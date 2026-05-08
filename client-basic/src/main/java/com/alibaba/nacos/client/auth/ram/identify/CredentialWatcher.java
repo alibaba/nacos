@@ -64,6 +64,7 @@ public class CredentialWatcher {
                 new NameThreadFactory("com.alibaba.nacos.client.auth.ram.identify.watcher"));
         
         executor.scheduleWithFixedDelay(new Runnable() {
+            
             private long modified = 0;
             
             @Override
@@ -118,7 +119,8 @@ public class CredentialWatcher {
         }
         if (!credentials.valid()) {
             LOGGER
-                    .warn("[1] Credential file missing required property {} Credential file missing {} or {}", appName,
+                    .warn("[1] Credential file missing required property {} Credential file missing {} or {}",
+                            appName,
                             IdentifyConstants.ACCESS_KEY, IdentifyConstants.SECRET_KEY);
             propertyPath = null;
             // return;
@@ -126,13 +128,15 @@ public class CredentialWatcher {
         serviceInstance.setCredential(credentials);
     }
     
-    private boolean loadCredentialFromProperties(InputStream propertiesIs, boolean init, Credentials credentials) {
+    private boolean loadCredentialFromProperties(InputStream propertiesIs, boolean init,
+            Credentials credentials) {
         Properties properties = new Properties();
         try {
             properties.load(propertiesIs);
         } catch (IOException e) {
             LOGGER
-                    .error("[26] Unable to load credential file, appName:" + appName + "Unable to load credential file "
+                    .error("[26] Unable to load credential file, appName:" + appName
+                            + "Unable to load credential file "
                             + propertyPath, e);
             propertyPath = null;
             return false;
@@ -182,8 +186,10 @@ public class CredentialWatcher {
     
     private boolean loadCredentialFromEnv(boolean init, Credentials credentials) {
         propertyPath = null;
-        String accessKey = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_ACCESS_KEY);
-        String secretKey = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_SECRET_KEY);
+        String accessKey =
+                NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_ACCESS_KEY);
+        String secretKey =
+                NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_SECRET_KEY);
         if (accessKey == null && secretKey == null) {
             if (init) {
                 LOGGER.info("{} No credential found", appName);
@@ -209,11 +215,13 @@ public class CredentialWatcher {
                 }
                 if (propertyPath == null || propertyPath.isEmpty()) {
                     propertyPath =
-                            IdentifyConstants.CREDENTIAL_PATH + (appName == null ? IdentifyConstants.CREDENTIAL_DEFAULT
-                                    : appName);
+                            IdentifyConstants.CREDENTIAL_PATH
+                                    + (appName == null ? IdentifyConstants.CREDENTIAL_DEFAULT
+                                            : appName);
                 } else {
                     if (init) {
-                        LOGGER.info("[{}] Defined credential file: -Dspas.identity={}", appName, propertyPath);
+                        LOGGER.info("[{}] Defined credential file: -Dspas.identity={}", appName,
+                                propertyPath);
                     }
                 }
             } else {
@@ -231,9 +239,11 @@ public class CredentialWatcher {
             try {
                 propertiesIs = new FileInputStream(propertyPath);
             } catch (FileNotFoundException e) {
-                if (appName != null && !appName.equals(IdentifyConstants.CREDENTIAL_DEFAULT) && propertyPath
-                        .equals(IdentifyConstants.CREDENTIAL_PATH + appName)) {
-                    propertyPath = IdentifyConstants.CREDENTIAL_PATH + IdentifyConstants.CREDENTIAL_DEFAULT;
+                if (appName != null && !appName.equals(IdentifyConstants.CREDENTIAL_DEFAULT)
+                        && propertyPath
+                                .equals(IdentifyConstants.CREDENTIAL_PATH + appName)) {
+                    propertyPath = IdentifyConstants.CREDENTIAL_PATH
+                            + IdentifyConstants.CREDENTIAL_DEFAULT;
                     continue;
                 }
                 if (!IdentifyConstants.DOCKER_CREDENTIAL_PATH.equals(propertyPath)) {

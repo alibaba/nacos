@@ -56,10 +56,12 @@ class StsCredentialHolderTest {
         StsConfig.getInstance().setSecurityCredentialsUrl("url");
         Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
         restMapField.setAccessible(true);
-        Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
+        Map<String, NacosRestTemplate> restMap =
+                (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
                 "com.alibaba.nacos.client.remote.HttpClientManager$HttpClientFactory");
-        restMap.put("com.alibaba.nacos.client.remote.HttpClientManager$HttpClientFactory", nacosRestTemplate);
+        restMap.put("com.alibaba.nacos.client.remote.HttpClientManager$HttpClientFactory",
+                nacosRestTemplate);
     }
     
     @AfterEach
@@ -69,7 +71,8 @@ class StsCredentialHolderTest {
         if (null != cachedNacosRestTemplate) {
             Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
             restMapField.setAccessible(true);
-            Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
+            Map<String, NacosRestTemplate> restMap =
+                    (Map<String, NacosRestTemplate>) restMapField.get(null);
             restMap.put("com.alibaba.nacos.client.remote.HttpClientManager$HttpClientFactory",
                     cachedNacosRestTemplate);
         }
@@ -90,7 +93,8 @@ class StsCredentialHolderTest {
         assertEquals(stsCredential, StsCredentialHolder.getInstance().getStsCredential());
     }
     
-    private void setStsCredential(StsCredential stsCredential) throws NoSuchFieldException, IllegalAccessException {
+    private void setStsCredential(StsCredential stsCredential)
+            throws NoSuchFieldException, IllegalAccessException {
         Field field = StsCredentialHolder.class.getDeclaredField("stsCredential");
         field.setAccessible(true);
         field.set(StsCredentialHolder.getInstance(), stsCredential);
@@ -100,7 +104,8 @@ class StsCredentialHolderTest {
     void testGetStsCredentialFromStringCache() throws NoSuchFieldException, IllegalAccessException {
         StsCredential stsCredential = buildMockStsCredential();
         StsConfig.getInstance().setSecurityCredentials(JacksonUtils.toJson(stsCredential));
-        assertEquals(stsCredential.toString(), StsCredentialHolder.getInstance().getStsCredential().toString());
+        assertEquals(stsCredential.toString(),
+                StsCredentialHolder.getInstance().getStsCredential().toString());
     }
     
     @Test
@@ -110,7 +115,8 @@ class StsCredentialHolderTest {
         mockResult.setData(JacksonUtils.toJson(stsCredential));
         mockResult.setCode(200);
         when(nacosRestTemplate.get(any(), any(), any(), any())).thenReturn(mockResult);
-        assertEquals(stsCredential.toString(), StsCredentialHolder.getInstance().getStsCredential().toString());
+        assertEquals(stsCredential.toString(),
+                StsCredentialHolder.getInstance().getStsCredential().toString());
     }
     
     @Test
@@ -127,7 +133,8 @@ class StsCredentialHolderTest {
     @Test
     void testGetStsCredentialFromRequestException() throws Exception {
         assertThrows(NacosRuntimeException.class, () -> {
-            when(nacosRestTemplate.get(any(), any(), any(), any())).thenThrow(new RuntimeException("test"));
+            when(nacosRestTemplate.get(any(), any(), any(), any()))
+                    .thenThrow(new RuntimeException("test"));
             StsCredentialHolder.getInstance().getStsCredential();
         });
     }

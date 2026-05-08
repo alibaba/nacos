@@ -68,7 +68,7 @@ public class CacheKeyUtils {
     public static String buildAgentSpecKey(String agentSpecName) {
         return agentSpecName;
     }
-
+    
     /**
      * Build prompt key.
      *

@@ -60,7 +60,8 @@ public class SpasAdapter {
         return header;
     }
     
-    public static Map<String, String> getSignHeaders(String groupKey, String tenant, String secretKey) {
+    public static Map<String, String> getSignHeaders(String groupKey, String tenant,
+            String secretKey) {
         if (StringUtils.isBlank(groupKey) && StringUtils.isBlank(tenant)) {
             return null;
         }
@@ -76,7 +77,8 @@ public class SpasAdapter {
         return getSignHeaders(resource, secretKey);
     }
     
-    public static Map<String, String> getSignHeaders(Map<String, String> paramValues, String secretKey) {
+    public static Map<String, String> getSignHeaders(Map<String, String> paramValues,
+            String secretKey) {
         if (null == paramValues) {
             return null;
         }

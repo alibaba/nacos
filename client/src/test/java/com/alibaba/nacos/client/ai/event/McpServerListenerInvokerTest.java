@@ -69,6 +69,7 @@ class McpServerListenerInvokerTest {
         assertNotEquals(invoker, new Object());
         assertEquals(invoker, new McpServerListenerInvoker(listener));
         assertNotEquals(invoker, new McpServerListenerInvoker(new AbstractNacosMcpServerListener() {
+            
             @Override
             public void onEvent(NacosMcpServerEvent event) {
             }

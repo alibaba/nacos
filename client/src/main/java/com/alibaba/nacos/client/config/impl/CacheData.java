@@ -68,7 +68,8 @@ public class CacheData {
         String notifyTimeouts = System.getProperty("nacos.listener.notify.warn.timeout");
         if (StringUtils.isNotBlank(notifyTimeouts) && NumberUtils.isDigits(notifyTimeouts)) {
             notifyWarnTimeout = Long.parseLong(notifyTimeouts);
-            LOGGER.info("config listener notify warn timeout millis is set to {}", notifyWarnTimeout);
+            LOGGER.info("config listener notify warn timeout millis is set to {}",
+                    notifyWarnTimeout);
         } else {
             LOGGER.info("config listener notify warn timeout millis use default {} millis ",
                     DEFAULT_NOTIF_WARN_TIMEOUTS);
@@ -76,7 +77,7 @@ public class CacheData {
         }
         return notifyWarnTimeout;
     }
-
+    
     /**
      * double check lock initialization of scheduledExecutor.
      */
@@ -97,7 +98,7 @@ public class CacheData {
         }
         return scheduledExecutor;
     }
-
+    
     /**
      * shutdownScheduledExecutor.
      */
@@ -112,11 +113,12 @@ public class CacheData {
             }
         }
     }
-
+    
     static boolean initSnapshot;
     
     static {
-        initSnapshot = NacosClientProperties.PROTOTYPE.getBoolean("nacos.cache.data.init.snapshot", true);
+        initSnapshot =
+                NacosClientProperties.PROTOTYPE.getBoolean("nacos.cache.data.init.snapshot", true);
         LOGGER.info("nacos.cache.data.init.snapshot = {} ", initSnapshot);
     }
     
@@ -254,7 +256,8 @@ public class CacheData {
         }
         
         if (listeners.addIfAbsent(wrap)) {
-            LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", envName, tenant, dataId,
+            LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", envName,
+                    tenant, dataId,
                     group, listeners.size());
         }
     }
@@ -270,7 +273,8 @@ public class CacheData {
         }
         ManagerListenerWrap wrap = new ManagerListenerWrap(listener);
         if (listeners.remove(wrap)) {
-            LOGGER.info("[{}] [remove-listener] ok, dataId={}, group={},tenant={}, cnt={}", envName, dataId, group,
+            LOGGER.info("[{}] [remove-listener] ok, dataId={}, group={},tenant={}, cnt={}", envName,
+                    dataId, group,
                     tenant, listeners.size());
         }
     }
@@ -361,7 +365,8 @@ public class CacheData {
     
     class LongNotifyHandler implements Runnable {
         
-        public LongNotifyHandler(String listenerClass, String dataId, String group, String tenant, String md5,
+        public LongNotifyHandler(String listenerClass, String dataId, String group, String tenant,
+                String md5,
                 long timeoutMills, Thread thread) {
             this.listenerClass = listenerClass;
             this.dataId = dataId;
@@ -392,10 +397,12 @@ public class CacheData {
         public void run() {
             String blockTrace = getTrace(thread.getStackTrace(), 5);
             LOGGER.warn("[{}] [notify-block-monitor] dataId={}, group={},tenant={}, md5={}, "
-                            + "receiveConfigInfo execute over {} mills，thread trace block : {}", envName, dataId, group, tenant,
+                    + "receiveConfigInfo execute over {} mills，thread trace block : {}", envName,
+                    dataId, group, tenant,
                     md5, timeoutMills, blockTrace);
             NotifyCenter.publishEvent(
-                    new ChangeNotifyBlockEvent(this.listenerClass, dataId, group, tenant, this.startTime,
+                    new ChangeNotifyBlockEvent(this.listenerClass, dataId, group, tenant,
+                            this.startTime,
                             System.currentTimeMillis(), blockTrace));
         }
         
@@ -416,8 +423,10 @@ public class CacheData {
         return stringBuilder.toString();
     }
     
-    private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
-            final String md5, final String encryptedDataKey, final ManagerListenerWrap listenerWrap) {
+    private void safeNotifyListener(final String dataId, final String group, final String content,
+            final String type,
+            final String md5, final String encryptedDataKey,
+            final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
         if (!listenerWrap.inNotifying.compareAndSet(false, true)) {
             LOGGER.warn(
@@ -438,7 +447,8 @@ public class CacheData {
                     if (listener instanceof AbstractSharedListener) {
                         AbstractSharedListener adapter = (AbstractSharedListener) listener;
                         adapter.fillContext(dataId, group);
-                        LOGGER.info("[{}] [notify-context] dataId={}, group={},tenant={}, md5={}", envName, dataId,
+                        LOGGER.info("[{}] [notify-context] dataId={}, group={},tenant={}, md5={}",
+                                envName, dataId,
                                 group, tenant, md5);
                     }
                     // Before executing the callback, set the thread classloader to the classloader of
@@ -454,8 +464,10 @@ public class CacheData {
                     configFilterChainManager.doFilter(null, cr);
                     String contentTmp = cr.getContent();
                     timeSchedule = getNotifyBlockMonitor().schedule(
-                            new LongNotifyHandler(listener.getClass().getSimpleName(), dataId, group, tenant, md5,
-                                    notifyWarnTimeout, Thread.currentThread()), notifyWarnTimeout,
+                            new LongNotifyHandler(listener.getClass().getSimpleName(), dataId,
+                                    group, tenant, md5,
+                                    notifyWarnTimeout, Thread.currentThread()),
+                            notifyWarnTimeout,
                             TimeUnit.MILLISECONDS);
                     listener.receiveConfigInfo(contentTmp);
                     // compare lastContent and content
@@ -470,15 +482,19 @@ public class CacheData {
                     listenerWrap.lastCallMd5 = md5;
                     LOGGER.info(
                             "[{}] [notify-ok] dataId={}, group={},tenant={}, md5={}, listener={} ,job run cost={} millis.",
-                            envName, dataId, group, tenant, md5, listener, (System.currentTimeMillis() - start));
+                            envName, dataId, group, tenant, md5, listener,
+                            (System.currentTimeMillis() - start));
                 } catch (NacosException ex) {
                     LOGGER.error(
                             "[{}] [notify-error] dataId={}, group={},tenant={},md5={}, listener={} errCode={} errMsg={},stackTrace :{}",
-                            envName, dataId, group, tenant, md5, listener, ex.getErrCode(), ex.getErrMsg(),
+                            envName, dataId, group, tenant, md5, listener, ex.getErrCode(),
+                            ex.getErrMsg(),
                             getTrace(ex.getStackTrace(), 3));
                 } catch (Throwable t) {
-                    LOGGER.error("[{}] [notify-error] dataId={}, group={},tenant={}, md5={}, listener={} tx={}",
-                            envName, dataId, group, tenant, md5, listener, getTrace(t.getStackTrace(), 3));
+                    LOGGER.error(
+                            "[{}] [notify-error] dataId={}, group={},tenant={}, md5={}, listener={} tx={}",
+                            envName, dataId, group, tenant, md5, listener,
+                            getTrace(t.getStackTrace(), 3));
                 } finally {
                     listenerWrap.inNotifying.set(false);
                     Thread.currentThread().setContextClassLoader(myClassLoader);
@@ -504,7 +520,8 @@ public class CacheData {
             }
         } catch (Throwable t) {
             listenerWrap.inNotifying.set(false);
-            LOGGER.error("[{}] [notify-listener-error] dataId={}, group={},tenant={}, md5={}, listener={} throwable={}",
+            LOGGER.error(
+                    "[{}] [notify-listener-error] dataId={}, group={},tenant={}, md5={}, listener={} throwable={}",
                     envName, dataId, group, tenant, md5, listener, t.getCause());
         }
     }
@@ -527,9 +544,11 @@ public class CacheData {
         return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
     }
     
-    private String loadCacheContentFromDiskLocal(String name, String dataId, String group, String tenant) {
+    private String loadCacheContentFromDiskLocal(String name, String dataId, String group,
+            String tenant) {
         String content = LocalConfigInfoProcessor.getFailover(name, dataId, group, tenant);
-        content = (null != content) ? content : LocalConfigInfoProcessor.getSnapshot(name, dataId, group, tenant);
+        content = (null != content) ? content
+                : LocalConfigInfoProcessor.getSnapshot(name, dataId, group, tenant);
         return content;
     }
     
@@ -555,11 +574,13 @@ public class CacheData {
         isDiscard = discard;
     }
     
-    public CacheData(ConfigFilterChainManager configFilterChainManager, String envName, String dataId, String group) {
+    public CacheData(ConfigFilterChainManager configFilterChainManager, String envName,
+            String dataId, String group) {
         this(configFilterChainManager, envName, dataId, group, TenantUtil.getUserTenantForAcm());
     }
     
-    public CacheData(ConfigFilterChainManager configFilterChainManager, String envName, String dataId, String group,
+    public CacheData(ConfigFilterChainManager configFilterChainManager, String envName,
+            String dataId, String group,
             String tenant) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
@@ -573,7 +594,8 @@ public class CacheData {
         this.isInitializing = true;
         if (initSnapshot) {
             this.content = loadCacheContentFromDiskLocal(envName, dataId, group, tenant);
-            this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(envName, dataId, group, tenant);
+            this.encryptedDataKey =
+                    loadEncryptedDataKeyFromDiskLocal(envName, dataId, group, tenant);
             this.md5 = getMd5String(this.content);
         }
     }
@@ -588,15 +610,18 @@ public class CacheData {
         this.encryptedDataKey = encryptedDataKey;
     }
     
-    private String loadEncryptedDataKeyFromDiskLocal(String envName, String dataId, String group, String tenant) {
-        String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(envName, dataId, group,
-                tenant);
+    private String loadEncryptedDataKeyFromDiskLocal(String envName, String dataId, String group,
+            String tenant) {
+        String encryptedDataKey =
+                LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(envName, dataId, group,
+                        tenant);
         
         if (encryptedDataKey != null) {
             return encryptedDataKey;
         }
         
-        return LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(envName, dataId, group, tenant);
+        return LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(envName, dataId, group,
+                tenant);
     }
     
     private static class ManagerListenerWrap {

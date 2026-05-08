@@ -37,10 +37,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
-import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -53,7 +51,6 @@ import java.util.Map;
 @Component
 @EnabledInnerHandler
 @EnabledAiHandler
-@Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 public class SkillInnerHandler implements SkillHandler {
     
     private final SkillOperationService skillOperationService;

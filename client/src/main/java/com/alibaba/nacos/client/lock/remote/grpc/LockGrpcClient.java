@@ -63,7 +63,8 @@ public class LockGrpcClient extends AbstractLockClient {
             SecurityProxy securityProxy) throws NacosException {
         super(securityProxy);
         this.uuid = UUID.randomUUID().toString();
-        this.requestTimeout = Long.parseLong(properties.getProperty(PropertyConstants.LOCK_REQUEST_TIMEOUT, "-1"));
+        this.requestTimeout = Long
+                .parseLong(properties.getProperty(PropertyConstants.LOCK_REQUEST_TIMEOUT, "-1"));
         Map<String, String> labels = new HashMap<>();
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_LOCK);
@@ -87,7 +88,8 @@ public class LockGrpcClient extends AbstractLockClient {
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(instance);
         request.setLockOperationEnum(LockOperationEnum.ACQUIRE);
-        LockOperationResponse acquireLockResponse = requestToServer(request, LockOperationResponse.class);
+        LockOperationResponse acquireLockResponse =
+                requestToServer(request, LockOperationResponse.class);
         return (Boolean) acquireLockResponse.getResult();
     }
     
@@ -100,7 +102,8 @@ public class LockGrpcClient extends AbstractLockClient {
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(instance);
         request.setLockOperationEnum(LockOperationEnum.RELEASE);
-        LockOperationResponse acquireLockResponse = requestToServer(request, LockOperationResponse.class);
+        LockOperationResponse acquireLockResponse =
+                requestToServer(request, LockOperationResponse.class);
         return (Boolean) acquireLockResponse.getResult();
     }
     
@@ -109,12 +112,14 @@ public class LockGrpcClient extends AbstractLockClient {
         rpcClient.shutdown();
     }
     
-    private <T extends Response> T requestToServer(AbstractLockRequest request, Class<T> responseClass)
+    private <T extends Response> T requestToServer(AbstractLockRequest request,
+            Class<T> responseClass)
             throws NacosException {
         try {
             request.putAllHeader(getSecurityHeaders());
             Response response =
-                    requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+                    requestTimeout < 0 ? rpcClient.request(request)
+                            : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }
@@ -124,12 +129,14 @@ public class LockGrpcClient extends AbstractLockClient {
         } catch (NacosException e) {
             throw e;
         } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
+            throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ",
+                    e);
         }
         throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
     }
     
     private boolean isAbilitySupportedByServer() {
-        return rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK) == AbilityStatus.SUPPORTED;
+        return rpcClient.getConnectionAbility(
+                AbilityKey.SERVER_DISTRIBUTED_LOCK) == AbilityStatus.SUPPORTED;
     }
 }

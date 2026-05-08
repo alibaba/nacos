@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 import static com.alibaba.nacos.sys.env.EnvUtil.FUNCTION_MODE_NAMING;
+import static com.alibaba.nacos.sys.env.EnvUtil.FUNCTION_MODE_MICROSERVICE;
 
 /**
  * K8s Sync module enabled filter by spring packages scan.
@@ -47,7 +48,8 @@ public class K8sSyncEnabledFilter implements NacosPackageExcludeFilter {
         String functionMode = EnvUtil.getFunctionMode();
         // When not specified naming mode or specified all mode, the naming module not start and load.
         if (isNamingDisabled(functionMode)) {
-            LOGGER.warn("K8s Sync module disabled because function mode is {}, and K8s Sync depend naming module",
+            LOGGER.warn(
+                    "K8s Sync module disabled because function mode is {}, and K8s Sync depend naming module",
                     functionMode);
             return true;
         }
@@ -62,6 +64,6 @@ public class K8sSyncEnabledFilter implements NacosPackageExcludeFilter {
         if (StringUtils.isEmpty(functionMode)) {
             return false;
         }
-        return !FUNCTION_MODE_NAMING.equals(functionMode);
+        return !FUNCTION_MODE_NAMING.equals(functionMode) && !FUNCTION_MODE_MICROSERVICE.equals(functionMode);
     }
 }

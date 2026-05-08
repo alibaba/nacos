@@ -34,6 +34,7 @@ public abstract class AbstractResourceInjector {
      * @param context  ram context
      * @param result   the result identity context
      */
-    public void doInject(RequestResource resource, RamContext context, LoginIdentityContext result) {
+    public void doInject(RequestResource resource, RamContext context,
+            LoginIdentityContext result) {
     }
 }

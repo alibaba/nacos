@@ -64,7 +64,8 @@ class NacosPromptCacheHolderTest {
         Properties properties = new Properties();
         properties.put(AiConstants.AI_PROMPT_CACHE_UPDATE_INTERVAL, "100");
         NotifyCenter.registerToPublisher(PromptChangedEvent.class, 16384);
-        cacheHolder = new NacosPromptCacheHolder(aiClientProxy, NacosClientProperties.PROTOTYPE.derive(properties));
+        cacheHolder = new NacosPromptCacheHolder(aiClientProxy,
+                NacosClientProperties.PROTOTYPE.derive(properties));
     }
     
     @AfterEach
@@ -98,7 +99,8 @@ class NacosPromptCacheHolderTest {
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         
         assertNotNull(getPromptCache().get("p1::version:1.0.0"));
-        assertTrue(subscriber.await(5000), "Event should be received by subscriber within 5 seconds");
+        assertTrue(subscriber.await(5000),
+                "Event should be received by subscriber within 5 seconds");
         assertTrue(subscriber.invokedMark.get(), "Subscriber should have been invoked");
     }
     
@@ -134,7 +136,8 @@ class NacosPromptCacheHolderTest {
         updater.run();
         
         assertNull(getPromptCache().get("p1::version:1.0.0"));
-        assertTrue(subscriber.await(5000), "Null event should be received by subscriber within 5 seconds");
+        assertTrue(subscriber.await(5000),
+                "Null event should be received by subscriber within 5 seconds");
         assertTrue(subscriber.invokedMark.get());
     }
     

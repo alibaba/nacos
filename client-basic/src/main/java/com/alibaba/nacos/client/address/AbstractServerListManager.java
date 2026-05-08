@@ -82,22 +82,26 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
      * @throws NacosException during start and initialize.
      */
     public void start() throws NacosException {
-        Collection<ServerListProvider> serverListProviders = NacosServiceLoader.load(ServerListProvider.class);
+        Collection<ServerListProvider> serverListProviders =
+                NacosServiceLoader.load(ServerListProvider.class);
         Collection<ServerListProvider> sorted = serverListProviders.stream()
                 .sorted((a, b) -> b.getOrder() - a.getOrder()).collect(Collectors.toList());
         for (ServerListProvider each : sorted) {
             boolean matchResult = each.match(properties);
-            LOGGER.info("Load and match ServerListProvider {}, match result: {}", each.getClass().getCanonicalName(),
+            LOGGER.info("Load and match ServerListProvider {}, match result: {}",
+                    each.getClass().getCanonicalName(),
                     matchResult);
             if (matchResult) {
                 this.serverListProvider = each;
-                LOGGER.info("Will use {} as ServerListProvider", this.serverListProvider.getClass().getCanonicalName());
+                LOGGER.info("Will use {} as ServerListProvider",
+                        this.serverListProvider.getClass().getCanonicalName());
                 break;
             }
         }
         if (null == serverListProvider) {
             LOGGER.error("No server list provider found, SPI load size: {}", sorted.size());
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "No server list provider found.");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM,
+                    "No server list provider found.");
         }
         this.serverListProvider.init(properties, getNacosRestTemplate());
     }

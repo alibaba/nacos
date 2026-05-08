@@ -39,13 +39,15 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
     
     @Override
     public void init(Properties properties) {
-    
+        
     }
     
     @Override
-    public void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
+    public void doFilter(IConfigRequest request, IConfigResponse response,
+            IConfigFilterChain filterChain)
             throws NacosException {
-        if (Objects.nonNull(request) && request instanceof ConfigRequest && Objects.isNull(response)) {
+        if (Objects.nonNull(request) && request instanceof ConfigRequest
+                && Objects.isNull(response)) {
             
             // Publish configuration, encrypt
             ConfigRequest configRequest = (ConfigRequest) request;
@@ -58,13 +60,16 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
             if (!StringUtils.isBlank(encryptContent) && !encryptContent.equals(content)) {
                 ((ConfigRequest) request).setContent(encryptContent);
             }
-            if (!StringUtils.isBlank(secretKey) && !secretKey.equals(((ConfigRequest) request).getEncryptedDataKey())) {
+            if (!StringUtils.isBlank(secretKey)
+                    && !secretKey.equals(((ConfigRequest) request).getEncryptedDataKey())) {
                 ((ConfigRequest) request).setEncryptedDataKey(secretKey);
-            } else if (StringUtils.isBlank(((ConfigRequest) request).getEncryptedDataKey()) && StringUtils.isBlank(secretKey)) {
+            } else if (StringUtils.isBlank(((ConfigRequest) request).getEncryptedDataKey())
+                    && StringUtils.isBlank(secretKey)) {
                 ((ConfigRequest) request).setEncryptedDataKey("");
             }
         }
-        if (Objects.nonNull(response) && response instanceof ConfigResponse && Objects.isNull(request)) {
+        if (Objects.nonNull(response) && response instanceof ConfigResponse
+                && Objects.isNull(request)) {
             
             // Get configuration, decrypt
             ConfigResponse configResponse = (ConfigResponse) response;
@@ -73,15 +78,18 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
             String encryptedDataKey = configResponse.getEncryptedDataKey();
             String content = configResponse.getContent();
             
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
+            Pair<String, String> pair =
+                    EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
             String secretKey = pair.getFirst();
             String decryptContent = pair.getSecond();
             if (!StringUtils.isBlank(decryptContent) && !decryptContent.equals(content)) {
                 ((ConfigResponse) response).setContent(decryptContent);
             }
-            if (!StringUtils.isBlank(secretKey) && !secretKey.equals(((ConfigResponse) response).getEncryptedDataKey())) {
+            if (!StringUtils.isBlank(secretKey)
+                    && !secretKey.equals(((ConfigResponse) response).getEncryptedDataKey())) {
                 ((ConfigResponse) response).setEncryptedDataKey(secretKey);
-            } else if (StringUtils.isBlank(((ConfigResponse) response).getEncryptedDataKey()) && StringUtils.isBlank(secretKey)) {
+            } else if (StringUtils.isBlank(((ConfigResponse) response).getEncryptedDataKey())
+                    && StringUtils.isBlank(secretKey)) {
                 ((ConfigResponse) response).setEncryptedDataKey("");
             }
         }

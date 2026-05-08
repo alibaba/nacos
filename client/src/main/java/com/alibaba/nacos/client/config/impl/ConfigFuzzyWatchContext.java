@@ -101,7 +101,8 @@ public class ConfigFuzzyWatchContext {
     private static final long SUPPRESSED_PERIOD = 60 * 1000L;
     
     boolean patternLimitSuppressed() {
-        return patternLimitTs > 0 && System.currentTimeMillis() - patternLimitTs < SUPPRESSED_PERIOD;
+        return patternLimitTs > 0
+                && System.currentTimeMillis() - patternLimitTs < SUPPRESSED_PERIOD;
     }
     
     public void clearOverLimitTs() {
@@ -154,7 +155,8 @@ public class ConfigFuzzyWatchContext {
      * @param groupKey groupKey
      * @param uuid     UUID to filter listeners
      */
-    public void notifyWatcher(final String groupKey, final String changedType, final String syncType,
+    public void notifyWatcher(final String groupKey, final String changedType,
+            final String syncType,
             final String uuid) {
         Set<ConfigFuzzyWatcherWrapper> listenersToNotify = calculateListenersToNotify(uuid);
         doNotifyWatchers(groupKey, changedType, syncType, listenersToNotify);
@@ -166,7 +168,8 @@ public class ConfigFuzzyWatchContext {
      * @param groupKey          groupKey
      * @param listenersToNotify Set of listeners to notify
      */
-    private void doNotifyWatchers(final String groupKey, final String changedType, final String syncType,
+    private void doNotifyWatchers(final String groupKey, final String changedType,
+            final String syncType,
             Set<ConfigFuzzyWatcherWrapper> listenersToNotify) {
         for (ConfigFuzzyWatcherWrapper watcher : listenersToNotify) {
             doNotifyWatcher(groupKey, changedType, syncType, watcher);
@@ -185,15 +188,18 @@ public class ConfigFuzzyWatchContext {
         }
         boolean notify = false;
         
-        for (ConfigFuzzyWatcherWrapper configFuzzyWatcherWrapper : calculateListenersToNotify(null)) {
+        for (ConfigFuzzyWatcherWrapper configFuzzyWatcherWrapper : calculateListenersToNotify(
+                null)) {
             if (configFuzzyWatcherWrapper.fuzzyWatchEventWatcher instanceof FuzzyWatchLoadWatcher) {
                 
                 if (FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode().equals(code)) {
-                    ((FuzzyWatchLoadWatcher) configFuzzyWatcherWrapper.fuzzyWatchEventWatcher).onConfigReachUpLimit();
+                    ((FuzzyWatchLoadWatcher) configFuzzyWatcherWrapper.fuzzyWatchEventWatcher)
+                            .onConfigReachUpLimit();
                     notify = true;
                 }
                 if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode().equals(code)) {
-                    ((FuzzyWatchLoadWatcher) configFuzzyWatcherWrapper.fuzzyWatchEventWatcher).onPatternOverLimit();
+                    ((FuzzyWatchLoadWatcher) configFuzzyWatcherWrapper.fuzzyWatchEventWatcher)
+                            .onPatternOverLimit();
                     notify = true;
                 }
             }
@@ -203,14 +209,17 @@ public class ConfigFuzzyWatchContext {
         }
     }
     
-    private void doNotifyWatcher(final String groupKey, final String changedType, final String syncType,
+    private void doNotifyWatcher(final String groupKey, final String changedType,
+            final String syncType,
             ConfigFuzzyWatcherWrapper configFuzzyWatcher) {
         
-        if (ADD_CONFIG.equals(changedType) && configFuzzyWatcher.getSyncGroupKeys().contains(groupKey)) {
+        if (ADD_CONFIG.equals(changedType)
+                && configFuzzyWatcher.getSyncGroupKeys().contains(groupKey)) {
             return;
         }
         
-        if (DELETE_CONFIG.equals(changedType) && !configFuzzyWatcher.getSyncGroupKeys().contains(groupKey)) {
+        if (DELETE_CONFIG.equals(changedType)
+                && !configFuzzyWatcher.getSyncGroupKeys().contains(groupKey)) {
             return;
         }
         
@@ -220,23 +229,29 @@ public class ConfigFuzzyWatchContext {
         
         String tenant = parseKey[2];
         
-        final String resetSyncType = initializationCompleted.get() ? syncType : FUZZY_WATCH_INIT_NOTIFY;
+        final String resetSyncType =
+                initializationCompleted.get() ? syncType : FUZZY_WATCH_INIT_NOTIFY;
         AbstractFuzzyNotifyTask job = new AbstractFuzzyNotifyTask() {
+            
             @Override
             public void run() {
                 long start = System.currentTimeMillis();
-                ConfigFuzzyWatchChangeEvent event = ConfigFuzzyWatchChangeEvent.build(tenant, group, dataId,
-                        changedType, resetSyncType);
+                ConfigFuzzyWatchChangeEvent event =
+                        ConfigFuzzyWatchChangeEvent.build(tenant, group, dataId,
+                                changedType, resetSyncType);
                 if (configFuzzyWatcher != null) {
                     configFuzzyWatcher.fuzzyWatchEventWatcher.onEvent(event);
                 }
                 LOGGER.info(
                         "[{}] [notify-fuzzy-watcher-ok] dataId={}, group={}, tenant={}, watcher={}, job run cost={} millis.",
-                        envName, dataId, group, tenant, configFuzzyWatcher, (System.currentTimeMillis() - start));
+                        envName, dataId, group, tenant, configFuzzyWatcher,
+                        (System.currentTimeMillis() - start));
                 if (changedType.equals(DELETE_CONFIG)) {
-                    configFuzzyWatcher.getSyncGroupKeys().remove(GroupKey.getKey(dataId, group, tenant));
+                    configFuzzyWatcher.getSyncGroupKeys()
+                            .remove(GroupKey.getKey(dataId, group, tenant));
                 } else if (changedType.equals(ADD_CONFIG)) {
-                    configFuzzyWatcher.getSyncGroupKeys().add(GroupKey.getKey(dataId, group, tenant));
+                    configFuzzyWatcher.getSyncGroupKeys()
+                            .add(GroupKey.getKey(dataId, group, tenant));
                     
                 }
             }
@@ -256,7 +271,8 @@ public class ConfigFuzzyWatchContext {
                 job.run();
             }
         } catch (Throwable t) {
-            LOGGER.error("[{}] [notify-fuzzy-watcher-error] dataId={}, group={}, tenant={}, listener={}, throwable={}.",
+            LOGGER.error(
+                    "[{}] [notify-fuzzy-watcher-error] dataId={}, group={}, tenant={}, listener={}, throwable={}.",
                     envName, dataId, group, tenant, configFuzzyWatcher, t.getCause());
         }
     }
@@ -283,7 +299,9 @@ public class ConfigFuzzyWatchContext {
             ConfigFuzzyWatcherWrapper next = iterator.next();
             if (next.fuzzyWatchEventWatcher.equals(watcher)) {
                 iterator.remove();
-                LOGGER.info("[{}] [remove-fuzzy-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", getEnvName(),
+                LOGGER.info(
+                        "[{}] [remove-fuzzy-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ",
+                        getEnvName(),
                         this.groupKeyPattern, watcher, next.getUuid());
             }
         }
@@ -298,7 +316,8 @@ public class ConfigFuzzyWatchContext {
     public boolean addWatcher(ConfigFuzzyWatcherWrapper configFuzzyWatcherWrapper) {
         boolean added = configFuzzyWatcherWrappers.add(configFuzzyWatcherWrapper);
         if (added) {
-            LOGGER.info("[{}] [add-fuzzy-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", getEnvName(),
+            LOGGER.info("[{}] [add-fuzzy-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ",
+                    getEnvName(),
                     this.groupKeyPattern, configFuzzyWatcherWrapper.fuzzyWatchEventWatcher,
                     configFuzzyWatcherWrapper.getUuid());
         }
@@ -466,14 +485,16 @@ public class ConfigFuzzyWatchContext {
             
             Set<String> receivedGroupKeysContext = new HashSet<>(getReceivedGroupKeys());
             Set<String> syncGroupKeys = configFuzzyWatcher.getSyncGroupKeys();
-            List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
-                    receivedGroupKeysContext, syncGroupKeys);
+            List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates =
+                    FuzzyGroupKeyPattern.diffGroupKeys(
+                            receivedGroupKeysContext, syncGroupKeys);
             if (CollectionUtils.isEmpty(groupKeyStates)) {
                 configFuzzyWatcher.syncVersion = this.syncVersion;
             } else {
                 for (FuzzyGroupKeyPattern.GroupKeyState groupKeyState : groupKeyStates) {
                     String changedType = groupKeyState.isExist() ? ADD_CONFIG : DELETE_CONFIG;
-                    doNotifyWatcher(groupKeyState.getGroupKey(), changedType, FUZZY_WATCH_DIFF_SYNC_NOTIFY,
+                    doNotifyWatcher(groupKeyState.getGroupKey(), changedType,
+                            FUZZY_WATCH_DIFF_SYNC_NOTIFY,
                             configFuzzyWatcher);
                 }
             }
@@ -488,6 +509,7 @@ public class ConfigFuzzyWatchContext {
      */
     public Future<Set<String>> createNewFuture() {
         Future<Set<String>> future = new Future<Set<String>>() {
+            
             @Override
             public boolean cancel(boolean mayInterruptIfRunning) {
                 throw new UnsupportedOperationException("not support to cancel fuzzy watch");
@@ -514,7 +536,8 @@ public class ConfigFuzzyWatchContext {
                 return new HashSet<>(ConfigFuzzyWatchContext.this.getReceivedGroupKeys());
             }
             
-            public Set<String> get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+            public Set<String> get(long timeout, TimeUnit unit)
+                    throws InterruptedException, TimeoutException {
                 if (!ConfigFuzzyWatchContext.this.initializationCompleted.get()) {
                     synchronized (ConfigFuzzyWatchContext.this) {
                         ConfigFuzzyWatchContext.this.wait(unit.toMillis(timeout));
@@ -523,7 +546,8 @@ public class ConfigFuzzyWatchContext {
                 
                 if (!ConfigFuzzyWatchContext.this.initializationCompleted.get()) {
                     throw new TimeoutException(
-                            "fuzzy watch result future timeout for " + unit.toMillis(timeout) + " millis");
+                            "fuzzy watch result future timeout for " + unit.toMillis(timeout)
+                                    + " millis");
                 }
                 return new HashSet<>(ConfigFuzzyWatchContext.this.getReceivedGroupKeys());
             }
@@ -532,4 +556,3 @@ public class ConfigFuzzyWatchContext {
         return future;
     }
 }
-

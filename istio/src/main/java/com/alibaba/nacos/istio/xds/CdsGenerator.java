@@ -65,22 +65,29 @@ public final class CdsGenerator implements ApiGenerator<Any> {
         }
         List<Any> result = new ArrayList<>();
         IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
-        Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
+        Map<String, IstioService> istioServiceMap =
+                pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
         for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
             String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                    entry.getKey() + '.' +  istioConfig.getDomainSuffix(), entry.getValue().getPort());
+                    entry.getKey() + '.' + istioConfig.getDomainSuffix(),
+                    entry.getValue().getPort());
             
-            Cluster.Builder cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
-                    .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(
-                            ConfigSource.newBuilder().setAds(AggregatedConfigSource.newBuilder())
-                                    .setResourceApiVersionValue(V2_VALUE).build()).build());
+            Cluster.Builder cluster =
+                    Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
+                            .setEdsClusterConfig(Cluster.EdsClusterConfig
+                                    .newBuilder().setServiceName(name).setEdsConfig(
+                                            ConfigSource.newBuilder()
+                                                    .setAds(AggregatedConfigSource.newBuilder())
+                                                    .setResourceApiVersionValue(V2_VALUE).build())
+                                    .build());
             if ("grpc".equals(entry.getValue().getProtocol())) {
                 cluster.setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build());
             } else {
                 cluster.setHttpProtocolOptions(Http1ProtocolOptions.newBuilder().build());
             }
-    
-            result.add(Any.newBuilder().setValue(cluster.build().toByteString()).setTypeUrl(CLUSTER_TYPE).build());
+            
+            result.add(Any.newBuilder().setValue(cluster.build().toByteString())
+                    .setTypeUrl(CLUSTER_TYPE).build());
         }
         
         return result;

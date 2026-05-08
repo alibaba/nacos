@@ -71,7 +71,8 @@ public class HttpLoginProcessor implements LoginProcessor {
         
         if (!server.startsWith(HTTPS_PREFIX) && !server.startsWith(HTTP_PREFIX)) {
             if (!InternetAddressUtil.containsPort(server)) {
-                server = server + InternetAddressUtil.IP_PORT_SPLITER + ClientBasicParamUtil.getDefaultServerPort();
+                server = server + InternetAddressUtil.IP_PORT_SPLITER
+                        + ClientBasicParamUtil.getDefaultServerPort();
             }
             server = HTTP_PREFIX + server;
         }
@@ -80,15 +81,18 @@ public class HttpLoginProcessor implements LoginProcessor {
         
         Map<String, String> params = new HashMap<>(2);
         Map<String, String> bodyMap = new HashMap<>(2);
-        params.put(PropertyKeyConst.USERNAME, properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY));
-        bodyMap.put(PropertyKeyConst.PASSWORD, properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY));
+        params.put(PropertyKeyConst.USERNAME,
+                properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY));
+        bodyMap.put(PropertyKeyConst.PASSWORD,
+                properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY));
         try {
             HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.EMPTY,
                     Query.newInstance().initParams(params), bodyMap, String.class);
             int code = restResult.getCode();
             if (code == NacosException.NOT_FOUND || code == NacosException.SERVER_NOT_IMPLEMENTED) {
                 url = server + contextPath + LOGIN_V1_URL;
-                restResult = nacosRestTemplate.postForm(url, Header.EMPTY, Query.newInstance().initParams(params),
+                restResult = nacosRestTemplate.postForm(url, Header.EMPTY,
+                        Query.newInstance().initParams(params),
                         bodyMap, String.class);
             }
             if (!restResult.ok()) {
@@ -105,15 +109,18 @@ public class HttpLoginProcessor implements LoginProcessor {
                 loginIdentityContext.setParameter(NacosAuthLoginConstant.TOKENTTL,
                         obj.get(Constants.TOKEN_TTL).asText());
             } else {
-                SECURITY_LOGGER.info("[NacosClientAuthServiceImpl] ACCESS_TOKEN is empty from response");
+                SECURITY_LOGGER
+                        .info("[NacosClientAuthServiceImpl] ACCESS_TOKEN is empty from response");
             }
             return loginIdentityContext;
         } catch (Exception e) {
             Map<String, String> newBodyMap = new HashMap<>(bodyMap);
             newBodyMap.put(PropertyKeyConst.PASSWORD,
-                    ClientBasicParamUtil.desensitiseParameter(bodyMap.get(PropertyKeyConst.PASSWORD)));
+                    ClientBasicParamUtil
+                            .desensitiseParameter(bodyMap.get(PropertyKeyConst.PASSWORD)));
             SECURITY_LOGGER.error("[NacosClientAuthServiceImpl] login http request failed"
-                    + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", url, params, newBodyMap, e.getMessage());
+                    + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", url, params, newBodyMap,
+                    e.getMessage());
             return null;
         }
     }

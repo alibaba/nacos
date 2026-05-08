@@ -42,7 +42,8 @@ class OidcClientContextTest {
     @Test
     void testInitWithFullConfig() {
         Properties properties = new Properties();
-        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, "https://idp.example.com/realms/test");
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI,
+                "https://idp.example.com/realms/test");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
         properties.setProperty(OidcClientConstants.PROP_SCOPE, "openid profile");
@@ -64,9 +65,9 @@ class OidcClientContextTest {
         properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, "https://idp.example.com");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
-
+        
         boolean configured = context.init(properties);
-
+        
         assertTrue(configured);
         assertEquals(OidcClientConstants.DEFAULT_SCOPE, context.getScope());
     }
@@ -76,7 +77,8 @@ class OidcClientContextTest {
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
-        properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT, "https://idp.example.com/token");
+        properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT,
+                "https://idp.example.com/token");
         
         boolean configured = context.init(properties);
         
@@ -99,20 +101,20 @@ class OidcClientContextTest {
     void testInitWithOnlyClientId() {
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
-
+        
         boolean configured = context.init(properties);
-
+        
         assertFalse(configured);
     }
-
+    
     @Test
     void testInitWithClientCredentialsButNoEndpoint() {
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
-
+        
         boolean configured = context.init(properties);
-
+        
         assertFalse(configured, "Should not be configured without issuer-uri or token-endpoint");
     }
     
@@ -133,7 +135,8 @@ class OidcClientContextTest {
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
-        properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT, "https://idp.example.com/token");
+        properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT,
+                "https://idp.example.com/token");
         context.init(properties);
         
         // Already discovered via direct token endpoint
@@ -149,9 +152,9 @@ class OidcClientContextTest {
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
         context.init(properties);
-
+        
         boolean result = context.discover();
-
+        
         assertFalse(result, "Discovery should fail with invalid URL");
     }
 }

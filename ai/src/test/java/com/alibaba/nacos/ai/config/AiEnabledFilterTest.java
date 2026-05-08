@@ -74,4 +74,16 @@ class AiEnabledFilterTest {
         environment.setProperty("nacos.extension.ai.enabled", "true");
         assertFalse(aiEnabledFilter.isExcluded("com.alibaba.nacos.ai.config.AiEnabledFilter", null));
     }
+
+    @Test
+    void isNotExcludedInAiMode() {
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "ai");
+        assertFalse(aiEnabledFilter.isExcluded("com.alibaba.nacos.ai.config.AiEnabledFilter", null));
+    }
+
+    @Test
+    void isExcludedInMicroserviceMode() {
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "microservice");
+        assertTrue(aiEnabledFilter.isExcluded("com.alibaba.nacos.ai.config.AiEnabledFilter", null));
+    }
 }

@@ -32,12 +32,11 @@ import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
-import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.core.model.form.PageForm;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 /**
@@ -49,7 +48,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @EnabledRemoteHandler
-@Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
+@EnabledAiHandler
 public class SkillRemoteHandler implements SkillHandler {
     
     private final NacosMaintainerClientHolder clientHolder;

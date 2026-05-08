@@ -48,17 +48,20 @@ public class NamingResourceInjector extends AbstractResourceInjector {
     private static final String AK_FILED = "ak";
     
     @Override
-    public void doInject(RequestResource resource, RamContext context, LoginIdentityContext result) {
+    public void doInject(RequestResource resource, RamContext context,
+            LoginIdentityContext result) {
         if (context.validate()) {
             try {
                 String accessKey = context.getAccessKey();
                 String secretKey = context.getSecretKey();
                 // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
                 if (StsConfig.getInstance().isStsOn()) {
-                    StsCredential stsCredential = StsCredentialHolder.getInstance().getStsCredential();
+                    StsCredential stsCredential =
+                            StsCredentialHolder.getInstance().getStsCredential();
                     accessKey = stsCredential.getAccessKeyId();
                     secretKey = stsCredential.getAccessKeySecret();
-                    result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER, stsCredential.getSecurityToken());
+                    result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER,
+                            stsCredential.getSecurityToken());
                 }
                 String signatureKey = secretKey;
                 if (StringUtils.isNotEmpty(context.getRegionId())) {
@@ -86,7 +89,9 @@ public class NamingResourceInjector extends AbstractResourceInjector {
     }
     
     private String getSignData(String serviceName) {
-        return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + Constants.SERVICE_INFO_SPLITER
-                + serviceName : String.valueOf(System.currentTimeMillis());
+        return StringUtils.isNotEmpty(serviceName)
+                ? System.currentTimeMillis() + Constants.SERVICE_INFO_SPLITER
+                        + serviceName
+                : String.valueOf(System.currentTimeMillis());
     }
 }

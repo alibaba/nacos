@@ -54,4 +54,40 @@ class ConditionFunctionEnabledTest {
         ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "naming");
         assertTrue(new ConditionFunctionEnabled.ConditionNamingEnabled().matches(null, null));
     }
+
+    @Test
+    void matchesForMicroServiceModeEnablesConfig() {
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "microservice");
+        assertTrue(new ConditionFunctionEnabled.ConditionConfigEnabled().matches(null, null));
+    }
+
+    @Test
+    void matchesForMicroServiceModeEnablesNaming() {
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "microservice");
+        assertTrue(new ConditionFunctionEnabled.ConditionNamingEnabled().matches(null, null));
+    }
+
+    @Test
+    void matchesForMicroServiceModeNotEnableAi() {
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "microservice");
+        assertFalse(new ConditionFunctionEnabled.ConditionAiEnabled().matches(null, null));
+    }
+
+    @Test
+    void matchesForAiModeEnablesAi() {
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "ai");
+        assertTrue(new ConditionFunctionEnabled.ConditionAiEnabled().matches(null, null));
+    }
+
+    @Test
+    void matchesForAiModeEnablesConfig() {
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "ai");
+        assertTrue(new ConditionFunctionEnabled.ConditionConfigEnabled().matches(null, null));
+    }
+
+    @Test
+    void matchesForAiModeEnablesNaming() {
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "ai");
+        assertTrue(new ConditionFunctionEnabled.ConditionNamingEnabled().matches(null, null));
+    }
 }

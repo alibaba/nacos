@@ -36,15 +36,15 @@ import static com.alibaba.nacos.istio.api.ApiConstants.*;
  */
 @Component
 public class ApiGeneratorFactory {
-
+    
     private final Map<String, ApiGenerator<?>> apiGeneratorMap;
-
+    
     public ApiGeneratorFactory() {
         apiGeneratorMap = new HashMap<>(2);
         // mcp over xds
         apiGeneratorMap.put(SERVICE_ENTRY_PROTO_PACKAGE, ServiceEntryXdsGenerator.getInstance());
         // TODO Support other api generator
-
+        
         //xds
         apiGeneratorMap.put(CLUSTER_TYPE, CdsGenerator.getInstance());
         apiGeneratorMap.put(ENDPOINT_TYPE, EdsGenerator.getInstance());
@@ -54,10 +54,10 @@ public class ApiGeneratorFactory {
         // mcp
         apiGeneratorMap.put(SERVICE_ENTRY_COLLECTION, ServiceEntryMcpGenerator.getInstance());
     }
-
+    
     public ApiGenerator<?> getApiGenerator(String typeUrl) {
         ApiGenerator<?> apiGenerator = apiGeneratorMap.get(typeUrl);
-        return apiGenerator != null ? apiGenerator :
-                (typeUrl.startsWith(MCP_PREFIX) ? EmptyMcpGenerator.getInstance() : EmptyXdsGenerator.getInstance());
+        return apiGenerator != null ? apiGenerator : (typeUrl.startsWith(MCP_PREFIX)
+                ? EmptyMcpGenerator.getInstance() : EmptyXdsGenerator.getInstance());
     }
 }

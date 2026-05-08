@@ -35,6 +35,7 @@ const initialState = {
   authAdminRequest: '',
   authSystemType: '',
   copilotEnabled: false,
+  aiEnabled: true,
   guideMsg: '',
   configRetentionDays: 30, // config default retention days is 30
 };
@@ -76,6 +77,7 @@ const getState = () => dispatch =>
           startupMode: res.startup_mode,
           configRetentionDays: res.config_retention_days,
           copilotEnabled: res.copilot_enabled === 'true',
+          aiEnabled: res.ai_enabled === undefined ? true : res.ai_enabled === 'true',
         },
       });
     })

@@ -75,7 +75,8 @@ class NacosLoggingTest {
         nacosLoggingField.setAccessible(true);
         NacosLoggingAdapter cachedLogging = (NacosLoggingAdapter) nacosLoggingField.get(instance);
         try {
-            doThrow(new RuntimeException()).when(loggingAdapter).loadConfiguration(loggingProperties);
+            doThrow(new RuntimeException()).when(loggingAdapter)
+                    .loadConfiguration(loggingProperties);
             nacosLoggingField.set(instance, loggingAdapter);
             instance.loadConfiguration();
             // without exception thrown

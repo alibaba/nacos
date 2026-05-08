@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
-import { AuthGuard, AdminGuard, GuestGuard } from './guards';
+import { AuthGuard, AdminGuard, GuestGuard, AiGuard, getDefaultRoute } from './guards';
+import { useServerStore } from '@/stores/server-store';
 
 // Loading component
 function PageLoading() {
@@ -22,6 +23,11 @@ function lazyPage(
       <LazyComponent />
     </Suspense>
   );
+}
+
+function DefaultRedirect() {
+  const { aiEnabled, functionMode } = useServerStore();
+  return <Navigate to={getDefaultRoute(aiEnabled, functionMode)} replace />;
 }
 
 // Layouts
@@ -57,7 +63,7 @@ export const routes: RouteObject[] = [
           // Default redirect
           {
             index: true,
-            element: <Navigate to="/skill" replace />,
+            element: <DefaultRedirect />,
           },
           
           // Welcome page
@@ -154,78 +160,75 @@ export const routes: RouteObject[] = [
             ],
           },
           
-          // MCP Server Management
+          // AI Registry
           {
-            path: 'mcpServerManagement',
-            element: lazyPage(() => import('@/pages/mcpServerManagement')),
-          },
-          {
-            path: 'mcpServerDetail',
-            element: lazyPage(() => import('@/pages/mcpServerDetail')),
-          },
-          {
-            path: 'newMcpServer',
-            element: lazyPage(() => import('@/pages/newMcpServer')),
-          },
-          
-          // Agent Management
-          {
-            path: 'agentManagement',
-            element: lazyPage(() => import('@/pages/agentManagement')),
-          },
-          {
-            path: 'newAgent',
-            element: lazyPage(() => import('@/pages/newAgent')),
-          },
-          {
-            path: 'agentDetail',
-            element: lazyPage(() => import('@/pages/agentDetail')),
-          },
-          
-          // AgentSpec Management
-          {
-            path: 'agentspec',
-            element: lazyPage(() => import('@/pages/agentSpecManagement')),
-          },
-          {
-            path: 'agentspec/new',
-            element: lazyPage(() => import('@/pages/newAgentSpec')),
-          },
-          {
-            path: 'agentspec/:name',
-            element: lazyPage(() => import('@/pages/agentSpecDetail')),
-          },
-          
-          // Skill Management
-          {
-            path: 'skill',
-            element: lazyPage(() => import('@/pages/skillManagement')),
-          },
-          {
-            path: 'newSkill',
-            element: lazyPage(() => import('@/pages/newSkill')),
-          },
-          {
-            path: 'skill/:name',
-            element: lazyPage(() => import('@/pages/skillDetail')),
-          },
-          
-          // Prompt Management
-          {
-            path: 'promptManagement',
-            element: lazyPage(() => import('@/pages/promptManagement')),
-          },
-          {
-            path: 'newPrompt',
-            element: <Navigate to="/promptManagement" replace />,
-          },
-          {
-            path: 'promptDetail',
-            element: lazyPage(() => import('@/pages/promptDetail')),
-          },
-          {
-            path: 'publishPromptVersion',
-            element: <Navigate to="/newPrompt" replace />,
+            element: <AiGuard />,
+            children: [
+              {
+                path: 'mcpServerManagement',
+                element: lazyPage(() => import('@/pages/mcpServerManagement')),
+              },
+              {
+                path: 'mcpServerDetail',
+                element: lazyPage(() => import('@/pages/mcpServerDetail')),
+              },
+              {
+                path: 'newMcpServer',
+                element: lazyPage(() => import('@/pages/newMcpServer')),
+              },
+              {
+                path: 'agentManagement',
+                element: lazyPage(() => import('@/pages/agentManagement')),
+              },
+              {
+                path: 'newAgent',
+                element: lazyPage(() => import('@/pages/newAgent')),
+              },
+              {
+                path: 'agentDetail',
+                element: lazyPage(() => import('@/pages/agentDetail')),
+              },
+              {
+                path: 'agentspec',
+                element: lazyPage(() => import('@/pages/agentSpecManagement')),
+              },
+              {
+                path: 'agentspec/new',
+                element: lazyPage(() => import('@/pages/newAgentSpec')),
+              },
+              {
+                path: 'agentspec/:name',
+                element: lazyPage(() => import('@/pages/agentSpecDetail')),
+              },
+              {
+                path: 'skill',
+                element: lazyPage(() => import('@/pages/skillManagement')),
+              },
+              {
+                path: 'newSkill',
+                element: lazyPage(() => import('@/pages/newSkill')),
+              },
+              {
+                path: 'skill/:name',
+                element: lazyPage(() => import('@/pages/skillDetail')),
+              },
+              {
+                path: 'promptManagement',
+                element: lazyPage(() => import('@/pages/promptManagement')),
+              },
+              {
+                path: 'newPrompt',
+                element: <Navigate to="/promptManagement" replace />,
+              },
+              {
+                path: 'promptDetail',
+                element: lazyPage(() => import('@/pages/promptDetail')),
+              },
+              {
+                path: 'publishPromptVersion',
+                element: <Navigate to="/newPrompt" replace />,
+              },
+            ],
           },
           
           // Plugin Management (Admin only)

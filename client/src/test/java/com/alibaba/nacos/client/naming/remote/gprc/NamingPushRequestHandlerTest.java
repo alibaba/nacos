@@ -46,7 +46,8 @@ class NamingPushRequestHandlerTest {
         ServiceInfo info = new ServiceInfo("name", "cluster1");
         Request req = NotifySubscriberRequest.buildNotifySubscriberRequest(info);
         //when
-        Response response = handler.requestReply(req, new TestConnection(new RpcClient.ServerInfo()));
+        Response response =
+                handler.requestReply(req, new TestConnection(new RpcClient.ServerInfo()));
         //then
         assertTrue(response instanceof NotifySubscriberResponse);
         verify(holder, times(1)).processServiceInfo(info);
@@ -55,8 +56,9 @@ class NamingPushRequestHandlerTest {
     @Test
     void testRequestReplyOtherType() {
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-    
+        
         NamingPushRequestHandler handler = new NamingPushRequestHandler(holder);
-        assertNull(handler.requestReply(new HealthCheckRequest(), new TestConnection(new RpcClient.ServerInfo())));
+        assertNull(handler.requestReply(new HealthCheckRequest(),
+                new TestConnection(new RpcClient.ServerInfo())));
     }
 }

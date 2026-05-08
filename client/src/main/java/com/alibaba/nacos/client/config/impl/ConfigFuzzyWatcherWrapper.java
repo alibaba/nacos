@@ -54,7 +54,8 @@ public class ConfigFuzzyWatcherWrapper {
             return false;
         }
         ConfigFuzzyWatcherWrapper that = (ConfigFuzzyWatcherWrapper) o;
-        return Objects.equals(fuzzyWatchEventWatcher, that.fuzzyWatchEventWatcher) && Objects.equals(uuid, that.uuid);
+        return Objects.equals(fuzzyWatchEventWatcher, that.fuzzyWatchEventWatcher)
+                && Objects.equals(uuid, that.uuid);
     }
     
     @Override

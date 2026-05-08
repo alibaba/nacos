@@ -40,7 +40,7 @@ public class ClientAbilityControlManager extends AbstractAbilityControlManager {
         abilities.put(AbilityMode.SDK_CLIENT, SdkClientAbilities.getStaticAbilities());
         return abilities;
     }
-
+    
     @Override
     public int getPriority() {
         // if server ability manager exist, you should choose the server one

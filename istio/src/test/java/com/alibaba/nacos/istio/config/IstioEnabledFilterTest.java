@@ -54,24 +54,28 @@ class IstioEnabledFilterTest {
     @Test
     void isExcludedOnlyNamingFunction() {
         ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "naming");
-        assertTrue(istioEnabledFilter.isExcluded("com.alibaba.nacos.istio.server.IstioServer", null));
+        assertTrue(
+                istioEnabledFilter.isExcluded("com.alibaba.nacos.istio.server.IstioServer", null));
     }
     
     @Test
     void isExcludedOnlyConfigFunction() {
         ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "config");
-        assertTrue(istioEnabledFilter.isExcluded("com.alibaba.nacos.istio.server.IstioServer", null));
+        assertTrue(
+                istioEnabledFilter.isExcluded("com.alibaba.nacos.istio.server.IstioServer", null));
     }
     
     @Test
     void isExcludedDisabled() {
         environment.setProperty("nacos.extension.naming.istio.enabled", "false");
-        assertTrue(istioEnabledFilter.isExcluded("com.alibaba.nacos.istio.server.IstioServer", null));
+        assertTrue(
+                istioEnabledFilter.isExcluded("com.alibaba.nacos.istio.server.IstioServer", null));
     }
     
     @Test
     void isExcludedEnabled() {
         environment.setProperty("nacos.extension.naming.istio.enabled", "true");
-        assertFalse(istioEnabledFilter.isExcluded("com.alibaba.nacos.istio.server.IstioServer", null));
+        assertFalse(
+                istioEnabledFilter.isExcluded("com.alibaba.nacos.istio.server.IstioServer", null));
     }
 }

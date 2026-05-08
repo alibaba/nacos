@@ -40,7 +40,8 @@ public class AiResourceInjector extends AbstractResourceInjector {
     private static final String ACCESS_KEY_HEADER = "Spas-AccessKey";
     
     @Override
-    public void doInject(RequestResource resource, RamContext context, LoginIdentityContext result) {
+    public void doInject(RequestResource resource, RamContext context,
+            LoginIdentityContext result) {
         if (!context.validate()) {
             return;
         }
@@ -50,7 +51,8 @@ public class AiResourceInjector extends AbstractResourceInjector {
             StsCredential stsCredential = StsCredentialHolder.getInstance().getStsCredential();
             accessKey = stsCredential.getAccessKeyId();
             secretKey = stsCredential.getAccessKeySecret();
-            result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER, stsCredential.getSecurityToken());
+            result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER,
+                    stsCredential.getSecurityToken());
         }
         result.setParameter(ACCESS_KEY_HEADER, accessKey);
         String signatureKey = secretKey;
@@ -59,7 +61,8 @@ public class AiResourceInjector extends AbstractResourceInjector {
                     context.getRegionId());
             result.setParameter(RamConstants.SIGNATURE_VERSION, RamConstants.V4);
         }
-        Map<String, String> signHeaders = SpasAdapter.getSignHeaders(buildResourceString(resource), signatureKey);
+        Map<String, String> signHeaders =
+                SpasAdapter.getSignHeaders(buildResourceString(resource), signatureKey);
         result.setParameters(signHeaders);
     }
     

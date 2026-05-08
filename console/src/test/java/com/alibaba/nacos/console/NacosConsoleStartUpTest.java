@@ -156,6 +156,12 @@ class NacosConsoleStartUpTest {
         ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", EnvUtil.FUNCTION_MODE_NAMING);
         nacosConsoleStartUp.initSystemProperty();
         assertEquals(EnvUtil.FUNCTION_MODE_NAMING, System.getProperty("nacos.function.mode"));
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", EnvUtil.FUNCTION_MODE_MICROSERVICE);
+        nacosConsoleStartUp.initSystemProperty();
+        assertEquals(EnvUtil.FUNCTION_MODE_MICROSERVICE, System.getProperty("nacos.function.mode"));
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", EnvUtil.FUNCTION_MODE_AI);
+        nacosConsoleStartUp.initSystemProperty();
+        assertEquals(EnvUtil.FUNCTION_MODE_AI, System.getProperty("nacos.function.mode"));
     }
     
     private void changeIsConsoleDeploymentType() {

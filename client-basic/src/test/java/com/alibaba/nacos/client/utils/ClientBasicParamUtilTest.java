@@ -108,7 +108,8 @@ class ClientBasicParamUtilTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.NAMESPACE, expect);
         
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ClientBasicParamUtil.parseNamespace(nacosClientProperties);
         assertEquals(expect, actual);
     }
@@ -122,14 +123,18 @@ class ClientBasicParamUtilTest {
     
     @Test
     void testParsingEndpointRuleFromSystem() {
-        System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL, "alibaba_aliware_endpoint_url");
-        assertEquals("alibaba_aliware_endpoint_url", ClientBasicParamUtil.parsingEndpointRule(null));
+        System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
+                "alibaba_aliware_endpoint_url");
+        assertEquals("alibaba_aliware_endpoint_url",
+                ClientBasicParamUtil.parsingEndpointRule(null));
     }
     
     @Test
     void testParsingEndpointRuleFromSystemWithParam() {
-        System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL, "alibaba_aliware_endpoint_url");
-        assertEquals("alibaba_aliware_endpoint_url", ClientBasicParamUtil.parsingEndpointRule("${abc:xxx}"));
+        System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
+                "alibaba_aliware_endpoint_url");
+        assertEquals("alibaba_aliware_endpoint_url",
+                ClientBasicParamUtil.parsingEndpointRule("${abc:xxx}"));
     }
     
     @Test
@@ -156,7 +161,8 @@ class ClientBasicParamUtilTest {
         properties.setProperty(PropertyKeyConst.PASSWORD, "testPassword");
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ClientBasicParamUtil.getInputParameters(clientProperties.asProperties());
-        assertEquals("Nacos client key init properties: \n\tserverAddr=localhost:8848\n\tpassword=te********rd\n",
+        assertEquals(
+                "Nacos client key init properties: \n\tserverAddr=localhost:8848\n\tpassword=te********rd\n",
                 actual);
     }
     

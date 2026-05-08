@@ -67,11 +67,13 @@ public class NacosPromptCacheHolder implements Closeable {
                 AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL);
     }
     
-    private Prompt queryPrompt(String promptKey, String version, String label) throws NacosException {
+    private Prompt queryPrompt(String promptKey, String version, String label)
+            throws NacosException {
         return queryPrompt(promptKey, version, label, null);
     }
     
-    private Prompt queryPrompt(String promptKey, String version, String label, String md5) throws NacosException {
+    private Prompt queryPrompt(String promptKey, String version, String label, String md5)
+            throws NacosException {
         return aiClientProxy.queryPrompt(promptKey, version, label, md5);
     }
     
@@ -82,7 +84,8 @@ public class NacosPromptCacheHolder implements Closeable {
      * @return current Prompt object, null if not found
      * @throws NacosException if error occurs
      */
-    public Prompt subscribePrompt(String promptKey, String version, String label) throws NacosException {
+    public Prompt subscribePrompt(String promptKey, String version, String label)
+            throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "Required parameter `promptKey` not present");
@@ -199,7 +202,8 @@ public class NacosPromptCacheHolder implements Closeable {
                 } else if (e.getErrCode() == NacosException.NOT_MODIFIED) {
                     // No content change, keep local cache and skip callback.
                 } else {
-                    LOGGER.warn("Prompt updater execute query failed: promptKey={}, err={}", promptKey, e.getErrMsg());
+                    LOGGER.warn("Prompt updater execute query failed: promptKey={}, err={}",
+                            promptKey, e.getErrMsg());
                 }
             } finally {
                 if (!cancel.get()) {

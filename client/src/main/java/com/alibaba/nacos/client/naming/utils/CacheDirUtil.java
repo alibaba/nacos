@@ -54,15 +54,18 @@ public class CacheDirUtil {
         String namingCacheRegistryDir = "";
         if (properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR) != null) {
             namingCacheRegistryDir =
-                    File.separator + properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR);
+                    File.separator
+                            + properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR);
         }
         
         if (!StringUtils.isBlank(jmSnapshotPath)) {
-            cacheDir = jmSnapshotPath + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir + File.separator
+            cacheDir = jmSnapshotPath + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
+                    + File.separator
                     + FILE_PATH_NAMING + File.separator + namespace;
         } else {
             cacheDir =
-                    properties.getProperty(USER_HOME_PROPERTY) + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
+                    properties.getProperty(USER_HOME_PROPERTY) + File.separator + FILE_PATH_NACOS
+                            + namingCacheRegistryDir
                             + File.separator + FILE_PATH_NAMING + File.separator + namespace;
         }
         
