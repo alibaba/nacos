@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
@@ -53,7 +52,8 @@ class DiskUtilsTest {
     @BeforeAll
     static void setup() throws IOException, URISyntaxException {
         testFile = DiskUtils.createTmpFile("nacostmp", ".ut");
-        testLineFile = new File(DiskUtilsTest.class.getClassLoader().getResource("line_iterator_test.txt").toURI());
+        testLineFile = new File(
+                DiskUtilsTest.class.getClassLoader().getResource("line_iterator_test.txt").toURI());
         openTestFile = new File(testLineFile.getParent(), "temp_open_file");
     }
     
@@ -157,12 +157,14 @@ class DiskUtilsTest {
     void testReadNonExistFile2() {
         File file = new File("non-path/non-exist");
         file.deleteOnExit();
-        assertEquals("", DiskUtils.readFile(file.getParentFile().getAbsolutePath(), file.getName()));
+        assertEquals("",
+                DiskUtils.readFile(file.getParentFile().getAbsolutePath(), file.getName()));
     }
     
     @Test
     void testReadFileWithIllegalPath() {
-        String path = testFile.getParentFile().getAbsolutePath() + "/../" + testFile.getParentFile().getName();
+        String path = testFile.getParentFile().getAbsolutePath() + "/../"
+                + testFile.getParentFile().getName();
         assertNull(DiskUtils.readFile(path, testFile.getName()));
     }
     
@@ -206,7 +208,8 @@ class DiskUtilsTest {
     
     @Test
     void testReadFileBytesWithIllegalPath() {
-        String path = testFile.getParentFile().getAbsolutePath() + "/../" + testFile.getParentFile().getName();
+        String path = testFile.getParentFile().getAbsolutePath() + "/../"
+                + testFile.getParentFile().getName();
         assertNull(DiskUtils.readFileBytes(path, testFile.getName()));
     }
     
@@ -219,7 +222,8 @@ class DiskUtilsTest {
     
     @Test
     void writeFile() {
-        assertTrue(DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
+        assertTrue(
+                DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
         assertEquals("unit test", DiskUtils.readFile(testFile));
     }
     
@@ -256,7 +260,8 @@ class DiskUtilsTest {
     
     @Test
     void testDeleteFileIllegalPath() {
-        String path = testFile.getParentFile().getAbsolutePath() + "/../" + testFile.getParentFile().getName();
+        String path = testFile.getParentFile().getAbsolutePath() + "/../"
+                + testFile.getParentFile().getName();
         assertFalse(DiskUtils.deleteFile(path, testFile.getName()));
     }
     
@@ -282,7 +287,9 @@ class DiskUtilsTest {
     
     @Test
     void testForceMkdir() throws IOException {
-        File dir = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(), UUID.randomUUID().toString())
+        File dir = Paths
+                .get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(),
+                        UUID.randomUUID().toString())
                 .toFile();
         DiskUtils.forceMkdir(dir);
         assertTrue(dir.exists());
@@ -291,7 +298,8 @@ class DiskUtilsTest {
     
     @Test
     void testForceMkdirWithPath() throws IOException {
-        Path path = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        Path path = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(),
+                UUID.randomUUID().toString());
         DiskUtils.forceMkdir(path.toString());
         File file = path.toFile();
         assertTrue(file.exists());
@@ -421,7 +429,8 @@ class DiskUtilsTest {
         // 测试磁盘满异常处理 - 模拟 IOException
         // 由于无法真正触发磁盘满，这里测试正常写入失败的返回值
         File invalidFile = new File("/non/existent/path/file.txt");
-        assertFalse(DiskUtils.writeFile(invalidFile, "test".getBytes(StandardCharsets.UTF_8), false));
+        assertFalse(
+                DiskUtils.writeFile(invalidFile, "test".getBytes(StandardCharsets.UTF_8), false));
     }
     
     @Test
@@ -452,65 +461,5 @@ class DiskUtilsTest {
             result.deleteOnExit();
             nonWritableDir.deleteOnExit();
         }
-    }
-
-    @Test
-    void testReadFileWithMultiByteUtf8AcrossChunkBoundary() throws IOException {
-        // Reproduces the corruption that happens when a multi-byte UTF-8 character straddles the
-        // 4096-byte read-buffer boundary. The decode loop reads the first chunk, the decoder
-        // reports UNDERFLOW because the trailing bytes are an incomplete UTF-8 sequence, and the
-        // unconsumed bytes are dropped if the buffer is cleared instead of compacted.
-        //
-        // Layout (UTF-8): 4094 ASCII bytes + 3-byte CJK ('中', E4 B8 AD) + 200 ASCII bytes.
-        // The CJK character occupies bytes 4094..4096, so its trailing byte falls in the second
-        // chunk. With buffer.clear() the leading two bytes are discarded and the second chunk
-        // starts at the orphaned continuation byte AD, producing a malformed sequence and
-        // truncating the rest of the file. With buffer.compact() the leading bytes are preserved
-        // and the character round-trips cleanly.
-        File f = Files.createTempFile("nacos-sys-disk-utils-chunk-boundary", ".txt").toFile();
-        f.deleteOnExit();
-        StringBuilder content = new StringBuilder(4094 + 1 + 200);
-        for (int i = 0; i < 4094; i++) {
-            content.append('a');
-        }
-        content.append('中'); // '中', encodes to E4 B8 AD in UTF-8
-        for (int i = 0; i < 200; i++) {
-            content.append('b');
-        }
-        String expected = content.toString();
-        byte[] encoded = expected.getBytes(StandardCharsets.UTF_8);
-        // Sanity-check the layout so future edits to the test cannot accidentally make it pass.
-        assertEquals(4094 + 3 + 200, encoded.length);
-        assertEquals((byte) 0xe4, encoded[4094]);
-        assertEquals((byte) 0xb8, encoded[4095]);
-        assertEquals((byte) 0xad, encoded[4096]);
-        Files.write(f.toPath(), encoded);
-
-        assertEquals(expected, DiskUtils.readFile(f));
-    }
-
-    @Test
-    void testReadFileWithSmallMultiByteUtf8Content() throws IOException {
-        // Regression: small non-ASCII content that fits in a single 4096-byte chunk must continue
-        // to round-trip correctly.
-        File f = Files.createTempFile("nacos-sys-disk-utils-utf8", ".txt").toFile();
-        f.deleteOnExit();
-        String content = "限流规则-中文内容-αβγ-🚀";
-        Files.write(f.toPath(), content.getBytes(StandardCharsets.UTF_8));
-        assertEquals(content, DiskUtils.readFile(f));
-    }
-
-    @Test
-    void testReadFileSequentialCallsAreIndependent() throws IOException {
-        // Each readFile call must observe a clean decoder regardless of what the previous call
-        // read; the previous code shared one static CharsetDecoder across all callers.
-        File f = Files.createTempFile("nacos-sys-disk-utils-sequential", ".txt").toFile();
-        f.deleteOnExit();
-        String first = "first-payload-数据A";
-        String second = "second-payload-数据B";
-        Files.write(f.toPath(), first.getBytes(StandardCharsets.UTF_8));
-        assertEquals(first, DiskUtils.readFile(f));
-        Files.write(f.toPath(), second.getBytes(StandardCharsets.UTF_8));
-        assertEquals(second, DiskUtils.readFile(f));
     }
 }

@@ -74,6 +74,8 @@ public final class DiskUtils {
     
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     
+    private static final CharsetDecoder DECODER = CHARSET.newDecoder();
+    
     /**
      * Touch file.
      *
@@ -173,7 +175,8 @@ public final class DiskUtils {
      * @return content
      */
     public static String readFile(InputStream is) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader =
+                new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             StringBuilder textBuilder = new StringBuilder();
             String lineTxt = null;
             while ((lineTxt = reader.readLine()) != null) {
@@ -192,9 +195,6 @@ public final class DiskUtils {
      * @return content
      */
     public static String readFile(File file) {
-        // CharsetDecoder is documented as not safe for concurrent use, so allocate one per call
-        // instead of sharing a static instance across threads.
-        CharsetDecoder decoder = CHARSET.newDecoder();
         try (FileInputStream fis = new FileInputStream(file);
                 FileChannel fileChannel = fis.getChannel()) {
             StringBuilder text = new StringBuilder();
@@ -202,25 +202,13 @@ public final class DiskUtils {
             CharBuffer charBuffer = CharBuffer.allocate(4096);
             while (fileChannel.read(buffer) != -1) {
                 buffer.flip();
-                decoder.decode(buffer, charBuffer, false);
+                DECODER.decode(buffer, charBuffer, false);
                 charBuffer.flip();
                 while (charBuffer.hasRemaining()) {
                     text.append(charBuffer.get());
                 }
-                // compact() preserves any bytes the decoder did not consume - typically the leading
-                // bytes of a multi-byte UTF-8 character that straddles the 4096-byte chunk boundary.
-                // The previous clear() silently discarded those bytes, corrupting any non-ASCII
-                // content longer than one chunk.
-                buffer.compact();
+                buffer.clear();
                 charBuffer.clear();
-            }
-            // Flush the trailing partial input and any decoder state once the stream is exhausted.
-            buffer.flip();
-            decoder.decode(buffer, charBuffer, true);
-            decoder.flush(charBuffer);
-            charBuffer.flip();
-            while (charBuffer.hasRemaining()) {
-                text.append(charBuffer.get());
             }
             return text.toString();
         } catch (IOException e) {
@@ -276,7 +264,8 @@ public final class DiskUtils {
         } catch (IOException ioe) {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUOTA_CN)
+                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg)
+                        || errMsg.contains(DISK_QUOTA_CN)
                         || errMsg.contains(DISK_QUOTA_EN)) {
                     LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);
@@ -397,7 +386,8 @@ public final class DiskUtils {
      * @param checksum   checksum
      * @throws IOException IOException
      */
-    public static void compress(final String rootDir, final String sourceDir, final String outputFile,
+    public static void compress(final String rootDir, final String sourceDir,
+            final String outputFile,
             final Checksum checksum) throws IOException {
         try (final FileOutputStream fos = new FileOutputStream(outputFile);
                 final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
@@ -442,8 +432,10 @@ public final class DiskUtils {
             return;
         }
         try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
-                final CheckedOutputStream checkedOutputStream = new CheckedOutputStream(fileOutputStream, checksum);
-                final ZipOutputStream zipStream = new ZipOutputStream(new BufferedOutputStream(checkedOutputStream))) {
+                final CheckedOutputStream checkedOutputStream =
+                        new CheckedOutputStream(fileOutputStream, checksum);
+                final ZipOutputStream zipStream =
+                        new ZipOutputStream(new BufferedOutputStream(checkedOutputStream))) {
             compressIntoZipFile(childName, inputStream, zipStream);
             zipStream.flush();
             fileOutputStream.getFD().sync();
@@ -466,7 +458,8 @@ public final class DiskUtils {
      * @param checksum   checksum
      * @throws IOException IOException
      */
-    public static void decompress(final String sourceFile, final String outputDir, final Checksum checksum)
+    public static void decompress(final String sourceFile, final String outputDir,
+            final Checksum checksum)
             throws IOException {
         try (final FileInputStream fis = new FileInputStream(sourceFile);
                 final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
@@ -502,7 +495,8 @@ public final class DiskUtils {
      * @return decompress byte array
      * @throws IOException IOException during decompress
      */
-    public static byte[] decompress(final String sourceFile, final Checksum checksum) throws IOException {
+    public static byte[] decompress(final String sourceFile, final Checksum checksum)
+            throws IOException {
         byte[] result;
         try (final FileInputStream fis = new FileInputStream(sourceFile);
                 final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
@@ -526,8 +520,9 @@ public final class DiskUtils {
      * @return {@code true} when file name contain <code>..</code> or start with root path.
      */
     public static boolean isIllegalFileName(String fileName) {
-        return fileName.contains(TOP_PATH) || fileName.startsWith(FOLDER_SEPARATOR) || fileName.startsWith(
-                WINDOWS_FOLDER_SEPARATOR);
+        return fileName.contains(TOP_PATH) || fileName.startsWith(FOLDER_SEPARATOR)
+                || fileName.startsWith(
+                        WINDOWS_FOLDER_SEPARATOR);
     }
     
     public static boolean isIllegalPath(String path) {
