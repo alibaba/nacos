@@ -42,7 +42,7 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
     private List<ServiceEntryWrapper> serviceEntries;
     
     private static volatile ServiceEntryMcpGenerator singleton = null;
-
+    
     public static ServiceEntryMcpGenerator getInstance() {
         if (singleton == null) {
             synchronized (ServiceEntryMcpGenerator.class) {
@@ -53,20 +53,22 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
         }
         return singleton;
     }
-
+    
     @Override
     public List<Resource> generate(PushRequest pushRequest) {
         List<Resource> result = new ArrayList<>();
         serviceEntries = new ArrayList<>(16);
         ResourceSnapshot resourceSnapshot = pushRequest.getResourceSnapshot();
-    
+        
         IstioConfig istioConfig = resourceSnapshot.getIstioConfig();
-        Map<String, IstioService> serviceInfoMap = resourceSnapshot.getIstioResources().getIstioServiceMap();
-    
+        Map<String, IstioService> serviceInfoMap =
+                resourceSnapshot.getIstioResources().getIstioServiceMap();
+        
         for (Map.Entry<String, IstioService> entry : serviceInfoMap.entrySet()) {
             String serviceName = entry.getKey();
             
-            ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName, serviceName + istioConfig.getDomainSuffix(), serviceInfoMap.get(serviceName));
+            ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName,
+                    serviceName + istioConfig.getDomainSuffix(), serviceInfoMap.get(serviceName));
             if (serviceEntryWrapper != null) {
                 serviceEntries.add(serviceEntryWrapper);
             }
@@ -74,18 +76,21 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
         
         for (ServiceEntryWrapper serviceEntryWrapper : serviceEntries) {
             MetadataOuterClass.Metadata metadata = serviceEntryWrapper.getMetadata();
-            ServiceEntryOuterClass.ServiceEntry serviceEntry = serviceEntryWrapper.getServiceEntry();
-
-            Any any = Any.newBuilder().setValue(serviceEntry.toByteString()).setTypeUrl(SERVICE_ENTRY_PROTO).build();
-
+            ServiceEntryOuterClass.ServiceEntry serviceEntry =
+                    serviceEntryWrapper.getServiceEntry();
+            
+            Any any = Any.newBuilder().setValue(serviceEntry.toByteString())
+                    .setTypeUrl(SERVICE_ENTRY_PROTO).build();
+            
             result.add(Resource.newBuilder().setBody(any).setMetadata(metadata).build());
         }
-
+        
         return result;
     }
     
     @Override
-    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(PushRequest pushRequest) {
+    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(
+            PushRequest pushRequest) {
         return new ArrayList<>();
     }
 }

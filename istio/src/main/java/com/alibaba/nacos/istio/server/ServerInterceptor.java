@@ -30,15 +30,15 @@ import java.net.SocketAddress;
  */
 @Component
 public class ServerInterceptor implements io.grpc.ServerInterceptor {
-
+    
     @Override
     public <R, T> ServerCall.Listener<R> interceptCall(ServerCall<R, T> call, Metadata headers,
-                                                       ServerCallHandler<R, T> next) {
+            ServerCallHandler<R, T> next) {
         SocketAddress address = call.getAttributes().get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
         String methodName = call.getMethodDescriptor().getFullMethodName();
-
+        
         Loggers.MAIN.info("remote address: {}, method: {}", address, methodName);
-
+        
         return next.startCall(call, headers);
     }
 }

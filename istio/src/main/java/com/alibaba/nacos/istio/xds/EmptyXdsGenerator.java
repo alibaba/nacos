@@ -28,9 +28,9 @@ import java.util.List;
  * @author special.fy
  */
 public class EmptyXdsGenerator implements ApiGenerator<Any> {
-
+    
     private static volatile EmptyXdsGenerator singleton = null;
-
+    
     public static EmptyXdsGenerator getInstance() {
         if (singleton == null) {
             synchronized (EmptyXdsGenerator.class) {

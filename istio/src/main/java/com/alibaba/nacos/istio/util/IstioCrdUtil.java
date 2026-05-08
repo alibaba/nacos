@@ -41,27 +41,32 @@ import java.util.regex.Pattern;
  * @author special.fy
  */
 public class IstioCrdUtil {
-
+    
     public static final String VALID_DEFAULT_GROUP_NAME = "DEFAULT-GROUP";
-
+    
     public static final String ISTIO_HOSTNAME = "istio.hostname";
-
-    public static final String VALID_LABEL_KEY_FORMAT = "^([a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?)*/)?((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$";
     
-    public static final String VALID_LABEL_VALUE_FORMAT = "^((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$";
+    public static final String VALID_LABEL_KEY_FORMAT =
+            "^([a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?)*/)?((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$";
     
-    public static String buildClusterName(TrafficDirection direction, String subset, String hostName, int port) {
+    public static final String VALID_LABEL_VALUE_FORMAT =
+            "^((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$";
+    
+    public static String buildClusterName(TrafficDirection direction, String subset,
+            String hostName, int port) {
         return direction.toString().toLowerCase() + "|" + port + "|" + subset + "|" + hostName;
     }
     
     public static String buildServiceName(Service service) {
-        String group = !Constants.DEFAULT_GROUP.equals(service.getGroup()) ? service.getGroup() : VALID_DEFAULT_GROUP_NAME;
-
+        String group = !Constants.DEFAULT_GROUP.equals(service.getGroup()) ? service.getGroup()
+                : VALID_DEFAULT_GROUP_NAME;
+        
         // DEFAULT_GROUP is invalid for istio,because the istio host only supports: [0-9],[A-Z],[a-z],-,*
         return service.getName() + "." + group + "." + service.getNamespace();
     }
     
-    public static String parseServiceEntryNameToServiceName(String serviceEntryName, String domain) {
+    public static String parseServiceEntryNameToServiceName(String serviceEntryName,
+            String domain) {
         return serviceEntryName.substring(0, serviceEntryName.length() - domain.length() - 1);
     }
     
@@ -70,21 +75,26 @@ public class IstioCrdUtil {
         return str.substring(0, str.length() - domain.length() - 1);
     }
     
-    public static ServiceEntryWrapper buildServiceEntry(String serviceName, String hostName, IstioService istioService) {
+    public static ServiceEntryWrapper buildServiceEntry(String serviceName, String hostName,
+            IstioService istioService) {
         if (istioService.getHosts().isEmpty()) {
             return null;
         }
-
-        ServiceEntryOuterClass.ServiceEntry.Builder serviceEntryBuilder = ServiceEntryOuterClass.ServiceEntry
-                .newBuilder().setResolution(ServiceEntryOuterClass.ServiceEntry.Resolution.STATIC)
-                .setLocation(ServiceEntryOuterClass.ServiceEntry.Location.MESH_INTERNAL);
-
+        
+        ServiceEntryOuterClass.ServiceEntry.Builder serviceEntryBuilder =
+                ServiceEntryOuterClass.ServiceEntry
+                        .newBuilder()
+                        .setResolution(ServiceEntryOuterClass.ServiceEntry.Resolution.STATIC)
+                        .setLocation(ServiceEntryOuterClass.ServiceEntry.Location.MESH_INTERNAL);
+        
         int port = 0;
         String protocol = "http";
         List<WorkloadEntry> endpoints = buildWorkloadEntry(istioService.getHosts());
         
-        serviceEntryBuilder.addHosts(hostName).addPorts(GatewayOuterClass.Port.newBuilder().setNumber(port)
-                .setName(protocol).setProtocol(protocol.toUpperCase()).build()).addAllEndpoints(endpoints);
+        serviceEntryBuilder.addHosts(hostName)
+                .addPorts(GatewayOuterClass.Port.newBuilder().setNumber(port)
+                        .setName(protocol).setProtocol(protocol.toUpperCase()).build())
+                .addAllEndpoints(endpoints);
         ServiceEntryOuterClass.ServiceEntry serviceEntry = serviceEntryBuilder.build();
         
         Date createTimestamp = istioService.getCreateTimeStamp();
@@ -92,25 +102,27 @@ public class IstioCrdUtil {
                 .setName(istioService.getNamespace() + "/" + serviceName)
                 .putAnnotations("virtual", "1")
                 .putLabels("registryType", "nacos")
-                .setCreateTime(Timestamp.newBuilder().setSeconds(createTimestamp.getTime() / 1000).build())
+                .setCreateTime(
+                        Timestamp.newBuilder().setSeconds(createTimestamp.getTime() / 1000).build())
                 .setVersion(String.valueOf(istioService.getRevision())).build();
         
         return new ServiceEntryWrapper(metadata, serviceEntry);
     }
     
-    public static List<WorkloadEntryOuterClass.WorkloadEntry> buildWorkloadEntry(List<IstioEndpoint> istioEndpointList) {
+    public static List<WorkloadEntryOuterClass.WorkloadEntry> buildWorkloadEntry(
+            List<IstioEndpoint> istioEndpointList) {
         List<WorkloadEntryOuterClass.WorkloadEntry> result = new ArrayList<>();
         
         for (IstioEndpoint istioEndpoint : istioEndpointList) {
             if (!istioEndpoint.isHealthy() || !istioEndpoint.isEnabled()) {
                 continue;
             }
-
+            
             Map<String, String> metadata = new HashMap<>(1 << 3);
             if (StringUtils.isNotEmpty(istioEndpoint.getClusterName())) {
                 metadata.put("cluster", istioEndpoint.getClusterName());
             }
-
+            
             for (Map.Entry<String, String> entry : istioEndpoint.getLabels().entrySet()) {
                 if (!Pattern.matches(VALID_LABEL_KEY_FORMAT, entry.getKey())) {
                     continue;
@@ -121,9 +133,12 @@ public class IstioCrdUtil {
                 metadata.put(entry.getKey().toLowerCase(), entry.getValue());
             }
             
-            WorkloadEntryOuterClass.WorkloadEntry workloadEntry = WorkloadEntryOuterClass.WorkloadEntry.newBuilder()
-                    .setAddress(istioEndpoint.getAdder()).setWeight(istioEndpoint.getWeight())
-                    .putAllLabels(metadata).putPorts(istioEndpoint.getProtocol(), istioEndpoint.getPort()).build();
+            WorkloadEntryOuterClass.WorkloadEntry workloadEntry =
+                    WorkloadEntryOuterClass.WorkloadEntry.newBuilder()
+                            .setAddress(istioEndpoint.getAdder())
+                            .setWeight(istioEndpoint.getWeight())
+                            .putAllLabels(metadata)
+                            .putPorts(istioEndpoint.getProtocol(), istioEndpoint.getPort()).build();
             
             result.add(workloadEntry);
         }

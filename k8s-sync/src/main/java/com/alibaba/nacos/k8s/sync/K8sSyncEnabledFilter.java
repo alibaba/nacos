@@ -47,7 +47,8 @@ public class K8sSyncEnabledFilter implements NacosPackageExcludeFilter {
         String functionMode = EnvUtil.getFunctionMode();
         // When not specified naming mode or specified all mode, the naming module not start and load.
         if (isNamingDisabled(functionMode)) {
-            LOGGER.warn("K8s Sync module disabled because function mode is {}, and K8s Sync depend naming module",
+            LOGGER.warn(
+                    "K8s Sync module disabled because function mode is {}, and K8s Sync depend naming module",
                     functionMode);
             return true;
         }
