@@ -40,8 +40,9 @@ class FuzzyWatchChangeEventTest {
     
     @Test
     void testFuzzyWatchChangeEventWithFullConstructor() {
-        FuzzyWatchChangeEvent event = new FuzzyWatchChangeEvent("service", "group", "namespace", "ADD_SERVICE",
-                "FUZZY_WATCH_INIT_NOTIFY");
+        FuzzyWatchChangeEvent event =
+                new FuzzyWatchChangeEvent("service", "group", "namespace", "ADD_SERVICE",
+                        "FUZZY_WATCH_INIT_NOTIFY");
         assertEquals("service", event.getServiceName());
         assertEquals("group", event.getGroupName());
         assertEquals("namespace", event.getNamespace());
@@ -51,10 +52,12 @@ class FuzzyWatchChangeEventTest {
     
     @Test
     void testToString() {
-        FuzzyWatchChangeEvent event = new FuzzyWatchChangeEvent("service", "group", "namespace", "ADD_SERVICE",
-                "FUZZY_WATCH_INIT_NOTIFY");
-        String expected = "FuzzyWatchChangeEvent{serviceName='service', groupName='group', namespace='namespace',"
-                + " changeType='ADD_SERVICE', syncType='FUZZY_WATCH_INIT_NOTIFY'}";
+        FuzzyWatchChangeEvent event =
+                new FuzzyWatchChangeEvent("service", "group", "namespace", "ADD_SERVICE",
+                        "FUZZY_WATCH_INIT_NOTIFY");
+        String expected =
+                "FuzzyWatchChangeEvent{serviceName='service', groupName='group', namespace='namespace',"
+                        + " changeType='ADD_SERVICE', syncType='FUZZY_WATCH_INIT_NOTIFY'}";
         assertEquals(expected, event.toString());
     }
     

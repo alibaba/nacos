@@ -27,7 +27,7 @@ public class ConfigRemoveRequest extends AbstractConfigRequest {
     String tag;
     
     public ConfigRemoveRequest() {
-    
+        
     }
     
     public ConfigRemoveRequest(String dataId, String group, String tenant, String tag) {

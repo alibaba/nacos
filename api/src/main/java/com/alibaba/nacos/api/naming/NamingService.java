@@ -54,7 +54,8 @@ public interface NamingService {
      * @param port        instance port
      * @throws NacosException nacos exception
      */
-    void registerInstance(String serviceName, String groupName, String ip, int port) throws NacosException;
+    void registerInstance(String serviceName, String groupName, String ip, int port)
+            throws NacosException;
     
     /**
      * register an instance to service with specified cluster name.
@@ -65,7 +66,8 @@ public interface NamingService {
      * @param clusterName instance cluster name
      * @throws NacosException nacos exception
      */
-    void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException;
+    void registerInstance(String serviceName, String ip, int port, String clusterName)
+            throws NacosException;
     
     /**
      * register an instance to service with specified cluster name.
@@ -77,7 +79,8 @@ public interface NamingService {
      * @param clusterName instance cluster name
      * @throws NacosException nacos exception
      */
-    void registerInstance(String serviceName, String groupName, String ip, int port, String clusterName)
+    void registerInstance(String serviceName, String groupName, String ip, int port,
+            String clusterName)
             throws NacosException;
     
     /**
@@ -97,7 +100,8 @@ public interface NamingService {
      * @param instance    instance to register
      * @throws NacosException nacos exception
      */
-    void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException;
+    void registerInstance(String serviceName, String groupName, Instance instance)
+            throws NacosException;
     
     /**
      * batch register instance to service with specified instance properties.
@@ -108,7 +112,8 @@ public interface NamingService {
      * @throws NacosException nacos exception
      * @since 2.1.1
      */
-    void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException;
+    void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException;
     
     /**
      * batch deRegister instance to service with specified instance properties.
@@ -119,7 +124,8 @@ public interface NamingService {
      * @throws NacosException nacos exception
      * @since 2.2.0
      */
-    void batchDeregisterInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException;
+    void batchDeregisterInstance(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException;
     
     /**
      * deregister instance from a service.
@@ -140,7 +146,8 @@ public interface NamingService {
      * @param port        instance port
      * @throws NacosException nacos exception
      */
-    void deregisterInstance(String serviceName, String groupName, String ip, int port) throws NacosException;
+    void deregisterInstance(String serviceName, String groupName, String ip, int port)
+            throws NacosException;
     
     /**
      * deregister instance with specified cluster name from a service.
@@ -151,7 +158,8 @@ public interface NamingService {
      * @param clusterName instance cluster name
      * @throws NacosException nacos exception
      */
-    void deregisterInstance(String serviceName, String ip, int port, String clusterName) throws NacosException;
+    void deregisterInstance(String serviceName, String ip, int port, String clusterName)
+            throws NacosException;
     
     /**
      * deregister instance with specified cluster name from a service.
@@ -163,7 +171,8 @@ public interface NamingService {
      * @param clusterName instance cluster name
      * @throws NacosException nacos exception
      */
-    void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName)
+    void deregisterInstance(String serviceName, String groupName, String ip, int port,
+            String clusterName)
             throws NacosException;
     
     /**
@@ -183,7 +192,8 @@ public interface NamingService {
      * @param instance    instance information
      * @throws NacosException nacos exception
      */
-    void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException;
+    void deregisterInstance(String serviceName, String groupName, Instance instance)
+            throws NacosException;
     
     /**
      * get all instances of a service.
@@ -223,7 +233,8 @@ public interface NamingService {
      * @return A list of instance
      * @throws NacosException nacos exception
      */
-    List<Instance> getAllInstances(String serviceName, String groupName, boolean subscribe) throws NacosException;
+    List<Instance> getAllInstances(String serviceName, String groupName, boolean subscribe)
+            throws NacosException;
     
     /**
      * Get all instances within specified clusters of a service.
@@ -244,7 +255,8 @@ public interface NamingService {
      * @return A list of qualified instance
      * @throws NacosException nacos exception
      */
-    List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters) throws NacosException;
+    List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters)
+            throws NacosException;
     
     /**
      * Get all instances within specified clusters of a service.
@@ -255,7 +267,8 @@ public interface NamingService {
      * @return A list of qualified instance
      * @throws NacosException nacos exception
      */
-    List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe) throws NacosException;
+    List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe)
+            throws NacosException;
     
     /**
      * Get all instances within specified clusters of a service.
@@ -267,7 +280,8 @@ public interface NamingService {
      * @return A list of qualified instance
      * @throws NacosException nacos exception
      */
-    List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters, boolean subscribe)
+    List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters,
+            boolean subscribe)
             throws NacosException;
     
     /**
@@ -289,7 +303,8 @@ public interface NamingService {
      * @return A qualified list of instance
      * @throws NacosException nacos exception
      */
-    List<Instance> selectInstances(String serviceName, String groupName, boolean healthy) throws NacosException;
+    List<Instance> selectInstances(String serviceName, String groupName, boolean healthy)
+            throws NacosException;
     
     /**
      * Get qualified instances of service.
@@ -300,7 +315,8 @@ public interface NamingService {
      * @return A qualified list of instance
      * @throws NacosException nacos exception
      */
-    List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe) throws NacosException;
+    List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe)
+            throws NacosException;
     
     /**
      * Get qualified instances of service.
@@ -312,7 +328,8 @@ public interface NamingService {
      * @return A qualified list of instance
      * @throws NacosException nacos exception
      */
-    List<Instance> selectInstances(String serviceName, String groupName, boolean healthy, boolean subscribe)
+    List<Instance> selectInstances(String serviceName, String groupName, boolean healthy,
+            boolean subscribe)
             throws NacosException;
     
     /**
@@ -324,7 +341,8 @@ public interface NamingService {
      * @return A qualified list of instance
      * @throws NacosException nacos exception
      */
-    List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy) throws NacosException;
+    List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy)
+            throws NacosException;
     
     /**
      * Get qualified instances within specified clusters of service.
@@ -336,7 +354,8 @@ public interface NamingService {
      * @return A qualified list of instance
      * @throws NacosException nacos exception
      */
-    List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy)
+    List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters,
+            boolean healthy)
             throws NacosException;
     
     /**
@@ -349,7 +368,8 @@ public interface NamingService {
      * @return A qualified list of instance
      * @throws NacosException nacos exception
      */
-    List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy, boolean subscribe)
+    List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy,
+            boolean subscribe)
             throws NacosException;
     
     /**
@@ -363,7 +383,8 @@ public interface NamingService {
      * @return A qualified list of instance
      * @throws NacosException nacos exception
      */
-    List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy,
+    List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters,
+            boolean healthy,
             boolean subscribe) throws NacosException;
     
     /**
@@ -404,7 +425,8 @@ public interface NamingService {
      * @return qualified instance
      * @throws NacosException nacos exception
      */
-    Instance selectOneHealthyInstance(String serviceName, String groupName, boolean subscribe) throws NacosException;
+    Instance selectOneHealthyInstance(String serviceName, String groupName, boolean subscribe)
+            throws NacosException;
     
     /**
      * Select one healthy instance of service using predefined load balance strategy.
@@ -414,7 +436,8 @@ public interface NamingService {
      * @return qualified instance
      * @throws NacosException nacos exception
      */
-    Instance selectOneHealthyInstance(String serviceName, List<String> clusters) throws NacosException;
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters)
+            throws NacosException;
     
     /**
      * Select one healthy instance of service using predefined load balance strategy.
@@ -450,7 +473,8 @@ public interface NamingService {
      * @return qualified instance
      * @throws NacosException nacos exception
      */
-    Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters, boolean subscribe)
+    Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters,
+            boolean subscribe)
             throws NacosException;
     
     /**
@@ -470,7 +494,8 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void subscribe(String serviceName, String groupName, EventListener listener) throws NacosException;
+    void subscribe(String serviceName, String groupName, EventListener listener)
+            throws NacosException;
     
     /**
      * Subscribe service to receive events of instances alteration.
@@ -480,7 +505,8 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void subscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException;
+    void subscribe(String serviceName, List<String> clusters, EventListener listener)
+            throws NacosException;
     
     /**
      * Subscribe service to receive events of instances alteration.
@@ -491,7 +517,8 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
+    void subscribe(String serviceName, String groupName, List<String> clusters,
+            EventListener listener)
             throws NacosException;
     
     /**
@@ -502,7 +529,8 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void subscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
+    void subscribe(String serviceName, NamingSelector selector, EventListener listener)
+            throws NacosException;
     
     /**
      * Subscribe service to receive events of instances alteration.
@@ -513,7 +541,8 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void subscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+    void subscribe(String serviceName, String groupName, NamingSelector selector,
+            EventListener listener)
             throws NacosException;
     
     /**
@@ -533,7 +562,8 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void unsubscribe(String serviceName, String groupName, EventListener listener) throws NacosException;
+    void unsubscribe(String serviceName, String groupName, EventListener listener)
+            throws NacosException;
     
     /**
      * Unsubscribe event listener of service.
@@ -543,7 +573,8 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void unsubscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException;
+    void unsubscribe(String serviceName, List<String> clusters, EventListener listener)
+            throws NacosException;
     
     /**
      * Unsubscribe event listener of service.
@@ -554,9 +585,10 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
+    void unsubscribe(String serviceName, String groupName, List<String> clusters,
+            EventListener listener)
             throws NacosException;
-
+    
     /**
      * Unsubscribe event listener of service.
      *
@@ -565,7 +597,8 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void unsubscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
+    void unsubscribe(String serviceName, NamingSelector selector, EventListener listener)
+            throws NacosException;
     
     /**
      * Unsubscribe event listener of service.
@@ -576,9 +609,9 @@ public interface NamingService {
      * @param listener    event listener
      * @throws NacosException nacos exception
      */
-    void unsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+    void unsubscribe(String serviceName, String groupName, NamingSelector selector,
+            EventListener listener)
             throws NacosException;
-    
     
     /**
      * According to matching rules, watch services within a specific scope, and receive notifications when
@@ -615,7 +648,8 @@ public interface NamingService {
      * @return matched service keys.
      * @throws NacosException nacos exception
      */
-    Future<ListView<String>> fuzzyWatchWithServiceKeys(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
+    Future<ListView<String>> fuzzyWatchWithServiceKeys(String groupNamePattern,
+            FuzzyWatchEventWatcher listener) throws NacosException;
     
     /**
      * According to matching rules, watch services within a specific scope, and receive notifications when
@@ -629,7 +663,8 @@ public interface NamingService {
      * @return matched service keys.
      * @throws NacosException nacos exception
      */
-    Future<ListView<String>> fuzzyWatchWithServiceKeys(String serviceNamePattern, String groupNamePattern,
+    Future<ListView<String>> fuzzyWatchWithServiceKeys(String serviceNamePattern,
+            String groupNamePattern,
             FuzzyWatchEventWatcher listener) throws NacosException;
     
     /**
@@ -639,7 +674,8 @@ public interface NamingService {
      * @param listener event listener
      * @throws NacosException nacos exception
      */
-    void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
+    void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener)
+            throws NacosException;
     
     /**
      * Cancel fuzzy watch, and remove event listener of a pattern.
@@ -649,7 +685,8 @@ public interface NamingService {
      * @param listener event listener
      * @throws NacosException nacos exception
      */
-    void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
+    void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern,
+            FuzzyWatchEventWatcher listener) throws NacosException;
     
     /**
      * Get all service names from server.
@@ -670,7 +707,8 @@ public interface NamingService {
      * @return list of service names
      * @throws NacosException nacos exception
      */
-    ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName) throws NacosException;
+    ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName)
+            throws NacosException;
     
     /**
      * Get all service names from server with selector.
@@ -684,7 +722,8 @@ public interface NamingService {
      * @deprecated after 3.3.0.
      */
     @Deprecated
-    ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException;
+    ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector)
+            throws NacosException;
     
     /**
      * Get all service names from server with selector.
@@ -698,7 +737,8 @@ public interface NamingService {
      * @deprecated after 3.3.0.
      */
     @Deprecated
-    ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName, AbstractSelector selector)
+    ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName,
+            AbstractSelector selector)
             throws NacosException;
     
     /**

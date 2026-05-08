@@ -58,18 +58,20 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification,
+            McpToolSpecification toolSpecification,
             McpEndpointSpec endpointSpecification) throws NacosException {
         return "";
     }
     
     @Override
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification,
+            McpToolSpecification toolSpecification,
             McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
             throws NacosException {
         return "";
     }
-
+    
     @Override
     public void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
             throws NacosException {
@@ -77,8 +79,9 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
-    
+    public void deregisterMcpServerEndpoint(String mcpName, String address, int port)
+            throws NacosException {
+        
     }
     
     @Override
@@ -88,18 +91,20 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
+    public void unsubscribeMcpServer(String mcpName, String version,
+            AbstractNacosMcpServerListener mcpServerListener)
             throws NacosException {
         
     }
     
     @Override
     public void shutdown() throws NacosException {
-    
+        
     }
     
     @Override
-    public AgentCardDetailInfo getAgentCard(String agentName, String version, String registrationType)
+    public AgentCardDetailInfo getAgentCard(String agentName, String version,
+            String registrationType)
             throws NacosException {
         return null;
     }
@@ -111,18 +116,21 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
-    
+    public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint)
+            throws NacosException {
+        
     }
     
     @Override
-    public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
-    
+    public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints)
+            throws NacosException {
+        
     }
     
     @Override
-    public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
-    
+    public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint)
+            throws NacosException {
+        
     }
     
     @Override
@@ -132,7 +140,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void unsubscribeAgentCard(String agentName, String version, AbstractNacosAgentCardListener agentCardListener)
+    public void unsubscribeAgentCard(String agentName, String version,
+            AbstractNacosAgentCardListener agentCardListener)
             throws NacosException {
         
     }
@@ -143,7 +152,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException {
+    public byte[] downloadSkillZipByVersion(String skillName, String version)
+            throws NacosException {
         return new byte[0];
     }
     
@@ -158,13 +168,15 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+    public AgentSpec subscribeAgentSpec(String agentSpecName,
+            AbstractNacosAgentSpecListener agentSpecListener)
             throws NacosException {
         return null;
     }
     
     @Override
-    public void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+    public void unsubscribeAgentSpec(String agentSpecName,
+            AbstractNacosAgentSpecListener agentSpecListener)
             throws NacosException {
     }
     

@@ -55,76 +55,86 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void registerInstance(String serviceName, String ip, int port) throws NacosException {
-    
+        
     }
     
     @Override
-    public void registerInstance(String serviceName, String groupName, String ip, int port) throws NacosException {
-    
+    public void registerInstance(String serviceName, String groupName, String ip, int port)
+            throws NacosException {
+        
     }
     
     @Override
-    public void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException {
-    
+    public void registerInstance(String serviceName, String ip, int port, String clusterName)
+            throws NacosException {
+        
     }
     
     @Override
-    public void registerInstance(String serviceName, String groupName, String ip, int port, String clusterName)
+    public void registerInstance(String serviceName, String groupName, String ip, int port,
+            String clusterName)
             throws NacosException {
         
     }
     
     @Override
     public void registerInstance(String serviceName, Instance instance) throws NacosException {
-    
+        
     }
     
     @Override
-    public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-    
-    }
-    
-    @Override
-    public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
+    public void registerInstance(String serviceName, String groupName, Instance instance)
             throws NacosException {
         
     }
     
     @Override
-    public void batchDeregisterInstance(String serviceName, String groupName, List<Instance> instances)
+    public void batchRegisterInstance(String serviceName, String groupName,
+            List<Instance> instances)
+            throws NacosException {
+        
+    }
+    
+    @Override
+    public void batchDeregisterInstance(String serviceName, String groupName,
+            List<Instance> instances)
             throws NacosException {
         
     }
     
     @Override
     public void deregisterInstance(String serviceName, String ip, int port) throws NacosException {
-    
+        
     }
     
     @Override
-    public void deregisterInstance(String serviceName, String groupName, String ip, int port) throws NacosException {
-    
+    public void deregisterInstance(String serviceName, String groupName, String ip, int port)
+            throws NacosException {
+        
     }
     
     @Override
-    public void deregisterInstance(String serviceName, String ip, int port, String clusterName) throws NacosException {
-    
+    public void deregisterInstance(String serviceName, String ip, int port, String clusterName)
+            throws NacosException {
+        
     }
     
     @Override
-    public void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName)
+    public void deregisterInstance(String serviceName, String groupName, String ip, int port,
+            String clusterName)
             throws NacosException {
         
     }
     
     @Override
     public void deregisterInstance(String serviceName, Instance instance) throws NacosException {
-    
+        
     }
     
     @Override
-    public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-    
+    public void deregisterInstance(String serviceName, String groupName, Instance instance)
+            throws NacosException {
+        
     }
     
     @Override
@@ -133,12 +143,14 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, String groupName) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, String groupName)
+            throws NacosException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, boolean subscribe) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, boolean subscribe)
+            throws NacosException {
         return Collections.emptyList();
     }
     
@@ -149,35 +161,41 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
-        return Collections.emptyList();
-    }
-    
-    @Override
-    public List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters)
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters)
             throws NacosException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe)
+    public List<Instance> getAllInstances(String serviceName, String groupName,
+            List<String> clusters)
             throws NacosException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters,
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters,
+            boolean subscribe)
+            throws NacosException {
+        return Collections.emptyList();
+    }
+    
+    @Override
+    public List<Instance> getAllInstances(String serviceName, String groupName,
+            List<String> clusters,
             boolean subscribe) throws NacosException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException {
+    public List<Instance> selectInstances(String serviceName, boolean healthy)
+            throws NacosException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, String groupName, boolean healthy) throws NacosException {
+    public List<Instance> selectInstances(String serviceName, String groupName, boolean healthy)
+            throws NacosException {
         return Collections.emptyList();
     }
     
@@ -188,31 +206,36 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, String groupName, boolean healthy, boolean subscribe)
+    public List<Instance> selectInstances(String serviceName, String groupName, boolean healthy,
+            boolean subscribe)
             throws NacosException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy)
+    public List<Instance> selectInstances(String serviceName, List<String> clusters,
+            boolean healthy)
             throws NacosException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy)
+    public List<Instance> selectInstances(String serviceName, String groupName,
+            List<String> clusters, boolean healthy)
             throws NacosException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy, boolean subscribe)
+    public List<Instance> selectInstances(String serviceName, List<String> clusters,
+            boolean healthy, boolean subscribe)
             throws NacosException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy,
+    public List<Instance> selectInstances(String serviceName, String groupName,
+            List<String> clusters, boolean healthy,
             boolean subscribe) throws NacosException {
         return Collections.emptyList();
     }
@@ -223,138 +246,161 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, String groupName) throws NacosException {
-        return null;
-    }
-    
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, boolean subscribe) throws NacosException {
-        return null;
-    }
-    
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, String groupName, boolean subscribe)
+    public Instance selectOneHealthyInstance(String serviceName, String groupName)
             throws NacosException {
         return null;
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) throws NacosException {
-        return null;
-    }
-    
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters)
+    public Instance selectOneHealthyInstance(String serviceName, boolean subscribe)
             throws NacosException {
         return null;
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe)
+    public Instance selectOneHealthyInstance(String serviceName, String groupName,
+            boolean subscribe)
             throws NacosException {
         return null;
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters,
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters)
+            throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, String groupName,
+            List<String> clusters)
+            throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters,
+            boolean subscribe)
+            throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, String groupName,
+            List<String> clusters,
             boolean subscribe) throws NacosException {
         return null;
     }
     
     @Override
     public void subscribe(String serviceName, EventListener listener) throws NacosException {
-    
+        
     }
     
     @Override
-    public void subscribe(String serviceName, String groupName, EventListener listener) throws NacosException {
-    
-    }
-    
-    @Override
-    public void subscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException {
-    
-    }
-    
-    @Override
-    public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
+    public void subscribe(String serviceName, String groupName, EventListener listener)
             throws NacosException {
         
     }
     
     @Override
-    public void subscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException {
-    
+    public void subscribe(String serviceName, List<String> clusters, EventListener listener)
+            throws NacosException {
+        
     }
     
     @Override
-    public void subscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+    public void subscribe(String serviceName, String groupName, List<String> clusters,
+            EventListener listener)
+            throws NacosException {
+        
+    }
+    
+    @Override
+    public void subscribe(String serviceName, NamingSelector selector, EventListener listener)
+            throws NacosException {
+        
+    }
+    
+    @Override
+    public void subscribe(String serviceName, String groupName, NamingSelector selector,
+            EventListener listener)
             throws NacosException {
         
     }
     
     @Override
     public void unsubscribe(String serviceName, EventListener listener) throws NacosException {
-    
+        
     }
     
     @Override
-    public void unsubscribe(String serviceName, String groupName, EventListener listener) throws NacosException {
-    
-    }
-    
-    @Override
-    public void unsubscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException {
-    
-    }
-    
-    @Override
-    public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
+    public void unsubscribe(String serviceName, String groupName, EventListener listener)
             throws NacosException {
         
     }
     
     @Override
-    public void unsubscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException {
-    
-    }
-    
-    @Override
-    public void unsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+    public void unsubscribe(String serviceName, List<String> clusters, EventListener listener)
             throws NacosException {
         
     }
     
     @Override
-    public void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException {
-    
-    }
-    
-    @Override
-    public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, FuzzyWatchEventWatcher listener)
+    public void unsubscribe(String serviceName, String groupName, List<String> clusters,
+            EventListener listener)
             throws NacosException {
         
     }
     
     @Override
-    public Future<ListView<String>> fuzzyWatchWithServiceKeys(String groupNamePattern, FuzzyWatchEventWatcher listener)
+    public void unsubscribe(String serviceName, NamingSelector selector, EventListener listener)
+            throws NacosException {
+        
+    }
+    
+    @Override
+    public void unsubscribe(String serviceName, String groupName, NamingSelector selector,
+            EventListener listener)
+            throws NacosException {
+        
+    }
+    
+    @Override
+    public void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener)
+            throws NacosException {
+        
+    }
+    
+    @Override
+    public void fuzzyWatch(String serviceNamePattern, String groupNamePattern,
+            FuzzyWatchEventWatcher listener)
+            throws NacosException {
+        
+    }
+    
+    @Override
+    public Future<ListView<String>> fuzzyWatchWithServiceKeys(String groupNamePattern,
+            FuzzyWatchEventWatcher listener)
             throws NacosException {
         return null;
     }
     
     @Override
-    public Future<ListView<String>> fuzzyWatchWithServiceKeys(String serviceNamePattern, String groupNamePattern,
+    public Future<ListView<String>> fuzzyWatchWithServiceKeys(String serviceNamePattern,
+            String groupNamePattern,
             FuzzyWatchEventWatcher listener) throws NacosException {
         return null;
     }
     
     @Override
-    public void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException {
-    
+    public void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener)
+            throws NacosException {
+        
     }
     
     @Override
-    public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern, FuzzyWatchEventWatcher listener)
+    public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern,
+            FuzzyWatchEventWatcher listener)
             throws NacosException {
         
     }
@@ -365,7 +411,8 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName) throws NacosException {
+    public ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName)
+            throws NacosException {
         return null;
     }
     
@@ -376,7 +423,8 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName, AbstractSelector selector)
+    public ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName,
+            AbstractSelector selector)
             throws NacosException {
         return null;
     }
@@ -393,6 +441,6 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void shutDown() throws NacosException {
-    
+        
     }
 }

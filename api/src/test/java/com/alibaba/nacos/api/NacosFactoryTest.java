@@ -89,8 +89,10 @@ class NacosFactoryTest {
     void testCreateMaintainServiceWithServerAddr() throws NacosException {
         NamingMaintainService namingMaintainService = mock(NamingMaintainService.class);
         
-        try (MockedStatic<NamingMaintainFactory> namingMaintainFactoryMock = mockStatic(NamingMaintainFactory.class)) {
-            namingMaintainFactoryMock.when(() -> NamingMaintainFactory.createMaintainService("localhost:8848"))
+        try (MockedStatic<NamingMaintainFactory> namingMaintainFactoryMock =
+                mockStatic(NamingMaintainFactory.class)) {
+            namingMaintainFactoryMock
+                    .when(() -> NamingMaintainFactory.createMaintainService("localhost:8848"))
                     .thenReturn(namingMaintainService);
             
             assertNotNull(NacosFactory.createMaintainService("localhost:8848"));
@@ -101,8 +103,10 @@ class NacosFactoryTest {
     void testCreateMaintainServiceWithProperties() throws NacosException {
         NamingMaintainService namingMaintainService = mock(NamingMaintainService.class);
         
-        try (MockedStatic<NamingMaintainFactory> namingMaintainFactoryMock = mockStatic(NamingMaintainFactory.class)) {
-            namingMaintainFactoryMock.when(() -> NamingMaintainFactory.createMaintainService((Properties) null))
+        try (MockedStatic<NamingMaintainFactory> namingMaintainFactoryMock =
+                mockStatic(NamingMaintainFactory.class)) {
+            namingMaintainFactoryMock
+                    .when(() -> NamingMaintainFactory.createMaintainService((Properties) null))
                     .thenReturn(namingMaintainService);
             
             assertNotNull(NacosFactory.createMaintainService((Properties) null));
@@ -113,7 +117,8 @@ class NacosFactoryTest {
     void testCreateLockService() throws NacosException {
         LockService lockService = mock(LockService.class);
         
-        try (MockedStatic<NacosLockFactory> nacosLockFactoryMock = mockStatic(NacosLockFactory.class)) {
+        try (MockedStatic<NacosLockFactory> nacosLockFactoryMock =
+                mockStatic(NacosLockFactory.class)) {
             nacosLockFactoryMock.when(() -> NacosLockFactory.createLockService((Properties) null))
                     .thenReturn(lockService);
             
@@ -127,7 +132,8 @@ class NacosFactoryTest {
             configFactoryMock.when(() -> ConfigFactory.createConfigService((Properties) null))
                     .thenThrow(new NacosException());
             
-            assertThrows(NacosException.class, () -> NacosFactory.createConfigService((Properties) null));
+            assertThrows(NacosException.class,
+                    () -> NacosFactory.createConfigService((Properties) null));
         }
     }
     
@@ -137,7 +143,8 @@ class NacosFactoryTest {
             configFactoryMock.when(() -> ConfigFactory.createConfigService("localhost:8848"))
                     .thenThrow(new NacosException());
             
-            assertThrows(NacosException.class, () -> NacosFactory.createConfigService("localhost:8848"));
+            assertThrows(NacosException.class,
+                    () -> NacosFactory.createConfigService("localhost:8848"));
         }
     }
     
@@ -147,7 +154,8 @@ class NacosFactoryTest {
             namingFactoryMock.when(() -> NamingFactory.createNamingService("localhost:8848"))
                     .thenThrow(new NacosException());
             
-            assertThrows(NacosException.class, () -> NacosFactory.createNamingService("localhost:8848"));
+            assertThrows(NacosException.class,
+                    () -> NacosFactory.createNamingService("localhost:8848"));
         }
     }
     
@@ -157,37 +165,46 @@ class NacosFactoryTest {
             namingFactoryMock.when(() -> NamingFactory.createNamingService((Properties) null))
                     .thenThrow(new NacosException());
             
-            assertThrows(NacosException.class, () -> NacosFactory.createNamingService((Properties) null));
+            assertThrows(NacosException.class,
+                    () -> NacosFactory.createNamingService((Properties) null));
         }
     }
     
     @Test
     void testCreateMaintainServiceWithServerAddrThrowException() {
-        try (MockedStatic<NamingMaintainFactory> namingMaintainFactoryMock = mockStatic(NamingMaintainFactory.class)) {
-            namingMaintainFactoryMock.when(() -> NamingMaintainFactory.createMaintainService("localhost:8848"))
+        try (MockedStatic<NamingMaintainFactory> namingMaintainFactoryMock =
+                mockStatic(NamingMaintainFactory.class)) {
+            namingMaintainFactoryMock
+                    .when(() -> NamingMaintainFactory.createMaintainService("localhost:8848"))
                     .thenThrow(new NacosException());
             
-            assertThrows(NacosException.class, () -> NacosFactory.createMaintainService("localhost:8848"));
+            assertThrows(NacosException.class,
+                    () -> NacosFactory.createMaintainService("localhost:8848"));
         }
     }
     
     @Test
     void testCreateMaintainServiceWithPropertiesThrowException() {
-        try (MockedStatic<NamingMaintainFactory> namingMaintainFactoryMock = mockStatic(NamingMaintainFactory.class)) {
-            namingMaintainFactoryMock.when(() -> NamingMaintainFactory.createMaintainService((Properties) null))
+        try (MockedStatic<NamingMaintainFactory> namingMaintainFactoryMock =
+                mockStatic(NamingMaintainFactory.class)) {
+            namingMaintainFactoryMock
+                    .when(() -> NamingMaintainFactory.createMaintainService((Properties) null))
                     .thenThrow(new NacosException());
             
-            assertThrows(NacosException.class, () -> NacosFactory.createMaintainService((Properties) null));
+            assertThrows(NacosException.class,
+                    () -> NacosFactory.createMaintainService((Properties) null));
         }
     }
     
     @Test
     void testCreateLockServiceThrowException() {
-        try (MockedStatic<NacosLockFactory> nacosLockFactoryMock = mockStatic(NacosLockFactory.class)) {
+        try (MockedStatic<NacosLockFactory> nacosLockFactoryMock =
+                mockStatic(NacosLockFactory.class)) {
             nacosLockFactoryMock.when(() -> NacosLockFactory.createLockService((Properties) null))
                     .thenThrow(new NacosException());
             
-            assertThrows(NacosException.class, () -> NacosFactory.createLockService((Properties) null));
+            assertThrows(NacosException.class,
+                    () -> NacosFactory.createLockService((Properties) null));
         }
     }
 }

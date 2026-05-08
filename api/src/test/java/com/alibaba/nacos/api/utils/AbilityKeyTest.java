@@ -76,7 +76,8 @@ class AbilityKeyTest {
     
     @Test
     void testMapEnumForEmpty() {
-        Map<AbilityKey, Boolean> actual = AbilityKey.mapEnum(AbilityMode.SERVER, Collections.emptyMap());
+        Map<AbilityKey, Boolean> actual =
+                AbilityKey.mapEnum(AbilityMode.SERVER, Collections.emptyMap());
         assertTrue(actual.isEmpty());
     }
     

@@ -57,7 +57,8 @@ class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
     void testConfigListenContextToString() {
         ConfigBatchListenRequest configBatchListenRequest = new ConfigBatchListenRequest();
         configBatchListenRequest.addConfigListenContext(GROUP, DATA_ID, TENANT, MD5);
-        assertEquals("ConfigListenContext{group='group', md5='test_MD5', dataId='test_data', tenant='test_tenant'}",
+        assertEquals(
+                "ConfigListenContext{group='group', md5='test_MD5', dataId='test_data', tenant='test_tenant'}",
                 configBatchListenRequest.getConfigListenContexts().get(0).toString());
     }
 }

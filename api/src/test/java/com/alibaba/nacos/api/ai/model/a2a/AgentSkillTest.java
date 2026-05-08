@@ -62,9 +62,10 @@ class AgentSkillTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"skill-1\",\"name\":\"test skill\",\"description\":\"test description\","
-                + "\"tags\":[\"tag1\",\"tag2\"],\"examples\":[\"example1\",\"example2\"],"
-                + "\"inputModes\":[\"text\",\"voice\"],\"outputModes\":[\"text\",\"image\"]}";
+        String json =
+                "{\"id\":\"skill-1\",\"name\":\"test skill\",\"description\":\"test description\","
+                        + "\"tags\":[\"tag1\",\"tag2\"],\"examples\":[\"example1\",\"example2\"],"
+                        + "\"inputModes\":[\"text\",\"voice\"],\"outputModes\":[\"text\",\"image\"]}";
         
         AgentSkill agentSkill = mapper.readValue(json, AgentSkill.class);
         assertNotNull(agentSkill);

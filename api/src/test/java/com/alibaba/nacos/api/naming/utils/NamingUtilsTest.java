@@ -154,7 +154,8 @@ class NamingUtilsTest {
         assertEquals("public@@group@@serviceName", serviceKeyWithEmptyNamespace);
         
         // 测试namespace为null的情况
-        String serviceKeyWithNullNamespace = NamingUtils.getServiceKey(null, "group", "serviceName");
+        String serviceKeyWithNullNamespace =
+                NamingUtils.getServiceKey(null, "group", "serviceName");
         assertEquals("public@@group@@serviceName", serviceKeyWithNullNamespace);
     }
     
@@ -218,7 +219,8 @@ class NamingUtilsTest {
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(e instanceof NacosException);
-            assertEquals("Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
+            assertEquals(
+                    "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
                     e.getMessage());
         }
         meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "3");
@@ -265,7 +267,8 @@ class NamingUtilsTest {
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(e instanceof NacosException);
-            assertEquals("Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
+            assertEquals(
+                    "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
                     e.getMessage());
         }
         instanceList.remove(instance);

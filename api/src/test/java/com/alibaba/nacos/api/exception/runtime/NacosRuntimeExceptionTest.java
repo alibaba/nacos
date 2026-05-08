@@ -35,7 +35,8 @@ class NacosRuntimeExceptionTest {
     
     @Test
     void testConstructorWithErrorCodeAndMsg() {
-        NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM, "test");
+        NacosRuntimeException exception =
+                new NacosRuntimeException(NacosException.INVALID_PARAM, "test");
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals("errCode: 400, errMsg: test ", exception.getMessage());
         assertNull(exception.getCause());
@@ -52,8 +53,9 @@ class NacosRuntimeExceptionTest {
     
     @Test
     void testConstructorWithFull() {
-        NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM, "test",
-                new RuntimeException("cause test"));
+        NacosRuntimeException exception =
+                new NacosRuntimeException(NacosException.INVALID_PARAM, "test",
+                        new RuntimeException("cause test"));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals("errCode: 400, errMsg: test ", exception.getMessage());
         assertTrue(exception.getCause() instanceof RuntimeException);

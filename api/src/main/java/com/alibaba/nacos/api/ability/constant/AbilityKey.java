@@ -34,13 +34,15 @@ public enum AbilityKey {
     /**
      * Server support register or deregister persistent instance by grpc.
      */
-    SERVER_PERSISTENT_INSTANCE_BY_GRPC("supportPersistentInstanceByGrpc", "support persistent instance by grpc",
+    SERVER_PERSISTENT_INSTANCE_BY_GRPC("supportPersistentInstanceByGrpc",
+            "support persistent instance by grpc",
             AbilityMode.SERVER),
     
     /**
      * For fuzzy watch naming or config.
      */
-    SERVER_FUZZY_WATCH("fuzzyWatch", "Server whether support fuzzy watch service or config", AbilityMode.SERVER),
+    SERVER_FUZZY_WATCH("fuzzyWatch", "Server whether support fuzzy watch service or config",
+            AbilityMode.SERVER),
     
     /**
      * For Distributed Lock.
@@ -50,19 +52,22 @@ public enum AbilityKey {
     /**
      * For AI module MCP registry.
      */
-    SERVER_MCP_REGISTRY("mcp", "Server whether support release mcp server and register endpoint for mcp server",
+    SERVER_MCP_REGISTRY("mcp",
+            "Server whether support release mcp server and register endpoint for mcp server",
             AbilityMode.SERVER),
     
     /**
      * For AI module Agent & Agent Card registry.
      */
-    SERVER_AGENT_REGISTRY("agent", "Server whether support release agent server and register endpoint for agent server",
+    SERVER_AGENT_REGISTRY("agent",
+            "Server whether support release agent server and register endpoint for agent server",
             AbilityMode.SERVER),
     
     /**
      * For AI module A2A AgentCard 1.0 protocol.
      */
-    SERVER_AGENT_CARD_V1("agentCardV1", "Server whether support A2A AgentCard 1.0 protocol", AbilityMode.SERVER),
+    SERVER_AGENT_CARD_V1("agentCardV1", "Server whether support A2A AgentCard 1.0 protocol",
+            AbilityMode.SERVER),
     
     /**
      * For fuzzy watch naming or config.
@@ -73,18 +78,21 @@ public enum AbilityKey {
     /**
      * For Distributed Lock.
      */
-    SDK_CLIENT_DISTRIBUTED_LOCK("lock", "Client whether support distributed lock", AbilityMode.SDK_CLIENT),
+    SDK_CLIENT_DISTRIBUTED_LOCK("lock", "Client whether support distributed lock",
+            AbilityMode.SDK_CLIENT),
     
     /**
      * For AI module MCP registry.
      */
-    SDK_MCP_REGISTRY("mcp", "Client whether support release mcp server and register endpoint for mcp server",
+    SDK_MCP_REGISTRY("mcp",
+            "Client whether support release mcp server and register endpoint for mcp server",
             AbilityMode.SDK_CLIENT),
     
     /**
      * For AI module Agent & Agent Card registry.
      */
-    SDK_AGENT_REGISTRY("agent", "Client whether support release agent server and register endpoint for agent server",
+    SDK_AGENT_REGISTRY("agent",
+            "Client whether support release agent server and register endpoint for agent server",
             AbilityMode.SDK_CLIENT),
     
     /**
@@ -164,12 +172,14 @@ public enum AbilityKey {
      * @param abilities map
      * @return enum map
      */
-    public static Map<AbilityKey, Boolean> mapEnum(AbilityMode mode, Map<String, Boolean> abilities) {
+    public static Map<AbilityKey, Boolean> mapEnum(AbilityMode mode,
+            Map<String, Boolean> abilities) {
         if (abilities == null || abilities.isEmpty()) {
             return Collections.emptyMap();
         }
         return abilities.entrySet().stream().filter(entry -> isLegalKey(mode, entry.getKey()))
-                .collect(Collectors.toMap((entry) -> getEnum(mode, entry.getKey()), Map.Entry::getValue));
+                .collect(Collectors.toMap((entry) -> getEnum(mode, entry.getKey()),
+                        Map.Entry::getValue));
     }
     
     /**.
@@ -183,7 +193,8 @@ public enum AbilityKey {
             return Collections.emptyMap();
         }
         return abilities.entrySet().stream()
-                .collect(Collectors.toMap((entry) -> entry.getKey().getName(), Map.Entry::getValue));
+                .collect(
+                        Collectors.toMap((entry) -> entry.getKey().getName(), Map.Entry::getValue));
     }
     
     /**.
@@ -206,7 +217,8 @@ public enum AbilityKey {
                 AbilityKey previous = map.putIfAbsent(value.getName(), value);
                 if (previous != null) {
                     throw new IllegalStateException(
-                            "Duplicate key name field " + value + " and " + previous + " under mode: " + mode);
+                            "Duplicate key name field " + value + " and " + previous
+                                    + " under mode: " + mode);
                 }
                 ALL_ABILITIES.put(mode, map);
             }

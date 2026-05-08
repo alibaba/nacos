@@ -47,7 +47,8 @@ class McpServerEndpointRequestTest extends BasicRequestTest {
         assertTrue(json.contains("\"namespaceId\":\"public\""));
         assertTrue(json.contains("\"mcpName\":\"testMcpName\""));
         assertTrue(json.contains(String.format("\"mcpId\":\"%s\"", id)));
-        assertTrue(json.contains(String.format("\"type\":\"%s\"", AiRemoteConstants.REGISTER_ENDPOINT)));
+        assertTrue(json
+                .contains(String.format("\"type\":\"%s\"", AiRemoteConstants.REGISTER_ENDPOINT)));
         assertTrue(json.contains("\"address\":\"1.1.1.1\""));
         assertTrue(json.contains("\"version\":\"1.0.0\""));
         assertTrue(json.contains("\"port\":3306"));

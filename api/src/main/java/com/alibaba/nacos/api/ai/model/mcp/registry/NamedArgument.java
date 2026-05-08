@@ -29,15 +29,15 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NamedArgument extends InputWithVariables implements Argument {
-
+    
     private String type = "named";
     
     private String name;
-
+    
     private Boolean isRepeated;
-
+    
     private String valueHint;
-
+    
     /**
      * Get type.
      *
@@ -46,7 +46,7 @@ public class NamedArgument extends InputWithVariables implements Argument {
     public String getType() {
         return type;
     }
-
+    
     /**
      * Set type.
      *
@@ -55,7 +55,7 @@ public class NamedArgument extends InputWithVariables implements Argument {
     public void setType(String type) {
         this.type = type;
     }
-
+    
     /**
      * Get name.
      *
@@ -64,7 +64,7 @@ public class NamedArgument extends InputWithVariables implements Argument {
     public String getName() {
         return name;
     }
-
+    
     /**
      * Set name.
      *
@@ -73,7 +73,7 @@ public class NamedArgument extends InputWithVariables implements Argument {
     public void setName(String name) {
         this.name = name;
     }
-
+    
     /**
      * Get is repeated flag.
      *
@@ -82,7 +82,7 @@ public class NamedArgument extends InputWithVariables implements Argument {
     public Boolean getIsRepeated() {
         return isRepeated;
     }
-
+    
     /**
      * Set is repeated flag.
      *
@@ -91,7 +91,7 @@ public class NamedArgument extends InputWithVariables implements Argument {
     public void setIsRepeated(Boolean isRepeated) {
         this.isRepeated = isRepeated;
     }
-
+    
     /**
      * Get value hint.
      *
@@ -100,7 +100,7 @@ public class NamedArgument extends InputWithVariables implements Argument {
     public String getValueHint() {
         return valueHint;
     }
-
+    
     /**
      * Set value hint.
      *

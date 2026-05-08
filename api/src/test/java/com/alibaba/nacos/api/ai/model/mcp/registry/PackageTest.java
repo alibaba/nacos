@@ -97,7 +97,8 @@ class PackageTest extends BasicRequestTest {
         assertEquals("named", ((NamedArgument) pkg.getRuntimeArguments().get(0)).getType());
         assertEquals(2, pkg.getPackageArguments().size());
         assertEquals("named", ((NamedArgument) pkg.getPackageArguments().get(0)).getType());
-        assertEquals("positional", ((PositionalArgument) pkg.getPackageArguments().get(1)).getType());
+        assertEquals("positional",
+                ((PositionalArgument) pkg.getPackageArguments().get(1)).getType());
         assertEquals(1, pkg.getEnvironmentVariables().size());
         assertEquals("ENV_VAR", pkg.getEnvironmentVariables().get(0).getName());
     }

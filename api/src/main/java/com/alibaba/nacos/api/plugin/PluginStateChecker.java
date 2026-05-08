@@ -24,7 +24,7 @@ package com.alibaba.nacos.api.plugin;
  * @since 3.0.0
  */
 public interface PluginStateChecker {
-
+    
     /**
      * Check if plugin is enabled.
      *

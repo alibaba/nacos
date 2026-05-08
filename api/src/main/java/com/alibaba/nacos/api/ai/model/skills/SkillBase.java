@@ -23,33 +23,33 @@ package com.alibaba.nacos.api.ai.model.skills;
  * @since 3.2.0
  */
 public class SkillBase {
-
+    
     private String namespaceId;
-
+    
     private String name;
-
+    
     private String description;
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getDescription() {
         return description;
     }
-
+    
     public void setDescription(String description) {
         this.description = description;
     }

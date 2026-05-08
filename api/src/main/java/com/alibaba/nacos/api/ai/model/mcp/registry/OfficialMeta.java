@@ -27,15 +27,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OfficialMeta {
-
+    
     private String publishedAt;
-
+    
     private String updatedAt;
-
+    
     private Boolean isLatest;
-
+    
     private String status;
-
+    
     /**
      * Get published at timestamp.
      *
@@ -44,7 +44,7 @@ public class OfficialMeta {
     public String getPublishedAt() {
         return publishedAt;
     }
-
+    
     /**
      * Set published at timestamp.
      *
@@ -53,7 +53,7 @@ public class OfficialMeta {
     public void setPublishedAt(String publishedAt) {
         this.publishedAt = publishedAt;
     }
-
+    
     /**
      * Get updated at timestamp.
      *
@@ -62,7 +62,7 @@ public class OfficialMeta {
     public String getUpdatedAt() {
         return updatedAt;
     }
-
+    
     /**
      * Set updated at timestamp.
      *
@@ -71,7 +71,7 @@ public class OfficialMeta {
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
     }
-
+    
     /**
      * Get is latest flag.
      *
@@ -80,7 +80,7 @@ public class OfficialMeta {
     public Boolean getIsLatest() {
         return isLatest;
     }
-
+    
     /**
      * Set is latest flag.
      *
@@ -89,7 +89,7 @@ public class OfficialMeta {
     public void setIsLatest(Boolean isLatest) {
         this.isLatest = isLatest;
     }
-
+    
     /**
      * Get status.
      *
@@ -98,7 +98,7 @@ public class OfficialMeta {
     public String getStatus() {
         return status;
     }
-
+    
     /**
      * Set status.
      *

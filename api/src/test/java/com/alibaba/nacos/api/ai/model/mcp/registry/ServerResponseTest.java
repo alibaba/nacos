@@ -83,6 +83,7 @@ class ServerResponseTest extends BasicRequestTest {
         Map<String, Object> extensionData = new HashMap<>();
         extensionData.put("customField", "customValue");
         extensionData.put("metadata", new HashMap<String, Object>() {
+            
             {
                 put("key1", "value1");
             }
