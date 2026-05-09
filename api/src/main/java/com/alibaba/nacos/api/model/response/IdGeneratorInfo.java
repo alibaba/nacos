@@ -46,25 +46,25 @@ public class IdGeneratorInfo {
     public static class IdInfo {
         
         private Long currentId;
-    
+        
         private Long workerId;
-    
+        
         public Long getCurrentId() {
             return currentId;
         }
-    
+        
         public void setCurrentId(Long currentId) {
             this.currentId = currentId;
         }
-    
+        
         public Long getWorkerId() {
             return workerId;
         }
-    
+        
         public void setWorkerId(Long workerId) {
             this.workerId = workerId;
         }
-    
+        
         @Override
         public String toString() {
             return "IdInfo{" + "currentId=" + currentId + ", workerId=" + workerId + '}';

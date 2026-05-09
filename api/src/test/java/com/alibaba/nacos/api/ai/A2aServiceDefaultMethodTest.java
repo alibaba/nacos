@@ -39,45 +39,50 @@ class A2aServiceDefaultMethodTest {
     void setUp() {
         invokeMark = new AtomicBoolean(false);
         a2aService = new A2aService() {
+            
             @Override
-            public AgentCardDetailInfo getAgentCard(String agentName, String version, String registrationType)
-                    throws NacosException {
+            public AgentCardDetailInfo getAgentCard(String agentName, String version,
+                String registrationType)
+                throws NacosException {
                 invokeMark.set(true);
                 return null;
             }
             
             @Override
-            public void releaseAgentCard(AgentCard agentCard, String registrationType, boolean setAsLatest)
-                    throws NacosException {
+            public void releaseAgentCard(AgentCard agentCard, String registrationType,
+                boolean setAsLatest)
+                throws NacosException {
                 invokeMark.set(true);
             }
             
             @Override
-            public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+            public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint)
+                throws NacosException {
                 invokeMark.set(true);
             }
             
             @Override
             public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints)
-                    throws NacosException {
+                throws NacosException {
                 invokeMark.set(true);
             }
             
             @Override
-            public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+            public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint)
+                throws NacosException {
                 invokeMark.set(true);
             }
             
             @Override
             public AgentCardDetailInfo subscribeAgentCard(String agentName, String version,
-                    AbstractNacosAgentCardListener agentCardListener) throws NacosException {
+                AbstractNacosAgentCardListener agentCardListener) throws NacosException {
                 invokeMark.set(true);
                 return null;
             }
             
             @Override
             public void unsubscribeAgentCard(String agentName, String version,
-                    AbstractNacosAgentCardListener agentCardListener) throws NacosException {
+                AbstractNacosAgentCardListener agentCardListener) throws NacosException {
                 invokeMark.set(true);
             }
         };

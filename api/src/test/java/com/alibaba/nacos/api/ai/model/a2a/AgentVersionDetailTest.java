@@ -45,7 +45,8 @@ class AgentVersionDetailTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"version\":\"1.0.0\",\"createdAt\":\"2023-01-01T00:00:00Z\",\"updatedAt\":\"2023-01-02T00:00:00Z\",\"latest\":true}";
+        String json =
+            "{\"version\":\"1.0.0\",\"createdAt\":\"2023-01-01T00:00:00Z\",\"updatedAt\":\"2023-01-02T00:00:00Z\",\"latest\":true}";
         
         AgentVersionDetail agentVersionDetail = mapper.readValue(json, AgentVersionDetail.class);
         assertNotNull(agentVersionDetail);

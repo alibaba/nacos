@@ -334,9 +334,9 @@ public class SkillScannerPipelineService implements PublishPipelineService {
     @Override
     public PublishPipelineResourceType[] pipelineResourceTypes() {
         return new PublishPipelineResourceType[] {
-                PublishPipelineResourceType.SKILL,
-                PublishPipelineResourceType.AGENTSPEC,
-                PublishPipelineResourceType.PROMPT
+            PublishPipelineResourceType.SKILL,
+            PublishPipelineResourceType.AGENTSPEC,
+            PublishPipelineResourceType.PROMPT
         };
     }
 }

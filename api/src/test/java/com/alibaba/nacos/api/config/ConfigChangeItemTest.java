@@ -49,7 +49,8 @@ class ConfigChangeItemTest {
     void testToString() {
         ConfigChangeItem item = new ConfigChangeItem("testKey", null, "testValue");
         item.setType(PropertyChangeType.ADDED);
-        assertEquals("ConfigChangeItem{key='testKey', oldValue='null', newValue='testValue', type=ADDED}",
-                item.toString());
+        assertEquals(
+            "ConfigChangeItem{key='testKey', oldValue='null', newValue='testValue', type=ADDED}",
+            item.toString());
     }
 }

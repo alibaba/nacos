@@ -51,9 +51,9 @@ public class McpServerBasicInfo {
     private Repository repository;
     
     private List<Package> packages;
-
+    
     private List<Icon> icons;
-
+    
     private String websiteUrl;
     
     private ServerVersionDetail versionDetail;
@@ -126,15 +126,15 @@ public class McpServerBasicInfo {
     public void setLocalServerConfig(Map<String, Object> localServerConfig) {
         this.localServerConfig = localServerConfig;
     }
-
+    
     public String getFrontProtocol() {
         return frontProtocol;
     }
-
+    
     public void setFrontProtocol(String frontProtocol) {
         this.frontProtocol = frontProtocol;
     }
-
+    
     public boolean isEnabled() {
         return enabled;
     }
@@ -150,75 +150,75 @@ public class McpServerBasicInfo {
     public void setCapabilities(List<McpCapability> capabilities) {
         this.capabilities = capabilities;
     }
-
+    
     public ServerVersionDetail getVersionDetail() {
         return versionDetail;
     }
-
+    
     public void setVersionDetail(ServerVersionDetail versionDetail) {
         this.versionDetail = versionDetail;
     }
-
+    
     public String getId() {
         return id;
     }
-
+    
     public void setId(String id) {
         this.id = id;
     }
-
+    
     public Repository getRepository() {
         return repository;
     }
-
+    
     public void setRepository(Repository repository) {
         this.repository = repository;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public List<Package> getPackages() {
         return packages;
     }
-
+    
     public void setPackages(List<Package> packages) {
         this.packages = packages;
     }
-
+    
     public String getStatus() {
         return status;
     }
-
+    
     public void setStatus(String status) {
         this.status = status;
     }
-
+    
     public List<Icon> getIcons() {
         return icons;
     }
-
+    
     public void setIcons(List<Icon> icons) {
         this.icons = icons;
     }
-
+    
     public String getWebsiteUrl() {
         return websiteUrl;
     }
-
+    
     public void setWebsiteUrl(String websiteUrl) {
         this.websiteUrl = websiteUrl;
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }

@@ -556,24 +556,24 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //mock add config 1 success,config 2 fail and skip,config 3 success
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(0).getDataId(), configInfoList.get(0).getGroup(),
-                    configInfoList.get(0).getTenant()}),
+                configInfoList.get(0).getTenant()}),
             eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
             .thenReturn(null);
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(1).getDataId(), configInfoList.get(1).getGroup(),
-                    configInfoList.get(1).getTenant()}),
+                configInfoList.get(1).getTenant()}),
             eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
             .thenReturn(new ConfigInfoStateWrapper());
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(2).getDataId(), configInfoList.get(2).getGroup(),
-                    configInfoList.get(1).getTenant()}),
+                configInfoList.get(1).getTenant()}),
             eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
             .thenReturn(null);
         //mock query config info during update
         ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(1).getDataId(), configInfoList.get(1).getGroup(),
-                    configInfoList.get(1).getTenant()}),
+                configInfoList.get(1).getTenant()}),
             eq(CONFIG_INFO_WRAPPER_ROW_MAPPER)))
             .thenReturn(configInfoWrapper);
         
@@ -600,17 +600,17 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //mock add config 1 success,config 2 fail and skip,config 3 success
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(0).getDataId(), configInfoList.get(0).getGroup(),
-                    configInfoList.get(0).getTenant()}),
+                configInfoList.get(0).getTenant()}),
             eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
             .thenReturn(null);
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(1).getDataId(), configInfoList.get(1).getGroup(),
-                    configInfoList.get(1).getTenant()}),
+                configInfoList.get(1).getTenant()}),
             eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
             .thenReturn(new ConfigInfoStateWrapper());
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(2).getDataId(), configInfoList.get(2).getGroup(),
-                    configInfoList.get(1).getTenant()}),
+                configInfoList.get(1).getTenant()}),
             eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
             .thenReturn(null);
         
@@ -639,17 +639,17 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //mock add config 1 success,config 2 fail and abort,config 3 not operated
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(0).getDataId(), configInfoList.get(0).getGroup(),
-                    configInfoList.get(0).getTenant()}),
+                configInfoList.get(0).getTenant()}),
             eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
             .thenReturn(null);
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(1).getDataId(), configInfoList.get(1).getGroup(),
-                    configInfoList.get(1).getTenant()}),
+                configInfoList.get(1).getTenant()}),
             eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
             .thenReturn(new ConfigInfoStateWrapper());
         Mockito.when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {configInfoList.get(2).getDataId(), configInfoList.get(2).getGroup(),
-                    configInfoList.get(1).getTenant()}),
+                configInfoList.get(1).getTenant()}),
             eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
             .thenReturn(null);
         
@@ -854,8 +854,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //mock total count
         when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"),
-                    appName,
-                    content}),
+                appName,
+                content}),
             eq(Integer.class))).thenReturn(new Integer(9));
         //mock page list
         List<ConfigInfo> result = new ArrayList<>();
@@ -864,8 +864,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         result.add(createMockConfigInfo(2));
         when(databaseOperate.queryMany(anyString(),
             eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"),
-                    appName,
-                    content}),
+                appName,
+                content}),
             eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
         
         Page<ConfigInfo> configInfo4Page =
@@ -891,8 +891,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //mock total count
         when(databaseOperate.queryOne(anyString(),
             eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"),
-                    appName, content,
-                    "tags", "tag2"}),
+                appName, content,
+                "tags", "tag2"}),
             eq(Integer.class))).thenReturn(new Integer(9));
         //mock page list
         List<ConfigInfo> result = new ArrayList<>();
@@ -901,8 +901,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         result.add(createMockConfigInfo(2));
         when(databaseOperate.queryMany(anyString(),
             eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"),
-                    appName, content,
-                    "tags", "tag2"}),
+                appName, content,
+                "tags", "tag2"}),
             eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
         
         Page<ConfigInfo> configInfo4Page =

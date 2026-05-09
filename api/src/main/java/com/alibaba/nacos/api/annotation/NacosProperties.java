@@ -111,7 +111,6 @@ public @interface NacosProperties {
      */
     String PASSWORD = "password";
     
-    
     /**
      * The placeholder of endpoint, the value is <code>"${nacos.endpoint:}"</code>.
      */

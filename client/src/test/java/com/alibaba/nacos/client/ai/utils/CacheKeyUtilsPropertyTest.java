@@ -40,6 +40,6 @@ class CacheKeyUtilsPropertyTest {
     void buildAgentSpecKeyAlwaysReturnsNameItself(@ForAll String agentSpecName) {
         String result = CacheKeyUtils.buildAgentSpecKey(agentSpecName);
         assertEquals(agentSpecName, result,
-                "buildAgentSpecKey should return agentSpecName itself, got: " + result);
+            "buildAgentSpecKey should return agentSpecName itself, got: " + result);
     }
 }

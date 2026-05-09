@@ -27,12 +27,12 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigMigrateMapper;
  * @author WangzJi
  */
 public class ConfigMigrateMapperByPostgresql extends AbstractMapper implements ConfigMigrateMapper {
-
+    
     @Override
     public String getDataSource() {
         return DatabaseTypeConstant.POSTGRESQL;
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedPostgresqlFunctionEnum.getFunctionByName(functionName);

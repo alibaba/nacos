@@ -65,13 +65,16 @@ class ClientSummaryInfoTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String jsonString = "{\"clientId\":\"clientId\",\"ephemeral\":true,\"lastUpdatedTime\":1000,"
+        String jsonString =
+            "{\"clientId\":\"clientId\",\"ephemeral\":true,\"lastUpdatedTime\":1000,"
                 + "\"clientType\":\"connection\",\"connectType\":\"grpc\",\"appName\":\"appName\","
                 + "\"version\":\"version\",\"clientIp\":\"1.1.1.1\",\"clientPort\":8080}";
-        ClientSummaryInfo clientSummaryInfo1 = mapper.readValue(jsonString, ClientSummaryInfo.class);
+        ClientSummaryInfo clientSummaryInfo1 =
+            mapper.readValue(jsonString, ClientSummaryInfo.class);
         assertEquals(clientSummaryInfo.getClientId(), clientSummaryInfo1.getClientId());
         assertEquals(clientSummaryInfo.isEphemeral(), clientSummaryInfo1.isEphemeral());
-        assertEquals(clientSummaryInfo.getLastUpdatedTime(), clientSummaryInfo1.getLastUpdatedTime());
+        assertEquals(clientSummaryInfo.getLastUpdatedTime(),
+            clientSummaryInfo1.getLastUpdatedTime());
         assertEquals(clientSummaryInfo.getClientType(), clientSummaryInfo1.getClientType());
         assertEquals(clientSummaryInfo.getConnectType(), clientSummaryInfo1.getConnectType());
         assertEquals(clientSummaryInfo.getAppName(), clientSummaryInfo1.getAppName());

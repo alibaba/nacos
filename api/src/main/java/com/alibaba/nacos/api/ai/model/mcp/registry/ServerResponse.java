@@ -32,28 +32,28 @@ import java.util.Map;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServerResponse {
-
+    
     private McpRegistryServerDetail server;
-
+    
     @JsonProperty("_meta")
     private Meta meta;
-
+    
     public McpRegistryServerDetail getServer() {
         return server;
     }
-
+    
     public void setServer(McpRegistryServerDetail server) {
         this.server = server;
     }
-
+    
     public Meta getMeta() {
         return meta;
     }
-
+    
     public void setMeta(Meta meta) {
         this.meta = meta;
     }
-
+    
     /**
      * _meta wrapper allowing extension namespaces.
      *
@@ -61,21 +61,21 @@ public class ServerResponse {
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Meta {
-
+        
         @JsonProperty("io.modelcontextprotocol.registry/official")
         private OfficialMeta official;
-
+        
         @JsonAnySetter
         private Map<String, Object> additionalMetadata = new HashMap<>();
-
+        
         public OfficialMeta getOfficial() {
             return official;
         }
-
+        
         public void setOfficial(OfficialMeta official) {
             this.official = official;
         }
-
+        
         @JsonAnyGetter
         public Map<String, Object> getAdditionalMetadata() {
             return additionalMetadata;

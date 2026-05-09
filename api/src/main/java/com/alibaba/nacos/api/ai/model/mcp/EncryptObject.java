@@ -25,31 +25,31 @@ import java.util.Map;
  * @author luoxiner
  */
 public class EncryptObject implements Serializable {
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     /**
      * The ciphertext or encoded payload.
      */
     private String data;
-
+    
     /**
      * Additional encryption metadata, e.g. alg, iv, keyId, version.
      */
     private Map<String, String> encryptInfo;
-
+    
     public String getData() {
         return data;
     }
-
+    
     public void setData(String data) {
         this.data = data;
     }
-
+    
     public Map<String, String> getEncryptInfo() {
         return encryptInfo;
     }
-
+    
     public void setEncryptInfo(Map<String, String> encryptInfo) {
         this.encryptInfo = encryptInfo;
     }

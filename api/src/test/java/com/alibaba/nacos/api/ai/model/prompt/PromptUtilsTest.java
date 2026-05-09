@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author nacos
  */
 class PromptUtilsTest {
-
+    
     @Test
     void testBuildPromptVersionGroupBasic() {
         String group = PromptUtils.buildPromptVersionGroup("greeting", "1.0.0");
@@ -36,53 +36,53 @@ class PromptUtilsTest {
         // Should contain encoded promptKey and version separated by double underscore
         assertTrue(group.contains("__"));
     }
-
+    
     @Test
     void testBuildPromptVersionGroupDeterministicOutput() {
         String group1 = PromptUtils.buildPromptVersionGroup("greeting", "1.0.0");
         String group2 = PromptUtils.buildPromptVersionGroup("greeting", "1.0.0");
         assertEquals(group1, group2);
     }
-
+    
     @Test
     void testBuildPromptVersionGroupDifferentVersionsProduceDifferentGroups() {
         String group1 = PromptUtils.buildPromptVersionGroup("greeting", "1.0.0");
         String group2 = PromptUtils.buildPromptVersionGroup("greeting", "2.0.0");
         assertTrue(!group1.equals(group2));
     }
-
+    
     @Test
     void testBuildPromptVersionGroupDifferentKeysProduceDifferentGroups() {
         String group1 = PromptUtils.buildPromptVersionGroup("greeting", "1.0.0");
         String group2 = PromptUtils.buildPromptVersionGroup("farewell", "1.0.0");
         assertTrue(!group1.equals(group2));
     }
-
+    
     @Test
     void testBuildPromptVersionGroupShouldThrowOnBlankKey() {
         assertThrows(IllegalArgumentException.class,
-                () -> PromptUtils.buildPromptVersionGroup("", "1.0.0"));
+            () -> PromptUtils.buildPromptVersionGroup("", "1.0.0"));
         assertThrows(IllegalArgumentException.class,
-                () -> PromptUtils.buildPromptVersionGroup(null, "1.0.0"));
+            () -> PromptUtils.buildPromptVersionGroup(null, "1.0.0"));
         assertThrows(IllegalArgumentException.class,
-                () -> PromptUtils.buildPromptVersionGroup("  ", "1.0.0"));
+            () -> PromptUtils.buildPromptVersionGroup("  ", "1.0.0"));
     }
-
+    
     @Test
     void testBuildPromptVersionGroupShouldThrowOnBlankVersion() {
         assertThrows(IllegalArgumentException.class,
-                () -> PromptUtils.buildPromptVersionGroup("greeting", ""));
+            () -> PromptUtils.buildPromptVersionGroup("greeting", ""));
         assertThrows(IllegalArgumentException.class,
-                () -> PromptUtils.buildPromptVersionGroup("greeting", null));
+            () -> PromptUtils.buildPromptVersionGroup("greeting", null));
         assertThrows(IllegalArgumentException.class,
-                () -> PromptUtils.buildPromptVersionGroup("greeting", "  "));
+            () -> PromptUtils.buildPromptVersionGroup("greeting", "  "));
     }
-
+    
     @Test
     void testPromptMainDataIdConstant() {
         assertEquals("content.json", PromptUtils.PROMPT_MAIN_DATA_ID);
     }
-
+    
     @Test
     void testPromptGroupPrefixConstant() {
         assertEquals("prompt__", PromptUtils.PROMPT_GROUP_PREFIX);

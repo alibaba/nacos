@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author xiweng.yy
  */
 public abstract class AbstractAiListenerInvoker<E extends NacosAiEvent, L extends NacosAiListener<E>>
-        implements ListenerInvoker<E> {
+    implements ListenerInvoker<E> {
     
     protected final L listener;
     

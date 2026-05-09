@@ -46,6 +46,6 @@ public class ConfigChangeNotifyResponseTest extends BasedConfigResponseTest {
     
     @Override
     public void testSerializeFailResponse() throws JsonProcessingException {
-    
+        
     }
 }

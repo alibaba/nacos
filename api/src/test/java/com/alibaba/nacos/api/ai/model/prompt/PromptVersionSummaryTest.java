@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PromptVersionSummaryTest extends BasicRequestTest {
-
+    
     @Test
     @DisplayName("test default constructor")
     void testDefaultConstructor() {
@@ -40,7 +40,7 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         assertNull(summary.getGmtModified());
         assertNull(summary.getPublishPipelineInfo());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for promptKey")
     void testGetterAndSetterForPromptKey() {
@@ -48,7 +48,7 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         summary.setPromptKey("testPrompt");
         assertEquals("testPrompt", summary.getPromptKey());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for version")
     void testGetterAndSetterForVersion() {
@@ -56,7 +56,7 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         summary.setVersion("1.0.0");
         assertEquals("1.0.0", summary.getVersion());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for status")
     void testGetterAndSetterForStatus() {
@@ -64,7 +64,7 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         summary.setStatus("online");
         assertEquals("online", summary.getStatus());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for commitMsg")
     void testGetterAndSetterForCommitMsg() {
@@ -72,7 +72,7 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         summary.setCommitMsg("Initial commit");
         assertEquals("Initial commit", summary.getCommitMsg());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for srcUser")
     void testGetterAndSetterForSrcUser() {
@@ -80,7 +80,7 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         summary.setSrcUser("admin");
         assertEquals("admin", summary.getSrcUser());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for gmtModified")
     void testGetterAndSetterForGmtModified() {
@@ -88,7 +88,7 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         summary.setGmtModified(1234567890L);
         assertEquals(1234567890L, summary.getGmtModified());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for publishPipelineInfo")
     void testGetterAndSetterForPublishPipelineInfo() {
@@ -96,7 +96,7 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         summary.setPublishPipelineInfo("{\"pipeline\":\"info\"}");
         assertEquals("{\"pipeline\":\"info\"}", summary.getPublishPipelineInfo());
     }
-
+    
     @Test
     @DisplayName("test serialize to json")
     void testSerializeToJson() throws JsonProcessingException {
@@ -107,7 +107,7 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         summary.setCommitMsg("Initial commit");
         summary.setSrcUser("admin");
         summary.setGmtModified(1234567890L);
-
+        
         String json = mapper.writeValueAsString(summary);
         assertNotNull(json);
         assertTrue(json.contains("\"promptKey\":\"testPrompt\""));
@@ -117,14 +117,14 @@ class PromptVersionSummaryTest extends BasicRequestTest {
         assertTrue(json.contains("\"srcUser\":\"admin\""));
         assertTrue(json.contains("\"gmtModified\":1234567890"));
     }
-
+    
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"promptKey\":\"testPrompt\",\"version\":\"1.0.0\",\"status\":\"online\","
-                + "\"commitMsg\":\"Initial commit\",\"srcUser\":\"admin\",\"gmtModified\":1234567890,"
-                + "\"publishPipelineInfo\":\"pipeline-info\"}";
-
+            + "\"commitMsg\":\"Initial commit\",\"srcUser\":\"admin\",\"gmtModified\":1234567890,"
+            + "\"publishPipelineInfo\":\"pipeline-info\"}";
+        
         PromptVersionSummary summary = mapper.readValue(json, PromptVersionSummary.class);
         assertNotNull(summary);
         assertEquals("testPrompt", summary.getPromptKey());

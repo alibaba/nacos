@@ -352,8 +352,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 "c_schema", "encrypted_data_key"));
         final Object[] args =
             new Object[] {id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
-                    configInfo.getContent(), md5Tmp, srcIp, srcUser, desc, use, effect, type,
-                    schema, encryptedDataKey};
+                configInfo.getContent(), md5Tmp, srcIp, srcUser, desc, use, effect, type,
+                schema, encryptedDataKey};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         return id;
     }

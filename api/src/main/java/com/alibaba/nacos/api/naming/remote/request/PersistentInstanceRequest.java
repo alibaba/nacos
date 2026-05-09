@@ -24,32 +24,33 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
  * @author blake.qiu
  */
 public class PersistentInstanceRequest extends AbstractNamingRequest {
-
+    
     private String type;
-
+    
     private Instance instance;
-
+    
     public PersistentInstanceRequest() {
     }
-
-    public PersistentInstanceRequest(String namespace, String serviceName, String groupName, String type, Instance instance) {
+    
+    public PersistentInstanceRequest(String namespace, String serviceName, String groupName,
+        String type, Instance instance) {
         super(namespace, serviceName, groupName);
         this.type = type;
         this.instance = instance;
     }
-
+    
     public String getType() {
         return this.type;
     }
-
+    
     public void setType(String type) {
         this.type = type;
     }
-
+    
     public Instance getInstance() {
         return instance;
     }
-
+    
     public void setInstance(Instance instance) {
         this.instance = instance;
     }

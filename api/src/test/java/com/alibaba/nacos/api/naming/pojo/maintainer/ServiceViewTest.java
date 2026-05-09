@@ -60,7 +60,7 @@ class ServiceViewTest {
     @Test
     void testDeserialize() throws IOException {
         String jsonString = "{\"name\":\"service\",\"groupName\":\"group\",\"clusterCount\":2,"
-                + "\"ipCount\":10,\"healthyInstanceCount\":8,\"triggerFlag\":\"flag\"}";
+            + "\"ipCount\":10,\"healthyInstanceCount\":8,\"triggerFlag\":\"flag\"}";
         ServiceView serviceView1 = mapper.readValue(jsonString, ServiceView.class);
         assertEquals(serviceView.getName(), serviceView1.getName());
         assertEquals(serviceView.getGroupName(), serviceView1.getGroupName());
@@ -72,7 +72,8 @@ class ServiceViewTest {
     
     @Test
     void testToString() {
-        String expected = "ServiceView{name='service', groupName='group', clusterCount=2, ipCount=10, healthyInstanceCount=8, triggerFlag='flag'}";
+        String expected =
+            "ServiceView{name='service', groupName='group', clusterCount=2, ipCount=10, healthyInstanceCount=8, triggerFlag='flag'}";
         assertEquals(expected, serviceView.toString());
     }
 }

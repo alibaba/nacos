@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PromptVersionInfoTest extends BasicRequestTest {
-
+    
     @Test
     @DisplayName("test default constructor")
     void testDefaultConstructor() {
@@ -39,7 +39,7 @@ class PromptVersionInfoTest extends BasicRequestTest {
         assertNull(info.getMd5());
         assertNull(info.getVariables());
     }
-
+    
     @Test
     @DisplayName("test inherited fields from PromptVersionSummary")
     void testInheritedFieldsFromPromptVersionSummary() {
@@ -50,7 +50,7 @@ class PromptVersionInfoTest extends BasicRequestTest {
         info.setCommitMsg("Initial commit");
         info.setSrcUser("admin");
         info.setGmtModified(1234567890L);
-
+        
         assertEquals("testPrompt", info.getPromptKey());
         assertEquals("1.0.0", info.getVersion());
         assertEquals("online", info.getStatus());
@@ -58,7 +58,7 @@ class PromptVersionInfoTest extends BasicRequestTest {
         assertEquals("admin", info.getSrcUser());
         assertEquals(1234567890L, info.getGmtModified());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for template")
     void testGetterAndSetterForTemplate() {
@@ -66,7 +66,7 @@ class PromptVersionInfoTest extends BasicRequestTest {
         info.setTemplate("Hello {{name}}!");
         assertEquals("Hello {{name}}!", info.getTemplate());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for md5")
     void testGetterAndSetterForMd5() {
@@ -74,7 +74,7 @@ class PromptVersionInfoTest extends BasicRequestTest {
         info.setMd5("abc123def456");
         assertEquals("abc123def456", info.getMd5());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for variables")
     void testGetterAndSetterForVariables() {
@@ -86,7 +86,7 @@ class PromptVersionInfoTest extends BasicRequestTest {
         assertEquals(1, info.getVariables().size());
         assertEquals("name", info.getVariables().get(0).getName());
     }
-
+    
     @Test
     @DisplayName("test serialize to json")
     void testSerializeToJson() throws JsonProcessingException {
@@ -95,7 +95,7 @@ class PromptVersionInfoTest extends BasicRequestTest {
         info.setVersion("1.0.0");
         info.setTemplate("Hello {{name}}!");
         info.setMd5("abc123");
-
+        
         String json = mapper.writeValueAsString(info);
         assertNotNull(json);
         assertTrue(json.contains("\"promptKey\":\"testPrompt\""));
@@ -103,13 +103,13 @@ class PromptVersionInfoTest extends BasicRequestTest {
         assertTrue(json.contains("\"template\":\"Hello {{name}}!\""));
         assertTrue(json.contains("\"md5\":\"abc123\""));
     }
-
+    
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"promptKey\":\"testPrompt\",\"version\":\"1.0.0\",\"status\":\"online\","
-                + "\"template\":\"Hello {{name}}!\",\"md5\":\"abc123\",\"variables\":[{\"name\":\"name\",\"defaultValue\":\"Guest\"}]}";
-
+            + "\"template\":\"Hello {{name}}!\",\"md5\":\"abc123\",\"variables\":[{\"name\":\"name\",\"defaultValue\":\"Guest\"}]}";
+        
         PromptVersionInfo info = mapper.readValue(json, PromptVersionInfo.class);
         assertNotNull(info);
         assertEquals("testPrompt", info.getPromptKey());

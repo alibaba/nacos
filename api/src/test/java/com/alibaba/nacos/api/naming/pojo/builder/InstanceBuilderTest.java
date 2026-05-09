@@ -53,9 +53,11 @@ class InstanceBuilderTest {
     @Test
     void testBuildFullInstance() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();
-        Instance actual = builder.setServiceName(SERVICE_NAME).setClusterName(CLUSTER_NAME).setInstanceId(INSTANCE_ID).setIp(IP)
-                .setPort(PORT).setWeight(WEIGHT).setHealthy(HEALTHY).setEnabled(ENABLED).setEphemeral(EPHEMERAL)
-                .addMetadata(META_KEY, META_VALUE).build();
+        Instance actual = builder.setServiceName(SERVICE_NAME).setClusterName(CLUSTER_NAME)
+            .setInstanceId(INSTANCE_ID).setIp(IP)
+            .setPort(PORT).setWeight(WEIGHT).setHealthy(HEALTHY).setEnabled(ENABLED)
+            .setEphemeral(EPHEMERAL)
+            .addMetadata(META_KEY, META_VALUE).build();
         assertEquals(actual.getServiceName(), SERVICE_NAME);
         assertEquals(actual.getClusterName(), CLUSTER_NAME);
         assertEquals(actual.getInstanceId(), INSTANCE_ID);

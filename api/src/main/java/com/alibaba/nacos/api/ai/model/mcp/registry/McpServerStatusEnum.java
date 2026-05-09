@@ -22,35 +22,35 @@ package com.alibaba.nacos.api.ai.model.mcp.registry;
  * @author xinluo
  */
 public enum McpServerStatusEnum {
-
+    
     /**
      * active.
      */
     ACTIVE("active"),
-
+    
     /**
      * deleted.
      */
     DELETED("deleted"),
-
+    
     /**
      * deprecated.
      */
     DEPRECATED("deprecated");
-
+    
     /**
      * name.
      */
     private final String name;
-
+    
     McpServerStatusEnum(String name) {
         this.name = name;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     /**
      * parse string status to enum.
      * return null if status is not valid.

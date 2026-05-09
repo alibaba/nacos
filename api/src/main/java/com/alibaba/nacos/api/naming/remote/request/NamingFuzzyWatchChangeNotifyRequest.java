@@ -30,7 +30,7 @@ public class NamingFuzzyWatchChangeNotifyRequest extends AbstractFuzzyWatchNotif
     private String changedType;
     
     public NamingFuzzyWatchChangeNotifyRequest() {
-    
+        
     }
     
     public NamingFuzzyWatchChangeNotifyRequest(String serviceKey, String changedType) {

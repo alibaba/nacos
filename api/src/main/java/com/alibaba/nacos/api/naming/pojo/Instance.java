@@ -193,11 +193,12 @@ public class Instance implements NacosForm {
         fillDefaultValue();
         if (StringUtils.isBlank(ip)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'ip' type String is not present");
+                "Required parameter 'ip' type String is not present");
         }
         if (port < 0 || port > MAX_PORT) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Required parameter 'port' type int is require 0 ~ 65535");
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Required parameter 'port' type int is require 0 ~ 65535");
         }
     }
     
@@ -209,10 +210,12 @@ public class Instance implements NacosForm {
     
     @Override
     public String toString() {
-        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port=" + port + ", weight="
-                + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral=" + ephemeral
-                + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName + '\'' + ", metadata="
-                + metadata + '}';
+        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port="
+            + port + ", weight="
+            + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral=" + ephemeral
+            + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName + '\''
+            + ", metadata="
+            + metadata + '}';
     }
     
     public String toInetAddr() {
@@ -240,22 +243,22 @@ public class Instance implements NacosForm {
     
     public long getInstanceHeartBeatInterval() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_INTERVAL,
-                Constants.DEFAULT_HEART_BEAT_INTERVAL);
+            Constants.DEFAULT_HEART_BEAT_INTERVAL);
     }
     
     public long getInstanceHeartBeatTimeOut() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_TIMEOUT,
-                Constants.DEFAULT_HEART_BEAT_TIMEOUT);
+            Constants.DEFAULT_HEART_BEAT_TIMEOUT);
     }
     
     public long getIpDeleteTimeout() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.IP_DELETE_TIMEOUT,
-                Constants.DEFAULT_IP_DELETE_TIMEOUT);
+            Constants.DEFAULT_IP_DELETE_TIMEOUT);
     }
     
     public String getInstanceIdGenerator() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.INSTANCE_ID_GENERATOR,
-                Constants.DEFAULT_INSTANCE_ID_GENERATOR);
+            Constants.DEFAULT_INSTANCE_ID_GENERATOR);
     }
     
     /**

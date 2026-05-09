@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginStateCheckerHolderTest {
-
+    
     @Test
     @DisplayName("test getInstance returns empty when no checker set")
     void testGetInstanceReturnsEmptyWhenNoCheckerSet() {
@@ -35,7 +35,7 @@ class PluginStateCheckerHolderTest {
         Optional<PluginStateChecker> checker = PluginStateCheckerHolder.getInstance();
         assertFalse(checker.isPresent());
     }
-
+    
     @Test
     @DisplayName("test setInstance and getInstance")
     void testSetInstanceAndGetInstance() {
@@ -47,7 +47,7 @@ class PluginStateCheckerHolderTest {
         // Reset after test
         PluginStateCheckerHolder.setInstance(null);
     }
-
+    
     @Test
     @DisplayName("test isPluginEnabled returns true when no checker set")
     void testIsPluginEnabledReturnsTrueWhenNoCheckerSet() {
@@ -55,7 +55,7 @@ class PluginStateCheckerHolderTest {
         boolean enabled = PluginStateCheckerHolder.isPluginEnabled("auth", "test-plugin");
         assertTrue(enabled);
     }
-
+    
     @Test
     @DisplayName("test isPluginEnabled with checker set returns checker result")
     void testIsPluginEnabledWithCheckerSetReturnsCheckerResult() {
@@ -68,12 +68,12 @@ class PluginStateCheckerHolderTest {
         // Reset after test
         PluginStateCheckerHolder.setInstance(null);
     }
-
+    
     /**
      * Mock implementation of PluginStateChecker for testing.
      */
     private static class MockPluginStateChecker implements PluginStateChecker {
-
+        
         @Override
         public boolean isPluginEnabled(String pluginType, String pluginName) {
             return "enabled-plugin".equals(pluginName);

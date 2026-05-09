@@ -110,9 +110,9 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl
                 "encrypted_data_key"));
         final Object[] args =
             new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                    appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops,
-                    publishTypeTmp, grayNameTemp,
-                    extInfo, encryptedDataKey};
+                appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops,
+                publishTypeTmp, grayNameTemp,
+                extInfo, encryptedDataKey};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }

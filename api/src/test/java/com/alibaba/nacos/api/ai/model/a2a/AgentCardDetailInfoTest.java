@@ -50,7 +50,8 @@ class AgentCardDetailInfoTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"protocolVersion\":\"1.0\",\"name\":\"test agent\",\"description\":\"test description\","
+        String json =
+            "{\"protocolVersion\":\"1.0\",\"name\":\"test agent\",\"description\":\"test description\","
                 + "\"version\":\"1.0.0\",\"iconUrl\":\"http://test.com/icon.png\","
                 + "\"registrationType\":\"URL\",\"latestVersion\":true}";
         

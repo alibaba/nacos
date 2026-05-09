@@ -148,7 +148,7 @@ public class DumpChangeGrayConfigWorker implements Runnable {
                         LogUtil.DEFAULT_LOG.info(
                             "[dump-change-gray-ok] {}, {}, length={}, md5={},md5UTF8={}",
                             new Object[] {groupKey, cf.getLastModified(), content.length(), md5,
-                                    md5Utf8});
+                                md5Utf8});
                     }
                 }
                 if (changeConfigs.size() < pageSize) {

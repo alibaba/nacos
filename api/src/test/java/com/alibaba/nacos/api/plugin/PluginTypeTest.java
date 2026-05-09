@@ -24,77 +24,77 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginTypeTest {
-
+    
     @Test
     @DisplayName("test AUTH enum values")
     void testAuthEnumValues() {
         assertEquals("auth", PluginType.AUTH.getType());
         assertEquals("Authentication plugin", PluginType.AUTH.getDescription());
     }
-
+    
     @Test
     @DisplayName("test DATASOURCE_DIALECT enum values")
     void testDatasourceDialectEnumValues() {
         assertEquals("datasource-dialect", PluginType.DATASOURCE_DIALECT.getType());
         assertEquals("Datasource dialect plugin", PluginType.DATASOURCE_DIALECT.getDescription());
     }
-
+    
     @Test
     @DisplayName("test CONFIG_CHANGE enum values")
     void testConfigChangeEnumValues() {
         assertEquals("config-change", PluginType.CONFIG_CHANGE.getType());
         assertEquals("Config change plugin", PluginType.CONFIG_CHANGE.getDescription());
     }
-
+    
     @Test
     @DisplayName("test ENCRYPTION enum values")
     void testEncryptionEnumValues() {
         assertEquals("encryption", PluginType.ENCRYPTION.getType());
         assertEquals("Encryption plugin", PluginType.ENCRYPTION.getDescription());
     }
-
+    
     @Test
     @DisplayName("test TRACE enum values")
     void testTraceEnumValues() {
         assertEquals("trace", PluginType.TRACE.getType());
         assertEquals("Trace plugin", PluginType.TRACE.getDescription());
     }
-
+    
     @Test
     @DisplayName("test ENVIRONMENT enum values")
     void testEnvironmentEnumValues() {
         assertEquals("environment", PluginType.ENVIRONMENT.getType());
         assertEquals("Environment plugin", PluginType.ENVIRONMENT.getDescription());
     }
-
+    
     @Test
     @DisplayName("test CONTROL enum values")
     void testControlEnumValues() {
         assertEquals("control", PluginType.CONTROL.getType());
         assertEquals("Control plugin", PluginType.CONTROL.getDescription());
     }
-
+    
     @Test
     @DisplayName("test VISIBILITY enum values")
     void testVisibilityEnumValues() {
         assertEquals("visibility", PluginType.VISIBILITY.getType());
         assertEquals("Visibility plugin", PluginType.VISIBILITY.getDescription());
     }
-
+    
     @Test
     @DisplayName("test AI_PIPELINE enum values")
     void testAiPipelineEnumValues() {
         assertEquals("ai-pipeline", PluginType.AI_PIPELINE.getType());
         assertEquals("AI publish pipeline plugin", PluginType.AI_PIPELINE.getDescription());
     }
-
+    
     @Test
     @DisplayName("test AI_STORAGE enum values")
     void testAiStorageEnumValues() {
         assertEquals("ai-storage", PluginType.AI_STORAGE.getType());
         assertEquals("AI resource storage plugin", PluginType.AI_STORAGE.getDescription());
     }
-
+    
     @Test
     @DisplayName("test fromType with valid type")
     void testFromTypeWithValidType() {
@@ -103,7 +103,7 @@ class PluginTypeTest {
         assertEquals(PluginType.AI_PIPELINE, PluginType.fromType("ai-pipeline"));
         assertEquals(PluginType.AI_STORAGE, PluginType.fromType("ai-storage"));
     }
-
+    
     @Test
     @DisplayName("test fromType with invalid type throws exception")
     void testFromTypeWithInvalidTypeThrowsException() {
@@ -113,14 +113,14 @@ class PluginTypeTest {
         assertTrue(exception.getMessage().contains("Unknown plugin type"));
         assertTrue(exception.getMessage().contains("invalid-type"));
     }
-
+    
     @Test
     @DisplayName("test all enum values count")
     void testAllEnumValuesCount() {
         PluginType[] values = PluginType.values();
         assertEquals(10, values.length);
     }
-
+    
     @Test
     @DisplayName("test enum valueOf")
     void testEnumValueOf() {

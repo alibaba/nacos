@@ -21,5 +21,6 @@ package com.alibaba.nacos.api.ai.listener;
  *
  * @author nacos
  */
-public abstract class AbstractNacosAgentSpecListener implements NacosAiListener<NacosAgentSpecEvent> {
+public abstract class AbstractNacosAgentSpecListener
+    implements NacosAiListener<NacosAgentSpecEvent> {
 }

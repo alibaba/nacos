@@ -24,25 +24,26 @@ import java.util.List;
  * McpServerVersionInfo.
  * @author xinluo
  */
-@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName", "checkstyle:SummaryJavadoc"})
+@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName",
+    "checkstyle:SummaryJavadoc"})
 public class McpServerVersionInfo extends McpServerBasicInfo {
-
+    
     private String latestPublishedVersion;
-
+    
     private List<ServerVersionDetail> versionDetails;
-
+    
     public String getLatestPublishedVersion() {
         return latestPublishedVersion;
     }
-
+    
     public void setLatestPublishedVersion(String latestPublishedVersion) {
         this.latestPublishedVersion = latestPublishedVersion;
     }
-
+    
     public List<ServerVersionDetail> getVersionDetails() {
         return versionDetails;
     }
-
+    
     public void setVersions(List<ServerVersionDetail> versionDetails) {
         this.versionDetails = versionDetails;
     }

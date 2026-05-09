@@ -34,7 +34,7 @@ class McpServerImportRequestTest extends BasicRequestTest {
         request.setData("{\"servers\":[{\"name\":\"test-server\"}]}");
         request.setOverrideExisting(true);
         request.setValidateOnly(false);
-        request.setSelectedServers(new String[]{"server1", "server2"});
+        request.setSelectedServers(new String[] {"server1", "server2"});
         request.setCursor("cursor123");
         request.setLimit(10);
         request.setSearch("test");
@@ -42,7 +42,8 @@ class McpServerImportRequestTest extends BasicRequestTest {
         
         String json = mapper.writeValueAsString(request);
         assertTrue(json.contains("\"importType\":\"json\""));
-        assertTrue(json.contains("\"data\":\"{\\\"servers\\\":[{\\\"name\\\":\\\"test-server\\\"}]}\""));
+        assertTrue(
+            json.contains("\"data\":\"{\\\"servers\\\":[{\\\"name\\\":\\\"test-server\\\"}]}\""));
         assertTrue(json.contains("\"overrideExisting\":true"));
         assertTrue(json.contains("\"validateOnly\":false"));
         assertTrue(json.contains("\"selectedServers\":[\"server1\",\"server2\"]"));
@@ -100,7 +101,8 @@ class McpServerImportRequestTest extends BasicRequestTest {
     
     @Test
     void testDeserializeJsonImport() throws JsonProcessingException {
-        String json = "{\"importType\":\"json\",\"data\":\"{\\\"servers\\\":[{\\\"name\\\":\\\"test-server\\\"}]}\","
+        String json =
+            "{\"importType\":\"json\",\"data\":\"{\\\"servers\\\":[{\\\"name\\\":\\\"test-server\\\"}]}\","
                 + "\"overrideExisting\":true,\"validateOnly\":false,\"selectedServers\":[\"server1\",\"server2\"],"
                 + "\"cursor\":\"cursor123\",\"limit\":10,\"search\":\"test\",\"skipInvalid\":true}";
         
@@ -123,8 +125,8 @@ class McpServerImportRequestTest extends BasicRequestTest {
     @Test
     void testDeserializeFileImport() throws JsonProcessingException {
         String json = "{\"importType\":\"file\",\"data\":\"/path/to/import/file.json\","
-                + "\"overrideExisting\":false,\"validateOnly\":true,"
-                + "\"cursor\":\"cursor456\",\"limit\":20,\"search\":\"demo\",\"skipInvalid\":false}";
+            + "\"overrideExisting\":false,\"validateOnly\":true,"
+            + "\"cursor\":\"cursor456\",\"limit\":20,\"search\":\"demo\",\"skipInvalid\":false}";
         
         McpServerImportRequest result = mapper.readValue(json, McpServerImportRequest.class);
         assertNotNull(result);
@@ -141,8 +143,8 @@ class McpServerImportRequestTest extends BasicRequestTest {
     @Test
     void testDeserializeUrlImport() throws JsonProcessingException {
         String json = "{\"importType\":\"url\",\"data\":\"https://example.com/mcp-servers.json\","
-                + "\"overrideExisting\":false,\"validateOnly\":false,"
-                + "\"cursor\":\"cursor789\",\"limit\":30,\"search\":\"prod\",\"skipInvalid\":true}";
+            + "\"overrideExisting\":false,\"validateOnly\":false,"
+            + "\"cursor\":\"cursor789\",\"limit\":30,\"search\":\"prod\",\"skipInvalid\":true}";
         
         McpServerImportRequest result = mapper.readValue(json, McpServerImportRequest.class);
         assertNotNull(result);

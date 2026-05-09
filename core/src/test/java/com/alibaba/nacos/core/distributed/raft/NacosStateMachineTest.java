@@ -334,7 +334,7 @@ class NacosStateMachineTest {
     @Test
     void testOnApplyFollowerReadRequest() {
         byte[] prefix = new byte[] {(byte) ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG,
-                ProtoMessageUtil.REQUEST_TYPE_READ};
+            ProtoMessageUtil.REQUEST_TYPE_READ};
         byte[] body = ReadRequest.getDefaultInstance().toByteArray();
         ByteBuffer data =
             ByteBuffer.allocate(prefix.length + body.length).put(prefix).put(body).flip();
@@ -357,7 +357,7 @@ class NacosStateMachineTest {
     @Test
     void testOnApplyFollowerWriteRequest() {
         byte[] prefix = new byte[] {(byte) ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG,
-                ProtoMessageUtil.REQUEST_TYPE_WRITE};
+            ProtoMessageUtil.REQUEST_TYPE_WRITE};
         byte[] body = WriteRequest.getDefaultInstance().toByteArray();
         ByteBuffer data =
             ByteBuffer.allocate(prefix.length + body.length).put(prefix).put(body).flip();

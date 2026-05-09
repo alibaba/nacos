@@ -169,7 +169,7 @@ class PublishPipelineBackwardCompatibilityTest {
         
         List<PipelineNodeConfig> nodes = new ArrayList<>();
         for (String id : new String[] {PLUGIN_SKILL_HIGH_ORDER_ID, PLUGIN_AGENTSPEC_ID,
-                PLUGIN_SKILL_LOW_ORDER_ID}) {
+            PLUGIN_SKILL_LOW_ORDER_ID}) {
             PipelineNodeConfig node = new PipelineNodeConfig();
             node.setPipelineId(id);
             node.setProperties(new Properties());

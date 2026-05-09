@@ -53,7 +53,8 @@ class LabelTest {
     
     @Test
     void testDeserialization() throws JsonProcessingException {
-        String json = "{\"values\":[\"test-value\"],\"name\":\"test-label\",\"description\":\"CMDB description\"}";
+        String json =
+            "{\"values\":[\"test-value\"],\"name\":\"test-label\",\"description\":\"CMDB description\"}";
         Label label = mapper.readValue(json, Label.class);
         assertEquals("test-label", label.getName());
         assertEquals("CMDB description", label.getDescription());

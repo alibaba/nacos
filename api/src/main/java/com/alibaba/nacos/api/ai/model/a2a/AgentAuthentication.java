@@ -53,7 +53,8 @@ public class AgentAuthentication {
             return false;
         }
         AgentAuthentication that = (AgentAuthentication) o;
-        return Objects.equals(schemes, that.schemes) && Objects.equals(credentials, that.credentials);
+        return Objects.equals(schemes, that.schemes)
+            && Objects.equals(credentials, that.credentials);
     }
     
     @Override

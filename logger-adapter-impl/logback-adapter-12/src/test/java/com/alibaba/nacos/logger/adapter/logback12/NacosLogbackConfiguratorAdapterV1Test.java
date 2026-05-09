@@ -78,7 +78,8 @@ class NacosLogbackConfiguratorAdapterV1Test {
             List<Status> statusList = context.getStatusManager().getCopyOfStatusList();
             assertFalse(statusList.isEmpty());
             assertTrue(statusList.get(statusList.size() - 1) instanceof ErrorStatus);
-            assertEquals("Could not close input stream", statusList.get(statusList.size() - 1).getMessage());
+            assertEquals("Could not close input stream",
+                statusList.get(statusList.size() - 1).getMessage());
         }
     }
 }

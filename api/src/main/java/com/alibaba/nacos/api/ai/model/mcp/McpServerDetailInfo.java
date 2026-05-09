@@ -34,7 +34,7 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
     private McpToolSpecification toolSpec;
     
     private McpResourceSpecification resourceSpec;
-
+    
     private List<ServerVersionDetail> allVersions;
     
     public List<McpEndpointInfo> getBackendEndpoints() {
@@ -60,19 +60,19 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
     public void setToolSpec(McpToolSpecification toolSpec) {
         this.toolSpec = toolSpec;
     }
-
+    
     public McpResourceSpecification getResourceSpec() {
         return resourceSpec;
     }
-
+    
     public void setResourceSpec(McpResourceSpecification resourceSpec) {
         this.resourceSpec = resourceSpec;
     }
-
+    
     public List<ServerVersionDetail> getAllVersions() {
         return allVersions;
     }
-
+    
     public void setAllVersions(List<ServerVersionDetail> allVersions) {
         this.allVersions = allVersions;
     }

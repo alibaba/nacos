@@ -69,7 +69,7 @@ public class Cluster implements Serializable {
     private Map<String, String> metadata = new HashMap<>();
     
     public Cluster() {
-    
+        
     }
     
     public Cluster(String clusterName) {

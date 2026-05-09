@@ -49,7 +49,8 @@ class NamingFuzzyWatchRequestTest {
     
     @Test
     void testSerialize() throws JsonProcessingException {
-        NamingFuzzyWatchRequest request = new NamingFuzzyWatchRequest(GROUP_KEY_PATTERN, WATCH_TYPE);
+        NamingFuzzyWatchRequest request =
+            new NamingFuzzyWatchRequest(GROUP_KEY_PATTERN, WATCH_TYPE);
         request.setNamespace(NAMESPACE);
         Set<String> receivedGroupKeys = new HashSet<>();
         receivedGroupKeys.add("key1");
@@ -68,7 +69,8 @@ class NamingFuzzyWatchRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"initializing\":true,\"namespace\":\"namespace\",\"groupKeyPattern\":\"groupKeyPattern\","
+        String json =
+            "{\"headers\":{},\"initializing\":true,\"namespace\":\"namespace\",\"groupKeyPattern\":\"groupKeyPattern\","
                 + "\"receivedGroupKeys\":[\"key1\",\"key2\"],\"watchType\":\"watchType\",\"module\":\"naming\"}";
         NamingFuzzyWatchRequest actual = mapper.readValue(json, NamingFuzzyWatchRequest.class);
         assertEquals(NAMESPACE, actual.getNamespace());

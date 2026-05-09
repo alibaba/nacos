@@ -88,7 +88,7 @@ class StringTopNCounterTest {
         }
         assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 10,
             new String[] {"test19", "test18", "test17", "test16", "test15", "test14", "test13",
-                    "test12", "test11", "test10"},
+                "test12", "test11", "test10"},
             new Integer[] {19, 18, 17, 16, 15, 14, 13, 12, 11, 10});
     }
     

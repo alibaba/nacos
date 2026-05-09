@@ -23,5 +23,5 @@ package com.alibaba.nacos.api.remote.response;
  * @version $Id: ServerCheckResponse.java, v 0.1 2021年01月20日 10:37 PM liuzunfei Exp $
  */
 public class ClientDetectionResponse extends Response {
-
+    
 }

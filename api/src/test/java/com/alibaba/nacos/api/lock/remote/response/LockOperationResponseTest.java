@@ -66,7 +66,8 @@ class LockOperationResponseTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"result\":true,\"success\":true}";
+        String json =
+            "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"result\":true,\"success\":true}";
         LockOperationResponse result = mapper.readValue(json, LockOperationResponse.class);
         assertNotNull(result);
         assertEquals("1", result.getRequestId());

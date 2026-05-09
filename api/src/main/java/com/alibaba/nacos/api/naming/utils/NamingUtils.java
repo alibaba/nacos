@@ -40,7 +40,8 @@ import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN_STRING;
  */
 public class NamingUtils {
     
-    private static final Pattern CLUSTER_NAME_PATTERN = Pattern.compile(CLUSTER_NAME_PATTERN_STRING);
+    private static final Pattern CLUSTER_NAME_PATTERN =
+        Pattern.compile(CLUSTER_NAME_PATTERN_STRING);
     
     private static final Pattern NUMBER_PATTERN = Pattern.compile(NUMBER_PATTERN_STRING);
     
@@ -59,7 +60,8 @@ public class NamingUtils {
      */
     public static String getGroupedName(final String serviceName, final String groupName) {
         if (StringUtils.isBlank(serviceName)) {
-            throw new IllegalArgumentException("Param 'serviceName' is illegal, serviceName is blank");
+            throw new IllegalArgumentException(
+                "Param 'serviceName' is illegal, serviceName is blank");
         }
         if (StringUtils.isBlank(groupName)) {
             throw new IllegalArgumentException("Param 'groupName' is illegal, groupName is blank");
@@ -72,7 +74,8 @@ public class NamingUtils {
         if (StringUtils.isBlank(namespace)) {
             namespace = DEFAULT_NAMESPACE_ID;
         }
-        return namespace + Constants.SERVICE_INFO_SPLITER + group + Constants.SERVICE_INFO_SPLITER + serviceName;
+        return namespace + Constants.SERVICE_INFO_SPLITER + group + Constants.SERVICE_INFO_SPLITER
+            + serviceName;
     }
     
     /**
@@ -112,7 +115,8 @@ public class NamingUtils {
      * @return if serviceName is compatibility mode, return true
      */
     public static boolean isServiceNameCompatibilityMode(final String serviceName) {
-        return !StringUtils.isBlank(serviceName) && serviceName.contains(Constants.SERVICE_INFO_SPLITER);
+        return !StringUtils.isBlank(serviceName)
+            && serviceName.contains(Constants.SERVICE_INFO_SPLITER);
     }
     
     /**
@@ -130,10 +134,11 @@ public class NamingUtils {
         String[] split = combineServiceName.split(Constants.SERVICE_INFO_SPLITER);
         if (split.length <= 1) {
             throw new IllegalArgumentException(
-                    "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
+                "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
         }
         if (split[0].isEmpty()) {
-            throw new IllegalArgumentException("Param 'serviceName' is illegal, groupName can't be empty");
+            throw new IllegalArgumentException(
+                "Param 'serviceName' is illegal, groupName can't be empty");
         }
     }
     
@@ -168,18 +173,20 @@ public class NamingUtils {
     public static void checkInstanceIsLegal(Instance instance) throws NacosException {
         if (null == instance) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
-                    "Instance can not be null.");
+                "Instance can not be null.");
         }
         if (instance.getInstanceHeartBeatTimeOut() < instance.getInstanceHeartBeatInterval()
-                || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
+            || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
-                    "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.");
+                "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.");
         }
-        if (!StringUtils.isEmpty(instance.getClusterName()) && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName())
+        if (!StringUtils.isEmpty(instance.getClusterName())
+            && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName())
                 .matches()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
-                    String.format("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
-                            instance.getClusterName()));
+                String.format(
+                    "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
+                    instance.getClusterName()));
         }
     }
     
@@ -192,8 +199,9 @@ public class NamingUtils {
     public static void checkInstanceIsEphemeral(Instance instance) throws NacosException {
         if (!instance.isEphemeral()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
-                    String.format("Batch registration does not allow persistent instance registration , Instance：%s",
-                            instance));
+                String.format(
+                    "Batch registration does not allow persistent instance registration , Instance：%s",
+                    instance));
         }
     }
     

@@ -22,38 +22,38 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ConfigItemTypeTest {
-
+    
     @Test
     @DisplayName("test STRING enum value")
     void testStringEnumValue() {
         assertEquals("STRING", ConfigItemType.STRING.name());
     }
-
+    
     @Test
     @DisplayName("test NUMBER enum value")
     void testNumberEnumValue() {
         assertEquals("NUMBER", ConfigItemType.NUMBER.name());
     }
-
+    
     @Test
     @DisplayName("test BOOLEAN enum value")
     void testBooleanEnumValue() {
         assertEquals("BOOLEAN", ConfigItemType.BOOLEAN.name());
     }
-
+    
     @Test
     @DisplayName("test ENUM enum value")
     void testEnumEnumValue() {
         assertEquals("ENUM", ConfigItemType.ENUM.name());
     }
-
+    
     @Test
     @DisplayName("test all enum values count")
     void testAllEnumValuesCount() {
         ConfigItemType[] values = ConfigItemType.values();
         assertEquals(4, values.length);
     }
-
+    
     @Test
     @DisplayName("test enum valueOf")
     void testEnumValueOf() {

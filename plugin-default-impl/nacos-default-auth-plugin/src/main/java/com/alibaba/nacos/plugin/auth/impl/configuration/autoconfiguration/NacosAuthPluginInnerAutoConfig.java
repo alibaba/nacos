@@ -34,8 +34,8 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Conditional(ConditionOnInnerDatasource.class)
 @Import({NacosAuthPluginPersistenceConfig.class, NacosAuthPluginInnerServiceConfig.class,
-        NacosAuthPluginCoreConfig.class, NacosAuthPluginWebConfig.class,
-        LdapAuthPluginConfig.class})
+    NacosAuthPluginCoreConfig.class, NacosAuthPluginWebConfig.class,
+    LdapAuthPluginConfig.class})
 public class NacosAuthPluginInnerAutoConfig {
     
 }

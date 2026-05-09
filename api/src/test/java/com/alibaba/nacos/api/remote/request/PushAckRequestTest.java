@@ -41,8 +41,8 @@ class PushAckRequestTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws Exception {
         String json = "{\"headers\":{},\"requestId\":\"1\",\"success\":false,"
-                + "\"exception\":{\"stackTrace\":[],\"errCode\":500,\"message\":\"errCode: 500, errMsg: test \","
-                + "\"localizedMessage\":\"errCode: 500, errMsg: test \",\"suppressed\":[]},\"module\":\"internal\"}";
+            + "\"exception\":{\"stackTrace\":[],\"errCode\":500,\"message\":\"errCode: 500, errMsg: test \","
+            + "\"localizedMessage\":\"errCode: 500, errMsg: test \",\"suppressed\":[]},\"module\":\"internal\"}";
         PushAckRequest result = mapper.readValue(json, PushAckRequest.class);
         assertNotNull(result);
         assertFalse(result.isSuccess());

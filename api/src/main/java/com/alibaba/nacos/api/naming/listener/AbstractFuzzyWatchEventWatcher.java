@@ -23,7 +23,8 @@ import java.util.concurrent.Executor;
  *
  * @author tanyongquan
  */
-public abstract class AbstractFuzzyWatchEventWatcher implements FuzzyWatchEventWatcher, FuzzyWatchLoadWatcher {
+public abstract class AbstractFuzzyWatchEventWatcher
+    implements FuzzyWatchEventWatcher, FuzzyWatchLoadWatcher {
     
     @Override
     public Executor getExecutor() {

@@ -45,7 +45,7 @@ class NacosApiExceptionTest {
     @Test
     void testConstructorWithCause() {
         NacosApiException exception = new NacosApiException(500, ErrorCode.SERVER_ERROR,
-                new RuntimeException("cause test"), "test");
+            new RuntimeException("cause test"), "test");
         assertEquals(500, exception.getErrCode());
         assertEquals(ErrorCode.SERVER_ERROR.getCode().intValue(), exception.getDetailErrCode());
         assertEquals("test", exception.getErrMsg());

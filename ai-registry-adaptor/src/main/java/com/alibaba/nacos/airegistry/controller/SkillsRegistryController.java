@@ -67,12 +67,10 @@ public class SkillsRegistryController {
      * @return well-known index payload
      * @throws NacosException if query fails
      */
-    // @formatter:off
     @GetMapping(value = {
-            WELL_KNOWN_AGENT_SKILLS + "/index.json",
-            WELL_KNOWN_SKILLS + "/index.json"
+        WELL_KNOWN_AGENT_SKILLS + "/index.json",
+        WELL_KNOWN_SKILLS + "/index.json"
     }, produces = MediaType.APPLICATION_JSON_VALUE)
-    // @formatter:on
     public WellKnownSkillsIndex getIndex(@PathVariable String namespaceId) throws NacosException {
         return nacosSkillsRegistryService.buildIndex(namespaceId);
     }
@@ -106,12 +104,10 @@ public class SkillsRegistryController {
      * @return skill markdown when the skill is exportable, otherwise 404
      * @throws NacosException if query fails
      */
-    // @formatter:off
     @GetMapping(value = {
-            WELL_KNOWN_AGENT_SKILLS + "/{skillName}/SKILL.md",
-            WELL_KNOWN_SKILLS + "/{skillName}/SKILL.md"
+        WELL_KNOWN_AGENT_SKILLS + "/{skillName}/SKILL.md",
+        WELL_KNOWN_SKILLS + "/{skillName}/SKILL.md"
     }, produces = MediaType.TEXT_PLAIN_VALUE)
-    // @formatter:on
     public ResponseEntity<String> getSkillMarkdown(@PathVariable String namespaceId,
         @PathVariable String skillName)
         throws NacosException {
@@ -135,12 +131,10 @@ public class SkillsRegistryController {
      * @return file content when the skill and file are exportable, otherwise 404
      * @throws NacosException if query fails
      */
-    // @formatter:off
     @GetMapping(value = {
-            WELL_KNOWN_AGENT_SKILLS + "/{skillName}/**",
-            WELL_KNOWN_SKILLS + "/{skillName}/**"
+        WELL_KNOWN_AGENT_SKILLS + "/{skillName}/**",
+        WELL_KNOWN_SKILLS + "/{skillName}/**"
     }, produces = MediaType.TEXT_PLAIN_VALUE)
-    // @formatter:on
     public ResponseEntity<String> getSkillFile(@PathVariable String namespaceId,
         @PathVariable String skillName,
         HttpServletRequest request) throws NacosException {

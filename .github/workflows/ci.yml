@@ -33,7 +33,7 @@ jobs:
       - name: "Print maven version"
         run: mvn -version
       - name: "Check with Maven"
-        run: mvn -B clean compile apache-rat:check spotbugs:check -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        run: mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Build and Test with Maven"
         run: mvn -B '-Prelease-nacos,!dev' clean install -Drat.skip=true -Dspotbugs.skip=true -DtrimStackTrace=false -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Upload coverage to Codecov"

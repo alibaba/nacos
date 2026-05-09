@@ -27,8 +27,8 @@ class ConfigFuzzyWatchChangeEventTest {
     @Test
     void testBuildWithValidParameters() {
         ConfigFuzzyWatchChangeEvent event = ConfigFuzzyWatchChangeEvent.build(
-                "test-namespace", "test-group", "test-dataId", "ADD_CONFIG", 
-                "FUZZY_WATCH_INIT_NOTIFY");
+            "test-namespace", "test-group", "test-dataId", "ADD_CONFIG",
+            "FUZZY_WATCH_INIT_NOTIFY");
         
         assertNotNull(event);
         assertEquals("test-namespace", event.getNamespace());
@@ -41,7 +41,7 @@ class ConfigFuzzyWatchChangeEventTest {
     @Test
     void testBuildWithNullParameters() {
         ConfigFuzzyWatchChangeEvent event = ConfigFuzzyWatchChangeEvent.build(
-                null, null, null, null, null);
+            null, null, null, null, null);
         
         assertNotNull(event);
         assertNull(event.getNamespace());
@@ -54,11 +54,11 @@ class ConfigFuzzyWatchChangeEventTest {
     @Test
     void testToString() {
         ConfigFuzzyWatchChangeEvent event = ConfigFuzzyWatchChangeEvent.build(
-                "test-namespace", "test-group", "test-dataId", "ADD_CONFIG", 
-                "FUZZY_WATCH_INIT_NOTIFY");
+            "test-namespace", "test-group", "test-dataId", "ADD_CONFIG",
+            "FUZZY_WATCH_INIT_NOTIFY");
         
         String expected = "ConfigFuzzyWatchChangeEvent{group='test-group', dataId='test-dataId', "
-                + "namespace='test-namespace', changedType='ADD_CONFIG', syncType='FUZZY_WATCH_INIT_NOTIFY'}";
+            + "namespace='test-namespace', changedType='ADD_CONFIG', syncType='FUZZY_WATCH_INIT_NOTIFY'}";
         assertEquals(expected, event.toString());
     }
 }

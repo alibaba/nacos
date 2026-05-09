@@ -50,7 +50,8 @@ class ConfigCloneInfoTest {
     
     @Test
     public void testDeserialize() throws Exception {
-        String json = "{\"configId\":1,\"targetGroupName\":\"newGroup\",\"targetDataId\":\"newDataId\"}";
+        String json =
+            "{\"configId\":1,\"targetGroupName\":\"newGroup\",\"targetDataId\":\"newDataId\"}";
         ConfigCloneInfo actual = mapper.readValue(json, ConfigCloneInfo.class);
         assertEquals(configCloneInfo.getConfigId(), actual.getConfigId());
         assertEquals(configCloneInfo.getTargetGroupName(), actual.getTargetGroupName());

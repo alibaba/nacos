@@ -31,25 +31,27 @@ import java.util.List;
  * @author nacos
  */
 public class AiResourceMapperByDerby extends AbstractMapperByDerby implements AiResourceMapper {
-
+    
     @Override
     public MapperResult findAiResourceFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,"
-                        + "biz_tags,ext,c_from,version_info,meta_version,scope,owner,download_count "
-                        + "FROM ai_resource");
+            "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,"
+                + "biz_tags,ext,c_from,version_info,meta_version,scope,owner,download_count "
+                + "FROM ai_resource");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
-
+        
         appendExtraQueryCondition(where, context);
-
+        
         MapperResult built = where.build();
-        String sql = built.getSql() + resolveOrderByClause(context) + " OFFSET " + context.getStartRow()
+        String sql =
+            built.getSql() + resolveOrderByClause(context) + " OFFSET " + context.getStartRow()
                 + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, built.getParamList());
     }
     
     @Override
-    public void appendSingleAndCondition(WhereBuilder where, String field, Object value, boolean likeMatch) {
+    public void appendSingleAndCondition(WhereBuilder where, String field, Object value,
+        boolean likeMatch) {
         if (field == null || value == null) {
             return;
         }
@@ -66,10 +68,9 @@ public class AiResourceMapperByDerby extends AbstractMapperByDerby implements Ai
             where.and().eq(field, value);
         }
     }
-
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.DERBY;
     }
 }
-

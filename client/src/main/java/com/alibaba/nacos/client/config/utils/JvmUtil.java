@@ -52,7 +52,7 @@ public class JvmUtil {
     
     private static void init() {
         String multiDeploy = NacosClientProperties.PROTOTYPE
-                .getProperty(IS_MULTI_INSTANCE_PROPERTY, DEFAULT_IS_MULTI_INSTANCE);
+            .getProperty(IS_MULTI_INSTANCE_PROPERTY, DEFAULT_IS_MULTI_INSTANCE);
         if (TRUE.equals(multiDeploy)) {
             isMultiInstance = true;
         }

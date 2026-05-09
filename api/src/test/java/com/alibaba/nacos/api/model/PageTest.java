@@ -54,7 +54,7 @@ class PageTest {
     
     @Test
     void testSerialize() throws Exception {
-        String json =  mapper.writeValueAsString(page);
+        String json = mapper.writeValueAsString(page);
         assertTrue(json.contains("\"totalCount\":10"));
         assertTrue(json.contains("\"pageNumber\":1"));
         assertTrue(json.contains("\"pagesAvailable\":10"));
@@ -63,7 +63,8 @@ class PageTest {
     
     @Test
     void testDeserialize() throws Exception {
-        String json =  "{\"totalCount\":10,\"pageNumber\":1,\"pagesAvailable\":10,\"pageItems\":[\"test\"]}";
+        String json =
+            "{\"totalCount\":10,\"pageNumber\":1,\"pagesAvailable\":10,\"pageItems\":[\"test\"]}";
         Page<String> page = mapper.readValue(json, new TypeReference<Page<String>>() {
         });
         assertEquals(10, page.getPagesAvailable());

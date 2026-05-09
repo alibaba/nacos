@@ -38,12 +38,12 @@ public class TestMapper extends AbstractMapper implements ConfigInfoGrayMapper {
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
     }
-
+    
     @Override
     public MapperResult findAllConfigInfoGrayForDumpAllFetchRows(MapperContext context) {
         return new MapperResult("SELECT 1", Collections.emptyList());
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return functionName;

@@ -47,6 +47,6 @@ public class DefaultNamingSelector implements NamingSelector {
     
     private List<Instance> doFilter(List<Instance> instances) {
         return instances == null ? Collections.emptyList()
-                : instances.stream().filter(filter).collect(Collectors.toList());
+            : instances.stream().filter(filter).collect(Collectors.toList());
     }
 }

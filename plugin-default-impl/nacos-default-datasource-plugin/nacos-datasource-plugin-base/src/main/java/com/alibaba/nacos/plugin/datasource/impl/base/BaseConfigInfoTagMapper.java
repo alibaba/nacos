@@ -31,7 +31,8 @@ import java.util.Collections;
  *
  * @author Long Yu
  **/
-public abstract class BaseConfigInfoTagMapper extends AbstractMapper implements ConfigInfoTagMapper {
+public abstract class BaseConfigInfoTagMapper extends AbstractMapper
+    implements ConfigInfoTagMapper {
     
     private DatabaseDialect databaseDialect;
     
@@ -49,12 +50,15 @@ public abstract class BaseConfigInfoTagMapper extends AbstractMapper implements 
         int startRow = context.getStartRow();
         int pageSize = context.getPageSize();
         String innerSql = databaseDialect
-                .getLimitPageSqlWithOffset("SELECT id FROM config_info_tag  ORDER BY id ", startRow, pageSize);
-        String sql = " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified " + " FROM (  "
+            .getLimitPageSqlWithOffset("SELECT id FROM config_info_tag  ORDER BY id ", startRow,
+                pageSize);
+        String sql =
+            " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
+                + " FROM (  "
                 + innerSql + "  ) " + "g, config_info_tag t  WHERE g.id = t.id  ";
         return new MapperResult(sql, Collections.emptyList());
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return databaseDialect.getFunction(functionName);

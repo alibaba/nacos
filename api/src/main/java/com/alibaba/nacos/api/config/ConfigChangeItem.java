@@ -71,7 +71,8 @@ public class ConfigChangeItem {
     
     @Override
     public String toString() {
-        return "ConfigChangeItem{" + "key='" + key + '\'' + ", oldValue='" + oldValue + '\'' + ", newValue='" + newValue
-                + '\'' + ", type=" + type + '}';
+        return "ConfigChangeItem{" + "key='" + key + '\'' + ", oldValue='" + oldValue + '\''
+            + ", newValue='" + newValue
+            + '\'' + ", type=" + type + '}';
     }
 }

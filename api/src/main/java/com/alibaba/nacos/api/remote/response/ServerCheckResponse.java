@@ -29,7 +29,7 @@ public class ServerCheckResponse extends Response {
     private boolean supportAbilityNegotiation;
     
     public ServerCheckResponse() {
-    
+        
     }
     
     public ServerCheckResponse(String connectionId, boolean supportAbilityNegotiation) {

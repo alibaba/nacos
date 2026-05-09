@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PromptMetaInfoTest extends BasicRequestTest {
-
+    
     @Test
     @DisplayName("test default constructor initializes default values")
     void testDefaultConstructor() {
@@ -42,7 +42,7 @@ class PromptMetaInfoTest extends BasicRequestTest {
         assertEquals(1, info.getSchemaVersion());
         assertNotNull(info.getBizTags());
     }
-
+    
     @Test
     @DisplayName("test inherited fields from PromptMetaSummary")
     void testInheritedFieldsFromPromptMetaSummary() {
@@ -51,13 +51,13 @@ class PromptMetaInfoTest extends BasicRequestTest {
         info.setDescription("Test description");
         info.setLatestVersion("1.0.0");
         info.setOnlineCnt(5);
-
+        
         assertEquals("testPrompt", info.getPromptKey());
         assertEquals("Test description", info.getDescription());
         assertEquals("1.0.0", info.getLatestVersion());
         assertEquals(5, info.getOnlineCnt());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for versions")
     void testGetterAndSetterForVersions() {
@@ -71,7 +71,7 @@ class PromptMetaInfoTest extends BasicRequestTest {
         assertEquals("1.0.0", info.getVersions().get(0));
         assertEquals("1.1.0", info.getVersions().get(1));
     }
-
+    
     @Test
     @DisplayName("test getter and setter for versionDetails")
     void testGetterAndSetterForVersionDetails() {
@@ -87,7 +87,7 @@ class PromptMetaInfoTest extends BasicRequestTest {
         assertEquals("1.0.0", info.getVersionDetails().get(0).getVersion());
         assertEquals("online", info.getVersionDetails().get(0).getStatus());
     }
-
+    
     @Test
     @DisplayName("test serialize to json")
     void testSerializeToJson() throws JsonProcessingException {
@@ -97,7 +97,7 @@ class PromptMetaInfoTest extends BasicRequestTest {
         List<String> versions = new ArrayList<>();
         versions.add("1.0.0");
         info.setVersions(versions);
-
+        
         String json = mapper.writeValueAsString(info);
         assertNotNull(json);
         assertTrue(json.contains("\"promptKey\":\"testPrompt\""));
@@ -105,14 +105,14 @@ class PromptMetaInfoTest extends BasicRequestTest {
         assertTrue(json.contains("\"versions\""));
         assertTrue(json.contains("\"versionDetails\""));
     }
-
+    
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"schemaVersion\":1,\"promptKey\":\"testPrompt\",\"description\":\"Test\","
-                + "\"latestVersion\":\"1.0.0\",\"versions\":[\"1.0.0\",\"1.1.0\"],"
-                + "\"versionDetails\":[{\"version\":\"1.0.0\",\"status\":\"online\"}]}";
-
+            + "\"latestVersion\":\"1.0.0\",\"versions\":[\"1.0.0\",\"1.1.0\"],"
+            + "\"versionDetails\":[{\"version\":\"1.0.0\",\"status\":\"online\"}]}";
+        
         PromptMetaInfo info = mapper.readValue(json, PromptMetaInfo.class);
         assertNotNull(info);
         assertEquals("testPrompt", info.getPromptKey());

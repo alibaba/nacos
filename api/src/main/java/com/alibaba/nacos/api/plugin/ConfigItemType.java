@@ -23,22 +23,22 @@ package com.alibaba.nacos.api.plugin;
  * @since 3.2.0
  */
 public enum ConfigItemType {
-
+    
     /**
      * String type configuration.
      */
     STRING,
-
+    
     /**
      * Number type configuration.
      */
     NUMBER,
-
+    
     /**
      * Boolean type configuration.
      */
     BOOLEAN,
-
+    
     /**
      * Enumeration type configuration.
      */

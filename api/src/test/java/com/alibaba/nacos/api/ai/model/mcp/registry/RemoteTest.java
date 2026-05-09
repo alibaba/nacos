@@ -51,7 +51,7 @@ class RemoteTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"type\":\"https\",\"url\":\"https://test.server.com/api\","
-                + "\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer token\"}]}";
+            + "\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer token\"}]}";
         
         Remote remote = mapper.readValue(json, Remote.class);
         assertNotNull(remote);

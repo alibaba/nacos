@@ -48,10 +48,10 @@ class ConnectionSetupRequestTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws Exception {
         String json =
-                "{\"headers\":{},\"requestId\":\"1\",\"clientVersion\":\"2.2.2\",\"abilities\":{\"remoteAbility\":"
-                        + "{\"supportRemoteConnection\":false},\"configAbility\":{\"supportRemoteMetrics\":false},"
-                        + "\"namingAbility\":{\"supportDeltaPush\":false,\"supportRemoteMetric\":false}},\"tenant\":\"testNamespaceId\","
-                        + "\"labels\":{\"labelKey\":\"labelValue\"},\"module\":\"internal\"}";
+            "{\"headers\":{},\"requestId\":\"1\",\"clientVersion\":\"2.2.2\",\"abilities\":{\"remoteAbility\":"
+                + "{\"supportRemoteConnection\":false},\"configAbility\":{\"supportRemoteMetrics\":false},"
+                + "\"namingAbility\":{\"supportDeltaPush\":false,\"supportRemoteMetric\":false}},\"tenant\":\"testNamespaceId\","
+                + "\"labels\":{\"labelKey\":\"labelValue\"},\"module\":\"internal\"}";
         ConnectionSetupRequest result = mapper.readValue(json, ConnectionSetupRequest.class);
         assertNotNull(result);
         assertEquals("2.2.2", result.getClientVersion());

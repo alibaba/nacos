@@ -64,33 +64,33 @@ public class CmdbContext<T extends Instance> {
     }
     
     public static class CmdbInstance<T> {
-    
+        
         /**
          * the CMDB info of instance.
          */
         private Entity entity;
-    
+        
         /**
          * the instance.
          */
         private T instance;
-    
+        
         public Entity getEntity() {
             return entity;
         }
-    
+        
         public void setEntity(Entity entity) {
             this.entity = entity;
         }
-    
+        
         public T getInstance() {
             return instance;
         }
-    
+        
         public void setInstance(T instance) {
             this.instance = instance;
         }
-    
+        
         @Override
         public String toString() {
             return "CmdbInstance{" + "entity=" + entity + ", instance=" + instance + '}';

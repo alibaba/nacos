@@ -47,7 +47,8 @@ class SecuritySchemeTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"sec-1\",\"type\":\"apiKey\",\"scheme\":\"bearer\",\"in\":\"header\","
+        String json =
+            "{\"id\":\"sec-1\",\"type\":\"apiKey\",\"scheme\":\"bearer\",\"in\":\"header\","
                 + "\"name\":\"Authorization\",\"defaultCredential\":\"default-token\"}";
         
         SecurityScheme result = mapper.readValue(json, SecurityScheme.class);

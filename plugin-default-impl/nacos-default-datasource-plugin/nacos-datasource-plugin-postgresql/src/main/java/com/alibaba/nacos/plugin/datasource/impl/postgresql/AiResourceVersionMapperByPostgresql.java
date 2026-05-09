@@ -31,16 +31,17 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  *
  * @author nacos
  */
-public class AiResourceVersionMapperByPostgresql extends AbstractMapper implements AiResourceVersionMapper {
-
+public class AiResourceVersionMapperByPostgresql extends AbstractMapper
+    implements AiResourceVersionMapper {
+    
     @Override
     public MapperResult findAiResourceVersionFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,gmt_create,gmt_modified,type,author,name,c_desc,status,version,namespace_id,storage,publish_pipeline_info,download_count "
-                        + "FROM ai_resource_version");
+            "SELECT id,gmt_create,gmt_modified,type,author,name,c_desc,status,version,namespace_id,storage,publish_pipeline_info,download_count "
+                + "FROM ai_resource_version");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
         where.and().eq("name", context.getWhereParameter(FieldConstant.NAME));
-
+        
         Object type = context.getWhereParameter(FieldConstant.TYPE);
         if (type != null && StringUtils.isNotBlank(String.valueOf(type))) {
             where.and().eq("type", type);
@@ -53,21 +54,21 @@ public class AiResourceVersionMapperByPostgresql extends AbstractMapper implemen
         if (version != null && StringUtils.isNotBlank(String.valueOf(version))) {
             where.and().eq("version", version);
         }
-
+        
         MapperResult built = where.build();
-        String sql = built.getSql() + " ORDER BY gmt_modified DESC LIMIT " + context.getPageSize() + " OFFSET "
-                + context.getStartRow();
+        String sql = built.getSql() + " ORDER BY gmt_modified DESC LIMIT " + context.getPageSize()
+            + " OFFSET "
+            + context.getStartRow();
         return new MapperResult(sql, built.getParamList());
     }
-
+    
     @Override
     public String getDataSource() {
         return DatabaseTypeConstant.POSTGRESQL;
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedPostgresqlFunctionEnum.getFunctionByName(functionName);
     }
 }
-

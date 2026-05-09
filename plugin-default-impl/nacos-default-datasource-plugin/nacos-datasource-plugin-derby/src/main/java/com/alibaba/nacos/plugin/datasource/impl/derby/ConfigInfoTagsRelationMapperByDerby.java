@@ -34,7 +34,8 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby implements ConfigTagsRelationMapper {
+public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby
+    implements ConfigTagsRelationMapper {
     
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
@@ -49,9 +50,9 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
         StringBuilder where = new StringBuilder(" WHERE ");
         // 增强 SELECT 子句，包含 desc 字段，但不包含 configTags（Derby 不支持 GROUP_CONCAT）
         final String baseSql =
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc "
-                        + "FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id";
+            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc "
+                + "FROM config_info  a LEFT JOIN "
+                + "config_tags_relation b ON a.id=b.id";
         
         where.append(" a.tenant_id=? ");
         paramList.add(tenantId);
@@ -81,8 +82,9 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
             paramList.add(tagArr[i]);
         }
         where.append(") ");
-        String sql = baseSql + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
-                + " ROWS ONLY";
+        String sql = baseSql + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
+            + context.getPageSize()
+            + " ROWS ONLY";
         return new MapperResult(sql, paramList);
     }
     
@@ -94,10 +96,10 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-
+        
         WhereBuilder where = new WhereBuilder(
-                "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
-
+            "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
+        
         where.likeWithEscape("a.tenant_id", tenantId);
         if (StringUtils.isNotBlank(dataId)) {
             where.and().likeWithEscape("a.data_id", dataId);
@@ -123,7 +125,7 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
         }
         return where.build();
     }
-
+    
     @Override
     public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
@@ -136,12 +138,12 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
         
         // 增强 SELECT 子句，包含 desc 字段，但不包含 configTags（Derby 不支持 GROUP_CONCAT）
         WhereBuilder where = new WhereBuilder(
-                "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
-                        + "FROM config_info a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id");
+            "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
+                + "FROM config_info a LEFT JOIN "
+                + "config_tags_relation b ON a.id=b.id");
         
         where.likeWithEscape("a.tenant_id", tenantId);
-
+        
         if (StringUtils.isNotBlank(dataId)) {
             where.and().likeWithEscape("a.data_id", dataId);
         }

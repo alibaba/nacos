@@ -141,7 +141,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
             
             final Object[] args =
                 new Object[] {configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp,
-                        appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time};
+                    appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time};
             
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
@@ -224,7 +224,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
                 Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
             final Object[] args =
                 new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
-                        configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp};
+                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp};
             
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);

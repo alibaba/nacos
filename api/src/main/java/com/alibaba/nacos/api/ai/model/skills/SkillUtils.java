@@ -42,25 +42,25 @@ import java.util.zip.ZipOutputStream;
  * @author nacos
  */
 public class SkillUtils {
-
+    
     private static final String EMPTY_STRING = "";
-
+    
     private static final String METADATA_ENCODING = "encoding";
-
+    
     private static final String METADATA_ENCODING_BASE64 = "base64";
-
+    
     private static final String PATH_TRAVERSAL_SEQUENCE = "..";
-
+    
     /**
      * ZIP local file header signature: PK\x03\x04.
      */
     private static final byte[] ZIP_MAGIC = {0x50, 0x4B, 0x03, 0x04};
-
+    
     /**
      * Minimum valid ZIP size (local file header = 30 bytes).
      */
     private static final int ZIP_MIN_SIZE = 30;
-
+    
     /**
      * Strategy for handling existing skill directories.
      */
@@ -69,18 +69,18 @@ public class SkillUtils {
          * Overwrite existing directory (delete and recreate).
          */
         OVERWRITE,
-
+        
         /**
          * Backup existing directory by renaming it with timestamp suffix.
          */
         BACKUP,
-
+        
         /**
          * Throw exception if directory already exists.
          */
         FAIL
     }
-
+    
     /**
      * Get full SKILL.md markdown content from skill.
      *
@@ -91,10 +91,10 @@ public class SkillUtils {
         if (skill == null) {
             return EMPTY_STRING;
         }
-
+        
         return skill.getSkillMd() == null ? EMPTY_STRING : skill.getSkillMd();
     }
-
+    
     /**
      * Convert Skill object to a ZIP byte array containing all skill files.
      *
@@ -114,7 +114,7 @@ public class SkillUtils {
         if (StringUtils.isBlank(skill.getName())) {
             throw new IllegalArgumentException("Skill name cannot be blank");
         }
-
+        
         String skillName = skill.getName();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
@@ -122,7 +122,7 @@ public class SkillUtils {
             zos.putNextEntry(new ZipEntry(skillName + "/SKILL.md"));
             zos.write(toMarkdown(skill).getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
-
+            
             // 2. Resource files
             if (skill.getResource() != null && !skill.getResource().isEmpty()) {
                 for (SkillResource resource : skill.getResource().values()) {
@@ -139,7 +139,7 @@ public class SkillUtils {
         }
         return baos.toByteArray();
     }
-
+    
     /**
      * Build ZIP entry path for a skill resource.
      *
@@ -158,7 +158,7 @@ public class SkillUtils {
         validatePathSafety(entryPath);
         return entryPath;
     }
-
+    
     /**
      * Validate that a path does not contain path traversal sequences or absolute path indicators.
      *
@@ -176,7 +176,7 @@ public class SkillUtils {
             throw new SecurityException("Absolute path not allowed: " + path);
         }
     }
-
+    
     /**
      * Validate that a resolved path stays within the expected base directory.
      *
@@ -187,10 +187,10 @@ public class SkillUtils {
     public static void validatePathContainment(Path baseDir, Path target) {
         if (!target.normalize().startsWith(baseDir.normalize())) {
             throw new SecurityException(
-                    "Path escapes target directory: " + target + " is outside " + baseDir);
+                "Path escapes target directory: " + target + " is outside " + baseDir);
         }
     }
-
+    
     /**
      * Validate that byte array is a valid ZIP file by checking the magic number header.
      *
@@ -200,16 +200,16 @@ public class SkillUtils {
     public static void validateZipBytes(byte[] data) {
         if (data == null || data.length < ZIP_MIN_SIZE) {
             throw new IllegalArgumentException(
-                    "Invalid ZIP data: too short (" + (data == null ? 0 : data.length) + " bytes)");
+                "Invalid ZIP data: too short (" + (data == null ? 0 : data.length) + " bytes)");
         }
         for (int i = 0; i < ZIP_MAGIC.length; i++) {
             if (data[i] != ZIP_MAGIC[i]) {
                 throw new IllegalArgumentException(
-                        "Invalid ZIP data: missing ZIP magic header (PK\\x03\\x04)");
+                    "Invalid ZIP data: missing ZIP magic header (PK\\x03\\x04)");
             }
         }
     }
-
+    
     /**
      * Validate all ZIP entry paths for path traversal and absolute paths.
      *
@@ -228,7 +228,7 @@ public class SkillUtils {
             }
         }
     }
-
+    
     /**
      * Resolve resource content to raw bytes.
      * Base64-encoded binary resources (marked with metadata encoding=base64) are decoded;
@@ -247,7 +247,7 @@ public class SkillUtils {
         }
         return content.getBytes(StandardCharsets.UTF_8);
     }
-
+    
     /**
      * Check if a resource is Base64-encoded binary content.
      *
@@ -258,7 +258,7 @@ public class SkillUtils {
         Map<String, Object> metadata = resource.getMetadata();
         return metadata != null && METADATA_ENCODING_BASE64.equals(metadata.get(METADATA_ENCODING));
     }
-
+    
     /**
      * Sync Skill object to local directory.
      * Creates the skill directory structure, SKILL.md file, and resource files.
@@ -272,7 +272,7 @@ public class SkillUtils {
     public static void syncToLocal(Skill skill, String baseDir) throws IOException {
         syncToLocal(skill, baseDir, ExistingDirectoryStrategy.OVERWRITE);
     }
-
+    
     /**
      * Sync Skill object to local directory with strategy.
      * Creates the skill directory structure, SKILL.md file, and resource files.
@@ -286,31 +286,32 @@ public class SkillUtils {
      * @throws IllegalArgumentException if skill is null or skill name is blank
      * @throws FileAlreadyExistsException if directory exists and strategy is FAIL
      */
-    public static void syncToLocal(Skill skill, String baseDir, ExistingDirectoryStrategy strategy) throws IOException {
+    public static void syncToLocal(Skill skill, String baseDir, ExistingDirectoryStrategy strategy)
+        throws IOException {
         if (skill == null) {
             throw new IllegalArgumentException("Skill cannot be null");
         }
-
+        
         if (StringUtils.isBlank(skill.getName())) {
             throw new IllegalArgumentException("Skill name cannot be blank");
         }
-
+        
         if (StringUtils.isBlank(baseDir)) {
             throw new IllegalArgumentException("Base directory cannot be blank");
         }
-
+        
         if (strategy == null) {
             strategy = ExistingDirectoryStrategy.OVERWRITE;
         }
-
+        
         // Create skill directory path: {baseDir}/{skillName}
         Path basePath = Paths.get(baseDir);
         Path skillDir = basePath.resolve(skill.getName());
-
+        
         // Delegate to core implementation
         syncToLocalCore(skill, skillDir, basePath, strategy);
     }
-
+    
     /**
      * Sync Skill object to local directory with custom skill directory name.
      * Creates the skill directory structure, SKILL.md file, and resource files.
@@ -322,10 +323,11 @@ public class SkillUtils {
      * @throws IOException if file operations fail
      * @throws IllegalArgumentException if skill is null or baseDir is blank
      */
-    public static void syncToLocal(Skill skill, String baseDir, String skillDirName) throws IOException {
+    public static void syncToLocal(Skill skill, String baseDir, String skillDirName)
+        throws IOException {
         syncToLocal(skill, baseDir, skillDirName, ExistingDirectoryStrategy.OVERWRITE);
     }
-
+    
     /**
      * Sync Skill object to local directory with custom skill directory name and strategy.
      * Creates the skill directory structure, SKILL.md file, and resource files.
@@ -340,33 +342,34 @@ public class SkillUtils {
      * @throws IllegalArgumentException if skill is null or baseDir is blank
      * @throws FileAlreadyExistsException if directory exists and strategy is FAIL
      */
-    public static void syncToLocal(Skill skill, String baseDir, String skillDirName, ExistingDirectoryStrategy strategy) throws IOException {
+    public static void syncToLocal(Skill skill, String baseDir, String skillDirName,
+        ExistingDirectoryStrategy strategy) throws IOException {
         if (skill == null) {
             throw new IllegalArgumentException("Skill cannot be null");
         }
-
+        
         if (StringUtils.isBlank(baseDir)) {
             throw new IllegalArgumentException("Base directory cannot be blank");
         }
-
+        
         if (strategy == null) {
             strategy = ExistingDirectoryStrategy.OVERWRITE;
         }
-
+        
         // Use custom directory name or fall back to skill name
         String dirName = !StringUtils.isBlank(skillDirName) ? skillDirName : skill.getName();
         if (StringUtils.isBlank(dirName)) {
             throw new IllegalArgumentException("Skill directory name cannot be blank");
         }
-
+        
         // Create skill directory path: {baseDir}/{skillDirName}
         Path basePath = Paths.get(baseDir);
         Path skillDir = basePath.resolve(dirName);
-
+        
         // Delegate to core implementation
         syncToLocalCore(skill, skillDir, basePath, strategy);
     }
-
+    
     /**
      * Core implementation for syncing Skill to local directory.
      * This method contains the common logic for all syncToLocal variants.
@@ -378,27 +381,28 @@ public class SkillUtils {
      * @throws IOException if file operations fail
      * @throws FileAlreadyExistsException if directory exists and strategy is FAIL
      */
-    private static void syncToLocalCore(Skill skill, Path skillDir, Path basePath, ExistingDirectoryStrategy strategy) throws IOException {
+    private static void syncToLocalCore(Skill skill, Path skillDir, Path basePath,
+        ExistingDirectoryStrategy strategy) throws IOException {
         // Step 1: If strategy is FAIL, check if directory exists and throw exception immediately
         if (strategy == ExistingDirectoryStrategy.FAIL) {
             if (Files.exists(skillDir) && Files.isDirectory(skillDir)) {
                 throw new FileAlreadyExistsException("Skill directory already exists: " + skillDir);
             }
         }
-
+        
         // Step 2: Create temporary directory and write all files
         String dirName = skillDir.getFileName().toString();
         Path tempSkillDir = basePath.resolve(dirName + ".tmp." + System.currentTimeMillis());
-
+        
         try {
             // Create temporary skill directory
             Files.createDirectories(tempSkillDir);
-
+            
             // Write SKILL.md file
             String markdownContent = toMarkdown(skill);
             Path skillMdPath = tempSkillDir.resolve("SKILL.md");
             Files.write(skillMdPath, markdownContent.getBytes(StandardCharsets.UTF_8));
-
+            
             // Write resource files
             if (skill.getResource() != null && !skill.getResource().isEmpty()) {
                 for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
@@ -406,16 +410,16 @@ public class SkillUtils {
                     if (resource == null) {
                         continue;
                     }
-
+                    
                     String resourceName = resource.getName();
                     if (StringUtils.isBlank(resourceName)) {
                         // Use key as resource name if name is blank
                         resourceName = entry.getKey();
                     }
-
+                    
                     String resourceType = resource.getType();
                     String resourceContent = resource.getContent();
-
+                    
                     // Determine resource file path
                     Path resourcePath;
                     if (!StringUtils.isBlank(resourceType)) {
@@ -429,16 +433,16 @@ public class SkillUtils {
                     }
                     // Security: ensure resolved path does not escape the skill directory
                     validatePathContainment(tempSkillDir, resourcePath);
-
+                    
                     // Write resource content (use empty string if content is null)
                     String content = resourceContent != null ? resourceContent : "";
                     Files.write(resourcePath, content.getBytes(StandardCharsets.UTF_8));
                 }
             }
-
+            
             // Step 3: All files written successfully, now handle final directory
             boolean oldDirExists = Files.exists(skillDir) && Files.isDirectory(skillDir);
-
+            
             if (!oldDirExists) {
                 // Old directory doesn't exist, directly rename temp directory to final directory
                 Files.move(tempSkillDir, skillDir, StandardCopyOption.ATOMIC_MOVE);
@@ -447,10 +451,10 @@ public class SkillUtils {
                 // Step 3.1: Rename old directory to backup directory
                 Path backupDir = createBackupDirectoryPath(skillDir);
                 Files.move(skillDir, backupDir, StandardCopyOption.ATOMIC_MOVE);
-
+                
                 // Step 3.2: Rename temp directory to final directory
                 Files.move(tempSkillDir, skillDir, StandardCopyOption.ATOMIC_MOVE);
-
+                
                 // Step 3.3: Handle backup directory based on strategy
                 if (strategy == ExistingDirectoryStrategy.OVERWRITE) {
                     // Delete backup directory
@@ -458,7 +462,7 @@ public class SkillUtils {
                 }
                 // If strategy is BACKUP, keep the backup directory (do nothing)
             }
-
+            
         } catch (Exception e) {
             // Clean up temporary directory on failure
             if (Files.exists(tempSkillDir)) {
@@ -471,7 +475,7 @@ public class SkillUtils {
             throw e;
         }
     }
-
+    
     /**
      * Create backup directory path with timestamp suffix.
      * If backup directory already exists, append counter to ensure uniqueness.
@@ -482,20 +486,21 @@ public class SkillUtils {
     private static Path createBackupDirectoryPath(Path skillDir) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         String timestamp = dateFormat.format(new Date());
-        Path backupDir = skillDir.getParent().resolve(skillDir.getFileName().toString() + ".backup." + timestamp);
-
+        Path backupDir = skillDir.getParent()
+            .resolve(skillDir.getFileName().toString() + ".backup." + timestamp);
+        
         // If backup directory already exists, append counter
         int counter = 1;
         Path finalBackupDir = backupDir;
         while (Files.exists(finalBackupDir)) {
             finalBackupDir = skillDir.getParent().resolve(
-                    skillDir.getFileName().toString() + ".backup." + timestamp + "." + counter);
+                skillDir.getFileName().toString() + ".backup." + timestamp + "." + counter);
             counter++;
         }
-
+        
         return finalBackupDir;
     }
-
+    
     /**
      * Recursively delete a directory and all its contents.
      *
@@ -506,19 +511,19 @@ public class SkillUtils {
         if (!Files.exists(directory)) {
             return;
         }
-
+        
         // Delete files before directories
         Files.walk(directory)
-                .sorted((a, b) -> b.compareTo(a))
-                .forEach(path -> {
-                    try {
-                        Files.delete(path);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to delete: " + path, e);
-                    }
-                });
+            .sorted((a, b) -> b.compareTo(a))
+            .forEach(path -> {
+                try {
+                    Files.delete(path);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to delete: " + path, e);
+                }
+            });
     }
-
+    
     /**
      * Main config dataId for skill.
      *
@@ -527,31 +532,31 @@ public class SkillUtils {
      */
     @Deprecated
     public static final String SKILL_MAIN_DATA_ID = "skill.json";
-
+    
     /**
      * Resource config dataId prefix.
      */
     public static final String RESOURCE_DATA_ID_PREFIX = "resource_";
-
+    
     /**
      * Resource config dataId suffix.
      */
     public static final String RESOURCE_DATA_ID_SUFFIX = ".json";
-
+    
     /**
      * Skill group prefix.
      */
     public static final String SKILL_GROUP_PREFIX = "skill_";
-
+    
     /**
      * Skill index config dataId for client-side config caching.
      * Server writes a manifest config with this dataId at group {@code skill_{name}}
      * containing the current online version and file list.
      */
     public static final String SKILL_INDEX_DATA_ID = "skill_index.json";
-
+    
     private static final String DOUBLE_UNDERSCORE = "__";
-
+    
     /**
      * Build the Nacos Config group for a skill (no version suffix).
      *
@@ -561,7 +566,7 @@ public class SkillUtils {
     public static String buildSkillGroup(String skillName) {
         return SKILL_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeManifestGroupNameSegment(skillName);
     }
-
+    
     /**
      * Build the Nacos Config group for a specific skill version.
      *
@@ -570,10 +575,11 @@ public class SkillUtils {
      * @return config group string, e.g. "skill_myskill__v1"
      */
     public static String buildSkillVersionGroup(String skillName, String version) {
-        return SKILL_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(skillName) + DOUBLE_UNDERSCORE
-                + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(version);
+        return SKILL_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(skillName)
+            + DOUBLE_UNDERSCORE
+            + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(version);
     }
-
+    
     /**
      * Decode a Skill Nacos Config {@code group} (as stored) into logical skill name and optional version.
      *
@@ -590,9 +596,9 @@ public class SkillUtils {
             return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest), null};
         }
         return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest.substring(0, idx)),
-                NacosAiConfigKeyCodec.decodeSegment(rest.substring(idx + DOUBLE_UNDERSCORE.length()))};
+            NacosAiConfigKeyCodec.decodeSegment(rest.substring(idx + DOUBLE_UNDERSCORE.length()))};
     }
-
+    
     /**
      * Sanitize a resource name for use in Nacos Config group names.
      *
@@ -604,9 +610,9 @@ public class SkillUtils {
     public static String sanitizeNameForGroup(String name) {
         return NacosAiConfigKeyCodec.encodeManifestGroupNameSegment(name);
     }
-
+    
     private static final String FILE_EXTENSION_PATTERN = ".*\\.[a-zA-Z0-9]+$";
-
+    
     /**
      * Generate resource ID from resource type and name.
      * Format: {type}_{resourcename}
@@ -621,7 +627,7 @@ public class SkillUtils {
         if (resourceName == null || resourceName.trim().isEmpty()) {
             return "";
         }
-
+        
         // If resourcename ends with .xx, convert the last . to __
         String processedName = resourceName;
         if (resourceName.matches(FILE_EXTENSION_PATTERN)) {
@@ -632,7 +638,7 @@ public class SkillUtils {
                     + resourceName.substring(lastDotIndex + 1);
             }
         }
-
+        
         if (type != null && !type.trim().isEmpty()) {
             // Encode / as . so dataId has no slash (Nacos config key compatibility)
             String safeType = type.trim().replace("/", ".");

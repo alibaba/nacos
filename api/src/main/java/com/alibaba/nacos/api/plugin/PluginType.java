@@ -23,37 +23,37 @@ package com.alibaba.nacos.api.plugin;
  * @since 3.2.0
  */
 public enum PluginType {
-
+    
     /**
      * Authentication plugin.
      */
     AUTH("auth", "Authentication plugin"),
-
+    
     /**
      * Datasource dialect plugin.
      */
     DATASOURCE_DIALECT("datasource-dialect", "Datasource dialect plugin"),
-
+    
     /**
      * Config change plugin.
      */
     CONFIG_CHANGE("config-change", "Config change plugin"),
-
+    
     /**
      * Encryption plugin.
      */
     ENCRYPTION("encryption", "Encryption plugin"),
-
+    
     /**
      * Trace plugin.
      */
     TRACE("trace", "Trace plugin"),
-
+    
     /**
      * Environment plugin.
      */
     ENVIRONMENT("environment", "Environment plugin"),
-
+    
     /**
      * Control plugin.
      */
@@ -73,24 +73,24 @@ public enum PluginType {
      * AI resource storage plugin.
      */
     AI_STORAGE("ai-storage", "AI resource storage plugin");
-
+    
     private final String type;
-
+    
     private final String description;
-
+    
     PluginType(String type, String description) {
         this.type = type;
         this.description = description;
     }
-
+    
     public String getType() {
         return type;
     }
-
+    
     public String getDescription() {
         return description;
     }
-
+    
     /**
      * Get PluginType from type string.
      *

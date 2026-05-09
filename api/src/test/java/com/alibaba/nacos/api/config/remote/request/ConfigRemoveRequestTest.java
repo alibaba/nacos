@@ -53,7 +53,8 @@ class ConfigRemoveRequestTest extends BasedConfigRequestTest {
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"dataId\":\"test_data\",\"group\":\"group\",\"tenant\":\"test_tenant\""
+        String json =
+            "{\"headers\":{},\"dataId\":\"test_data\",\"group\":\"group\",\"tenant\":\"test_tenant\""
                 + ",\"tag\":\"tag\",\"module\":\"config\"}";
         ConfigRemoveRequest actual = mapper.readValue(json, ConfigRemoveRequest.class);
         assertEquals(DATA_ID, actual.getDataId());

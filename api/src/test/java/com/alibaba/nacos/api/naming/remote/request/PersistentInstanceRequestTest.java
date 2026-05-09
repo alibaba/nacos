@@ -29,7 +29,7 @@ class PersistentInstanceRequestTest extends BasedNamingRequestTest {
     @Test
     void testSerialize() throws JsonProcessingException {
         PersistentInstanceRequest request = new PersistentInstanceRequest(NAMESPACE, SERVICE, GROUP,
-                NamingRemoteConstants.REGISTER_INSTANCE, new Instance());
+            NamingRemoteConstants.REGISTER_INSTANCE, new Instance());
         String json = mapper.writeValueAsString(request);
         checkSerializeBasedInfo(json);
         assertTrue(json.contains("\"type\":\"" + NamingRemoteConstants.REGISTER_INSTANCE + "\""));
@@ -38,7 +38,8 @@ class PersistentInstanceRequestTest extends BasedNamingRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
+        String json =
+            "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
                 + "\"type\":\"deregisterInstance\",\"instance\":{\"port\":0,\"weight\":1.0,\"healthy\":true,"
                 + "\"enabled\":true,\"ephemeral\":true,\"metadata\":{},\"instanceIdGenerator\":\"simple\","
                 + "\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000},"

@@ -58,8 +58,8 @@ class FrontEndpointConfigTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"type\":\"sse\",\"protocol\":\"http\",\"endpointType\":\"DIRECT\","
-                + "\"endpointData\":\"127.0.0.1:8080\",\"path\":\"/test\","
-                + "\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer token\"}]}";
+            + "\"endpointData\":\"127.0.0.1:8080\",\"path\":\"/test\","
+            + "\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer token\"}]}";
         
         FrontEndpointConfig result = mapper.readValue(json, FrontEndpointConfig.class);
         assertNotNull(result);

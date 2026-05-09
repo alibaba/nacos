@@ -53,7 +53,7 @@ class AgentSpecStorageKeyTest {
     
     private static String[] validResourceNames() {
         return new String[] {"SOUL.md", "AGENTS.md", "MEMORY.md", "jobs.json",
-                "my-skill.md", "Dockerfile", "tool-analysis.json"};
+            "my-skill.md", "Dockerfile", "tool-analysis.json"};
     }
     
     /**
