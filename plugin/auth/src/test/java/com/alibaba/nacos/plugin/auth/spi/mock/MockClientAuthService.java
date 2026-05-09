@@ -37,6 +37,6 @@ public class MockClientAuthService extends AbstractClientAuthService {
     
     @Override
     public void shutdown() throws NacosException {
-    
+        
     }
 }

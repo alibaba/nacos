@@ -51,13 +51,13 @@ public class MockAuthPluginService implements AuthPluginService {
     
     @Override
     public AuthResult validateAuthority(IdentityContext identityContext, Permission permission)
-            throws AccessException {
+        throws AccessException {
         return AuthResult.failureResult(401, "mock auth failed");
     }
     
     @Override
     public AuthResult validateIdentity(IdentityContext identityContext, Resource resource)
-            throws AccessException {
+        throws AccessException {
         return AuthResult.failureResult(403, "mock auth failed");
     }
 }

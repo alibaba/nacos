@@ -52,7 +52,7 @@ public class IdentityContext {
     public <T> T getParameter(String key, T defaultValue) {
         if (null == defaultValue) {
             throw new IllegalArgumentException(
-                    "defaultValue can't be null. Please use #getParameter(String key) replace");
+                "defaultValue can't be null. Please use #getParameter(String key) replace");
         }
         try {
             Object result = param.get(key);

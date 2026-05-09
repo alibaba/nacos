@@ -109,7 +109,8 @@ public final class DiskUtils {
         } catch (IOException ioe) {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUOTA_CN) || errMsg
+                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg)
+                    || errMsg.contains(DISK_QUOTA_CN) || errMsg
                         .contains(DISK_QUOTA_EN)) {
                     LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);

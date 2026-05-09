@@ -48,7 +48,8 @@ class ControlManagerCenterTest {
         Field instanceControlConfigs = ControlConfigs.class.getDeclaredField("instance");
         instanceControlConfigs.setAccessible(true);
         instanceControlConfigs.set(null, null);
-        Field instanceControlManagerCenter = ControlManagerCenter.class.getDeclaredField("instance");
+        Field instanceControlManagerCenter =
+            ControlManagerCenter.class.getDeclaredField("instance");
         instanceControlManagerCenter.setAccessible(true);
         instanceControlManagerCenter.set(null, null);
     }
@@ -57,7 +58,8 @@ class ControlManagerCenterTest {
         try {
             //reset instance for reload spi
             Field instanceRuleStorageProxy = RuleStorageProxy.class.getDeclaredField("INSTANCE");
-            Constructor<RuleStorageProxy> constructor = RuleStorageProxy.class.getDeclaredConstructor();
+            Constructor<RuleStorageProxy> constructor =
+                RuleStorageProxy.class.getDeclaredConstructor();
             constructor.setAccessible(true);
             setStaticFinalField(instanceRuleStorageProxy, constructor.newInstance());
         } catch (Exception e) {
@@ -66,8 +68,9 @@ class ControlManagerCenterTest {
     }
     
     private void setStaticFinalField(Field finalField, Object value)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method getDeclaredFields0 =
+            Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
         getDeclaredFields0.setAccessible(true);
         Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
         Field modifiers = null;
@@ -86,7 +89,8 @@ class ControlManagerCenterTest {
     void testGetInstance() {
         ControlConfigs.getInstance().setControlManagerType("test");
         ControlManagerCenter controlManagerCenter = ControlManagerCenter.getInstance();
-        ConnectionControlManager connectionControlManager = controlManagerCenter.getConnectionControlManager();
+        ConnectionControlManager connectionControlManager =
+            controlManagerCenter.getConnectionControlManager();
         assertEquals("testConnection", connectionControlManager.getName());
         TpsControlManager tpsControlManager = controlManagerCenter.getTpsControlManager();
         assertEquals("testTps", tpsControlManager.getName());
@@ -96,7 +100,8 @@ class ControlManagerCenterTest {
     @Test
     void testGetInstanceWithDefault() {
         ControlManagerCenter controlManagerCenter = ControlManagerCenter.getInstance();
-        ConnectionControlManager connectionControlManager = controlManagerCenter.getConnectionControlManager();
+        ConnectionControlManager connectionControlManager =
+            controlManagerCenter.getConnectionControlManager();
         assertEquals("noLimit", connectionControlManager.getName());
         TpsControlManager tpsControlManager = controlManagerCenter.getTpsControlManager();
         assertEquals("noLimit", tpsControlManager.getName());
@@ -105,7 +110,8 @@ class ControlManagerCenterTest {
     @Test
     void testReloadTpsControlRule() throws Exception {
         String localRuleStorageBaseDir =
-                EnvUtils.getNacosHome() + File.separator + "tmpTps" + File.separator + "tps" + File.separator;
+            EnvUtils.getNacosHome() + File.separator + "tmpTps" + File.separator + "tps"
+                + File.separator;
         ControlConfigs.getInstance().setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
         resetRuleStorageProxy();
         final ControlManagerCenter controlManagerCenter = ControlManagerCenter.getInstance();
@@ -118,9 +124,11 @@ class ControlManagerCenterTest {
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         tpsControlRule.setPointRule(ruleDetail);
         String ruleContent = JacksonUtils.toJson(tpsControlRule);
-        controlManagerCenter.getRuleStorageProxy().getLocalDiskStorage().saveTpsRule("test", ruleContent);
+        controlManagerCenter.getRuleStorageProxy().getLocalDiskStorage().saveTpsRule("test",
+            ruleContent);
         controlManagerCenter.getTpsControlManager().applyTpsRule("test", tpsControlRule);
-        TpsControlRule testTpsControlRule = controlManagerCenter.getTpsControlManager().getRules().get("test");
+        TpsControlRule testTpsControlRule =
+            controlManagerCenter.getTpsControlManager().getRules().get("test");
         
         assertEquals(100, testTpsControlRule.getPointRule().getMaxCount());
         assertEquals("test", testTpsControlRule.getPointRule().getRuleName());
@@ -134,12 +142,14 @@ class ControlManagerCenterTest {
         ruleDetail2.setPeriod(TimeUnit.SECONDS);
         tpsControlRule2.setPointRule(ruleDetail2);
         String ruleContent2 = JacksonUtils.toJson(tpsControlRule2);
-        controlManagerCenter.getRuleStorageProxy().getLocalDiskStorage().saveTpsRule("test", ruleContent2);
+        controlManagerCenter.getRuleStorageProxy().getLocalDiskStorage().saveTpsRule("test",
+            ruleContent2);
         controlManagerCenter.reloadTpsControlRule("test", false);
         
         //wait event
         TimeUnit.SECONDS.sleep(1);
-        TpsControlRule testTpsControlRule2 = controlManagerCenter.getTpsControlManager().getRules().get("test");
+        TpsControlRule testTpsControlRule2 =
+            controlManagerCenter.getTpsControlManager().getRules().get("test");
         assertEquals(200, testTpsControlRule2.getPointRule().getMaxCount());
         assertEquals("test2", testTpsControlRule2.getPointRule().getRuleName());
     }
@@ -147,7 +157,8 @@ class ControlManagerCenterTest {
     @Test
     void testReloadTpsControlRuleExternal() throws Exception {
         String localRuleStorageBaseDir =
-                EnvUtils.getNacosHome() + File.separator + "tmpTps" + File.separator + "tpsExternal" + File.separator;
+            EnvUtils.getNacosHome() + File.separator + "tmpTps" + File.separator + "tpsExternal"
+                + File.separator;
         ControlConfigs.getInstance().setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
         ControlConfigs.getInstance().setRuleExternalStorage("test");
         resetRuleStorageProxy();
@@ -162,9 +173,11 @@ class ControlManagerCenterTest {
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         tpsControlRule.setPointRule(ruleDetail);
         String ruleContent = JacksonUtils.toJson(tpsControlRule);
-        controlManagerCenter.getRuleStorageProxy().getExternalStorage().saveTpsRule("test", ruleContent);
+        controlManagerCenter.getRuleStorageProxy().getExternalStorage().saveTpsRule("test",
+            ruleContent);
         controlManagerCenter.getTpsControlManager().applyTpsRule("test", tpsControlRule);
-        TpsControlRule testTpsControlRule = controlManagerCenter.getTpsControlManager().getRules().get("test");
+        TpsControlRule testTpsControlRule =
+            controlManagerCenter.getTpsControlManager().getRules().get("test");
         
         assertEquals(100, testTpsControlRule.getPointRule().getMaxCount());
         assertEquals("test", testTpsControlRule.getPointRule().getRuleName());
@@ -178,12 +191,14 @@ class ControlManagerCenterTest {
         ruleDetail2.setPeriod(TimeUnit.SECONDS);
         tpsControlRule2.setPointRule(ruleDetail2);
         String ruleContent2 = JacksonUtils.toJson(tpsControlRule2);
-        controlManagerCenter.getRuleStorageProxy().getExternalStorage().saveTpsRule("test", ruleContent2);
+        controlManagerCenter.getRuleStorageProxy().getExternalStorage().saveTpsRule("test",
+            ruleContent2);
         controlManagerCenter.reloadTpsControlRule("test", true);
         
         //wait event
         TimeUnit.SECONDS.sleep(1);
-        TpsControlRule testTpsControlRule2 = controlManagerCenter.getTpsControlManager().getRules().get("test");
+        TpsControlRule testTpsControlRule2 =
+            controlManagerCenter.getTpsControlManager().getRules().get("test");
         assertEquals(200, testTpsControlRule2.getPointRule().getMaxCount());
         assertEquals("test2", testTpsControlRule2.getPointRule().getRuleName());
     }
@@ -191,8 +206,9 @@ class ControlManagerCenterTest {
     @Test
     void testReloadConnectionControlRule() throws Exception {
         String localRuleStorageBaseDir =
-                EnvUtils.getNacosHome() + File.separator + "tmpConnection" + File.separator + "connection"
-                        + File.separator;
+            EnvUtils.getNacosHome() + File.separator + "tmpConnection" + File.separator
+                + "connection"
+                + File.separator;
         ControlConfigs.getInstance().setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
         resetRuleStorageProxy();
         ConnectionControlRule connectionLimitRule = new ConnectionControlRule();
@@ -200,31 +216,37 @@ class ControlManagerCenterTest {
         String ruleContent = JacksonUtils.toJson(connectionLimitRule);
         
         ControlManagerCenter controlManagerCenter = ControlManagerCenter.getInstance();
-        controlManagerCenter.getRuleStorageProxy().getLocalDiskStorage().saveConnectionRule(ruleContent);
-        ConnectionControlManager connectionControlManager = controlManagerCenter.getConnectionControlManager();
+        controlManagerCenter.getRuleStorageProxy().getLocalDiskStorage()
+            .saveConnectionRule(ruleContent);
+        ConnectionControlManager connectionControlManager =
+            controlManagerCenter.getConnectionControlManager();
         //apply rule
         connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
-        ConnectionControlRule connectionLimitRule1 = connectionControlManager.getConnectionLimitRule();
+        ConnectionControlRule connectionLimitRule1 =
+            connectionControlManager.getConnectionLimitRule();
         assertEquals(100, connectionLimitRule1.getCountLimit());
         
         ConnectionControlRule connectionLimitRule2 = new ConnectionControlRule();
         connectionLimitRule2.setCountLimit(200);
         String ruleContent2 = JacksonUtils.toJson(connectionLimitRule2);
-        controlManagerCenter.getRuleStorageProxy().getLocalDiskStorage().saveConnectionRule(ruleContent2);
+        controlManagerCenter.getRuleStorageProxy().getLocalDiskStorage()
+            .saveConnectionRule(ruleContent2);
         //reload new rule
         controlManagerCenter.reloadConnectionControlRule(false);
         
         //wait event
         TimeUnit.SECONDS.sleep(1);
-        ConnectionControlRule connectionLimitRule3 = connectionControlManager.getConnectionLimitRule();
+        ConnectionControlRule connectionLimitRule3 =
+            connectionControlManager.getConnectionLimitRule();
         assertEquals(200, connectionLimitRule3.getCountLimit());
     }
     
     @Test
     void testReloadConnectionControlRuleExternal() throws Exception {
         String localRuleStorageBaseDir =
-                EnvUtils.getNacosHome() + File.separator + "tmpConnection" + File.separator + "connectionExternal"
-                        + File.separator;
+            EnvUtils.getNacosHome() + File.separator + "tmpConnection" + File.separator
+                + "connectionExternal"
+                + File.separator;
         ControlConfigs.getInstance().setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
         ControlConfigs.getInstance().setRuleExternalStorage("test");
         resetRuleStorageProxy();
@@ -233,23 +255,28 @@ class ControlManagerCenterTest {
         String ruleContent = JacksonUtils.toJson(connectionLimitRule);
         
         ControlManagerCenter controlManagerCenter = ControlManagerCenter.getInstance();
-        controlManagerCenter.getRuleStorageProxy().getExternalStorage().saveConnectionRule(ruleContent);
-        ConnectionControlManager connectionControlManager = controlManagerCenter.getConnectionControlManager();
+        controlManagerCenter.getRuleStorageProxy().getExternalStorage()
+            .saveConnectionRule(ruleContent);
+        ConnectionControlManager connectionControlManager =
+            controlManagerCenter.getConnectionControlManager();
         //apply rule
         connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
-        ConnectionControlRule connectionLimitRule1 = connectionControlManager.getConnectionLimitRule();
+        ConnectionControlRule connectionLimitRule1 =
+            connectionControlManager.getConnectionLimitRule();
         assertEquals(100, connectionLimitRule1.getCountLimit());
         
         ConnectionControlRule connectionLimitRule2 = new ConnectionControlRule();
         connectionLimitRule2.setCountLimit(200);
         String ruleContent2 = JacksonUtils.toJson(connectionLimitRule2);
-        controlManagerCenter.getRuleStorageProxy().getExternalStorage().saveConnectionRule(ruleContent2);
+        controlManagerCenter.getRuleStorageProxy().getExternalStorage()
+            .saveConnectionRule(ruleContent2);
         //reload new rule
         controlManagerCenter.reloadConnectionControlRule(true);
         
         //wait event
         TimeUnit.SECONDS.sleep(1);
-        ConnectionControlRule connectionLimitRule3 = connectionControlManager.getConnectionLimitRule();
+        ConnectionControlRule connectionLimitRule3 =
+            connectionControlManager.getConnectionLimitRule();
         assertEquals(200, connectionLimitRule3.getCountLimit());
     }
 }

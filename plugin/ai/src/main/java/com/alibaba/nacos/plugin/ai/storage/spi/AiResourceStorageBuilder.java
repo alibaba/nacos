@@ -27,14 +27,14 @@ package com.alibaba.nacos.plugin.ai.storage.spi;
  * @since 3.2.0
  */
 public interface AiResourceStorageBuilder {
-
+    
     /**
      * Type identifier, corresponding to {@link AiResourceStorage#type()}.
      *
      * @return storage provider type, e.g. "nacos_config", "oss"
      */
     String type();
-
+    
     /**
      * Build an {@link AiResourceStorage} instance.
      *
@@ -42,4 +42,3 @@ public interface AiResourceStorageBuilder {
      */
     AiResourceStorage build();
 }
-

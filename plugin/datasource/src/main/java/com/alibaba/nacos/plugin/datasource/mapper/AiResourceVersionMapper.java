@@ -30,7 +30,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * @since 3.2.0
  */
 public interface AiResourceVersionMapper extends Mapper {
-
+    
     /**
      * Query count rows for ai_resource_version list.
      *
@@ -40,33 +40,32 @@ public interface AiResourceVersionMapper extends Mapper {
         WhereBuilder where = new WhereBuilder("SELECT count(*) FROM ai_resource_version");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
         where.and().eq("name", context.getWhereParameter(FieldConstant.NAME));
-
+        
         Object type = context.getWhereParameter(FieldConstant.TYPE);
         if (type != null && StringUtils.isNotBlank(String.valueOf(type))) {
             where.and().eq("type", type);
         }
-
+        
         Object status = context.getWhereParameter(FieldConstant.STATUS);
         if (status != null && StringUtils.isNotBlank(String.valueOf(status))) {
             where.and().eq("status", status);
         }
-
+        
         Object version = context.getWhereParameter(FieldConstant.VERSION);
         if (version != null && StringUtils.isNotBlank(String.valueOf(version))) {
             where.and().eq("version", version);
         }
-
+        
         return where.build();
     }
-
+    
     /**
      * Query fetch rows for ai_resource_version list.
      */
     MapperResult findAiResourceVersionFetchRows(MapperContext context);
-
+    
     @Override
     default String getTableName() {
         return TableConstant.AI_RESOURCE_VERSION;
     }
 }
-

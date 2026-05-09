@@ -32,34 +32,34 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @author WangzJi
  */
 class ConfigChangePluginProviderTest {
-
+    
     private ConfigChangePluginProvider provider;
-
+    
     @BeforeEach
     void setUp() {
         provider = new ConfigChangePluginProvider();
     }
-
+    
     @Test
     void getPluginTypeTest() {
         PluginType pluginType = provider.getPluginType();
-
+        
         assertNotNull(pluginType);
         assertEquals(PluginType.CONFIG_CHANGE, pluginType);
         assertEquals("config-change", pluginType.getType());
     }
-
+    
     @Test
     void getAllPluginsTest() {
         Map<String, ConfigChangePluginService> plugins = provider.getAllPlugins();
-
+        
         assertNotNull(plugins);
     }
-
+    
     @Test
     void getOrderTest() {
         int order = provider.getOrder();
-
+        
         assertEquals(0, order);
     }
 }

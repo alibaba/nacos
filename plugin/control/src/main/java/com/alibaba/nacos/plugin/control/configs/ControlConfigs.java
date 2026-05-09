@@ -35,7 +35,7 @@ public class ControlConfigs {
                 if (instance == null) {
                     instance = new ControlConfigs();
                     Collection<ControlConfigsInitializer> load = NacosServiceLoader
-                            .load(ControlConfigsInitializer.class);
+                        .load(ControlConfigsInitializer.class);
                     for (ControlConfigsInitializer controlConfigsInitializer : load) {
                         controlConfigsInitializer.initialize(instance);
                     }

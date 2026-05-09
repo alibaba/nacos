@@ -47,8 +47,9 @@ public class TpsMetrics {
     
     @Override
     public String toString() {
-        return "TpsMetrics{" + "pointName='" + pointName + '\'' + ", type='" + type + '\'' + ", timeStamp=" + timeStamp
-                + ", period=" + period + ", counter=" + counter + '}';
+        return "TpsMetrics{" + "pointName='" + pointName + '\'' + ", type='" + type + '\''
+            + ", timeStamp=" + timeStamp
+            + ", period=" + period + ", counter=" + counter + '}';
     }
     
     public String getTimeFormatOfSecond(long timeStamp) {
@@ -59,7 +60,7 @@ public class TpsMetrics {
     public String getMsg() {
         
         return String.join("|", pointName, type, period.name(), getTimeFormatOfSecond(timeStamp),
-                String.valueOf(counter.passCount), String.valueOf(counter.deniedCount));
+            String.valueOf(counter.passCount), String.valueOf(counter.deniedCount));
     }
     
     public String getPointName() {

@@ -42,7 +42,8 @@ public class ControlRuleChangeActivator {
     
     TpsRuleChangeSubscriber tpsRuleChangeSubscriber = new TpsRuleChangeSubscriber();
     
-    ConnectionRuleChangeSubscriber connectionRuleChangeSubscriber = new ConnectionRuleChangeSubscriber();
+    ConnectionRuleChangeSubscriber connectionRuleChangeSubscriber =
+        new ConnectionRuleChangeSubscriber();
     
     public ControlRuleChangeActivator() {
         NotifyCenter.registerSubscriber(tpsRuleChangeSubscriber);
@@ -54,28 +55,35 @@ public class ControlRuleChangeActivator {
         @Override
         public void onEvent(TpsControlRuleChangeEvent event) {
             String pointName = event.getPointName();
-            LOGGER.info("Tps control rule change event receive,pointName={}, external={} ", pointName,
-                    event.isExternal());
+            LOGGER.info("Tps control rule change event receive,pointName={}, external={} ",
+                pointName,
+                event.isExternal());
             if (event.getPointName() == null) {
                 return;
             }
             try {
-                RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+                RuleStorageProxy ruleStorageProxy =
+                    ControlManagerCenter.getInstance().getRuleStorageProxy();
                 
                 if (event.isExternal()) {
                     if (ruleStorageProxy.getExternalStorage() != null) {
-                        String persistTpsRule = ruleStorageProxy.getExternalStorage().getTpsRule(pointName);
-                        ruleStorageProxy.getLocalDiskStorage().saveTpsRule(pointName, persistTpsRule);
+                        String persistTpsRule =
+                            ruleStorageProxy.getExternalStorage().getTpsRule(pointName);
+                        ruleStorageProxy.getLocalDiskStorage().saveTpsRule(pointName,
+                            persistTpsRule);
                     } else {
                         Loggers.CONTROL.info(
-                                "No external rule storage found,will load local disk instead,point name={}",
-                                event.getPointName());
+                            "No external rule storage found,will load local disk instead,point name={}",
+                            event.getPointName());
                     }
                     
                 }
-                String tpsRuleContent = ruleStorageProxy.getLocalDiskStorage().getTpsRule(pointName);
-                TpsControlManager tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
-                TpsControlRule tpsControlRule = StringUtils.isBlank(tpsRuleContent) ? new TpsControlRule()
+                String tpsRuleContent =
+                    ruleStorageProxy.getLocalDiskStorage().getTpsRule(pointName);
+                TpsControlManager tpsControlManager =
+                    ControlManagerCenter.getInstance().getTpsControlManager();
+                TpsControlRule tpsControlRule =
+                    StringUtils.isBlank(tpsRuleContent) ? new TpsControlRule()
                         : tpsControlManager.getTpsControlRuleParser().parseRule(tpsRuleContent);
                 
                 tpsControlManager.applyTpsRule(pointName, tpsControlRule);
@@ -96,18 +104,22 @@ public class ControlRuleChangeActivator {
         
         @Override
         public void onEvent(ConnectionLimitRuleChangeEvent event) {
-            LOGGER.info("connection limit rule change event receive ,external:{}", event.isExternal());
+            LOGGER.info("connection limit rule change event receive ,external:{}",
+                event.isExternal());
             
             try {
                 
-                RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+                RuleStorageProxy ruleStorageProxy =
+                    ControlManagerCenter.getInstance().getRuleStorageProxy();
                 
                 if (event.isExternal()) {
                     if (ruleStorageProxy.getExternalStorage() != null) {
-                        String connectionRule = ruleStorageProxy.getExternalStorage().getConnectionRule();
+                        String connectionRule =
+                            ruleStorageProxy.getExternalStorage().getConnectionRule();
                         ruleStorageProxy.getLocalDiskStorage().saveConnectionRule(connectionRule);
                     } else {
-                        Loggers.CONTROL.info("No external rule storage found,will load local disk instead");
+                        Loggers.CONTROL
+                            .info("No external rule storage found,will load local disk instead");
                         
                     }
                     
@@ -116,10 +128,10 @@ public class ControlRuleChangeActivator {
                 
                 Loggers.CONTROL.info("start to apply connection rule content {}", limitRule);
                 ConnectionControlManager controlManager = ControlManagerCenter.getInstance()
-                        .getConnectionControlManager();
+                    .getConnectionControlManager();
                 ConnectionControlRule connectionControlRule =
-                        StringUtils.isBlank(limitRule) ? new ConnectionControlRule()
-                                : controlManager.getConnectionControlRuleParser().parseRule(limitRule);
+                    StringUtils.isBlank(limitRule) ? new ConnectionControlRule()
+                        : controlManager.getConnectionControlRuleParser().parseRule(limitRule);
                 Loggers.CONTROL.info("end to  apply connection rule content ");
                 
                 if (connectionControlRule != null) {
@@ -129,7 +141,8 @@ public class ControlRuleChangeActivator {
                 }
                 
             } catch (Exception e) {
-                LOGGER.error("Fail to parse connection limit rule ,persit:{}", event.isExternal(), e);
+                LOGGER.error("Fail to parse connection limit rule ,persit:{}", event.isExternal(),
+                    e);
             }
         }
         

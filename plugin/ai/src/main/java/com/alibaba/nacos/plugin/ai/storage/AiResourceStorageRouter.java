@@ -39,15 +39,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 3.2.0
  */
 public class AiResourceStorageRouter {
-
+    
     private static final AiResourceStorageRouter INSTANCE = new AiResourceStorageRouter();
-
-    private static final Map<String, AiResourceStorage> STORAGES_BY_TYPE = new ConcurrentHashMap<>(8);
-
+    
+    private static final Map<String, AiResourceStorage> STORAGES_BY_TYPE =
+        new ConcurrentHashMap<>(8);
+    
     private AiResourceStorageRouter() {
         // Storage implementations are registered via join() by external initializer
     }
-
+    
     /**
      * Get global singleton instance.
      *
@@ -56,7 +57,7 @@ public class AiResourceStorageRouter {
     public static AiResourceStorageRouter getInstance() {
         return INSTANCE;
     }
-
+    
     /**
      * Route to storage implementation by {@link StorageKey#getProvider()}.
      *
@@ -69,15 +70,16 @@ public class AiResourceStorageRouter {
         }
         AiResourceStorage storage = STORAGES_BY_TYPE.get(storageKey.getProvider());
         if (storage == null) {
-            throw new IllegalStateException("No AiResourceStorage for provider: " + storageKey.getProvider());
+            throw new IllegalStateException(
+                "No AiResourceStorage for provider: " + storageKey.getProvider());
         }
         return storage;
     }
-
+    
     public Map<String, AiResourceStorage> allStorages() {
         return Collections.unmodifiableMap(STORAGES_BY_TYPE);
     }
-
+    
     /**
      * Add/override a storage implementation at runtime.
      *
@@ -93,7 +95,7 @@ public class AiResourceStorageRouter {
         STORAGES_BY_TYPE.put(storage.type(), storage);
         return true;
     }
-
+    
     @JustForTest
     public static synchronized void reset() {
         STORAGES_BY_TYPE.clear();

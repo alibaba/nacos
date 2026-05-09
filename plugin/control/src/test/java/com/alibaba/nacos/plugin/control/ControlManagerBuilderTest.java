@@ -49,7 +49,7 @@ public class ControlManagerBuilderTest implements ControlManagerBuilder {
             
             @Override
             public void applyConnectionLimitRule(ConnectionControlRule connectionControlRule) {
-            
+                
             }
             
             @Override
@@ -68,7 +68,7 @@ public class ControlManagerBuilderTest implements ControlManagerBuilder {
             
             @Override
             public void registerTpsPoint(String pointName) {
-            
+                
             }
             
             @Override
@@ -83,7 +83,7 @@ public class ControlManagerBuilderTest implements ControlManagerBuilder {
             
             @Override
             public void applyTpsRule(String pointName, TpsControlRule rule) {
-            
+                
             }
             
             @Override

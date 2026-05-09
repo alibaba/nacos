@@ -30,7 +30,8 @@ class RequestResourceTest {
     
     @Test
     void testBuildNamingRequestResource() {
-        RequestResource actual = RequestResource.namingBuilder().setNamespace("NS").setGroup("G").setResource("Service").build();
+        RequestResource actual = RequestResource.namingBuilder().setNamespace("NS").setGroup("G")
+            .setResource("Service").build();
         assertEquals(SignType.NAMING, actual.getType());
         assertEquals("NS", actual.getNamespace());
         assertEquals("G", actual.getGroup());
@@ -39,7 +40,8 @@ class RequestResourceTest {
     
     @Test
     void testBuildConfigRequestResource() {
-        RequestResource actual = RequestResource.configBuilder().setNamespace("NS").setGroup("G").setResource("dataId").build();
+        RequestResource actual = RequestResource.configBuilder().setNamespace("NS").setGroup("G")
+            .setResource("dataId").build();
         assertEquals(SignType.CONFIG, actual.getType());
         assertEquals("NS", actual.getNamespace());
         assertEquals("G", actual.getGroup());

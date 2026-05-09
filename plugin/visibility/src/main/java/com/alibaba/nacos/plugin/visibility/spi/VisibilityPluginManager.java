@@ -60,7 +60,8 @@ public class VisibilityPluginManager {
             return;
         }
         Properties allProperties = resolveInitProperties();
-        ServiceLoader<VisibilityService> serviceLoader = ServiceLoader.load(VisibilityService.class);
+        ServiceLoader<VisibilityService> serviceLoader =
+            ServiceLoader.load(VisibilityService.class);
         Iterator<VisibilityService> iterator = serviceLoader.iterator();
         while (true) {
             VisibilityService each;
@@ -70,7 +71,9 @@ public class VisibilityPluginManager {
                 }
                 each = iterator.next();
             } catch (ServiceConfigurationError | RuntimeException ex) {
-                LOGGER.warn("[VisibilityPluginManager] Failed to load one VisibilityService from SPI, skip it.", ex);
+                LOGGER.warn(
+                    "[VisibilityPluginManager] Failed to load one VisibilityService from SPI, skip it.",
+                    ex);
                 continue;
             }
             registerVisibilityService(each, allProperties);
@@ -83,26 +86,29 @@ public class VisibilityPluginManager {
         try {
             serviceName = service.getVisibilityServiceName();
         } catch (Throwable ex) {
-            LOGGER.warn("[VisibilityPluginManager] VisibilityService({}) resolve name failed, skip.",
-                    service.getClass(), ex);
+            LOGGER.warn(
+                "[VisibilityPluginManager] VisibilityService({}) resolve name failed, skip.",
+                service.getClass(), ex);
             return;
         }
         if (StringUtils.isEmpty(serviceName)) {
-            LOGGER.warn("[VisibilityPluginManager] VisibilityService({}) has empty serviceName, skip.",
-                    service.getClass());
+            LOGGER.warn(
+                "[VisibilityPluginManager] VisibilityService({}) has empty serviceName, skip.",
+                service.getClass());
             return;
         }
         Properties serviceProperties = resolveServiceProperties(allProperties, serviceName);
         try {
             service.init(serviceProperties);
         } catch (Throwable ex) {
-            LOGGER.warn("[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, skip.",
-                    service.getClass(), serviceName, ex);
+            LOGGER.warn(
+                "[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, skip.",
+                service.getClass(), serviceName, ex);
             return;
         }
         visibilityServiceMap.put(serviceName, service);
         LOGGER.info("[VisibilityPluginManager] Loaded VisibilityService({}:{}) successfully.",
-                service.getClass(), serviceName);
+            service.getClass(), serviceName);
     }
     
     private Properties resolveServiceProperties(Properties allProperties, String serviceName) {
@@ -113,7 +119,8 @@ public class VisibilityPluginManager {
         String legacyPrefix = PROPERTIES_PREFIX + serviceName + ".";
         for (String key : allProperties.stringPropertyNames()) {
             if (key.startsWith(legacyPrefix)) {
-                result.setProperty(key.substring(legacyPrefix.length()), allProperties.getProperty(key));
+                result.setProperty(key.substring(legacyPrefix.length()),
+                    allProperties.getProperty(key));
             }
         }
         return result;
@@ -131,10 +138,12 @@ public class VisibilityPluginManager {
      */
     public Optional<VisibilityService> findVisibilityService(String serviceName) {
         if (!isVisibilityPluginEnabled()) {
-            LOGGER.debug("[VisibilityPluginManager] Plugin VISIBILITY is disabled by {}", ENABLED_PROPERTY);
+            LOGGER.debug("[VisibilityPluginManager] Plugin VISIBILITY is disabled by {}",
+                ENABLED_PROPERTY);
             return Optional.empty();
         }
-        if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.VISIBILITY.getType(), serviceName)) {
+        if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.VISIBILITY.getType(),
+            serviceName)) {
             LOGGER.debug("[VisibilityPluginManager] Plugin VISIBILITY:{} is disabled", serviceName);
             return Optional.empty();
         }
@@ -164,7 +173,9 @@ public class VisibilityPluginManager {
                 return (Properties) result;
             }
         } catch (Throwable ex) {
-            LOGGER.debug("[VisibilityPluginManager] Cannot load EnvUtil properties, fallback to system properties.", ex);
+            LOGGER.debug(
+                "[VisibilityPluginManager] Cannot load EnvUtil properties, fallback to system properties.",
+                ex);
         }
         Properties fallback = new Properties();
         fallback.putAll(System.getProperties());

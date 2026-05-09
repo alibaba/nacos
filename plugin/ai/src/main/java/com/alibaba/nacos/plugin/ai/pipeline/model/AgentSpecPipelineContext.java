@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.ai.pipeline.model;
  * @author nacos
  */
 public class AgentSpecPipelineContext extends ResourceFilesPipelineContext {
-
+    
     public AgentSpecPipelineContext() {
         setResourceType(PublishPipelineResourceType.AGENTSPEC);
     }

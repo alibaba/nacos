@@ -32,34 +32,34 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @author WangzJi
  */
 class TracePluginProviderTest {
-
+    
     private TracePluginProvider provider;
-
+    
     @BeforeEach
     void setUp() {
         provider = new TracePluginProvider();
     }
-
+    
     @Test
     void getPluginTypeTest() {
         PluginType pluginType = provider.getPluginType();
-
+        
         assertNotNull(pluginType);
         assertEquals(PluginType.TRACE, pluginType);
         assertEquals("trace", pluginType.getType());
     }
-
+    
     @Test
     void getAllPluginsTest() {
         Map<String, NacosTraceSubscriber> plugins = provider.getAllPlugins();
-
+        
         assertNotNull(plugins);
     }
-
+    
     @Test
     void getOrderTest() {
         int order = provider.getOrder();
-
+        
         assertEquals(0, order);
     }
 }
