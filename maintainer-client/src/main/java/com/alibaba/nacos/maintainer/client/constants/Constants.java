@@ -59,7 +59,8 @@ public class Constants {
         
         public static final String AI_AGENT_ADMIN_PATH = "/v3/admin/ai/a2a";
         
-        public static final String AI_AGENT_LIST_VERSION_ADMIN_PATH = AI_AGENT_ADMIN_PATH + "/version/list";
+        public static final String AI_AGENT_LIST_VERSION_ADMIN_PATH =
+            AI_AGENT_ADMIN_PATH + "/version/list";
         
         public static final String AI_AGENT_LIST_ADMIN_PATH = AI_AGENT_ADMIN_PATH + "/list";
         
@@ -67,15 +68,20 @@ public class Constants {
         
         public static final String AI_PROMPT_LIST_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/list";
         
-        public static final String AI_PROMPT_VERSIONS_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/versions";
+        public static final String AI_PROMPT_VERSIONS_ADMIN_PATH =
+            AI_PROMPT_ADMIN_PATH + "/versions";
         
-        public static final String AI_PROMPT_GOVERNANCE_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/governance";
+        public static final String AI_PROMPT_GOVERNANCE_ADMIN_PATH =
+            AI_PROMPT_ADMIN_PATH + "/governance";
         
-        public static final String AI_PROMPT_VERSION_DETAIL_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/version";
+        public static final String AI_PROMPT_VERSION_DETAIL_ADMIN_PATH =
+            AI_PROMPT_ADMIN_PATH + "/version";
         
-        public static final String AI_PROMPT_BIZ_TAGS_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/biz-tags";
+        public static final String AI_PROMPT_BIZ_TAGS_ADMIN_PATH =
+            AI_PROMPT_ADMIN_PATH + "/biz-tags";
         
-        public static final String AI_PROMPT_DESCRIPTION_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/description";
+        public static final String AI_PROMPT_DESCRIPTION_ADMIN_PATH =
+            AI_PROMPT_ADMIN_PATH + "/description";
         
         /**
          * Deprecated admin path for prompt metadata.
@@ -83,7 +89,8 @@ public class Constants {
          * @deprecated Use {@link #AI_PROMPT_GOVERNANCE_ADMIN_PATH} instead.
          */
         @Deprecated
-        public static final String AI_PROMPT_METADATA_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/metadata";
+        public static final String AI_PROMPT_METADATA_ADMIN_PATH =
+            AI_PROMPT_ADMIN_PATH + "/metadata";
         
         /**
          * Deprecated admin path for prompt detail.
@@ -100,7 +107,7 @@ public class Constants {
          */
         @Deprecated
         public static final String AI_PROMPT_LABEL_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/label";
-
+        
         public static final String CORE_PLUGIN_ADMIN_PATH = "/v3/admin/core/plugin";
         
         public static final String AI_SKILL_ADMIN_PATH = "/v3/admin/ai/skills";
@@ -110,7 +117,7 @@ public class Constants {
         public static final String AI_SKILL_VERSION_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/version";
         
         public static final String AI_SKILL_SCOPE_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/scope";
-
+        
         public static final String AI_SKILL_BIZ_TAGS_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/biz-tags";
         
         public static final String AI_SKILL_UPLOAD_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/upload";
@@ -118,22 +125,28 @@ public class Constants {
         public static final String AI_AGENTSPEC_ADMIN_PATH = "/v3/admin/ai/agentspecs";
         
         public static final String AI_AGENTSPEC_LIST_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/list";
-
-        public static final String AI_AGENTSPEC_VERSION_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/version";
-
-        public static final String AI_AGENTSPEC_VERSION_META_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/version/meta";
-
-        public static final String AI_AGENTSPEC_SCOPE_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/scope";
-
-        public static final String AI_AGENTSPEC_BIZ_TAGS_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/biz-tags";
         
-        public static final String AI_AGENTSPEC_UPLOAD_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/upload";
+        public static final String AI_AGENTSPEC_VERSION_ADMIN_PATH =
+            AI_AGENTSPEC_ADMIN_PATH + "/version";
+        
+        public static final String AI_AGENTSPEC_VERSION_META_ADMIN_PATH =
+            AI_AGENTSPEC_ADMIN_PATH + "/version/meta";
+        
+        public static final String AI_AGENTSPEC_SCOPE_ADMIN_PATH =
+            AI_AGENTSPEC_ADMIN_PATH + "/scope";
+        
+        public static final String AI_AGENTSPEC_BIZ_TAGS_ADMIN_PATH =
+            AI_AGENTSPEC_ADMIN_PATH + "/biz-tags";
+        
+        public static final String AI_AGENTSPEC_UPLOAD_ADMIN_PATH =
+            AI_AGENTSPEC_ADMIN_PATH + "/upload";
         
         public static final String AI_PIPELINE_ADMIN_PATH = "/v3/admin/ai/pipelines";
         
         public static final String AI_PIPELINE_LIST_ADMIN_PATH = AI_PIPELINE_ADMIN_PATH + "/list";
         
-        public static final String AI_PIPELINE_DETAIL_ADMIN_PATH = AI_PIPELINE_ADMIN_PATH + "/detail";
+        public static final String AI_PIPELINE_DETAIL_ADMIN_PATH =
+            AI_PIPELINE_ADMIN_PATH + "/detail";
     }
     
 }

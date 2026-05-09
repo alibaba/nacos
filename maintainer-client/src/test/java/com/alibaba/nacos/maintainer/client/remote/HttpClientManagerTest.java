@@ -52,9 +52,9 @@ public class HttpClientManagerTest {
         NacosRestTemplate template = httpClientManager.getNacosRestTemplate();
         assertNotNull(template, "NacosRestTemplate should not be null.");
     }
-
+    
     // ========== Additional Tests for Coverage ==========
-
+    
     @Test
     @DisplayName("getInstance concurrent access should return same instance")
     void testGetInstanceConcurrentAccess() throws InterruptedException {
@@ -63,7 +63,7 @@ public class HttpClientManagerTest {
         final CountDownLatch endLatch = new CountDownLatch(threadCount);
         final AtomicReference<HttpClientManager> firstInstance = new AtomicReference<>();
         final ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-
+        
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 try {
@@ -72,8 +72,8 @@ public class HttpClientManagerTest {
                     if (firstInstance.get() == null) {
                         firstInstance.set(instance);
                     }
-                    assertEquals(firstInstance.get(), instance, 
-                            "All threads should get the same HttpClientManager instance");
+                    assertEquals(firstInstance.get(), instance,
+                        "All threads should get the same HttpClientManager instance");
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } finally {
@@ -81,14 +81,14 @@ public class HttpClientManagerTest {
                 }
             });
         }
-
+        
         startLatch.countDown();
         endLatch.await();
         executor.shutdown();
         
         assertNotNull(firstInstance.get(), "HttpClientManager instance should be created");
     }
-
+    
     @Test
     @DisplayName("shutdown should complete without throwing")
     void testShutdownCompletes() throws NacosException {

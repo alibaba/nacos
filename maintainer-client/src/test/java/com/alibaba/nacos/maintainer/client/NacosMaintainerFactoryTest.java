@@ -43,15 +43,19 @@ public class NacosMaintainerFactoryTest {
     void testCreateConfigMaintainerServiceWithServerList() throws NacosException {
         String serverList = "127.0.0.1:8848";
         
-        try (MockedStatic<ConfigMaintainerFactory> mockedFactory = mockStatic(ConfigMaintainerFactory.class)) {
-            mockedFactory.when(() -> ConfigMaintainerFactory.createConfigMaintainerService(serverList))
-                    .thenReturn(mockConfigMaintainerService);
+        try (MockedStatic<ConfigMaintainerFactory> mockedFactory =
+            mockStatic(ConfigMaintainerFactory.class)) {
+            mockedFactory
+                .when(() -> ConfigMaintainerFactory.createConfigMaintainerService(serverList))
+                .thenReturn(mockConfigMaintainerService);
             
-            ConfigMaintainerService result = NacosMaintainerFactory.createConfigMaintainerService(serverList);
+            ConfigMaintainerService result =
+                NacosMaintainerFactory.createConfigMaintainerService(serverList);
             
             assertNotNull(result);
             
-            mockedFactory.verify(() -> ConfigMaintainerFactory.createConfigMaintainerService(serverList), times(1));
+            mockedFactory.verify(
+                () -> ConfigMaintainerFactory.createConfigMaintainerService(serverList), times(1));
         }
     }
     
@@ -60,15 +64,19 @@ public class NacosMaintainerFactoryTest {
         Properties properties = new Properties();
         properties.setProperty("serverAddr", "127.0.0.1:8848");
         
-        try (MockedStatic<ConfigMaintainerFactory> mockedFactory = mockStatic(ConfigMaintainerFactory.class)) {
-            mockedFactory.when(() -> ConfigMaintainerFactory.createConfigMaintainerService(properties))
-                    .thenReturn(mockConfigMaintainerService);
+        try (MockedStatic<ConfigMaintainerFactory> mockedFactory =
+            mockStatic(ConfigMaintainerFactory.class)) {
+            mockedFactory
+                .when(() -> ConfigMaintainerFactory.createConfigMaintainerService(properties))
+                .thenReturn(mockConfigMaintainerService);
             
-            ConfigMaintainerService result = NacosMaintainerFactory.createConfigMaintainerService(properties);
+            ConfigMaintainerService result =
+                NacosMaintainerFactory.createConfigMaintainerService(properties);
             
             assertNotNull(result);
             
-            mockedFactory.verify(() -> ConfigMaintainerFactory.createConfigMaintainerService(properties), times(1));
+            mockedFactory.verify(
+                () -> ConfigMaintainerFactory.createConfigMaintainerService(properties), times(1));
         }
     }
 }

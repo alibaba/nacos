@@ -177,7 +177,8 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} if the namespace is created successfully, {@code false} otherwise.
      * @throws NacosException Thrown if any error occurs during the creation.
      */
-    default Boolean createNamespace(String namespaceName, String namespaceDesc) throws NacosException {
+    default Boolean createNamespace(String namespaceName, String namespaceDesc)
+        throws NacosException {
         return createNamespace(StringUtils.EMPTY, namespaceName, namespaceDesc);
     }
     
@@ -190,7 +191,8 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} if the namespace is created successfully, {@code false} otherwise.
      * @throws NacosException Thrown if any error occurs during the creation.
      */
-    Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc) throws NacosException;
+    Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
+        throws NacosException;
     
     /**
      * Update an existing namespace with the provided details.
@@ -201,7 +203,8 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} if the namespace is updated successfully, {@code false} otherwise.
      * @throws NacosException Thrown if any error occurs during the update.
      */
-    Boolean updateNamespace(String namespaceId, String namespaceName, String namespaceDesc) throws NacosException;
+    Boolean updateNamespace(String namespaceId, String namespaceName, String namespaceDesc)
+        throws NacosException;
     
     /**
      * Delete a namespace by its unique identifier.
@@ -220,7 +223,7 @@ public interface CoreMaintainerService extends Closeable {
      * @throws NacosException Thrown if any error occurs during the check.
      */
     Boolean checkNamespaceIdExist(String namespaceId) throws NacosException;
-
+    
     /**
      * List all plugins with optional type filter.
      *
@@ -229,7 +232,7 @@ public interface CoreMaintainerService extends Closeable {
      * @throws NacosException if the operation fails
      */
     List<Map<String, Object>> listPlugins(String pluginType) throws NacosException;
-
+    
     /**
      * Get plugin detail by type and name.
      *
@@ -239,7 +242,7 @@ public interface CoreMaintainerService extends Closeable {
      * @throws NacosException if the operation fails
      */
     Map<String, Object> getPluginDetail(String pluginType, String pluginName) throws NacosException;
-
+    
     /**
      * Update plugin enabled/disabled status.
      *
@@ -248,10 +251,11 @@ public interface CoreMaintainerService extends Closeable {
      * @param enabled    whether to enable
      * @throws NacosException if the operation fails
      */
-    default void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException {
+    default void updatePluginStatus(String pluginType, String pluginName, boolean enabled)
+        throws NacosException {
         updatePluginStatus(pluginType, pluginName, enabled, false);
     }
-
+    
     /**
      * Update plugin enabled/disabled status.
      *
@@ -261,9 +265,10 @@ public interface CoreMaintainerService extends Closeable {
      * @param localOnly  whether only apply to local node
      * @throws NacosException if the operation fails
      */
-    void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
-            throws NacosException;
-
+    void updatePluginStatus(String pluginType, String pluginName, boolean enabled,
+        boolean localOnly)
+        throws NacosException;
+    
     /**
      * Update plugin configuration.
      *
@@ -272,11 +277,12 @@ public interface CoreMaintainerService extends Closeable {
      * @param config     configuration map
      * @throws NacosException if the operation fails
      */
-    default void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config)
-            throws NacosException {
+    default void updatePluginConfig(String pluginType, String pluginName,
+        Map<String, String> config)
+        throws NacosException {
         updatePluginConfig(pluginType, pluginName, config, false);
     }
-
+    
     /**
      * Update plugin configuration.
      *
@@ -286,9 +292,10 @@ public interface CoreMaintainerService extends Closeable {
      * @param localOnly  whether only apply to local node
      * @throws NacosException if the operation fails
      */
-    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config, boolean localOnly)
-            throws NacosException;
-
+    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config,
+        boolean localOnly)
+        throws NacosException;
+    
     /**
      * Get plugin availability across cluster nodes.
      *
@@ -297,5 +304,6 @@ public interface CoreMaintainerService extends Closeable {
      * @return node availability map (node address to availability)
      * @throws NacosException if the operation fails
      */
-    Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName) throws NacosException;
+    Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName)
+        throws NacosException;
 }

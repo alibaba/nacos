@@ -47,123 +47,141 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class SkillMaintainerServiceImplTest {
-
+    
     @Mock
     private ClientHttpProxy clientHttpProxy;
-
+    
     private SkillMaintainerService skillService;
     private AiMaintainerService aiMaintainerService;
-
+    
     @BeforeEach
     void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         aiMaintainerService = AiMaintainerFactory.createAiMaintainerService(properties);
-
+        
         // Get the SkillMaintainerService instance via reflection
-        Field skillServiceField = NacosAiMaintainerServiceImpl.class.getDeclaredField("skillMaintainerService");
+        Field skillServiceField =
+            NacosAiMaintainerServiceImpl.class.getDeclaredField("skillMaintainerService");
         skillServiceField.setAccessible(true);
         skillService = (SkillMaintainerService) skillServiceField.get(aiMaintainerService);
-
+        
         // Inject mock ClientHttpProxy
         injectMockClientHttpProxy(skillService);
     }
-
-    private void injectMockClientHttpProxy(Object service) throws NoSuchFieldException, IllegalAccessException {
+    
+    private void injectMockClientHttpProxy(Object service)
+        throws NoSuchFieldException, IllegalAccessException {
         Field contextField = AbstractAiDelegateMaintainerService.class.getDeclaredField("context");
         contextField.setAccessible(true);
         Object context = contextField.get(service);
-        Field clientHttpProxyField = AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
+        Field clientHttpProxyField =
+            AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
         clientHttpProxyField.setAccessible(true);
         clientHttpProxyField.set(context, clientHttpProxy);
     }
-
+    
     // ========== Lifecycle API Tests ==========
-
+    
     @Test
     @DisplayName("createDraft with targetVersion should return version")
     void testCreateDraftWithTargetVersion() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-
-        String actual = skillService.createDraft("public", "testSkill", "v0", "v1", "skillCardJson");
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        String actual =
+            skillService.createDraft("public", "testSkill", "v0", "v1", "skillCardJson");
         assertEquals("v1", actual);
     }
-
+    
     @Test
     @DisplayName("createDraft with null skillCard should still create")
     void testCreateDraftWithNullSkillCard() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
         String actual = skillService.createDraft("public", "testSkill", null, null, null);
         assertEquals("v1", actual);
     }
-
+    
     @Test
     @DisplayName("updateDraft with setAsLatest should return true")
     void testUpdateDraftWithSetAsLatest() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-
+        mockRestResult
+            .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
         boolean actual = skillService.updateDraft("public", "skillCardJson", true);
         assertTrue(actual);
     }
-
+    
     @Test
     @DisplayName("deleteDraft should return true")
     void testDeleteDraftReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-
+        mockRestResult
+            .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
         boolean actual = skillService.deleteDraft("public", "testSkill");
         assertTrue(actual);
     }
-
+    
     @Test
     @DisplayName("submit should return submitted version")
     void testSubmitReturnsVersion() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
         String actual = skillService.submit("public", "testSkill", "v1");
         assertEquals("v1", actual);
     }
-
+    
     @Test
     @DisplayName("publish should return true")
     void testPublishReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-
+        mockRestResult
+            .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
         boolean actual = skillService.publish("public", "testSkill", "v1", true);
         assertTrue(actual);
     }
-
+    
     @Test
     @DisplayName("changeOnlineStatus online should return true")
     void testChangeOnlineStatusOnline() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-
-        boolean actual = skillService.changeOnlineStatus("public", "testSkill", "PUBLIC", "v1", true);
+        mockRestResult
+            .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        boolean actual =
+            skillService.changeOnlineStatus("public", "testSkill", "PUBLIC", "v1", true);
         assertTrue(actual);
     }
-
+    
     @Test
     @DisplayName("changeOnlineStatus with null scope should handle gracefully")
     void testChangeOnlineStatusWithNullScope() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-
+        mockRestResult
+            .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
         boolean actual = skillService.changeOnlineStatus("public", "testSkill", null, "v1", false);
         assertTrue(actual);
     }

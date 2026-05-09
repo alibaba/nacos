@@ -28,12 +28,14 @@ import java.util.Properties;
  * @author Nacos
  */
 public class NacosMaintainerFactory {
-
-    public static ConfigMaintainerService createConfigMaintainerService(String serverList) throws NacosException {
+    
+    public static ConfigMaintainerService createConfigMaintainerService(String serverList)
+        throws NacosException {
         return ConfigMaintainerFactory.createConfigMaintainerService(serverList);
     }
     
-    public static ConfigMaintainerService createConfigMaintainerService(Properties properties) throws NacosException {
+    public static ConfigMaintainerService createConfigMaintainerService(Properties properties)
+        throws NacosException {
         return ConfigMaintainerFactory.createConfigMaintainerService(properties);
     }
 }

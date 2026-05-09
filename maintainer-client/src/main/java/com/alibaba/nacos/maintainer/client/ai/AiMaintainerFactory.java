@@ -34,7 +34,8 @@ public class AiMaintainerFactory {
      * @return naming maintainer service
      * @throws NacosException nacos exception
      */
-    public static AiMaintainerService createAiMaintainerService(Properties properties) throws NacosException {
+    public static AiMaintainerService createAiMaintainerService(Properties properties)
+        throws NacosException {
         if (properties == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "properties is null");
         }

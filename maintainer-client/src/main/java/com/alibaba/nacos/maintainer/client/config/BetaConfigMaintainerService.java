@@ -45,8 +45,10 @@ public interface BetaConfigMaintainerService {
      * @return Whether the configuration was published successfully.
      * @throws NacosException If publishing fails.
      */
-    boolean publishBetaConfig(String dataId, String groupName, String namespaceId, String content, String appName,
-            String srcUser, String configTags, String desc, String type, String betaIps) throws NacosException;
+    boolean publishBetaConfig(String dataId, String groupName, String namespaceId, String content,
+        String appName,
+        String srcUser, String configTags, String desc, String type, String betaIps)
+        throws NacosException;
     
     /**
      * Stop a beta configuration by dataId and groupName.
@@ -92,6 +94,7 @@ public interface BetaConfigMaintainerService {
      * @return Beta configuration information.
      * @throws NacosException If the query fails.
      */
-    ConfigGrayInfo queryBeta(String dataId, String groupName, String namespaceId) throws NacosException;
+    ConfigGrayInfo queryBeta(String dataId, String groupName, String namespaceId)
+        throws NacosException;
     
 }
