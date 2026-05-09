@@ -220,7 +220,7 @@ git push origin develop-issue#${issue编号}
 - [ ] 编写详细的 PR 描述，足以说明 PR 做了什么、如何做的以及为什么这样做。
 - [ ] 编写必要的单元测试来验证您的逻辑正确性。当存在跨模块依赖时，尽量使用 mock。如果提交了新功能或重大更改，请记得添加集成测试。
 - [ ] 运行 `mvn -B clean apache-rat:check checkstyle:check spotbugs:check spotless:check -DskipTests` 确保基本检查通过。
-- [ ] 运行 `mvn clean install -DskipITs` 确保单元测试通过。
+- [ ] 运行 `mvn clean install` 确保单元测试通过。
 - [ ] 运行 `mvn clean test-compile failsafe:integration-test` 确保集成测试通过。
 - [ ] 如果此贡献较大，请签署 [Apache 个人贡献者许可协议](http://www.apache.org/licenses/#clas)。
 

@@ -220,7 +220,7 @@ Create a pull request to the **develop** branch and follow the [pull request tem
 - [ ] Write a pull request description that is detailed enough to understand what the pull request does, how, and why.
 - [ ] Write necessary unit tests to verify your logic correction. Use mocking when cross-module dependencies exist. If a new feature or significant change is committed, please remember to add integration tests.
 - [ ] Run `mvn -B clean apache-rat:check checkstyle:check spotbugs:check spotless:check -DskipTests` to make sure basic checks pass.
-- [ ] Run `mvn clean install -DskipITs` to make sure unit tests pass.
+- [ ] Run `mvn clean install` to make sure unit tests pass.
 - [ ] Run `mvn clean test-compile failsafe:integration-test` to make sure integration tests pass.
 - [ ] If this contribution is large, please file an [Apache Individual Contributor License Agreement](http://www.apache.org/licenses/#clas).
 
