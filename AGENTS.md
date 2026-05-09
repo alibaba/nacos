@@ -108,12 +108,16 @@ Every new source file **must** include the Apache License 2.0 header. CI enforce
 Nacos v3 APIs follow strict conventions. AI agents **must** comply with these
 standards when generating controller code.
 
-Authoritative HTTP API specs live under [`specs/`](./specs/README.md). English:
+Authoritative API and SDK specs live under [`specs/`](./specs/README.md).
+English:
 
 - [HTTP API Spec](./specs/en/http-api/api-spec.md)
 - [Authorization Spec](./specs/en/http-api/authorization-spec.md)
 - [Response And Error Spec](./specs/en/http-api/response-error-spec.md)
 - [V3 API Surface](./specs/en/http-api/v3-api-surface.md)
+- [gRPC API Spec](./specs/en/grpc-api/api-spec.md)
+- [SDK Spec](./specs/en/sdk/sdk-spec.md)
+- [Java SDK Implementation Spec](./specs/en/sdk/sdk-java-impl-spec.md)
 
 Simplified Chinese:
 
@@ -121,6 +125,9 @@ Simplified Chinese:
 - [鉴权规范](./specs/zh-cn/http-api/authorization-spec.md)
 - [响应与错误规范](./specs/zh-cn/http-api/response-error-spec.md)
 - [V3 API 范围](./specs/zh-cn/http-api/v3-api-surface.md)
+- [gRPC API 规范](./specs/zh-cn/grpc-api/api-spec.md)
+- [SDK 规范](./specs/zh-cn/sdk/sdk-spec.md)
+- [Java SDK 实现规范](./specs/zh-cn/sdk/sdk-java-impl-spec.md)
 
 This section is a quick implementation checklist for agents. If it conflicts
 with the specs, follow the specs and update this checklist.

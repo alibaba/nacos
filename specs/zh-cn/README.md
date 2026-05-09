@@ -19,6 +19,9 @@
 当前规范：
 
 - [HTTP API 规范](http-api/api-spec.md)
+- [gRPC API 规范](grpc-api/api-spec.md)
+- [SDK 规范](sdk/sdk-spec.md)
+- [Java SDK 实现规范](sdk/sdk-java-impl-spec.md)
 
 [AGENTS.md](../../AGENTS.md) 等 Agent 指南文件应只摘要这些规范以便本地执行。
 当人、AI agent、模板或校验工具使用 API 指南时，规范仍然是规则来源。

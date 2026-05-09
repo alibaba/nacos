@@ -19,6 +19,9 @@
 Current specs:
 
 - [HTTP API Spec](http-api/api-spec.md)
+- [gRPC API Spec](grpc-api/api-spec.md)
+- [SDK Spec](sdk/sdk-spec.md)
+- [Java SDK Implementation Spec](sdk/sdk-java-impl-spec.md)
 
 Agent guidance files such as [AGENTS.md](../../AGENTS.md) should summarize these
 specs for local execution. The specs remain the rule source when API guidance is
