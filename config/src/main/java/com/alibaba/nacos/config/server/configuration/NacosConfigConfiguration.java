@@ -51,7 +51,8 @@ public class NacosConfigConfiguration {
     }
     
     @Bean
-    @ConditionalOnProperty(name = "nacos.web.charset.filter", havingValue = "nacos", matchIfMissing = true)
+    @ConditionalOnProperty(name = "nacos.web.charset.filter", havingValue = "nacos",
+        matchIfMissing = true)
     public FilterRegistrationBean<NacosWebFilter> nacosWebFilterRegistration() {
         FilterRegistrationBean<NacosWebFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(nacosWebFilter());

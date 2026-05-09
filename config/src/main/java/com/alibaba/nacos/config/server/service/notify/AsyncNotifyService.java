@@ -128,13 +128,17 @@ public class AsyncNotifyService {
         }
     }
     
-    private NotifySingleRpcTask generateTask(ConfigDataChangeEvent configDataChangeEvent, Member member) {
+    private NotifySingleRpcTask generateTask(ConfigDataChangeEvent configDataChangeEvent,
+        Member member) {
         
-        NotifySingleRpcTask task = new NotifySingleRpcTask(configDataChangeEvent.dataId, configDataChangeEvent.group,
-                configDataChangeEvent.tenant, configDataChangeEvent.grayName, configDataChangeEvent.lastModifiedTs,
+        NotifySingleRpcTask task =
+            new NotifySingleRpcTask(configDataChangeEvent.dataId, configDataChangeEvent.group,
+                configDataChangeEvent.tenant, configDataChangeEvent.grayName,
+                configDataChangeEvent.lastModifiedTs,
                 member);
         
-        if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isNotBlank(configDataChangeEvent.grayName)) {
+        if (PropertyUtil.isGrayCompatibleModel()
+            && StringUtils.isNotBlank(configDataChangeEvent.grayName)) {
             
             // old server should set beta or tag flag
             if (!(Boolean) member.getExtendInfo().getOrDefault(SUPPORT_GRAY_MODEL, Boolean.FALSE)) {
@@ -142,7 +146,8 @@ public class AsyncNotifyService {
                 task.setBeta(BetaGrayRule.TYPE_BETA.equals(configDataChangeEvent.grayName));
                 if (configDataChangeEvent.grayName.startsWith(TagGrayRule.TYPE_TAG + underLine)) {
                     task.setTag(configDataChangeEvent.grayName.substring(
-                            configDataChangeEvent.grayName.indexOf(TagGrayRule.TYPE_TAG + underLine) + 4));
+                        configDataChangeEvent.grayName.indexOf(TagGrayRule.TYPE_TAG + underLine)
+                            + 4));
                 }
                 
             }
@@ -176,9 +181,10 @@ public class AsyncNotifyService {
                 boolean unHealthNeedDelay = isUnHealthy(member.getAddress());
                 if (unHealthNeedDelay) {
                     // target ip is unhealthy, then put it in the notification list
-                    ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                            task.getLastModified(), InetUtils.getSelfIP(), event,
-                            ConfigTraceService.NOTIFY_TYPE_UNHEALTH, 0, member.getAddress());
+                    ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(),
+                        task.getTenant(), null,
+                        task.getLastModified(), InetUtils.getSelfIP(), event,
+                        ConfigTraceService.NOTIFY_TYPE_UNHEALTH, 0, member.getAddress());
                     // get delay time and set fail count to the task
                     asyncTaskExecute(task);
                 } else {
@@ -186,7 +192,7 @@ public class AsyncNotifyService {
                     // grpc report data change only
                     try {
                         configClusterRpcClientProxy.syncConfigChange(member, syncRequest,
-                                new AsyncRpcNotifyCallBack(AsyncNotifyService.this, task));
+                            new AsyncRpcNotifyCallBack(AsyncNotifyService.this, task));
                     } catch (Exception e) {
                         MetricsMonitor.getConfigNotifyException().increment();
                         asyncTaskExecute(task);
@@ -236,8 +242,9 @@ public class AsyncNotifyService {
         @Deprecated
         private String tag;
         
-        public NotifySingleRpcTask(String dataId, String group, String tenant, String grayName, long lastModified,
-                Member member) {
+        public NotifySingleRpcTask(String dataId, String group, String tenant, String grayName,
+            long lastModified,
+            Member member) {
             this.dataId = dataId;
             this.group = group;
             this.tenant = tenant;
@@ -324,13 +331,15 @@ public class AsyncNotifyService {
         return event;
     }
     
-    public static class AsyncRpcNotifyCallBack implements RequestCallBack<ConfigChangeClusterSyncResponse> {
+    public static class AsyncRpcNotifyCallBack
+        implements RequestCallBack<ConfigChangeClusterSyncResponse> {
         
         private NotifySingleRpcTask task;
         
         AsyncNotifyService asyncNotifyService;
         
-        public AsyncRpcNotifyCallBack(AsyncNotifyService asyncNotifyService, NotifySingleRpcTask task) {
+        public AsyncRpcNotifyCallBack(AsyncNotifyService asyncNotifyService,
+            NotifySingleRpcTask task) {
             this.task = task;
             this.asyncNotifyService = asyncNotifyService;
         }
@@ -351,21 +360,28 @@ public class AsyncNotifyService {
             
             long delayed = System.currentTimeMillis() - task.getLastModified();
             if (response.isSuccess()) {
-                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                        task.getLastModified(), InetUtils.getSelfIP(), event, ConfigTraceService.NOTIFY_TYPE_OK,
-                        delayed, task.member.getAddress());
+                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(),
+                    task.getTenant(), null,
+                    task.getLastModified(), InetUtils.getSelfIP(), event,
+                    ConfigTraceService.NOTIFY_TYPE_OK,
+                    delayed, task.member.getAddress());
             } else {
-                LOGGER.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}", task.member.getAddress(),
-                        task.getDataId(), task.getGroup(), task.getLastModified(), response.getErrorCode());
-                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                        task.getLastModified(), InetUtils.getSelfIP(), event, ConfigTraceService.NOTIFY_TYPE_ERROR,
-                        delayed, task.member.getAddress());
+                LOGGER.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}",
+                    task.member.getAddress(),
+                    task.getDataId(), task.getGroup(), task.getLastModified(),
+                    response.getErrorCode());
+                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(),
+                    task.getTenant(), null,
+                    task.getLastModified(), InetUtils.getSelfIP(), event,
+                    ConfigTraceService.NOTIFY_TYPE_ERROR,
+                    delayed, task.member.getAddress());
                 
                 //get delay time and set fail count to the task
                 asyncNotifyService.asyncTaskExecute(task);
                 
-                LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.member.getAddress(),
-                        task.getDataId(), task.getGroup(), task.getLastModified());
+                LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
+                    task.member.getAddress(),
+                    task.getDataId(), task.getGroup(), task.getLastModified());
                 
                 MetricsMonitor.getConfigNotifyException().increment();
             }
@@ -376,16 +392,20 @@ public class AsyncNotifyService {
             String event = getNotifyEvent(task);
             
             long delayed = System.currentTimeMillis() - task.getLastModified();
-            LOGGER.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}", task.member.getAddress(),
-                    task.getDataId(), task.getGroup(), task.getLastModified(), ex);
-            ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                    task.getLastModified(), InetUtils.getSelfIP(), event, ConfigTraceService.NOTIFY_TYPE_EXCEPTION,
-                    delayed, task.member.getAddress());
+            LOGGER.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}",
+                task.member.getAddress(),
+                task.getDataId(), task.getGroup(), task.getLastModified(), ex);
+            ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(),
+                null,
+                task.getLastModified(), InetUtils.getSelfIP(), event,
+                ConfigTraceService.NOTIFY_TYPE_EXCEPTION,
+                delayed, task.member.getAddress());
             
             //get delay time and set fail count to the task
             asyncNotifyService.asyncTaskExecute(task);
-            LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.member.getAddress(),
-                    task.getDataId(), task.getGroup(), task.getLastModified());
+            LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
+                task.member.getAddress(),
+                task.getDataId(), task.getGroup(), task.getLastModified());
             
             MetricsMonitor.getConfigNotifyException().increment();
         }

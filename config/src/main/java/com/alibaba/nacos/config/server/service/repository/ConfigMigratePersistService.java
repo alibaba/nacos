@@ -81,8 +81,9 @@ public interface ConfigMigratePersistService {
      * @param srcUser      the src user
      * @return the migrate config update list
      */
-    List<ConfigInfo> getMigrateConfigUpdateList(long startId, int pageSize, String srcTenant, String targetTenant,
-            String srcUser);
+    List<ConfigInfo> getMigrateConfigUpdateList(long startId, int pageSize, String srcTenant,
+        String targetTenant,
+        String srcUser);
     
     /**
      * Gets migrate config gray update list.
@@ -94,8 +95,9 @@ public interface ConfigMigratePersistService {
      * @param srcUser      the src user
      * @return the migrate config gray update list
      */
-    List<ConfigInfoGrayWrapper> getMigrateConfigGrayUpdateList(long startId, int pageSize, String srcTenant,
-            String targetTenant, String srcUser);
+    List<ConfigInfoGrayWrapper> getMigrateConfigGrayUpdateList(long startId, int pageSize,
+        String srcTenant,
+        String targetTenant, String srcUser);
     
     /**
      * Migrate config by ids.
@@ -123,8 +125,9 @@ public interface ConfigMigratePersistService {
      * @param targetTenant the target tenant
      * @param srcUser      the src user
      */
-    void syncConfigGray(String dataId, String group, String tenant, String grayName, String targetTenant,
-            String srcUser);
+    void syncConfigGray(String dataId, String group, String tenant, String grayName,
+        String targetTenant,
+        String srcUser);
     
     /**
      * Sync config.
@@ -135,5 +138,6 @@ public interface ConfigMigratePersistService {
      * @param targetTenant the target tenant
      * @param srcUser      the src user
      */
-    void syncConfig(String dataId, String group, String tenant, String targetTenant, String srcUser);
+    void syncConfig(String dataId, String group, String tenant, String targetTenant,
+        String srcUser);
 }

@@ -70,7 +70,8 @@ class ConfigOpenApiControllerTest {
         response.setEncryptedDataKey(null);
         response.setLastModified(System.currentTimeMillis());
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
         ConfigFormV3 configForm = new ConfigFormV3();
         configForm.setDataId("test");
         configForm.setGroupName("test");
@@ -90,7 +91,8 @@ class ConfigOpenApiControllerTest {
         response.setContent(null);
         response.setEncryptedDataKey(null);
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
         ConfigFormV3 configForm = new ConfigFormV3();
         configForm.setDataId("test");
         configForm.setGroupName("test");
@@ -110,9 +112,11 @@ class ConfigOpenApiControllerTest {
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY);
         response.setMatchedGray(new ConfigCacheGray());
         BetaGrayRule betaGrayRule = new BetaGrayRule("1.1.1.1", 1);
-        ConfigGrayPersistInfo grayPersistInfo = GrayRuleManager.constructConfigGrayPersistInfo(betaGrayRule);
+        ConfigGrayPersistInfo grayPersistInfo =
+            GrayRuleManager.constructConfigGrayPersistInfo(betaGrayRule);
         response.getMatchedGray().resetGrayRule(JacksonUtils.toJson(grayPersistInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
         ConfigFormV3 configForm = new ConfigFormV3();
         configForm.setDataId("test");
         configForm.setGroupName("test");
@@ -137,9 +141,11 @@ class ConfigOpenApiControllerTest {
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY);
         response.setMatchedGray(new ConfigCacheGray());
         TagGrayRule tagGrayRule = new TagGrayRule("1.1.1.1", 1);
-        ConfigGrayPersistInfo grayPersistInfo = GrayRuleManager.constructConfigGrayPersistInfo(tagGrayRule);
+        ConfigGrayPersistInfo grayPersistInfo =
+            GrayRuleManager.constructConfigGrayPersistInfo(tagGrayRule);
         response.getMatchedGray().resetGrayRule(JacksonUtils.toJson(grayPersistInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
         ConfigFormV3 configForm = new ConfigFormV3();
         configForm.setDataId("test");
         configForm.setGroupName("test");

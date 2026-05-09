@@ -75,7 +75,8 @@ class ConfigPublishRequestHandlerTest {
     @BeforeEach
     void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        ConfigOperationService configOperationService = new ConfigOperationService(configInfoPersistService,
+        ConfigOperationService configOperationService =
+            new ConfigOperationService(configInfoPersistService,
                 configInfoGrayPersistService, configMigrateService);
         configPublishRequestHandler = new ConfigPublishRequestHandler(configOperationService);
         DatasourceConfiguration.setEmbeddedStorage(false);
@@ -134,9 +135,11 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoPersistService.insertOrUpdate(eq(requestMeta.getClientIp()), eq(srcUser), any(ConfigInfo.class),
-                any(Map.class))).thenReturn(configOperateResult);
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
+        when(configInfoPersistService.insertOrUpdate(eq(requestMeta.getClientIp()), eq(srcUser),
+            any(ConfigInfo.class),
+            any(Map.class))).thenReturn(configOperateResult);
+        ConfigPublishResponse response =
+            configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         Thread.sleep(500L);
@@ -198,8 +201,9 @@ class ConfigPublishRequestHandlerTest {
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
         when(configInfoPersistService.insertOrUpdateCas(eq(requestMeta.getClientIp()), eq(srcUser),
-                any(ConfigInfo.class), any(Map.class))).thenReturn(configOperateResult);
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
+            any(ConfigInfo.class), any(Map.class))).thenReturn(configOperateResult);
+        ConfigPublishResponse response =
+            configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         Thread.sleep(500L);
@@ -265,8 +269,10 @@ class ConfigPublishRequestHandlerTest {
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
         when(configInfoPersistService.insertOrUpdateCas(eq(requestMeta.getClientIp()), eq(srcUser),
-                any(ConfigInfo.class), any(Map.class))).thenThrow(new NacosRuntimeException(502, "mock error"));
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
+            any(ConfigInfo.class), any(Map.class)))
+            .thenThrow(new NacosRuntimeException(502, "mock error"));
+        ConfigPublishResponse response =
+            configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertTrue(response.getMessage().contains("mock error"));
@@ -320,9 +326,12 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq(BetaGrayRule.TYPE_BETA),
-                anyString(), eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
+        when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class),
+            eq(BetaGrayRule.TYPE_BETA),
+            anyString(), eq(requestMeta.getClientIp()), eq(srcUser)))
+            .thenReturn(configOperateResult);
+        ConfigPublishResponse response =
+            configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         Thread.sleep(500L);
@@ -382,9 +391,12 @@ class ConfigPublishRequestHandlerTest {
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
         
-        when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq(BetaGrayRule.TYPE_BETA),
-                anyString(), eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class),
+            eq(BetaGrayRule.TYPE_BETA),
+            anyString(), eq(requestMeta.getClientIp()), eq(srcUser)))
+            .thenReturn(configOperateResult);
+        ConfigPublishResponse response =
+            configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         Thread.sleep(500L);
@@ -446,9 +458,11 @@ class ConfigPublishRequestHandlerTest {
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
         
-        when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
-                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
+        when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class),
+            eq("tag_" + tag), anyString(),
+            eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
+        ConfigPublishResponse response =
+            configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         Thread.sleep(500L);
@@ -504,9 +518,11 @@ class ConfigPublishRequestHandlerTest {
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
         
-        when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
-                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class),
+            eq("tag_" + tag), anyString(),
+            eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
+        ConfigPublishResponse response =
+            configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         Thread.sleep(500L);

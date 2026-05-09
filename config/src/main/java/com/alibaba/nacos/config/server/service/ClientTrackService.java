@@ -71,7 +71,7 @@ public class ClientTrackService {
      */
     public static Map<String, SubscriberStatus> listSubStatus(String ip) {
         Map<String, SubscriberStatus> status = new HashMap<>(100);
-
+        
         // record here is non-null
         ClientRecord record = getClientRecord(ip);
         for (Map.Entry<String, String> entry : record.getGroupKey2md5Map().entrySet()) {
@@ -80,19 +80,21 @@ public class ClientTrackService {
             long lastPollingTs = record.getGroupKey2pollingTsMap().get(groupKey);
             boolean isUpdate = ConfigCacheService.isUptodate(groupKey, clientMd5);
             
-            status.put(groupKey, new SubscriberStatus(groupKey, isUpdate, clientMd5, lastPollingTs));
+            status.put(groupKey,
+                new SubscriberStatus(groupKey, isUpdate, clientMd5, lastPollingTs));
         }
         
         return status;
     }
-  
+    
     /**
      * Specify subscriber's ip and look up whether data is latest.
      * groupKey -> isUptodate.
      */
     public static Map<String, Boolean> isClientUptodate(String ip) {
         Map<String, Boolean> result = new HashMap<>(100);
-        for (Map.Entry<String, String> entry : getClientRecord(ip).getGroupKey2md5Map().entrySet()) {
+        for (Map.Entry<String, String> entry : getClientRecord(ip).getGroupKey2md5Map()
+            .entrySet()) {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
             Boolean isuptodate = ConfigCacheService.isUptodate(groupKey, clientMd5);
@@ -126,5 +128,3 @@ public class ClientTrackService {
      */
     static volatile ConcurrentMap<String, ClientRecord> clientRecords = new ConcurrentHashMap<>();
 }
-
-

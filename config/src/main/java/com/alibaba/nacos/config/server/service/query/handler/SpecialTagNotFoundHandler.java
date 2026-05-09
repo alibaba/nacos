@@ -41,7 +41,8 @@ public class SpecialTagNotFoundHandler extends AbstractConfigQueryHandler {
     public ConfigQueryChainResponse handle(ConfigQueryChainRequest request) throws IOException {
         if (StringUtils.isNotBlank(request.getTag())) {
             ConfigQueryChainResponse response = new ConfigQueryChainResponse();
-            response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND);
+            response
+                .setStatus(ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND);
             return response;
         } else {
             return nextHandler.handle(request);

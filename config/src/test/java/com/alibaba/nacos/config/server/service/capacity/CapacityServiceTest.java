@@ -62,8 +62,10 @@ class CapacityServiceTest {
     @BeforeEach
     void setUp() {
         service = new CapacityService();
-        ReflectionTestUtils.setField(service, "groupCapacityPersistService", groupCapacityPersistService);
-        ReflectionTestUtils.setField(service, "tenantCapacityPersistService", tenantCapacityPersistService);
+        ReflectionTestUtils.setField(service, "groupCapacityPersistService",
+            groupCapacityPersistService);
+        ReflectionTestUtils.setField(service, "tenantCapacityPersistService",
+            tenantCapacityPersistService);
         ReflectionTestUtils.setField(service, "configInfoPersistService", configInfoPersistService);
     }
     
@@ -79,8 +81,10 @@ class CapacityServiceTest {
         groupCapacity.setId(1L);
         groupCapacity.setGroupName("testGroup");
         groupCapacityList.add(groupCapacity);
-        when(groupCapacityPersistService.getCapacityList4CorrectUsage(0L, 100)).thenReturn(groupCapacityList);
-        when(groupCapacityPersistService.getCapacityList4CorrectUsage(1L, 100)).thenReturn(new ArrayList<>());
+        when(groupCapacityPersistService.getCapacityList4CorrectUsage(0L, 100))
+            .thenReturn(groupCapacityList);
+        when(groupCapacityPersistService.getCapacityList4CorrectUsage(1L, 100))
+            .thenReturn(new ArrayList<>());
         when(groupCapacityPersistService.correctUsage(eq("testGroup"), any())).thenReturn(true);
         
         List<NamespaceCapacity> tenantCapacityList = new ArrayList<>();
@@ -88,8 +92,10 @@ class CapacityServiceTest {
         tenantCapacity.setId(1L);
         tenantCapacity.setNamespaceId("testTenant");
         tenantCapacityList.add(tenantCapacity);
-        when(tenantCapacityPersistService.getCapacityList4CorrectUsage(0L, 100)).thenReturn(tenantCapacityList);
-        when(tenantCapacityPersistService.getCapacityList4CorrectUsage(1L, 100)).thenReturn(new ArrayList<>());
+        when(tenantCapacityPersistService.getCapacityList4CorrectUsage(0L, 100))
+            .thenReturn(tenantCapacityList);
+        when(tenantCapacityPersistService.getCapacityList4CorrectUsage(1L, 100))
+            .thenReturn(new ArrayList<>());
         when(tenantCapacityPersistService.correctUsage(eq("testTenant"), any())).thenReturn(true);
         
         service.correctUsage();
@@ -98,9 +104,12 @@ class CapacityServiceTest {
         Mockito.verify(groupCapacityPersistService, times(1)).getCapacityList4CorrectUsage(1L, 100);
         Mockito.verify(groupCapacityPersistService, times(1)).correctUsage(eq("testGroup"), any());
         
-        Mockito.verify(tenantCapacityPersistService, times(1)).getCapacityList4CorrectUsage(0L, 100);
-        Mockito.verify(tenantCapacityPersistService, times(1)).getCapacityList4CorrectUsage(1L, 100);
-        Mockito.verify(tenantCapacityPersistService, times(1)).correctUsage(eq("testTenant"), any());
+        Mockito.verify(tenantCapacityPersistService, times(1)).getCapacityList4CorrectUsage(0L,
+            100);
+        Mockito.verify(tenantCapacityPersistService, times(1)).getCapacityList4CorrectUsage(1L,
+            100);
+        Mockito.verify(tenantCapacityPersistService, times(1)).correctUsage(eq("testTenant"),
+            any());
     }
     
     @Test
@@ -114,7 +123,8 @@ class CapacityServiceTest {
     void testCorrectTenantUsage() {
         when(tenantCapacityPersistService.correctUsage(eq("testTenant"), any())).thenReturn(true);
         service.correctTenantUsage("testTenant");
-        Mockito.verify(tenantCapacityPersistService, times(1)).correctUsage(eq("testTenant"), any());
+        Mockito.verify(tenantCapacityPersistService, times(1)).correctUsage(eq("testTenant"),
+            any());
     }
     
     @Test
@@ -130,14 +140,16 @@ class CapacityServiceTest {
         groupCapacity.setGroupName("testGroup");
         groupCapacity.setUsage(300);
         when(groupCapacityPersistService.insertGroupCapacity(any())).thenReturn(true);
-        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
+        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup")))
+            .thenReturn(groupCapacity);
         when(groupCapacityPersistService.updateQuota(eq("testGroup"), eq(500))).thenReturn(true);
         
         NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setNamespaceId("testTenant");
         tenantCapacity.setUsage(300);
         when(tenantCapacityPersistService.insertTenantCapacity(any())).thenReturn(true);
-        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
+        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant")))
+            .thenReturn(tenantCapacity);
         when(tenantCapacityPersistService.updateQuota(eq("testTenant"), eq(500))).thenReturn(true);
         
         service.initAllCapacity();
@@ -148,21 +160,24 @@ class CapacityServiceTest {
         
         Mockito.verify(tenantCapacityPersistService, times(1)).insertTenantCapacity(any());
         Mockito.verify(tenantCapacityPersistService, times(1)).getTenantCapacity(eq("testTenant"));
-        Mockito.verify(tenantCapacityPersistService, times(1)).updateQuota(eq("testTenant"), eq(500));
+        Mockito.verify(tenantCapacityPersistService, times(1)).updateQuota(eq("testTenant"),
+            eq(500));
     }
     
     @Test
     void testInsertAndUpdateClusterUsage() {
         when(groupCapacityPersistService.insertGroupCapacity(any())).thenReturn(true);
         when(groupCapacityPersistService.incrementUsage(any())).thenReturn(true);
-        when(groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any())).thenReturn(true);
+        when(groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any()))
+            .thenReturn(true);
         when(groupCapacityPersistService.decrementUsage(any())).thenReturn(true);
         
         service.insertAndUpdateClusterUsage(CounterMode.INCREMENT, true);
         Mockito.verify(groupCapacityPersistService, times(1)).incrementUsage(any());
         
         service.insertAndUpdateClusterUsage(CounterMode.INCREMENT, false);
-        Mockito.verify(groupCapacityPersistService, times(1)).incrementUsageWithDefaultQuotaLimit(any());
+        Mockito.verify(groupCapacityPersistService, times(1))
+            .incrementUsageWithDefaultQuotaLimit(any());
         
         service.insertAndUpdateClusterUsage(CounterMode.DECREMENT, true);
         Mockito.verify(groupCapacityPersistService, times(1)).decrementUsage(any());
@@ -170,11 +185,13 @@ class CapacityServiceTest {
     
     @Test
     void testUpdateClusterUsage() {
-        when(groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any())).thenReturn(true);
+        when(groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any()))
+            .thenReturn(true);
         when(groupCapacityPersistService.decrementUsage(any())).thenReturn(true);
         
         service.updateClusterUsage(CounterMode.INCREMENT);
-        Mockito.verify(groupCapacityPersistService, times(1)).incrementUsageWithDefaultQuotaLimit(any());
+        Mockito.verify(groupCapacityPersistService, times(1))
+            .incrementUsageWithDefaultQuotaLimit(any());
         
         service.updateClusterUsage(CounterMode.DECREMENT);
         Mockito.verify(groupCapacityPersistService, times(1)).decrementUsage(any());
@@ -187,14 +204,16 @@ class CapacityServiceTest {
         groupCapacity.setUsage(300);
         when(groupCapacityPersistService.getGroupCapacity("testGroup")).thenReturn(groupCapacity);
         when(groupCapacityPersistService.incrementUsage(any())).thenReturn(true);
-        when(groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any())).thenReturn(true);
+        when(groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any()))
+            .thenReturn(true);
         when(groupCapacityPersistService.decrementUsage(any())).thenReturn(true);
         
         service.insertAndUpdateGroupUsage(CounterMode.INCREMENT, "testGroup", true);
         Mockito.verify(groupCapacityPersistService, times(1)).incrementUsage(any());
         
         service.insertAndUpdateClusterUsage(CounterMode.INCREMENT, false);
-        Mockito.verify(groupCapacityPersistService, times(1)).incrementUsageWithDefaultQuotaLimit(any());
+        Mockito.verify(groupCapacityPersistService, times(1))
+            .incrementUsageWithDefaultQuotaLimit(any());
         
         service.insertAndUpdateClusterUsage(CounterMode.DECREMENT, true);
         Mockito.verify(groupCapacityPersistService, times(1)).decrementUsage(any());
@@ -202,11 +221,13 @@ class CapacityServiceTest {
     
     @Test
     void testUpdateGroupUsage() {
-        when(groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any())).thenReturn(true);
+        when(groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any()))
+            .thenReturn(true);
         when(groupCapacityPersistService.decrementUsage(any())).thenReturn(true);
         
         service.updateGroupUsage(CounterMode.INCREMENT, "testGroup");
-        Mockito.verify(groupCapacityPersistService, times(1)).incrementUsageWithDefaultQuotaLimit(any());
+        Mockito.verify(groupCapacityPersistService, times(1))
+            .incrementUsageWithDefaultQuotaLimit(any());
         
         service.updateGroupUsage(CounterMode.DECREMENT, "testGroup");
         Mockito.verify(groupCapacityPersistService, times(1)).decrementUsage(any());
@@ -217,7 +238,8 @@ class CapacityServiceTest {
         GroupCapacity groupCapacity = new GroupCapacity();
         groupCapacity.setId(1L);
         groupCapacity.setGroupName("testGroup");
-        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
+        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup")))
+            .thenReturn(groupCapacity);
         
         GroupCapacity resGroupCapacity = service.getGroupCapacity("testGroup");
         assertEquals(groupCapacity.getId(), resGroupCapacity.getId());
@@ -230,7 +252,8 @@ class CapacityServiceTest {
         groupCapacity.setGroupName("testGroup");
         groupCapacity.setUsage(300);
         when(groupCapacityPersistService.insertGroupCapacity(any())).thenReturn(true);
-        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
+        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup")))
+            .thenReturn(groupCapacity);
         when(groupCapacityPersistService.updateQuota(eq("testGroup"), eq(500))).thenReturn(true);
         
         service.initGroupCapacity("testGroup");
@@ -243,11 +266,13 @@ class CapacityServiceTest {
     void testGetCapacity() {
         GroupCapacity groupCapacity = new GroupCapacity();
         groupCapacity.setId(1L);
-        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
+        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup")))
+            .thenReturn(groupCapacity);
         
         NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setId(2L);
-        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
+        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant")))
+            .thenReturn(tenantCapacity);
         
         Capacity resCapacity1 = service.getCapacity("testGroup", null);
         assertEquals(1L, resCapacity1.getId().longValue());
@@ -263,7 +288,8 @@ class CapacityServiceTest {
         tenantCapacity.setMaxSize(0);
         tenantCapacity.setMaxAggrCount(0);
         tenantCapacity.setMaxAggrSize(0);
-        when(tenantCapacityPersistService.getTenantCapacity(anyString())).thenReturn(tenantCapacity);
+        when(tenantCapacityPersistService.getTenantCapacity(anyString()))
+            .thenReturn(tenantCapacity);
         
         GroupCapacity groupCapacity1 = new GroupCapacity();
         groupCapacity1.setQuota(0);
@@ -276,15 +302,20 @@ class CapacityServiceTest {
         Capacity resCapacity1 = service.getCapacityWithDefault(null, "testTenant");
         assertEquals(PropertyUtil.getDefaultGroupQuota(), resCapacity1.getQuota().intValue());
         assertEquals(PropertyUtil.getDefaultMaxSize(), resCapacity1.getMaxSize().intValue());
-        assertEquals(PropertyUtil.getDefaultMaxAggrCount(), resCapacity1.getMaxAggrCount().intValue());
-        assertEquals(PropertyUtil.getDefaultMaxAggrSize(), resCapacity1.getMaxAggrSize().intValue());
+        assertEquals(PropertyUtil.getDefaultMaxAggrCount(),
+            resCapacity1.getMaxAggrCount().intValue());
+        assertEquals(PropertyUtil.getDefaultMaxAggrSize(),
+            resCapacity1.getMaxAggrSize().intValue());
         
         //group is GroupCapacityPersistService.CLUSTER
-        Capacity resCapacity2 = service.getCapacityWithDefault(GroupCapacityPersistService.CLUSTER, null);
+        Capacity resCapacity2 =
+            service.getCapacityWithDefault(GroupCapacityPersistService.CLUSTER, null);
         assertEquals(PropertyUtil.getDefaultClusterQuota(), resCapacity2.getQuota().intValue());
         assertEquals(PropertyUtil.getDefaultMaxSize(), resCapacity2.getMaxSize().intValue());
-        assertEquals(PropertyUtil.getDefaultMaxAggrCount(), resCapacity2.getMaxAggrCount().intValue());
-        assertEquals(PropertyUtil.getDefaultMaxAggrSize(), resCapacity2.getMaxAggrSize().intValue());
+        assertEquals(PropertyUtil.getDefaultMaxAggrCount(),
+            resCapacity2.getMaxAggrCount().intValue());
+        assertEquals(PropertyUtil.getDefaultMaxAggrSize(),
+            resCapacity2.getMaxAggrSize().intValue());
         
         GroupCapacity groupCapacity2 = new GroupCapacity();
         groupCapacity2.setQuota(0);
@@ -297,21 +328,25 @@ class CapacityServiceTest {
         Capacity resCapacity3 = service.getCapacityWithDefault("testGroup", null);
         assertEquals(PropertyUtil.getDefaultGroupQuota(), resCapacity3.getQuota().intValue());
         assertEquals(PropertyUtil.getDefaultMaxSize(), resCapacity3.getMaxSize().intValue());
-        assertEquals(PropertyUtil.getDefaultMaxAggrCount(), resCapacity3.getMaxAggrCount().intValue());
-        assertEquals(PropertyUtil.getDefaultMaxAggrSize(), resCapacity3.getMaxAggrSize().intValue());
+        assertEquals(PropertyUtil.getDefaultMaxAggrCount(),
+            resCapacity3.getMaxAggrCount().intValue());
+        assertEquals(PropertyUtil.getDefaultMaxAggrSize(),
+            resCapacity3.getMaxAggrSize().intValue());
     }
     
     @Test
     void testInitCapacityV1() {
         GroupCapacity groupCapacity = new GroupCapacity();
         groupCapacity.setUsage(300);
-        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
+        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup")))
+            .thenReturn(groupCapacity);
         when(groupCapacityPersistService.insertGroupCapacity(any())).thenReturn(true);
         when(groupCapacityPersistService.updateQuota(eq("testGroup"), eq(500))).thenReturn(true);
         
         NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setUsage(300);
-        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
+        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant")))
+            .thenReturn(tenantCapacity);
         when(tenantCapacityPersistService.insertTenantCapacity(any())).thenReturn(true);
         when(tenantCapacityPersistService.updateQuota(eq("testTenant"), eq(500))).thenReturn(true);
         
@@ -323,7 +358,8 @@ class CapacityServiceTest {
         service.initCapacity(null, "testTenant");
         Mockito.verify(tenantCapacityPersistService, times(1)).getTenantCapacity(eq("testTenant"));
         Mockito.verify(tenantCapacityPersistService, times(1)).insertTenantCapacity(any());
-        Mockito.verify(tenantCapacityPersistService, times(1)).updateQuota(eq("testTenant"), eq(500));
+        Mockito.verify(tenantCapacityPersistService, times(1)).updateQuota(eq("testTenant"),
+            eq(500));
     }
     
     @Test
@@ -339,16 +375,19 @@ class CapacityServiceTest {
         NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setNamespaceId("testTenant");
         tenantCapacity.setUsage(300);
-        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
+        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant")))
+            .thenReturn(tenantCapacity);
         when(tenantCapacityPersistService.incrementUsage(any())).thenReturn(true);
-        when(tenantCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any())).thenReturn(true);
+        when(tenantCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any()))
+            .thenReturn(true);
         when(tenantCapacityPersistService.decrementUsage(any())).thenReturn(true);
         
         service.insertAndUpdateTenantUsage(CounterMode.INCREMENT, "testTenant", true);
         Mockito.verify(tenantCapacityPersistService, times(1)).incrementUsage(any());
         
         service.insertAndUpdateTenantUsage(CounterMode.INCREMENT, "testTenant", false);
-        Mockito.verify(tenantCapacityPersistService, times(1)).incrementUsageWithDefaultQuotaLimit(any());
+        Mockito.verify(tenantCapacityPersistService, times(1))
+            .incrementUsageWithDefaultQuotaLimit(any());
         
         service.insertAndUpdateTenantUsage(CounterMode.DECREMENT, "testTenant", true);
         Mockito.verify(tenantCapacityPersistService, times(1)).decrementUsage(any());
@@ -356,11 +395,13 @@ class CapacityServiceTest {
     
     @Test
     void testUpdateTenantUsage() {
-        when(tenantCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any())).thenReturn(true);
+        when(tenantCapacityPersistService.incrementUsageWithDefaultQuotaLimit(any()))
+            .thenReturn(true);
         when(tenantCapacityPersistService.decrementUsage(any())).thenReturn(true);
         
         service.updateTenantUsage(CounterMode.INCREMENT, "testTenant");
-        Mockito.verify(tenantCapacityPersistService, times(1)).incrementUsageWithDefaultQuotaLimit(any());
+        Mockito.verify(tenantCapacityPersistService, times(1))
+            .incrementUsageWithDefaultQuotaLimit(any());
         
         service.updateTenantUsage(CounterMode.DECREMENT, "testTenant");
         Mockito.verify(tenantCapacityPersistService, times(1)).decrementUsage(any());
@@ -372,13 +413,15 @@ class CapacityServiceTest {
         tenantCapacity.setNamespaceId("testTenant");
         tenantCapacity.setUsage(300);
         when(tenantCapacityPersistService.insertTenantCapacity(any())).thenReturn(true);
-        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
+        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant")))
+            .thenReturn(tenantCapacity);
         when(tenantCapacityPersistService.updateQuota(eq("testTenant"), eq(500))).thenReturn(true);
         
         service.initTenantCapacity("testTenant");
         Mockito.verify(tenantCapacityPersistService, times(1)).insertTenantCapacity(any());
         Mockito.verify(tenantCapacityPersistService, times(1)).getTenantCapacity(eq("testTenant"));
-        Mockito.verify(tenantCapacityPersistService, times(1)).updateQuota(eq("testTenant"), eq(500));
+        Mockito.verify(tenantCapacityPersistService, times(1)).updateQuota(eq("testTenant"),
+            eq(500));
     }
     
     @Test
@@ -397,7 +440,8 @@ class CapacityServiceTest {
         NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setId(1L);
         tenantCapacity.setNamespaceId("testTenant");
-        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
+        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant")))
+            .thenReturn(tenantCapacity);
         
         NamespaceCapacity resTenantCapacity = service.getTenantCapacity("testTenant");
         assertEquals(tenantCapacity.getId(), resTenantCapacity.getId());
@@ -409,20 +453,26 @@ class CapacityServiceTest {
         //tenant is null
         GroupCapacity groupCapacity = new GroupCapacity();
         groupCapacity.setUsage(300);
-        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
-        when(groupCapacityPersistService.updateGroupCapacity(eq("testGroup"), eq(0), eq(0), eq(0), eq(0))).thenReturn(true);
+        when(groupCapacityPersistService.getGroupCapacity(eq("testGroup")))
+            .thenReturn(groupCapacity);
+        when(groupCapacityPersistService.updateGroupCapacity(eq("testGroup"), eq(0), eq(0), eq(0),
+            eq(0))).thenReturn(true);
         service.insertOrUpdateCapacity("testGroup", null, 0, 0, 0, 0);
         Mockito.verify(groupCapacityPersistService, times(1)).getGroupCapacity(eq("testGroup"));
-        Mockito.verify(groupCapacityPersistService, times(1)).updateGroupCapacity(eq("testGroup"), eq(0), eq(0), eq(0), eq(0));
+        Mockito.verify(groupCapacityPersistService, times(1)).updateGroupCapacity(eq("testGroup"),
+            eq(0), eq(0), eq(0), eq(0));
         
         //tenant is not null
         NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setNamespaceId("testTenant");
-        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
-        when(tenantCapacityPersistService.updateTenantCapacity(eq("testTenant"), eq(0), eq(0), eq(0), eq(0))).thenReturn(true);
+        when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant")))
+            .thenReturn(tenantCapacity);
+        when(tenantCapacityPersistService.updateTenantCapacity(eq("testTenant"), eq(0), eq(0),
+            eq(0), eq(0))).thenReturn(true);
         service.insertOrUpdateCapacity(null, "testTenant", 0, 0, 0, 0);
         Mockito.verify(tenantCapacityPersistService, times(1)).getTenantCapacity(eq("testTenant"));
-        Mockito.verify(tenantCapacityPersistService, times(1)).updateTenantCapacity(eq("testTenant"), eq(0), eq(0), eq(0), eq(0));
+        Mockito.verify(tenantCapacityPersistService, times(1))
+            .updateTenantCapacity(eq("testTenant"), eq(0), eq(0), eq(0), eq(0));
     }
     
     @Test

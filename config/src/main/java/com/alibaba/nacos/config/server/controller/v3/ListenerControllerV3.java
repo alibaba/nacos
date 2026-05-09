@@ -60,11 +60,11 @@ public class ListenerControllerV3 {
     @GetMapping
     @Secured(signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigListenerInfo> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
-            @RequestParam(value = "all", required = false) boolean all,
-            @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            AggregationForm aggregationForm) {
+        @RequestParam(value = "all", required = false) boolean all,
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        AggregationForm aggregationForm) {
         ConfigListenerInfo result = configListenerStateDelegate.getListenerStateByIp(ip,
-                aggregationForm.isAggregation());
+            aggregationForm.isAggregation());
         result.setQueryType(ConfigListenerInfo.QUERY_TYPE_IP);
         Map<String, String> configMd5Status = new HashMap<>(100);
         if (result.getListenersStatus() == null || result.getListenersStatus().isEmpty()) {

@@ -93,7 +93,8 @@ class ConfigServletInnerTest {
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         ReflectionTestUtils.setField(configServletInner, "longPollingService", longPollingService);
-        ReflectionTestUtils.setField(configServletInner, "configQueryChainService", new ConfigQueryChainService());
+        ReflectionTestUtils.setField(configServletInner, "configQueryChainService",
+            new ConfigQueryChainService());
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);
@@ -132,9 +133,12 @@ class ConfigServletInnerTest {
         changedGroups.put("1", new ConfigListenState("testMd51"));
         changedGroups.put("2", new ConfigListenState("testMd52"));
         
-        md5UtilMockedStatic.when(() -> MD5Util.compareMd5(request, response, clientMd5Map)).thenReturn(changedGroups);
-        md5UtilMockedStatic.when(() -> MD5Util.compareMd5OldResult(changedGroups)).thenReturn("test-old");
-        md5UtilMockedStatic.when(() -> MD5Util.compareMd5ResultString(changedGroups)).thenReturn("test-new");
+        md5UtilMockedStatic.when(() -> MD5Util.compareMd5(request, response, clientMd5Map))
+            .thenReturn(changedGroups);
+        md5UtilMockedStatic.when(() -> MD5Util.compareMd5OldResult(changedGroups))
+            .thenReturn("test-old");
+        md5UtilMockedStatic.when(() -> MD5Util.compareMd5ResultString(changedGroups))
+            .thenReturn("test-new");
         
         String actualValue = configServletInner.doPollingConfig(request, response, clientMd5Map, 1);
         
@@ -148,7 +152,8 @@ class ConfigServletInnerTest {
     @Test
     void testDoGetConfigV1Beta() throws Exception {
         
-        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString())).thenReturn(1);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString()))
+            .thenReturn(1);
         
         //mock cache item  isBeta
         CacheItem cacheItem = new CacheItem("test");
@@ -156,8 +161,8 @@ class ConfigServletInnerTest {
         String group = "group23";
         String tenant = "tenant234";
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataId, group, tenant)))
-                .thenReturn(cacheItem);
+            () -> ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataId, group, tenant)))
+            .thenReturn(cacheItem);
         String mockBetaContent = "content3456543";
         mockGray4Beta(cacheItem, mockBetaContent, "localhost", "betaKey1234567");
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -168,37 +173,48 @@ class ConfigServletInnerTest {
         request.addHeader(CLIENT_APPNAME_HEADER, "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
         
-        when(configRocksDbDiskService.getGrayContent(dataId, group, tenant, BetaGrayRule.TYPE_BETA)).thenReturn(
+        when(configRocksDbDiskService.getGrayContent(dataId, group, tenant, BetaGrayRule.TYPE_BETA))
+            .thenReturn(
                 mockBetaContent);
-        String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, "", "true",
+        String actualValue =
+            configServletInner.doGetConfig(request, response, dataId, group, tenant, "", "true",
                 "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertEquals("true", response.getHeader("isBeta"));
-        assertEquals(MD5Utils.md5Hex(mockBetaContent, ENCODE_UTF8), response.getHeader(CONTENT_MD5));
+        assertEquals(MD5Utils.md5Hex(mockBetaContent, ENCODE_UTF8),
+            response.getHeader(CONTENT_MD5));
         assertEquals("betaKey1234567", response.getHeader("Encrypted-Data-Key"));
         assertEquals(mockBetaContent, response.getContentAsString());
     }
     
-    private void mockGray4Beta(CacheItem cacheItem, String content, String betaIps, String dataKey) {
+    private void mockGray4Beta(CacheItem cacheItem, String content, String betaIps,
+        String dataKey) {
         cacheItem.initConfigGrayIfEmpty(BetaGrayRule.TYPE_BETA);
-        ConfigCacheGray configCacheGray = cacheItem.getConfigCacheGray().get(BetaGrayRule.TYPE_BETA);
+        ConfigCacheGray configCacheGray =
+            cacheItem.getConfigCacheGray().get(BetaGrayRule.TYPE_BETA);
         configCacheGray.setMd5(MD5Utils.md5Hex(content, ENCODE_UTF8));
         configCacheGray.setEncryptedDataKey(dataKey);
-        ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
+        ConfigGrayPersistInfo configGrayPersistInfo =
+            new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
                 BetaGrayRule.VERSION, betaIps, -1000);
-        configCacheGray.resetGrayRule(GrayRuleManager.serializeConfigGrayPersistInfo(configGrayPersistInfo));
+        configCacheGray
+            .resetGrayRule(GrayRuleManager.serializeConfigGrayPersistInfo(configGrayPersistInfo));
         cacheItem.sortConfigGray();
     }
     
-    private void mockGray4Tag(CacheItem cacheItem, String content, String tagValue, String dataKey, long ts) {
+    private void mockGray4Tag(CacheItem cacheItem, String content, String tagValue, String dataKey,
+        long ts) {
         cacheItem.initConfigGrayIfEmpty(TagGrayRule.TYPE_TAG + "_" + tagValue);
-        ConfigCacheGray configCacheGray = cacheItem.getConfigCacheGray().get(TagGrayRule.TYPE_TAG + "_" + tagValue);
+        ConfigCacheGray configCacheGray =
+            cacheItem.getConfigCacheGray().get(TagGrayRule.TYPE_TAG + "_" + tagValue);
         configCacheGray.setMd5(MD5Utils.md5Hex(content, ENCODE_UTF8));
         configCacheGray.setLastModifiedTs(ts);
         configCacheGray.setEncryptedDataKey(dataKey);
-        ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
+        ConfigGrayPersistInfo configGrayPersistInfo =
+            new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
                 TagGrayRule.VERSION, tagValue, -999);
-        configCacheGray.resetGrayRule(GrayRuleManager.serializeConfigGrayPersistInfo(configGrayPersistInfo));
+        configCacheGray
+            .resetGrayRule(GrayRuleManager.serializeConfigGrayPersistInfo(configGrayPersistInfo));
         cacheItem.sortConfigGray();
     }
     
@@ -214,7 +230,8 @@ class ConfigServletInnerTest {
         String group = "group";
         String tenant = "tenant";
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(1);
+            () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant)))
+            .thenReturn(1);
         
         //mock cache item with tag.
         CacheItem cacheItem = new CacheItem("test");
@@ -229,8 +246,8 @@ class ConfigServletInnerTest {
         mockGray4Tag(cacheItem, specificTagContent, specificTag, "specificTagkey", specificTs);
         
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant)))
-                .thenReturn(cacheItem);
+            () -> ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant)))
+            .thenReturn(cacheItem);
         
         //test auto tag.
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -243,9 +260,11 @@ class ConfigServletInnerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         Mockito.when(
-                        configRocksDbDiskService.getGrayContent(dataId, group, tenant, TagGrayRule.TYPE_TAG + "_" + autoTag))
-                .thenReturn(autoTagContent);
-        String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "true",
+            configRocksDbDiskService.getGrayContent(dataId, group, tenant,
+                TagGrayRule.TYPE_TAG + "_" + autoTag))
+            .thenReturn(autoTagContent);
+        String actualValue =
+            configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "true",
                 "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertEquals(autoTagContent, response.getContentAsString());
@@ -256,9 +275,10 @@ class ConfigServletInnerTest {
         response = new MockHttpServletResponse();
         request.setParameter("tag", specificTag);
         when(configRocksDbDiskService.getGrayContent(dataId, group, tenant,
-                TagGrayRule.TYPE_TAG + "_" + specificTag)).thenReturn(specificTagContent);
-        actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, specificTag, "true",
-                "localhost", ApiVersionEnum.V1);
+            TagGrayRule.TYPE_TAG + "_" + specificTag)).thenReturn(specificTagContent);
+        actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant,
+            specificTag, "true",
+            "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertEquals(specificTagContent, response.getContentAsString());
         assertEquals(MD5Utils.md5Hex(specificTagContent, "UTF-8"), response.getHeader(CONTENT_MD5));
@@ -267,10 +287,10 @@ class ConfigServletInnerTest {
         // test for specific tag ,not exist
         request.setParameter("tag", "auto-tag-test-not-exist");
         when(configRocksDbDiskService.getGrayContent(dataId, group, tenant,
-                TagGrayRule.TYPE_TAG + "_" + "auto-tag-test-not-exist")).thenReturn(null);
+            TagGrayRule.TYPE_TAG + "_" + "auto-tag-test-not-exist")).thenReturn(null);
         response = new MockHttpServletResponse();
         actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant,
-                "auto-tag-test-not-exist", "true", "localhost", ApiVersionEnum.V1);
+            "auto-tag-test-not-exist", "true", "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
         String expectedContent = "config data not exist";
         String actualContent = response.getContentAsString();
@@ -285,7 +305,8 @@ class ConfigServletInnerTest {
         String group = "group";
         String tenant = "tenant";
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(1);
+            () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant)))
+            .thenReturn(1);
         
         //mock cache item .
         CacheItem cacheItem = new CacheItem("test");
@@ -296,8 +317,8 @@ class ConfigServletInnerTest {
         cacheItem.getConfigCache().setLastModifiedTs(ts);
         cacheItem.getConfigCache().setEncryptedDataKey("key2345678");
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataId, group, tenant)))
-                .thenReturn(cacheItem);
+            () -> ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataId, group, tenant)))
+            .thenReturn(cacheItem);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setParameter("dataId", dataId);
         request.setParameter("group", group);
@@ -305,7 +326,8 @@ class ConfigServletInnerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         when(configRocksDbDiskService.getContent(dataId, group, tenant)).thenReturn(content);
-        String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "true",
+        String actualValue =
+            configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "true",
                 "localhost", ApiVersionEnum.V1);
         assertEquals(content, response.getContentAsString());
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
@@ -320,7 +342,8 @@ class ConfigServletInnerTest {
         String group = "group";
         String tenant = "tenant";
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(1);
+            () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant)))
+            .thenReturn(1);
         
         //mock cache item .
         CacheItem cacheItem = new CacheItem("test");
@@ -331,8 +354,8 @@ class ConfigServletInnerTest {
         cacheItem.getConfigCache().setLastModifiedTs(ts);
         cacheItem.getConfigCache().setEncryptedDataKey("key2345678");
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataId, group, tenant)))
-                .thenReturn(cacheItem);
+            () -> ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataId, group, tenant)))
+            .thenReturn(cacheItem);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setParameter("dataId", dataId);
         request.setParameter("group", group);
@@ -340,7 +363,8 @@ class ConfigServletInnerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         when(configRocksDbDiskService.getContent(dataId, group, tenant)).thenReturn(content);
-        String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "true",
+        String actualValue =
+            configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "true",
                 "localhost", ApiVersionEnum.V2);
         assertEquals(JacksonUtils.toJson(Result.success(content)), response.getContentAsString());
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
@@ -357,24 +381,28 @@ class ConfigServletInnerTest {
         final String tag = "test";
         
         // if lockResult equals 0,cache item not exist.
-        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString())).thenReturn(0);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString()))
+            .thenReturn(0);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setParameter("dataId", dataId);
         request.setParameter("group", group);
         request.setParameter("tenant", tenant);
         request.setParameter("tag", tag);
         MockHttpServletResponse response = new MockHttpServletResponse();
-        String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, tag, "true",
+        String actualValue =
+            configServletInner.doGetConfig(request, response, dataId, group, tenant, tag, "true",
                 "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
         
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.getContentCache(GroupKey2.getKey("test", "test", "test")))
-                .thenReturn(new CacheItem(GroupKey2.getKey("test", "test", "test")));
+            () -> ConfigCacheService.getContentCache(GroupKey2.getKey("test", "test", "test")))
+            .thenReturn(new CacheItem(GroupKey2.getKey("test", "test", "test")));
         // if lockResult less than 0
-        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString())).thenReturn(-1);
-        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "test", "true",
-                "localhost", ApiVersionEnum.V1);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString()))
+            .thenReturn(-1);
+        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test",
+            "test", "true",
+            "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_CONFLICT + "", actualValue);
         
     }

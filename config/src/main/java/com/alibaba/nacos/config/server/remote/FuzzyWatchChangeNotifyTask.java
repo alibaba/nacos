@@ -35,9 +35,11 @@ class FuzzyWatchChangeNotifyTask implements Runnable {
     
     private static final String POINT_FUZZY_WATCH_CONFIG_PUSH = "POINT_FUZZY_WATCH_CONFIG_PUSH";
     
-    private static final String POINT_FUZZY_WATCH_CONFIG_PUSH_SUCCESS = "POINT_FUZZY_WATCH_CONFIG_PUSH_SUCCESS";
+    private static final String POINT_FUZZY_WATCH_CONFIG_PUSH_SUCCESS =
+        "POINT_FUZZY_WATCH_CONFIG_PUSH_SUCCESS";
     
-    private static final String POINT_FUZZY_WATCH_CONFIG_PUSH_FAIL = "POINT_FUZZY_WATCH_CONFIG_PUSH_FAIL";
+    private static final String POINT_FUZZY_WATCH_CONFIG_PUSH_FAIL =
+        "POINT_FUZZY_WATCH_CONFIG_PUSH_FAIL";
     
     ConfigFuzzyWatchChangeNotifyRequest notifyRequest;
     
@@ -58,8 +60,9 @@ class FuzzyWatchChangeNotifyTask implements Runnable {
      * @param maxRetryTimes The maximum number of retry times.
      * @param connectionId  The ID of the connection.
      */
-    public FuzzyWatchChangeNotifyTask(ConnectionManager connectionManager, RpcPushService rpcPushService,
-            ConfigFuzzyWatchChangeNotifyRequest notifyRequest, int maxRetryTimes, String connectionId) {
+    public FuzzyWatchChangeNotifyTask(ConnectionManager connectionManager,
+        RpcPushService rpcPushService,
+        ConfigFuzzyWatchChangeNotifyRequest notifyRequest, int maxRetryTimes, String connectionId) {
         this.connectionManager = connectionManager;
         this.rpcPushService = rpcPushService;
         this.notifyRequest = notifyRequest;
@@ -81,42 +84,48 @@ class FuzzyWatchChangeNotifyTask implements Runnable {
         
         if (isOverTimes()) {
             Loggers.REMOTE_PUSH.warn(
-                    "push callback retry fail over times.groupKey={},,clientId={}, will unregister client.",
-                    notifyRequest.getGroupKey(), connectionId);
+                "push callback retry fail over times.groupKey={},,clientId={}, will unregister client.",
+                notifyRequest.getGroupKey(), connectionId);
             connectionManager.unregister(connectionId);
         } else if (connectionManager.getConnection(connectionId) == null) {
             // Client is already offline, ignore the task.
             Loggers.REMOTE_PUSH.warn(
-                    "Client is already offline, ignore the task. dataId={},groupKey={},tenant={},clientId={}",
-                    notifyRequest.getGroupKey(), connectionId);
+                "Client is already offline, ignore the task. dataId={},groupKey={},tenant={},clientId={}",
+                notifyRequest.getGroupKey(), connectionId);
             return;
         }
         
         TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
         tpsCheckRequest.setPointName(POINT_FUZZY_WATCH_CONFIG_PUSH);
-        if (!ControlManagerCenter.getInstance().getTpsControlManager().check(tpsCheckRequest).isSuccess()) {
+        if (!ControlManagerCenter.getInstance().getTpsControlManager().check(tpsCheckRequest)
+            .isSuccess()) {
             scheduleSelf();
         } else {
             long timeout = ConfigCommonConfig.getInstance().getPushTimeout();
-            rpcPushService.pushWithCallback(connectionId, notifyRequest, new AbstractPushCallBack(timeout) {
-                @Override
-                public void onSuccess() {
-                    TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-                    tpsCheckRequest.setPointName(POINT_FUZZY_WATCH_CONFIG_PUSH_SUCCESS);
-                    ControlManagerCenter.getInstance().getTpsControlManager().check(tpsCheckRequest);
-                }
-                
-                @Override
-                public void onFail(Throwable e) {
-                    TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-                    tpsCheckRequest.setPointName(POINT_FUZZY_WATCH_CONFIG_PUSH_FAIL);
-                    ControlManagerCenter.getInstance().getTpsControlManager().check(tpsCheckRequest);
-                    Loggers.REMOTE_PUSH.warn("Push fail,  groupKey={},  clientId={}", notifyRequest.getGroupKey(),
+            rpcPushService.pushWithCallback(connectionId, notifyRequest,
+                new AbstractPushCallBack(timeout) {
+                    
+                    @Override
+                    public void onSuccess() {
+                        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+                        tpsCheckRequest.setPointName(POINT_FUZZY_WATCH_CONFIG_PUSH_SUCCESS);
+                        ControlManagerCenter.getInstance().getTpsControlManager()
+                            .check(tpsCheckRequest);
+                    }
+                    
+                    @Override
+                    public void onFail(Throwable e) {
+                        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+                        tpsCheckRequest.setPointName(POINT_FUZZY_WATCH_CONFIG_PUSH_FAIL);
+                        ControlManagerCenter.getInstance().getTpsControlManager()
+                            .check(tpsCheckRequest);
+                        Loggers.REMOTE_PUSH.warn("Push fail,  groupKey={},  clientId={}",
+                            notifyRequest.getGroupKey(),
                             connectionId, e);
-                    FuzzyWatchChangeNotifyTask.this.scheduleSelf();
-                }
-                
-            }, ConfigExecutor.getClientConfigNotifierServiceExecutor());
+                        FuzzyWatchChangeNotifyTask.this.scheduleSelf();
+                    }
+                    
+                }, ConfigExecutor.getClientConfigNotifierServiceExecutor());
         }
     }
     

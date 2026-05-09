@@ -51,9 +51,10 @@ public class DumpChangeGrayConfigWorker implements Runnable {
     
     int pageSize = 100;
     
-    public DumpChangeGrayConfigWorker(ConfigInfoGrayPersistService configInfoGrayPersistService, Timestamp startTime,
-            HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigMigrateService configMigrateService) {
+    public DumpChangeGrayConfigWorker(ConfigInfoGrayPersistService configInfoGrayPersistService,
+        Timestamp startTime,
+        HistoryConfigInfoPersistService historyConfigInfoPersistService,
+        ConfigMigrateService configMigrateService) {
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.startTime = startTime;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
@@ -68,13 +69,15 @@ public class DumpChangeGrayConfigWorker implements Runnable {
                 return;
             }
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
-            LogUtil.DEFAULT_LOG.info("DumpGrayChange start ,from time {},current time {}", startTime, currentTime);
+            LogUtil.DEFAULT_LOG.info("DumpGrayChange start ,from time {},current time {}",
+                startTime, currentTime);
             
             LogUtil.DEFAULT_LOG.info("Start to check delete configs from  time {}", startTime);
             long startDeletedConfigTime = System.currentTimeMillis();
             long deleteCursorId = 0L;
             while (true) {
-                List<ConfigInfoStateWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
+                List<ConfigInfoStateWrapper> configDeleted =
+                    historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize, Constants.GRAY);
                 for (ConfigInfoStateWrapper configInfo : configDeleted) {
                     String grayName = configInfo.getGrayName();
@@ -82,13 +85,16 @@ public class DumpChangeGrayConfigWorker implements Runnable {
                         continue;
                     }
                     
-                    ConfigInfoStateWrapper configInfoStateWrapper = configInfoGrayPersistService.findConfigInfo4GrayState(configInfo.getDataId(),
+                    ConfigInfoStateWrapper configInfoStateWrapper = configInfoGrayPersistService
+                        .findConfigInfo4GrayState(configInfo.getDataId(),
                             configInfo.getGroup(), configInfo.getTenant(), grayName);
                     if (configInfoStateWrapper == null) {
                         ConfigCacheService.removeGray(configInfo.getDataId(), configInfo.getGroup(),
-                                configInfo.getTenant(), grayName);
-                        LogUtil.DEFAULT_LOG.info("[dump-gray-delete-ok], groupKey: {}, tenant: {}, grayName: {}",
-                                GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup()), configInfo.getTenant(), grayName);
+                            configInfo.getTenant(), grayName);
+                        LogUtil.DEFAULT_LOG.info(
+                            "[dump-gray-delete-ok], groupKey: {}, tenant: {}, grayName: {}",
+                            GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup()),
+                            configInfo.getTenant(), grayName);
                         configMigrateService.checkDeletedConfigGrayMigrateState(configInfo);
                     }
                 }
@@ -98,41 +104,51 @@ public class DumpChangeGrayConfigWorker implements Runnable {
                 deleteCursorId = configDeleted.get(configDeleted.size() - 1).getId();
             }
             LogUtil.DEFAULT_LOG.info("Check delete configs finished,cost:{}",
-                    System.currentTimeMillis() - startDeletedConfigTime);
+                System.currentTimeMillis() - startDeletedConfigTime);
             
             LogUtil.DEFAULT_LOG.info("Check changeGrayConfig start");
             long startChangeConfigTime = System.currentTimeMillis();
             
             long changeCursorId = 0L;
             while (true) {
-                LogUtil.DEFAULT_LOG.info("Check changed gray configs from  time {},lastMaxId={}", startTime,
-                        changeCursorId);
-                List<ConfigInfoGrayWrapper> changeConfigs = configInfoGrayPersistService.findChangeConfig(startTime,
+                LogUtil.DEFAULT_LOG.info("Check changed gray configs from  time {},lastMaxId={}",
+                    startTime,
+                    changeCursorId);
+                List<ConfigInfoGrayWrapper> changeConfigs =
+                    configInfoGrayPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
                 for (ConfigInfoGrayWrapper cf : changeConfigs) {
                     configMigrateService.checkChangedConfigGrayMigrateState(cf);
                     if (StringUtils.isBlank(cf.getTenant())) {
                         continue;
                     }
-                    final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
+                    final String groupKey =
+                        GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
                     //check md5 & localtimestamp update local disk cache.
-                    boolean newLastModified = cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
+                    boolean newLastModified =
+                        cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
                     String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
                     boolean md5Update = !localContentMd5.equals(cf.getMd5());
                     if (newLastModified || md5Update) {
-                        LogUtil.DEFAULT_LOG.info("[dump-change-gray] find change config  {}, {}, md5={}",
-                                new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
+                        LogUtil.DEFAULT_LOG.info(
+                            "[dump-change-gray] find change config  {}, {}, md5={}",
+                            new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
                         
-                        LogUtil.DUMP_LOG.info("[dump-change-gray] find change config  {}, {}, md5={}",
-                                new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
-                        ConfigCacheService.dumpGray(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getGrayName(),
-                                cf.getGrayRule(), cf.getContent(), cf.getLastModified(), cf.getEncryptedDataKey());
+                        LogUtil.DUMP_LOG.info(
+                            "[dump-change-gray] find change config  {}, {}, md5={}",
+                            new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
+                        ConfigCacheService.dumpGray(cf.getDataId(), cf.getGroup(), cf.getTenant(),
+                            cf.getGrayName(),
+                            cf.getGrayRule(), cf.getContent(), cf.getLastModified(),
+                            cf.getEncryptedDataKey());
                         final String content = cf.getContent();
                         final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_GBK);
                         final String md5Utf8 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
                         
-                        LogUtil.DEFAULT_LOG.info("[dump-change-gray-ok] {}, {}, length={}, md5={},md5UTF8={}",
-                                new Object[] {groupKey, cf.getLastModified(), content.length(), md5, md5Utf8});
+                        LogUtil.DEFAULT_LOG.info(
+                            "[dump-change-gray-ok] {}, {}, length={}, md5={},md5UTF8={}",
+                            new Object[] {groupKey, cf.getLastModified(), content.length(), md5,
+                                    md5Utf8});
                     }
                 }
                 if (changeConfigs.size() < pageSize) {
@@ -143,16 +159,17 @@ public class DumpChangeGrayConfigWorker implements Runnable {
             
             long endChangeConfigTime = System.currentTimeMillis();
             LogUtil.DEFAULT_LOG.info(
-                    "Check changed gray configs finished,cost:{}, next task running will from start time  {}",
-                    endChangeConfigTime - startChangeConfigTime, currentTime);
+                "Check changed gray configs finished,cost:{}, next task running will from start time  {}",
+                endChangeConfigTime - startChangeConfigTime, currentTime);
             startTime = currentTime;
         } catch (Throwable e) {
             LogUtil.DEFAULT_LOG.error("Check changed gray configs error", e);
         } finally {
-            ConfigExecutor.scheduleConfigChangeTask(this, PropertyUtil.getDumpChangeWorkerInterval(),
-                    TimeUnit.MILLISECONDS);
+            ConfigExecutor.scheduleConfigChangeTask(this,
+                PropertyUtil.getDumpChangeWorkerInterval(),
+                TimeUnit.MILLISECONDS);
             LogUtil.DEFAULT_LOG.info("Next dump gray change will scheduled after {} milliseconds",
-                    PropertyUtil.getDumpChangeWorkerInterval());
+                PropertyUtil.getDumpChangeWorkerInterval());
             
         }
     }

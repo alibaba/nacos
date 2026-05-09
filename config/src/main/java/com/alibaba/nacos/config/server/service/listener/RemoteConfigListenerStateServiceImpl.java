@@ -49,7 +49,8 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 @Service
 public class RemoteConfigListenerStateServiceImpl implements ConfigListenerStateService {
     
-    private static final String CONFIG_LISTENER_STATE_URL = Constants.CONFIG_ADMIN_V3_PATH + "/listener";
+    private static final String CONFIG_LISTENER_STATE_URL =
+        Constants.CONFIG_ADMIN_V3_PATH + "/listener";
     
     private final ServerMemberManager memberManager;
     
@@ -62,8 +63,10 @@ public class RemoteConfigListenerStateServiceImpl implements ConfigListenerState
     }
     
     @Override
-    public ConfigListenerInfo getListenerState(String dataId, String groupName, String namespaceId) {
-        Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", groupName)
+    public ConfigListenerInfo getListenerState(String dataId, String groupName,
+        String namespaceId) {
+        Query query =
+            Query.newInstance().addParam("dataId", dataId).addParam("groupName", groupName)
                 .addParam("namespaceId", namespaceId).addParam("aggregation", false);
         Header header = buildHeader();
         ConfigListenerInfo result = new ConfigListenerInfo();
@@ -100,7 +103,7 @@ public class RemoteConfigListenerStateServiceImpl implements ConfigListenerState
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, Constants.ENCODE_UTF8);
         NacosAuthConfig authConfig = NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
+            .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
         AuthHeaderUtil.addIdentityToHeader(header, authConfig);
         return header;
     }
@@ -108,18 +111,21 @@ public class RemoteConfigListenerStateServiceImpl implements ConfigListenerState
     private ConfigListenerInfo invokeUrl(String url, Query query, Header header) {
         try {
             RestResult<String> restResult = HttpClientManager.getNacosRestTemplate()
-                    .get(url, header, query, String.class);
+                .get(url, header, query, String.class);
             if (!restResult.ok()) {
                 LogUtil.DEFAULT_LOG.warn(
-                        "Invoke remote server config listener state by url {} failed with code {}, msg {}", url,
-                        restResult.getCode(), restResult.getMessage());
+                    "Invoke remote server config listener state by url {} failed with code {}, msg {}",
+                    url,
+                    restResult.getCode(), restResult.getMessage());
                 return emptyConfigListenerInfo;
             }
-            Result<ConfigListenerInfo> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
-            });
+            Result<ConfigListenerInfo> result =
+                JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
+                });
             return result.getData();
         } catch (Exception e) {
-            LogUtil.DEFAULT_LOG.error("Invoke remote server config listener by url {} failed :", url, e);
+            LogUtil.DEFAULT_LOG.error("Invoke remote server config listener by url {} failed :",
+                url, e);
             return emptyConfigListenerInfo;
         }
     }

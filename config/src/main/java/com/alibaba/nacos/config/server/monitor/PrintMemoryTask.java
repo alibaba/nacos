@@ -33,8 +33,9 @@ public class PrintMemoryTask implements Runnable {
         int groupCount = ConfigCacheService.groupCount();
         int subClientCount = ClientTrackService.subscribeClientCount();
         long subCount = ClientTrackService.subscriberCount();
-        MEMORY_LOG.info("groupCount = {}, subscriberClientCount = {}, subscriberCount = {}", groupCount, subClientCount,
-                subCount);
+        MEMORY_LOG.info("groupCount = {}, subscriberClientCount = {}, subscriberCount = {}",
+            groupCount, subClientCount,
+            subCount);
         MetricsMonitor.getConfigCountMonitor().set(groupCount);
     }
 }

@@ -34,12 +34,13 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  */
 @Service
 public class ClientIpWhiteList {
-
-    public static final String CLIENT_IP_WHITELIST_METADATA = "com.alibaba.nacos.metadata.clientIpWhitelist";
-
+    
+    public static final String CLIENT_IP_WHITELIST_METADATA =
+        "com.alibaba.nacos.metadata.clientIpWhitelist";
+    
     private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<>(
-            new ArrayList<>());
-
+        new ArrayList<>());
+    
     private static Boolean isOpen = false;
     
     /**

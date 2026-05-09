@@ -116,24 +116,35 @@ class ConfigControllerV3Test {
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(configControllerV3, "configListenerStateDelegate", configListenerStateDelegate);
-        ReflectionTestUtils.setField(configControllerV3, "configInfoPersistService", configInfoPersistService);
-        ReflectionTestUtils.setField(configControllerV3, "configInfoBetaPersistService", configInfoBetaPersistService);
-        ReflectionTestUtils.setField(configControllerV3, "configInfoGrayPersistService", configInfoGrayPersistService);
-        ReflectionTestUtils.setField(configControllerV3, "namespacePersistService", namespacePersistService);
-        ReflectionTestUtils.setField(configControllerV3, "configOperationService", configOperationService);
-        ReflectionTestUtils.setField(configControllerV3, "configMigrateService", configMigrateService);
+        ReflectionTestUtils.setField(configControllerV3, "configListenerStateDelegate",
+            configListenerStateDelegate);
+        ReflectionTestUtils.setField(configControllerV3, "configInfoPersistService",
+            configInfoPersistService);
+        ReflectionTestUtils.setField(configControllerV3, "configInfoBetaPersistService",
+            configInfoBetaPersistService);
+        ReflectionTestUtils.setField(configControllerV3, "configInfoGrayPersistService",
+            configInfoGrayPersistService);
+        ReflectionTestUtils.setField(configControllerV3, "namespacePersistService",
+            namespacePersistService);
+        ReflectionTestUtils.setField(configControllerV3, "configOperationService",
+            configOperationService);
+        ReflectionTestUtils.setField(configControllerV3, "configMigrateService",
+            configMigrateService);
         mockmvc = MockMvcBuilders.standaloneSetup(configControllerV3).build();
     }
     
     @Test
     void testPublishConfig() throws Exception {
         when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH)
-                .param("dataId", "test").param("groupName", "test").param("namespaceId", "").param("content", "test")
-                .param("tag", "").param("appName", "").param("src_user", "").param("config_tags", "").param("desc", "")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH)
+                .param("dataId", "test").param("groupName", "test").param("namespaceId", "")
+                .param("content", "test")
+                .param("tag", "").param("appName", "").param("src_user", "")
+                .param("config_tags", "").param("desc", "")
                 .param("use", "").param("effect", "").param("type", "").param("schema", "");
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("0", code);
@@ -142,21 +153,28 @@ class ConfigControllerV3Test {
     
     @Test
     void testGetConfig() throws Exception {
-        when(configInfoPersistService.findConfigAllInfo("test", "test", "public")).thenReturn(new ConfigAllInfo());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH)
-                .param("dataId", "test").param("groupName", "test").param("namespaceId", "").param("tag", "");
+        when(configInfoPersistService.findConfigAllInfo("test", "test", "public"))
+            .thenReturn(new ConfigAllInfo());
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH)
+                .param("dataId", "test").param("groupName", "test").param("namespaceId", "")
+                .param("tag", "");
         int actualValue = mockmvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
     }
     
     @Test
     void testDeleteConfig() throws Exception {
-        when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), anyString(), any(), any(),
-                any())).thenReturn(true);
+        when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), anyString(),
+            any(), any(),
+            any())).thenReturn(true);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH)
-                .param("dataId", "test").param("groupName", "test").param("namespaceId", "").param("tag", "");
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH)
+                .param("dataId", "test").param("groupName", "test").param("namespaceId", "")
+                .param("tag", "");
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("0", code);
@@ -179,10 +197,12 @@ class ConfigControllerV3Test {
         Mockito.when(configInfoPersistService.findConfigInfo(eq(2L))).thenReturn(configAllInfo);
         AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH + "/batch")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH + "/batch")
                 .param("ids", "1,2");
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
@@ -199,12 +219,16 @@ class ConfigControllerV3Test {
         sampleResult.setQueryType(ConfigListenerInfo.QUERY_TYPE_CONFIG);
         sampleResult.setListenersStatus(listenersGroupkeyStatus);
         
-        when(configListenerStateDelegate.getListenerState("test", "test", "public", true)).thenReturn(sampleResult);
+        when(configListenerStateDelegate.getListenerState("test", "test", "public", true))
+            .thenReturn(sampleResult);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/listener")
-                .param("dataId", "test").param("groupName", "test").param("namespaceId", "").param("sampleTime", "1");
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/listener")
+                .param("dataId", "test").param("groupName", "test").param("namespaceId", "")
+                .param("sampleTime", "1");
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         final String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         ConfigListenerInfo configListenerInfo = JacksonUtils.toObj(data, ConfigListenerInfo.class);
@@ -228,17 +252,22 @@ class ConfigControllerV3Test {
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         
         when(configDetailService.findConfigInfoPage("accurate", 1, 10, "test", "test", "public",
-                configAdvanceInfo)).thenReturn(page);
+            configAdvanceInfo)).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/list")
-                .param("search", "accurate").param("dataId", "test").param("groupName", "test").param("appName", "")
-                .param("namespaceId", "").param("config_tags", "").param("pageNo", "1").param("pageSize", "10")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/list")
+                .param("search", "accurate").param("dataId", "test").param("groupName", "test")
+                .param("appName", "")
+                .param("namespaceId", "").param("config_tags", "").param("pageNo", "1")
+                .param("pageSize", "10")
                 .param("config_detail", "");
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         JsonNode pageItemsNode = JacksonUtils.toObj(data).get("pageItems");
         List resultList = JacksonUtils.toObj(pageItemsNode.toString(), List.class);
-        ConfigBasicInfo resConfigInfo = JacksonUtils.toObj(pageItemsNode.get(0).toString(), ConfigBasicInfo.class);
+        ConfigBasicInfo resConfigInfo =
+            JacksonUtils.toObj(pageItemsNode.get(0).toString(), ConfigBasicInfo.class);
         
         assertEquals(configInfoList.size(), resultList.size());
         assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
@@ -260,18 +289,23 @@ class ConfigControllerV3Test {
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         
         when(configDetailService.findConfigInfoPage("blur", 1, 10, "test", "test", "public",
-                configAdvanceInfo)).thenReturn(page);
+            configAdvanceInfo)).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/list")
-                .param("search", "blur").param("dataId", "test").param("groupName", "test").param("appName", "")
-                .param("namespaceId", "").param("config_tags", "").param("pageNo", "1").param("pageSize", "10")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/list")
+                .param("search", "blur").param("dataId", "test").param("groupName", "test")
+                .param("appName", "")
+                .param("namespaceId", "").param("config_tags", "").param("pageNo", "1")
+                .param("pageSize", "10")
                 .param("config_detail", "");
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         JsonNode pageItemsNode = JacksonUtils.toObj(data).get("pageItems");
         List resultList = JacksonUtils.toObj(pageItemsNode.toString(), List.class);
-        ConfigBasicInfo resConfigInfo = JacksonUtils.toObj(pageItemsNode.get(0).toString(), ConfigBasicInfo.class);
+        ConfigBasicInfo resConfigInfo =
+            JacksonUtils.toObj(pageItemsNode.get(0).toString(), ConfigBasicInfo.class);
         
         assertEquals(configInfoList.size(), resultList.size());
         assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
@@ -282,10 +316,13 @@ class ConfigControllerV3Test {
     @Test
     void testStopBeta() throws Exception {
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH + "/beta")
-                .param("beta", "true").param("dataId", "test").param("groupName", "test").param("namespaceId", "");
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH + "/beta")
+                .param("beta", "true").param("dataId", "test").param("groupName", "test")
+                .param("namespaceId", "");
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
@@ -302,14 +339,18 @@ class ConfigControllerV3Test {
         configInfoBetaWrapper.setContent("test");
         configInfoBetaWrapper.setGrayName("beta");
         configInfoBetaWrapper.setGrayRule(
-                "{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}");
-        when(configInfoGrayPersistService.findConfigInfo4Gray("test", "test", "public", "beta")).thenReturn(
+            "{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}");
+        when(configInfoGrayPersistService.findConfigInfo4Gray("test", "test", "public", "beta"))
+            .thenReturn(
                 configInfoBetaWrapper);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/beta")
-                .param("beta", "true").param("dataId", "test").param("groupName", "test").param("namespaceId", "");
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/beta")
+                .param("beta", "true").param("dataId", "test").param("groupName", "test")
+                .param("namespaceId", "");
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         ConfigGrayInfo resConfigInfoBetaWrapper = JacksonUtils.toObj(data, ConfigGrayInfo.class);
@@ -319,8 +360,9 @@ class ConfigControllerV3Test {
         assertEquals(configInfoBetaWrapper.getGroup(), resConfigInfoBetaWrapper.getGroupName());
         assertEquals(configInfoBetaWrapper.getContent(), resConfigInfoBetaWrapper.getContent());
         assertEquals(configInfoBetaWrapper.getGrayName(), resConfigInfoBetaWrapper.getGrayName());
-        assertEquals("{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}",
-                resConfigInfoBetaWrapper.getGrayRule());
+        assertEquals(
+            "{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}",
+            resConfigInfoBetaWrapper.getGrayRule());
         
     }
     
@@ -338,11 +380,13 @@ class ConfigControllerV3Test {
         configAllInfo.setContent("content1234");
         List<ConfigAllInfo> dataList = new ArrayList<>();
         dataList.add(configAllInfo);
-        Mockito.when(configInfoPersistService.findAllConfigInfo4Export(eq(dataId), eq(groupName), eq(namespaceId),
-                eq(appname), eq(Arrays.asList(1L, 2L)))).thenReturn(dataList);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/export")
-                .param("dataId", dataId).param("groupName", groupName).param("namespaceId", namespaceId)
-                .param("appName", appname).param("ids", "1,2");
+        Mockito.when(configInfoPersistService.findAllConfigInfo4Export(eq(dataId), eq(groupName),
+            eq(namespaceId),
+            eq(appname), eq(Arrays.asList(1L, 2L)))).thenReturn(dataList);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+            .get(Constants.CONFIG_ADMIN_V3_PATH + "/export")
+            .param("dataId", dataId).param("groupName", groupName).param("namespaceId", namespaceId)
+            .param("appName", appname).param("ids", "1,2");
         
         int actualValue = mockmvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
@@ -365,25 +409,31 @@ class ConfigControllerV3Test {
         configExportItem.setAppName("appna123");
         configMetadata.getMetadata().add(configExportItem);
         ZipUtils.UnZipResult unziped = new ZipUtils.UnZipResult(zipItems,
-                new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, YamlParserUtil.dumpObject(configMetadata)));
-        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+            new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
+                YamlParserUtil.dumpObject(configMetadata)));
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
-            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                .thenReturn(unziped);
             when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
             Map<String, Object> map = new HashMap<>();
             map.put("test", "test");
-            when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
-                    any())).thenReturn(map);
+            when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(),
+                any(),
+                any())).thenReturn(map);
             
             MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(
-                            Constants.CONFIG_ADMIN_V3_PATH + "/import").file(file).param("src_user", "test")
-                    .param("namespace", "public").param("policy", "ABORT");
+                Constants.CONFIG_ADMIN_V3_PATH + "/import").file(file).param("src_user", "test")
+                .param("namespace", "public").param("policy", "ABORT");
             
-            String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+            String actualValue =
+                mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
             
             String code = JacksonUtils.toObj(actualValue).get("code").toString();
             assertEquals("0", code);
-            Map<String, Object> resultMap = JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(),
+            Map<String, Object> resultMap =
+                JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(),
                     Map.class);
             assertEquals(map.get("test"), resultMap.get("test").toString());
         }
@@ -409,24 +459,30 @@ class ConfigControllerV3Test {
         List<Long> idList = new ArrayList<>(configBeansList.size());
         idList.add(cloneInfo.getConfigId());
         
-        when(configInfoPersistService.findAllConfigInfo4Export(null, null, null, null, idList)).thenReturn(
+        when(configInfoPersistService.findAllConfigInfo4Export(null, null, null, null, idList))
+            .thenReturn(
                 queryedDataList);
         
         Map<String, Object> map = new HashMap<>();
         map.put("test", "test");
-        when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
-                any())).thenReturn(map);
+        when(
+            configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
+                any()))
+            .thenReturn(map);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
                 .param("clone", "true").param("src_user", "test").param("namespaceId", "public")
                 .param("policy", "ABORT").content(JacksonUtils.toJson(configBeansList))
                 .contentType(MediaType.APPLICATION_JSON);
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("0", code);
-        Map<String, Object> resultMap = JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(),
+        Map<String, Object> resultMap =
+            JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(),
                 Map.class);
         assertEquals(map.get("test"), resultMap.get("test").toString());
     }

@@ -76,7 +76,8 @@ class TenantCapacityPersistServiceTest {
         ReflectionTestUtils.setField(service, "dataSourceService", dataSourceService);
         ReflectionTestUtils.setField(service, "mapperManager", mapperManager);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
-        doReturn(new TenantCapacityMapperByMySql()).when(mapperManager).findMapper(any(), eq(TableConstant.TENANT_CAPACITY));
+        doReturn(new TenantCapacityMapperByMySql()).when(mapperManager).findMapper(any(),
+            eq(TableConstant.TENANT_CAPACITY));
     }
     
     @Test
@@ -88,7 +89,8 @@ class TenantCapacityPersistServiceTest {
         list.add(tenantCapacity);
         
         String tenantId = "testId";
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {tenantId}))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {tenantId})))
+            .thenReturn(list);
         NamespaceCapacity ret = service.getTenantCapacity(tenantId);
         
         assertEquals(tenantCapacity.getNamespaceId(), ret.getNamespaceId());
@@ -97,16 +99,18 @@ class TenantCapacityPersistServiceTest {
     @Test
     void testInsertTenantCapacity() {
         
-        when(jdbcTemplate.update(anyString(), eq("test"), eq(null), eq(null), eq(null), eq(null), eq(null), eq(null),
-                eq("test"))).thenReturn(1);
+        when(jdbcTemplate.update(anyString(), eq("test"), eq(null), eq(null), eq(null), eq(null),
+            eq(null), eq(null),
+            eq("test"))).thenReturn(1);
         
         NamespaceCapacity capacity = new NamespaceCapacity();
         capacity.setNamespaceId("test");
         assertTrue(service.insertTenantCapacity(capacity));
         
         //mock get connection fail
-        when(jdbcTemplate.update(anyString(), eq("test"), eq(null), eq(null), eq(null), eq(null), eq(null), eq(null),
-                eq("test"))).thenThrow(new CannotGetJdbcConnectionException("conn fail"));
+        when(jdbcTemplate.update(anyString(), eq("test"), eq(null), eq(null), eq(null), eq(null),
+            eq(null), eq(null),
+            eq("test"))).thenThrow(new CannotGetJdbcConnectionException("conn fail"));
         try {
             service.insertTenantCapacity(capacity);
             assertTrue(false);
@@ -129,7 +133,7 @@ class TenantCapacityPersistServiceTest {
         
         //mock get connection fail
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test"), eq(1))).thenThrow(
-                new CannotGetJdbcConnectionException("conn fail"));
+            new CannotGetJdbcConnectionException("conn fail"));
         try {
             service.incrementUsageWithDefaultQuotaLimit(tenantCapacity);
             assertTrue(false);
@@ -150,7 +154,8 @@ class TenantCapacityPersistServiceTest {
         assertTrue(service.incrementUsageWithQuotaLimit(tenantCapacity));
         
         //mock get connection fail
-        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test2"))).thenThrow(new CannotGetJdbcConnectionException("conn fail"));
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test2")))
+            .thenThrow(new CannotGetJdbcConnectionException("conn fail"));
         try {
             service.incrementUsageWithQuotaLimit(tenantCapacity);
             assertTrue(false);
@@ -171,7 +176,8 @@ class TenantCapacityPersistServiceTest {
         assertTrue(service.incrementUsage(tenantCapacity));
         
         //mock get connection fail
-        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenThrow(new CannotGetJdbcConnectionException("conn fail"));
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3")))
+            .thenThrow(new CannotGetJdbcConnectionException("conn fail"));
         try {
             service.incrementUsage(tenantCapacity);
             assertTrue(false);
@@ -192,7 +198,8 @@ class TenantCapacityPersistServiceTest {
         assertTrue(service.decrementUsage(tenantCapacity));
         
         //mock get connection fail
-        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test4"))).thenThrow(new CannotGetJdbcConnectionException("conn fail"));
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test4")))
+            .thenThrow(new CannotGetJdbcConnectionException("conn fail"));
         try {
             service.decrementUsage(tenantCapacity);
             assertTrue(false);
@@ -226,14 +233,18 @@ class TenantCapacityPersistServiceTest {
         String tenant = "test";
         argList.add(tenant);
         
-        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
-            if (invocationOnMock.getArgument(1).equals(quota) && invocationOnMock.getArgument(2).equals(maxSize)
-                    && invocationOnMock.getArgument(3).equals(maxAggrCount) && invocationOnMock.getArgument(4).equals(maxAggrSize)
-                    && invocationOnMock.getArgument(5).equals(timestamp) && invocationOnMock.getArgument(6).equals(tenant)) {
-                return 1;
-            }
-            return 0;
-        });
+        when(jdbcTemplate.update(anyString(), any(Object.class)))
+            .thenAnswer((Answer<Integer>) invocationOnMock -> {
+                if (invocationOnMock.getArgument(1).equals(quota)
+                    && invocationOnMock.getArgument(2).equals(maxSize)
+                    && invocationOnMock.getArgument(3).equals(maxAggrCount)
+                    && invocationOnMock.getArgument(4).equals(maxAggrSize)
+                    && invocationOnMock.getArgument(5).equals(timestamp)
+                    && invocationOnMock.getArgument(6).equals(tenant)) {
+                    return 1;
+                }
+                return 0;
+            });
         assertTrue(service.updateTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize));
         
         timeUtilsMockedStatic.close();
@@ -249,16 +260,19 @@ class TenantCapacityPersistServiceTest {
         String tenant = "test2";
         argList.add(tenant);
         
-        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
-            if (invocationOnMock.getArgument(1).equals(quota) && invocationOnMock.getArgument(3).equals(tenant)) {
-                return 1;
-            }
-            return 0;
-        });
+        when(jdbcTemplate.update(anyString(), any(Object.class)))
+            .thenAnswer((Answer<Integer>) invocationOnMock -> {
+                if (invocationOnMock.getArgument(1).equals(quota)
+                    && invocationOnMock.getArgument(3).equals(tenant)) {
+                    return 1;
+                }
+                return 0;
+            });
         assertTrue(service.updateQuota(tenant, quota));
         
         //mock get connection fail
-        when(jdbcTemplate.update(anyString(), any(Object.class))).thenThrow(new CannotGetJdbcConnectionException("conn fail"));
+        when(jdbcTemplate.update(anyString(), any(Object.class)))
+            .thenThrow(new CannotGetJdbcConnectionException("conn fail"));
         try {
             service.updateQuota(tenant, quota);
             assertTrue(false);
@@ -278,7 +292,7 @@ class TenantCapacityPersistServiceTest {
         
         //mock get connection fail
         when(jdbcTemplate.update(anyString(), eq(tenant), eq(timestamp), eq(tenant))).thenThrow(
-                new CannotGetJdbcConnectionException("conn fail"));
+            new CannotGetJdbcConnectionException("conn fail"));
         try {
             service.correctUsage(tenant, timestamp);
             assertTrue(false);
@@ -297,14 +311,16 @@ class TenantCapacityPersistServiceTest {
         long lastId = 1;
         int pageSize = 1;
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}), any(RowMapper.class))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}),
+            any(RowMapper.class))).thenReturn(list);
         List<NamespaceCapacity> ret = service.getCapacityList4CorrectUsage(lastId, pageSize);
         
         assertEquals(list.size(), ret.size());
         assertEquals(tenantCapacity.getNamespaceId(), ret.get(0).getNamespaceId());
         
         //mock get connection fail
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}), any(RowMapper.class))).thenThrow(
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}),
+            any(RowMapper.class))).thenThrow(
                 new CannotGetJdbcConnectionException("conn fail"));
         try {
             service.getCapacityList4CorrectUsage(lastId, pageSize);
@@ -321,7 +337,8 @@ class TenantCapacityPersistServiceTest {
         assertTrue(service.deleteTenantCapacity("test"));
         
         //mock get connection fail
-        when(jdbcTemplate.update(any(PreparedStatementCreator.class))).thenThrow(new CannotGetJdbcConnectionException("conn fail"));
+        when(jdbcTemplate.update(any(PreparedStatementCreator.class)))
+            .thenThrow(new CannotGetJdbcConnectionException("conn fail"));
         try {
             service.deleteTenantCapacity("test");
             assertTrue(false);
@@ -332,7 +349,8 @@ class TenantCapacityPersistServiceTest {
     
     @Test
     void testTenantCapacityRowMapper() throws SQLException {
-        TenantCapacityPersistService.TenantCapacityRowMapper groupCapacityRowMapper = new TenantCapacityPersistService.TenantCapacityRowMapper();
+        TenantCapacityPersistService.TenantCapacityRowMapper groupCapacityRowMapper =
+            new TenantCapacityPersistService.TenantCapacityRowMapper();
         ResultSet rs = Mockito.mock(ResultSet.class);
         int quota = 12345;
         Mockito.when(rs.getInt(eq("quota"))).thenReturn(quota);

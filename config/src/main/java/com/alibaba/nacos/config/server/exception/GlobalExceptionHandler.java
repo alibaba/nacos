@@ -57,11 +57,12 @@ public class GlobalExceptionHandler {
      * @throws com.alibaba.nacos.api.exception.runtime.NacosRuntimeException NacosRuntimeException.
      */
     @ExceptionHandler(NacosRuntimeException.class)
-    public ResponseEntity<String> handleNacosRunTimeException(NacosRuntimeException ex) throws IOException {
+    public ResponseEntity<String> handleNacosRunTimeException(NacosRuntimeException ex)
+        throws IOException {
         MetricsMonitor.getNacosException().increment();
         return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-
+    
     /**
      * For NacosException.
      *
@@ -72,14 +73,15 @@ public class GlobalExceptionHandler {
         MetricsMonitor.getNacosException().increment();
         return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-
+    
     /**
      * For DataAccessException.
      *
      * @throws DataAccessException DataAccessException.
      */
     @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<String> handleDataAccessException(DataAccessException ex) throws DataAccessException {
+    public ResponseEntity<String> handleDataAccessException(DataAccessException ex)
+        throws DataAccessException {
         DatasourceMetrics.getDbException().increment();
         return ResponseEntity.status(500).body(ExceptionUtil.getAllExceptionMsg(ex));
     }

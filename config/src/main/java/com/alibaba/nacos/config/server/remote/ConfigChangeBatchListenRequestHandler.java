@@ -45,7 +45,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ConfigChangeBatchListenRequestHandler
-        extends RequestHandler<ConfigBatchListenRequest, ConfigChangeBatchListenResponse> {
+    extends RequestHandler<ConfigBatchListenRequest, ConfigChangeBatchListenResponse> {
     
     @Autowired
     private ConfigChangeListenContext configChangeListenContext;
@@ -55,27 +55,35 @@ public class ConfigChangeBatchListenRequestHandler
     @TpsControl(pointName = "ConfigListen")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigBatchListenRequestParamExtractor.class)
-    public ConfigChangeBatchListenResponse handle(ConfigBatchListenRequest configChangeListenRequest, RequestMeta meta)
-            throws NacosException {
+    public ConfigChangeBatchListenResponse handle(
+        ConfigBatchListenRequest configChangeListenRequest, RequestMeta meta)
+        throws NacosException {
         String connectionId = StringPool.get(meta.getConnectionId());
         String tag = configChangeListenRequest.getHeader(Constants.VIPSERVER_TAG);
         ParamUtils.checkParam(tag);
-        ConfigChangeBatchListenResponse configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
-        for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest.getConfigListenContexts()) {
-            boolean isNeedTransferNamespace = NamespaceUtil.isNeedTransferNamespace(listenContext.getTenant());
+        ConfigChangeBatchListenResponse configChangeBatchListenResponse =
+            new ConfigChangeBatchListenResponse();
+        for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest
+            .getConfigListenContexts()) {
+            boolean isNeedTransferNamespace =
+                NamespaceUtil.isNeedTransferNamespace(listenContext.getTenant());
             String namespaceId = NamespaceUtil.processNamespaceParameter(listenContext.getTenant());
-            String groupKey = GroupKey2.getKey(listenContext.getDataId(), listenContext.getGroup(), namespaceId);
+            String groupKey =
+                GroupKey2.getKey(listenContext.getDataId(), listenContext.getGroup(), namespaceId);
             groupKey = StringPool.get(groupKey);
             
             String md5 = StringPool.get(listenContext.getMd5());
             
             if (configChangeListenRequest.isListen()) {
-                configChangeListenContext.addListen(groupKey, md5, connectionId, isNeedTransferNamespace);
-                boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag,
+                configChangeListenContext.addListen(groupKey, md5, connectionId,
+                    isNeedTransferNamespace);
+                boolean isUptoDate =
+                    ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag,
                         meta.getAppLabels());
                 if (!isUptoDate) {
-                    configChangeBatchListenResponse.addChangeConfig(listenContext.getDataId(), listenContext.getGroup(),
-                            listenContext.getTenant());
+                    configChangeBatchListenResponse.addChangeConfig(listenContext.getDataId(),
+                        listenContext.getGroup(),
+                        listenContext.getTenant());
                 }
             } else {
                 configChangeListenContext.removeListen(groupKey, connectionId);

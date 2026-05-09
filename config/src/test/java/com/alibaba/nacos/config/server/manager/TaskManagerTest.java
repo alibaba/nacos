@@ -57,6 +57,7 @@ class TaskManagerTest {
         taskManager = new TaskManager(TaskManagerTest.class.getName());
         taskManager.setDefaultTaskProcessor(taskProcessor);
         abstractTask = new AbstractDelayTask() {
+            
             @Override
             public void merge(AbstractDelayTask task) {
             }
@@ -120,7 +121,8 @@ class TaskManagerTest {
         taskManager.addProcessor("test", testTaskProcessor);
         when(testTaskProcessor.process(abstractTask)).thenReturn(true);
         taskManager.addTask("test", abstractTask);
-        assertEquals("test:" + new Date(0) + Constants.NACOS_LINE_SEPARATOR, taskManager.getTaskInfos());
+        assertEquals("test:" + new Date(0) + Constants.NACOS_LINE_SEPARATOR,
+            taskManager.getTaskInfos());
         TimeUnit.MILLISECONDS.sleep(150);
         assertEquals("test:finished" + Constants.NACOS_LINE_SEPARATOR, taskManager.getTaskInfos());
     }
@@ -128,7 +130,8 @@ class TaskManagerTest {
     @Test
     void testInit() throws Exception {
         taskManager.init();
-        ObjectName oName = new ObjectName(TaskManagerTest.class.getName() + ":type=" + TaskManager.class.getSimpleName());
+        ObjectName oName = new ObjectName(
+            TaskManagerTest.class.getName() + ":type=" + TaskManager.class.getSimpleName());
         assertTrue(ManagementFactory.getPlatformMBeanServer().isRegistered(oName));
     }
 }

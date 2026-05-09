@@ -83,12 +83,12 @@ public class ConfigSubService {
     }
     
     private List<SampleResult> runConfigListenerCollectionJob(Map<String, String> params,
-            CompletionService<SampleResult> completionService) {
+        CompletionService<SampleResult> completionService) {
         return new ClusterListenerJob(params, completionService, memberManager).runJobs();
     }
     
     private List<SampleResult> runConfigListenerByIpCollectionJob(Map<String, String> params,
-            CompletionService<SampleResult> completionService) {
+        CompletionService<SampleResult> completionService) {
         return new ClusterListenerByIpJob(params, completionService, memberManager).runJobs();
     }
     
@@ -96,8 +96,9 @@ public class ConfigSubService {
         
         static final String URL = Constants.COMMUNICATION_CONTROLLER_PATH + "/configWatchers";
         
-        ClusterListenerJob(Map<String, String> params, CompletionService<SampleResult> completionService,
-                ServerMemberManager serverMemberManager) {
+        ClusterListenerJob(Map<String, String> params,
+            CompletionService<SampleResult> completionService,
+            ServerMemberManager serverMemberManager) {
             super(URL, params, completionService, serverMemberManager);
         }
     }
@@ -106,8 +107,9 @@ public class ConfigSubService {
         
         static final String URL = Constants.COMMUNICATION_CONTROLLER_PATH + "/watcherConfigs";
         
-        ClusterListenerByIpJob(Map<String, String> params, CompletionService<SampleResult> completionService,
-                ServerMemberManager serverMemberManager) {
+        ClusterListenerByIpJob(Map<String, String> params,
+            CompletionService<SampleResult> completionService,
+            ServerMemberManager serverMemberManager) {
             super(URL, params, completionService, serverMemberManager);
         }
     }
@@ -123,7 +125,7 @@ public class ConfigSubService {
         private ServerMemberManager serverMemberManager;
         
         ClusterJob(String url, Map<String, String> params, CompletionService<T> completionService,
-                ServerMemberManager serverMemberManager) {
+            ServerMemberManager serverMemberManager) {
             this.url = url;
             this.params = params;
             this.completionService = completionService;
@@ -140,7 +142,8 @@ public class ConfigSubService {
             
             @Override
             public T call() throws Exception {
-                return (T) runSingleJob(ip, params, url, ((ParameterizedType) ClusterJob.this.getClass()
+                return (T) runSingleJob(ip, params, url,
+                    ((ParameterizedType) ClusterJob.this.getClass()
                         .getGenericSuperclass()).getActualTypeArguments()[0]);
             }
         }
@@ -155,7 +158,8 @@ public class ConfigSubService {
                     completionService.submit(new Job<T>(ip.getAddress()) {
                     });
                 } catch (Throwable e) { // Send request failed.
-                    LogUtil.DEFAULT_LOG.warn("invoke to {} with exception: {} during submit job", ip, e.getMessage());
+                    LogUtil.DEFAULT_LOG.warn("invoke to {} with exception: {} during submit job",
+                        ip, e.getMessage());
                 }
             }
             // Get and merge result.
@@ -170,13 +174,15 @@ public class ConfigSubService {
                                 collectionResult.add(sampleResults);
                             }
                         } else {
-                            LogUtil.DEFAULT_LOG.warn("The task in ip: {}  did not completed in 1000ms ", member);
+                            LogUtil.DEFAULT_LOG
+                                .warn("The task in ip: {}  did not completed in 1000ms ", member);
                         }
                     } catch (TimeoutException e) {
                         if (f != null) {
                             f.cancel(true);
                         }
-                        LogUtil.DEFAULT_LOG.warn("get task result with TimeoutException: {} ", e.getMessage());
+                        LogUtil.DEFAULT_LOG.warn("get task result with TimeoutException: {} ",
+                            e.getMessage());
                     }
                 } catch (Exception e) {
                     LogUtil.DEFAULT_LOG.warn("get task result with Exception: {} ", e.getMessage());
@@ -195,12 +201,13 @@ public class ConfigSubService {
      * @param type   type.
      * @return
      */
-    public static Object runSingleJob(String ip, Map<String, String> params, String url, Type type) {
+    public static Object runSingleJob(String ip, Map<String, String> params, String url,
+        Type type) {
         try {
             StringBuilder paramUrl = new StringBuilder();
             for (Map.Entry<String, String> param : params.entrySet()) {
                 paramUrl.append("&").append(param.getKey()).append("=")
-                        .append(URLEncoder.encode(param.getValue(), Constants.ENCODE_UTF8));
+                    .append(URLEncoder.encode(param.getValue(), Constants.ENCODE_UTF8));
             }
             
             String urlAll = getUrl(ip, url) + "?" + paramUrl;
@@ -210,11 +217,13 @@ public class ConfigSubService {
                 Object t = JacksonUtils.toObj(result.getData(), type);
                 return t;
             } else {
-                LogUtil.DEFAULT_LOG.info("Can not get remote from {} with {}", ip, result.getData());
+                LogUtil.DEFAULT_LOG.info("Can not get remote from {} with {}", ip,
+                    result.getData());
                 return null;
             }
         } catch (Exception e) {
-            LogUtil.DEFAULT_LOG.warn("Get remote info from {} with exception: {}", ip, e.getMessage());
+            LogUtil.DEFAULT_LOG.warn("Get remote info from {} with exception: {}", ip,
+                e.getMessage());
             return null;
         }
     }
@@ -227,7 +236,7 @@ public class ConfigSubService {
      * @return
      */
     public ListenerCheckResult mergeListenerCheckResult(ListenerCheckResult listenerCheckResult,
-            List<ListenerCheckResult> sampleResults, int expectSize) {
+        List<ListenerCheckResult> sampleResults, int expectSize) {
         for (ListenerCheckResult sampleResult : sampleResults) {
             if (sampleResult.getCode() == 200 && sampleResult.isHasListener()) {
                 listenerCheckResult.setHasListener(true);
@@ -249,10 +258,12 @@ public class ConfigSubService {
      * @param sampleResults       sampleResults.
      * @return SampleResult.
      */
-    public SampleResult mergeSampleResult(SampleResult sampleCollectResult, List<SampleResult> sampleResults) {
+    public SampleResult mergeSampleResult(SampleResult sampleCollectResult,
+        List<SampleResult> sampleResults) {
         SampleResult mergeResult = new SampleResult();
         Map<String, String> listenersGroupkeyStatus;
-        if (sampleCollectResult.getLisentersGroupkeyStatus() == null || sampleCollectResult.getLisentersGroupkeyStatus()
+        if (sampleCollectResult.getLisentersGroupkeyStatus() == null
+            || sampleCollectResult.getLisentersGroupkeyStatus()
                 .isEmpty()) {
             listenersGroupkeyStatus = new HashMap<>(10);
         } else {
@@ -260,28 +271,32 @@ public class ConfigSubService {
         }
         
         for (SampleResult sampleResult : sampleResults) {
-            Map<String, String> listenersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
+            Map<String, String> listenersGroupkeyStatusTmp =
+                sampleResult.getLisentersGroupkeyStatus();
             listenersGroupkeyStatus.putAll(listenersGroupkeyStatusTmp);
         }
         mergeResult.setLisentersGroupkeyStatus(listenersGroupkeyStatus);
         return mergeResult;
     }
     
-    public SampleResult getCollectSampleResult(String dataId, String group, String tenant, int sampleTime)
-            throws Exception {
+    public SampleResult getCollectSampleResult(String dataId, String group, String tenant,
+        int sampleTime)
+        throws Exception {
         Map<String, String> params = new HashMap<>(5);
         params.put("dataId", dataId);
         params.put("group", group);
         if (!StringUtils.isBlank(tenant)) {
             params.put("tenant", tenant);
         }
-        BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<>(memberManager.getServerList().size());
+        BlockingQueue<Future<SampleResult>> queue =
+            new LinkedBlockingDeque<>(memberManager.getServerList().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<>(
-                ConfigExecutor.getConfigSubServiceExecutor(), queue);
+            ConfigExecutor.getConfigSubServiceExecutor(), queue);
         
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
-            List<SampleResult> sampleResults = runConfigListenerCollectionJob(params, completionService);
+            List<SampleResult> sampleResults =
+                runConfigListenerCollectionJob(params, completionService);
             if (sampleResults != null) {
                 sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
             }
@@ -292,13 +307,15 @@ public class ConfigSubService {
     public SampleResult getCollectSampleResultByIp(String ip, int sampleTime) {
         Map<String, String> params = new HashMap<>(50);
         params.put("ip", ip);
-        BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<>(memberManager.getServerList().size());
+        BlockingQueue<Future<SampleResult>> queue =
+            new LinkedBlockingDeque<>(memberManager.getServerList().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<>(
-                ConfigExecutor.getConfigSubServiceExecutor(), queue);
+            ConfigExecutor.getConfigSubServiceExecutor(), queue);
         
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
-            List<SampleResult> sampleResults = runConfigListenerByIpCollectionJob(params, completionService);
+            List<SampleResult> sampleResults =
+                runConfigListenerByIpCollectionJob(params, completionService);
             if (sampleResults != null) {
                 sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
             }
@@ -318,7 +335,7 @@ public class ConfigSubService {
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
         NacosAuthConfig authConfig = NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
+            .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
         AuthHeaderUtil.addIdentityToHeader(header, authConfig);
         return HttpClientManager.getNacosRestTemplate().get(url, header, Query.EMPTY, String.class);
     }

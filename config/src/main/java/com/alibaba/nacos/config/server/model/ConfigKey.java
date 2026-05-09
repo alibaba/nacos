@@ -70,7 +70,8 @@ public class ConfigKey implements Serializable {
             return false;
         }
         ConfigKey configKey = (ConfigKey) o;
-        return Objects.equals(appName, configKey.appName) && Objects.equals(dataId, configKey.dataId) && Objects.equals(
+        return Objects.equals(appName, configKey.appName)
+            && Objects.equals(dataId, configKey.dataId) && Objects.equals(
                 group, configKey.group);
     }
     

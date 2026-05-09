@@ -183,18 +183,19 @@ public class ConfigQueryChainResponse {
         }
         ConfigQueryChainResponse that = (ConfigQueryChainResponse) o;
         return lastModified == that.lastModified
-                && Objects.equals(content, that.content)
-                && Objects.equals(contentType, that.contentType)
-                && Objects.equals(encryptedDataKey, that.encryptedDataKey)
-                && Objects.equals(md5, that.md5)
-                && Objects.equals(matchedGray, that.matchedGray)
-                && Objects.equals(resultCode, that.resultCode)
-                && Objects.equals(message, that.message)
-                && status == that.status;
+            && Objects.equals(content, that.content)
+            && Objects.equals(contentType, that.contentType)
+            && Objects.equals(encryptedDataKey, that.encryptedDataKey)
+            && Objects.equals(md5, that.md5)
+            && Objects.equals(matchedGray, that.matchedGray)
+            && Objects.equals(resultCode, that.resultCode)
+            && Objects.equals(message, that.message)
+            && status == that.status;
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(content, contentType, encryptedDataKey, md5, lastModified, matchedGray, resultCode, message, status);
+        return Objects.hash(content, contentType, encryptedDataKey, md5, lastModified, matchedGray,
+            resultCode, message, status);
     }
 }

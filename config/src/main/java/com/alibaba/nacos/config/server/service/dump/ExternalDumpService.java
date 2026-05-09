@@ -46,13 +46,13 @@ public class ExternalDumpService extends DumpService {
      * @param memberManager {@link ServerMemberManager}
      */
     public ExternalDumpService(ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService,
-            HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService,
-            ServerMemberManager memberManager,
-            ConfigMigrateService configMigrateService) {
+        NamespacePersistService namespacePersistService,
+        HistoryConfigInfoPersistService historyConfigInfoPersistService,
+        ConfigInfoGrayPersistService configInfoGrayPersistService,
+        ServerMemberManager memberManager,
+        ConfigMigrateService configMigrateService) {
         super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-                configInfoGrayPersistService, memberManager, configMigrateService);
+            configInfoGrayPersistService, memberManager, configMigrateService);
     }
     
     @PostConstruct

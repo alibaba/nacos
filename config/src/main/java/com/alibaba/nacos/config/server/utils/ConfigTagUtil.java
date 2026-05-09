@@ -46,9 +46,9 @@ public class ConfigTagUtil {
             return false;
         }
         return Arrays.stream(configTags.split(TAGS_DELIMITER))
-                .map(tag -> tag.trim().replaceAll(HYPHEN, ""))
-                .anyMatch(tag -> tag.equalsIgnoreCase(VIRTUAL_SERVICE.replaceAll(HYPHEN, ""))
-                        || tag.equalsIgnoreCase(DESTINATION_RULE.replaceAll(HYPHEN, "")));
+            .map(tag -> tag.trim().replaceAll(HYPHEN, ""))
+            .anyMatch(tag -> tag.equalsIgnoreCase(VIRTUAL_SERVICE.replaceAll(HYPHEN, ""))
+                || tag.equalsIgnoreCase(DESTINATION_RULE.replaceAll(HYPHEN, "")));
     }
     
     /**
@@ -61,16 +61,16 @@ public class ConfigTagUtil {
         if (configTags == null) {
             throw new IllegalArgumentException("configTags cannot be null.");
         }
-    
+        
         if (configTags.isEmpty()) {
             return null;
         }
-    
+        
         return Arrays.stream(configTags.split(TAGS_DELIMITER))
-                .map(tag -> tag.trim().replaceAll(HYPHEN, ""))
-                .filter(tag -> tag.equalsIgnoreCase(VIRTUAL_SERVICE.replaceAll(HYPHEN, ""))
-                        || tag.equalsIgnoreCase(DESTINATION_RULE.replaceAll(HYPHEN, "")))
-                .findFirst()
-                .orElse(null);
+            .map(tag -> tag.trim().replaceAll(HYPHEN, ""))
+            .filter(tag -> tag.equalsIgnoreCase(VIRTUAL_SERVICE.replaceAll(HYPHEN, ""))
+                || tag.equalsIgnoreCase(DESTINATION_RULE.replaceAll(HYPHEN, "")))
+            .findFirst()
+            .orElse(null);
     }
 }

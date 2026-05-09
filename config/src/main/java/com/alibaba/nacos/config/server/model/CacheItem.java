@@ -30,51 +30,51 @@ import java.util.stream.Collectors;
  * @author Nacos
  */
 public class CacheItem {
-
+    
     final String groupKey;
-
+    
     public String type;
-
+    
     ConfigCache configCache = ConfigCacheFactoryDelegate.getInstance().createConfigCache();
-
+    
     /**
      * Use for gray.
      */
     private volatile Map<String, ConfigCacheGray> configCacheGray = null;
-
+    
     List<ConfigCacheGray> sortedConfigCacheGrayList = null;
-
+    
     private final SimpleReadWriteLock rwLock = new SimpleReadWriteLock();
-
+    
     public CacheItem(String groupKey, String encryptedDataKey) {
         this.groupKey = StringPool.get(groupKey);
         this.getConfigCache().setEncryptedDataKey(encryptedDataKey);
     }
-
+    
     public CacheItem(String groupKey) {
         this.groupKey = StringPool.get(groupKey);
     }
-
+    
     public ConfigCache getConfigCache() {
         return configCache;
     }
-
+    
     public SimpleReadWriteLock getRwLock() {
         return rwLock;
     }
-
+    
     public String getType() {
         return type;
     }
-
+    
     public void setType(String type) {
         this.type = type;
     }
-
+    
     public String getGroupKey() {
         return groupKey;
     }
-
+    
     /**
      * init config gray if empty.
      */
@@ -87,7 +87,7 @@ public class CacheItem {
             }
         }
     }
-
+    
     /**
      * init config gray if empty.
      *
@@ -96,13 +96,13 @@ public class CacheItem {
     public void initConfigGrayIfEmpty(String grayName) {
         initConfigGrayIfEmpty();
         this.configCacheGray.computeIfAbsent(grayName,
-                k -> ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray(k));
+            k -> ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray(k));
     }
-
+    
     public List<ConfigCacheGray> getSortConfigGrays() {
         return sortedConfigCacheGrayList;
     }
-
+    
     /**
      * sort config gray.
      */
@@ -111,24 +111,24 @@ public class CacheItem {
             sortedConfigCacheGrayList = null;
             return;
         }
-
+        
         sortedConfigCacheGrayList = configCacheGray.values().stream().sorted((o1, o2) -> {
             if (o1.getPriority() != o2.getPriority()) {
                 return Integer.compare(o1.getPriority(), o2.getPriority()) * -1;
             } else {
                 return o1.getGrayName().compareTo(o2.getGrayName());
             }
-
+            
         }).collect(Collectors.toList());
     }
-
+    
     public Map<String, ConfigCacheGray> getConfigCacheGray() {
         return configCacheGray;
     }
-
+    
     public void clearConfigGrays() {
         this.configCacheGray = null;
         this.sortedConfigCacheGrayList = null;
     }
-
+    
 }

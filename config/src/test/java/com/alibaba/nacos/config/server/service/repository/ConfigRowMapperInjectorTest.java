@@ -55,8 +55,10 @@ class ConfigRowMapperInjectorTest {
     @Test
     void testInit() {
         ConfigRowMapperInjector configRowMapperInjector = new ConfigRowMapperInjector();
-        assertEquals(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER, RowMapperManager.getRowMapper(
-                ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName()));
+        assertEquals(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER,
+            RowMapperManager.getRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass()
+                    .getCanonicalName()));
     }
     
     @Test
@@ -79,13 +81,16 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
         Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
         Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(new Timestamp(preConfig.getLastModified()));
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
+            .thenReturn(new Timestamp(preConfig.getLastModified()));
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
         Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
+        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
+            .thenReturn(preConfig.getEncryptedDataKey());
         Mockito.when(resultSet.getString(eq("tag_id"))).thenReturn(preConfig.getTag());
-        ConfigInfoTagWrapperRowMapper configInfoWrapperRowMapper = new ConfigInfoTagWrapperRowMapper();
+        ConfigInfoTagWrapperRowMapper configInfoWrapperRowMapper =
+            new ConfigInfoTagWrapperRowMapper();
         ConfigInfoTagWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
         assertEquals(preConfig.getTag(), configInfoWrapper.getTag());
@@ -114,7 +119,8 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("beta_ips"))).thenReturn(preConfig.getBetaIps());
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
         Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
+        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
+            .thenReturn(preConfig.getEncryptedDataKey());
         ConfigInfo4BetaRowMapper configInfoWrapperRowMapper = new ConfigInfo4BetaRowMapper();
         ConfigInfo4Beta configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
@@ -140,12 +146,15 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
         Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
         Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(new Timestamp(preConfig.getLastModified()));
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
+            .thenReturn(new Timestamp(preConfig.getLastModified()));
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
         Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
-        ConfigInfoBetaWrapperRowMapper configInfoWrapperRowMapper = new ConfigInfoBetaWrapperRowMapper();
+        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
+            .thenReturn(preConfig.getEncryptedDataKey());
+        ConfigInfoBetaWrapperRowMapper configInfoWrapperRowMapper =
+            new ConfigInfoBetaWrapperRowMapper();
         ConfigInfoBetaWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
     }
@@ -168,11 +177,14 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("c_desc"))).thenReturn(preConfig.getDesc());
         Mockito.when(resultSet.getString(eq("effect"))).thenReturn(preConfig.getEffect());
         Mockito.when(resultSet.getString(eq("src_user"))).thenReturn(preConfig.getCreateUser());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(new Timestamp(preConfig.getModifyTime()));
-        Mockito.when(resultSet.getTimestamp(eq("gmt_create"))).thenReturn(new Timestamp(preConfig.getCreateTime()));
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
+            .thenReturn(new Timestamp(preConfig.getModifyTime()));
+        Mockito.when(resultSet.getTimestamp(eq("gmt_create")))
+            .thenReturn(new Timestamp(preConfig.getCreateTime()));
         Mockito.when(resultSet.getString(eq("c_use"))).thenReturn(preConfig.getUse());
         Mockito.when(resultSet.getString(eq("c_schema"))).thenReturn(preConfig.getSchema());
-        ConfigRowMapperInjector.ConfigAdvanceInfoRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigAdvanceInfoRowMapper();
+        ConfigRowMapperInjector.ConfigAdvanceInfoRowMapper configInfoWrapperRowMapper =
+            new ConfigRowMapperInjector.ConfigAdvanceInfoRowMapper();
         ConfigAdvanceInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
     }
@@ -199,14 +211,17 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
         Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(new Timestamp(preConfig.getModifyTime()));
-        Mockito.when(resultSet.getTimestamp(eq("gmt_create"))).thenReturn(new Timestamp(preConfig.getCreateTime()));
-
-
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
+            .thenReturn(new Timestamp(preConfig.getModifyTime()));
+        Mockito.when(resultSet.getTimestamp(eq("gmt_create")))
+            .thenReturn(new Timestamp(preConfig.getCreateTime()));
+        
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
         Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
-        ConfigRowMapperInjector.ConfigAllInfoRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigAllInfoRowMapper();
+        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
+            .thenReturn(preConfig.getEncryptedDataKey());
+        ConfigRowMapperInjector.ConfigAllInfoRowMapper configInfoWrapperRowMapper =
+            new ConfigRowMapperInjector.ConfigAllInfoRowMapper();
         
         ConfigAllInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
@@ -234,8 +249,10 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
         Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
-        ConfigRowMapperInjector.ConfigInfoRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfoRowMapper();
+        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
+            .thenReturn(preConfig.getEncryptedDataKey());
+        ConfigRowMapperInjector.ConfigInfoRowMapper configInfoWrapperRowMapper =
+            new ConfigRowMapperInjector.ConfigInfoRowMapper();
         ConfigInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
     }
@@ -262,10 +279,13 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(new Timestamp(preConfig.getLastModified()));
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
+            .thenReturn(new Timestamp(preConfig.getLastModified()));
         Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
-        ConfigRowMapperInjector.ConfigInfoWrapperRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfoWrapperRowMapper();
+        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
+            .thenReturn(preConfig.getEncryptedDataKey());
+        ConfigRowMapperInjector.ConfigInfoWrapperRowMapper configInfoWrapperRowMapper =
+            new ConfigRowMapperInjector.ConfigInfoWrapperRowMapper();
         ConfigInfoWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
         
@@ -295,8 +315,10 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
         Mockito.when(resultSet.getString(eq("tag_id"))).thenReturn(preConfig.getTag());
         Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
-        ConfigRowMapperInjector.ConfigInfo4TagRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfo4TagRowMapper();
+        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
+            .thenReturn(preConfig.getEncryptedDataKey());
+        ConfigRowMapperInjector.ConfigInfo4TagRowMapper configInfoWrapperRowMapper =
+            new ConfigRowMapperInjector.ConfigInfo4TagRowMapper();
         ConfigInfo4Tag configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
         
@@ -315,7 +337,8 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
-        ConfigRowMapperInjector.ConfigInfoBaseRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfoBaseRowMapper();
+        ConfigRowMapperInjector.ConfigInfoBaseRowMapper configInfoWrapperRowMapper =
+            new ConfigRowMapperInjector.ConfigInfoBaseRowMapper();
         ConfigInfoBase configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
         
@@ -346,10 +369,11 @@ class ConfigRowMapperInjectorTest {
         
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
         Mockito.when(resultSet.getString(eq("app"))).thenReturn(preConfig.getAppName());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
+        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
+            .thenReturn(preConfig.getEncryptedDataKey());
         
         ConfigRowMapperInjector.ConfigInfoGrayWrapperRowMapper configInfoWrapperRowMapper =
-                new ConfigRowMapperInjector.ConfigInfoGrayWrapperRowMapper();
+            new ConfigRowMapperInjector.ConfigInfoGrayWrapperRowMapper();
         
         ConfigInfoGrayWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
@@ -397,9 +421,12 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("src_user"))).thenReturn(preConfig.getSrcUser());
         Mockito.when(resultSet.getLong(eq("nid"))).thenReturn(preConfig.getId());
         Mockito.when(resultSet.getString(eq("src_ip"))).thenReturn(preConfig.getSrcIp());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(preConfig.getLastModifiedTime());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_create"))).thenReturn(preConfig.getCreatedTime());
-        ConfigRowMapperInjector.ConfigHistoryRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigHistoryRowMapper();
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
+            .thenReturn(preConfig.getLastModifiedTime());
+        Mockito.when(resultSet.getTimestamp(eq("gmt_create")))
+            .thenReturn(preConfig.getCreatedTime());
+        ConfigRowMapperInjector.ConfigHistoryRowMapper configInfoWrapperRowMapper =
+            new ConfigRowMapperInjector.ConfigHistoryRowMapper();
         
         ConfigHistoryInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
@@ -434,13 +461,17 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("src_user"))).thenReturn(preConfig.getSrcUser());
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
         Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
+        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
+            .thenReturn(preConfig.getEncryptedDataKey());
         Mockito.when(resultSet.getLong(eq("nid"))).thenReturn(preConfig.getId());
         Mockito.when(resultSet.getString(eq("src_ip"))).thenReturn(preConfig.getSrcIp());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(preConfig.getLastModifiedTime());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_create"))).thenReturn(preConfig.getCreatedTime());
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
+            .thenReturn(preConfig.getLastModifiedTime());
+        Mockito.when(resultSet.getTimestamp(eq("gmt_create")))
+            .thenReturn(preConfig.getCreatedTime());
         
-        ConfigHistoryDetailRowMapper configInfoWrapperRowMapper = new ConfigHistoryDetailRowMapper();
+        ConfigHistoryDetailRowMapper configInfoWrapperRowMapper =
+            new ConfigHistoryDetailRowMapper();
         ConfigHistoryInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
         
@@ -458,10 +489,12 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(new Timestamp(preConfig.getLastModified()));
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
+            .thenReturn(new Timestamp(preConfig.getLastModified()));
         
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
-        ConfigInfoStateWrapperRowMapper configInfoWrapperRowMapper = new ConfigInfoStateWrapperRowMapper();
+        ConfigInfoStateWrapperRowMapper configInfoWrapperRowMapper =
+            new ConfigInfoStateWrapperRowMapper();
         ConfigInfoStateWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
         
@@ -477,7 +510,8 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
-        ConfigRowMapperInjector.ConfigKeyRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigKeyRowMapper();
+        ConfigRowMapperInjector.ConfigKeyRowMapper configInfoWrapperRowMapper =
+            new ConfigRowMapperInjector.ConfigKeyRowMapper();
         
         ConfigKey configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
@@ -486,7 +520,8 @@ class ConfigRowMapperInjectorTest {
     
     @Test
     void testConfigInfoRowMapperWithDescAndTags() throws SQLException {
-        ConfigRowMapperInjector.ConfigInfoRowMapper mapper = new ConfigRowMapperInjector.ConfigInfoRowMapper();
+        ConfigRowMapperInjector.ConfigInfoRowMapper mapper =
+            new ConfigRowMapperInjector.ConfigInfoRowMapper();
         ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
         
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(1L);
@@ -518,7 +553,8 @@ class ConfigRowMapperInjectorTest {
     
     @Test
     void testConfigInfoRowMapperWithNullDescAndTags() throws SQLException {
-        ConfigRowMapperInjector.ConfigInfoRowMapper mapper = new ConfigRowMapperInjector.ConfigInfoRowMapper();
+        ConfigRowMapperInjector.ConfigInfoRowMapper mapper =
+            new ConfigRowMapperInjector.ConfigInfoRowMapper();
         ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
         
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(1L);
@@ -550,7 +586,8 @@ class ConfigRowMapperInjectorTest {
     
     @Test
     void testConfigInfoRowMapperBackwardCompatibility() throws SQLException {
-        ConfigRowMapperInjector.ConfigInfoRowMapper mapper = new ConfigRowMapperInjector.ConfigInfoRowMapper();
+        ConfigRowMapperInjector.ConfigInfoRowMapper mapper =
+            new ConfigRowMapperInjector.ConfigInfoRowMapper();
         ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
         
         // 模拟旧版本数据库，没有 c_desc 和 config_tags 字段
@@ -565,8 +602,10 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn("encKey");
         
         // 模拟字段不存在的情况
-        Mockito.when(resultSet.getString(eq("c_desc"))).thenThrow(new SQLException("Column 'c_desc' not found"));
-        Mockito.when(resultSet.getString(eq("config_tags"))).thenThrow(new SQLException("Column 'config_tags' not found"));
+        Mockito.when(resultSet.getString(eq("c_desc")))
+            .thenThrow(new SQLException("Column 'c_desc' not found"));
+        Mockito.when(resultSet.getString(eq("config_tags")))
+            .thenThrow(new SQLException("Column 'config_tags' not found"));
         
         ConfigInfo configInfo = mapper.mapRow(resultSet, 1);
         

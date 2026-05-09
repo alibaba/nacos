@@ -48,13 +48,15 @@ class ConfigChangeClusterSyncRequestHandlerTest {
     
     @BeforeEach
     void setUp() throws IOException {
-        configChangeClusterSyncRequestHandler = new ConfigChangeClusterSyncRequestHandler(dumpService,
+        configChangeClusterSyncRequestHandler =
+            new ConfigChangeClusterSyncRequestHandler(dumpService,
                 configMigrateService);
     }
     
     @Test
     void testHandle() throws NacosException {
-        ConfigChangeClusterSyncRequest configChangeSyncRequest = new ConfigChangeClusterSyncRequest();
+        ConfigChangeClusterSyncRequest configChangeSyncRequest =
+            new ConfigChangeClusterSyncRequest();
         configChangeSyncRequest.setRequestId("");
         configChangeSyncRequest.setDataId("dataId");
         configChangeSyncRequest.setTag("tag");
@@ -62,14 +64,17 @@ class ConfigChangeClusterSyncRequestHandlerTest {
         configChangeSyncRequest.setBeta(false);
         RequestMeta meta = new RequestMeta();
         meta.setClientIp("1.1.1.1");
-        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
+        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse =
+            configChangeClusterSyncRequestHandler.handle(
                 configChangeSyncRequest, meta);
-        assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
+        assertEquals(configChangeClusterSyncResponse.getResultCode(),
+            ResponseCode.SUCCESS.getCode());
     }
     
     @Test
     void testHandleBetaCompatibleFromOldServer() throws NacosException {
-        ConfigChangeClusterSyncRequest configChangeSyncRequest = new ConfigChangeClusterSyncRequest();
+        ConfigChangeClusterSyncRequest configChangeSyncRequest =
+            new ConfigChangeClusterSyncRequest();
         configChangeSyncRequest.setRequestId("");
         configChangeSyncRequest.setDataId("dataId");
         configChangeSyncRequest.setGroup("group123");
@@ -78,16 +83,19 @@ class ConfigChangeClusterSyncRequestHandlerTest {
         configChangeSyncRequest.setBeta(true);
         RequestMeta meta = new RequestMeta();
         meta.setClientIp("1.1.1.1");
-        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
+        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse =
+            configChangeClusterSyncRequestHandler.handle(
                 configChangeSyncRequest, meta);
         verify(configMigrateService, times(1)).checkMigrateBeta(configChangeSyncRequest.getDataId(),
-                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
-        assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
+            configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
+        assertEquals(configChangeClusterSyncResponse.getResultCode(),
+            ResponseCode.SUCCESS.getCode());
     }
     
     @Test
     void testHandleOldCompatibleFromOldServer() throws NacosException {
-        ConfigChangeClusterSyncRequest configChangeSyncRequest = new ConfigChangeClusterSyncRequest();
+        ConfigChangeClusterSyncRequest configChangeSyncRequest =
+            new ConfigChangeClusterSyncRequest();
         configChangeSyncRequest.setRequestId("");
         configChangeSyncRequest.setDataId("dataId");
         configChangeSyncRequest.setGroup("group123");
@@ -96,11 +104,13 @@ class ConfigChangeClusterSyncRequestHandlerTest {
         configChangeSyncRequest.setLastModified(1L);
         RequestMeta meta = new RequestMeta();
         meta.setClientIp("1.1.1.1");
-        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
+        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse =
+            configChangeClusterSyncRequestHandler.handle(
                 configChangeSyncRequest, meta);
         verify(configMigrateService, times(1)).checkMigrateTag(configChangeSyncRequest.getDataId(),
-                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
-                configChangeSyncRequest.getTag());
-        assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
+            configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+            configChangeSyncRequest.getTag());
+        assertEquals(configChangeClusterSyncResponse.getResultCode(),
+            ResponseCode.SUCCESS.getCode());
     }
 }

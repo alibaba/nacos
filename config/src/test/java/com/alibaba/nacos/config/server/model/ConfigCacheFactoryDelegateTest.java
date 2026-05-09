@@ -59,12 +59,16 @@ class ConfigCacheFactoryDelegateTest {
     @Test
     public void test() {
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheFactory.class))
-                .thenReturn(Collections.singletonList(nacosConfigCacheFactory));
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("lalala");
+            .thenReturn(Collections.singletonList(nacosConfigCacheFactory));
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos"))
+            .thenReturn("lalala");
         ConfigCache configCache = ConfigCacheFactoryDelegate.getInstance().createConfigCache();
-        ConfigCache configCache1 = ConfigCacheFactoryDelegate.getInstance().createConfigCache("md5", 123456789L);
-        ConfigCacheGray configCacheGray = ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray("grayName");
-        ConfigCacheGray configCacheGray1 = ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray();
+        ConfigCache configCache1 =
+            ConfigCacheFactoryDelegate.getInstance().createConfigCache("md5", 123456789L);
+        ConfigCacheGray configCacheGray =
+            ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray("grayName");
+        ConfigCacheGray configCacheGray1 =
+            ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray();
         verify(nacosConfigCacheFactory, times(0)).createConfigCache();
         verify(nacosConfigCacheFactory, times(0)).createConfigCacheGray();
     }
@@ -75,11 +79,13 @@ class ConfigCacheFactoryDelegateTest {
         when(nacosConfigCacheFactory.createConfigCache()).thenReturn(new ConfigCache());
         when(nacosConfigCacheFactory.createConfigCacheGray()).thenReturn(new ConfigCacheGray());
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheFactory.class))
-                .thenReturn(Collections.singletonList(nacosConfigCacheFactory));
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
+            .thenReturn(Collections.singletonList(nacosConfigCacheFactory));
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos"))
+            .thenReturn("nacos");
         Constructor constructor = ConfigCacheFactoryDelegate.class.getDeclaredConstructor();
         constructor.setAccessible(true);
-        ConfigCacheFactoryDelegate configCacheFactoryDelegate = (ConfigCacheFactoryDelegate) constructor.newInstance();
+        ConfigCacheFactoryDelegate configCacheFactoryDelegate =
+            (ConfigCacheFactoryDelegate) constructor.newInstance();
         configCacheFactoryDelegate.createConfigCache();
         configCacheFactoryDelegate.createConfigCache("md5", 123456789L);
         configCacheFactoryDelegate.createConfigCacheGray("grayName");

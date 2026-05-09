@@ -47,15 +47,18 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class RequestLogAspect {
     
-    private static final String PUBLISH_CONFIG = "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.publishConfig(..))";
+    private static final String PUBLISH_CONFIG =
+        "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.publishConfig(..))";
     
-    private static final String GET_CONFIG = "execution(* com.alibaba.nacos.config.server.service.query.ConfigQueryChainService.handle(..))";
+    private static final String GET_CONFIG =
+        "execution(* com.alibaba.nacos.config.server.service.query.ConfigQueryChainService.handle(..))";
     
-    private static final String DELETE_CONFIG = "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfig(..))";
+    private static final String DELETE_CONFIG =
+        "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfig(..))";
     
     private static final String CONFIG_CHANGE_LISTEN_RPC =
-            "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
-                    + " && target(com.alibaba.nacos.config.server.remote.ConfigChangeBatchListenRequestHandler) && args(request,meta)";
+        "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
+            + " && target(com.alibaba.nacos.config.server.remote.ConfigChangeBatchListenRequestHandler) && args(request,meta)";
     
     /**
      * Intercepts configuration publishing operations, records metrics, and logs client requests.
@@ -74,7 +77,8 @@ public class RequestLogAspect {
         
         MetricsMonitor.getPublishMonitor().incrementAndGet();
         AtomicLong rtHolder = new AtomicLong();
-        Object retVal = logClientRequest("publish", pjp, dataId, group, namespaceId, requestIp, md5, rtHolder);
+        Object retVal =
+            logClientRequest("publish", pjp, dataId, group, namespaceId, requestIp, md5, rtHolder);
         MetricsMonitor.getWriteConfigRtTimer().record(rtHolder.get(), TimeUnit.MILLISECONDS);
         
         return retVal;
@@ -92,14 +96,16 @@ public class RequestLogAspect {
         String tenant = chainRequest.getTenant();
         String requestIp = null;
         if (chainRequest.getAppLabels() != null) {
-            requestIp = chainRequest.getAppLabels().getOrDefault(BetaGrayRule.CLIENT_IP_LABEL, null);
+            requestIp =
+                chainRequest.getAppLabels().getOrDefault(BetaGrayRule.CLIENT_IP_LABEL, null);
         }
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String md5 = ConfigCacheService.getContentMd5(groupKey);
         
         MetricsMonitor.getConfigMonitor().incrementAndGet();
         AtomicLong rtHolder = new AtomicLong();
-        Object retVal = logClientRequest("get", pjp, dataId, group, tenant, requestIp, md5, rtHolder);
+        Object retVal =
+            logClientRequest("get", pjp, dataId, group, tenant, requestIp, md5, rtHolder);
         MetricsMonitor.getReadConfigRtTimer().record(rtHolder.get(), TimeUnit.MILLISECONDS);
         
         return retVal;
@@ -120,7 +126,8 @@ public class RequestLogAspect {
         
         MetricsMonitor.getConfigMonitor().incrementAndGet();
         AtomicLong rtHolder = new AtomicLong();
-        Object retVal = logClientRequest("delete", pjp, dataId, group, tenant, clientIp, md5, rtHolder);
+        Object retVal =
+            logClientRequest("delete", pjp, dataId, group, tenant, clientIp, md5, rtHolder);
         MetricsMonitor.getReadConfigRtTimer().record(rtHolder.get(), TimeUnit.MILLISECONDS);
         
         return retVal;
@@ -129,8 +136,9 @@ public class RequestLogAspect {
     /**
      * Client api request log rt | status | requestIp | opType | dataId | group | datumId | md5.
      */
-    private Object logClientRequest(String requestType, ProceedingJoinPoint pjp, String dataId, String group,
-            String tenant, String requestIp, String md5, AtomicLong rtHolder) throws Throwable {
+    private Object logClientRequest(String requestType, ProceedingJoinPoint pjp, String dataId,
+        String group,
+        String tenant, String requestIp, String md5, AtomicLong rtHolder) throws Throwable {
         long startTime = System.currentTimeMillis();
         try {
             Object retVal = pjp.proceed();
@@ -141,8 +149,8 @@ public class RequestLogAspect {
             }
             
             LogUtil.CLIENT_LOG.info(
-                    "opType: {} | rt: {}ms | status: success | requestIp: {} | dataId: {} | group: {} | tenant: {} | md5: {}",
-                    requestType, rt, requestIp, dataId, group, tenant, md5);
+                "opType: {} | rt: {}ms | status: success | requestIp: {} | dataId: {} | group: {} | tenant: {} | md5: {}",
+                requestType, rt, requestIp, dataId, group, tenant, md5);
             
             return retVal;
             
@@ -153,8 +161,8 @@ public class RequestLogAspect {
             }
             
             LogUtil.CLIENT_LOG.error(
-                    "opType: {} | rt: {}ms | status: failure | requestIp: {} | dataId: {} | group: {} | tenant: {} | md5: {}",
-                    requestType, rt, requestIp, dataId, group, tenant, md5);
+                "opType: {} | rt: {}ms | status: failure | requestIp: {} | dataId: {} | group: {} | tenant: {} | md5: {}",
+                requestType, rt, requestIp, dataId, group, tenant, md5);
             
             throw e;
         }
@@ -164,8 +172,9 @@ public class RequestLogAspect {
      * Handles configuration change listening requests.
      */
     @Around(CONFIG_CHANGE_LISTEN_RPC)
-    public Object interfaceListenConfigRpc(ProceedingJoinPoint pjp, ConfigBatchListenRequest request, RequestMeta meta)
-            throws Throwable {
+    public Object interfaceListenConfigRpc(ProceedingJoinPoint pjp,
+        ConfigBatchListenRequest request, RequestMeta meta)
+        throws Throwable {
         MetricsMonitor.getConfigMonitor().incrementAndGet();
         final String requestIp = meta.getClientIp();
         String appName = request.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
@@ -173,9 +182,10 @@ public class RequestLogAspect {
         Response retVal = (Response) pjp.proceed();
         final long rt = System.currentTimeMillis() - st;
         LogUtil.CLIENT_LOG.info(
-                "opType: {} | rt: {}ms | status: {} | requestIp: {} | listenSize: {} | listenOrCancel: {} | appName: {}",
-                "listen", rt, retVal.isSuccess() ? retVal.getResultCode() : retVal.getErrorCode(), requestIp,
-                request.getConfigListenContexts().size(), request.isListen(), appName);
+            "opType: {} | rt: {}ms | status: {} | requestIp: {} | listenSize: {} | listenOrCancel: {} | appName: {}",
+            "listen", rt, retVal.isSuccess() ? retVal.getResultCode() : retVal.getErrorCode(),
+            requestIp,
+            request.getConfigListenContexts().size(), request.isListen(), appName);
         return retVal;
     }
 }

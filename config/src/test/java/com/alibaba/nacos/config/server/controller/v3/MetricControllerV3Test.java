@@ -120,13 +120,16 @@ class MetricControllerV3Test {
         
         when(memberManager.allMembers()).thenReturn(members);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH + "/cluster")
-                .param("ip", "127.0.0.1").param("namespaceId", "test").param("dataId", "test").param("groupName", "test");
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH + "/cluster")
+                .param("ip", "127.0.0.1").param("namespaceId", "test").param("dataId", "test")
+                .param("groupName", "test");
+        String actualValue =
+            mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("0", code);
     }
-
+    
     @Test
     void testGetClusterMetricWithPartialFailureShouldSetCompleteFalse() throws Exception {
         List<Member> members = new ArrayList<>();
@@ -139,7 +142,7 @@ class MetricControllerV3Test {
         m2.setPort(9848);
         members.add(m2);
         when(memberManager.allMembers()).thenReturn(members);
-
+        
         NacosAsyncRestTemplate nacosAsyncRestTemplate = Mockito.mock(NacosAsyncRestTemplate.class);
         AtomicBoolean firstCall = new AtomicBoolean(true);
         Mockito.doAnswer(invocation -> {
@@ -156,15 +159,21 @@ class MetricControllerV3Test {
                 callback.onError(new RuntimeException("mock partial failure"));
             }
             return null;
-        }).when(nacosAsyncRestTemplate).get(any(String.class), any(Header.class), any(Query.class), any(Type.class),
-                any());
-
-        try (MockedStatic<HttpClientBeanHolder> mockedStatic = Mockito.mockStatic(HttpClientBeanHolder.class)) {
-            mockedStatic.when(() -> HttpClientBeanHolder.getNacosAsyncRestTemplate(any(Logger.class))).thenReturn(nacosAsyncRestTemplate);
+        }).when(nacosAsyncRestTemplate).get(any(String.class), any(Header.class), any(Query.class),
+            any(Type.class),
+            any());
+        
+        try (MockedStatic<HttpClientBeanHolder> mockedStatic =
+            Mockito.mockStatic(HttpClientBeanHolder.class)) {
+            mockedStatic
+                .when(() -> HttpClientBeanHolder.getNacosAsyncRestTemplate(any(Logger.class)))
+                .thenReturn(nacosAsyncRestTemplate);
             MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                    .get(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH + "/cluster").param("ip", "127.0.0.1")
-                    .param("namespaceId", "test").param("dataId", "test").param("groupName", "test");
-            String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+                .get(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH + "/cluster")
+                .param("ip", "127.0.0.1")
+                .param("namespaceId", "test").param("dataId", "test").param("groupName", "test");
+            String actualValue =
+                mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
             JsonNode response = JacksonUtils.toObj(actualValue);
             JsonNode data = response.get("data");
             assertNotNull(data);
@@ -194,8 +203,9 @@ class MetricControllerV3Test {
         String ip = "192.168.0.1";
         Map<String, Object> responseMap = new HashMap<>();
         AtomicBoolean complete = new AtomicBoolean(true);
-        MetricsControllerV3.ClusterMetricsCallBack clusterMetricsCallBack = new MetricsControllerV3.ClusterMetricsCallBack(
-            responseMap, latch, complete, dataId, group, tenant, ip, m1);
+        MetricsControllerV3.ClusterMetricsCallBack clusterMetricsCallBack =
+            new MetricsControllerV3.ClusterMetricsCallBack(
+                responseMap, latch, complete, dataId, group, tenant, ip, m1);
         clusterMetricsCallBack.onReceive(result1);
         //fail result
         RestResult<Map> result2 = new RestResult<>();
@@ -224,9 +234,12 @@ class MetricControllerV3Test {
         connections.add(connection);
         when(connectionManager.getConnectionByIp(eq("127.0.0.1"))).thenReturn(connections);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH + "/ip")
-                .param("ip", "127.0.0.1").param("namespaceId", "test").param("dataId", "test").param("groupName", "test");
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH + "/ip")
+                .param("ip", "127.0.0.1").param("namespaceId", "test").param("dataId", "test")
+                .param("groupName", "test");
+        String actualValue =
+            mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         assertEquals("{\"test\":\"test\"}", data);
         

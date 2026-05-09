@@ -51,8 +51,8 @@ public class HistoryService {
     private final ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     public HistoryService(HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoPersistService configInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService) {
+        ConfigInfoPersistService configInfoPersistService,
+        ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
@@ -61,17 +61,21 @@ public class HistoryService {
     /**
      * Query the list history config.
      */
-    public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
-            Integer pageSize) {
-        return historyConfigInfoPersistService.findConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
+    public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group,
+        String namespaceId, Integer pageNo,
+        Integer pageSize) {
+        return historyConfigInfoPersistService.findConfigHistory(dataId, group, namespaceId, pageNo,
+            pageSize);
     }
     
     /**
      * Query the detailed configuration history information.
      */
-    public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
-            throws AccessException {
-        ConfigHistoryInfo configHistoryInfo = historyConfigInfoPersistService.detailConfigHistory(nid);
+    public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String namespaceId,
+        Long nid)
+        throws AccessException {
+        ConfigHistoryInfo configHistoryInfo =
+            historyConfigInfoPersistService.detailConfigHistory(nid);
         if (Objects.isNull(configHistoryInfo)) {
             return null;
         }
@@ -80,7 +84,7 @@ public class HistoryService {
         
         String encryptedDataKey = configHistoryInfo.getEncryptedDataKey();
         Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
-                configHistoryInfo.getContent());
+            configHistoryInfo.getContent());
         configHistoryInfo.setContent(pair.getSecond());
         
         return configHistoryInfo;
@@ -89,9 +93,11 @@ public class HistoryService {
     /**
      * Query previous config history information.
      */
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
-            throws AccessException {
-        ConfigHistoryInfo configHistoryInfo = historyConfigInfoPersistService.detailPreviousConfigHistory(id);
+    public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group,
+        String namespaceId, Long id)
+        throws AccessException {
+        ConfigHistoryInfo configHistoryInfo =
+            historyConfigInfoPersistService.detailPreviousConfigHistory(id);
         if (Objects.isNull(configHistoryInfo)) {
             return null;
         }
@@ -100,7 +106,7 @@ public class HistoryService {
         
         String encryptedDataKey = configHistoryInfo.getEncryptedDataKey();
         Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
-                configHistoryInfo.getContent());
+            configHistoryInfo.getContent());
         configHistoryInfo.setContent(pair.getSecond());
         
         return configHistoryInfo;
@@ -116,10 +122,13 @@ public class HistoryService {
     /**
      * Check if the input dataId,group and namespaceId match the history config.
      */
-    private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId, String group,
-            String namespaceId) throws AccessException {
-        if (!Objects.equals(configHistoryInfo.getDataId(), dataId) || !Objects.equals(configHistoryInfo.getGroup(),
-                group) || !Objects.equals(configHistoryInfo.getTenant(), namespaceId)) {
+    private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId,
+        String group,
+        String namespaceId) throws AccessException {
+        if (!Objects.equals(configHistoryInfo.getDataId(), dataId)
+            || !Objects.equals(configHistoryInfo.getGroup(),
+                group)
+            || !Objects.equals(configHistoryInfo.getTenant(), namespaceId)) {
             throw new AccessException("Please check dataId, group or namespaceId.");
         }
     }
@@ -127,9 +136,11 @@ public class HistoryService {
     /**
      * Query the detailed config history info pair, including the original version and the updated version.
      */
-    public ConfigHistoryInfoDetail getConfigHistoryInfoDetail(String dataId, String group, String namespaceId, Long nid)
-            throws AccessException {
-        ConfigHistoryInfo configHistoryInfo = historyConfigInfoPersistService.detailConfigHistory(nid);
+    public ConfigHistoryInfoDetail getConfigHistoryInfoDetail(String dataId, String group,
+        String namespaceId, Long nid)
+        throws AccessException {
+        ConfigHistoryInfo configHistoryInfo =
+            historyConfigInfoPersistService.detailConfigHistory(nid);
         if (Objects.isNull(configHistoryInfo)) {
             return null;
         }
@@ -146,7 +157,8 @@ public class HistoryService {
         if (OperationType.INSERT.getValue().equals(configHistoryInfoDetail.getOpType())) {
             configHistoryInfoDetail.setUpdatedContent(configHistoryInfo.getContent());
             configHistoryInfoDetail.setUpdatedMd5(configHistoryInfo.getMd5());
-            configHistoryInfoDetail.setUpdatedEncryptedDataKey(configHistoryInfo.getEncryptedDataKey());
+            configHistoryInfoDetail
+                .setUpdatedEncryptedDataKey(configHistoryInfo.getEncryptedDataKey());
             configHistoryInfoDetail.setUpdateExtInfo(configHistoryInfo.getExtInfo());
             configHistoryInfoDetail.setOriginalExtInfo(StringUtils.EMPTY);
             configHistoryInfoDetail.setOriginalContent(StringUtils.EMPTY);
@@ -160,20 +172,25 @@ public class HistoryService {
             configHistoryInfoDetail.setOriginalExtInfo(configHistoryInfo.getExtInfo());
             configHistoryInfoDetail.setOriginalContent(configHistoryInfo.getContent());
             configHistoryInfoDetail.setOriginalMd5(configHistoryInfo.getMd5());
-            configHistoryInfoDetail.setOriginalEncryptedDataKey(configHistoryInfo.getEncryptedDataKey());
+            configHistoryInfoDetail
+                .setOriginalEncryptedDataKey(configHistoryInfo.getEncryptedDataKey());
             
-            ConfigHistoryInfo nextHistoryInfo = historyConfigInfoPersistService.getNextHistoryInfo(dataId, group,
-                    namespaceId, configHistoryInfoDetail.getPublishType(), configHistoryInfoDetail.getGrayName(), nid);
+            ConfigHistoryInfo nextHistoryInfo =
+                historyConfigInfoPersistService.getNextHistoryInfo(dataId, group,
+                    namespaceId, configHistoryInfoDetail.getPublishType(),
+                    configHistoryInfoDetail.getGrayName(), nid);
             
             ConfigInfo currentConfigInfo = null;
             if (Objects.isNull(nextHistoryInfo)) {
                 //double check for concurrent
                 currentConfigInfo = StringUtils.isEmpty(configHistoryInfoDetail.getGrayName())
-                        ? configInfoPersistService.findConfigInfo(dataId, group, namespaceId)
-                        : configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, namespaceId,
-                                configHistoryInfoDetail.getGrayName());
-                nextHistoryInfo = historyConfigInfoPersistService.getNextHistoryInfo(dataId, group, namespaceId,
-                        configHistoryInfoDetail.getPublishType(), configHistoryInfoDetail.getGrayName(), nid);
+                    ? configInfoPersistService.findConfigInfo(dataId, group, namespaceId)
+                    : configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, namespaceId,
+                        configHistoryInfoDetail.getGrayName());
+                nextHistoryInfo =
+                    historyConfigInfoPersistService.getNextHistoryInfo(dataId, group, namespaceId,
+                        configHistoryInfoDetail.getPublishType(),
+                        configHistoryInfoDetail.getGrayName(), nid);
                 
             }
             
@@ -181,12 +198,14 @@ public class HistoryService {
                 configHistoryInfoDetail.setUpdateExtInfo(nextHistoryInfo.getExtInfo());
                 configHistoryInfoDetail.setUpdatedContent(nextHistoryInfo.getContent());
                 configHistoryInfoDetail.setUpdatedMd5(nextHistoryInfo.getMd5());
-                configHistoryInfoDetail.setUpdatedEncryptedDataKey(nextHistoryInfo.getEncryptedDataKey());
+                configHistoryInfoDetail
+                    .setUpdatedEncryptedDataKey(nextHistoryInfo.getEncryptedDataKey());
             } else {
                 configHistoryInfoDetail.setUpdatedContent(currentConfigInfo.getContent());
                 configHistoryInfoDetail.setUpdatedMd5(currentConfigInfo.getMd5());
-                configHistoryInfoDetail.setUpdatedEncryptedDataKey(currentConfigInfo.getEncryptedDataKey());
-    
+                configHistoryInfoDetail
+                    .setUpdatedEncryptedDataKey(currentConfigInfo.getEncryptedDataKey());
+                
             }
         }
         
@@ -194,21 +213,24 @@ public class HistoryService {
         if (OperationType.DELETE.getValue().equals(configHistoryInfoDetail.getOpType())) {
             configHistoryInfoDetail.setOriginalMd5(configHistoryInfo.getMd5());
             configHistoryInfoDetail.setOriginalContent(configHistoryInfo.getContent());
-            configHistoryInfoDetail.setOriginalEncryptedDataKey(configHistoryInfo.getEncryptedDataKey());
+            configHistoryInfoDetail
+                .setOriginalEncryptedDataKey(configHistoryInfo.getEncryptedDataKey());
             configHistoryInfoDetail.setOriginalExtInfo(configHistoryInfo.getExtInfo());
         }
         
         // decrypt content
         if (StringUtils.isNotBlank(configHistoryInfoDetail.getOriginalContent())) {
             String originalContent = EncryptionHandler.decryptHandler(dataId,
-                            configHistoryInfoDetail.getOriginalEncryptedDataKey(), configHistoryInfoDetail.getOriginalContent())
-                    .getSecond();
+                configHistoryInfoDetail.getOriginalEncryptedDataKey(),
+                configHistoryInfoDetail.getOriginalContent())
+                .getSecond();
             configHistoryInfoDetail.setOriginalContent(originalContent);
         }
         if (StringUtils.isNotBlank(configHistoryInfoDetail.getUpdatedContent())) {
             String updatedContent = EncryptionHandler.decryptHandler(dataId,
-                            configHistoryInfoDetail.getUpdatedEncryptedDataKey(), configHistoryInfoDetail.getUpdatedContent())
-                    .getSecond();
+                configHistoryInfoDetail.getUpdatedEncryptedDataKey(),
+                configHistoryInfoDetail.getUpdatedContent())
+                .getSecond();
             configHistoryInfoDetail.setUpdatedContent(updatedContent);
         }
         

@@ -99,10 +99,11 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         when(dataSourceService.getTransactionTemplate()).thenReturn(transactionTemplate);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
-                .thenReturn(false);
+        envUtilMockedStatic
+            .when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
+            .thenReturn(false);
         externalConfigInfoGrayPersistService = new ExternalConfigInfoGrayPersistServiceImpl(
-                historyConfigInfoPersistService);
+            historyConfigInfoPersistService);
     }
     
     /**
@@ -136,10 +137,12 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         String grayName = "grayName...";
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
         String srcIp = "srcUp...";
         String srcUser = "srcUser...";
@@ -148,16 +151,19 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setEncryptedDataKey("key34567");
         String grayRule = "grayRule...";
-        ConfigOperateResult configOperateResult = externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo,
+        ConfigOperateResult configOperateResult =
+            externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo,
                 grayName, grayRule, srcIp, srcUser);
         //expect return obj
         assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         //verify update to be invoked
         Mockito.verify(jdbcTemplate, times(1))
-                .update(anyString(), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule),
-                        eq(dataId), eq(group), eq(tenant), eq(grayName));
+            .update(anyString(), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
+                eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(configInfo.getAppName()),
+                eq(grayRule),
+                eq(dataId), eq(group), eq(tenant), eq(grayName));
         
     }
     
@@ -174,9 +180,11 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
         String grayName = "grayName...";
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1))
-                .thenReturn(mockedConfigInfoStateWrapper);
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1))
+            .thenReturn(mockedConfigInfoStateWrapper);
         
         String srcIp = "srcUp...";
         String srcUser = "srcUser...";
@@ -187,16 +195,19 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         String grayRule = "grayRule...";
         
         //execute
-        ConfigOperateResult configOperateResult = externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo,
+        ConfigOperateResult configOperateResult =
+            externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo,
                 grayName, grayRule, srcIp, srcUser);
         //expect return obj
         assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         //verify add to be invoked
         Mockito.verify(jdbcTemplate, times(1))
-                .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
-                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser));
+            .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
+                eq(configInfo.getAppName()), eq(configInfo.getContent()),
+                eq(configInfo.getEncryptedDataKey()),
+                eq(configInfo.getMd5()), eq(srcIp), eq(srcUser));
     }
     
     @Test
@@ -213,9 +224,10 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
         String grayName = "grayName...";
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
-
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
+        
         ConfigInfoGrayWrapper mockedConfigInfoGrayWrapper = new ConfigInfoGrayWrapper();
         mockedConfigInfoGrayWrapper.setDataId(dataId);
         mockedConfigInfoGrayWrapper.setGroup(group);
@@ -223,7 +235,8 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockedConfigInfoGrayWrapper.setId(mockedConfigInfoStateWrapper.getId());
         mockedConfigInfoGrayWrapper.setLastModified(mockedConfigInfoStateWrapper.getLastModified());
         mockedConfigInfoGrayWrapper.setGrayName(grayName);
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
             eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoGrayWrapper);
         
         String srcIp = "srcUp...";
@@ -235,42 +248,51 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         configInfo.setMd5("casMd5");
         String grayRule = "grayRule...";
         // mock update throw CannotGetJdbcConnectionException
-        when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule),
-                eq(dataId), eq(group), eq(tenant), eq(grayName))).thenThrow(
+        when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()),
+            eq(configInfo.getEncryptedDataKey()),
+            eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser),
+            eq(configInfo.getAppName()), eq(grayRule),
+            eq(dataId), eq(group), eq(tenant), eq(grayName))).thenThrow(
                 new CannotGetJdbcConnectionException("mock fail"));
         //execute of update& expect.
         try {
-            externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo, grayName, grayRule, srcIp, srcUser);
+            externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo, grayName, grayRule,
+                srcIp, srcUser);
             assertTrue(false);
         } catch (Exception exception) {
             assertEquals("mock fail", exception.getMessage());
         }
         
         //mock query return null
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
         //mock add throw CannotGetJdbcConnectionException
-        when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
-                eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser))).thenThrow(
+        when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName),
+            eq(grayRule),
+            eq(configInfo.getAppName()), eq(configInfo.getContent()),
+            eq(configInfo.getEncryptedDataKey()),
+            eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser))).thenThrow(
                 new CannotGetJdbcConnectionException("mock fail add"));
         
         //execute of add& expect.
         try {
-            externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo, grayName, grayRule, srcIp, srcUser);
+            externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo, grayName, grayRule,
+                srcIp, srcUser);
             assertTrue(false);
         } catch (Exception exception) {
             assertEquals("mock fail add", exception.getMessage());
         }
         
         //mock query throw CannotGetJdbcConnectionException
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenThrow(
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("get c fail"));
         //execute of add& expect.
         try {
-            externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo, grayName, grayRule, srcIp, srcUser);
+            externalConfigInfoGrayPersistService.insertOrUpdateGray(configInfo, grayName, grayRule,
+                srcIp, srcUser);
             assertTrue(false);
         } catch (Exception exception) {
             assertEquals("get c fail", exception.getMessage());
@@ -292,8 +314,9 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
         String grayName = "grayName...";
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper,
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper,
                 mockedConfigInfoStateWrapper);
         
         //execute
@@ -307,9 +330,11 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         configInfo.setMd5("casMd5");
         String grayRule = "grayRule...";
         //mock cas update
-        when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, ENCODE)),
-                eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule), eq(dataId), eq(group), eq(tenant),
-                eq(grayName), eq(configInfo.getMd5()))).thenReturn(1);
+        when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()),
+            eq(MD5Utils.md5Hex(content, ENCODE)),
+            eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule), eq(dataId),
+            eq(group), eq(tenant),
+            eq(grayName), eq(configInfo.getMd5()))).thenReturn(1);
         
         //mock exist config info
         ConfigInfoGrayWrapper configAllInfo4Gray = new ConfigInfoGrayWrapper();
@@ -318,19 +343,24 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         String grayName1 = "grayName1...";
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
-        ConfigOperateResult configOperateResult = externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
+        ConfigOperateResult configOperateResult =
+            externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
                 grayName, grayRule, srcIp, srcUser);
         //expect return obj
         assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         //verify cas update to be invoked
         Mockito.verify(jdbcTemplate, times(1))
-                .update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp),
-                        eq(srcUser), eq(configInfo.getAppName()), eq(grayRule), eq(dataId), eq(group), eq(tenant),
-                        eq(grayName), eq(configInfo.getMd5()));
+            .update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, ENCODE)),
+                eq(srcIp),
+                eq(srcUser), eq(configInfo.getAppName()), eq(grayRule), eq(dataId), eq(group),
+                eq(tenant),
+                eq(grayName), eq(configInfo.getMd5()));
         
     }
     
@@ -348,9 +378,11 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
         String grayName = "grayName...";
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1))
-                .thenReturn(mockedConfigInfoStateWrapper);
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1))
+            .thenReturn(mockedConfigInfoStateWrapper);
         
         String srcIp = "srcUp...";
         String srcUser = "srcUser...";
@@ -361,16 +393,19 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         configInfo.setMd5("csMd5");
         String grayRule = "grayRule...";
         //execute
-        ConfigOperateResult configOperateResult = externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
+        ConfigOperateResult configOperateResult =
+            externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
                 grayName, grayRule, srcIp, srcUser);
         //expect return obj
         assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         //verify add to be invoked
         Mockito.verify(jdbcTemplate, times(1))
-                .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
-                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                        eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser));
+            .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
+                eq(configInfo.getAppName()), eq(configInfo.getContent()),
+                eq(configInfo.getEncryptedDataKey()),
+                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser));
         
     }
     
@@ -388,9 +423,10 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
         String grayName = "grayName...";
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
-
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
+        
         ConfigInfoGrayWrapper mockedConfigInfoGrayWrapper = new ConfigInfoGrayWrapper();
         mockedConfigInfoGrayWrapper.setDataId(dataId);
         mockedConfigInfoGrayWrapper.setGroup(group);
@@ -398,9 +434,10 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockedConfigInfoGrayWrapper.setId(mockedConfigInfoStateWrapper.getId());
         mockedConfigInfoGrayWrapper.setLastModified(mockedConfigInfoStateWrapper.getLastModified());
         mockedConfigInfoGrayWrapper.setGrayName(grayName);
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
             eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoGrayWrapper);
-
+        
         String srcIp = "srcUp...";
         String srcUser = "srcUser...";
         String appName = "appname";
@@ -410,43 +447,52 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         configInfo.setMd5("casMd5");
         String grayRule = "grayRule...";
         // mock update throw CannotGetJdbcConnectionException
-        when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, ENCODE)),
-                eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule), eq(dataId), eq(group), eq(tenant),
-                eq(grayName), eq(configInfo.getMd5()))).thenThrow(
+        when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()),
+            eq(MD5Utils.md5Hex(content, ENCODE)),
+            eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule), eq(dataId),
+            eq(group), eq(tenant),
+            eq(grayName), eq(configInfo.getMd5()))).thenThrow(
                 new CannotGetJdbcConnectionException("updat mock fail"));
         
         //execute of update& expect.
         try {
-            externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo, grayName, grayRule, srcIp, srcUser);
+            externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo, grayName,
+                grayRule, srcIp, srcUser);
             assertTrue(false);
         } catch (Exception exception) {
             assertEquals("updat mock fail", exception.getMessage());
         }
         
         //mock query return null
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
         //mock add throw CannotGetJdbcConnectionException
-        when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
-                eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser))).thenThrow(
+        when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName),
+            eq(grayRule),
+            eq(configInfo.getAppName()), eq(configInfo.getContent()),
+            eq(configInfo.getEncryptedDataKey()),
+            eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser))).thenThrow(
                 new CannotGetJdbcConnectionException("mock fail add"));
         
         //execute of add& expect.
         try {
-            externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo, grayName, grayRule, srcIp, srcUser);
+            externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo, grayName,
+                grayRule, srcIp, srcUser);
             assertTrue(false);
         } catch (Exception exception) {
             assertEquals("mock fail add", exception.getMessage());
         }
         
         //mock query throw CannotGetJdbcConnectionException
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenThrow(
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("get c fail"));
         //execute of add& expect.
         try {
-            externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo, grayName, grayRule, srcIp, srcUser);
+            externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo, grayName,
+                grayRule, srcIp, srcUser);
             assertTrue(false);
         } catch (Exception exception) {
             assertEquals("get c fail", exception.getMessage());
@@ -468,21 +514,26 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         
-        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         Mockito.when(databaseOperate.update(any())).thenReturn(true);
         
         String srcIp = "srcIp1234";
         String srcUser = "srcUser";
-        externalConfigInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, grayName, srcIp, srcUser);
+        externalConfigInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, grayName,
+            srcIp, srcUser);
         
-        Mockito.verify(jdbcTemplate, times(1)).update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName));
+        Mockito.verify(jdbcTemplate, times(1)).update(anyString(), eq(dataId), eq(group),
+            eq(tenant), eq(grayName));
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp),
-                        eq(srcUser), any(Timestamp.class), eq("D"), eq("gray"), eq(grayName), anyString());
+            .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray),
+                eq(srcIp),
+                eq(srcUser), any(Timestamp.class), eq("D"), eq("gray"), eq(grayName), anyString());
         
         // Test the exception handling for CannotGetJdbcConnectionException
-        when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName))).thenThrow(
+        when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName)))
+            .thenThrow(
                 new CannotGetJdbcConnectionException("mock fail11111"));
         
     }
@@ -501,10 +552,11 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         
         long lastMaxId = 123;
         when(jdbcTemplate.query(anyString(), eq(new Object[] {timestamp, lastMaxId, 100}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockList)
-                .thenThrow(new CannotGetJdbcConnectionException("mock exception22"));
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockList)
+            .thenThrow(new CannotGetJdbcConnectionException("mock exception22"));
         
-        List<ConfigInfoGrayWrapper> changeConfig = externalConfigInfoGrayPersistService.findChangeConfig(timestamp,
+        List<ConfigInfoGrayWrapper> changeConfig =
+            externalConfigInfoGrayPersistService.findChangeConfig(timestamp,
                 lastMaxId, 100);
         assertTrue(changeConfig.get(0).getLastModified() == mockList.get(0).getLastModified());
         assertTrue(changeConfig.get(1).getLastModified() == mockList.get(1).getLastModified());
@@ -532,27 +584,34 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setTenant(tenant);
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
-        ConfigInfoGrayWrapper configInfo4GrayReturn = externalConfigInfoGrayPersistService.findConfigInfo4Gray(dataId,
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
+        ConfigInfoGrayWrapper configInfo4GrayReturn =
+            externalConfigInfoGrayPersistService.findConfigInfo4Gray(dataId,
                 group, tenant, grayName);
         assertEquals(mockedConfigInfoStateWrapper, configInfo4GrayReturn);
         
         //mock query throw CannotGetJdbcConnectionException
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenThrow(
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("mock fail11111"));
         try {
-            externalConfigInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant, grayName);
+            externalConfigInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
+                grayName);
             assertTrue(false);
         } catch (Exception exception) {
             assertEquals("mock fail11111", exception.getMessage());
         }
         
         //mock query throw EmptyResultDataAccessException
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1));
-        ConfigInfoGrayWrapper configInfo4GrayNull = externalConfigInfoGrayPersistService.findConfigInfo4Gray(dataId,
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1));
+        ConfigInfoGrayWrapper configInfo4GrayNull =
+            externalConfigInfoGrayPersistService.findConfigInfo4Gray(dataId,
                 group, tenant, grayName);
         assertNull(configInfo4GrayNull);
     }
@@ -578,21 +637,23 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockList.get(1).setLastModified(System.currentTimeMillis());
         mockList.get(2).setLastModified(System.currentTimeMillis());
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {}), eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(
                 mockList);
         
         int pageNo = 1;
         int pageSize = 101;
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(101);
         //execute & expect
-        Page<ConfigInfoGrayWrapper> pageReturn = externalConfigInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(
+        Page<ConfigInfoGrayWrapper> pageReturn =
+            externalConfigInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(
                 pageNo, pageSize);
         assertEquals(mockList, pageReturn.getPageItems());
         assertEquals(101, pageReturn.getTotalCount());
         
         //mock count throw CannotGetJdbcConnectionException
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenThrow(
-                new CannotGetJdbcConnectionException("345678909fail"));
+            new CannotGetJdbcConnectionException("345678909fail"));
         //execute &expect
         try {
             externalConfigInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(pageNo, pageSize);
@@ -603,4 +664,3 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
     }
     
 }
-

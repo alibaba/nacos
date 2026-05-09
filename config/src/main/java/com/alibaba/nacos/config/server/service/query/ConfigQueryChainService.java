@@ -42,15 +42,18 @@ public class ConfigQueryChainService {
     
     public ConfigQueryChainService() {
         String curChain = EnvUtil.getProperty("nacos.config.query.chain.builder", "nacos");
-        Optional<ConfigQueryHandlerChainBuilder> optionalBuilder = NacosServiceLoader.load(ConfigQueryHandlerChainBuilder.class)
+        Optional<ConfigQueryHandlerChainBuilder> optionalBuilder =
+            NacosServiceLoader.load(ConfigQueryHandlerChainBuilder.class)
                 .stream()
                 .filter(builder -> builder.getName().equals(curChain))
                 .findFirst();
         if (optionalBuilder.isPresent()) {
             chain = optionalBuilder.get().build();
-            LOGGER.info("ConfigQueryHandlerChain has been initialized successfully with chain: {}", curChain);
+            LOGGER.info("ConfigQueryHandlerChain has been initialized successfully with chain: {}",
+                curChain);
         } else {
-            String errorMessage = "No suitable ConfigQueryHandlerChainBuilder found for name: " + curChain;
+            String errorMessage =
+                "No suitable ConfigQueryHandlerChainBuilder found for name: " + curChain;
             LOGGER.error(errorMessage);
             throw new NacosConfigException(errorMessage);
         }
@@ -67,7 +70,8 @@ public class ConfigQueryChainService {
             return chain.handle(request);
         } catch (Exception e) {
             LOGGER.error("[Error] Fail to handle ConfigQueryChainRequest", e);
-            return ConfigQueryChainResponse.buildFailResponse(ResponseCode.FAIL.getCode(), e.getMessage());
+            return ConfigQueryChainResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                e.getMessage());
         }
     }
 }

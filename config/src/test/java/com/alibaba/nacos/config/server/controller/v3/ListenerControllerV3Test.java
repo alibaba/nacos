@@ -64,7 +64,8 @@ class ListenerControllerV3Test {
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(listenerControllerV3, "configListenerStateDelegate", configListenerStateDelegate);
+        ReflectionTestUtils.setField(listenerControllerV3, "configListenerStateDelegate",
+            configListenerStateDelegate);
         mockmvc = MockMvcBuilders.standaloneSetup(listenerControllerV3).build();
     }
     
@@ -75,12 +76,16 @@ class ListenerControllerV3Test {
         Map<String, String> map = new HashMap<>();
         map.put("test", "test");
         sampleResult.setListenersStatus(map);
-        when(configListenerStateDelegate.getListenerStateByIp("localhost", true)).thenReturn(sampleResult);
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+            .thenReturn(sampleResult);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
-                .param("ip", "localhost").param("all", "true").param("namespaceId", "test").param("sampleTime", "1");
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
+                .param("ip", "localhost").param("all", "true").param("namespaceId", "test")
+                .param("sampleTime", "1");
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         ConfigListenerInfo configListenerInfo = JacksonUtils.toObj(data, ConfigListenerInfo.class);

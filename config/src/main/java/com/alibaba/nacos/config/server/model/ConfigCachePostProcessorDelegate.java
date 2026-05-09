@@ -33,35 +33,39 @@ public class ConfigCachePostProcessorDelegate {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheFactoryDelegate.class);
     
-    private static ConfigCachePostProcessorDelegate instance = new ConfigCachePostProcessorDelegate();
+    private static ConfigCachePostProcessorDelegate instance =
+        new ConfigCachePostProcessorDelegate();
     
-    private String configCacheMd5PostProcessorType = EnvUtil.getProperty("nacos.config.cache.type", "nacos");
+    private String configCacheMd5PostProcessorType =
+        EnvUtil.getProperty("nacos.config.cache.type", "nacos");
     
     private ConfigCachePostProcessor configCachePostProcessor;
     
     private ConfigCachePostProcessorDelegate() {
-        Collection<ConfigCachePostProcessor> processors = NacosServiceLoader.load(ConfigCachePostProcessor.class);
+        Collection<ConfigCachePostProcessor> processors =
+            NacosServiceLoader.load(ConfigCachePostProcessor.class);
         for (ConfigCachePostProcessor processor : processors) {
             if (StringUtils.isEmpty(processor.getName())) {
                 LOGGER.warn(
-                        "[ConfigCachePostProcessorDelegate] Load ConfigCachePostProcessor({}) PostProcessorName(null/empty) fail. "
-                                + "Please add PostProcessorName to resolve", processor.getClass().getName());
+                    "[ConfigCachePostProcessorDelegate] Load ConfigCachePostProcessor({}) PostProcessorName(null/empty) fail. "
+                        + "Please add PostProcessorName to resolve",
+                    processor.getClass().getName());
                 continue;
             }
             LOGGER.info(
-                    "[ConfigCachePostProcessorDelegate] Load ConfigCachePostProcessor({}) PostProcessorName({}) successfully. ",
-                    processor.getClass().getName(), processor.getName());
+                "[ConfigCachePostProcessorDelegate] Load ConfigCachePostProcessor({}) PostProcessorName({}) successfully. ",
+                processor.getClass().getName(), processor.getName());
             if (StringUtils.equals(configCacheMd5PostProcessorType, processor.getName())) {
                 LOGGER.info(
-                        "[ConfigCachePostProcessorDelegate] Matched ConfigCachePostProcessor found,set configCacheFactory={}",
-                        processor.getClass().getName());
+                    "[ConfigCachePostProcessorDelegate] Matched ConfigCachePostProcessor found,set configCacheFactory={}",
+                    processor.getClass().getName());
                 this.configCachePostProcessor = processor;
             }
         }
         if (configCachePostProcessor == null) {
             LOGGER.info(
-                    "[ConfigCachePostProcessorDelegate] Matched ConfigCachePostProcessor not found, "
-                            + "load Default NacosConfigCachePostProcessor successfully");
+                "[ConfigCachePostProcessorDelegate] Matched ConfigCachePostProcessor not found, "
+                    + "load Default NacosConfigCachePostProcessor successfully");
             configCachePostProcessor = new NacosConfigCachePostProcessor();
         }
     }

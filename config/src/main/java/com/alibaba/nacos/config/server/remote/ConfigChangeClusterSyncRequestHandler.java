@@ -52,13 +52,14 @@ import org.springframework.stereotype.Component;
 @Component
 @InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 public class ConfigChangeClusterSyncRequestHandler
-        extends RequestHandler<ConfigChangeClusterSyncRequest, ConfigChangeClusterSyncResponse> {
+    extends RequestHandler<ConfigChangeClusterSyncRequest, ConfigChangeClusterSyncResponse> {
     
     private final DumpService dumpService;
     
     private ConfigMigrateService configMigrateService;
     
-    public ConfigChangeClusterSyncRequestHandler(DumpService dumpService, ConfigMigrateService configMigrateService) {
+    public ConfigChangeClusterSyncRequestHandler(DumpService dumpService,
+        ConfigMigrateService configMigrateService) {
         this.dumpService = dumpService;
         this.configMigrateService = configMigrateService;
     }
@@ -68,15 +69,16 @@ public class ConfigChangeClusterSyncRequestHandler
     @TpsControl(pointName = "ClusterConfigChangeNotify")
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     @Secured(signType = SignType.CONFIG, apiType = ApiType.INNER_API)
-    public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
-            RequestMeta meta) throws NacosException {
+    public ConfigChangeClusterSyncResponse handle(
+        ConfigChangeClusterSyncRequest configChangeSyncRequest,
+        RequestMeta meta) throws NacosException {
         
         checkCompatity(configChangeSyncRequest, meta);
         
         ParamUtils.checkParam(configChangeSyncRequest.getTag());
         DumpRequest dumpRequest = DumpRequest.create(configChangeSyncRequest.getDataId(),
-                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
-                configChangeSyncRequest.getLastModified(), meta.getClientIp());
+            configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+            configChangeSyncRequest.getLastModified(), meta.getClientIp());
         
         dumpRequest.setGrayName(configChangeSyncRequest.getGrayName());
         dumpService.dump(dumpRequest);
@@ -88,20 +90,23 @@ public class ConfigChangeClusterSyncRequestHandler
      *
      * @param configChangeSyncRequest request.
      */
-    private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest, RequestMeta meta) {
-        if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isBlank(configChangeSyncRequest.getGrayName())) {
-            if (configChangeSyncRequest.isBeta() || StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
+    private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest,
+        RequestMeta meta) {
+        if (PropertyUtil.isGrayCompatibleModel()
+            && StringUtils.isBlank(configChangeSyncRequest.getGrayName())) {
+            if (configChangeSyncRequest.isBeta()
+                || StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
                 
                 String grayName = null;
                 //from old server ,beta or tag persist into old model,try migrate and transfer gray model.
                 if (configChangeSyncRequest.isBeta()) {
                     configMigrateService.checkMigrateBeta(configChangeSyncRequest.getDataId(),
-                            configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
+                        configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
                     grayName = BetaGrayRule.TYPE_BETA;
                 } else {
                     configMigrateService.checkMigrateTag(configChangeSyncRequest.getDataId(),
-                            configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
-                            configChangeSyncRequest.getTag());
+                        configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+                        configChangeSyncRequest.getTag());
                     grayName = TagGrayRule.TYPE_TAG + "_" + configChangeSyncRequest.getTag();
                 }
                 configChangeSyncRequest.setGrayName(grayName);
@@ -115,11 +120,11 @@ public class ConfigChangeClusterSyncRequestHandler
         
         if (StringUtils.isNotBlank(configChangeSyncRequest.getGrayName())) {
             configMigrateService.namespaceMigrateGray(configChangeSyncRequest.getDataId(),
-                    configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
-                    configChangeSyncRequest.getGrayName());
+                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+                configChangeSyncRequest.getGrayName());
         } else {
             configMigrateService.namespaceMigrate(configChangeSyncRequest.getDataId(),
-                    configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
+                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
         }
         
         configChangeSyncRequest.setTenant("public");
@@ -132,7 +137,8 @@ public class ConfigChangeClusterSyncRequestHandler
      * @param meta              the meta
      * @return the boolean
      */
-    public boolean checkNamespaceCompatible(ConfigChangeClusterSyncRequest configSyncRequest, RequestMeta meta) {
+    public boolean checkNamespaceCompatible(ConfigChangeClusterSyncRequest configSyncRequest,
+        RequestMeta meta) {
         if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return false;
         }
@@ -153,7 +159,7 @@ public class ConfigChangeClusterSyncRequestHandler
             Loggers.REMOTE_DIGEST.error("checkCompatity error", e);
         }
         return StringUtils.equals(configSyncRequest.getTenant(), "public") || StringUtils.isBlank(
-                configSyncRequest.getTenant());
+            configSyncRequest.getTenant());
     }
     
 }

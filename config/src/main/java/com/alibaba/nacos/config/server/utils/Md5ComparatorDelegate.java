@@ -48,21 +48,23 @@ public class Md5ComparatorDelegate {
         for (Md5Comparator each : md5Comparators) {
             if (StringUtils.isEmpty(each.getName())) {
                 LOGGER.warn(
-                        "[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName(null/empty) fail. Please add Md5ComparatorName to resolve",
-                        each.getClass().getName());
+                    "[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName(null/empty) fail. Please add Md5ComparatorName to resolve",
+                    each.getClass().getName());
                 continue;
             }
-            LOGGER.info("[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName({}) successfully.",
-                    each.getClass().getName(), each.getName());
+            LOGGER.info(
+                "[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName({}) successfully.",
+                each.getClass().getName(), each.getName());
             if (StringUtils.equals(md5ComparatorType, each.getName())) {
-                LOGGER.info("[Md5ComparatorDelegate] Matched Md5Comparator found,set md5Comparator={}",
-                        each.getClass().getName());
+                LOGGER.info(
+                    "[Md5ComparatorDelegate] Matched Md5Comparator found,set md5Comparator={}",
+                    each.getClass().getName());
                 md5Comparator = each;
             }
         }
         if (md5Comparator == null) {
             LOGGER.info(
-                    "[Md5ComparatorDelegate] Matched Md5Comparator not found, load Default NacosMd5Comparator successfully");
+                "[Md5ComparatorDelegate] Matched Md5Comparator not found, load Default NacosMd5Comparator successfully");
             md5Comparator = new NacosMd5Comparator();
         }
     }
@@ -71,8 +73,9 @@ public class Md5ComparatorDelegate {
         return INSTANCE;
     }
     
-    public Map<String, ConfigListenState> compareMd5(HttpServletRequest request, HttpServletResponse response,
-            Map<String, ConfigListenState> clientMd5Map) {
+    public Map<String, ConfigListenState> compareMd5(HttpServletRequest request,
+        HttpServletResponse response,
+        Map<String, ConfigListenState> clientMd5Map) {
         return md5Comparator.compareMd5(request, response, clientMd5Map);
     }
 }

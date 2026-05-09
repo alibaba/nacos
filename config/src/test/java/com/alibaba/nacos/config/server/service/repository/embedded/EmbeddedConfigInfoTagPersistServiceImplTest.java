@@ -78,14 +78,18 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
     
     @BeforeEach
     void before() {
-        embeddedStorageContextHolderMockedStatic = Mockito.mockStatic(EmbeddedStorageContextHolder.class);
+        embeddedStorageContextHolderMockedStatic =
+            Mockito.mockStatic(EmbeddedStorageContextHolder.class);
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         when(DynamicDataSource.getInstance()).thenReturn(dynamicDataSource);
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false))).thenReturn(false);
-        embeddedConfigInfoTagPersistService = new EmbeddedConfigInfoTagPersistServiceImpl(databaseOperate);
+        envUtilMockedStatic
+            .when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
+            .thenReturn(false);
+        embeddedConfigInfoTagPersistService =
+            new EmbeddedConfigInfoTagPersistServiceImpl(databaseOperate);
     }
     
     @AfterEach
@@ -111,20 +115,28 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         configInfoStateWrapper.setId(234567890L);
         String tag = "tag123";
         
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null).thenReturn(configInfoStateWrapper);
+        Mockito
+            .when(
+                databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
+                    eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(null).thenReturn(configInfoStateWrapper);
         
         String srcIp = "ip345678";
         String srcUser = "user1234567";
-        ConfigOperateResult configOperateResult = embeddedConfigInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser);
+        ConfigOperateResult configOperateResult =
+            embeddedConfigInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser);
         
         //mock insert invoked.
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant), eq(tag), eq(appName),
-                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        any(Timestamp.class)), times(1));
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group),
+                eq(tenant), eq(tag), eq(appName),
+                eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp),
+                eq(srcUser), any(Timestamp.class),
+                any(Timestamp.class)),
+            times(1));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(configInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         
     }
     
@@ -144,17 +156,24 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         configInfoStateWrapper.setId(234567890L);
         String tag = "tag123";
         
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(new ConfigInfoStateWrapper()).thenReturn(configInfoStateWrapper);
+        Mockito
+            .when(
+                databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
+                    eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(new ConfigInfoStateWrapper()).thenReturn(configInfoStateWrapper);
         String srcIp = "ip345678";
         String srcUser = "user1234567";
-        ConfigOperateResult configOperateResult = embeddedConfigInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser);
+        ConfigOperateResult configOperateResult =
+            embeddedConfigInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser);
         //verify update to be invoked
-        embeddedStorageContextHolderMockedStatic.verify(() -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
-                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName),
+        embeddedStorageContextHolderMockedStatic
+            .verify(() -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
+                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
+                any(Timestamp.class), eq(appName),
                 eq(dataId), eq(group), eq(tenant), eq(tag)), times(1));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(configInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         
     }
     
@@ -175,20 +194,28 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         configInfoStateWrapper.setId(234567890L);
         String tag = "tag123";
         
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null).thenReturn(configInfoStateWrapper);
+        Mockito
+            .when(
+                databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
+                    eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(null).thenReturn(configInfoStateWrapper);
         
         String srcIp = "ip345678";
         String srcUser = "user1234567";
-        ConfigOperateResult configOperateResult = embeddedConfigInfoTagPersistService.insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser);
+        ConfigOperateResult configOperateResult = embeddedConfigInfoTagPersistService
+            .insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser);
         //verify insert to be invoked
         //mock insert invoked.
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant), eq(tag), eq(appName),
-                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        any(Timestamp.class)), times(1));
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group),
+                eq(tenant), eq(tag), eq(appName),
+                eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp),
+                eq(srcUser), any(Timestamp.class),
+                any(Timestamp.class)),
+            times(1));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(configInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         
     }
     
@@ -208,20 +235,27 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         configInfoStateWrapper.setLastModified(System.currentTimeMillis());
         configInfoStateWrapper.setId(234567890L);
         String tag = "tag123";
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(new ConfigInfoStateWrapper()).thenReturn(configInfoStateWrapper);
+        Mockito
+            .when(
+                databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
+                    eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(new ConfigInfoStateWrapper()).thenReturn(configInfoStateWrapper);
         String srcIp = "ip345678";
         String srcUser = "user1234567";
         
         //mock cas update return 1
         Mockito.when(databaseOperate.blockUpdate()).thenReturn(true);
-        ConfigOperateResult configOperateResult = embeddedConfigInfoTagPersistService.insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser);
+        ConfigOperateResult configOperateResult = embeddedConfigInfoTagPersistService
+            .insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser);
         //verify update to be invoked
-        embeddedStorageContextHolderMockedStatic.verify(() -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
-                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName),
+        embeddedStorageContextHolderMockedStatic
+            .verify(() -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
+                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
+                any(Timestamp.class), eq(appName),
                 eq(dataId), eq(group), eq(tenant), eq(tag), eq(configInfo.getMd5())), times(1));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(configInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
     }
     
     @Test
@@ -232,10 +266,13 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         String tag = "tag123345";
         String srcIp = "ip345678";
         String srcUser = "user1234567";
-        embeddedConfigInfoTagPersistService.removeConfigInfoTag(dataId, group, tenant, tag, srcIp, srcUser);
+        embeddedConfigInfoTagPersistService.removeConfigInfoTag(dataId, group, tenant, tag, srcIp,
+            srcUser);
         //verify delete sql invoked.
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant), eq(tag)), times(1));
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group),
+                eq(tenant), eq(tag)),
+            times(1));
     }
     
     @Test
@@ -249,10 +286,13 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         ConfigInfoTagWrapper configInfoTagWrapperMocked = new ConfigInfoTagWrapper();
         configInfoTagWrapperMocked.setLastModified(System.currentTimeMillis());
         
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
-                eq(CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER))).thenReturn(configInfoTagWrapperMocked);
+        Mockito.when(
+            databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
+                eq(CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER)))
+            .thenReturn(configInfoTagWrapperMocked);
         
-        ConfigInfoTagWrapper configInfo4TagReturn = embeddedConfigInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
+        ConfigInfoTagWrapper configInfo4TagReturn =
+            embeddedConfigInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
         assertEquals(configInfoTagWrapperMocked, configInfo4TagReturn);
     }
     
@@ -280,12 +320,15 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         mockTagList.get(1).setLastModified(System.currentTimeMillis());
         mockTagList.get(2).setLastModified(System.currentTimeMillis());
         //mock query list
-        Mockito.when(databaseOperate.queryMany(anyString(), eq(new Object[] {}), eq(CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER)))
-                .thenReturn(mockTagList);
+        Mockito
+            .when(databaseOperate.queryMany(anyString(), eq(new Object[] {}),
+                eq(CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER)))
+            .thenReturn(mockTagList);
         int pageNo = 3;
         int pageSize = 100;
         //execute & verify
-        Page<ConfigInfoTagWrapper> returnTagPage = embeddedConfigInfoTagPersistService.findAllConfigInfoTagForDumpAll(pageNo, pageSize);
+        Page<ConfigInfoTagWrapper> returnTagPage =
+            embeddedConfigInfoTagPersistService.findAllConfigInfoTagForDumpAll(pageNo, pageSize);
         assertEquals(308, returnTagPage.getTotalCount());
         assertEquals(mockTagList, returnTagPage.getPageItems());
     }
@@ -296,9 +339,12 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         String group = "group22";
         String tenant = "tenant2";
         List<String> mockedTags = Arrays.asList("tags1", "tags11", "tags111");
-        Mockito.when(databaseOperate.queryMany(anyString(), eq(new Object[] {dataId, group, tenant}), eq(String.class)))
-                .thenReturn(mockedTags);
-        List<String> configInfoTags = embeddedConfigInfoTagPersistService.findConfigInfoTags(dataId, group, tenant);
+        Mockito
+            .when(databaseOperate.queryMany(anyString(), eq(new Object[] {dataId, group, tenant}),
+                eq(String.class)))
+            .thenReturn(mockedTags);
+        List<String> configInfoTags =
+            embeddedConfigInfoTagPersistService.findConfigInfoTags(dataId, group, tenant);
         assertEquals(mockedTags, configInfoTags);
     }
 }

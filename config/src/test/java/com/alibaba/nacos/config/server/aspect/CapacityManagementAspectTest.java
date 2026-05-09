@@ -92,10 +92,12 @@ class CapacityManagementAspectTest {
         when(PropertyUtil.getDefaultMaxSize()).thenReturn(10 * 1024);
         
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        when(EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false)).thenReturn(true);
+        when(EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false))
+            .thenReturn(true);
         
         // Initialize the aspect with mocked dependencies
-        capacityManagementAspect = new CapacityManagementAspect(configInfoPersistService, capacityService);
+        capacityManagementAspect =
+            new CapacityManagementAspect(configInfoPersistService, capacityService);
         
         // Mock the behavior of the ProceedingJoinPoint
         mockException = new RuntimeException("mock exception");
@@ -116,11 +118,13 @@ class CapacityManagementAspectTest {
         //  1. has tenant: true
         //  2. capacity limit check: false
         when(PropertyUtil.isManageCapacity()).thenReturn(false);
-        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
+        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
+        Boolean localMockResult =
+            (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
-        Mockito.verify(configInfoPersistService, Mockito.times(0)).findConfigInfo(any(), any(), any());
+        Mockito.verify(configInfoPersistService, Mockito.times(0)).findConfigInfo(any(), any(),
+            any());
         assert localMockResult.equals(mockProceedingJoinPointResult);
     }
     
@@ -133,7 +137,8 @@ class CapacityManagementAspectTest {
         //  3. over cluster quota: true
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn(mockDataId);
         when(configForm.getGroup()).thenReturn(mockGroup);
         when(configForm.getNamespaceId()).thenReturn(mockTenant);
@@ -147,7 +152,7 @@ class CapacityManagementAspectTest {
         });
         
         assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=mockTenant].",
-                exception.getMessage());
+            exception.getMessage());
         Mockito.verify(proceedingJoinPoint, Mockito.times(0)).proceed();
     }
     
@@ -161,8 +166,9 @@ class CapacityManagementAspectTest {
         //  4. tenant capacity: null
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
-        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         when(configForm.getDataId()).thenReturn(mockDataId);
         when(configForm.getGroup()).thenReturn(mockGroup);
         when(configForm.getNamespaceId()).thenReturn(mockTenant);
@@ -172,12 +178,15 @@ class CapacityManagementAspectTest {
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
         
         when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(null);
-        when(capacityService.updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant))).thenReturn(true);
+        when(capacityService.updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant)))
+            .thenReturn(true);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
+        Boolean localMockResult =
+            (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(1)).initTenantCapacity(eq(mockTenant));
-        Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
+        Mockito.verify(capacityService, Mockito.times(1))
+            .updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
     }
     
@@ -194,20 +203,24 @@ class CapacityManagementAspectTest {
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
         when(capacityService.getGroupCapacity(eq(mockGroup))).thenReturn(null);
-        when(capacityService.updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup))).thenReturn(true);
+        when(capacityService.updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup)))
+            .thenReturn(true);
         
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn(mockDataId);
         when(configForm.getGroup()).thenReturn(mockGroup);
         when(configForm.getContent()).thenReturn("content");
         when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
         when(configRequestInfo.getSrcType()).thenReturn("http");
-        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
+        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
+        Boolean localMockResult =
+            (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(1)).initGroupCapacity(eq(mockGroup));
-        Mockito.verify(capacityService, Mockito.times(1)).updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
+        Mockito.verify(capacityService, Mockito.times(1))
+            .updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
     }
     
@@ -222,8 +235,9 @@ class CapacityManagementAspectTest {
         //  5. over tenant max size: true/false (if tenant max size is 0, will use default max size)
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
-        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         when(configForm.getDataId()).thenReturn(mockDataId);
         when(configForm.getGroup()).thenReturn(mockGroup);
         when(configForm.getNamespaceId()).thenReturn(mockTenant);
@@ -231,7 +245,8 @@ class CapacityManagementAspectTest {
         when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
-        when(capacityService.updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant))).thenReturn(true);
+        when(capacityService.updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant)))
+            .thenReturn(true);
         
         NamespaceCapacity localTenantCapacity = new NamespaceCapacity();
         localTenantCapacity.setNamespaceId(mockTenant);
@@ -239,10 +254,12 @@ class CapacityManagementAspectTest {
         localTenantCapacity.setMaxAggrCount(0);
         when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(localTenantCapacity);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
+        Boolean localMockResult =
+            (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(0)).initTenantCapacity(eq(mockTenant));
-        Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
+        Mockito.verify(capacityService, Mockito.times(1))
+            .updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
         
         //  5. over tenant max size: true
@@ -253,12 +270,13 @@ class CapacityManagementAspectTest {
             capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         });
         assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=mockTenant].",
-                exception.getMessage());
+            exception.getMessage());
         
         //  5. over tenant max size: true
         localTenantCapacity.setMaxSize(10 * 1024);
         localTenantCapacity.setMaxAggrCount(1024);
-        localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
+        localMockResult =
+            (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
     }
     
@@ -273,7 +291,8 @@ class CapacityManagementAspectTest {
         //  5. over tenant max size: true/false (if tenant max size is 0, will use default max size)
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
         when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         when(configForm.getDataId()).thenReturn(mockDataId);
         when(configForm.getGroup()).thenReturn(mockGroup);
@@ -281,7 +300,8 @@ class CapacityManagementAspectTest {
         when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
-        when(capacityService.updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup))).thenReturn(true);
+        when(capacityService.updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup)))
+            .thenReturn(true);
         
         GroupCapacity localGroupCapacity = new GroupCapacity();
         localGroupCapacity.setGroupName(mockGroup);
@@ -289,10 +309,12 @@ class CapacityManagementAspectTest {
         localGroupCapacity.setMaxAggrCount(0);
         when(capacityService.getGroupCapacity(eq(mockGroup))).thenReturn(localGroupCapacity);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
+        Boolean localMockResult =
+            (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(true, localMockResult);
         Mockito.verify(capacityService, Mockito.times(0)).initGroupCapacity(eq(mockGroup));
-        Mockito.verify(capacityService, Mockito.times(1)).updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
+        Mockito.verify(capacityService, Mockito.times(1))
+            .updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
         
         //  5. over tenant max size: true
@@ -301,12 +323,14 @@ class CapacityManagementAspectTest {
         Exception exception = assertThrows(NacosException.class, () -> {
             capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         });
-        assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=null].", exception.getMessage());
+        assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=null].",
+            exception.getMessage());
         
         // 5. over tenant max size: true
         localGroupCapacity.setMaxSize(10 * 1024);
         localGroupCapacity.setMaxAggrCount(1024);
-        localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
+        localMockResult =
+            (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
     }
     
@@ -320,16 +344,19 @@ class CapacityManagementAspectTest {
         //  5. over tenant quota: false
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
-        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         when(configForm.getDataId()).thenReturn("dataId");
         when(configForm.getGroup()).thenReturn("group");
         when(configForm.getNamespaceId()).thenReturn("mockTenant");
         when(configForm.getContent()).thenReturn("content");
         when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
-        when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(new ConfigInfoWrapper());
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(new ConfigInfoWrapper());
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
-        when(capacityService.updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant))).thenReturn(true);
+        when(capacityService.updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant)))
+            .thenReturn(true);
         
         NamespaceCapacity localTenantCapacity = new NamespaceCapacity();
         localTenantCapacity.setNamespaceId(mockTenant);
@@ -337,10 +364,12 @@ class CapacityManagementAspectTest {
         localTenantCapacity.setMaxAggrCount(1024);
         when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(localTenantCapacity);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
+        Boolean localMockResult =
+            (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(0)).initTenantCapacity(eq(mockTenant));
-        Mockito.verify(capacityService, Mockito.times(0)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
+        Mockito.verify(capacityService, Mockito.times(0))
+            .updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(1)).getTenantCapacity(eq(mockTenant));
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
     }
@@ -355,16 +384,19 @@ class CapacityManagementAspectTest {
         //  5. over group quota: false
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
-        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         when(configForm.getDataId()).thenReturn("dataId");
         when(configForm.getContent()).thenReturn("content");
         when(configForm.getGroup()).thenReturn(mockGroup);
         when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
         when(configRequestInfo.getSrcType()).thenReturn("http");
-        when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(new ConfigInfoWrapper());
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(new ConfigInfoWrapper());
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
-        when(capacityService.updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup))).thenReturn(true);
+        when(capacityService.updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup)))
+            .thenReturn(true);
         
         GroupCapacity localGroupCapacity = new GroupCapacity();
         localGroupCapacity.setGroupName(mockGroup);
@@ -372,11 +404,13 @@ class CapacityManagementAspectTest {
         localGroupCapacity.setMaxAggrCount(1024);
         when(capacityService.getGroupCapacity(eq(mockGroup))).thenReturn(localGroupCapacity);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
+        Boolean localMockResult =
+            (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(0)).initGroupCapacity(eq(mockGroup));
         Mockito.verify(capacityService, Mockito.times(1)).getGroupCapacity(eq(mockGroup));
-        Mockito.verify(capacityService, Mockito.times(0)).updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
+        Mockito.verify(capacityService, Mockito.times(0))
+            .updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
     }
     
@@ -391,7 +425,8 @@ class CapacityManagementAspectTest {
         //  5. over tenant max size: true/false (if tenant max size is 0, will use default max size)
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
-        when(localMockProceedingJoinPoint.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
+        when(localMockProceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn("dataId");
         when(configForm.getGroup()).thenReturn("group");
         when(configForm.getNamespaceId()).thenReturn("mockTenant");
@@ -410,98 +445,119 @@ class CapacityManagementAspectTest {
         
         Boolean localMockResult = null;
         try {
-            localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(localMockProceedingJoinPoint);
+            localMockResult = (Boolean) capacityManagementAspect
+                .aroundPublishConfig(localMockProceedingJoinPoint);
         } catch (Throwable e) {
             assertEquals(mockException.getMessage(), e.getMessage());
         }
         assertNull(localMockResult);
         Mockito.verify(capacityService, Mockito.times(0)).initTenantCapacity(eq(mockTenant));
-        Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
-        Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(1))
-                .insertAndUpdateClusterUsage(eq(CounterMode.INCREMENT), anyBoolean());
-        Mockito.verify(capacityService, Mockito.times(1)).updateClusterUsage(eq(CounterMode.DECREMENT));
+            .updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
+        Mockito.verify(capacityService, Mockito.times(1))
+            .updateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant));
+        Mockito.verify(capacityService, Mockito.times(1))
+            .insertAndUpdateClusterUsage(eq(CounterMode.INCREMENT), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(1))
+            .updateClusterUsage(eq(CounterMode.DECREMENT));
         Mockito.verify(localMockProceedingJoinPoint, Mockito.times(1)).proceed();
     }
     
     @Test
     void testAroundDeleteConfigForTenant() throws Throwable {
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant, null});
-        when(localMockProceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant, null});
-        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {mockDataId, mockGroup, mockTenant, null});
+        when(localMockProceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {mockDataId, mockGroup, mockTenant, null});
+        when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
-        when(capacityService.insertAndUpdateTenantUsage(any(), eq(mockTenant), anyBoolean())).thenReturn(true);
+        when(capacityService.insertAndUpdateTenantUsage(any(), eq(mockTenant), anyBoolean()))
+            .thenReturn(true);
         when(capacityService.updateClusterUsage(any())).thenReturn(true);
         when(capacityService.updateTenantUsage(any(), eq(mockTenant))).thenReturn(true);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
+        Boolean localMockResult =
+            (Boolean) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
         
-        when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(new ConfigInfoWrapper());
-        localMockResult = (Boolean) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(new ConfigInfoWrapper());
+        localMockResult =
+            (Boolean) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(1))
-                .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
+            .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
         Mockito.verify(capacityService, Mockito.times(1))
-                .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
+            .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
         Mockito.verify(proceedingJoinPoint, Mockito.times(2)).proceed();
         
         localMockResult = null;
         try {
-            localMockResult = (Boolean) capacityManagementAspect.aroundDeleteConfig(localMockProceedingJoinPoint);
+            localMockResult =
+                (Boolean) capacityManagementAspect.aroundDeleteConfig(localMockProceedingJoinPoint);
         } catch (Throwable e) {
             assertEquals(mockException.getMessage(), e.getMessage());
         }
         assertNull(localMockResult);
         Mockito.verify(capacityService, Mockito.times(2))
-                .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
-        Mockito.verify(capacityService, Mockito.times(1)).updateClusterUsage(eq(CounterMode.INCREMENT));
+            .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(1))
+            .updateClusterUsage(eq(CounterMode.INCREMENT));
         Mockito.verify(capacityService, Mockito.times(2))
-                .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
-        Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
+            .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(1))
+            .updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
         Mockito.verify(localMockProceedingJoinPoint, Mockito.times(1)).proceed();
     }
     
     @Test
     void testAroundDeleteConfigForGroup() throws Throwable {
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant, null});
-        when(localMockProceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant, null});
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {mockDataId, mockGroup, mockTenant, null});
+        when(localMockProceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {mockDataId, mockGroup, mockTenant, null});
         when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
-        when(capacityService.insertAndUpdateGroupUsage(any(), eq(mockGroup), anyBoolean())).thenReturn(true);
+        when(capacityService.insertAndUpdateGroupUsage(any(), eq(mockGroup), anyBoolean()))
+            .thenReturn(true);
         when(capacityService.updateClusterUsage(any())).thenReturn(true);
         when(capacityService.updateGroupUsage(any(), eq(mockGroup))).thenReturn(true);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
+        Boolean localMockResult =
+            (Boolean) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
         
-        when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(new ConfigInfoWrapper());
-        localMockResult = (Boolean) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(new ConfigInfoWrapper());
+        localMockResult =
+            (Boolean) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(1))
-                .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
+            .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
         Mockito.verify(capacityService, Mockito.times(1))
-                .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
+            .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
         Mockito.verify(proceedingJoinPoint, Mockito.times(2)).proceed();
         
         localMockResult = null;
         try {
-            localMockResult = (Boolean) capacityManagementAspect.aroundDeleteConfig(localMockProceedingJoinPoint);
+            localMockResult =
+                (Boolean) capacityManagementAspect.aroundDeleteConfig(localMockProceedingJoinPoint);
         } catch (Throwable e) {
             assertEquals(mockException.getMessage(), e.getMessage());
         }
         assertNull(localMockResult);
         Mockito.verify(capacityService, Mockito.times(2))
-                .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
-        Mockito.verify(capacityService, Mockito.times(1)).updateClusterUsage(eq(CounterMode.INCREMENT));
+            .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(1))
+            .updateClusterUsage(eq(CounterMode.INCREMENT));
         Mockito.verify(capacityService, Mockito.times(2))
-                .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
+            .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
         Mockito.verify(localMockProceedingJoinPoint, Mockito.times(1)).proceed();
     }
 }

@@ -57,14 +57,15 @@ public class ConfigExtInfoUtilTest {
     @Test
     void testExt4Gray() {
         String grayName = "gray124";
-        ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
+        ConfigGrayPersistInfo configGrayPersistInfo =
+            new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
                 BetaGrayRule.VERSION, "127.0.0.1,127.0.0.2", PRIORITY);
         
         String grayRule = GrayRuleManager.serializeConfigGrayPersistInfo(configGrayPersistInfo);
         String oldSrcUser = "user132";
-        String extraInfoFromAllInfo = ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayName, grayRule, oldSrcUser);
+        String extraInfoFromAllInfo =
+            ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayName, grayRule, oldSrcUser);
         System.out.println(extraInfoFromAllInfo);
         
     }
 }
-

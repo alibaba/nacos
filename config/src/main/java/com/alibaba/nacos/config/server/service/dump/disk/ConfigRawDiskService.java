@@ -42,16 +42,19 @@ public class ConfigRawDiskService implements ConfigDiskService {
     
     private static final String BASE_DIR = File.separator + "data" + File.separator + "config-data";
     
-    private static final String TENANT_BASE_DIR = File.separator + "data" + File.separator + "tenant-config-data";
+    private static final String TENANT_BASE_DIR =
+        File.separator + "data" + File.separator + "tenant-config-data";
     
     private static final String GRAY_DIR = File.separator + "data" + File.separator + "gray-data";
     
-    private static final String TENANT_GRAY_DIR = File.separator + "data" + File.separator + "tenant-gray-data";
+    private static final String TENANT_GRAY_DIR =
+        File.separator + "data" + File.separator + "tenant-gray-data";
     
     /**
      * Save configuration information to disk.
      */
-    public void saveToDisk(String dataId, String group, String tenant, String content) throws IOException {
+    public void saveToDisk(String dataId, String group, String tenant, String content)
+        throws IOException {
         File targetFile = targetFile(dataId, group, tenant);
         FileUtils.writeStringToFile(targetFile, content, ENCODE_UTF8);
     }
@@ -63,7 +66,8 @@ public class ConfigRawDiskService implements ConfigDiskService {
         try {
             ParamUtils.checkParam(dataId, group, tenant);
         } catch (Exception e) {
-            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM,
+                "parameter is invalid.");
         }
         // fix https://github.com/alibaba/nacos/issues/10067
         dataId = PathEncoderManager.getInstance().encode(dataId);
@@ -84,12 +88,14 @@ public class ConfigRawDiskService implements ConfigDiskService {
     /**
      * Returns the path of the gray cache file in server.
      */
-    private static File targetGrayFile(String dataId, String group, String tenant, String grayName) {
+    private static File targetGrayFile(String dataId, String group, String tenant,
+        String grayName) {
         try {
             ParamUtils.checkParam(grayName);
             ParamUtils.checkParam(dataId, group, tenant);
         } catch (Exception e) {
-            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM,
+                "parameter is invalid.");
         }
         // fix https://github.com/alibaba/nacos/issues/10067
         dataId = PathEncoderManager.getInstance().encode(dataId);
@@ -112,15 +118,17 @@ public class ConfigRawDiskService implements ConfigDiskService {
     /**
      * Returns the path of the gray content cache file in server.
      */
-    private static File targetGrayContentFile(String dataId, String group, String tenant, String grayName) {
+    private static File targetGrayContentFile(String dataId, String group, String tenant,
+        String grayName) {
         return targetGrayFile(dataId, group, tenant, grayName);
     }
     
     /**
      * Save gray information to disk.
      */
-    public void saveGrayToDisk(String dataId, String group, String tenant, String grayName, String content)
-            throws IOException {
+    public void saveGrayToDisk(String dataId, String group, String tenant, String grayName,
+        String content)
+        throws IOException {
         File targetGrayContentFile = targetGrayContentFile(dataId, group, tenant, grayName);
         FileUtils.writeStringToFile(targetGrayContentFile, content, ENCODE_UTF8);
     }
@@ -149,7 +157,8 @@ public class ConfigRawDiskService implements ConfigDiskService {
     /**
      * Returns the content of the gray cache file in server.
      */
-    public String getGrayContent(String dataId, String group, String tenant, String grayName) throws IOException {
+    public String getGrayContent(String dataId, String group, String tenant, String grayName)
+        throws IOException {
         return file2String(targetGrayContentFile(dataId, group, tenant, grayName));
     }
     

@@ -62,18 +62,21 @@ class GlobalExceptionHandlerTest {
     void testNacosRunTimeExceptionHandler() throws Exception {
         // 设置HistoryControllerV3的行为，使其抛出NacosRuntimeException并被GlobalExceptionHandler捕获处理
         when(historyControllerV3.getConfigsByNamespace(any())).thenThrow(
-                        new NacosRuntimeException(NacosException.INVALID_PARAM))
-                .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
-                .thenThrow(new NacosRuntimeException(503));
+            new NacosRuntimeException(NacosException.INVALID_PARAM))
+            .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
+            .thenThrow(new NacosRuntimeException(503));
         
         // 执行请求并验证响应码 (v3 history path)
-        ResultActions resultActions = mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
+        ResultActions resultActions =
+            mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosException.INVALID_PARAM));
         
-        ResultActions resultActions1 = mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
+        ResultActions resultActions1 =
+            mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
         resultActions1.andExpect(MockMvcResultMatchers.status().is(NacosException.SERVER_ERROR));
         
-        ResultActions resultActions2 = mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
+        ResultActions resultActions2 =
+            mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
         resultActions2.andExpect(MockMvcResultMatchers.status().is(503));
     }
     

@@ -44,27 +44,31 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
         final String namespaceId = event.getNamespaceId();
         final String content = event.getContent();
         final long lastModified = event.getLastModifiedTs();
-    
+        
         //gray
         if (StringUtils.isNotBlank(event.getGrayName())) {
             boolean result = false;
             if (!event.isRemove()) {
-                result = ConfigCacheService.dumpGray(dataId, group, namespaceId, event.getGrayName(),
+                result =
+                    ConfigCacheService.dumpGray(dataId, group, namespaceId, event.getGrayName(),
                         event.getGrayRule(), content, lastModified, event.getEncryptedDataKey());
                 if (result) {
-                    ConfigTraceService.logDumpGrayNameEvent(dataId, group, namespaceId, event.getGrayName(), null,
-                            lastModified, event.getHandleIp(), ConfigTraceService.DUMP_TYPE_OK,
-                            System.currentTimeMillis() - lastModified, content.length());
+                    ConfigTraceService.logDumpGrayNameEvent(dataId, group, namespaceId,
+                        event.getGrayName(), null,
+                        lastModified, event.getHandleIp(), ConfigTraceService.DUMP_TYPE_OK,
+                        System.currentTimeMillis() - lastModified, content.length());
                 }
             } else {
-                result = ConfigCacheService.removeGray(dataId, group, namespaceId, event.getGrayName());
+                result =
+                    ConfigCacheService.removeGray(dataId, group, namespaceId, event.getGrayName());
                 if (result) {
-                    ConfigTraceService.logDumpGrayNameEvent(dataId, group, namespaceId, event.getGrayName(), null,
-                            lastModified, event.getHandleIp(), ConfigTraceService.DUMP_TYPE_REMOVE_OK,
-                            System.currentTimeMillis() - lastModified, 0);
+                    ConfigTraceService.logDumpGrayNameEvent(dataId, group, namespaceId,
+                        event.getGrayName(), null,
+                        lastModified, event.getHandleIp(), ConfigTraceService.DUMP_TYPE_REMOVE_OK,
+                        System.currentTimeMillis() - lastModified, 0);
                 }
             }
-        
+            
             return result;
         }
         
@@ -78,19 +82,24 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
         
         boolean result;
         if (!event.isRemove()) {
-            result = ConfigCacheService.dump(dataId, group, namespaceId, content, lastModified, event.getType(),
-                    event.getEncryptedDataKey());
+            result = ConfigCacheService.dump(dataId, group, namespaceId, content, lastModified,
+                event.getType(),
+                event.getEncryptedDataKey());
             
             if (result) {
-                ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
-                        ConfigTraceService.DUMP_TYPE_OK, System.currentTimeMillis() - lastModified, content.length());
+                ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified,
+                    event.getHandleIp(),
+                    ConfigTraceService.DUMP_TYPE_OK, System.currentTimeMillis() - lastModified,
+                    content.length());
             }
         } else {
             result = ConfigCacheService.remove(dataId, group, namespaceId);
             
             if (result) {
-                ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
-                        ConfigTraceService.DUMP_TYPE_REMOVE_OK, System.currentTimeMillis() - lastModified, 0);
+                ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified,
+                    event.getHandleIp(),
+                    ConfigTraceService.DUMP_TYPE_REMOVE_OK,
+                    System.currentTimeMillis() - lastModified, 0);
             }
         }
         return result;
