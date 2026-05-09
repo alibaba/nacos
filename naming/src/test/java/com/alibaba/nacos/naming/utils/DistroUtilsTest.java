@@ -60,24 +60,28 @@ class DistroUtilsTest {
         client1 = buildClient("127.0.0.2", 8848, true, true, "cluster1", metadata, 20);
     }
     
-    private IpPortBasedClient buildClient(String ip, int port, boolean ephemeral, boolean healthy, String cluster,
-            HashMap<String, Object> extendDatum) {
+    private IpPortBasedClient buildClient(String ip, int port, boolean ephemeral, boolean healthy,
+        String cluster,
+        HashMap<String, Object> extendDatum) {
         return buildClient(ip, port, ephemeral, healthy, cluster, extendDatum, 1);
     }
     
-    private IpPortBasedClient buildClient(String ip, int port, boolean ephemeral, boolean healthy, String cluster,
-            HashMap<String, Object> extendDatum, int serviceCount) {
+    private IpPortBasedClient buildClient(String ip, int port, boolean ephemeral, boolean healthy,
+        String cluster,
+        HashMap<String, Object> extendDatum, int serviceCount) {
         InstancePublishInfo instance = new InstancePublishInfo(ip, port);
         instance.setCluster(cluster);
         instance.setHealthy(healthy);
-        IpPortBasedClient client = new IpPortBasedClient(String.format("%s:%s#%s", ip, port, ephemeral), ephemeral);
+        IpPortBasedClient client =
+            new IpPortBasedClient(String.format("%s:%s#%s", ip, port, ephemeral), ephemeral);
         if (extendDatum != null) {
             instance.setExtendDatum(extendDatum);
         }
         for (int i = 1; i < serviceCount + 1; i++) {
             client.putServiceInstance(
-                    Service.newService(DistroUtilsTest.NAMESPACE + i, DistroUtilsTest.GROUP + i, DistroUtilsTest.SERVICE + i, ephemeral),
-                    instance);
+                Service.newService(DistroUtilsTest.NAMESPACE + i, DistroUtilsTest.GROUP + i,
+                    DistroUtilsTest.SERVICE + i, ephemeral),
+                instance);
         }
         return client;
     }
@@ -101,8 +105,9 @@ class DistroUtilsTest {
     
     @Test
     void testBuildUniqueString0() {
-        assertEquals("127.0.0.1:8848#false|testNamespace-1##testGroup-1@@testName-1##false_127.0.0.1:8848_1.0_true_true_DEFAULT_,",
-                DistroUtils.buildUniqueString(client0));
+        assertEquals(
+            "127.0.0.1:8848#false|testNamespace-1##testGroup-1@@testName-1##false_127.0.0.1:8848_1.0_true_true_DEFAULT_,",
+            DistroUtils.buildUniqueString(client0));
     }
     
     @Test
@@ -113,10 +118,13 @@ class DistroUtilsTest {
         metadata.put("Custom.metadataId1", "abc");
         metadata.put("Custom.metadataId2", 123);
         metadata.put("Custom.metadataId3", null);
-        Client client = buildClient("128.0.0.1", 8848, false, false, DEFAULT_CLUSTER_NAME, metadata);
-        assertEquals("128.0.0.1:8848#false|" + "testNamespace-1##testGroup-1@@testName-1##false_128.0.0.1:8848_2.0_false_false_DEFAULT_"
-                + "Custom.metadataId1:abc,Custom.metadataId2:123,Custom.metadataId3:null,"
-                + "publishInstanceEnable:false,publishInstanceWeight:2,,", DistroUtils.buildUniqueString(client));
+        Client client =
+            buildClient("128.0.0.1", 8848, false, false, DEFAULT_CLUSTER_NAME, metadata);
+        assertEquals("128.0.0.1:8848#false|"
+            + "testNamespace-1##testGroup-1@@testName-1##false_128.0.0.1:8848_2.0_false_false_DEFAULT_"
+            + "Custom.metadataId1:abc,Custom.metadataId2:123,Custom.metadataId3:null,"
+            + "publishInstanceEnable:false,publishInstanceWeight:2,,",
+            DistroUtils.buildUniqueString(client));
         assertEquals(2128732271L, DistroUtils.stringHash(client));
         assertEquals("ac9bf94dc4bd6a35e5ff9734868eafea", DistroUtils.checksum(client));
     }
@@ -128,8 +136,10 @@ class DistroUtilsTest {
         metadata.put(Constants.PUBLISH_INSTANCE_ENABLE, true);
         metadata.put("Custom.metadataId1", "abc");
         Client client = buildClient("128.0.0.2", 7001, true, false, "cluster1", metadata);
-        assertEquals("128.0.0.2:7001#true|" + "testNamespace-1##testGroup-1@@testName-1##true_128.0.0.2:7001_2.0_false_true_cluster1_"
-                + "Custom.metadataId1:abc,publishInstanceEnable:true,publishInstanceWeight:2,,", DistroUtils.buildUniqueString(client));
+        assertEquals("128.0.0.2:7001#true|"
+            + "testNamespace-1##testGroup-1@@testName-1##true_128.0.0.2:7001_2.0_false_true_cluster1_"
+            + "Custom.metadataId1:abc,publishInstanceEnable:true,publishInstanceWeight:2,,",
+            DistroUtils.buildUniqueString(client));
         assertEquals(775352583L, DistroUtils.stringHash(client));
         assertEquals("82d8e086a880f088320349b895b22948", DistroUtils.checksum(client));
     }
@@ -140,7 +150,8 @@ class DistroUtilsTest {
         for (int i = 0; i < N; i++) {
             DistroUtils.checksum(client1);
         }
-        System.out.printf("Distro Verify Checksum Performance: %.2f ivk/ns\n", ((double) System.nanoTime() - start) / N);
+        System.out.printf("Distro Verify Checksum Performance: %.2f ivk/ns\n",
+            ((double) System.nanoTime() - start) / N);
     }
     
     @Test
@@ -149,7 +160,8 @@ class DistroUtilsTest {
         for (int i = 0; i < N; i++) {
             DistroUtils.stringHash(client1);
         }
-        System.out.printf("Distro Verify Revision Performance: %.2f ivk/ns\n", ((double) System.nanoTime() - start) / N);
+        System.out.printf("Distro Verify Revision Performance: %.2f ivk/ns\n",
+            ((double) System.nanoTime() - start) / N);
     }
     
     @Test
@@ -158,7 +170,8 @@ class DistroUtilsTest {
         for (int i = 0; i < N; i++) {
             DistroUtils.hash(client1);
         }
-        System.out.printf("Distro Verify Hash Performance: %.2f ivk/ns\n", ((double) System.nanoTime() - start) / N);
+        System.out.printf("Distro Verify Hash Performance: %.2f ivk/ns\n",
+            ((double) System.nanoTime() - start) / N);
     }
     
 }

@@ -51,7 +51,9 @@ class ClusterOperatorV2ImplTest {
     
     @Test
     void testUpdateClusterMetadata() throws NacosException {
-        clusterOperatorV2Impl.updateClusterMetadata("namespace_test", "group_test@@name_test", "clusterName_test", clusterMetadata);
-        verify(metadataOperateServiceMock).addClusterMetadata(any(Service.class), anyString(), any(ClusterMetadata.class));
+        clusterOperatorV2Impl.updateClusterMetadata("namespace_test", "group_test@@name_test",
+            "clusterName_test", clusterMetadata);
+        verify(metadataOperateServiceMock).addClusterMetadata(any(Service.class), anyString(),
+            any(ClusterMetadata.class));
     }
 }

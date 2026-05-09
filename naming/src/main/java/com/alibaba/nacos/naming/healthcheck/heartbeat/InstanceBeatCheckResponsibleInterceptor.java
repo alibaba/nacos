@@ -26,15 +26,16 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
  * on 2021/3/24
  */
 public class InstanceBeatCheckResponsibleInterceptor extends AbstractBeatCheckInterceptor {
-
+    
     @Override
     public boolean intercept(InstanceBeatCheckTask object) {
-        return !ApplicationUtils.getBean(DistroMapper.class).responsible(object.getClient().getResponsibleId());
+        return !ApplicationUtils.getBean(DistroMapper.class)
+            .responsible(object.getClient().getResponsibleId());
     }
-
+    
     @Override
     public int order() {
         return Integer.MIN_VALUE + 2;
     }
-
+    
 }

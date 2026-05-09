@@ -41,7 +41,8 @@ class HealthCheckExtendProviderTest {
     void setUp() throws Exception {
         healthCheckExtendProvider = new HealthCheckExtendProvider();
         
-        AbstractHealthCheckProcessorExtend checkProcessorExtend = new HealthCheckProcessorExtendV2();
+        AbstractHealthCheckProcessorExtend checkProcessorExtend =
+            new HealthCheckProcessorExtendV2();
         Collection<HealthCheckProcessorV2> processors = new ArrayList<>();
         processors.add(new TestHealthCheckProcessor());
         ReflectionTestUtils.setField(checkProcessorExtend, "processors", processors);

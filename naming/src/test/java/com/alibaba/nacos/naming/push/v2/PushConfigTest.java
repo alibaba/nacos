@@ -52,8 +52,10 @@ class PushConfigTest {
     @Test
     void testUpgradeConfig() throws InterruptedException {
         mockEnvironment.setProperty(PushConstants.PUSH_TASK_DELAY, String.valueOf(pushTaskDelay));
-        mockEnvironment.setProperty(PushConstants.PUSH_TASK_TIMEOUT, String.valueOf(pushTaskTimeout));
-        mockEnvironment.setProperty(PushConstants.PUSH_TASK_RETRY_DELAY, String.valueOf(pushTaskRetryDelay));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_TIMEOUT,
+            String.valueOf(pushTaskTimeout));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_RETRY_DELAY,
+            String.valueOf(pushTaskRetryDelay));
         NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
         TimeUnit.SECONDS.sleep(1);
         assertEquals(pushTaskDelay, pushConfig.getPushTaskDelay());
@@ -62,10 +64,13 @@ class PushConfigTest {
     }
     
     @Test
-    void testInitConfigFormEnv() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    void testInitConfigFormEnv() throws NoSuchMethodException, InvocationTargetException,
+        InstantiationException, IllegalAccessException {
         mockEnvironment.setProperty(PushConstants.PUSH_TASK_DELAY, String.valueOf(pushTaskDelay));
-        mockEnvironment.setProperty(PushConstants.PUSH_TASK_TIMEOUT, String.valueOf(pushTaskTimeout));
-        mockEnvironment.setProperty(PushConstants.PUSH_TASK_RETRY_DELAY, String.valueOf(pushTaskRetryDelay));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_TIMEOUT,
+            String.valueOf(pushTaskTimeout));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_RETRY_DELAY,
+            String.valueOf(pushTaskRetryDelay));
         Constructor<PushConfig> declaredConstructor = PushConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         PushConfig pushConfig = declaredConstructor.newInstance();

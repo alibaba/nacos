@@ -58,15 +58,18 @@ class SubscribeManagerTest {
         boolean aggregation = Boolean.FALSE;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
-            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, serviceName, 0);
+            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1",
+                namespaceId, serviceName, 0);
             clients.add(subscriber);
-            Mockito.when(this.local.getFuzzySubscribers(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
-            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            Mockito.when(this.local.getFuzzySubscribers(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(clients);
+            List<Subscriber> list =
+                subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             assertNotNull(list);
             assertEquals(1, list.size());
             assertEquals("public", list.get(0).getNamespaceId());
         } catch (Exception ignored) {
-        
+            
         }
     }
     
@@ -77,16 +80,21 @@ class SubscribeManagerTest {
         boolean aggregation = Boolean.TRUE;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
-            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
+            Subscriber subscriber =
+                new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
                     "testGroupName@@test_subscriber", 0);
             clients.add(subscriber);
-            Mockito.when(this.aggregation.getFuzzySubscribers(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
-            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            Mockito
+                .when(
+                    this.aggregation.getFuzzySubscribers(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(clients);
+            List<Subscriber> list =
+                subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             assertNotNull(list);
             assertEquals(1, list.size());
             assertEquals("testGroupName@@test_subscriber", list.get(0).getServiceName());
         } catch (Exception ignored) {
-        
+            
         }
     }
     
@@ -97,17 +105,21 @@ class SubscribeManagerTest {
         boolean aggregation = Boolean.TRUE;
         try {
             List<Subscriber> clients = new ArrayList<>();
-            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, serviceName, 0);
+            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1",
+                namespaceId, serviceName, 0);
             clients.add(subscriber);
-            Mockito.when(this.aggregation.getFuzzySubscribers(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
-            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            Mockito
+                .when(
+                    this.aggregation.getFuzzySubscribers(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(clients);
+            List<Subscriber> list =
+                subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             assertNotNull(list);
             assertEquals(1, list.size());
             assertEquals("testGroupName@@test_subscriber", list.get(0).getServiceName());
             assertEquals("public", list.get(0).getNamespaceId());
         } catch (Exception ignored) {
-        
+            
         }
     }
 }
-

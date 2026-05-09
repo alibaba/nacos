@@ -61,7 +61,8 @@ class HealthCheckCommonV2Test {
     void setUp() {
         healthCheckCommonV2 = new HealthCheckCommonV2();
         when(healthCheckTaskV2.getClient()).thenReturn(ipPortBasedClient);
-        when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(healthCheckInstancePublishInfo);
+        when(ipPortBasedClient.getInstancePublishInfo(service))
+            .thenReturn(healthCheckInstancePublishInfo);
         when(healthCheckInstancePublishInfo.getFailCount()).thenReturn(new AtomicInteger());
     }
     

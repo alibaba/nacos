@@ -52,19 +52,22 @@ class ExpiredMetadataCleanerTest {
     @BeforeEach
     void setUp() throws Exception {
         EnvUtil.setEnvironment(new MockEnvironment());
-        expiredMetadataCleaner = new ExpiredMetadataCleaner(metadataManagerMock, metadataOperateServiceMock);
+        expiredMetadataCleaner =
+            new ExpiredMetadataCleaner(metadataManagerMock, metadataOperateServiceMock);
         
         set.add(expiredMetadataInfoMock);
         
         when(metadataManagerMock.getExpiredMetadataInfos()).thenReturn(set);
         when(expiredMetadataInfoMock.getCreateTime()).thenReturn(0L);
-        when(metadataManagerMock.containServiceMetadata(expiredMetadataInfoMock.getService())).thenReturn(true);
+        when(metadataManagerMock.containServiceMetadata(expiredMetadataInfoMock.getService()))
+            .thenReturn(true);
     }
     
     @Test
     void testDoClean() {
         expiredMetadataCleaner.doClean();
         verify(metadataManagerMock).getExpiredMetadataInfos();
-        verify(metadataOperateServiceMock).deleteServiceMetadata(expiredMetadataInfoMock.getService());
+        verify(metadataOperateServiceMock)
+            .deleteServiceMetadata(expiredMetadataInfoMock.getService());
     }
 }

@@ -101,8 +101,10 @@ public class ServiceMetadata implements Serializable {
             return false;
         }
         ServiceMetadata metadata = (ServiceMetadata) o;
-        return Float.compare(metadata.protectThreshold, protectThreshold) == 0 && selector == metadata.selector
-                && Objects.equals(extendData, metadata.extendData) && Objects.equals(clusters, metadata.clusters);
+        return Float.compare(metadata.protectThreshold, protectThreshold) == 0
+            && selector == metadata.selector
+            && Objects.equals(extendData, metadata.extendData)
+            && Objects.equals(clusters, metadata.clusters);
     }
     
     @Override

@@ -79,27 +79,31 @@ class NamingSubscriberServiceV2ImplTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager, null, null, null,
+        subscriberService =
+            new NamingSubscriberServiceV2Impl(clientManager, indexesManager, null, null, null,
                 switchDomain);
         ReflectionTestUtils.setField(subscriberService, "delayTaskEngine", delayTaskEngine);
-        when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(testClientId));
+        when(indexesManager.getAllClientsSubscribeService(service))
+            .thenReturn(Collections.singletonList(testClientId));
         when(indexesManager.getAllClientsSubscribeService(service1)).thenReturn(
-                Collections.singletonList(testClientId));
+            Collections.singletonList(testClientId));
         Collection<Service> services = new LinkedList<>();
         services.add(service);
         services.add(service1);
         when(indexesManager.getSubscribedService()).thenReturn(services);
         when(clientManager.getClient(testClientId)).thenReturn(client);
         when(client.getSubscriber(service)).thenReturn(
-                new Subscriber("1.1.1.1:1111", "Test", "unknown", "1.1.1.1", "N", service.getGroupedServiceName(), 0));
+            new Subscriber("1.1.1.1:1111", "Test", "unknown", "1.1.1.1", "N",
+                service.getGroupedServiceName(), 0));
         when(client.getSubscriber(service1)).thenReturn(
-                new Subscriber("1.1.1.1:1111", "Test", "unknown", "1.1.1.1", "N", service1.getGroupedServiceName(), 0));
+            new Subscriber("1.1.1.1:1111", "Test", "unknown", "1.1.1.1", "N",
+                service1.getGroupedServiceName(), 0));
     }
     
     @Test
     void testGetSubscribersByString() {
         Collection<Subscriber> actual = subscriberService.getSubscribers(service.getNamespace(),
-                service.getGroupedServiceName());
+            service.getGroupedServiceName());
         assertEquals(1, actual.size());
         assertEquals(service.getGroupedServiceName(), actual.iterator().next().getServiceName());
     }
@@ -113,7 +117,8 @@ class NamingSubscriberServiceV2ImplTest {
     
     @Test
     void testGetFuzzySubscribersByString() {
-        Collection<Subscriber> actual = subscriberService.getFuzzySubscribers(service.getNamespace(),
+        Collection<Subscriber> actual =
+            subscriberService.getFuzzySubscribers(service.getNamespace(),
                 service.getGroupedServiceName());
         assertEquals(2, actual.size());
     }
@@ -127,7 +132,8 @@ class NamingSubscriberServiceV2ImplTest {
     @Test
     public void onEvent() {
         subscriberService.onEvent(
-                new ServiceEvent.ServiceChangedEvent(service, Constants.ServiceChangedType.ADD_SERVICE));
+            new ServiceEvent.ServiceChangedEvent(service,
+                Constants.ServiceChangedType.ADD_SERVICE));
         verify(delayTaskEngine).addTask(eq(service), any(PushDelayTask.class));
     }
 }

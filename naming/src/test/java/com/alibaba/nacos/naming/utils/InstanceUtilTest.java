@@ -99,7 +99,8 @@ class InstanceUtilTest {
         instance.setClusterName("testCluster");
         InstanceUtil.setInstanceIdIfEmpty(instance, groupedServiceName);
         assertNotNull(instance.getInstanceId());
-        assertEquals(instance.getInstanceId(), InstanceIdGeneratorManager.generateInstanceId(instance));
+        assertEquals(instance.getInstanceId(),
+            InstanceIdGeneratorManager.generateInstanceId(instance));
         String customInsId = "customInstanceId_1";
         Instance instance1 = new Instance();
         instance1.setInstanceId(customInsId);

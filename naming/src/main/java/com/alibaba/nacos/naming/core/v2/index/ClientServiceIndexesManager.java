@@ -55,11 +55,13 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     public Collection<String> getAllClientsRegisteredService(Service service) {
-        return publisherIndexes.containsKey(service) ? publisherIndexes.get(service) : new ConcurrentHashSet<>();
+        return publisherIndexes.containsKey(service) ? publisherIndexes.get(service)
+            : new ConcurrentHashSet<>();
     }
     
     public Collection<String> getAllClientsSubscribeService(Service service) {
-        return subscriberIndexes.containsKey(service) ? subscriberIndexes.get(service) : new ConcurrentHashSet<>();
+        return subscriberIndexes.containsKey(service) ? subscriberIndexes.get(service)
+            : new ConcurrentHashSet<>();
     }
     
     public Collection<Service> getSubscribedService() {
@@ -103,15 +105,17 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         for (Service each : client.getAllSubscribeService()) {
             removeSubscriberIndexes(each, client.getClientId());
         }
-        DeregisterInstanceReason reason = event.isNative() ? DeregisterInstanceReason.NATIVE_DISCONNECTED
+        DeregisterInstanceReason reason =
+            event.isNative() ? DeregisterInstanceReason.NATIVE_DISCONNECTED
                 : DeregisterInstanceReason.SYNCED_DISCONNECTED;
         long currentTimeMillis = System.currentTimeMillis();
         for (Service each : client.getAllPublishedService()) {
             removePublisherIndexes(each, client.getClientId());
             InstancePublishInfo instance = client.getInstancePublishInfo(each);
             NotifyCenter.publishEvent(
-                    new DeregisterInstanceTraceEvent(currentTimeMillis, "", false, reason, each.getNamespace(),
-                            each.getGroup(), each.getName(), instance.getIp(), instance.getPort()));
+                new DeregisterInstanceTraceEvent(currentTimeMillis, "", false, reason,
+                    each.getNamespace(),
+                    each.getGroup(), each.getName(), instance.getIp(), instance.getPort()));
         }
     }
     
@@ -135,7 +139,8 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
             // The only time the index needs to be updated is when the service is first created
             serviceChangedType = Constants.ServiceChangedType.ADD_SERVICE;
         }
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
+        NotifyCenter
+            .publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
         publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
     }
     
@@ -143,14 +148,16 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         publisherIndexes.computeIfPresent(service, (s, ids) -> {
             ids.remove(clientId);
             String serviceChangedType = ids.isEmpty() ? Constants.ServiceChangedType.DELETE_SERVICE
-                    : Constants.ServiceChangedType.INSTANCE_CHANGED;
-            NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
+                : Constants.ServiceChangedType.INSTANCE_CHANGED;
+            NotifyCenter.publishEvent(
+                new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
             return ids.isEmpty() ? null : ids;
         });
     }
     
     private void addSubscriberIndexes(Service service, String clientId) {
-        Set<String> clientIds = subscriberIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>());
+        Set<String> clientIds =
+            subscriberIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>());
         // Fix #5404, Only first time add need notify event.
         if (clientIds.add(clientId)) {
             NotifyCenter.publishEvent(new ServiceEvent.ServiceSubscribedEvent(service, clientId));

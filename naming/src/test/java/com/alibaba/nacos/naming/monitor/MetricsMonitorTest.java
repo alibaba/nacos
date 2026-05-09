@@ -49,7 +49,8 @@ class MetricsMonitorTest {
         ApplicationUtils.injectContext(context);
         when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(null);
         // add simple meterRegistry.
-        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY).add(new SimpleMeterRegistry());
+        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY)
+            .add(new SimpleMeterRegistry());
         
         MetricsMonitor.resetPush();
         MetricsMonitor.getIpCountMonitor().set(0);

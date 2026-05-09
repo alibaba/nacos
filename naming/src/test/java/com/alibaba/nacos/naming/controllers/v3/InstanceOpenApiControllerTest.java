@@ -71,8 +71,9 @@ class InstanceOpenApiControllerTest {
         instanceForm.setIp("1.1.1.1");
         instanceForm.setPort(80);
         Result<String> actual = instanceOpenApiController.register(instanceForm, false);
-        verify(instanceOperator).registerInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(Constants.DEFAULT_GROUP),
-                eq("test"), any(Instance.class));
+        verify(instanceOperator).registerInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
+            eq(Constants.DEFAULT_GROUP),
+            eq("test"), any(Instance.class));
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());
         assertEquals("ok", actual.getData());
@@ -84,8 +85,9 @@ class InstanceOpenApiControllerTest {
         instanceForm.setServiceName("test");
         instanceForm.setIp("1.1.1.1");
         instanceForm.setPort(80);
-        when(instanceOperator.handleBeat(eq(Constants.DEFAULT_NAMESPACE_ID), eq(Constants.DEFAULT_GROUP), eq("test"),
-                eq("1.1.1.1"), eq(80), eq(Constants.DEFAULT_CLUSTER_NAME), any(), any())).thenReturn(
+        when(instanceOperator.handleBeat(eq(Constants.DEFAULT_NAMESPACE_ID),
+            eq(Constants.DEFAULT_GROUP), eq("test"),
+            eq("1.1.1.1"), eq(80), eq(Constants.DEFAULT_CLUSTER_NAME), any(), any())).thenReturn(
                 NamingResponseCode.RESOURCE_NOT_FOUND, NamingResponseCode.OK);
         Result<String> actual = instanceOpenApiController.register(instanceForm, true);
         assertEquals(ErrorCode.INSTANCE_NOT_FOUND.getCode(), actual.getCode());
@@ -103,8 +105,9 @@ class InstanceOpenApiControllerTest {
         instanceForm.setIp("1.1.1.1");
         instanceForm.setPort(80);
         Result<String> actual = instanceOpenApiController.deregister(instanceForm);
-        verify(instanceOperator).removeInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(Constants.DEFAULT_GROUP),
-                eq("test"), any(Instance.class));
+        verify(instanceOperator).removeInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
+            eq(Constants.DEFAULT_GROUP),
+            eq("test"), any(Instance.class));
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());
         assertEquals("ok", actual.getData());
@@ -119,8 +122,9 @@ class InstanceOpenApiControllerTest {
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setName("test");
         serviceInfo.setHosts(Collections.singletonList(instance));
-        when(instanceOperator.listInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "test", null,
-                StringUtils.EMPTY, false)).thenReturn(serviceInfo);
+        when(instanceOperator.listInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP,
+            "test", null,
+            StringUtils.EMPTY, false)).thenReturn(serviceInfo);
         Result<List<Instance>> actual = instanceOpenApiController.list(instanceForm);
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());

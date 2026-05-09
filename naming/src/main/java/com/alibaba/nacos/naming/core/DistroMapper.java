@@ -116,7 +116,8 @@ public class DistroMapper extends MemberChangeListener {
             return servers.get(index);
         } catch (Throwable e) {
             Loggers.SRV_LOG
-                    .warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + EnvUtil.getLocalAddress(), e);
+                .warn("[NACOS-DISTRO] distro mapper failed, return localhost: "
+                    + EnvUtil.getLocalAddress(), e);
             return EnvUtil.getLocalAddress();
         }
     }
@@ -129,12 +130,15 @@ public class DistroMapper extends MemberChangeListener {
     public void onEvent(MembersChangeEvent event) {
         // Here, the node list must be sorted to ensure that all nacos-server's
         // node list is in the same order
-        List<String> list = MemberUtil.simpleMembers(MemberUtil.selectTargetMembers(event.getMembers(),
-                member -> NodeState.UP.equals(member.getState()) || NodeState.SUSPICIOUS.equals(member.getState())));
+        List<String> list =
+            MemberUtil.simpleMembers(MemberUtil.selectTargetMembers(event.getMembers(),
+                member -> NodeState.UP.equals(member.getState())
+                    || NodeState.SUSPICIOUS.equals(member.getState())));
         Collections.sort(list);
         Collection<String> old = healthyList;
         healthyList = Collections.unmodifiableList(list);
-        Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, old: {}, new: {}", old, healthyList);
+        Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, old: {}, new: {}", old,
+            healthyList);
     }
     
     @Override

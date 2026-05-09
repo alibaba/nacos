@@ -60,28 +60,33 @@ class DistroDataRequestHandlerTest {
         DistroDataRequest distroDataRequest = new DistroDataRequest();
         distroDataRequest.setDataOperation(VERIFY);
         RequestMeta requestMeta = new RequestMeta();
-        DistroDataResponse response = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertEquals(response.getErrorCode(), ResponseCode.FAIL.getCode());
         
         DistroData distroData = new DistroData();
         Mockito.when(distroProtocol.onSnapshot(Mockito.any())).thenReturn(distroData);
         distroDataRequest.setDataOperation(SNAPSHOT);
-        DistroDataResponse response1 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response1 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertEquals(response1.getDistroData(), distroData);
         
         distroDataRequest.setDataOperation(DELETE);
         Mockito.when(distroProtocol.onReceive(Mockito.any())).thenReturn(false);
-        DistroDataResponse response2 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response2 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertEquals(response2.getErrorCode(), ResponseCode.FAIL.getCode());
         
         distroDataRequest.setDataOperation(QUERY);
         Mockito.when(distroProtocol.onQuery(Mockito.any())).thenReturn(distroData);
         distroDataRequest.setDistroData(new DistroData());
-        DistroDataResponse response3 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response3 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertEquals(response3.getDistroData(), distroData);
         
         distroDataRequest.setDataOperation(ADD);
-        DistroDataResponse response4 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response4 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertNull(response4.getDistroData());
     }
 }

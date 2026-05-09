@@ -40,7 +40,8 @@ public interface CatalogService {
      * @return detail information of service
      * @throws NacosException exception in query
      */
-    ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException;
+    ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName)
+        throws NacosException;
     
     /**
      * List all instances of specified services.
@@ -52,8 +53,9 @@ public interface CatalogService {
      * @return instances page object
      * @throws NacosException exception in query
      */
-    List<? extends Instance> listInstances(String namespaceId, String groupName, String serviceName, String clusterName)
-            throws NacosException;
+    List<? extends Instance> listInstances(String namespaceId, String groupName, String serviceName,
+        String clusterName)
+        throws NacosException;
     
     /**
      * List all instances of specified services.
@@ -63,7 +65,8 @@ public interface CatalogService {
      * @param serviceName service name
      * @return instances list
      */
-    List<? extends Instance> listAllInstances(String namespaceId, String groupName, String serviceName);
+    List<? extends Instance> listAllInstances(String namespaceId, String groupName,
+        String serviceName);
     
     /**
      * List service by page.
@@ -80,8 +83,9 @@ public interface CatalogService {
      * @deprecated after v1 http api removed, use {@link #listService(String, String, String, int, int, boolean)} replace.
      */
     @Deprecated
-    Object pageListService(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
-            String instancePattern, boolean ignoreEmptyService) throws NacosException;
+    Object pageListService(String namespaceId, String groupName, String serviceName, int pageNo,
+        int pageSize,
+        String instancePattern, boolean ignoreEmptyService) throws NacosException;
     
     /**
      * List service with cluster and instances by page.
@@ -94,8 +98,9 @@ public interface CatalogService {
      * @return service page object
      * @throws NacosException exception in query
      */
-    Page<ServiceDetailInfo> pageListServiceDetail(String namespaceId, String groupName, String serviceName, int pageNo,
-            int pageSize) throws NacosException;
+    Page<ServiceDetailInfo> pageListServiceDetail(String namespaceId, String groupName,
+        String serviceName, int pageNo,
+        int pageSize) throws NacosException;
     
     /**
      * List service by page.
@@ -109,7 +114,8 @@ public interface CatalogService {
      * @return service page object
      * @throws NacosException exception in query
      */
-    Page<ServiceView> listService(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
-            boolean ignoreEmptyService) throws NacosException;
+    Page<ServiceView> listService(String namespaceId, String groupName, String serviceName,
+        int pageNo, int pageSize,
+        boolean ignoreEmptyService) throws NacosException;
     
 }

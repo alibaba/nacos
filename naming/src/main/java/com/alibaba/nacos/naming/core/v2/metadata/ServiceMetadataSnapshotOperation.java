@@ -32,9 +32,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class ServiceMetadataSnapshotOperation extends AbstractMetadataSnapshotOperation {
     
-    private static final String SNAPSHOT_SAVE = ServiceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE";
+    private static final String SNAPSHOT_SAVE =
+        ServiceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE";
     
-    private static final String SNAPSHOT_LOAD = ServiceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD";
+    private static final String SNAPSHOT_LOAD =
+        ServiceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD";
     
     private static final String SNAPSHOT_ARCHIVE = "service_metadata.zip";
     
@@ -42,7 +44,8 @@ public class ServiceMetadataSnapshotOperation extends AbstractMetadataSnapshotOp
     
     private final Serializer serializer;
     
-    public ServiceMetadataSnapshotOperation(NamingMetadataManager metadataManager, ReentrantReadWriteLock lock) {
+    public ServiceMetadataSnapshotOperation(NamingMetadataManager metadataManager,
+        ReentrantReadWriteLock lock) {
         super(lock);
         this.metadataManager = metadataManager;
         this.serializer = SerializeFactory.getDefault();

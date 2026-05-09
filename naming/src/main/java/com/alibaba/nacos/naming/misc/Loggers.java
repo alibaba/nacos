@@ -39,7 +39,8 @@ public class Loggers {
     
     public static final Logger DISTRO = LoggerFactory.getLogger("com.alibaba.nacos.naming.distro");
     
-    public static final Logger PERFORMANCE_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.performance");
+    public static final Logger PERFORMANCE_LOG =
+        LoggerFactory.getLogger("com.alibaba.nacos.naming.performance");
     
     public static void setLogLevel(String logName, String level) {
         

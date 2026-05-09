@@ -88,7 +88,8 @@ public class NamingConfig {
     
     @Bean
     public FilterRegistrationBean<ClientAttributesFilter> clientAttributesFilterRegistration() {
-        FilterRegistrationBean<ClientAttributesFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<ClientAttributesFilter> registration =
+            new FilterRegistrationBean<>();
         registration.setFilter(clientAttributesFilter());
         registration.addUrlPatterns(URL_PATTERNS, URL_PATTERNS_V2);
         registration.setName(CLIENT_ATTRIBUTES_FILTER);

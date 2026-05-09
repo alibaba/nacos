@@ -59,7 +59,8 @@ class EmptyServiceAutoCleanerV2Test {
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
-        emptyServiceAutoCleanerV2 = new EmptyServiceAutoCleanerV2(clientServiceIndexesManager, serviceStorage);
+        emptyServiceAutoCleanerV2 =
+            new EmptyServiceAutoCleanerV2(clientServiceIndexesManager, serviceStorage);
         Mockito.when(service.getNamespace()).thenReturn("public");
         ServiceManager serviceManager = ServiceManager.getInstance();
         serviceManager.getSingleton(service);
@@ -78,7 +79,8 @@ class EmptyServiceAutoCleanerV2Test {
     @Test
     void testDoClean() {
         try {
-            Mockito.when(clientServiceIndexesManager.getAllClientsRegisteredService(Mockito.any())).thenReturn(Collections.emptyList());
+            Mockito.when(clientServiceIndexesManager.getAllClientsRegisteredService(Mockito.any()))
+                .thenReturn(Collections.emptyList());
             
             Mockito.when(service.getLastUpdatedTime()).thenReturn(0L);
             

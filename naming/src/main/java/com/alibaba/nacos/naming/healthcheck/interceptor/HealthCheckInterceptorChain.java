@@ -24,7 +24,8 @@ import com.alibaba.nacos.naming.interceptor.AbstractNamingInterceptorChain;
  *
  * @author xiweng.yy
  */
-public class HealthCheckInterceptorChain extends AbstractNamingInterceptorChain<NacosHealthCheckTask> {
+public class HealthCheckInterceptorChain
+    extends AbstractNamingInterceptorChain<NacosHealthCheckTask> {
     
     private static final HealthCheckInterceptorChain INSTANCE = new HealthCheckInterceptorChain();
     

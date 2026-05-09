@@ -60,7 +60,8 @@ class HealthCheckProcessorExtendV2Test {
         origin.add("HTTP");
         healthCheckProcessorExtendV2.addProcessor(origin);
         
-        verify(registry).registerSingleton(healthCheckProcessorExtendV2.lowerFirstChar(mysqlProcessor.getClass().getSimpleName()),
-                mysqlProcessor);
+        verify(registry).registerSingleton(
+            healthCheckProcessorExtendV2.lowerFirstChar(mysqlProcessor.getClass().getSimpleName()),
+            mysqlProcessor);
     }
 }

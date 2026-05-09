@@ -89,6 +89,7 @@ class InstanceControllerV3Test extends BaseTest {
         mockmvc = MockMvcBuilders.standaloneSetup(instanceControllerV3).build();
         
         subscriber = new SmartSubscriber() {
+            
             @Override
             public List<Class<? extends Event>> subscribeTypes() {
                 List<Class<? extends Event>> result = new LinkedList<>();
@@ -129,7 +130,8 @@ class InstanceControllerV3Test extends BaseTest {
         
         Result<String> result = instanceControllerV3.register(instanceForm);
         
-        verify(instanceService).registerInstance(eq(TEST_NAMESPACE), eq("DEFAULT_GROUP"), eq("test-service"), any());
+        verify(instanceService).registerInstance(eq(TEST_NAMESPACE), eq("DEFAULT_GROUP"),
+            eq("test-service"), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
@@ -153,7 +155,8 @@ class InstanceControllerV3Test extends BaseTest {
         
         Result<String> result = instanceControllerV3.deregister(instanceForm);
         
-        verify(instanceService).removeInstance(eq(TEST_NAMESPACE), eq("DEFAULT_GROUP"), eq("test-service"), any());
+        verify(instanceService).removeInstance(eq(TEST_NAMESPACE), eq("DEFAULT_GROUP"),
+            eq("test-service"), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
@@ -177,7 +180,8 @@ class InstanceControllerV3Test extends BaseTest {
         
         Result<String> result = instanceControllerV3.update(instanceForm);
         
-        verify(instanceService).updateInstance(eq(TEST_NAMESPACE), eq("DEFAULT_GROUP"), eq("test-service"), any());
+        verify(instanceService).updateInstance(eq(TEST_NAMESPACE), eq("DEFAULT_GROUP"),
+            eq("test-service"), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
@@ -198,11 +202,13 @@ class InstanceControllerV3Test extends BaseTest {
         
         ArrayList<String> ipList = new ArrayList<>();
         ipList.add(TEST_IP);
-        when(instanceService.batchUpdateMetadata(eq(TEST_NAMESPACE), any(), any())).thenReturn(ipList);
+        when(instanceService.batchUpdateMetadata(eq(TEST_NAMESPACE), any(), any()))
+            .thenReturn(ipList);
         
         InstanceMetadataBatchResult expectUpdate = new InstanceMetadataBatchResult(ipList);
         
-        Result<InstanceMetadataBatchResult> result = instanceControllerV3.batchUpdateInstanceMetadata(form);
+        Result<InstanceMetadataBatchResult> result =
+            instanceControllerV3.batchUpdateInstanceMetadata(form);
         verify(instanceService).batchUpdateMetadata(eq(TEST_NAMESPACE), any(), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -213,11 +219,14 @@ class InstanceControllerV3Test extends BaseTest {
     @Test
     void partialUpdateInstance() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(
-                        UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH).param("namespaceId", TEST_NAMESPACE)
-                .param("serviceName", TEST_SERVICE_NAME).param("ip", TEST_IP).param("cluster", TEST_CLUSTER_NAME)
-                .param("port", "9999").param("healthy", "true").param("weight", "2.0").param("enabled", "true")
-                .param("metadata", TEST_METADATA).param("ephemeral", "false");
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+            UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH).param("namespaceId", TEST_NAMESPACE)
+            .param("serviceName", TEST_SERVICE_NAME).param("ip", TEST_IP)
+            .param("cluster", TEST_CLUSTER_NAME)
+            .param("port", "9999").param("healthy", "true").param("weight", "2.0")
+            .param("enabled", "true")
+            .param("metadata", TEST_METADATA).param("ephemeral", "false");
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("ok", JacksonUtils.toObj(actualValue).get("data").asText());
     }
     
@@ -229,7 +238,8 @@ class InstanceControllerV3Test extends BaseTest {
         List<Instance> expected = new LinkedList<>();
         expected.add(instance);
         doReturn(expected).when(catalogService)
-                .listInstances(eq(TEST_NAMESPACE), eq(TEST_GROUP_NAME), eq("test-service"), eq(TEST_CLUSTER_NAME));
+            .listInstances(eq(TEST_NAMESPACE), eq(TEST_GROUP_NAME), eq("test-service"),
+                eq(TEST_CLUSTER_NAME));
         InstanceListForm instanceForm = new InstanceListForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
         instanceForm.setGroupName(TEST_GROUP_NAME);
@@ -247,8 +257,9 @@ class InstanceControllerV3Test extends BaseTest {
         Instance instance = new Instance();
         instance.setInstanceId("test-id");
         
-        when(instanceService.getInstance(TEST_NAMESPACE, Constants.DEFAULT_GROUP, "test-service", TEST_CLUSTER_NAME,
-                TEST_IP, 9999)).thenReturn(instance);
+        when(instanceService.getInstance(TEST_NAMESPACE, Constants.DEFAULT_GROUP, "test-service",
+            TEST_CLUSTER_NAME,
+            TEST_IP, 9999)).thenReturn(instance);
         InstanceForm instanceForm = new InstanceForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
         instanceForm.setGroupName("DEFAULT_GROUP");
@@ -258,8 +269,9 @@ class InstanceControllerV3Test extends BaseTest {
         instanceForm.setPort(9999);
         Result<Instance> result = instanceControllerV3.detail(instanceForm);
         
-        verify(instanceService).getInstance(TEST_NAMESPACE, Constants.DEFAULT_GROUP, "test-service", TEST_CLUSTER_NAME,
-                TEST_IP, 9999);
+        verify(instanceService).getInstance(TEST_NAMESPACE, Constants.DEFAULT_GROUP, "test-service",
+            TEST_CLUSTER_NAME,
+            TEST_IP, 9999);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(instance.getInstanceId(), result.getData().getInstanceId());

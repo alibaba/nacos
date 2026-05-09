@@ -86,7 +86,8 @@ class PushExecuteTaskTest {
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
         MetricsMonitor.resetAll();
-        when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(clientId));
+        when(indexesManager.getAllClientsSubscribeService(service))
+            .thenReturn(Collections.singletonList(clientId));
         when(clientManager.getClient(clientId)).thenReturn(client);
         when(client.getSubscriber(service)).thenReturn(subscriber);
         when(serviceStorage.getPushData(service)).thenReturn(new ServiceInfo("G@@S"));
@@ -102,7 +103,8 @@ class PushExecuteTaskTest {
     @Test
     void testRunSuccessForPushAll() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
-        PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        PushExecuteTask executeTask =
+            new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         executeTask.run();
         assertEquals(1, MetricsMonitor.getTotalPushMonitor().get());
     }
@@ -110,7 +112,8 @@ class PushExecuteTaskTest {
     @Test
     void testRunSuccessForPushSingle() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId);
-        PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        PushExecuteTask executeTask =
+            new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         executeTask.run();
         assertEquals(1, MetricsMonitor.getTotalPushMonitor().get());
     }
@@ -118,7 +121,8 @@ class PushExecuteTaskTest {
     @Test
     void testRunFailedWithHandleException() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
-        PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        PushExecuteTask executeTask =
+            new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         when(delayTaskExecuteEngine.getServiceStorage()).thenThrow(new RuntimeException());
         executeTask.run();
         assertEquals(0, MetricsMonitor.getFailedPushMonitor().get());
@@ -128,7 +132,8 @@ class PushExecuteTaskTest {
     @Test
     void testRunFailedWithNoRetry() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
-        PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        PushExecuteTask executeTask =
+            new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         pushExecutor.setShouldSuccess(false);
         pushExecutor.setFailedException(new NoRequiredRetryException());
         executeTask.run();
@@ -139,7 +144,8 @@ class PushExecuteTaskTest {
     @Test
     void testRunFailedWithRetry() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
-        PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        PushExecuteTask executeTask =
+            new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         pushExecutor.setShouldSuccess(false);
         pushExecutor.setFailedException(new RuntimeException());
         executeTask.run();

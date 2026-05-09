@@ -45,7 +45,8 @@ public interface InstanceOperator {
      * @deprecated use {@link #registerInstance(String, String, String, Instance)} replaced
      */
     @Deprecated
-    default void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+    default void registerInstance(String namespaceId, String serviceName, Instance instance)
+        throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         registerInstance(namespaceId, groupName, serviceNameNoGrouped, instance);
@@ -60,8 +61,9 @@ public interface InstanceOperator {
      * @param instance    instance to register
      * @throws NacosException nacos exceptioxn when register failed
      */
-    void registerInstance(String namespaceId, String groupName, String serviceName, Instance instance)
-            throws NacosException;
+    void registerInstance(String namespaceId, String groupName, String serviceName,
+        Instance instance)
+        throws NacosException;
     
     /**
      * Remove instance from service.
@@ -73,7 +75,8 @@ public interface InstanceOperator {
      * @deprecated use {@link #removeInstance(String, String, String, Instance)} replaced
      */
     @Deprecated
-    default void removeInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+    default void removeInstance(String namespaceId, String serviceName, Instance instance)
+        throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         removeInstance(namespaceId, groupName, serviceNameNoGrouped, instance);
@@ -89,7 +92,7 @@ public interface InstanceOperator {
      * @throws NacosException nacos exception when remove failed
      */
     void removeInstance(String namespaceId, String groupName, String serviceName, Instance instance)
-            throws NacosException;
+        throws NacosException;
     
     /**
      * Update instance information. Due to the basic information can't be changed, so this update should only update
@@ -104,7 +107,8 @@ public interface InstanceOperator {
      * @deprecated use {@link #updateInstance(String, String, String, Instance)} replaced
      */
     @Deprecated
-    default void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+    default void updateInstance(String namespaceId, String serviceName, Instance instance)
+        throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         updateInstance(namespaceId, groupName, serviceNameNoGrouped, instance);
@@ -123,7 +127,7 @@ public interface InstanceOperator {
      * @throws NacosException nacos exception when update failed
      */
     void updateInstance(String namespaceId, String groupName, String serviceName, Instance instance)
-            throws NacosException;
+        throws NacosException;
     
     /**
      * Patch update instance information. Due to the basic information can't be changed, so this update should only
@@ -138,8 +142,9 @@ public interface InstanceOperator {
      * @deprecated use {@link #patchInstance(String, String, String, InstancePatchObject)} replaced
      */
     @Deprecated
-    default void patchInstance(String namespaceId, String serviceName, InstancePatchObject patchObject)
-            throws NacosException {
+    default void patchInstance(String namespaceId, String serviceName,
+        InstancePatchObject patchObject)
+        throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         patchInstance(namespaceId, groupName, serviceNameNoGrouped, patchObject);
@@ -157,8 +162,9 @@ public interface InstanceOperator {
      * @param patchObject objects need to be patched
      * @throws NacosException nacos exception when update failed
      */
-    void patchInstance(String namespaceId, String groupName, String serviceName, InstancePatchObject patchObject)
-            throws NacosException;
+    void patchInstance(String namespaceId, String groupName, String serviceName,
+        InstancePatchObject patchObject)
+        throws NacosException;
     
     /**
      * Get all instance of input service.
@@ -173,11 +179,13 @@ public interface InstanceOperator {
      * @deprecated use {@link #listInstance(String, String, String, Subscriber, String, boolean)} replaced
      */
     @Deprecated
-    default ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
-            boolean healthOnly) throws Exception {
+    default ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber,
+        String cluster,
+        boolean healthOnly) throws Exception {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        return listInstance(namespaceId, groupName, serviceNameNoGrouped, subscriber, cluster, healthOnly);
+        return listInstance(namespaceId, groupName, serviceNameNoGrouped, subscriber, cluster,
+            healthOnly);
     }
     
     /**
@@ -192,8 +200,9 @@ public interface InstanceOperator {
      * @return service info
      * @throws NacosException exception when list instance failed
      */
-    ServiceInfo listInstance(String namespaceId, String groupName, String serviceName, Subscriber subscriber,
-            String cluster, boolean healthOnly) throws NacosException;
+    ServiceInfo listInstance(String namespaceId, String groupName, String serviceName,
+        Subscriber subscriber,
+        String cluster, boolean healthOnly) throws NacosException;
     
     /**
      * Get instance detail information.
@@ -208,8 +217,9 @@ public interface InstanceOperator {
      * @deprecated use {@link #getInstance(String, String, String, String, String, int)} replaced
      */
     @Deprecated
-    default Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
-            throws NacosException {
+    default Instance getInstance(String namespaceId, String serviceName, String cluster, String ip,
+        int port)
+        throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         return getInstance(namespaceId, groupName, serviceNameNoGrouped, cluster, ip, port);
@@ -227,8 +237,9 @@ public interface InstanceOperator {
      * @return instance info
      * @throws NacosException nacos exception during query
      */
-    Instance getInstance(String namespaceId, String groupName, String serviceName, String cluster, String ip, int port)
-            throws NacosException;
+    Instance getInstance(String namespaceId, String groupName, String serviceName, String cluster,
+        String ip, int port)
+        throws NacosException;
     
     /**
      * Handle beat request.
@@ -247,11 +258,13 @@ public interface InstanceOperator {
      * replaced
      */
     @Deprecated
-    default int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster, RsInfo clientBeat,
-            BeatInfoInstanceBuilder builder) throws NacosException {
+    default int handleBeat(String namespaceId, String serviceName, String ip, int port,
+        String cluster, RsInfo clientBeat,
+        BeatInfoInstanceBuilder builder) throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        return handleBeat(namespaceId, groupName, serviceNameNoGrouped, ip, port, cluster, clientBeat, builder);
+        return handleBeat(namespaceId, groupName, serviceNameNoGrouped, ip, port, cluster,
+            clientBeat, builder);
     }
     
     /**
@@ -269,8 +282,9 @@ public interface InstanceOperator {
      * @return result code
      * @throws NacosException nacos exception when service non-exist and client beat info is null
      */
-    int handleBeat(String namespaceId, String groupName, String serviceName, String ip, int port, String cluster,
-            RsInfo clientBeat, BeatInfoInstanceBuilder builder) throws NacosException;
+    int handleBeat(String namespaceId, String groupName, String serviceName, String ip, int port,
+        String cluster,
+        RsInfo clientBeat, BeatInfoInstanceBuilder builder) throws NacosException;
     
     /**
      * Get heart beat interval for specified instance.
@@ -284,7 +298,8 @@ public interface InstanceOperator {
      * @deprecated removed after not support v1 client.
      */
     @Deprecated
-    long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster);
+    long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port,
+        String cluster);
     
     /**
      * List all instances whatever status they are.
@@ -294,7 +309,8 @@ public interface InstanceOperator {
      * @return all instances
      * @throws NacosException nacos exception during query
      */
-    List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException;
+    List<? extends Instance> listAllInstances(String namespaceId, String serviceName)
+        throws NacosException;
     
     /**
      * Batch update metadata of instances.
@@ -305,8 +321,9 @@ public interface InstanceOperator {
      * @return updated instance
      * @throws NacosException nacos exception during update
      */
-    List<String> batchUpdateMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
-            Map<String, String> metadata) throws NacosException;
+    List<String> batchUpdateMetadata(String namespaceId,
+        InstanceOperationInfo instanceOperationInfo,
+        Map<String, String> metadata) throws NacosException;
     
     /**
      * Batch delete metadata of instances.
@@ -317,6 +334,7 @@ public interface InstanceOperator {
      * @return updated instance
      * @throws NacosException nacos exception during update
      */
-    List<String> batchDeleteMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
-            Map<String, String> metadata) throws NacosException;
+    List<String> batchDeleteMetadata(String namespaceId,
+        InstanceOperationInfo instanceOperationInfo,
+        Map<String, String> metadata) throws NacosException;
 }

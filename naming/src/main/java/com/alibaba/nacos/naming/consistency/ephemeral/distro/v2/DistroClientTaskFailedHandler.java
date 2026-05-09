@@ -39,7 +39,7 @@ public class DistroClientTaskFailedHandler implements DistroFailedTaskHandler {
     @Override
     public void retry(DistroKey distroKey, DataOperation action) {
         DistroDelayTask retryTask = new DistroDelayTask(distroKey, action,
-                DistroConfig.getInstance().getSyncRetryDelayMillis());
+            DistroConfig.getInstance().getSyncRetryDelayMillis());
         distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKey, retryTask);
     }
 }

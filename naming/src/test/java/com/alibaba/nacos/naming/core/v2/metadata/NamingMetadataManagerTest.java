@@ -74,18 +74,22 @@ class NamingMetadataManagerTest {
         namingMetadataManager = new NamingMetadataManager();
         
         Class<NamingMetadataManager> namingMetadataManagerClass = NamingMetadataManager.class;
-        Field serviceMetadataMapField = namingMetadataManagerClass.getDeclaredField("serviceMetadataMap");
+        Field serviceMetadataMapField =
+            namingMetadataManagerClass.getDeclaredField("serviceMetadataMap");
         serviceMetadataMapField.setAccessible(true);
-        ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap = (ConcurrentMap<Service, ServiceMetadata>) serviceMetadataMapField.get(
+        ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap =
+            (ConcurrentMap<Service, ServiceMetadata>) serviceMetadataMapField.get(
                 namingMetadataManager);
         serviceMetadataMap.put(service, serviceMetadata);
         
-        Field instanceMetadataMapField = namingMetadataManagerClass.getDeclaredField("instanceMetadataMap");
+        Field instanceMetadataMapField =
+            namingMetadataManagerClass.getDeclaredField("instanceMetadataMap");
         instanceMetadataMapField.setAccessible(true);
         
         ConcurrentMap<String, InstanceMetadata> concurrentMap = new ConcurrentHashMap<>();
         concurrentMap.put(METADATA_ID, instanceMetadata);
-        ((ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>>) instanceMetadataMapField.get(namingMetadataManager)).put(service,
+        ((ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>>) instanceMetadataMapField
+            .get(namingMetadataManager)).put(service,
                 concurrentMap);
     }
     
@@ -105,7 +109,8 @@ class NamingMetadataManagerTest {
     
     @Test
     void testGetServiceMetadata() {
-        Optional<ServiceMetadata> serviceMetadata = namingMetadataManager.getServiceMetadata(service);
+        Optional<ServiceMetadata> serviceMetadata =
+            namingMetadataManager.getServiceMetadata(service);
         
         assertTrue(serviceMetadata.isPresent());
         assertNotNull(serviceMetadata.get());
@@ -113,7 +118,8 @@ class NamingMetadataManagerTest {
     
     @Test
     void testGetInstanceMetadata() {
-        Optional<InstanceMetadata> instanceMetadata = namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
+        Optional<InstanceMetadata> instanceMetadata =
+            namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
         
         assertTrue(instanceMetadata.isPresent());
         assertNotNull(instanceMetadata.get());
@@ -146,7 +152,8 @@ class NamingMetadataManagerTest {
         
         namingMetadataManager.updateInstanceMetadata(service, METADATA_ID, instanceMetadata);
         
-        Optional<InstanceMetadata> optional = namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
+        Optional<InstanceMetadata> optional =
+            namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
         assertTrue(optional.isPresent());
         assertNotNull(optional.get());
         assertFalse(optional.get().isEnabled());
@@ -157,7 +164,8 @@ class NamingMetadataManagerTest {
         
         namingMetadataManager.removeServiceMetadata(service);
         
-        Optional<ServiceMetadata> serviceMetadata = namingMetadataManager.getServiceMetadata(service);
+        Optional<ServiceMetadata> serviceMetadata =
+            namingMetadataManager.getServiceMetadata(service);
         
         assertFalse(serviceMetadata.isPresent());
     }
@@ -167,25 +175,29 @@ class NamingMetadataManagerTest {
         
         namingMetadataManager.removeInstanceMetadata(service, METADATA_ID);
         
-        Optional<InstanceMetadata> instanceMetadata = namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
+        Optional<InstanceMetadata> instanceMetadata =
+            namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
         
         assertFalse(instanceMetadata.isPresent());
-
-        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot = namingMetadataManager.getInstanceMetadataSnapshot();
+        
+        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot =
+            namingMetadataManager.getInstanceMetadataSnapshot();
         
         assertEquals(0, instanceMetadataSnapshot.size());
     }
     
     @Test
     void testGetServiceMetadataSnapshot() {
-        Map<Service, ServiceMetadata> serviceMetadataSnapshot = namingMetadataManager.getServiceMetadataSnapshot();
+        Map<Service, ServiceMetadata> serviceMetadataSnapshot =
+            namingMetadataManager.getServiceMetadataSnapshot();
         
         assertEquals(1, serviceMetadataSnapshot.size());
     }
     
     @Test
     void testGetInstanceMetadataSnapshot() {
-        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot = namingMetadataManager.getInstanceMetadataSnapshot();
+        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot =
+            namingMetadataManager.getInstanceMetadataSnapshot();
         
         assertEquals(1, instanceMetadataSnapshot.size());
     }
@@ -193,7 +205,8 @@ class NamingMetadataManagerTest {
     @Test
     void testLoadServiceMetadataSnapshot() {
         namingMetadataManager.loadServiceMetadataSnapshot(new ConcurrentHashMap<>());
-        Map<Service, ServiceMetadata> serviceMetadataSnapshot = namingMetadataManager.getServiceMetadataSnapshot();
+        Map<Service, ServiceMetadata> serviceMetadataSnapshot =
+            namingMetadataManager.getServiceMetadataSnapshot();
         
         assertEquals(0, serviceMetadataSnapshot.size());
     }
@@ -201,14 +214,16 @@ class NamingMetadataManagerTest {
     @Test
     void testLoadInstanceMetadataSnapshot() {
         namingMetadataManager.loadInstanceMetadataSnapshot(new ConcurrentHashMap<>());
-        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot = namingMetadataManager.getInstanceMetadataSnapshot();
+        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot =
+            namingMetadataManager.getInstanceMetadataSnapshot();
         
         assertEquals(0, instanceMetadataSnapshot.size());
     }
     
     @Test
     void testGetExpiredMetadataInfos() {
-        Set<ExpiredMetadataInfo> expiredMetadataInfos = namingMetadataManager.getExpiredMetadataInfos();
+        Set<ExpiredMetadataInfo> expiredMetadataInfos =
+            namingMetadataManager.getExpiredMetadataInfos();
         
         assertNotNull(expiredMetadataInfos);
     }

@@ -52,9 +52,11 @@ public class HttpClient {
     
     private static final int CON_TIME_OUT_MILLIS = 5000;
     
-    private static final NacosRestTemplate APACHE_SYNC_NACOS_REST_TEMPLATE = HttpClientManager.getApacheRestTemplate();
+    private static final NacosRestTemplate APACHE_SYNC_NACOS_REST_TEMPLATE =
+        HttpClientManager.getApacheRestTemplate();
     
-    private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE = HttpClientManager.getAsyncRestTemplate();
+    private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE =
+        HttpClientManager.getAsyncRestTemplate();
     
     private static final String ENCODING = "UTF-8";
     
@@ -68,9 +70,11 @@ public class HttpClient {
      * @param paramValues params
      * @return {@link RestResult} as response
      */
-    public static RestResult<String> httpDelete(String url, List<String> headers, Map<String, String> paramValues) {
-        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8",
-                HttpMethod.DELETE);
+    public static RestResult<String> httpDelete(String url, List<String> headers,
+        Map<String, String> paramValues) {
+        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS,
+            TIME_OUT_MILLIS, "UTF-8",
+            HttpMethod.DELETE);
     }
     
     /**
@@ -81,9 +85,11 @@ public class HttpClient {
      * @param paramValues params
      * @return {@link RestResult} as response
      */
-    public static RestResult<String> httpGet(String url, List<String> headers, Map<String, String> paramValues) {
-        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8",
-                HttpMethod.GET);
+    public static RestResult<String> httpGet(String url, List<String> headers,
+        Map<String, String> paramValues) {
+        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS,
+            TIME_OUT_MILLIS, "UTF-8",
+            HttpMethod.GET);
     }
     
     /**
@@ -99,8 +105,9 @@ public class HttpClient {
      * @param method         http method
      * @return {@link RestResult} as response
      */
-    public static RestResult<String> request(String url, List<String> headers, Map<String, String> paramValues,
-            String body, int connectTimeout, int readTimeout, String encoding, String method) {
+    public static RestResult<String> request(String url, List<String> headers,
+        Map<String, String> paramValues,
+        String body, int connectTimeout, int readTimeout, String encoding, String method) {
         Header header = Header.newInstance();
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
@@ -110,17 +117,19 @@ public class HttpClient {
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, EnvUtil.getLocalAddress());
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
-        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+        AuthHeaderUtil.addIdentityToHeader(header,
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
                 NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         
-        HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)
+        HttpClientConfig httpClientConfig =
+            HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)
                 .setReadTimeOutMillis(readTimeout).build();
         Query query = Query.newInstance().initParams(paramValues);
         query.addParam(FieldsConstants.ENCODING, ENCODING);
         query.addParam(FieldsConstants.NOFIX, NOFIX);
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE
-                    .exchange(url, httpClientConfig, header, query, body, method, String.class);
+                .exchange(url, httpClientConfig, header, query, body, method, String.class);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();
@@ -135,8 +144,9 @@ public class HttpClient {
      * @param paramValues params
      * @param callback    callback after request execute
      */
-    public static void asyncHttpGet(String url, List<String> headers, Map<String, String> paramValues,
-            Callback<String> callback) throws Exception {
+    public static void asyncHttpGet(String url, List<String> headers,
+        Map<String, String> paramValues,
+        Callback<String> callback) throws Exception {
         asyncHttpRequest(url, headers, paramValues, callback, HttpMethod.GET);
     }
     
@@ -148,8 +158,9 @@ public class HttpClient {
      * @param paramValues params
      * @param callback    callback after request execute
      */
-    public static void asyncHttpPost(String url, List<String> headers, Map<String, String> paramValues,
-            Callback<String> callback) throws Exception {
+    public static void asyncHttpPost(String url, List<String> headers,
+        Map<String, String> paramValues,
+        Callback<String> callback) throws Exception {
         asyncHttpRequest(url, headers, paramValues, callback, HttpMethod.POST);
     }
     
@@ -161,8 +172,9 @@ public class HttpClient {
      * @param paramValues params
      * @param callback    callback after request execute
      */
-    public static void asyncHttpDelete(String url, List<String> headers, Map<String, String> paramValues,
-            Callback<String> callback) throws Exception {
+    public static void asyncHttpDelete(String url, List<String> headers,
+        Map<String, String> paramValues,
+        Callback<String> callback) throws Exception {
         asyncHttpRequest(url, headers, paramValues, callback, HttpMethod.DELETE);
     }
     
@@ -175,9 +187,10 @@ public class HttpClient {
      * @param method      http method
      * @throws Exception exception when request
      */
-    public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues,
-            Callback<String> callback, String method) throws Exception {
-    
+    public static void asyncHttpRequest(String url, List<String> headers,
+        Map<String, String> paramValues,
+        Callback<String> callback, String method) throws Exception {
+        
         Query query = Query.newInstance().initParams(paramValues);
         query.addParam(FieldsConstants.ENCODING, ENCODING);
         query.addParam(FieldsConstants.NOFIX, NOFIX);
@@ -187,7 +200,8 @@ public class HttpClient {
             header.addAll(headers);
         }
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
-        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+        AuthHeaderUtil.addIdentityToHeader(header,
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
                 NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         switch (method) {
             case HttpMethod.GET:
@@ -215,8 +229,9 @@ public class HttpClient {
      * @param content  full request content
      * @param callback callback after request execute
      */
-    public static void asyncHttpPostLarge(String url, List<String> headers, String content, Callback<String> callback)
-            throws Exception {
+    public static void asyncHttpPostLarge(String url, List<String> headers, String content,
+        Callback<String> callback)
+        throws Exception {
         asyncHttpPostLarge(url, headers, content.getBytes(StandardCharsets.UTF_8), callback);
     }
     
@@ -228,13 +243,15 @@ public class HttpClient {
      * @param content  full request content
      * @param callback callback after request execute
      */
-    public static void asyncHttpPostLarge(String url, List<String> headers, byte[] content, Callback<String> callback)
-            throws Exception {
+    public static void asyncHttpPostLarge(String url, List<String> headers, byte[] content,
+        Callback<String> callback)
+        throws Exception {
         Header header = Header.newInstance();
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+        AuthHeaderUtil.addIdentityToHeader(header,
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
                 NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         ASYNC_REST_TEMPLATE.post(url, header, Query.EMPTY, content, String.class, callback);
     }
@@ -247,18 +264,21 @@ public class HttpClient {
      * @param content  full request content
      * @param callback callback after request execute
      */
-    public static void asyncHttpDeleteLarge(String url, List<String> headers, String content, Callback<String> callback)
-            throws Exception {
+    public static void asyncHttpDeleteLarge(String url, List<String> headers, String content,
+        Callback<String> callback)
+        throws Exception {
         Header header = Header.newInstance();
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+        AuthHeaderUtil.addIdentityToHeader(header,
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
                 NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         ASYNC_REST_TEMPLATE.delete(url, header, content, String.class, callback);
     }
     
-    public static RestResult<String> httpPost(String url, List<String> headers, Map<String, String> paramValues) {
+    public static RestResult<String> httpPost(String url, List<String> headers,
+        Map<String, String> paramValues) {
         return httpPost(url, headers, paramValues, "UTF-8");
     }
     
@@ -271,19 +291,22 @@ public class HttpClient {
      * @param encoding    charset
      * @return {@link RestResult} as response
      */
-    public static RestResult<String> httpPost(String url, List<String> headers, Map<String, String> paramValues,
-            String encoding) {
+    public static RestResult<String> httpPost(String url, List<String> headers,
+        Map<String, String> paramValues,
+        String encoding) {
         try {
             Header header = Header.newInstance();
             if (CollectionUtils.isNotEmpty(headers)) {
                 header.addAll(headers);
             }
             header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
-            AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+            AuthHeaderUtil.addIdentityToHeader(header,
+                NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
                     NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
             HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000)
-                    .setReadTimeOutMillis(5000).build();
-            return APACHE_SYNC_NACOS_REST_TEMPLATE.postForm(url, httpClientConfig, header, paramValues, String.class);
+                .setReadTimeOutMillis(5000).build();
+            return APACHE_SYNC_NACOS_REST_TEMPLATE.postForm(url, httpClientConfig, header,
+                paramValues, String.class);
         } catch (Throwable e) {
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();
         }
@@ -298,12 +321,13 @@ public class HttpClient {
      * @param callback callback after request execute
      */
     public static void asyncHttpPutLarge(String url, Map<String, String> headers, byte[] content,
-            Callback<String> callback) throws Exception {
+        Callback<String> callback) throws Exception {
         Header header = Header.newInstance();
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+        AuthHeaderUtil.addIdentityToHeader(header,
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
                 NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         ASYNC_REST_TEMPLATE.put(url, header, Query.EMPTY, content, String.class, callback);
     }
@@ -316,15 +340,18 @@ public class HttpClient {
      * @param content full request content
      * @return {@link RestResult} as response
      */
-    public static RestResult<String> httpPutLarge(String url, Map<String, String> headers, byte[] content) {
+    public static RestResult<String> httpPutLarge(String url, Map<String, String> headers,
+        byte[] content) {
         Header header = Header.newInstance();
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+        AuthHeaderUtil.addIdentityToHeader(header,
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
                 NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         try {
-            return APACHE_SYNC_NACOS_REST_TEMPLATE.put(url, header, Query.EMPTY, content, String.class);
+            return APACHE_SYNC_NACOS_REST_TEMPLATE.put(url, header, Query.EMPTY, content,
+                String.class);
         } catch (Exception e) {
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();
         }
@@ -338,15 +365,18 @@ public class HttpClient {
      * @param content full request content
      * @return {@link RestResult} as response
      */
-    public static RestResult<String> httpGetLarge(String url, Map<String, String> headers, String content) {
+    public static RestResult<String> httpGetLarge(String url, Map<String, String> headers,
+        String content) {
         Header header = Header.newInstance();
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+        AuthHeaderUtil.addIdentityToHeader(header,
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
                 NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         try {
-            return APACHE_SYNC_NACOS_REST_TEMPLATE.getLarge(url, header, Query.EMPTY, content, String.class);
+            return APACHE_SYNC_NACOS_REST_TEMPLATE.getLarge(url, header, Query.EMPTY, content,
+                String.class);
         } catch (Exception e) {
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();
         }
@@ -360,12 +390,14 @@ public class HttpClient {
      * @param content full request content
      * @return {@link RestResult} as response
      */
-    public static RestResult<String> httpPostLarge(String url, Map<String, String> headers, String content) {
+    public static RestResult<String> httpPostLarge(String url, Map<String, String> headers,
+        String content) {
         Header header = Header.newInstance();
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+        AuthHeaderUtil.addIdentityToHeader(header,
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
                 NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postJson(url, header, content, String.class);

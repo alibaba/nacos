@@ -60,7 +60,8 @@ public class NamingFuzzyWatchContextServiceTest {
     void before() {
         namingFuzzyWatchContextService = new NamingFuzzyWatchContextService();
         
-        serviceManagerMockedStatic.when(() -> ServiceManager.getInstance()).thenReturn(serviceManager);
+        serviceManagerMockedStatic.when(() -> ServiceManager.getInstance())
+            .thenReturn(serviceManager);
     }
     
     @AfterEach
@@ -83,12 +84,15 @@ public class NamingFuzzyWatchContextServiceTest {
         serviceSet.add(Service.newService("namespace", "group", "12service", true));
         
         when(serviceManager.getSingletons(eq("namespace"))).thenReturn(serviceSet);
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
         Set<String> strings = namingFuzzyWatchContextService.initWatchMatchService(groupKeyPattern);
         for (int i = 0; i < 10; i++) {
-            Assertions.assertTrue(strings.contains(NamingUtils.getServiceKey("namespace", "group" + i, "service" + i)));
+            Assertions.assertTrue(strings
+                .contains(NamingUtils.getServiceKey("namespace", "group" + i, "service" + i)));
         }
-        Assertions.assertFalse(strings.contains(NamingUtils.getServiceKey("namespace", "group", "12service")));
+        Assertions.assertFalse(
+            strings.contains(NamingUtils.getServiceKey("namespace", "group", "12service")));
         
     }
     
@@ -97,10 +101,12 @@ public class NamingFuzzyWatchContextServiceTest {
         tMockedStatic.when(() -> GlobalConfig.getMaxPatternCount()).thenReturn(5);
         
         for (int i = 0; i < 10; i++) {
-            String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*" + i, "group*", "namespace");
+            String groupKeyPattern =
+                FuzzyGroupKeyPattern.generatePattern("service*" + i, "group*", "namespace");
             
             if (i < 5) {
-                int size = namingFuzzyWatchContextService.initWatchMatchService(groupKeyPattern).size();
+                int size =
+                    namingFuzzyWatchContextService.initWatchMatchService(groupKeyPattern).size();
                 Assertions.assertEquals(0, size);
             } else {
                 try {
@@ -109,7 +115,8 @@ public class NamingFuzzyWatchContextServiceTest {
                 } catch (Exception nacosException) {
                     Assertions.assertTrue(nacosException instanceof NacosException);
                     Assertions.assertTrue(
-                            ((NacosException) nacosException).getErrCode() == FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode());
+                        ((NacosException) nacosException)
+                            .getErrCode() == FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode());
                 }
             }
         }
@@ -128,10 +135,12 @@ public class NamingFuzzyWatchContextServiceTest {
         }
         serviceSet.add(Service.newService("namespace", "group", "12service", true));
         when(serviceManager.getSingletons(eq("namespace"))).thenReturn(serviceSet);
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
         Set<String> strings = namingFuzzyWatchContextService.initWatchMatchService(groupKeyPattern);
         Assertions.assertTrue(strings.size() == 5);
-        Assertions.assertFalse(strings.contains(NamingUtils.getServiceKey("namespace", "group", "12service")));
+        Assertions.assertFalse(
+            strings.contains(NamingUtils.getServiceKey("namespace", "group", "12service")));
     }
     
     @Test
@@ -141,34 +150,43 @@ public class NamingFuzzyWatchContextServiceTest {
         
         //init group key context.
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("1service*", "2group*", "3namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("1service*", "2group*", "3namespace");
         String connectionId = "conn1234";
         namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, connectionId);
         
         //match service  add
         Service service = Service.newService("3namespace", "2group", "1service", true);
-        boolean needNotify = namingFuzzyWatchContextService.syncServiceContext(service, ADD_SERVICE);
+        boolean needNotify =
+            namingFuzzyWatchContextService.syncServiceContext(service, ADD_SERVICE);
         Assertions.assertTrue(needNotify);
-        boolean needNotify2 = namingFuzzyWatchContextService.syncServiceContext(service, ADD_SERVICE);
+        boolean needNotify2 =
+            namingFuzzyWatchContextService.syncServiceContext(service, ADD_SERVICE);
         Assertions.assertFalse(needNotify2);
         
         //check matched client and services
-        Set<String> fuzzyWatchedClients = namingFuzzyWatchContextService.getFuzzyWatchedClients(service);
+        Set<String> fuzzyWatchedClients =
+            namingFuzzyWatchContextService.getFuzzyWatchedClients(service);
         Assertions.assertTrue(fuzzyWatchedClients.contains(connectionId));
-        Set<String> matchServiceKeys = namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
+        Set<String> matchServiceKeys =
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
         Assertions.assertTrue(matchServiceKeys.contains(
-                NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(), service.getName())));
+            NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(),
+                service.getName())));
         
         //not match service add
         Service serviceNotMatch = Service.newService("345namespace", "2group", "1service", true);
-        boolean needNotifyNotMatch = namingFuzzyWatchContextService.syncServiceContext(serviceNotMatch, ADD_SERVICE);
+        boolean needNotifyNotMatch =
+            namingFuzzyWatchContextService.syncServiceContext(serviceNotMatch, ADD_SERVICE);
         Assertions.assertFalse(needNotifyNotMatch);
         
         //match service  add
         Service serviceDRemove = service;
-        boolean needNotifyRemove = namingFuzzyWatchContextService.syncServiceContext(serviceDRemove, DELETE_SERVICE);
+        boolean needNotifyRemove =
+            namingFuzzyWatchContextService.syncServiceContext(serviceDRemove, DELETE_SERVICE);
         Assertions.assertTrue(needNotifyRemove);
-        boolean needNotify2Remove = namingFuzzyWatchContextService.syncServiceContext(serviceDRemove, DELETE_SERVICE);
+        boolean needNotify2Remove =
+            namingFuzzyWatchContextService.syncServiceContext(serviceDRemove, DELETE_SERVICE);
         Assertions.assertFalse(needNotify2Remove);
         
     }
@@ -189,22 +207,27 @@ public class NamingFuzzyWatchContextServiceTest {
         when(serviceManager.getSingletons(eq("namespace"))).thenReturn(serviceSet);
         
         String connectionId = "connection";
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
         namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, connectionId);
-        Set<String> matchServiceKeys = namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
+        Set<String> matchServiceKeys =
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
         Assertions.assertEquals(10, matchServiceKeys.size());
         
         String serviceKeyToRemove = (String) (matchServiceKeys.toArray()[0]);
         String[] parseServiceKey = NamingUtils.parseServiceKey(serviceKeyToRemove);
-        Service serviceToRemove = Service.newService(parseServiceKey[0], parseServiceKey[1], parseServiceKey[2]);
+        Service serviceToRemove =
+            Service.newService(parseServiceKey[0], parseServiceKey[1], parseServiceKey[2]);
         
         Set<Service> serviceSet2 = new HashSet<>(serviceSet);
         serviceSet2.remove(serviceToRemove);
         when(serviceManager.getSingletons(eq("namespace"))).thenReturn(serviceSet2);
         //delete on over load
-        boolean needNotify = namingFuzzyWatchContextService.syncServiceContext(serviceToRemove, DELETE_SERVICE);
+        boolean needNotify =
+            namingFuzzyWatchContextService.syncServiceContext(serviceToRemove, DELETE_SERVICE);
         Assertions.assertTrue(needNotify);
-        Set<String> matchServiceKeys2 = namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
+        Set<String> matchServiceKeys2 =
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
         Assertions.assertFalse(matchServiceKeys2.contains(serviceKeyToRemove));
         Assertions.assertEquals(10, matchServiceKeys2.size());
         
@@ -214,7 +237,8 @@ public class NamingFuzzyWatchContextServiceTest {
     void testTrimContext() throws NacosException {
         tMockedStatic.when(() -> GlobalConfig.getMaxPatternCount()).thenReturn(20);
         tMockedStatic.when(() -> GlobalConfig.getMaxMatchedServiceCount()).thenReturn(5);
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
         
         //mock services
         Set<Service> serviceSet = new HashSet<>();
@@ -227,20 +251,25 @@ public class NamingFuzzyWatchContextServiceTest {
         namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, connectionId);
         String connectionId2 = "connection22";
         namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, connectionId2);
-        Set<String> matchServiceKeys = namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
+        Set<String> matchServiceKeys =
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
         //
         namingFuzzyWatchContextService.trimFuzzyWatchContext();
-        Set<String> matchServiceKeys2 = namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
+        Set<String> matchServiceKeys2 =
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
         Assertions.assertEquals(matchServiceKeys, matchServiceKeys2);
         
         namingFuzzyWatchContextService.removeFuzzyWatchContext(groupKeyPattern, connectionId2);
         namingFuzzyWatchContextService.onEvent(
-                new ClientOperationEvent.ClientReleaseEvent(new ConnectionBasedClient(connectionId, true, 0L), true));
+            new ClientOperationEvent.ClientReleaseEvent(
+                new ConnectionBasedClient(connectionId, true, 0L), true));
         namingFuzzyWatchContextService.trimFuzzyWatchContext();
-        Set<String> matchServiceKeys3 = namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
+        Set<String> matchServiceKeys3 =
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
         Assertions.assertEquals(matchServiceKeys3, matchServiceKeys2);
         namingFuzzyWatchContextService.trimFuzzyWatchContext();
-        Set<String> matchServiceKeys4 = namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
+        Set<String> matchServiceKeys4 =
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
         Assertions.assertEquals(0, matchServiceKeys4.size());
         
     }

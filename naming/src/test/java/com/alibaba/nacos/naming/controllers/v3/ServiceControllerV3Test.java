@@ -82,8 +82,10 @@ class ServiceControllerV3Test {
     
     @BeforeEach
     void setUp() throws Exception {
-        serviceControllerV3 = new ServiceControllerV3(serviceOperatorV2, selectorManager, catalogServiceV2);
+        serviceControllerV3 =
+            new ServiceControllerV3(serviceOperatorV2, selectorManager, catalogServiceV2);
         subscriber = new SmartSubscriber() {
+            
             @Override
             public List<Class<? extends Event>> subscribeTypes() {
                 List<Class<? extends Event>> result = new LinkedList<>();
@@ -120,8 +122,9 @@ class ServiceControllerV3Test {
         
         Result<String> actual = serviceControllerV3.create(serviceForm);
         verify(serviceOperatorV2).create(
-                eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
-                any(ServiceMetadata.class));
+            eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP,
+                "service")),
+            any(ServiceMetadata.class));
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
     }
@@ -134,7 +137,7 @@ class ServiceControllerV3Test {
         serviceForm.setServiceName("service");
         Result<String> actual = serviceControllerV3.remove(serviceForm);
         verify(serviceOperatorV2).delete(
-                Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"));
+            Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"));
         assertEquals("ok", actual.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
     }
@@ -147,7 +150,8 @@ class ServiceControllerV3Test {
         serviceForm.setServiceName("service");
         ServiceDetailInfo expected = new ServiceDetailInfo();
         when(serviceOperatorV2.queryService(
-                Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"))).thenReturn(
+            Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")))
+            .thenReturn(
                 expected);
         Result<ServiceDetailInfo> actual = serviceControllerV3.detail(serviceForm);
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
@@ -158,8 +162,9 @@ class ServiceControllerV3Test {
     void testList() throws Exception {
         Page<ServiceView> result = new Page<>();
         result.getPageItems().add(new ServiceView());
-        when(catalogServiceV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "serviceName", 1, 10,
-                false)).thenReturn(result);
+        when(catalogServiceV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP,
+            "serviceName", 1, 10,
+            false)).thenReturn(result);
         ServiceListForm serviceListForm = new ServiceListForm();
         serviceListForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         serviceListForm.setGroupNameParam(Constants.DEFAULT_GROUP);
@@ -183,8 +188,9 @@ class ServiceControllerV3Test {
         serviceForm.setSelector("");
         Result<String> actual = serviceControllerV3.update(serviceForm);
         verify(serviceOperatorV2).update(
-                eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
-                any(ServiceMetadata.class));
+            eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP,
+                "service")),
+            any(ServiceMetadata.class));
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
         TimeUnit.SECONDS.sleep(3);
@@ -201,8 +207,10 @@ class ServiceControllerV3Test {
         subscribers.getPageItems().get(0).setNamespaceId("testNamespace");
         subscribers.getPageItems().get(0).setServiceName("testService");
         subscribers.getPageItems().get(0).setGroupName("testGroup");
-        Mockito.when(serviceOperatorV2.getSubscribers("testNamespace", "testService", "testGroup", true, 1, 10))
-                .thenReturn(subscribers);
+        Mockito
+            .when(serviceOperatorV2.getSubscribers("testNamespace", "testService", "testGroup",
+                true, 1, 10))
+            .thenReturn(subscribers);
         
         ServiceForm serviceForm = new ServiceForm();
         serviceForm.setNamespaceId("testNamespace");
@@ -213,7 +221,8 @@ class ServiceControllerV3Test {
         pageForm.setPageSize(10);
         AggregationForm aggregationForm = new AggregationForm();
         aggregationForm.setAggregation(true);
-        Page<SubscriberInfo> actual = serviceControllerV3.subscribers(serviceForm, pageForm, aggregationForm).getData();
+        Page<SubscriberInfo> actual =
+            serviceControllerV3.subscribers(serviceForm, pageForm, aggregationForm).getData();
         assertEquals(subscribers, actual);
     }
     

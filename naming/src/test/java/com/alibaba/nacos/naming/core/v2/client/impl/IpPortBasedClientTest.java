@@ -71,14 +71,16 @@ class IpPortBasedClientTest {
     
     @Test
     void testIsExpire() {
-        long mustExpireTime = ipPortBasedClient.getLastUpdatedTime() + ClientConfig.getInstance().getClientExpiredTime() * 2;
+        long mustExpireTime = ipPortBasedClient.getLastUpdatedTime()
+            + ClientConfig.getInstance().getClientExpiredTime() * 2;
         assertTrue(ipPortBasedClient.isExpire(mustExpireTime));
     }
     
     @Test
     void testGetAllInstancePublishInfo() {
         ipPortBasedClient.addServiceInstance(service, instancePublishInfo);
-        Collection<InstancePublishInfo> allInstancePublishInfo = ipPortBasedClient.getAllInstancePublishInfo();
+        Collection<InstancePublishInfo> allInstancePublishInfo =
+            ipPortBasedClient.getAllInstancePublishInfo();
         assertEquals(1, allInstancePublishInfo.size());
         assertEquals(allInstancePublishInfo.iterator().next(), instancePublishInfo);
     }

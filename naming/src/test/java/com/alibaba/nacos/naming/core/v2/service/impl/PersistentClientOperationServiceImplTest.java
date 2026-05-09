@@ -93,11 +93,15 @@ class PersistentClientOperationServiceImplTest {
         when(service.getNamespace()).thenReturn("n");
         when(applicationContext.getBean(ProtocolManager.class)).thenReturn(protocolManager);
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
-        when(serializer.serialize(any(PersistentClientOperationServiceImpl.InstanceStoreRequest.class))).thenReturn(new byte[1]);
+        when(serializer
+            .serialize(any(PersistentClientOperationServiceImpl.InstanceStoreRequest.class)))
+            .thenReturn(new byte[1]);
         ApplicationUtils.injectContext(applicationContext);
-        Field serializerField = PersistentClientOperationServiceImpl.class.getDeclaredField("serializer");
+        Field serializerField =
+            PersistentClientOperationServiceImpl.class.getDeclaredField("serializer");
         serializerField.setAccessible(true);
-        persistentClientOperationServiceImpl = new PersistentClientOperationServiceImpl(clientManager);
+        persistentClientOperationServiceImpl =
+            new PersistentClientOperationServiceImpl(clientManager);
         serializerField.set(persistentClientOperationServiceImpl, serializer);
         
     }
@@ -112,7 +116,8 @@ class PersistentClientOperationServiceImplTest {
     
     @Test
     void testRegisterAndDeregisterInstance() throws Exception {
-        Field clientManagerField = PersistentClientOperationServiceImpl.class.getDeclaredField("clientManager");
+        Field clientManagerField =
+            PersistentClientOperationServiceImpl.class.getDeclaredField("clientManager");
         clientManagerField.setAccessible(true);
         // Test register instance
         persistentClientOperationServiceImpl.registerInstance(service, instance, clientId);
@@ -124,7 +129,8 @@ class PersistentClientOperationServiceImplTest {
     
     @Test
     void updateInstance() throws Exception {
-        Field clientManagerField = PersistentClientOperationServiceImpl.class.getDeclaredField("clientManager");
+        Field clientManagerField =
+            PersistentClientOperationServiceImpl.class.getDeclaredField("clientManager");
         clientManagerField.setAccessible(true);
         // Test register instance
         persistentClientOperationServiceImpl.updateInstance(service, instance, clientId);
@@ -154,7 +160,8 @@ class PersistentClientOperationServiceImplTest {
     
     @Test
     void testOnApply() {
-        PersistentClientOperationServiceImpl.InstanceStoreRequest request = new PersistentClientOperationServiceImpl.InstanceStoreRequest();
+        PersistentClientOperationServiceImpl.InstanceStoreRequest request =
+            new PersistentClientOperationServiceImpl.InstanceStoreRequest();
         Service service1 = Service.newService("A", "B", "C");
         request.setService(service1);
         request.setClientId("xxxx");
@@ -167,7 +174,8 @@ class PersistentClientOperationServiceImplTest {
         IpPortBasedClient ipPortBasedClient = Mockito.mock(IpPortBasedClient.class);
         Mockito.when(clientManager.getClient(Mockito.anyString())).thenReturn(ipPortBasedClient);
         
-        WriteRequest writeRequest = WriteRequest.newBuilder().setOperation(DataOperation.ADD.name()).build();
+        WriteRequest writeRequest =
+            WriteRequest.newBuilder().setOperation(DataOperation.ADD.name()).build();
         Response response = persistentClientOperationServiceImpl.onApply(writeRequest);
         assertTrue(response.getSuccess());
         assertTrue(ServiceManager.getInstance().containSingleton(service1));
@@ -188,7 +196,8 @@ class PersistentClientOperationServiceImplTest {
     
     @Test
     void testOnApplyChange() {
-        PersistentClientOperationServiceImpl.InstanceStoreRequest request = new PersistentClientOperationServiceImpl.InstanceStoreRequest();
+        PersistentClientOperationServiceImpl.InstanceStoreRequest request =
+            new PersistentClientOperationServiceImpl.InstanceStoreRequest();
         Service service1 = Service.newService("A", "B", "C");
         request.setService(service1);
         request.setClientId("xxxx");
@@ -196,8 +205,10 @@ class PersistentClientOperationServiceImplTest {
         Mockito.when(serializer.deserialize(Mockito.any())).thenReturn(request);
         Mockito.when(clientManager.contains(Mockito.anyString())).thenReturn(true);
         when(clientManager.getClient(Mockito.anyString())).thenReturn(ipPortBasedClient);
-        when(ipPortBasedClient.getAllPublishedService()).thenReturn(Collections.singletonList(service1));
-        WriteRequest writeRequest = WriteRequest.newBuilder().setOperation(DataOperation.ADD.name()).build();
+        when(ipPortBasedClient.getAllPublishedService())
+            .thenReturn(Collections.singletonList(service1));
+        WriteRequest writeRequest =
+            WriteRequest.newBuilder().setOperation(DataOperation.ADD.name()).build();
         writeRequest = WriteRequest.newBuilder().setOperation(DataOperation.ADD.name()).build();
         Response response = persistentClientOperationServiceImpl.onApply(writeRequest);
         assertTrue(response.getSuccess());

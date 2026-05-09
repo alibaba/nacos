@@ -71,10 +71,13 @@ class ClientAttributesFilterTest {
     
     @BeforeEach
     void setUp() {
-        RequestContextHolder.getContext().getBasicContext().setUserAgent("Nacos-Java-Client:v2.4.0");
+        RequestContextHolder.getContext().getBasicContext()
+            .setUserAgent("Nacos-Java-Client:v2.4.0");
         RequestContextHolder.getContext().getBasicContext().setApp("testApp");
-        RequestContextHolder.getContext().getBasicContext().getAddressContext().setRemoteIp("1.1.1.1");
-        RequestContextHolder.getContext().getBasicContext().getAddressContext().setSourceIp("2.2.2.2");
+        RequestContextHolder.getContext().getBasicContext().getAddressContext()
+            .setRemoteIp("1.1.1.1");
+        RequestContextHolder.getContext().getBasicContext().getAddressContext()
+            .setSourceIp("2.2.2.2");
     }
     
     @AfterEach
@@ -85,8 +88,8 @@ class ClientAttributesFilterTest {
     @Test
     void testDoFilterForRegisterUri() throws IOException {
         when(request.getRequestURI()).thenReturn(
-                UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT);
+            UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT);
         when(request.getMethod()).thenReturn("POST");
         filter.doFilter(request, response, new MockFilterChain(servlet, new MockRegisterFilter()));
     }
@@ -98,8 +101,8 @@ class ClientAttributesFilterTest {
         when(request.getParameter("encoding")).thenReturn("utf-8");
         when(clientManager.getClient("127.0.0.1:8848#true")).thenReturn(client);
         when(request.getRequestURI()).thenReturn(
-                UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/beat");
+            UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/beat");
         when(request.getMethod()).thenReturn("PUT");
         filter.doFilter(request, response, new MockFilterChain());
         verify(client).setAttributes(any(ClientAttributes.class));
@@ -108,14 +111,18 @@ class ClientAttributesFilterTest {
     private static class MockRegisterFilter implements Filter {
         
         @Override
-        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
-                throws IOException, ServletException {
-            Optional<ClientAttributes> clientAttributes = ClientAttributesFilter.getCurrentClientAttributes();
+        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+            FilterChain filterChain)
+            throws IOException, ServletException {
+            Optional<ClientAttributes> clientAttributes =
+                ClientAttributesFilter.getCurrentClientAttributes();
             assertTrue(clientAttributes.isPresent());
             assertEquals("Nacos-Java-Client:v2.4.0",
-                    clientAttributes.get().getClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER));
-            assertEquals("testApp", clientAttributes.get().getClientAttribute(HttpHeaderConsts.APP_FILED));
-            assertEquals("2.2.2.2", clientAttributes.get().getClientAttribute(HttpHeaderConsts.CLIENT_IP));
+                clientAttributes.get().getClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER));
+            assertEquals("testApp",
+                clientAttributes.get().getClientAttribute(HttpHeaderConsts.APP_FILED));
+            assertEquals("2.2.2.2",
+                clientAttributes.get().getClientAttribute(HttpHeaderConsts.CLIENT_IP));
         }
     }
 }

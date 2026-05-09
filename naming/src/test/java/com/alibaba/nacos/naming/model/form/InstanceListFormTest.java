@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InstanceListFormTest {
-
+    
     @Test
     void testFillDefaultValueWhenClusterNameIsBlank() throws NacosApiException {
         InstanceListForm form = new InstanceListForm();
@@ -32,7 +32,7 @@ class InstanceListFormTest {
         form.validate();
         assertEquals("", form.getClusterName());
     }
-
+    
     @Test
     void testFillDefaultValueWhenClusterNameIsProvided() throws NacosApiException {
         InstanceListForm form = new InstanceListForm();
@@ -41,7 +41,7 @@ class InstanceListFormTest {
         form.validate();
         assertEquals("myCluster", form.getClusterName());
     }
-
+    
     @Test
     void testFillDefaultValueForNamespaceAndGroup() throws NacosApiException {
         InstanceListForm form = new InstanceListForm();
@@ -50,7 +50,7 @@ class InstanceListFormTest {
         assertEquals(Constants.DEFAULT_NAMESPACE_ID, form.getNamespaceId());
         assertEquals(Constants.DEFAULT_GROUP, form.getGroupName());
     }
-
+    
     @Test
     void testValidateThrowsExceptionWhenServiceNameIsBlank() {
         InstanceListForm form = new InstanceListForm();

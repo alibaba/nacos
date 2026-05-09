@@ -61,13 +61,17 @@ public class ClusterControllerV3 {
         ClusterMetadata clusterMetadata = new ClusterMetadata();
         clusterMetadata.setHealthyCheckPort(updateClusterForm.getCheckPort());
         clusterMetadata.setUseInstancePortForCheck(updateClusterForm.isUseInstancePort4Check());
-        AbstractHealthChecker healthChecker = HealthCheckerFactory.deserialize(updateClusterForm.getHealthChecker());
+        AbstractHealthChecker healthChecker =
+            HealthCheckerFactory.deserialize(updateClusterForm.getHealthChecker());
         clusterMetadata.setHealthChecker(healthChecker);
         clusterMetadata.setHealthyCheckType(healthChecker.getType());
-        clusterMetadata.setExtendData(UtilsAndCommons.parseMetadata(updateClusterForm.getMetadata()));
+        clusterMetadata
+            .setExtendData(UtilsAndCommons.parseMetadata(updateClusterForm.getMetadata()));
         
-        clusterOperatorV2.updateClusterMetadata(updateClusterForm.getNamespaceId(), updateClusterForm.getGroupName(),
-                updateClusterForm.getServiceName(), updateClusterForm.getClusterName(), clusterMetadata);
+        clusterOperatorV2.updateClusterMetadata(updateClusterForm.getNamespaceId(),
+            updateClusterForm.getGroupName(),
+            updateClusterForm.getServiceName(), updateClusterForm.getClusterName(),
+            clusterMetadata);
         
         return Result.success("ok");
     }

@@ -203,7 +203,8 @@ class DistroClientTransportAgentTest {
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
         when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-        doThrow(new NacosException()).when(clusterRpcClientProxy).asyncRequest(eq(member), any(), any());
+        doThrow(new NacosException()).when(clusterRpcClientProxy).asyncRequest(eq(member), any(),
+            any());
         transportAgent.syncData(new DistroData(), member.getAddress(), distroCallback);
         verify(distroCallback).onFailed(any(NacosException.class));
     }
@@ -352,7 +353,8 @@ class DistroClientTransportAgentTest {
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
         when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-        doThrow(new NacosException()).when(clusterRpcClientProxy).asyncRequest(eq(member), any(), any());
+        doThrow(new NacosException()).when(clusterRpcClientProxy).asyncRequest(eq(member), any(),
+            any());
         transportAgent.syncVerifyData(verifyData, member.getAddress(), distroCallback);
         verify(distroCallback).onFailed(any(NacosException.class));
     }
@@ -416,7 +418,8 @@ class DistroClientTransportAgentTest {
             when(memberManager.find(member.getAddress())).thenReturn(member);
             member.setState(NodeState.UP);
             when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-            when(clusterRpcClientProxy.sendRequest(eq(member), any())).thenThrow(new NacosException());
+            when(clusterRpcClientProxy.sendRequest(eq(member), any()))
+                .thenThrow(new NacosException());
             transportAgent.getData(new DistroKey(), member.getAddress());
         });
     }
@@ -470,7 +473,8 @@ class DistroClientTransportAgentTest {
             when(memberManager.find(member.getAddress())).thenReturn(member);
             member.setState(NodeState.UP);
             when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-            when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class))).thenThrow(new NacosException());
+            when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class)))
+                .thenThrow(new NacosException());
             transportAgent.getDatumSnapshot(member.getAddress());
         });
     }
@@ -481,7 +485,8 @@ class DistroClientTransportAgentTest {
             when(memberManager.find(member.getAddress())).thenReturn(member);
             member.setState(NodeState.UP);
             when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-            when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class))).thenReturn(response);
+            when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class)))
+                .thenReturn(response);
             response.setErrorInfo(ResponseCode.FAIL.getCode(), "TEST");
             transportAgent.getDatumSnapshot(member.getAddress());
         });
@@ -492,7 +497,8 @@ class DistroClientTransportAgentTest {
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
         when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-        when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class))).thenReturn(response);
+        when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class)))
+            .thenReturn(response);
         transportAgent.getDatumSnapshot(member.getAddress());
     }
 }

@@ -46,7 +46,8 @@ public class NamingEnabledFilter implements NacosPackageExcludeFilter {
         if (StringUtils.isEmpty(functionMode)) {
             return false;
         }
-        return !FUNCTION_MODE_NAMING.equals(functionMode) && !FUNCTION_MODE_MICROSERVICE.equals(functionMode)
-                && !FUNCTION_MODE_AI.equals(functionMode);
+        return !FUNCTION_MODE_NAMING.equals(functionMode)
+            && !FUNCTION_MODE_MICROSERVICE.equals(functionMode)
+            && !FUNCTION_MODE_AI.equals(functionMode);
     }
 }

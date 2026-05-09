@@ -39,7 +39,8 @@ class NamingEventPublisherFactoryTest {
         originalEventPublisherMap = new HashMap<>(NotifyCenter.getPublisherMap());
         NotifyCenter.getPublisherMap().clear();
         // Protect other unit test publisher affect this case.
-        Field field = ReflectionUtils.findField(NamingEventPublisherFactory.class, "publisher", Map.class);
+        Field field =
+            ReflectionUtils.findField(NamingEventPublisherFactory.class, "publisher", Map.class);
         field.setAccessible(true);
         Map map = (Map) field.get(NamingEventPublisherFactory.getInstance());
         map.clear();
@@ -58,7 +59,9 @@ class NamingEventPublisherFactoryTest {
         NamingEventPublisherFactory.getInstance().apply(TestEvent.TestEvent2.class, Byte.SIZE);
         NamingEventPublisherFactory.getInstance().apply(TestEvent.class, Byte.SIZE);
         String expectedStatus =
-                "Naming event publisher statues:\n" + "\tPublisher TestEvent                     : shutdown=false, queue=      0/8      \n";
-        assertThat(NamingEventPublisherFactory.getInstance().getAllPublisherStatues(), is(expectedStatus));
+            "Naming event publisher statues:\n"
+                + "\tPublisher TestEvent                     : shutdown=false, queue=      0/8      \n";
+        assertThat(NamingEventPublisherFactory.getInstance().getAllPublisherStatues(),
+            is(expectedStatus));
     }
 }

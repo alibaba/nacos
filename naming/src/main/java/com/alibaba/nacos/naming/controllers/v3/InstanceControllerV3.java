@@ -83,8 +83,9 @@ public class InstanceControllerV3 {
     
     private final CatalogService catalogService;
     
-    public InstanceControllerV3(SwitchDomain switchDomain, InstanceOperatorClientImpl instanceService,
-            CatalogService catalogService) {
+    public InstanceControllerV3(SwitchDomain switchDomain,
+        InstanceOperatorClientImpl instanceService,
+        CatalogService catalogService) {
         this.switchDomain = switchDomain;
         this.instanceService = instanceService;
         this.catalogService = catalogService;
@@ -102,14 +103,16 @@ public class InstanceControllerV3 {
         instanceForm.validate();
         NamingRequestUtil.checkWeight(instanceForm.getWeight());
         // build instance
-        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
+        Instance instance =
+            InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
         String namespaceId = instanceForm.getNamespaceId();
         String groupName = instanceForm.getGroupName();
         String serviceName = instanceForm.getServiceName();
         instanceService.registerInstance(namespaceId, groupName, serviceName, instance);
         NotifyCenter.publishEvent(
-                new RegisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
-                        namespaceId, groupName, serviceName, instance.getIp(), instance.getPort()));
+            new RegisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIp(), false,
+                namespaceId, groupName, serviceName, instance.getIp(), instance.getPort()));
         
         return Result.success("ok");
     }
@@ -125,13 +128,16 @@ public class InstanceControllerV3 {
         // check param
         instanceForm.validate();
         // build instance
-        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
+        Instance instance =
+            InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
         instanceService.removeInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), instance);
+            instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
-                new DeregisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
-                        DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                        instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
+            new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIp(), false,
+                DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(),
+                instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
         
         return Result.success("ok");
     }
@@ -148,13 +154,16 @@ public class InstanceControllerV3 {
         instanceForm.validate();
         NamingRequestUtil.checkWeight(instanceForm.getWeight());
         // build instance
-        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
+        Instance instance =
+            InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
         instanceService.updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), instance);
+            instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
-                new UpdateInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(),
-                        instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
-                        instance.getIp(), instance.getPort(), instance.getMetadata()));
+            new UpdateInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIp(),
+                instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(),
+                instance.getIp(), instance.getPort(), instance.getMetadata()));
         
         return Result.success("ok");
     }
@@ -164,20 +173,23 @@ public class InstanceControllerV3 {
      */
     @CanDistro
     @PutMapping(value = "/metadata/batch")
-    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate",
+        name = "HttpNamingInstanceMetadataBatchUpdate")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    public Result<InstanceMetadataBatchResult> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
-            throws NacosException {
+    public Result<InstanceMetadataBatchResult> batchUpdateInstanceMetadata(
+        InstanceMetadataBatchOperationForm form)
+        throws NacosException {
         form.validate();
         
         List<Instance> targetInstances = parseBatchInstances(form.getInstances());
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(form.getMetadata());
-        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form),
+        InstanceOperationInfo instanceOperationInfo =
+            buildOperationInfo(buildCompositeServiceName(form),
                 form.getConsistencyType(), targetInstances);
         
         List<String> operatedInstances = instanceService.batchUpdateMetadata(form.getNamespaceId(),
-                instanceOperationInfo, targetMetadata);
+            instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
         
         return Result.success(new InstanceMetadataBatchResult(ipList));
@@ -188,25 +200,28 @@ public class InstanceControllerV3 {
      */
     @CanDistro
     @DeleteMapping("/metadata/batch")
-    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate",
+        name = "HttpNamingInstanceMetadataBatchUpdate")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    public Result<InstanceMetadataBatchResult> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
-            throws NacosException {
+    public Result<InstanceMetadataBatchResult> batchDeleteInstanceMetadata(
+        InstanceMetadataBatchOperationForm form)
+        throws NacosException {
         form.validate();
         List<Instance> targetInstances = parseBatchInstances(form.getInstances());
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(form.getMetadata());
-        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form),
+        InstanceOperationInfo instanceOperationInfo =
+            buildOperationInfo(buildCompositeServiceName(form),
                 form.getConsistencyType(), targetInstances);
         List<String> operatedInstances = instanceService.batchDeleteMetadata(form.getNamespaceId(),
-                instanceOperationInfo, targetMetadata);
+            instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
         
         return Result.success(new InstanceMetadataBatchResult(ipList));
     }
     
     private InstanceOperationInfo buildOperationInfo(String serviceName, String consistencyType,
-            List<Instance> instances) {
+        List<Instance> instances) {
         if (!CollectionUtils.isEmpty(instances)) {
             for (Instance instance : instances) {
                 if (StringUtils.isBlank(instance.getClusterName())) {
@@ -222,7 +237,8 @@ public class InstanceControllerV3 {
             return JacksonUtils.toObj(instances, new TypeReference<List<Instance>>() {
             });
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'instances' is illegal, ignore this operation", e);
+            Loggers.SRV_LOG
+                .warn("UPDATE-METADATA: Param 'instances' is illegal, ignore this operation", e);
         }
         return Collections.emptyList();
     }
@@ -235,7 +251,8 @@ public class InstanceControllerV3 {
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> partialUpdateInstance(InstanceForm instanceForm) throws Exception {
         instanceForm.validate();
-        InstancePatchObject patchObject = new InstancePatchObject(instanceForm.getClusterName(), instanceForm.getIp(),
+        InstancePatchObject patchObject =
+            new InstancePatchObject(instanceForm.getClusterName(), instanceForm.getIp(),
                 instanceForm.getPort());
         String metadata = instanceForm.getMetadata();
         if (StringUtils.isNotBlank(metadata)) {
@@ -251,7 +268,7 @@ public class InstanceControllerV3 {
             patchObject.setEnabled(enabled);
         }
         instanceService.patchInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), patchObject);
+            instanceForm.getServiceName(), patchObject);
         return Result.success("ok");
     }
     
@@ -262,10 +279,13 @@ public class InstanceControllerV3 {
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<? extends Instance>> list(InstanceListForm instanceListForm) throws NacosException {
+    public Result<List<? extends Instance>> list(InstanceListForm instanceListForm)
+        throws NacosException {
         instanceListForm.validate();
-        List<? extends Instance> instances = catalogService.listInstances(instanceListForm.getNamespaceId(),
-                instanceListForm.getGroupName(), instanceListForm.getServiceName(), instanceListForm.getClusterName());
+        List<? extends Instance> instances =
+            catalogService.listInstances(instanceListForm.getNamespaceId(),
+                instanceListForm.getGroupName(), instanceListForm.getServiceName(),
+                instanceListForm.getClusterName());
         if (instanceListForm.getHealthyOnly()) {
             instances = instances.stream().filter(Instance::isHealthy).toList();
         }
@@ -285,7 +305,7 @@ public class InstanceControllerV3 {
         String ip = instanceForm.getIp();
         int port = instanceForm.getPort();
         Instance instance = instanceService.getInstance(namespaceId, instanceForm.getGroupName(),
-                instanceForm.getServiceName(), clusterName, ip, port);
+            instanceForm.getServiceName(), clusterName, ip, port);
         return Result.success(instance);
     }
     

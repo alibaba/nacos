@@ -65,9 +65,11 @@ class NamingSubscriberServiceAggregationImplTest {
     void setUp() throws Exception {
         aggregation = new NamingSubscriberServiceAggregationImpl(local, memberManager);
         Subscriber subscriber = new Subscriber("local", "", "", "", namespace, serviceName, 0);
-        when(local.getSubscribers(namespace, serviceName)).thenReturn(Collections.singletonList(subscriber));
+        when(local.getSubscribers(namespace, serviceName))
+            .thenReturn(Collections.singletonList(subscriber));
         when(local.getSubscribers(service)).thenReturn(Collections.singletonList(subscriber));
-        when(local.getFuzzySubscribers(namespace, serviceName)).thenReturn(Collections.singletonList(subscriber));
+        when(local.getFuzzySubscribers(namespace, serviceName))
+            .thenReturn(Collections.singletonList(subscriber));
         when(local.getFuzzySubscribers(service)).thenReturn(Collections.singletonList(subscriber));
         members = new HashMap<>();
         members.put("1", Mockito.mock(Member.class));

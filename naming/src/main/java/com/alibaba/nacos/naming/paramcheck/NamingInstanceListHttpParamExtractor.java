@@ -31,14 +31,15 @@ import java.util.List;
  * @author zhuoguang
  */
 public class NamingInstanceListHttpParamExtractor extends AbstractHttpParamExtractor {
-
+    
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) {
         ParamInfo paramInfo = new ParamInfo();
         String serviceName = request.getParameter("serviceName");
         String groupName = request.getParameter("groupName");
         String groupServiceName = serviceName;
-        if (StringUtils.isNotBlank(groupServiceName) && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+        if (StringUtils.isNotBlank(groupServiceName)
+            && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
             String[] splits = groupServiceName.split(Constants.SERVICE_INFO_SPLITER, 2);
             groupName = splits[0];
             serviceName = splits[1];

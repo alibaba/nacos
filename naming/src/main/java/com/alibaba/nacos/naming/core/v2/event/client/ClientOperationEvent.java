@@ -118,8 +118,9 @@ public class ClientOperationEvent extends Event {
          */
         private boolean isInitializing;
         
-        public ClientFuzzyWatchEvent(String groupKeyPattern, String clientId, Set<String> clientReceivedServiceKeys,
-                boolean isInitializing) {
+        public ClientFuzzyWatchEvent(String groupKeyPattern, String clientId,
+            Set<String> clientReceivedServiceKeys,
+            boolean isInitializing) {
             super(clientId, null);
             this.groupKeyPattern = groupKeyPattern;
             this.clientReceivedServiceKeys = clientReceivedServiceKeys;

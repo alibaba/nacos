@@ -122,7 +122,8 @@ class DistroClientDataProcessorTest {
         result.setNamespaces(Collections.singletonList("ns"));
         result.setGroupNames(Collections.singletonList("group"));
         result.setServiceNames(Collections.singletonList("service"));
-        result.setInstancePublishInfos(Collections.singletonList(new InstancePublishInfo("3.3.3.3", 1111)));
+        result.setInstancePublishInfos(
+            Collections.singletonList(new InstancePublishInfo("3.3.3.3", 1111)));
         return result;
     }
     
@@ -146,7 +147,8 @@ class DistroClientDataProcessorTest {
     @Test
     void testOnEventForStandalone() {
         EnvUtil.setIsStandalone(true);
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        distroClientDataProcessor
+            .onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
@@ -154,7 +156,8 @@ class DistroClientDataProcessorTest {
     @Test
     void testOnClientVerifyFailedEventWithoutClient() {
         when(clientManager.getClient(CLIENT_ID)).thenReturn(null);
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        distroClientDataProcessor
+            .onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
@@ -164,7 +167,8 @@ class DistroClientDataProcessorTest {
         client = mock(Client.class);
         when(client.isEphemeral()).thenReturn(false);
         when(clientManager.getClient(CLIENT_ID)).thenReturn(client);
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        distroClientDataProcessor
+            .onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
@@ -172,15 +176,18 @@ class DistroClientDataProcessorTest {
     @Test
     void testOnClientVerifyFailedEventWithoutResponsible() {
         when(clientManager.isResponsibleClient(client)).thenReturn(false);
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        distroClientDataProcessor
+            .onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
     
     @Test
     void testOnClientVerifyFailedEventSuccess() {
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
-        verify(distroProtocol).syncToTarget(any(), eq(DataOperation.ADD), eq(MOCK_TARGET_SERVER), eq(0L));
+        distroClientDataProcessor
+            .onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        verify(distroProtocol).syncToTarget(any(), eq(DataOperation.ADD), eq(MOCK_TARGET_SERVER),
+            eq(0L));
         verify(distroProtocol, never()).sync(any(), any());
     }
     
@@ -258,7 +265,8 @@ class DistroClientDataProcessorTest {
         assertEquals(1, client.getAllPublishedService().size());
         Service service = Service.newService("batchData", "batchData", "batchData");
         Service singleton = ServiceManager.getInstance().getSingleton(service);
-        InstancePublishInfo info = client.getInstancePublishInfo(ServiceManager.getInstance().getSingleton(singleton));
+        InstancePublishInfo info =
+            client.getInstancePublishInfo(ServiceManager.getInstance().getSingleton(singleton));
         assertEquals("127.0.0.1", info.getIp());
         assertEquals(8080, info.getPort());
         
@@ -277,7 +285,8 @@ class DistroClientDataProcessorTest {
         assertEquals(2, batchInfo.getInstancePublishInfos().size());
         for (InstancePublishInfo instancePublishInfo : batchInfo.getInstancePublishInfos()) {
             assertEquals("127.0.0.1", instancePublishInfo.getIp());
-            assertTrue(instancePublishInfo.getPort() == 8080 || instancePublishInfo.getPort() == 8081);
+            assertTrue(
+                instancePublishInfo.getPort() == 8080 || instancePublishInfo.getPort() == 8081);
         }
         
         // batch
@@ -295,7 +304,8 @@ class DistroClientDataProcessorTest {
         assertEquals(2, batchInfo.getInstancePublishInfos().size());
         for (InstancePublishInfo instancePublishInfo : batchInfo.getInstancePublishInfos()) {
             assertEquals("127.0.0.1", instancePublishInfo.getIp());
-            assertTrue(instancePublishInfo.getPort() == 8080 || instancePublishInfo.getPort() == 8081);
+            assertTrue(
+                instancePublishInfo.getPort() == 8080 || instancePublishInfo.getPort() == 8081);
         }
         
         // single
@@ -321,7 +331,8 @@ class DistroClientDataProcessorTest {
         syncData.setNamespaces(Collections.singletonList("batchData"));
         syncData.setGroupNames(Collections.singletonList("batchData"));
         syncData.setServiceNames(Collections.singletonList("batchData"));
-        syncData.setInstancePublishInfos(Collections.singletonList(new InstancePublishInfo("127.0.0.1", 8080)));
+        syncData.setInstancePublishInfos(
+            Collections.singletonList(new InstancePublishInfo("127.0.0.1", 8080)));
         return syncData;
     }
     
@@ -333,17 +344,21 @@ class DistroClientDataProcessorTest {
         syncData.setAttributes(clientAttributes);
         syncData.setNamespaces(Collections.emptyList());
         BatchInstancePublishInfo batchInstancePublishInfo = new BatchInstancePublishInfo();
-        syncData.setBatchInstanceData(new BatchInstanceData(Collections.singletonList("batchData"), Collections.singletonList("batchData"),
-                Collections.singletonList("batchData"), Collections.singletonList(batchInstancePublishInfo)));
+        syncData.setBatchInstanceData(new BatchInstanceData(Collections.singletonList("batchData"),
+            Collections.singletonList("batchData"),
+            Collections.singletonList("batchData"),
+            Collections.singletonList(batchInstancePublishInfo)));
         batchInstancePublishInfo.setInstancePublishInfos(
-                Arrays.asList(new InstancePublishInfo("127.0.0.1", 8080), new InstancePublishInfo("127.0.0.1", 8081)));
+            Arrays.asList(new InstancePublishInfo("127.0.0.1", 8080),
+                new InstancePublishInfo("127.0.0.1", 8081)));
         return syncData;
     }
     
     @Test
     void testProcessVerifyData() {
         DistroClientVerifyInfo verifyInfo = new DistroClientVerifyInfo(CLIENT_ID, 0L);
-        when(serializer.deserialize(any(), eq(DistroClientVerifyInfo.class))).thenReturn(verifyInfo);
+        when(serializer.deserialize(any(), eq(DistroClientVerifyInfo.class)))
+            .thenReturn(verifyInfo);
         assertFalse(distroClientDataProcessor.processVerifyData(distroData, MOCK_TARGET_SERVER));
         when(clientManager.verifyClient(verifyInfo)).thenReturn(true);
         assertTrue(distroClientDataProcessor.processVerifyData(distroData, MOCK_TARGET_SERVER));
@@ -384,6 +399,7 @@ class DistroClientDataProcessorTest {
         assertEquals(1, list.size());
         assertEquals(DataOperation.VERIFY, list.iterator().next().getType());
         assertEquals(CLIENT_ID, list.iterator().next().getDistroKey().getResourceKey());
-        assertEquals(DistroClientDataProcessor.TYPE, list.iterator().next().getDistroKey().getResourceType());
+        assertEquals(DistroClientDataProcessor.TYPE,
+            list.iterator().next().getDistroKey().getResourceType());
     }
 }

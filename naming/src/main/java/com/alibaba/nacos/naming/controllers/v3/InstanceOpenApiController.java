@@ -92,8 +92,9 @@ public class InstanceOpenApiController {
     @PostMapping
     @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.OPEN_API)
-    public Result<String> register(InstanceForm instanceForm, @RequestParam(defaultValue = "false") boolean heartBeat)
-            throws NacosException {
+    public Result<String> register(InstanceForm instanceForm,
+        @RequestParam(defaultValue = "false") boolean heartBeat)
+        throws NacosException {
         // check param
         instanceForm.validate();
         if (heartBeat) {
@@ -120,13 +121,16 @@ public class InstanceOpenApiController {
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
-        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
+        Instance instance =
+            InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
         instanceOperator.removeInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), instance);
+            instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
-                new DeregisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
-                        DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                        instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
+            new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIp(), false,
+                DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(),
+                instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
     
@@ -153,27 +157,31 @@ public class InstanceOpenApiController {
         String namespaceId = instanceForm.getNamespaceId();
         String groupName = instanceForm.getGroupName();
         String serviceName = instanceForm.getServiceName();
-        ServiceInfo serviceInfo = instanceOperator.listInstance(namespaceId, groupName, serviceName, null,
+        ServiceInfo serviceInfo =
+            instanceOperator.listInstance(namespaceId, groupName, serviceName, null,
                 instanceForm.getClusterName(), false);
         return Result.success(serviceInfo.getHosts());
     }
     
     private int doHeartBeat(InstanceForm instanceForm) throws NacosException {
         BeatInfoInstanceBuilder builder = BeatInfoInstanceBuilder.newBuilder();
-        return instanceOperator.handleBeat(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), instanceForm.getIp(), instanceForm.getPort(),
-                instanceForm.getClusterName(), null, builder);
+        return instanceOperator.handleBeat(instanceForm.getNamespaceId(),
+            instanceForm.getGroupName(),
+            instanceForm.getServiceName(), instanceForm.getIp(), instanceForm.getPort(),
+            instanceForm.getClusterName(), null, builder);
     }
     
     private void doRegisterInstance(InstanceForm instanceForm) throws NacosException {
         NamingRequestUtil.checkWeight(instanceForm.getWeight());
-        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
+        Instance instance =
+            InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
         String namespaceId = instanceForm.getNamespaceId();
         String groupName = instanceForm.getGroupName();
         String serviceName = instanceForm.getServiceName();
         instanceOperator.registerInstance(namespaceId, groupName, serviceName, instance);
         NotifyCenter.publishEvent(
-                new RegisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
-                        namespaceId, groupName, serviceName, instance.getIp(), instance.getPort()));
+            new RegisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIp(), false,
+                namespaceId, groupName, serviceName, instance.getIp(), instance.getPort()));
     }
 }
