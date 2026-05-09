@@ -48,14 +48,14 @@ class EventTest {
         RaftDbErrorEvent deserialized = JacksonUtils.toObj(json, RaftDbErrorEvent.class);
         assertInstanceOf(Throwable.class, deserialized.getEx());
     }
-
+    
     @Test
     void testRaftDbErrorEventNoArg() {
         RaftDbErrorEvent event = new RaftDbErrorEvent();
         assertNotNull(event);
         assertNull(event.getEx());
     }
-
+    
     @Test
     void testDerbyImportEventNotFinished() {
         DerbyImportEvent event = new DerbyImportEvent(false);

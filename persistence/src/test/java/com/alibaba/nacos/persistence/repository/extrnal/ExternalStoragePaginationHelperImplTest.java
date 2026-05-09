@@ -64,26 +64,30 @@ class ExternalStoragePaginationHelperImplTest {
     @Test
     void testFetchPageWithIllegalPageInfo() {
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPage("", "", new Object[] {}, 0, 0, null));
+            () -> externalStoragePaginationHelper.fetchPage("", "", new Object[] {}, 0, 0, null));
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPage("", "", new Object[] {}, 1, 0, null));
+            () -> externalStoragePaginationHelper.fetchPage("", "", new Object[] {}, 1, 0, null));
     }
     
     @Test
     void testFetchPageWithoutResult() {
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(null);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(null);
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1,
-                        null));
+            () -> externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL,
+                new Object[] {}, 1, 1,
+                null));
     }
     
     @Test
     void testFetchPageOnePage() {
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(1);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(1);
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1,
-                1, rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 1,
+            1, rowMapper);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(1, actual.getPagesAvailable());
@@ -92,11 +96,13 @@ class ExternalStoragePaginationHelperImplTest {
     
     @Test
     void testFetchPageMorePageFull() {
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(2);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(2);
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1,
-                1, rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 1,
+            1, rowMapper);
         assertEquals(2, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -105,13 +111,15 @@ class ExternalStoragePaginationHelperImplTest {
     
     @Test
     void testFetchPageMorePageNotFull() {
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
         List<Object> pageItems = new LinkedList<>();
         pageItems.add(new Object());
         pageItems.add(new Object());
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(pageItems);
-        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1,
-                2, rowMapper);
+        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 1,
+            2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -120,11 +128,13 @@ class ExternalStoragePaginationHelperImplTest {
     
     @Test
     void testFetchPageMorePageNextPage() {
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 2,
-                2, rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 2,
+            2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(2, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -133,9 +143,11 @@ class ExternalStoragePaginationHelperImplTest {
     
     @Test
     void testFetchPageMoreThanItemCount() {
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
-        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 3,
-                2, rowMapper);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
+        Page<Object> actual = externalStoragePaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 3,
+            2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(3, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -145,25 +157,29 @@ class ExternalStoragePaginationHelperImplTest {
     @Test
     void testFetchPageLimitWithIllegalPageInfo() {
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPageLimit("", "", new Object[] {}, 0, 0, null));
+            () -> externalStoragePaginationHelper.fetchPageLimit("", "", new Object[] {}, 0, 0,
+                null));
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPageLimit("", "", new Object[] {}, 1, 0, null));
+            () -> externalStoragePaginationHelper.fetchPageLimit("", "", new Object[] {}, 1, 0,
+                null));
     }
     
     @Test
     void testFetchPageLimitWithoutResult() {
         when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, Integer.class)).thenReturn(null);
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1,
-                        null));
+            () -> externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+                new Object[] {}, 1, 1,
+                null));
     }
     
     @Test
     void testFetchPageLimitOnePage() {
         when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, Integer.class)).thenReturn(1);
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+            Collections.singletonList(new Object()));
+        Page<Object> actual =
+            externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
                 new Object[] {}, 1, 1, rowMapper);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
@@ -175,8 +191,9 @@ class ExternalStoragePaginationHelperImplTest {
     void testFetchPageLimitMorePageFull() {
         when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, Integer.class)).thenReturn(2);
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+            Collections.singletonList(new Object()));
+        Page<Object> actual =
+            externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
                 new Object[] {}, 1, 1, rowMapper);
         assertEquals(2, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
@@ -191,7 +208,8 @@ class ExternalStoragePaginationHelperImplTest {
         pageItems.add(new Object());
         pageItems.add(new Object());
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(pageItems);
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+        Page<Object> actual =
+            externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
                 new Object[] {}, 1, 2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
@@ -203,8 +221,9 @@ class ExternalStoragePaginationHelperImplTest {
     void testFetchPageLimitMorePageNextPage() {
         when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, Integer.class)).thenReturn(3);
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+            Collections.singletonList(new Object()));
+        Page<Object> actual =
+            externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
                 new Object[] {}, 2, 2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(2, actual.getPageNumber());
@@ -215,7 +234,8 @@ class ExternalStoragePaginationHelperImplTest {
     @Test
     void testFetchPageLimitMoreThanItemCount() {
         when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, Integer.class)).thenReturn(3);
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+        Page<Object> actual =
+            externalStoragePaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
                 new Object[] {}, 3, 2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(3, actual.getPageNumber());
@@ -228,28 +248,34 @@ class ExternalStoragePaginationHelperImplTest {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 0, 0, null));
+            () -> externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 0, 0,
+                null));
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 0, null));
+            () -> externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 0,
+                null));
     }
     
     @Test
     void testFetchPageLimitWithPluginWithoutResult() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(null);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(null);
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1, null));
+            () -> externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1,
+                null));
     }
     
     @Test
     void testFetchPageLimitWithPluginPageOnePage() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(1);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(1);
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1, rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper,
+            queryMapper, 1, 1, rowMapper);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(1, actual.getPagesAvailable());
@@ -260,10 +286,12 @@ class ExternalStoragePaginationHelperImplTest {
     void testFetchPageLimitWithPluginMorePageFull() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(2);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(2);
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1, rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper,
+            queryMapper, 1, 1, rowMapper);
         assertEquals(2, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -272,14 +300,16 @@ class ExternalStoragePaginationHelperImplTest {
     
     @Test
     void testFetchPageLimitWithPluginMorePageNotFull() {
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
         List<Object> pageItems = new LinkedList<>();
         pageItems.add(new Object());
         pageItems.add(new Object());
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(pageItems);
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 2, rowMapper);
+        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper,
+            queryMapper, 1, 2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -290,10 +320,12 @@ class ExternalStoragePaginationHelperImplTest {
     void testFetchPageLimitWithPluginMorePageNextPage() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 2, 2, rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper,
+            queryMapper, 2, 2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(2, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -304,8 +336,10 @@ class ExternalStoragePaginationHelperImplTest {
     void testFetchPageLimitWithPluginMoreThanItemCount() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper, queryMapper, 3, 2, rowMapper);
+        when(jdbcTemplate.queryForObject(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
+        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(countMapper,
+            queryMapper, 3, 2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(3, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -315,9 +349,11 @@ class ExternalStoragePaginationHelperImplTest {
     @Test
     void testFetchPageLimitSimpleWithIllegalPageInfo() {
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 0, 0, null));
+            () -> externalStoragePaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 0, 0,
+                null));
         assertThrows(IllegalArgumentException.class,
-                () -> externalStoragePaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 1, 0, null));
+            () -> externalStoragePaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 1, 0,
+                null));
     }
     
     @Test
@@ -327,7 +363,8 @@ class ExternalStoragePaginationHelperImplTest {
         pageItems.add(new Object());
         pageItems.add(new Object());
         when(jdbcTemplate.query(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(pageItems);
-        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(QUERY_SQL, new Object[]{}, 3, 1, rowMapper);
+        Page<Object> actual = externalStoragePaginationHelper.fetchPageLimit(QUERY_SQL,
+            new Object[] {}, 3, 1, rowMapper);
         assertEquals(0, actual.getTotalCount());
         assertEquals(0, actual.getPageNumber());
         assertEquals(0, actual.getPagesAvailable());

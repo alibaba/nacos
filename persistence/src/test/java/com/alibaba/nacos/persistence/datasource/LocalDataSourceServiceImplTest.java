@@ -96,14 +96,14 @@ class LocalDataSourceServiceImplTest {
     private void deleteDirectory(java.io.File directory) throws Exception {
         if (directory.exists()) {
             java.nio.file.Files.walk(directory.toPath())
-                    .sorted((a, b) -> b.compareTo(a))
-                    .forEach(path -> {
-                        try {
-                            java.nio.file.Files.delete(path);
-                        } catch (Exception e) {
-                            // Ignore
-                        }
-                    });
+                .sorted((a, b) -> b.compareTo(a))
+                .forEach(path -> {
+                    try {
+                        java.nio.file.Files.delete(path);
+                    } catch (Exception e) {
+                        // Ignore
+                    }
+                });
         }
     }
     
@@ -177,7 +177,8 @@ class LocalDataSourceServiceImplTest {
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("test.jdbc.url");
         when(jt.getDataSource()).thenReturn(dataSource);
-        assertEquals(dataSource.getJdbcUrl(), ((HikariDataSource) service.getDatasource()).getJdbcUrl());
+        assertEquals(dataSource.getJdbcUrl(),
+            ((HikariDataSource) service.getDatasource()).getJdbcUrl());
     }
     
     @Test

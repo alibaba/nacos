@@ -65,24 +65,28 @@ class EmbeddedPaginationHelperImplTest {
     @Test
     void testFetchPageWithIllegalPageInfo() {
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPage("", "", new Object[] {}, 0, 0, null));
+            () -> embeddedPaginationHelper.fetchPage("", "", new Object[] {}, 0, 0, null));
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPage("", "", new Object[] {}, 1, 0, null));
+            () -> embeddedPaginationHelper.fetchPage("", "", new Object[] {}, 1, 0, null));
     }
     
     @Test
     void testFetchPageWithoutResult() {
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(null);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(null);
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1, null));
+            () -> embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1,
+                1, null));
     }
     
     @Test
     void testFetchPageOnePage() {
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(1);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(1);
         when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1,
+            Collections.singletonList(new Object()));
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1,
                 rowMapper);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
@@ -92,10 +96,12 @@ class EmbeddedPaginationHelperImplTest {
     
     @Test
     void testFetchPageMorePageFull() {
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(2);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(2);
         when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1,
+            Collections.singletonList(new Object()));
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1,
                 rowMapper);
         assertEquals(2, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
@@ -105,12 +111,15 @@ class EmbeddedPaginationHelperImplTest {
     
     @Test
     void testFetchPageMorePageNotFull() {
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
         List<Object> pageItems = new LinkedList<>();
         pageItems.add(new Object());
         pageItems.add(new Object());
-        when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(pageItems);
-        Page<Object> actual = embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 2,
+        when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper))
+            .thenReturn(pageItems);
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 2,
                 rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
@@ -120,10 +129,12 @@ class EmbeddedPaginationHelperImplTest {
     
     @Test
     void testFetchPageMorePageNextPage() {
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
         when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 2, 2,
+            Collections.singletonList(new Object()));
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 2, 2,
                 rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(2, actual.getPageNumber());
@@ -133,8 +144,10 @@ class EmbeddedPaginationHelperImplTest {
     
     @Test
     void testFetchPageMoreThanItemCount() {
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
-        Page<Object> actual = embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 3, 2,
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPage(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 3, 2,
                 rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(3, actual.getPageNumber());
@@ -145,25 +158,27 @@ class EmbeddedPaginationHelperImplTest {
     @Test
     void testFetchPageLimitWithIllegalPageInfo() {
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPageLimit("", "", new Object[] {}, 0, 0, null));
+            () -> embeddedPaginationHelper.fetchPageLimit("", "", new Object[] {}, 0, 0, null));
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPageLimit("", "", new Object[] {}, 1, 0, null));
+            () -> embeddedPaginationHelper.fetchPageLimit("", "", new Object[] {}, 1, 0, null));
     }
     
     @Test
     void testFetchPageLimitWithoutResult() {
         when(databaseOperate.queryOne(QUERY_COUNT_SQL, Integer.class)).thenReturn(null);
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1, null));
+            () -> embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+                new Object[] {}, 1, 1, null));
     }
     
     @Test
     void testFetchPageLimitOnePage() {
         when(databaseOperate.queryOne(QUERY_COUNT_SQL, Integer.class)).thenReturn(1);
         when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1,
-                rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 1, 1,
+            rowMapper);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(1, actual.getPagesAvailable());
@@ -174,9 +189,10 @@ class EmbeddedPaginationHelperImplTest {
     void testFetchPageLimitMorePageFull() {
         when(databaseOperate.queryOne(QUERY_COUNT_SQL, Integer.class)).thenReturn(2);
         when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 1,
-                rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 1, 1,
+            rowMapper);
         assertEquals(2, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -189,9 +205,11 @@ class EmbeddedPaginationHelperImplTest {
         List<Object> pageItems = new LinkedList<>();
         pageItems.add(new Object());
         pageItems.add(new Object());
-        when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(pageItems);
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 1, 2,
-                rowMapper);
+        when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper))
+            .thenReturn(pageItems);
+        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 1, 2,
+            rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -202,9 +220,10 @@ class EmbeddedPaginationHelperImplTest {
     void testFetchPageLimitMorePageNextPage() {
         when(databaseOperate.queryOne(QUERY_COUNT_SQL, Integer.class)).thenReturn(3);
         when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 2, 2,
-                rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 2, 2,
+            rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(2, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -214,8 +233,9 @@ class EmbeddedPaginationHelperImplTest {
     @Test
     void testFetchPageLimitMoreThanItemCount() {
         when(databaseOperate.queryOne(QUERY_COUNT_SQL, Integer.class)).thenReturn(3);
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL, new Object[] {}, 3, 2,
-                rowMapper);
+        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_COUNT_SQL, QUERY_SQL,
+            new Object[] {}, 3, 2,
+            rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(3, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -227,28 +247,31 @@ class EmbeddedPaginationHelperImplTest {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 0, 0, null));
+            () -> embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 0, 0, null));
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 0, null));
+            () -> embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 0, null));
     }
     
     @Test
     void testFetchPageLimitWithPluginWithoutResult() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(null);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(null);
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1, null));
+            () -> embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1, null));
     }
     
     @Test
     void testFetchPageLimitWithPluginPageOnePage() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(1);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(1);
         when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1, rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1, rowMapper);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(1, actual.getPagesAvailable());
@@ -259,10 +282,12 @@ class EmbeddedPaginationHelperImplTest {
     void testFetchPageLimitWithPluginMorePageFull() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(2);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(2);
         when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1, rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 1, rowMapper);
         assertEquals(2, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -271,14 +296,17 @@ class EmbeddedPaginationHelperImplTest {
     
     @Test
     void testFetchPageLimitWithPluginMorePageNotFull() {
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
         List<Object> pageItems = new LinkedList<>();
         pageItems.add(new Object());
         pageItems.add(new Object());
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(pageItems);
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 2, rowMapper);
+        when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper))
+            .thenReturn(pageItems);
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 1, 2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(1, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -289,10 +317,12 @@ class EmbeddedPaginationHelperImplTest {
     void testFetchPageLimitWithPluginMorePageNextPage() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
         when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(
-                Collections.singletonList(new Object()));
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 2, 2, rowMapper);
+            Collections.singletonList(new Object()));
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 2, 2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(2, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -303,8 +333,10 @@ class EmbeddedPaginationHelperImplTest {
     void testFetchPageLimitWithPluginMoreThanItemCount() {
         MapperResult countMapper = new MapperResult(QUERY_COUNT_SQL, new ArrayList<>());
         MapperResult queryMapper = new MapperResult(QUERY_SQL, new ArrayList<>());
-        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class)).thenReturn(3);
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 3, 2, rowMapper);
+        when(databaseOperate.queryOne(QUERY_COUNT_SQL, new Object[] {}, Integer.class))
+            .thenReturn(3);
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPageLimit(countMapper, queryMapper, 3, 2, rowMapper);
         assertEquals(3, actual.getTotalCount());
         assertEquals(3, actual.getPageNumber());
         assertEquals(2, actual.getPagesAvailable());
@@ -314,9 +346,9 @@ class EmbeddedPaginationHelperImplTest {
     @Test
     void testFetchPageLimitSimpleWithIllegalPageInfo() {
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 0, 0, null));
+            () -> embeddedPaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 0, 0, null));
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedPaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 1, 0, null));
+            () -> embeddedPaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 1, 0, null));
     }
     
     @Test
@@ -325,8 +357,10 @@ class EmbeddedPaginationHelperImplTest {
         pageItems.add(new Object());
         pageItems.add(new Object());
         pageItems.add(new Object());
-        when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper)).thenReturn(pageItems);
-        Page<Object> actual = embeddedPaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 3, 1, rowMapper);
+        when(databaseOperate.queryMany(QUERY_SQL, new Object[] {}, rowMapper))
+            .thenReturn(pageItems);
+        Page<Object> actual =
+            embeddedPaginationHelper.fetchPageLimit(QUERY_SQL, new Object[] {}, 3, 1, rowMapper);
         assertEquals(0, actual.getTotalCount());
         assertEquals(0, actual.getPageNumber());
         assertEquals(0, actual.getPagesAvailable());

@@ -31,7 +31,7 @@ public class MockStatement implements Statement {
     
     @Override
     public void close() throws SQLException {
-    
+        
     }
     
     @Override
@@ -41,7 +41,7 @@ public class MockStatement implements Statement {
     
     @Override
     public void setMaxFieldSize(int max) throws SQLException {
-    
+        
     }
     
     @Override
@@ -51,12 +51,12 @@ public class MockStatement implements Statement {
     
     @Override
     public void setMaxRows(int max) throws SQLException {
-    
+        
     }
     
     @Override
     public void setEscapeProcessing(boolean enable) throws SQLException {
-    
+        
     }
     
     @Override
@@ -66,12 +66,12 @@ public class MockStatement implements Statement {
     
     @Override
     public void setQueryTimeout(int seconds) throws SQLException {
-    
+        
     }
     
     @Override
     public void cancel() throws SQLException {
-    
+        
     }
     
     @Override
@@ -81,12 +81,12 @@ public class MockStatement implements Statement {
     
     @Override
     public void clearWarnings() throws SQLException {
-    
+        
     }
     
     @Override
     public void setCursorName(String name) throws SQLException {
-    
+        
     }
     
     @Override
@@ -111,7 +111,7 @@ public class MockStatement implements Statement {
     
     @Override
     public void setFetchDirection(int direction) throws SQLException {
-    
+        
     }
     
     @Override
@@ -121,7 +121,7 @@ public class MockStatement implements Statement {
     
     @Override
     public void setFetchSize(int rows) throws SQLException {
-    
+        
     }
     
     @Override
@@ -141,12 +141,12 @@ public class MockStatement implements Statement {
     
     @Override
     public void addBatch(String sql) throws SQLException {
-    
+        
     }
     
     @Override
     public void clearBatch() throws SQLException {
-    
+        
     }
     
     @Override
@@ -216,7 +216,7 @@ public class MockStatement implements Statement {
     
     @Override
     public void setPoolable(boolean poolable) throws SQLException {
-    
+        
     }
     
     @Override
@@ -226,7 +226,7 @@ public class MockStatement implements Statement {
     
     @Override
     public void closeOnCompletion() throws SQLException {
-    
+        
     }
     
     @Override

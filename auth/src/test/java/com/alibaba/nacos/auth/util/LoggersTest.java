@@ -61,7 +61,7 @@ class LoggersTest {
     void testAuthLoggerNotNull() {
         assertNotNull(Loggers.AUTH);
     }
-
+    
     @Test
     void testConstructor() {
         new Loggers();

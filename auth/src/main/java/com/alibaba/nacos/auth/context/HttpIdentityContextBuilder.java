@@ -57,7 +57,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
         IdentityContext result = new IdentityContext();
         getRemoteIp(request, result);
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
+            .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (!authPluginService.isPresent()) {
             return result;
         }
@@ -73,7 +73,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
     }
     
     private void getIdentityFromHeader(HttpServletRequest request, IdentityContext result,
-            Map<String, String> identityNames) {
+        Map<String, String> identityNames) {
         Enumeration<String> headerEnu = request.getHeaderNames();
         while (headerEnu.hasMoreElements()) {
             String paraName = headerEnu.nextElement();
@@ -84,7 +84,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
     }
     
     private void getIdentityFromParameter(HttpServletRequest request, IdentityContext result,
-            Map<String, String> identityNames) {
+        Map<String, String> identityNames) {
         Enumeration<String> paramEnu = request.getParameterNames();
         while (paramEnu.hasMoreElements()) {
             String paraName = paramEnu.nextElement();

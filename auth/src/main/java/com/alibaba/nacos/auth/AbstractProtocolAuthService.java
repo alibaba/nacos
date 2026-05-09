@@ -63,19 +63,21 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     @Override
     public boolean enableAuth(Secured secured) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
+            .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().enableAuth(secured.action(), secured.signType());
         }
-        Loggers.AUTH.warn("Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
-                authConfig.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
+        Loggers.AUTH.warn(
+            "Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
+            authConfig.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
         return false;
     }
     
     @Override
-    public AuthResult validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+    public AuthResult validateIdentity(IdentityContext identityContext, Resource resource)
+        throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
+            .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateIdentity(identityContext, resource);
         }
@@ -83,9 +85,10 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     }
     
     @Override
-    public AuthResult validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
+    public AuthResult validateAuthority(IdentityContext identityContext, Permission permission)
+        throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
+            .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateAuthority(identityContext, permission);
         }
@@ -96,8 +99,8 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     public ServerIdentityResult checkServerIdentity(R request, Secured secured) {
         if (isInvalidServerIdentity()) {
             return ServerIdentityResult.fail(
-                    "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
-                            + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`");
+                "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                    + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`");
         }
         ServerIdentity serverIdentity = parseServerIdentity(request);
         return checker.check(serverIdentity, secured);
@@ -105,7 +108,7 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     
     private boolean isInvalidServerIdentity() {
         return StringUtils.isBlank(authConfig.getServerIdentityKey()) || StringUtils.isBlank(
-                authConfig.getServerIdentityValue());
+            authConfig.getServerIdentityValue());
     }
     
     /**
@@ -142,7 +145,7 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
             return secured.parser().newInstance().parse(request, secured);
         } catch (Exception e) {
             Loggers.AUTH.error("Use specified resource parser {} parse resource failed.",
-                    secured.parser().getCanonicalName(), e);
+                secured.parser().getCanonicalName(), e);
             return Resource.EMPTY_RESOURCE;
         }
     }

@@ -130,15 +130,18 @@ public class SqlTypeLimiter implements SqlLimiter {
     }
     
     private void throwException(String sql) throws SQLException {
-        throw new SQLException(String.format("Unsupported SQL: %s. Nacos only support DML and some DDL SQL.", sql));
+        throw new SQLException(
+            String.format("Unsupported SQL: %s. Nacos only support DML and some DDL SQL.", sql));
     }
     
-    private void checkSqlForSecondToken(int firstTokenIndex, String trimmedSql) throws SQLException {
+    private void checkSqlForSecondToken(int firstTokenIndex, String trimmedSql)
+        throws SQLException {
         int secondTokenIndex = trimmedSql.indexOf(" ", firstTokenIndex + 1);
         if (-1 == secondTokenIndex) {
             secondTokenIndex = trimmedSql.length();
         }
-        String secondToken = trimmedSql.substring(firstTokenIndex + 1, secondTokenIndex).toUpperCase();
+        String secondToken =
+            trimmedSql.substring(firstTokenIndex + 1, secondTokenIndex).toUpperCase();
         if (!allowedDdlScopes.contains(secondToken)) {
             throwException(trimmedSql);
         }

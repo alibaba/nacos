@@ -36,7 +36,7 @@ public class DataSourcePoolProperties {
     public static final long DEFAULT_CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(3L);
     
     public static final long DEFAULT_VALIDATION_TIMEOUT = TimeUnit.SECONDS.toMillis(10L);
-
+    
     public static final long DEFAULT_IDLE_TIMEOUT = TimeUnit.MINUTES.toMillis(10L);
     
     public static final int DEFAULT_MAX_POOL_SIZE = 20;

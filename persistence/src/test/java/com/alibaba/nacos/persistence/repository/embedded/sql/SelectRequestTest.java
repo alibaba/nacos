@@ -35,10 +35,11 @@ class SelectRequestTest {
         assertEquals("java.lang.Integer", request.getClassName());
         assertEquals(1, request.getArgs().length);
         assertEquals("1", request.getArgs()[0]);
-        assertEquals("SelectRequest{queryType=0, sql='SELECT 1', args=[1], className='java.lang.Integer'}",
-                request.toString());
+        assertEquals(
+            "SelectRequest{queryType=0, sql='SELECT 1', args=[1], className='java.lang.Integer'}",
+            request.toString());
     }
-
+    
     @Test
     void testSelectRequestGettersSetters() {
         SelectRequest request = new SelectRequest();
@@ -50,7 +51,8 @@ class SelectRequestTest {
         assertEquals("SELECT * FROM t", request.getSql());
         assertEquals(2, request.getArgs().length);
         assertEquals("java.lang.String", request.getClassName());
-        assertEquals("SelectRequest{queryType=4, sql='SELECT * FROM t', args=[a, 1], className='java.lang.String'}",
-                request.toString());
+        assertEquals(
+            "SelectRequest{queryType=4, sql='SELECT * FROM t', args=[a, 1], className='java.lang.String'}",
+            request.toString());
     }
 }
