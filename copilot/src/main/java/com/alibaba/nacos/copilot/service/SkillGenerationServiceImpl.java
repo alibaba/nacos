@@ -71,13 +71,13 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         // 1. Validate request
         if (request == null || StringUtils.isBlank(request.getBackgroundInfo())) {
             throw new RuntimeException(new NacosException(NacosException.INVALID_PARAM,
-                    "Background information is required"));
+                "Background information is required"));
         }
-    
+        
         // 2. Check if Copilot is enabled
         if (!agentManager.isEnabled()) {
             throw new RuntimeException(new NacosException(NacosException.INVALID_PARAM,
-                    "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
+                "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
         }
         
         // 3. Get system prompt
@@ -90,61 +90,60 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         ReActAgent agent = agentManager.createAgent(systemPrompt);
         if (agent == null) {
             throw new RuntimeException(new NacosException(NacosException.INVALID_PARAM,
-                    "Failed to create Copilot agent. Please check configuration."));
+                "Failed to create Copilot agent. Please check configuration."));
         }
         
         // 6. Create user message
         Msg userMsg = Msg.builder()
-                .textContent(userMessage)
-                .build();
+            .textContent(userMessage)
+            .build();
         
         // 7. Call agent (non-streaming, collect all results)
         try {
             StreamOptions streamOptions = StreamOptions.builder()
-                    .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
-                    .incremental(true)
-                    .build();
+                .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
+                .incremental(true)
+                .build();
             
             StringBuilder fullContent = new StringBuilder();
             AtomicReference<Throwable> errorRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
             
             Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(userMsg, streamOptions)
-                    .subscribeOn(Schedulers.boundedElastic());
+                .subscribeOn(Schedulers.boundedElastic());
             
             eventFlux.subscribe(
-                    event -> {
-                        try {
-                            Msg msg = event.getMessage();
-                            if (msg != null) {
-                                String content = StreamEventProcessor.getTextContent(msg);
-                                if (content != null && !content.isEmpty()) {
-                                    fullContent.append(content);
-                                }
+                event -> {
+                    try {
+                        Msg msg = event.getMessage();
+                        if (msg != null) {
+                            String content = StreamEventProcessor.getTextContent(msg);
+                            if (content != null && !content.isEmpty()) {
+                                fullContent.append(content);
                             }
-                        } catch (Exception e) {
-                            LOGGER.warn("Failed to process stream event", e);
                         }
-                    },
-                    error -> {
-                        errorRef.set(error);
-                        latch.countDown();
-                    },
-                    () -> {
-                        latch.countDown();
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to process stream event", e);
                     }
-            );
+                },
+                error -> {
+                    errorRef.set(error);
+                    latch.countDown();
+                },
+                () -> {
+                    latch.countDown();
+                });
             
             // Wait for completion (with timeout)
             boolean completed = latch.await(60, TimeUnit.SECONDS);
             if (!completed) {
                 throw new RuntimeException(new NacosException(NacosException.SERVER_ERROR,
-                        "Skill generation timeout after 60 seconds"));
+                    "Skill generation timeout after 60 seconds"));
             }
             
             if (errorRef.get() != null) {
                 throw new RuntimeException(new NacosException(NacosException.SERVER_ERROR,
-                        "Failed to generate skill: " + errorRef.get().getMessage()));
+                    "Failed to generate skill: " + errorRef.get().getMessage()));
             }
             
             // 8. Parse response
@@ -155,29 +154,29 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(new NacosException(NacosException.SERVER_ERROR,
-                    "Skill generation interrupted: " + e.getMessage()));
+                "Skill generation interrupted: " + e.getMessage()));
         } catch (Exception e) {
             LOGGER.error("Failed to generate skill", e);
             throw new RuntimeException(new NacosException(NacosException.SERVER_ERROR,
-                    "Failed to generate skill: " + e.getMessage()));
+                "Failed to generate skill: " + e.getMessage()));
         }
     }
     
     @Override
     @SuppressWarnings("PMD.MethodTooLongRule")
     public void generateSkillStream(SkillGenerationRequest request,
-                                    StreamResponseCallback<SkillGenerationResponse> callback) {
+        StreamResponseCallback<SkillGenerationResponse> callback) {
         // 1. Validate request
         if (request == null || StringUtils.isBlank(request.getBackgroundInfo())) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
-                    "Background information is required"));
+                "Background information is required"));
             return;
         }
-    
+        
         // 2. Check if Copilot is enabled
         if (!agentManager.isEnabled()) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
-                    "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
+                "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
             return;
         }
         
@@ -191,44 +190,44 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         ReActAgent agent = agentManager.createAgent(systemPrompt);
         if (agent == null) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
-                    "Failed to create Copilot agent. Please check configuration."));
+                "Failed to create Copilot agent. Please check configuration."));
             return;
         }
         
         // 6. Create user message
         Msg userMsg = Msg.builder()
-                .textContent(userMessage)
-                .build();
+            .textContent(userMessage)
+            .build();
         
         // 7. Configure streaming options
         StreamOptions streamOptions = StreamOptions.builder()
-                .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
-                .incremental(true)
-                .build();
+            .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
+            .incremental(true)
+            .build();
         
         // 8. Call agent with stream response
         // Frontend will accumulate and parse the content itself, so we don't need to accumulate fullContent
         Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(userMsg, streamOptions)
-                .subscribeOn(Schedulers.boundedElastic());
+            .subscribeOn(Schedulers.boundedElastic());
         
         eventFlux.subscribe(StreamEventProcessor.createSubscriber(
-                (type, content, done) -> {
-                    SkillGenerationResponse response = new SkillGenerationResponse();
-                    response.setType(type);
-                    response.setChunk(content);
-                    response.setDone(done);
-                    return response;
-                },
-                callback));
+            (type, content, done) -> {
+                SkillGenerationResponse response = new SkillGenerationResponse();
+                response.setType(type);
+                response.setChunk(content);
+                response.setDone(done);
+                return response;
+            },
+            callback));
     }
     
     @SuppressWarnings("PMD.MethodTooLongRule")
     private String buildUserMessage(SkillGenerationRequest request) {
         StringBuilder sb = new StringBuilder();
         boolean hasConversationHistory = request.getConversationHistory() != null
-                && request.getConversationHistory().getMessages() != null
-                && !request.getConversationHistory().getMessages().isEmpty();
-                            
+            && request.getConversationHistory().getMessages() != null
+            && !request.getConversationHistory().getMessages().isEmpty();
+        
         // Add conversation history analysis if provided
         if (hasConversationHistory) {
             sb.append("对话历史分析（请充分理解这段对话历史，判断是否适合沉淀为一个 Skill）：\n\n");
@@ -316,7 +315,6 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         return sb.toString();
     }
     
-    
     @SuppressWarnings("unchecked")
     private void parseGenerationResult(String fullContent, SkillGenerationResponse response) {
         try {
@@ -359,7 +357,8 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
                     if (skillMap != null) {
                         normalizeResourceStructure(skillMap);
                         normalizeSkillMdField(skillMap);
-                        Skill skill = JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
+                        Skill skill =
+                            JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
                         response.setSkill(skill);
                     }
                 }
@@ -417,9 +416,10 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
             }
             @SuppressWarnings("PMD.AvoidComplexConditionRule")
             boolean isClosingMarker = nextBacktick > startPos
-                    && (nextBacktick == 0
-                            || content.charAt(nextBacktick - 1) == '\n'
-                            || content.substring(Math.max(0, nextBacktick - 10), nextBacktick).trim().isEmpty());
+                && (nextBacktick == 0
+                    || content.charAt(nextBacktick - 1) == '\n'
+                    || content.substring(Math.max(0, nextBacktick - 10), nextBacktick).trim()
+                        .isEmpty());
             if (isClosingMarker) {
                 return nextBacktick;
             }
@@ -541,7 +541,7 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         skillMap.remove("resources");
         skillMap.put("resource", flatResourceMap);
     }
-
+    
     /**
      * Accept legacy "instruction" field from model output and map it to skillMd.
      */
@@ -567,7 +567,8 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
      * @param prefix prefix for resource keys (currently unused, kept for API consistency)
      */
     @SuppressWarnings({"unchecked", "unused"})
-    private void flattenResources(Map<String, Object> nestedResources, Map<String, Object> flatMap, String prefix) {
+    private void flattenResources(Map<String, Object> nestedResources, Map<String, Object> flatMap,
+        String prefix) {
         for (Map.Entry<String, Object> entry : nestedResources.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -579,9 +580,9 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
                 // A resource object should have at least one of: type, path, name, content
                 @SuppressWarnings("PMD.AvoidComplexConditionRule")
                 boolean isResourceObject = valueMap.containsKey("type")
-                        || valueMap.containsKey("path")
-                        || valueMap.containsKey("name")
-                        || valueMap.containsKey("content");
+                    || valueMap.containsKey("path")
+                    || valueMap.containsKey("name")
+                    || valueMap.containsKey("content");
                 
                 if (isResourceObject) {
                     // This is a resource object, convert it to SkillResource format
@@ -602,7 +603,8 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
                                 name = key + ".sh";
                             } else if ("template".equals(type) || "json".equals(type)) {
                                 name = key + ".json";
-                            } else if ("document".equals(type) || "md".equals(type) || "documentation".equals(type)) {
+                            } else if ("document".equals(type) || "md".equals(type)
+                                || "documentation".equals(type)) {
                                 name = key + ".md";
                             } else {
                                 name = key;
@@ -635,7 +637,8 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
                 }
             } else {
                 // Not a Map, skip
-                LOGGER.warn("Unexpected resource value type for key {}: {}", key, value.getClass().getName());
+                LOGGER.warn("Unexpected resource value type for key {}: {}", key,
+                    value.getClass().getName());
             }
         }
     }

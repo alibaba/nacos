@@ -67,7 +67,8 @@ class NacosDuplicateConfigurationBeanPostProcessorTest {
         when(context.getBeanFactory()).thenReturn(beanFactory);
         when(beanFactory.getBeanDefinition(beanName)).thenReturn(beanDefinition);
         Class beanClass = MockAutoConfiguration.MockConfiguration.class;
-        MockAutoConfiguration.MockConfiguration existBean = new MockAutoConfiguration.MockConfiguration();
+        MockAutoConfiguration.MockConfiguration existBean =
+            new MockAutoConfiguration.MockConfiguration();
         when(context.getBean(beanName)).thenReturn(existBean);
         assertEquals(existBean, processor.postProcessBeforeInstantiation(beanClass, beanName));
     }

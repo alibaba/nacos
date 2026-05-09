@@ -78,8 +78,10 @@ class ApplicationUtilsTest {
     
     @Test
     void testGetBeanByNameAneType() {
-        when(context.getBean("testBeanName", ConfigurableApplicationContext.class)).thenReturn(context);
-        assertEquals(context, ApplicationUtils.getBean("testBeanName", ConfigurableApplicationContext.class));
+        when(context.getBean("testBeanName", ConfigurableApplicationContext.class))
+            .thenReturn(context);
+        assertEquals(context,
+            ApplicationUtils.getBean("testBeanName", ConfigurableApplicationContext.class));
     }
     
     @Test
@@ -108,7 +110,7 @@ class ApplicationUtilsTest {
     void testGetBeanIfExistNonExist() {
         Consumer consumer = mock(Consumer.class);
         when(context.getBean(ConfigurableApplicationContext.class)).thenThrow(
-                new NoSuchBeanDefinitionException("test"));
+            new NoSuchBeanDefinitionException("test"));
         ApplicationUtils.getBeanIfExist(ConfigurableApplicationContext.class, consumer);
         verify(consumer, never()).accept(context);
     }
@@ -121,8 +123,10 @@ class ApplicationUtilsTest {
     
     @Test
     void testGetType() {
-        when(context.getType("testBeanName")).thenAnswer(invocationOnMock -> ConfigurableApplicationContext.class);
-        assertEquals(ConfigurableApplicationContext.class, ApplicationUtils.getType("testBeanName"));
+        when(context.getType("testBeanName"))
+            .thenAnswer(invocationOnMock -> ConfigurableApplicationContext.class);
+        assertEquals(ConfigurableApplicationContext.class,
+            ApplicationUtils.getType("testBeanName"));
     }
     
     @Test
@@ -149,7 +153,8 @@ class ApplicationUtilsTest {
     @Test
     void testGetClassLoader() {
         when(context.getClassLoader()).thenReturn(Thread.currentThread().getContextClassLoader());
-        assertEquals(Thread.currentThread().getContextClassLoader(), ApplicationUtils.getClassLoader());
+        assertEquals(Thread.currentThread().getContextClassLoader(),
+            ApplicationUtils.getClassLoader());
     }
     
     @Test

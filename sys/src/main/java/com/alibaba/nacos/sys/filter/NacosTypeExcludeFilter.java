@@ -42,31 +42,36 @@ public class NacosTypeExcludeFilter implements TypeFilter {
     
     public NacosTypeExcludeFilter() {
         this.packageExcludeFilters = new HashMap<>(2);
-        for (NacosPackageExcludeFilter each : NacosServiceLoader.load(NacosPackageExcludeFilter.class)) {
+        for (NacosPackageExcludeFilter each : NacosServiceLoader
+            .load(NacosPackageExcludeFilter.class)) {
             packageExcludeFilters.put(each.getResponsiblePackagePrefix(), each);
             LOGGER.info("Load Nacos package exclude filter success, package prefix {}, filter {}",
-                    each.getResponsiblePackagePrefix(), each.getClass().getCanonicalName());
+                each.getResponsiblePackagePrefix(), each.getClass().getCanonicalName());
         }
     }
     
     @Override
     public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory)
-            throws IOException {
+        throws IOException {
         // If no exclude filters, all classes should be load.
         if (packageExcludeFilters.isEmpty()) {
             return false;
         }
         boolean isSpringBootApplication = metadataReader.getAnnotationMetadata()
-                .hasAnnotation(SpringBootApplication.class.getCanonicalName());
+            .hasAnnotation(SpringBootApplication.class.getCanonicalName());
         String className = metadataReader.getClassMetadata().getClassName();
         if (isSpringBootApplication) {
-            LOGGER.info("Skip @SpringBootApplication annotation for class {} to avoid duplicate scan", className);
+            LOGGER.info(
+                "Skip @SpringBootApplication annotation for class {} to avoid duplicate scan",
+                className);
             return true;
         }
-        for (Map.Entry<String, NacosPackageExcludeFilter> entry : packageExcludeFilters.entrySet()) {
+        for (Map.Entry<String, NacosPackageExcludeFilter> entry : packageExcludeFilters
+            .entrySet()) {
             // If match the package exclude filter, judged by filter.
             if (className.startsWith(entry.getKey())) {
-                Set<String> annotations = metadataReader.getAnnotationMetadata().getAnnotationTypes();
+                Set<String> annotations =
+                    metadataReader.getAnnotationMetadata().getAnnotationTypes();
                 return entry.getValue().isExcluded(className, annotations);
             }
         }

@@ -67,7 +67,8 @@ public class OriginTrackedPropertiesLoader {
      * @throws IOException on read error
      */
     public Map<String, OriginTrackedValue> load(boolean expandLists) throws IOException {
-        try (OriginTrackedPropertiesLoader.CharacterReader reader = new CharacterReader(this.resource)) {
+        try (OriginTrackedPropertiesLoader.CharacterReader reader =
+            new CharacterReader(this.resource)) {
             Map<String, OriginTrackedValue> result = new LinkedHashMap<>();
             StringBuilder buffer = new StringBuilder();
             while (reader.read()) {
@@ -97,8 +98,9 @@ public class OriginTrackedPropertiesLoader {
         }
     }
     
-    private String loadKey(StringBuilder buffer, OriginTrackedPropertiesLoader.CharacterReader reader)
-            throws IOException {
+    private String loadKey(StringBuilder buffer,
+        OriginTrackedPropertiesLoader.CharacterReader reader)
+        throws IOException {
         buffer.setLength(0);
         boolean previousWhitespace = false;
         while (!reader.isEndOfLine()) {
@@ -116,8 +118,9 @@ public class OriginTrackedPropertiesLoader {
         return buffer.toString();
     }
     
-    private OriginTrackedValue loadValue(StringBuilder buffer, OriginTrackedPropertiesLoader.CharacterReader reader,
-            boolean splitLists) throws IOException {
+    private OriginTrackedValue loadValue(StringBuilder buffer,
+        OriginTrackedPropertiesLoader.CharacterReader reader,
+        boolean splitLists) throws IOException {
         buffer.setLength(0);
         while (reader.isWhiteSpace() && !reader.isEndOfLine()) {
             reader.read();
@@ -149,7 +152,7 @@ public class OriginTrackedPropertiesLoader {
         
         CharacterReader(Resource resource) throws IOException {
             this.reader = new LineNumberReader(
-                    new InputStreamReader(resource.getInputStream(), StandardCharsets.ISO_8859_1));
+                new InputStreamReader(resource.getInputStream(), StandardCharsets.ISO_8859_1));
         }
         
         @Override
@@ -227,7 +230,8 @@ public class OriginTrackedPropertiesLoader {
         }
         
         public boolean isWhiteSpace() {
-            return !this.escaped && (this.character == ' ' || this.character == '\t' || this.character == '\f');
+            return !this.escaped
+                && (this.character == ' ' || this.character == '\t' || this.character == '\f');
         }
         
         public boolean isEndOfFile() {

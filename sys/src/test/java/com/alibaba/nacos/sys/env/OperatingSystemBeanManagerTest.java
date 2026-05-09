@@ -55,12 +55,13 @@ class OperatingSystemBeanManagerTest {
     @Test
     void testLoadOneWithException() {
         assertNull(ReflectionTestUtils.invokeMethod(OperatingSystemBeanManager.class, "loadOne",
-                Collections.singletonList("com.alibaba.nacos.NonExistClass")));
+            Collections.singletonList("com.alibaba.nacos.NonExistClass")));
     }
     
     @Test
     void testDeduceMethodWithException() {
         assertNull(
-                ReflectionTestUtils.invokeMethod(OperatingSystemBeanManager.class, "deduceMethod", "nonExistMethod"));
+            ReflectionTestUtils.invokeMethod(OperatingSystemBeanManager.class, "deduceMethod",
+                "nonExistMethod"));
     }
 }

@@ -59,7 +59,8 @@ class NacosTypeExcludeFilterTest {
     @SuppressWarnings("unchecked")
     public void setUp() {
         filter = new NacosTypeExcludeFilter();
-        packageExcludeFilters = (Map<String, NacosPackageExcludeFilter>) ReflectionTestUtils.getField(filter,
+        packageExcludeFilters =
+            (Map<String, NacosPackageExcludeFilter>) ReflectionTestUtils.getField(filter,
                 "packageExcludeFilters");
     }
     
@@ -72,9 +73,11 @@ class NacosTypeExcludeFilterTest {
     @Test
     void testMatchWithSpringBootApplicationAnnotation() throws IOException {
         when(metadataReader.getAnnotationMetadata()).thenReturn(annotationMetadata);
-        when(annotationMetadata.hasAnnotation(SpringBootApplication.class.getCanonicalName())).thenReturn(true);
+        when(annotationMetadata.hasAnnotation(SpringBootApplication.class.getCanonicalName()))
+            .thenReturn(true);
         when(metadataReader.getClassMetadata()).thenReturn(classMetadata);
-        when(classMetadata.getClassName()).thenReturn(MockNacosPackageExcludeFilter.class.getCanonicalName());
+        when(classMetadata.getClassName())
+            .thenReturn(MockNacosPackageExcludeFilter.class.getCanonicalName());
         assertTrue(filter.match(metadataReader, metadataReaderFactory));
     }
     
@@ -82,8 +85,9 @@ class NacosTypeExcludeFilterTest {
     void testMatchWithoutSpringBootApplicationAnnotation() throws IOException {
         when(metadataReader.getAnnotationMetadata()).thenReturn(annotationMetadata);
         when(metadataReader.getClassMetadata()).thenReturn(classMetadata);
-        when(classMetadata.getClassName()).thenReturn(MockNacosPackageExcludeFilter.class.getCanonicalName(),
-                MockNacosPackageExcludeFilter.class.getPackage().getName() + ".Test");
+        when(classMetadata.getClassName()).thenReturn(
+            MockNacosPackageExcludeFilter.class.getCanonicalName(),
+            MockNacosPackageExcludeFilter.class.getPackage().getName() + ".Test");
         assertTrue(filter.match(metadataReader, metadataReaderFactory));
         assertFalse(filter.match(metadataReader, metadataReaderFactory));
     }
@@ -92,7 +96,8 @@ class NacosTypeExcludeFilterTest {
     void testMatchWithoutMatched() throws IOException {
         when(metadataReader.getAnnotationMetadata()).thenReturn(annotationMetadata);
         when(metadataReader.getClassMetadata()).thenReturn(classMetadata);
-        when(classMetadata.getClassName()).thenReturn(NacosTypeExcludeFilterTest.class.getCanonicalName());
+        when(classMetadata.getClassName())
+            .thenReturn(NacosTypeExcludeFilterTest.class.getCanonicalName());
         assertFalse(filter.match(metadataReader, metadataReaderFactory));
     }
 }

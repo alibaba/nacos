@@ -41,9 +41,11 @@ class MethodUtilTest {
     @Test
     void invokeAndReturnDouble() {
         InternalMethod internalMethod = new InternalMethod();
-        assertNotEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(DOUBLE_METHOD, internalMethod), 0.000001d);
+        assertNotEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(DOUBLE_METHOD, internalMethod),
+            0.000001d);
         
-        assertEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(LONG_METHOD, internalMethod), 0.000001d);
+        assertEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(LONG_METHOD, internalMethod),
+            0.000001d);
     }
     
     @Test

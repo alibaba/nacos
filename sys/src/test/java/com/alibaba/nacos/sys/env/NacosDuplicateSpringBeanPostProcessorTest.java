@@ -74,9 +74,11 @@ class NacosDuplicateSpringBeanPostProcessorTest {
     void testPostProcessBeforeInstantiationForBootContextBean() {
         when(context.containsBean("boundConfigurationProperties")).thenReturn(true);
         when(context.getBeanFactory()).thenReturn(beanFactory);
-        when(beanFactory.getBeanDefinition("boundConfigurationProperties")).thenReturn(beanDefinition);
+        when(beanFactory.getBeanDefinition("boundConfigurationProperties"))
+            .thenReturn(beanDefinition);
         Class beanClass = BoundConfigurationProperties.class;
-        assertNull(processor.postProcessBeforeInstantiation(beanClass, "boundConfigurationProperties"));
+        assertNull(
+            processor.postProcessBeforeInstantiation(beanClass, "boundConfigurationProperties"));
         verify(context, never()).getBean("boundConfigurationProperties");
     }
     

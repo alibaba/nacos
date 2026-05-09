@@ -59,7 +59,8 @@ public class ModuleStateHolder {
                 ModuleState moduleState = each.build();
                 moduleStates.put(moduleState.getModuleName(), moduleState);
             } catch (Exception e) {
-                LOGGER.warn("Build ModuleState failed in builder:{}", each.getClass().getCanonicalName(), e);
+                LOGGER.warn("Build ModuleState failed in builder:{}",
+                    each.getClass().getCanonicalName(), e);
             }
         }
     }
@@ -77,7 +78,8 @@ public class ModuleStateHolder {
                 ModuleState moduleState = each.build();
                 moduleStates.put(moduleState.getModuleName(), moduleState);
             } catch (Exception e) {
-                LOGGER.warn("reBuild ModuleState failed in builder:{}", each.getClass().getCanonicalName(), e);
+                LOGGER.warn("reBuild ModuleState failed in builder:{}",
+                    each.getClass().getCanonicalName(), e);
             }
         }
         
