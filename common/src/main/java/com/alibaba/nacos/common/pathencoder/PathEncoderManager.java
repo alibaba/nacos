@@ -27,17 +27,17 @@ import java.util.Collection;
  * @author daydreamer-ia
  */
 public class PathEncoderManager {
-
+    
     /**
      * singleton.
      */
     private static final PathEncoderManager INSTANCE = new PathEncoderManager();
-
+    
     /**
      * encoder.
      */
     private PathEncoder targetEncoder = null;
-
+    
     private PathEncoderManager() {
         // load path encoder
         Collection<PathEncoder> load = NacosServiceLoader.load(PathEncoder.class);
@@ -52,7 +52,7 @@ public class PathEncoderManager {
             }
         }
     }
-
+    
     /**
      * encode path if necessary.
      *
@@ -69,7 +69,7 @@ public class PathEncoderManager {
         }
         return path;
     }
-
+    
     /**
      * encode path if necessary.
      *
@@ -79,7 +79,7 @@ public class PathEncoderManager {
     public String encode(String path) {
         return encode(path, Charset.defaultCharset().name());
     }
-
+    
     /**
      * decode path.
      *
@@ -96,7 +96,7 @@ public class PathEncoderManager {
         }
         return path;
     }
-
+    
     /**
      * decode path.
      *
@@ -106,7 +106,7 @@ public class PathEncoderManager {
     public String decode(String path) {
         return decode(path, Charset.defaultCharset().name());
     }
-
+    
     /**
      * get singleton.
      *
@@ -115,5 +115,5 @@ public class PathEncoderManager {
     public static PathEncoderManager getInstance() {
         return INSTANCE;
     }
-
+    
 }

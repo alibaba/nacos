@@ -92,7 +92,8 @@ class IoUtilsTest {
     void testToStringWithReader() throws IOException {
         String testCase = "123";
         assertEquals(testCase,
-                IoUtils.toString(new ByteArrayInputStream(testCase.getBytes(Charsets.toCharset("UTF-8"))), "UTF-8"));
+            IoUtils.toString(
+                new ByteArrayInputStream(testCase.getBytes(Charsets.toCharset("UTF-8"))), "UTF-8"));
     }
     
     @Test
@@ -129,7 +130,8 @@ class IoUtilsTest {
     void testDeleteForDirectory() throws IOException {
         File file = null;
         try {
-            String tmpDir = AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty("java.io.tmpdir"));
+            String tmpDir = AccessController.doPrivileged(
+                (PrivilegedAction<String>) () -> System.getProperty("java.io.tmpdir"));
             File tmpDirFile = new File(tmpDir, "IoUtilsTest");
             tmpDirFile.mkdirs();
             file = File.createTempFile("test_deleteForDirectory", ".txt", tmpDirFile);
@@ -198,7 +200,8 @@ class IoUtilsTest {
     @Test
     void testCloseQuietly() throws IOException {
         BufferedReader br = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream("111".getBytes(Charsets.toCharset("UTF-8")))));
+            new InputStreamReader(
+                new ByteArrayInputStream("111".getBytes(Charsets.toCharset("UTF-8")))));
         assertEquals("111", br.readLine());
         IoUtils.closeQuietly(br);
         try {
@@ -213,10 +216,12 @@ class IoUtilsTest {
     @Test
     void testCloseQuietly2() throws IOException {
         BufferedReader br = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream("123".getBytes(Charsets.toCharset("UTF-8")))));
+            new InputStreamReader(
+                new ByteArrayInputStream("123".getBytes(Charsets.toCharset("UTF-8")))));
         assertEquals("123", br.readLine());
         BufferedReader br2 = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream("456".getBytes(Charsets.toCharset("UTF-8")))));
+            new InputStreamReader(
+                new ByteArrayInputStream("456".getBytes(Charsets.toCharset("UTF-8")))));
         assertEquals("456", br2.readLine());
         IoUtils.closeQuietly(br, br2);
         try {

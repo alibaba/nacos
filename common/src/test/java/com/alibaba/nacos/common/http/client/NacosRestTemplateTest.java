@@ -84,7 +84,8 @@ class NacosRestTemplateTest {
         when(requestClient.execute(any(), eq("GET"), any())).thenReturn(mockResponse);
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
-        HttpRestResult<String> result = restTemplate.get("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.get("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
                 String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
@@ -97,7 +98,8 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         HttpClientConfig config = HttpClientConfig.builder().setConTimeOutMillis(1000).build();
-        HttpRestResult<String> result = restTemplate.get("http://127.0.0.1:8848/nacos/test", config, Header.EMPTY, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.get("http://127.0.0.1:8848/nacos/test", config, Header.EMPTY, Query.EMPTY,
                 String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
@@ -107,9 +109,11 @@ class NacosRestTemplateTest {
     @Test
     void testGetWithInterceptor() throws Exception {
         when(mockResponse.getStatusCode()).thenReturn(300);
-        when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test interceptor".getBytes()));
+        when(mockResponse.getBody())
+            .thenReturn(new ByteArrayInputStream("test interceptor".getBytes()));
         restTemplate.setInterceptors(Collections.singletonList(interceptor));
-        HttpRestResult<String> result = restTemplate.get("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.get("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
                 String.class);
         assertFalse(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
@@ -119,8 +123,10 @@ class NacosRestTemplateTest {
     @Test
     void testGetWithException() throws Exception {
         assertThrows(RuntimeException.class, () -> {
-            when(requestClient.execute(any(), eq("GET"), any())).thenThrow(new RuntimeException("test"));
-            restTemplate.get("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY, String.class);
+            when(requestClient.execute(any(), eq("GET"), any()))
+                .thenThrow(new RuntimeException("test"));
+            restTemplate.get("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
+                String.class);
         });
     }
     
@@ -129,7 +135,8 @@ class NacosRestTemplateTest {
         when(requestClient.execute(any(), eq("GET-LARGE"), any())).thenReturn(mockResponse);
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
-        HttpRestResult<String> result = restTemplate.getLarge("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.getLarge("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
                 new Object(), String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
@@ -141,7 +148,8 @@ class NacosRestTemplateTest {
         when(requestClient.execute(any(), eq("DELETE"), any())).thenReturn(mockResponse);
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
-        HttpRestResult<String> result = restTemplate.delete("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.delete("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
                 String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
@@ -154,8 +162,9 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         HttpClientConfig config = HttpClientConfig.builder().setConTimeOutMillis(1000).build();
-        HttpRestResult<String> result = restTemplate.delete("http://127.0.0.1:8848/nacos/test", config, Header.EMPTY, Query.EMPTY,
-                String.class);
+        HttpRestResult<String> result = restTemplate.delete("http://127.0.0.1:8848/nacos/test",
+            config, Header.EMPTY, Query.EMPTY,
+            String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
@@ -166,7 +175,8 @@ class NacosRestTemplateTest {
         when(requestClient.execute(any(), eq("PUT"), any())).thenReturn(mockResponse);
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
-        HttpRestResult<String> result = restTemplate.put("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.put("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
                 new Object(), String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
@@ -179,7 +189,8 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.putJson("http://127.0.0.1:8848/nacos/test", header, "body", String.class);
+        HttpRestResult<String> result =
+            restTemplate.putJson("http://127.0.0.1:8848/nacos/test", header, "body", String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
@@ -192,7 +203,8 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.putJson("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY, "body",
+        HttpRestResult<String> result =
+            restTemplate.putJson("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY, "body",
                 String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
@@ -206,12 +218,14 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.putForm("http://127.0.0.1:8848/nacos/test", header, new HashMap<>(),
+        HttpRestResult<String> result =
+            restTemplate.putForm("http://127.0.0.1:8848/nacos/test", header, new HashMap<>(),
                 String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
@@ -220,12 +234,14 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.putForm("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.putForm("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY,
                 new HashMap<>(), String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
@@ -235,12 +251,14 @@ class NacosRestTemplateTest {
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         HttpClientConfig config = HttpClientConfig.builder().setConTimeOutMillis(1000).build();
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.putForm("http://127.0.0.1:8848/nacos/test", config, header, new HashMap<>(),
-                String.class);
+        HttpRestResult<String> result = restTemplate.putForm("http://127.0.0.1:8848/nacos/test",
+            config, header, new HashMap<>(),
+            String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
@@ -248,7 +266,8 @@ class NacosRestTemplateTest {
         when(requestClient.execute(any(), eq("POST"), any())).thenReturn(mockResponse);
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
-        HttpRestResult<String> result = restTemplate.post("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.post("http://127.0.0.1:8848/nacos/test", Header.EMPTY, Query.EMPTY,
                 new Object(), String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
@@ -261,7 +280,8 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.postJson("http://127.0.0.1:8848/nacos/test", header, "body", String.class);
+        HttpRestResult<String> result =
+            restTemplate.postJson("http://127.0.0.1:8848/nacos/test", header, "body", String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
@@ -274,7 +294,8 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.postJson("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY, "body",
+        HttpRestResult<String> result =
+            restTemplate.postJson("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY, "body",
                 String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
@@ -288,12 +309,14 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.postForm("http://127.0.0.1:8848/nacos/test", header, new HashMap<>(),
+        HttpRestResult<String> result =
+            restTemplate.postForm("http://127.0.0.1:8848/nacos/test", header, new HashMap<>(),
                 String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
@@ -302,12 +325,14 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.postForm("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.postForm("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY,
                 new HashMap<>(), String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
@@ -317,12 +342,14 @@ class NacosRestTemplateTest {
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         HttpClientConfig config = HttpClientConfig.builder().setConTimeOutMillis(1000).build();
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.postForm("http://127.0.0.1:8848/nacos/test", config, header, new HashMap<>(),
-                String.class);
+        HttpRestResult<String> result = restTemplate.postForm("http://127.0.0.1:8848/nacos/test",
+            config, header, new HashMap<>(),
+            String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
@@ -331,12 +358,14 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        HttpRestResult<String> result = restTemplate.exchangeForm("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.exchangeForm("http://127.0.0.1:8848/nacos/test", header, Query.EMPTY,
                 new HashMap<>(), "PUT", String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());
         assertEquals("test", result.getData());
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
@@ -345,7 +374,8 @@ class NacosRestTemplateTest {
         when(mockResponse.getStatusCode()).thenReturn(200);
         when(mockResponse.getBody()).thenReturn(new ByteArrayInputStream("test".getBytes()));
         HttpClientConfig config = HttpClientConfig.builder().setConTimeOutMillis(1000).build();
-        HttpRestResult<String> result = restTemplate.exchange("http://127.0.0.1:8848/nacos/test", config, Header.EMPTY,
+        HttpRestResult<String> result =
+            restTemplate.exchange("http://127.0.0.1:8848/nacos/test", config, Header.EMPTY,
                 Query.EMPTY, new Object(), "PUT", String.class);
         assertTrue(result.ok());
         assertEquals(Header.EMPTY, result.getHeader());

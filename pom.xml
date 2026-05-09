@@ -318,6 +318,7 @@
                             <exclude>**/nacos/test/**</exclude>
                             <exclude>**/protobuf/**</exclude>
                         </excludes>
+                        <toggleOffOn/>
                         <eclipse>
                             <file>${maven.multiModuleProjectDirectory}/style/nacos-eclipse-formatter.xml</file>
                         </eclipse>

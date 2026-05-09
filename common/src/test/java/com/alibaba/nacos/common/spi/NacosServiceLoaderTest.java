@@ -40,8 +40,10 @@ class NacosServiceLoaderTest {
     
     @Test
     void newServiceInstances() {
-        SpiTestInterface loadInstance = NacosServiceLoader.load(SpiTestInterface.class).iterator().next();
-        Collection<SpiTestInterface> actual = NacosServiceLoader.newServiceInstances(SpiTestInterface.class);
+        SpiTestInterface loadInstance =
+            NacosServiceLoader.load(SpiTestInterface.class).iterator().next();
+        Collection<SpiTestInterface> actual =
+            NacosServiceLoader.newServiceInstances(SpiTestInterface.class);
         assertEquals(1, actual.size());
         assertEquals(SpiTestImpl.class, actual.iterator().next().getClass());
         assertNotEquals(loadInstance, actual.iterator().next());
@@ -55,7 +57,8 @@ class NacosServiceLoaderTest {
             NacosServiceLoader.newServiceInstances(SpiTestInterface.class);
         } catch (ServiceLoaderException e) {
             assertEquals(SpiTestImpl.class, e.getClazz());
-            assertEquals("Can not load class `" + SpiTestImpl.class.getName() + "` by SPI ", e.getMessage());
+            assertEquals("Can not load class `" + SpiTestImpl.class.getName() + "` by SPI ",
+                e.getMessage());
         }
     }
 }

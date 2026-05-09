@@ -87,7 +87,8 @@ class HttpClientBeanHolderTest {
         cachedAsyncRestTemplateMap.clear();
     }
     
-    private Object getCachedMap(String mapName) throws NoSuchFieldException, IllegalAccessException {
+    private Object getCachedMap(String mapName)
+        throws NoSuchFieldException, IllegalAccessException {
         Field field = HttpClientBeanHolder.class.getDeclaredField(mapName);
         field.setAccessible(true);
         return field.get(HttpClientBeanHolder.class);
@@ -123,9 +124,11 @@ class HttpClientBeanHolderTest {
     @Test
     void testGetNacosAsyncRestTemplateWithDefault() {
         assertTrue(restAsyncMap.isEmpty());
-        NacosAsyncRestTemplate actual = HttpClientBeanHolder.getNacosAsyncRestTemplate((Logger) null);
+        NacosAsyncRestTemplate actual =
+            HttpClientBeanHolder.getNacosAsyncRestTemplate((Logger) null);
         assertEquals(1, restAsyncMap.size());
-        NacosAsyncRestTemplate duplicateGet = HttpClientBeanHolder.getNacosAsyncRestTemplate((Logger) null);
+        NacosAsyncRestTemplate duplicateGet =
+            HttpClientBeanHolder.getNacosAsyncRestTemplate((Logger) null);
         assertEquals(1, restAsyncMap.size());
         assertEquals(actual, duplicateGet);
     }
@@ -199,7 +202,8 @@ class HttpClientBeanHolderTest {
             executor.submit(() -> {
                 try {
                     startLatch.await();
-                    NacosRestTemplate template = HttpClientBeanHolder.getNacosRestTemplate((Logger) null);
+                    NacosRestTemplate template =
+                        HttpClientBeanHolder.getNacosRestTemplate((Logger) null);
                     firstTemplate.compareAndSet(null, template);
                 } catch (Exception e) {
                     hasError.set(true);
@@ -230,7 +234,8 @@ class HttpClientBeanHolderTest {
             executor.submit(() -> {
                 try {
                     startLatch.await();
-                    NacosAsyncRestTemplate template = HttpClientBeanHolder.getNacosAsyncRestTemplate((Logger) null);
+                    NacosAsyncRestTemplate template =
+                        HttpClientBeanHolder.getNacosAsyncRestTemplate((Logger) null);
                     firstTemplate.compareAndSet(null, template);
                 } catch (Exception e) {
                     hasError.set(true);

@@ -51,6 +51,7 @@ class GrpcUtilsTest {
     private ClientConfigMetricResponse createResponse() {
         ClientConfigMetricResponse clientConfigMetricResponse = new ClientConfigMetricResponse();
         clientConfigMetricResponse.setMetrics(new HashMap<String, Object>() {
+            
             {
                 put("m1", "v1");
                 put("m2", "v2");
@@ -109,7 +110,8 @@ class GrpcUtilsTest {
         assertEquals(this.request.getNamespace(), request.getNamespace());
         
         Payload responsePayload = GrpcUtils.convert(response);
-        ClientConfigMetricResponse response = (ClientConfigMetricResponse) GrpcUtils.parse(responsePayload);
+        ClientConfigMetricResponse response =
+            (ClientConfigMetricResponse) GrpcUtils.parse(responsePayload);
         assertEquals(this.response.getMetrics(), response.getMetrics());
         
     }

@@ -27,8 +27,9 @@ public class NamingTraceEvent extends TraceEvent {
     
     private static final long serialVersionUID = 2923077640400851816L;
     
-    public NamingTraceEvent(String eventType, long eventTime, String serviceNamespace, String serviceGroup,
-            String name) {
+    public NamingTraceEvent(String eventType, long eventTime, String serviceNamespace,
+        String serviceGroup,
+        String name) {
         super(eventType, eventTime, serviceNamespace, serviceGroup, name);
     }
     

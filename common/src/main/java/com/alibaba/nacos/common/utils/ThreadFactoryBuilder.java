@@ -47,7 +47,7 @@ public class ThreadFactoryBuilder {
      *   Uncaught exception handler.
      */
     private Thread.UncaughtExceptionHandler uncaughtExceptionHandler = null;
-
+    
     /**
      *   Customize thread factory.
      */
@@ -68,8 +68,8 @@ public class ThreadFactoryBuilder {
     public ThreadFactoryBuilder priority(int priority) {
         if (priority > Thread.MAX_PRIORITY || priority < Thread.MIN_PRIORITY) {
             throw new IllegalArgumentException(
-                    String.format("The value of priority should be between %s and %s", Thread.MIN_PRIORITY + 1, Thread.MAX_PRIORITY + 1)
-            );
+                String.format("The value of priority should be between %s and %s",
+                    Thread.MIN_PRIORITY + 1, Thread.MAX_PRIORITY + 1));
         }
         this.priority = priority;
         return this;
@@ -79,7 +79,7 @@ public class ThreadFactoryBuilder {
      * set uncaughtExceptionHandler property.
      */
     public ThreadFactoryBuilder uncaughtExceptionHandler(
-            Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
+        Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
         checkNullParameter(uncaughtExceptionHandler, "uncaughtExceptionHandler cannot be null.");
         this.uncaughtExceptionHandler = uncaughtExceptionHandler;
         return this;
@@ -106,7 +106,8 @@ public class ThreadFactoryBuilder {
      *  build thread factory.
      */
     public ThreadFactory build() {
-        ThreadFactory factory = customizeFactory == null ? Executors.defaultThreadFactory() : customizeFactory;
+        ThreadFactory factory =
+            customizeFactory == null ? Executors.defaultThreadFactory() : customizeFactory;
         final AtomicLong count = (nameFormat != null) ? new AtomicLong(0) : null;
         return r -> {
             Thread thread = factory.newThread(r);

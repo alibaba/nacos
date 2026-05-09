@@ -27,7 +27,7 @@ import java.util.Properties;
  * @date 2024/4/8
  */
 public interface RpcTlsConfigFactory {
-
+    
     /**
      * Create a TlsConfig for SDK connections based on the provided properties.
      *
@@ -35,7 +35,7 @@ public interface RpcTlsConfigFactory {
      * @return TlsConfig instance for SDK connections
      */
     TlsConfig createSdkConfig(Properties properties);
-
+    
     /**
      * Create a TlsConfig for cluster connections based on the provided properties.
      *
@@ -43,7 +43,7 @@ public interface RpcTlsConfigFactory {
      * @return TlsConfig instance for cluster connections
      */
     TlsConfig createClusterConfig(Properties properties);
-
+    
     /**
      * Get boolean property from properties.
      *

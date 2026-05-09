@@ -83,7 +83,8 @@ class ConcurrentHashSetTest {
         assertTrue(hashSetChecker.hasConcurrentError());
         
         count = 5;
-        SetMultiThreadChecker concurrentSetChecker = new SetMultiThreadChecker(new ConcurrentHashSet<>());
+        SetMultiThreadChecker concurrentSetChecker =
+            new SetMultiThreadChecker(new ConcurrentHashSet<>());
         concurrentSetChecker.start();
         while (!concurrentSetChecker.hasConcurrentError() && concurrentSetChecker.isRunning()) {
             TimeUnit.SECONDS.sleep(1);
@@ -119,7 +120,8 @@ class ConcurrentHashSetTest {
         }
         
         public boolean hasConcurrentError() {
-            return addThread.hasConcurrentError() || deleteThread.hasConcurrentError() || iteratorThread.hasConcurrentError();
+            return addThread.hasConcurrentError() || deleteThread.hasConcurrentError()
+                || iteratorThread.hasConcurrentError();
         }
         
         public boolean isRunning() {

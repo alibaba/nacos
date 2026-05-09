@@ -54,9 +54,10 @@ public class ConnLabelsUtils {
      * will be
      * a Map with value{k1=v1,k2=v2}.</p>
      */
-    public static Map<String, String> parsePropertyValue2Map(Properties properties, String propertyName) {
+    public static Map<String, String> parsePropertyValue2Map(Properties properties,
+        String propertyName) {
         String rawLabels = properties.getProperty(propertyName,
-                System.getProperty(propertyName, System.getenv(propertyName)));
+            System.getProperty(propertyName, System.getenv(propertyName)));
         if (StringUtils.isBlank(rawLabels)) {
             LOGGER.info("no value found for property key: {}", propertyName);
             return new HashMap<>(2);
@@ -78,15 +79,16 @@ public class ConnLabelsUtils {
         }
         HashMap<String, String> resultMap = new HashMap<>(2);
         try {
-            Arrays.stream(rawLabels.split(LABEL_SPLIT_OPERATOR)).filter(Objects::nonNull).map(String::trim)
-                    .filter(StringUtils::isNotBlank).forEach(label -> {
-                        String[] kv = label.split(LABEL_EQUALS_OPERATOR);
-                        if (kv.length == TAG_V2_LABEL_KEY_VALUE_SPLIT_LENGTH) {
-                            resultMap.put(kv[0].trim(), kv[1].trim());
-                        } else {
-                            LOGGER.error("unknown label format: {}", label);
-                        }
-                    });
+            Arrays.stream(rawLabels.split(LABEL_SPLIT_OPERATOR)).filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(StringUtils::isNotBlank).forEach(label -> {
+                    String[] kv = label.split(LABEL_EQUALS_OPERATOR);
+                    if (kv.length == TAG_V2_LABEL_KEY_VALUE_SPLIT_LENGTH) {
+                        resultMap.put(kv[0].trim(), kv[1].trim());
+                    } else {
+                        LOGGER.error("unknown label format: {}", label);
+                    }
+                });
         } catch (Exception e) {
             LOGGER.error("unknown label format: {}", rawLabels);
         }
@@ -104,6 +106,7 @@ public class ConnLabelsUtils {
     public static <T, R> Map<T, R> mergeMapByOrder(Map<T, R> preferredMap, Map<T, R> backwardMap) {
         if (preferredMap == null || preferredMap.isEmpty()) {
             return new HashMap<T, R>(8) {
+                
                 {
                     putAll(backwardMap);
                 }
@@ -111,15 +114,18 @@ public class ConnLabelsUtils {
         }
         if (backwardMap == null || backwardMap.isEmpty()) {
             return new HashMap<T, R>(8) {
+                
                 {
                     putAll(preferredMap);
                 }
             };
         }
         HashMap<T, R> resultMap = new HashMap<T, R>(8) {
+            
             {
                 putAll(preferredMap);
-            } };
+            }
+        };
         backwardMap.forEach((key, value) -> {
             if (!resultMap.containsKey(key)) {
                 resultMap.put(key, value);
@@ -140,7 +146,8 @@ public class ConnLabelsUtils {
         if (map == null || map.isEmpty()) {
             return map;
         }
-        return map.entrySet().stream().filter(Objects::nonNull).filter(elem -> !elem.getKey().trim().isEmpty())
-                .collect(Collectors.toMap(elem -> prefix + elem.getKey(), Map.Entry::getValue));
+        return map.entrySet().stream().filter(Objects::nonNull)
+            .filter(elem -> !elem.getKey().trim().isEmpty())
+            .collect(Collectors.toMap(elem -> prefix + elem.getKey(), Map.Entry::getValue));
     }
 }

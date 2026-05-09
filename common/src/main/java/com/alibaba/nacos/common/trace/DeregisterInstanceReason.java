@@ -38,5 +38,5 @@ public enum DeregisterInstanceReason {
      * Instance heart beat timeout expire.
      */
     HEARTBEAT_EXPIRE,
-   
+    
 }

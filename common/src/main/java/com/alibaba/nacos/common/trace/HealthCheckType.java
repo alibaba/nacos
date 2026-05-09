@@ -22,6 +22,7 @@ package com.alibaba.nacos.common.trace;
  * @author yanda
  */
 public enum HealthCheckType {
+    
     /**
      * Instance heart beat timeout.
      */

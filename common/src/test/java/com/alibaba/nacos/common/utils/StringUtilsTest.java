@@ -128,8 +128,10 @@ class StringUtilsTest {
         assertNull(StringUtils.substringBetween("a", "b", null));
         assertNull(StringUtils.substringBetween(StringUtils.EMPTY, StringUtils.EMPTY, "]"));
         assertNull(StringUtils.substringBetween(StringUtils.EMPTY, "[", "]"));
-        assertEquals(StringUtils.EMPTY, StringUtils.substringBetween("yabcz", StringUtils.EMPTY, StringUtils.EMPTY));
-        assertEquals(StringUtils.EMPTY, StringUtils.substringBetween(StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY));
+        assertEquals(StringUtils.EMPTY,
+            StringUtils.substringBetween("yabcz", StringUtils.EMPTY, StringUtils.EMPTY));
+        assertEquals(StringUtils.EMPTY,
+            StringUtils.substringBetween(StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY));
         assertEquals("b", StringUtils.substringBetween("wx[b]yz", "[", "]"));
         assertEquals("abc", StringUtils.substringBetween("yabcz", "y", "z"));
         assertEquals("abc", StringUtils.substringBetween("yabczyabcz", "y", "z"));
@@ -247,7 +249,8 @@ class StringUtilsTest {
         boolean trimTokens1 = true;
         boolean ignoreEmptyTokens1 = false;
         String[] expected1 = new String[0];
-        String[] result1 = StringUtils.tokenizeToStringArray(str1, delimiters1, trimTokens1, ignoreEmptyTokens1);
+        String[] result1 =
+            StringUtils.tokenizeToStringArray(str1, delimiters1, trimTokens1, ignoreEmptyTokens1);
         assertArrayEquals(expected1, result1);
         
         // Test case 2: Null string
@@ -256,7 +259,8 @@ class StringUtilsTest {
         boolean trimTokens2 = false;
         boolean ignoreEmptyTokens2 = true;
         String[] expected2 = new String[0];
-        String[] result2 = StringUtils.tokenizeToStringArray(str2, delimiters2, trimTokens2, ignoreEmptyTokens2);
+        String[] result2 =
+            StringUtils.tokenizeToStringArray(str2, delimiters2, trimTokens2, ignoreEmptyTokens2);
         assertArrayEquals(expected2, result2);
         
         // Test case 3: Single token
@@ -265,7 +269,8 @@ class StringUtilsTest {
         boolean trimTokens3 = true;
         boolean ignoreEmptyTokens3 = false;
         String[] expected3 = {"Hello"};
-        String[] result3 = StringUtils.tokenizeToStringArray(str3, delimiters3, trimTokens3, ignoreEmptyTokens3);
+        String[] result3 =
+            StringUtils.tokenizeToStringArray(str3, delimiters3, trimTokens3, ignoreEmptyTokens3);
         assertArrayEquals(expected3, result3);
         
         // Test case 4: Multiple tokens with trimming
@@ -274,7 +279,8 @@ class StringUtilsTest {
         boolean trimTokens4 = true;
         boolean ignoreEmptyTokens4 = false;
         String[] expected4 = {"Hello", "World", ""};
-        String[] result4 = StringUtils.tokenizeToStringArray(str4, delimiters4, trimTokens4, ignoreEmptyTokens4);
+        String[] result4 =
+            StringUtils.tokenizeToStringArray(str4, delimiters4, trimTokens4, ignoreEmptyTokens4);
         assertArrayEquals(expected4, result4);
         
         // Test case 5: Multiple tokens with empty tokens ignored
@@ -283,7 +289,8 @@ class StringUtilsTest {
         boolean trimTokens5 = true;
         boolean ignoreEmptyTokens5 = true;
         String[] expected5 = {"Hello", "World"};
-        String[] result5 = StringUtils.tokenizeToStringArray(str5, delimiters5, trimTokens5, ignoreEmptyTokens5);
+        String[] result5 =
+            StringUtils.tokenizeToStringArray(str5, delimiters5, trimTokens5, ignoreEmptyTokens5);
         assertArrayEquals(expected5, result5);
     }
     

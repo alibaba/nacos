@@ -37,7 +37,8 @@ class DefaultLabelsCollectorManagerTest {
         Properties properties = new Properties();
         properties.put(Constants.APP_CONN_LABELS_KEY, "k1=v1,gray=properties_pre");
         properties.put(Constants.CONFIG_GRAY_LABEL, "properties_after");
-        DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
+        DefaultLabelsCollectorManager defaultLabelsCollectorManager =
+            new DefaultLabelsCollectorManager();
         Map<String, String> labels = defaultLabelsCollectorManager.getLabels(properties);
         assertEquals("properties_after", labels.get(Constants.CONFIG_GRAY_LABEL));
         assertEquals("v1", labels.get("k1"));
@@ -46,7 +47,8 @@ class DefaultLabelsCollectorManagerTest {
     @Test
     void tagV2LabelsCollectorOrderTest() {
         Properties properties = new Properties();
-        DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
+        DefaultLabelsCollectorManager defaultLabelsCollectorManager =
+            new DefaultLabelsCollectorManager();
         Map<String, String> labels = defaultLabelsCollectorManager.getLabels(properties);
         String test = labels.get("test");
         assertEquals("test2", test);

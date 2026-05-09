@@ -61,9 +61,12 @@ public class DeregisterInstanceTraceEvent extends NamingTraceEvent {
         return reason;
     }
     
-    public DeregisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc, DeregisterInstanceReason reason,
-            String serviceNamespace, String serviceGroup, String serviceName, String instanceIp, int instancePort) {
-        super("DEREGISTER_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+    public DeregisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc,
+        DeregisterInstanceReason reason,
+        String serviceNamespace, String serviceGroup, String serviceName, String instanceIp,
+        int instancePort) {
+        super("DEREGISTER_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup,
+            serviceName);
         this.clientIp = clientIp;
         this.reason = reason;
         this.rpc = rpc;

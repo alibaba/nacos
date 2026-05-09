@@ -55,7 +55,8 @@ class NacosExecuteTaskExecuteEngineTest {
     
     @AfterEach
     void tearDown() throws NacosException {
-        System.setProperty("nacos.common.processors", null == cachedProcessor ? "" : cachedProcessor);
+        System.setProperty("nacos.common.processors",
+            null == cachedProcessor ? "" : cachedProcessor);
         executeTaskExecuteEngine.shutdown();
     }
     

@@ -48,12 +48,13 @@ public class GrpcSdkClient extends GrpcClient {
      * @param labels             .
      */
     public GrpcSdkClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
-            Map<String, String> labels) {
+        Map<String, String> labels) {
         this(name, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
     
-    public GrpcSdkClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
-            RpcClientTlsConfig tlsConfig) {
+    public GrpcSdkClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
+        Map<String, String> labels,
+        RpcClientTlsConfig tlsConfig) {
         super(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
     }
     
@@ -74,7 +75,7 @@ public class GrpcSdkClient extends GrpcClient {
     @Override
     public int rpcPortOffset() {
         return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
-                String.valueOf(Constants.SDK_GRPC_PORT_DEFAULT_OFFSET)));
+            String.valueOf(Constants.SDK_GRPC_PORT_DEFAULT_OFFSET)));
     }
     
 }

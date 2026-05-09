@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * @author xingxuechao on:2019/2/27 12:32 PM
  */
 public class VersionUtils {
-
+    
     private VersionUtils() {
     }
     
@@ -44,7 +44,8 @@ public class VersionUtils {
     private static final String NACOS_VERSION_FILE = "nacos-version.txt";
     
     static {
-        try (InputStream in = VersionUtils.class.getClassLoader().getResourceAsStream(NACOS_VERSION_FILE)) {
+        try (InputStream in =
+            VersionUtils.class.getClassLoader().getResourceAsStream(NACOS_VERSION_FILE)) {
             Properties props = new Properties();
             props.load(in);
             String val = props.getProperty("version");
@@ -71,11 +72,13 @@ public class VersionUtils {
         if (sA.length != expectSize || sB.length != expectSize) {
             throw new IllegalArgumentException("version must be like x.y.z(-beta)");
         }
-        int major = Integer.compare(parseVersionPart(sA[0], versionA), parseVersionPart(sB[0], versionB));
+        int major =
+            Integer.compare(parseVersionPart(sA[0], versionA), parseVersionPart(sB[0], versionB));
         if (major != 0) {
             return major;
         }
-        int minor = Integer.compare(parseVersionPart(sA[1], versionA), parseVersionPart(sB[1], versionB));
+        int minor =
+            Integer.compare(parseVersionPart(sA[1], versionA), parseVersionPart(sB[1], versionB));
         if (minor != 0) {
             return minor;
         }
@@ -83,12 +86,13 @@ public class VersionUtils {
         int patchB = parseVersionPart(sB[2].split("-")[0], versionB);
         return Integer.compare(patchA, patchB);
     }
-
+    
     private static int parseVersionPart(String part, String originalVersion) {
         try {
             return Integer.parseInt(part);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("version must be like x.y.z(-beta), got: " + originalVersion, e);
+            throw new IllegalArgumentException(
+                "version must be like x.y.z(-beta), got: " + originalVersion, e);
         }
     }
     
@@ -98,7 +102,8 @@ public class VersionUtils {
     
     // ---- AI Resource Version Utilities (semver x.y.z + legacy vN) ----
     
-    private static final Pattern PURE_SEMVER_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([a-zA-Z0-9]+(?:\\.[a-zA-Z0-9]+)*))?$");
+    private static final Pattern PURE_SEMVER_PATTERN =
+        Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([a-zA-Z0-9]+(?:\\.[a-zA-Z0-9]+)*))?$");
     
     private static final String DEFAULT_INITIAL_SEMVER = "0.0.1";
     
@@ -152,7 +157,8 @@ public class VersionUtils {
             return null;
         }
         try {
-            return new int[] {Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2])};
+            return new int[] {Integer.parseInt(parts[0]), Integer.parseInt(parts[1]),
+                Integer.parseInt(parts[2])};
         } catch (NumberFormatException ignored) {
             return null;
         }
@@ -217,7 +223,7 @@ public class VersionUtils {
         int idx = normalizedVersion.indexOf('-');
         return idx >= 0 ? normalizedVersion.substring(idx + 1) : null;
     }
-
+    
     /**
      * Increment the patch number of a semver version string. Pre-release suffix is stripped in the result.
      *
@@ -266,7 +272,8 @@ public class VersionUtils {
             return null;
         }
         String normalized = version.trim();
-        if (!(normalized.startsWith("v") || normalized.startsWith("V")) || normalized.length() <= 1) {
+        if (!(normalized.startsWith("v") || normalized.startsWith("V"))
+            || normalized.length() <= 1) {
             return null;
         }
         try {

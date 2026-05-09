@@ -98,6 +98,7 @@ class JdkClientHttpResponseTest {
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(testCase);
         when(connection.getInputStream()).thenReturn(byteArrayInputStream);
         headers.put(HttpHeaderConsts.CONTENT_ENCODING, Collections.singletonList("gzip"));
-        assertEquals("test", IoUtils.toString(clientHttpResponse.getBody(), StandardCharsets.UTF_8.name()));
+        assertEquals("test",
+            IoUtils.toString(clientHttpResponse.getBody(), StandardCharsets.UTF_8.name()));
     }
 }

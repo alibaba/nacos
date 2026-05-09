@@ -31,7 +31,7 @@ class RpcConstantsTest {
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
             if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    RpcConstants.RpcConfigLabel.class)) {
+                RpcConstants.RpcConfigLabel.class)) {
                 i++;
             }
         }

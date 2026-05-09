@@ -84,8 +84,9 @@ public class JdkHttpClientRequest implements HttpClientRequest {
     }
     
     @Override
-    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
-            throws Exception {
+    public HttpClientResponse execute(URI uri, String httpMethod,
+        RequestHttpEntity requestHttpEntity)
+        throws Exception {
         final Object body = requestHttpEntity.getBody();
         final Header headers = requestHttpEntity.getHeaders();
         replaceDefaultConfig(requestHttpEntity.getHttpClientConfig());
@@ -98,7 +99,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
                     conn.setRequestProperty(entry.getKey(), entry.getValue());
                 }
             }
-
+            
             conn.setConnectTimeout(this.httpClientConfig.getConTimeOutMillis());
             conn.setReadTimeout(this.httpClientConfig.getReadTimeOutMillis());
             conn.setRequestMethod(httpMethod);
@@ -136,12 +137,15 @@ public class JdkHttpClientRequest implements HttpClientRequest {
         
         StringBuilder sb = new StringBuilder();
         sb.append("--").append(boundary).append(LINE_FEED);
-        sb.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(file.getName()).append("\"")
-                .append(LINE_FEED);
-        sb.append("Content-Type: ").append(Files.probeContentType(file.toPath())).append(LINE_FEED).append(LINE_FEED);
+        sb.append("Content-Disposition: form-data; name=\"file\"; filename=\"")
+            .append(file.getName()).append("\"")
+            .append(LINE_FEED);
+        sb.append("Content-Type: ").append(Files.probeContentType(file.toPath())).append(LINE_FEED)
+            .append(LINE_FEED);
         
         byte[] fileBytes = Files.readAllBytes(file.toPath());
-        byte[] boundaryBytes = (LINE_FEED + "--" + boundary + "--" + LINE_FEED).getBytes(StandardCharsets.UTF_8);
+        byte[] boundaryBytes =
+            (LINE_FEED + "--" + boundary + "--" + LINE_FEED).getBytes(StandardCharsets.UTF_8);
         
         conn.setDoOutput(true);
         try (OutputStream outputStream = conn.getOutputStream()) {
@@ -166,6 +170,6 @@ public class JdkHttpClientRequest implements HttpClientRequest {
     
     @Override
     public void close() throws IOException {
-    
+        
     }
 }

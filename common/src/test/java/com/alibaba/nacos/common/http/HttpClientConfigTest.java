@@ -39,19 +39,22 @@ class HttpClientConfigTest {
     
     @Test
     void testGetConnTimeToLive() {
-        HttpClientConfig config = HttpClientConfig.builder().setConnectionTimeToLive(3000, TimeUnit.MILLISECONDS).build();
+        HttpClientConfig config =
+            HttpClientConfig.builder().setConnectionTimeToLive(3000, TimeUnit.MILLISECONDS).build();
         assertEquals(3000, config.getConnTimeToLive());
     }
     
     @Test
     void testGetConnTimeToLiveTimeUnit() {
-        HttpClientConfig config = HttpClientConfig.builder().setConnectionTimeToLive(4000, TimeUnit.SECONDS).build();
+        HttpClientConfig config =
+            HttpClientConfig.builder().setConnectionTimeToLive(4000, TimeUnit.SECONDS).build();
         assertEquals(TimeUnit.SECONDS, config.getConnTimeToLiveTimeUnit());
     }
     
     @Test
     void testGetConnectionRequestTimeout() {
-        HttpClientConfig config = HttpClientConfig.builder().setConnectionRequestTimeout(5000).build();
+        HttpClientConfig config =
+            HttpClientConfig.builder().setConnectionRequestTimeout(5000).build();
         assertEquals(5000, config.getConnectionRequestTimeout());
     }
     
@@ -75,7 +78,8 @@ class HttpClientConfigTest {
     
     @Test
     void testGetContentCompressionEnabled() {
-        HttpClientConfig config = HttpClientConfig.builder().setContentCompressionEnabled(false).build();
+        HttpClientConfig config =
+            HttpClientConfig.builder().setContentCompressionEnabled(false).build();
         assertFalse(config.getContentCompressionEnabled());
     }
     

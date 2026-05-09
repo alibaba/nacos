@@ -37,7 +37,8 @@ public class ParamCheckerManager {
     private final Map<String, AbstractParamChecker> paramCheckerMap = new ConcurrentHashMap<>();
     
     private ParamCheckerManager() {
-        Collection<AbstractParamChecker> paramCheckers = NacosServiceLoader.load(AbstractParamChecker.class);
+        Collection<AbstractParamChecker> paramCheckers =
+            NacosServiceLoader.load(AbstractParamChecker.class);
         for (AbstractParamChecker paramChecker : paramCheckers) {
             String checkerType = paramChecker.getCheckerType();
             paramCheckerMap.put(checkerType, paramChecker);

@@ -37,7 +37,8 @@ class NacosAbilityManagerHolderTest {
     
     @AfterEach
     void tearDown() throws Exception {
-        Field abilityControlManagerField = NacosAbilityManagerHolder.class.getDeclaredField("abstractAbilityControlManager");
+        Field abilityControlManagerField =
+            NacosAbilityManagerHolder.class.getDeclaredField("abstractAbilityControlManager");
         abilityControlManagerField.setAccessible(true);
         abilityControlManagerField.set(null, null);
     }

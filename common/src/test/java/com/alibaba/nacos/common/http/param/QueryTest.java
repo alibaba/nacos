@@ -41,7 +41,8 @@ class QueryTest {
         parameters.put("port", String.valueOf(9999));
         parameters.put("weight", String.valueOf(1.0));
         parameters.put("ephemeral", String.valueOf(true));
-        String excepted = "namespaceId=namespace&serviceName=service&groupName=group&ip=1.1.1.1&port=9999&weight=1.0&ephemeral=true";
+        String excepted =
+            "namespaceId=namespace&serviceName=service&groupName=group&ip=1.1.1.1&port=9999&weight=1.0&ephemeral=true";
         Query actual = Query.newInstance().initParams(parameters);
         assertEquals(excepted, actual.toQueryUrl());
         assertEquals("namespace", actual.getValue(CommonParams.NAMESPACE_ID));
@@ -52,8 +53,9 @@ class QueryTest {
         Query query = Query.newInstance().addParam("key-1", "value-1").addParam("key-2", "value-2");
         String s1 = query.toQueryUrl();
         String s2 =
-                "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name()) + "&key-2=" + URLEncoder.encode("value-2",
-                        StandardCharsets.UTF_8.name());
+            "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name()) + "&key-2="
+                + URLEncoder.encode("value-2",
+                    StandardCharsets.UTF_8.name());
         assertEquals(s2, s1);
         assertEquals("value-1", query.getValue("key-1"));
     }

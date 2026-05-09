@@ -65,19 +65,23 @@ public class Base64 {
      *
      * <p>http://svn.apache.org/repos/asf/webservices/commons/trunk/modules/util/
      */
+    // @formatter:off
     private static final byte[] STANDARD_ENCODE_TABLE = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
             'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
             'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1',
             '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
+    // @formatter:on
     
     /**
      * This is a copy of the STANDARD_ENCODE_TABLE above, but with + and / changed to - and _ to make the encoded Base64
      * results more URL-SAFE. This table is only used when the Base64's mode is set to URL-SAFE.
      */
+    // @formatter:off
     private static final byte[] URL_SAFE_ENCODE_TABLE = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
             'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
             'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1',
             '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'};
+    // @formatter:on
     
     /**
      * This array is a lookup table that translates Unicode characters drawn from the "Base64 Alphabet" (as specified in
@@ -91,11 +95,13 @@ public class Base64 {
      *
      * <p>http://svn.apache.org/repos/asf/webservices/commons/trunk/modules/util/
      */
+    // @formatter:off
     private static final byte[] DECODE_TABLE = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1,
             62, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
             9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, 63, -1, 26, 27, 28, 29,
             30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51};
+    // @formatter:on
     
     /**
      * Base64 uses 6-bit fields. Mask used to extract 6 bits, used when encoding
@@ -172,7 +178,8 @@ public class Base64 {
         unencodedBlockSize = BYTES_PER_UNENCODED_BLOCK;
         encodedBlockSize = BYTES_PER_ENCODED_BLOCK;
         this.lineLength =
-                (lineLength > 0 && chunkSeparatorLength > 0) ? (lineLength / encodedBlockSize) * encodedBlockSize : 0;
+            (lineLength > 0 && chunkSeparatorLength > 0)
+                ? (lineLength / encodedBlockSize) * encodedBlockSize : 0;
         if (lineLength > 0) {
             this.encodeSize = BYTES_PER_ENCODED_BLOCK + lineSeparator.length;
             this.lineSeparator = new byte[lineSeparator.length];
@@ -387,7 +394,8 @@ public class Base64 {
      * @throws IllegalArgumentException Thrown when the input array needs an output array bigger than maxResultSize
      * @since 1.4
      */
-    public static byte[] encodeBase64(byte[] binaryData, boolean isChunked, boolean urlSafe, int maxResultSize) {
+    public static byte[] encodeBase64(byte[] binaryData, boolean isChunked, boolean urlSafe,
+        int maxResultSize) {
         if (binaryData == null || binaryData.length == 0) {
             return binaryData;
         }
@@ -395,10 +403,11 @@ public class Base64 {
         // Create this so can use the super-class method
         // Also ensures that the same roundings are performed by the ctor and the code
         Base64 b64 = isChunked ? new Base64(MIME_CHUNK_SIZE, CHUNK_SEPARATOR, urlSafe)
-                : new Base64(0, CHUNK_SEPARATOR, urlSafe);
+            : new Base64(0, CHUNK_SEPARATOR, urlSafe);
         long len = b64.getEncodedLength(binaryData);
         if (len > maxResultSize) {
-            throw new IllegalArgumentException("Input array too big, the output array would be bigger (" + len
+            throw new IllegalArgumentException(
+                "Input array too big, the output array would be bigger (" + len
                     + ") than the specified maximum size of " + maxResultSize);
         }
         
@@ -562,7 +571,8 @@ public class Base64 {
     private long getEncodedLength(byte[] pArray) {
         // Calculate non-chunked size - rounded up to allow for padding
         // cast to long is needed to avoid possibility of overflow
-        long len = ((pArray.length + unencodedBlockSize - 1) / unencodedBlockSize) * (long) encodedBlockSize;
+        long len = ((pArray.length + unencodedBlockSize - 1) / unencodedBlockSize)
+            * (long) encodedBlockSize;
         if (lineLength > 0) {
             /*
              Round up to nearest multiple

@@ -25,7 +25,7 @@ import java.lang.reflect.Type;
  * @author zzq
  */
 public class TypeUtils {
-
+    
     private TypeUtils() {
     }
     
@@ -47,7 +47,8 @@ public class TypeUtils {
      * @param raw           raw class
      * @param typeArguments the types used for parameterization
      */
-    private static void checkParameterizeMethodParameter(Class<?> raw, final Type... typeArguments) {
+    private static void checkParameterizeMethodParameter(Class<?> raw,
+        final Type... typeArguments) {
         if (raw == null) {
             throw new NullPointerException("raw cannot be null");
         }
@@ -56,8 +57,8 @@ public class TypeUtils {
         }
         if (typeArguments.length != raw.getTypeParameters().length) {
             throw new IllegalArgumentException(
-                    String.format("invalid number of type parameters specified: expected %s, got %s",
-                            raw.getTypeParameters().length, typeArguments.length));
+                String.format("invalid number of type parameters specified: expected %s, got %s",
+                    raw.getTypeParameters().length, typeArguments.length));
         }
         
         for (int i = 0; i < typeArguments.length; i++) {
@@ -88,7 +89,8 @@ public class TypeUtils {
          */
         private final Type[] typeArguments;
         
-        private ParameterizedTypeImpl(final Class<?> raw, final Type useOwner, final Type[] typeArguments) {
+        private ParameterizedTypeImpl(final Class<?> raw, final Type useOwner,
+            final Type[] typeArguments) {
             this.raw = raw;
             this.useOwner = useOwner;
             this.typeArguments = typeArguments;

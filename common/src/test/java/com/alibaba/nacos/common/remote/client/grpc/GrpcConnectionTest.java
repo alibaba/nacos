@@ -131,7 +131,8 @@ class GrpcConnectionTest {
     }
     
     @Test
-    void testRequestTimeout() throws InterruptedException, ExecutionException, TimeoutException, NacosException {
+    void testRequestTimeout()
+        throws InterruptedException, ExecutionException, TimeoutException, NacosException {
         assertThrows(NacosException.class, () -> {
             when(future.get(100L, TimeUnit.MILLISECONDS)).thenThrow(new TimeoutException("test"));
             connection.request(new HealthCheckRequest(), 100);
@@ -210,12 +211,15 @@ class GrpcConnectionTest {
     }
     
     @Test
-    void testAsyncRequestNullResponse() throws NacosException, ExecutionException, InterruptedException {
+    void testAsyncRequestNullResponse()
+        throws NacosException, ExecutionException, InterruptedException {
         byte[] jsonBytes = JacksonUtils.toJsonBytes(null);
-        Metadata.Builder metaBuilder = Metadata.newBuilder().setType(HealthCheckResponse.class.getSimpleName());
+        Metadata.Builder metaBuilder =
+            Metadata.newBuilder().setType(HealthCheckResponse.class.getSimpleName());
         Payload nullResponsePayload = Payload.newBuilder()
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes))).setMetadata(metaBuilder.build())
-                .build();
+            .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
+            .setMetadata(metaBuilder.build())
+            .build();
         when(future.get()).thenReturn(nullResponsePayload);
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArgument(0)).run();
@@ -227,7 +231,8 @@ class GrpcConnectionTest {
     }
     
     @Test
-    void testAsyncRequestWithCancelException() throws NacosException, ExecutionException, InterruptedException {
+    void testAsyncRequestWithCancelException()
+        throws NacosException, ExecutionException, InterruptedException {
         when(future.get()).thenThrow(new CancellationException("test"));
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArgument(0)).run();
@@ -239,7 +244,8 @@ class GrpcConnectionTest {
     }
     
     @Test
-    void testAsyncRequestWithOtherException() throws NacosException, ExecutionException, InterruptedException {
+    void testAsyncRequestWithOtherException()
+        throws NacosException, ExecutionException, InterruptedException {
         when(future.get()).thenThrow(new RuntimeException("test"));
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArgument(0)).run();
