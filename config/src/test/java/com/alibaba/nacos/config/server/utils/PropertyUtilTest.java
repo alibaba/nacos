@@ -44,7 +44,7 @@ class PropertyUtilTest {
     void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("memory_limit_file_path"),
-                eq("/sys/fs/cgroup/memory/memory.limit_in_bytes"))).thenReturn(mockMem);
+            eq("/sys/fs/cgroup/memory/memory.limit_in_bytes"))).thenReturn(mockMem);
         
     }
     
@@ -68,7 +68,8 @@ class PropertyUtilTest {
     @Test
     void testGetPropertyV2() {
         
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("test"), eq("default"))).thenReturn("default");
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("test"), eq("default")))
+            .thenReturn("default");
         assertEquals("default", new PropertyUtil().getProperty("test", "default"));
     }
     

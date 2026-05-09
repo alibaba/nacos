@@ -35,14 +35,15 @@ import java.util.Map;
  * @author xiweng.yy
  */
 @RestController
-@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
+@RequestMapping({
+        UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
         UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 @ConditionalOnMissingClass("com.alibaba.nacos.legacy.adapter.naming.OperatorController")
 public class OperatorMetricsV1Controller {
-    
+
     public OperatorMetricsV1Controller() {
     }
-    
+
     /**
      * Get metrics (only status). Kept for old clients; full metrics available at v3 API.
      */

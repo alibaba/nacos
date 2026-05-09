@@ -37,24 +37,24 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class CircuitFilterTest {
-
+    
     private CircuitFilter filter;
-
+    
     @Mock
     private ServerMemberManager memberManager;
-
+    
     @Mock
     private CPProtocol protocol;
-
+    
     @Mock
     private HttpServletRequest request;
-
+    
     @Mock
     private HttpServletResponse response;
-
+    
     @Mock
     private FilterChain chain;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         filter = new CircuitFilter();
@@ -63,65 +63,70 @@ class CircuitFilterTest {
         injectField(filter, "isOpenService", true);
         injectField(filter, "isDowngrading", false);
     }
-
+    
     @Test
     void testSecurityExceptionReturns403() throws Exception {
         doThrow(new SecurityException("access denied")).when(chain).doFilter(request, response);
-
+        
         filter.doFilter(request, response, chain);
-
+        
         verify(response).sendError(eq(HttpServletResponse.SC_FORBIDDEN), contains("access denied"));
     }
-
+    
     @Test
     void testSecurityExceptionFromDownstreamAuthFilterReturns403() throws Exception {
-        doThrow(new SecurityException("Authority validation failed")).when(chain).doFilter(request, response);
-
+        doThrow(new SecurityException("Authority validation failed")).when(chain).doFilter(request,
+            response);
+        
         filter.doFilter(request, response, chain);
-
-        verify(response).sendError(eq(HttpServletResponse.SC_FORBIDDEN), contains("Authority validation failed"));
+        
+        verify(response).sendError(eq(HttpServletResponse.SC_FORBIDDEN),
+            contains("Authority validation failed"));
     }
-
+    
     @Test
     void testServiceNotOpenReturns503() throws Exception {
         injectField(filter, "isOpenService", false);
-
+        
         filter.doFilter(request, response, chain);
-
+        
         verify(response).sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-                "In the node initialization, unable to process any requests at this time");
+            "In the node initialization, unable to process any requests at this time");
         verify(chain, never()).doFilter(request, response);
     }
-
+    
     @Test
     void testDowngradingReturns503() throws Exception {
         injectField(filter, "isDowngrading", true);
-
+        
         filter.doFilter(request, response, chain);
-
+        
         verify(response).sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-                "Unable to process the request at this time: System triggered degradation");
+            "Unable to process the request at this time: System triggered degradation");
         verify(chain, never()).doFilter(request, response);
     }
-
+    
     @Test
     void testGenericExceptionReturns500() throws Exception {
         doThrow(new RuntimeException("internal error")).when(chain).doFilter(request, response);
-
+        
         filter.doFilter(request, response, chain);
-
-        verify(response).sendError(eq(HttpServletResponse.SC_INTERNAL_SERVER_ERROR), contains("internal error"));
+        
+        verify(response).sendError(eq(HttpServletResponse.SC_INTERNAL_SERVER_ERROR),
+            contains("internal error"));
     }
-
+    
     @Test
     void testNormalRequestPassesThrough() throws Exception {
         filter.doFilter(request, response, chain);
-
+        
         verify(chain).doFilter(request, response);
-        verify(response, never()).sendError(eq(HttpServletResponse.SC_FORBIDDEN), contains("access denied"));
+        verify(response, never()).sendError(eq(HttpServletResponse.SC_FORBIDDEN),
+            contains("access denied"));
     }
-
-    private static void injectField(Object target, String fieldName, Object value) throws Exception {
+    
+    private static void injectField(Object target, String fieldName, Object value)
+        throws Exception {
         Field field = CircuitFilter.class.getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(target, value);

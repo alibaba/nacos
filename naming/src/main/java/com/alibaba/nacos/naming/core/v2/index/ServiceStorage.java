@@ -60,8 +60,9 @@ public class ServiceStorage {
     
     private final ConcurrentMap<Service, Set<String>> serviceClusterIndex;
     
-    public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager, ClientManagerDelegate clientManager,
-            SwitchDomain switchDomain, NamingMetadataManager metadataManager) {
+    public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager,
+        ClientManagerDelegate clientManager,
+        SwitchDomain switchDomain, NamingMetadataManager metadataManager) {
         this.serviceIndexesManager = serviceIndexesManager;
         this.clientManager = clientManager;
         this.switchDomain = switchDomain;
@@ -75,7 +76,8 @@ public class ServiceStorage {
     }
     
     public ServiceInfo getData(Service service) {
-        return serviceDataIndexes.containsKey(service) ? serviceDataIndexes.get(service) : getPushData(service);
+        return serviceDataIndexes.containsKey(service) ? serviceDataIndexes.get(service)
+            : getPushData(service);
     }
     
     public ServiceInfo getPushData(Service service) {
@@ -112,8 +114,10 @@ public class ServiceStorage {
                 InstancePublishInfo publishInfo = instancePublishInfo.get();
                 //If it is a BatchInstancePublishInfo type, it will be processed manually and added to the instance list
                 if (publishInfo instanceof BatchInstancePublishInfo) {
-                    BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) publishInfo;
-                    List<Instance> batchInstance = parseBatchInstance(service, batchInstancePublishInfo, clusters);
+                    BatchInstancePublishInfo batchInstancePublishInfo =
+                        (BatchInstancePublishInfo) publishInfo;
+                    List<Instance> batchInstance =
+                        parseBatchInstance(service, batchInstancePublishInfo, clusters);
                     result.addAll(batchInstance);
                 } else {
                     Instance instance = parseInstance(service, instancePublishInfo.get());
@@ -133,9 +137,11 @@ public class ServiceStorage {
      * @param batchInstancePublishInfo batchInstancePublishInfo
      * @return batch instance list
      */
-    private List<Instance> parseBatchInstance(Service service, BatchInstancePublishInfo batchInstancePublishInfo, Set<String> clusters) {
+    private List<Instance> parseBatchInstance(Service service,
+        BatchInstancePublishInfo batchInstancePublishInfo, Set<String> clusters) {
         List<Instance> resultInstanceList = new ArrayList<>();
-        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
+        List<InstancePublishInfo> instancePublishInfos =
+            batchInstancePublishInfo.getInstancePublishInfos();
         for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
             Instance instance = parseInstance(service, instancePublishInfo);
             resultInstanceList.add(instance);
@@ -155,8 +161,9 @@ public class ServiceStorage {
     private Instance parseInstance(Service service, InstancePublishInfo instanceInfo) {
         Instance result = InstanceUtil.parseToApiInstance(service, instanceInfo);
         Optional<InstanceMetadata> metadata = metadataManager
-                .getInstanceMetadata(service, instanceInfo.getMetadataId());
-        metadata.ifPresent(instanceMetadata -> InstanceUtil.updateInstanceMetadata(result, instanceMetadata));
+            .getInstanceMetadata(service, instanceInfo.getMetadataId());
+        metadata.ifPresent(
+            instanceMetadata -> InstanceUtil.updateInstanceMetadata(result, instanceMetadata));
         return result;
     }
 }

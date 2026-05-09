@@ -46,8 +46,10 @@ class ConfigRawDiskServiceTest {
      * 测试获取文件路径.
      */
     @Test
-    void testTargetFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class,
+    void testTargetFile()
+        throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method =
+            ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class,
                 String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa-dsaknkf", "aaaa.dsaknkf", "aaaa:dsaknkf");
@@ -66,20 +68,26 @@ class ConfigRawDiskServiceTest {
     
     @Test
     void testTargetFileWithInvalidParam() {
-        assertThrows(NacosRuntimeException.class, () -> ConfigRawDiskService.targetFile("../aaa", "testG", "testNS"));
-        assertThrows(NacosRuntimeException.class, () -> ConfigRawDiskService.targetFile("testD", "../aaa", "testNS"));
-        assertThrows(NacosRuntimeException.class, () -> ConfigRawDiskService.targetFile("testD", "testG", "../aaa"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("../aaa", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "../aaa", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "testG", "../aaa"));
     }
     
     /**
      * 测试获取beta文件路径.
      */
     @Test
-    void testTargetGrayFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetGrayFile", String.class, String.class,
-                String.class, String.class);
+    void testTargetGrayFile()
+        throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetGrayFile", String.class,
+            String.class,
+            String.class, String.class);
         method.setAccessible(true);
-        File result = (File) method.invoke(null, "data345678", "group3456", "tenant1234", "graynem4567");
+        File result =
+            (File) method.invoke(null, "data345678", "group3456", "tenant1234", "graynem4567");
         // 分解路径
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();

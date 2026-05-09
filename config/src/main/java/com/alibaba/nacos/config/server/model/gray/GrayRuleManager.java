@@ -38,7 +38,8 @@ public class GrayRuleManager {
     static {
         Collection<GrayRule> grayRuleCollection = NacosServiceLoader.load(GrayRule.class);
         for (GrayRule grayRule : grayRuleCollection) {
-            GRAY_RULE_MAP.put(grayRule.getType() + SPLIT + grayRule.getVersion(), grayRule.getClass());
+            GRAY_RULE_MAP.put(grayRule.getType() + SPLIT + grayRule.getVersion(),
+                grayRule.getClass());
         }
     }
     
@@ -63,18 +64,21 @@ public class GrayRuleManager {
      */
     public static GrayRule constructGrayRule(ConfigGrayPersistInfo configGrayPersistInfo) {
         Class<?> classByTypeAndVersion = getClassByTypeAndVersion(configGrayPersistInfo.getType(),
-                configGrayPersistInfo.getVersion());
+            configGrayPersistInfo.getVersion());
         if (classByTypeAndVersion == null) {
             return null;
         }
         try {
-            Constructor<?> declaredConstructor = classByTypeAndVersion.getDeclaredConstructor(String.class, int.class);
+            Constructor<?> declaredConstructor =
+                classByTypeAndVersion.getDeclaredConstructor(String.class, int.class);
             declaredConstructor.setAccessible(true);
             return (GrayRule) declaredConstructor.newInstance(configGrayPersistInfo.getExpr(),
-                    configGrayPersistInfo.getPriority());
+                configGrayPersistInfo.getPriority());
         } catch (Exception e) {
-            throw new RuntimeException(String.format("construct gray rule failed with type[%s], version[%s].",
-                    configGrayPersistInfo.getType(), configGrayPersistInfo.getVersion()), e);
+            throw new RuntimeException(
+                String.format("construct gray rule failed with type[%s], version[%s].",
+                    configGrayPersistInfo.getType(), configGrayPersistInfo.getVersion()),
+                e);
         }
     }
     
@@ -86,8 +90,9 @@ public class GrayRuleManager {
      * @date 2024/3/14
      */
     public static ConfigGrayPersistInfo constructConfigGrayPersistInfo(GrayRule grayRule) {
-        return new ConfigGrayPersistInfo(grayRule.getType(), grayRule.getVersion(), grayRule.getRawGrayRuleExp(),
-                grayRule.getPriority());
+        return new ConfigGrayPersistInfo(grayRule.getType(), grayRule.getVersion(),
+            grayRule.getRawGrayRuleExp(),
+            grayRule.getPriority());
     }
     
     /**
@@ -97,7 +102,8 @@ public class GrayRuleManager {
      * @return config gray persist info.
      * @date 2024/3/14
      */
-    public static ConfigGrayPersistInfo deserializeConfigGrayPersistInfo(String grayRuleRawStringFromDb) {
+    public static ConfigGrayPersistInfo deserializeConfigGrayPersistInfo(
+        String grayRuleRawStringFromDb) {
         return (new Gson()).fromJson(grayRuleRawStringFromDb, ConfigGrayPersistInfo.class);
     }
     
@@ -108,7 +114,8 @@ public class GrayRuleManager {
      * @return serialized string.
      * @date 2024/3/14
      */
-    public static String serializeConfigGrayPersistInfo(ConfigGrayPersistInfo configGrayPersistInfo) {
+    public static String serializeConfigGrayPersistInfo(
+        ConfigGrayPersistInfo configGrayPersistInfo) {
         return (new Gson()).toJson(configGrayPersistInfo);
     }
 }

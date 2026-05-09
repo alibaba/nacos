@@ -71,7 +71,8 @@ class MD5UtilTest {
         Md5ComparatorDelegate md5ComparatorDelegate = Mockito.mock(Md5ComparatorDelegate.class);
         when(Md5ComparatorDelegate.getInstance()).thenReturn(md5ComparatorDelegate);
         
-        when(ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), anyString())).thenReturn(false);
+        when(ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), anyString()))
+            .thenReturn(false);
         
         HashMap<String, ConfigListenState> clientMd5Map = new HashMap<>();
         clientMd5Map.put("test", new ConfigListenState("test"));
@@ -80,7 +81,8 @@ class MD5UtilTest {
         request.addHeader("Vipserver-Tag", "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
         
-        when(md5ComparatorDelegate.compareMd5(request, response, clientMd5Map)).thenReturn(new HashMap<>());
+        when(md5ComparatorDelegate.compareMd5(request, response, clientMd5Map))
+            .thenReturn(new HashMap<>());
         MD5Util.compareMd5(request, response, clientMd5Map);
         
         verify(md5ComparatorDelegate, times(1)).compareMd5(request, response, clientMd5Map);
@@ -136,8 +138,8 @@ class MD5UtilTest {
     void testGetClientMd5Map() {
         
         String configKeysString =
-                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
-                        + MD5Util.LINE_SEPARATOR_CHAR;
+            "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
+                + MD5Util.LINE_SEPARATOR_CHAR;
         
         Map<String, ConfigListenState> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
         assertEquals("test2", actualValueMap.get("test0+test1+public").getMd5());
@@ -147,8 +149,8 @@ class MD5UtilTest {
     @Test
     void testGetClientMd5MapForNewProtocol() {
         String configKeysString =
-                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
-                        + MD5Util.WORD_SEPARATOR_CHAR + "test3" + MD5Util.LINE_SEPARATOR_CHAR;
+            "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
+                + MD5Util.WORD_SEPARATOR_CHAR + "test3" + MD5Util.LINE_SEPARATOR_CHAR;
         
         Map<String, ConfigListenState> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
         

@@ -21,7 +21,7 @@ package com.alibaba.nacos.config.server.model;
  *
  * @author rong
  */
-public class ConfigInfoGrayWrapper extends ConfigInfo  {
+public class ConfigInfoGrayWrapper extends ConfigInfo {
     
     private static final long serialVersionUID = 4511997591465712505L;
     

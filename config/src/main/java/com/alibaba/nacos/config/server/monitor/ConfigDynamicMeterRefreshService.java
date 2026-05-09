@@ -35,7 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class ConfigDynamicMeterRefreshService {
     
-    private static final String TOPN_CONFIG_CHANGE_REGISTRY = NacosMeterRegistryCenter.TOPN_CONFIG_CHANGE_REGISTRY;
+    private static final String TOPN_CONFIG_CHANGE_REGISTRY =
+        NacosMeterRegistryCenter.TOPN_CONFIG_CHANGE_REGISTRY;
     
     private static final int CONFIG_CHANGE_N = 10;
     
@@ -45,12 +46,14 @@ public class ConfigDynamicMeterRefreshService {
     @Scheduled(cron = "0/30 * * * * *")
     public void refreshTopnConfigChangeCount() {
         NacosMeterRegistryCenter.clear(TOPN_CONFIG_CHANGE_REGISTRY);
-        List<Pair<String, AtomicInteger>> topnConfigChangeCount = MetricsMonitor.getConfigChangeCount()
+        List<Pair<String, AtomicInteger>> topnConfigChangeCount =
+            MetricsMonitor.getConfigChangeCount()
                 .getCounterOfTopN(CONFIG_CHANGE_N);
         for (Pair<String, AtomicInteger> configChangeCount : topnConfigChangeCount) {
             List<Tag> tags = new ArrayList<>();
             tags.add(new ImmutableTag("config", configChangeCount.getFirst()));
-            NacosMeterRegistryCenter.gauge(TOPN_CONFIG_CHANGE_REGISTRY, "config_change_count", tags, configChangeCount.getSecond());
+            NacosMeterRegistryCenter.gauge(TOPN_CONFIG_CHANGE_REGISTRY, "config_change_count", tags,
+                configChangeCount.getSecond());
         }
     }
     

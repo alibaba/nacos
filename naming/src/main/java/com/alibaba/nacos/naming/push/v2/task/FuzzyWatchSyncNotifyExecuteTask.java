@@ -35,7 +35,8 @@ public class FuzzyWatchSyncNotifyExecuteTask extends AbstractExecuteTask {
     private final FuzzyWatchSyncNotifyTask delayTask;
     
     public FuzzyWatchSyncNotifyExecuteTask(String clientId, String pattern,
-            FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine, FuzzyWatchSyncNotifyTask delayTask) {
+        FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine,
+        FuzzyWatchSyncNotifyTask delayTask) {
         this.clientId = clientId;
         this.pattern = pattern;
         this.fuzzyWatchPushDelayTaskEngine = fuzzyWatchPushDelayTaskEngine;
@@ -45,13 +46,15 @@ public class FuzzyWatchSyncNotifyExecuteTask extends AbstractExecuteTask {
     @Override
     public void run() {
         
-        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequest = NamingFuzzyWatchSyncRequest.buildSyncNotifyRequest(
-                pattern, delayTask.getSyncType(), delayTask.getSyncServiceKeys(), delayTask.getTotalBatch(),
+        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequest =
+            NamingFuzzyWatchSyncRequest.buildSyncNotifyRequest(
+                pattern, delayTask.getSyncType(), delayTask.getSyncServiceKeys(),
+                delayTask.getTotalBatch(),
                 delayTask.getCurrentBatch());
         fuzzyWatchPushDelayTaskEngine.getPushExecutor()
-                .doFuzzyWatchNotifyPushWithCallBack(clientId, namingFuzzyWatchSyncRequest,
-                        new FuzzyWatchSyncNotifyCallback(delayTask, delayTask.getBatchTaskCounter(),
-                                fuzzyWatchPushDelayTaskEngine));
+            .doFuzzyWatchNotifyPushWithCallBack(clientId, namingFuzzyWatchSyncRequest,
+                new FuzzyWatchSyncNotifyCallback(delayTask, delayTask.getBatchTaskCounter(),
+                    fuzzyWatchPushDelayTaskEngine));
     }
     
 }

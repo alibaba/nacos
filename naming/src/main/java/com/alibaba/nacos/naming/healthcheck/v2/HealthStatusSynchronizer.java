@@ -35,6 +35,7 @@ public interface HealthStatusSynchronizer {
      * @param service   service of instance
      * @param instance  instance
      */
-    void instanceHealthStatusChange(boolean isHealthy, Client client, Service service, InstancePublishInfo instance);
+    void instanceHealthStatusChange(boolean isHealthy, Client client, Service service,
+        InstancePublishInfo instance);
     
 }

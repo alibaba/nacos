@@ -44,7 +44,8 @@ class ConfigListenerHttpParamExtractorTest {
     @Test
     void testNormal() {
         String listenerConfigsString = getListenerConfigsString();
-        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs"))).thenReturn(listenerConfigsString);
+        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs")))
+            .thenReturn(listenerConfigsString);
         configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
         configListenerHttpParamExtractor.extractParam(httpServletRequest);
     }
@@ -52,7 +53,8 @@ class ConfigListenerHttpParamExtractorTest {
     @Test
     void testError() {
         String listenerConfigsString = getErrorListenerConfigsString();
-        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs"))).thenReturn(listenerConfigsString);
+        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs")))
+            .thenReturn(listenerConfigsString);
         configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
         try {
             configListenerHttpParamExtractor.extractParam(httpServletRequest);
@@ -84,7 +86,8 @@ class ConfigListenerHttpParamExtractorTest {
         configInfo4.setGroup("1234445");
         configInfo4.setMd5("12345");
         configInfo4.setTenant(null);
-        List<ConfigInfo> configInfoList = Arrays.asList(configInfo4, configInfo3, configInfo2, configInfo1);
+        List<ConfigInfo> configInfoList =
+            Arrays.asList(configInfo4, configInfo3, configInfo2, configInfo1);
         StringBuilder sb = new StringBuilder();
         for (ConfigInfo configInfo : configInfoList) {
             sb.append(configInfo.getDataId()).append(WORD_SEPARATOR);

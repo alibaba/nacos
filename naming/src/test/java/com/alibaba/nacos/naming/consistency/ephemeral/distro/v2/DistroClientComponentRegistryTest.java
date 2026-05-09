@@ -60,7 +60,8 @@ class DistroClientComponentRegistryTest {
     void setUp() throws Exception {
         componentHolder = new DistroComponentHolder();
         
-        distroClientComponentRegistry = new DistroClientComponentRegistry(serverMemberManager, distroProtocol, componentHolder,
+        distroClientComponentRegistry =
+            new DistroClientComponentRegistry(serverMemberManager, distroProtocol, componentHolder,
                 taskEngineHolder, clientManager, clusterRpcClientProxy);
     }
     
@@ -68,16 +69,20 @@ class DistroClientComponentRegistryTest {
     void testDoRegister() {
         distroClientComponentRegistry.doRegister();
         
-        DistroDataStorage dataStorage = componentHolder.findDataStorage(DistroClientDataProcessor.TYPE);
+        DistroDataStorage dataStorage =
+            componentHolder.findDataStorage(DistroClientDataProcessor.TYPE);
         assertNotNull(dataStorage);
         
-        DistroDataProcessor dataProcessor = componentHolder.findDataProcessor(DistroClientDataProcessor.TYPE);
+        DistroDataProcessor dataProcessor =
+            componentHolder.findDataProcessor(DistroClientDataProcessor.TYPE);
         assertNotNull(dataProcessor);
         
-        DistroFailedTaskHandler failedTaskHandler = componentHolder.findFailedTaskHandler(DistroClientDataProcessor.TYPE);
+        DistroFailedTaskHandler failedTaskHandler =
+            componentHolder.findFailedTaskHandler(DistroClientDataProcessor.TYPE);
         assertNotNull(failedTaskHandler);
         
-        DistroTransportAgent transportAgent = componentHolder.findTransportAgent(DistroClientDataProcessor.TYPE);
+        DistroTransportAgent transportAgent =
+            componentHolder.findTransportAgent(DistroClientDataProcessor.TYPE);
         assertNotNull(transportAgent);
         
     }

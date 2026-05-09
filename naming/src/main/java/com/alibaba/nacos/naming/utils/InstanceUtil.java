@@ -66,7 +66,8 @@ public final class InstanceUtil {
                     result.setWeight((Double) entry.getValue());
                     break;
                 default:
-                    instanceMetadata.put(entry.getKey(), null != entry.getValue() ? entry.getValue().toString() : null);
+                    instanceMetadata.put(entry.getKey(),
+                        null != entry.getValue() ? entry.getValue().toString() : null);
             }
         }
         result.setMetadata(instanceMetadata);
@@ -88,7 +89,7 @@ public final class InstanceUtil {
             instance.getMetadata().put(entry.getKey(), entry.getValue().toString());
         }
     }
-
+    
     /**
      * Deepcopy one instance.
      *
@@ -130,7 +131,8 @@ public final class InstanceUtil {
      * @param instances   instances from request
      * @param groupedServiceName groupedServiceName from service
      */
-    public static void batchSetInstanceIdIfEmpty(List<Instance> instances, String groupedServiceName) {
+    public static void batchSetInstanceIdIfEmpty(List<Instance> instances,
+        String groupedServiceName) {
         if (null != instances) {
             for (Instance instance : instances) {
                 setInstanceIdIfEmpty(instance, groupedServiceName);
@@ -146,14 +148,16 @@ public final class InstanceUtil {
      * @return new instance
      * @throws NacosException if parse failed.
      */
-    public static Instance buildInstance(InstanceForm instanceForm, boolean defaultEphemeral) throws NacosException {
-        String groupedServiceName = NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
+    public static Instance buildInstance(InstanceForm instanceForm, boolean defaultEphemeral)
+        throws NacosException {
+        String groupedServiceName =
+            NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
         Instance instance = InstanceBuilder.newBuilder().setServiceName(groupedServiceName)
-                .setIp(instanceForm.getIp()).setClusterName(instanceForm.getClusterName())
-                .setPort(instanceForm.getPort()).setHealthy(instanceForm.getHealthy())
-                .setWeight(instanceForm.getWeight()).setEnabled(instanceForm.getEnabled())
-                .setMetadata(UtilsAndCommons.parseMetadata(instanceForm.getMetadata()))
-                .setEphemeral(instanceForm.getEphemeral()).build();
+            .setIp(instanceForm.getIp()).setClusterName(instanceForm.getClusterName())
+            .setPort(instanceForm.getPort()).setHealthy(instanceForm.getHealthy())
+            .setWeight(instanceForm.getWeight()).setEnabled(instanceForm.getEnabled())
+            .setMetadata(UtilsAndCommons.parseMetadata(instanceForm.getMetadata()))
+            .setEphemeral(instanceForm.getEphemeral()).build();
         if (instanceForm.getEphemeral() == null) {
             instance.setEphemeral(defaultEphemeral);
         }

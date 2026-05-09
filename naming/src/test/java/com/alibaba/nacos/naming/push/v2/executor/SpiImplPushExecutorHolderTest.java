@@ -47,10 +47,12 @@ class SpiImplPushExecutorHolderTest {
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
         spiImplPushExecutorHolder = SpiImplPushExecutorHolder.getInstance();
-        Class<SpiImplPushExecutorHolder> spiImplPushExecutorHolderClass = SpiImplPushExecutorHolder.class;
+        Class<SpiImplPushExecutorHolder> spiImplPushExecutorHolderClass =
+            SpiImplPushExecutorHolder.class;
         Field pushExecutors = spiImplPushExecutorHolderClass.getDeclaredField("pushExecutors");
         pushExecutors.setAccessible(true);
-        Set<SpiPushExecutor> spiPushExecutorSet = (Set<SpiPushExecutor>) pushExecutors.get(spiImplPushExecutorHolder);
+        Set<SpiPushExecutor> spiPushExecutorSet =
+            (Set<SpiPushExecutor>) pushExecutors.get(spiImplPushExecutorHolder);
         spiPushExecutorSet.add(spiPushExecutor);
     }
     
@@ -64,7 +66,8 @@ class SpiImplPushExecutorHolderTest {
     @Test
     void testFindPushExecutorSpiImpl() {
         Mockito.when(spiPushExecutor.isInterest(CLIENT_ID, subscriber)).thenReturn(true);
-        Optional<SpiPushExecutor> pushExecutorSpiImpl = spiImplPushExecutorHolder.findPushExecutorSpiImpl(CLIENT_ID, subscriber);
+        Optional<SpiPushExecutor> pushExecutorSpiImpl =
+            spiImplPushExecutorHolder.findPushExecutorSpiImpl(CLIENT_ID, subscriber);
         
         assertTrue(pushExecutorSpiImpl.isPresent());
     }

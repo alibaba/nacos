@@ -63,13 +63,17 @@ class ClientManagerDelegateTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        delegate = new ClientManagerDelegate(connectionBasedClientManager, ephemeralIpPortClientManager, persistentIpPortClientManager);
+        delegate = new ClientManagerDelegate(connectionBasedClientManager,
+            ephemeralIpPortClientManager, persistentIpPortClientManager);
         when(connectionBasedClientManager.contains(connectionId)).thenReturn(true);
         when(ephemeralIpPortClientManager.contains(ephemeralIpPortId)).thenReturn(true);
         when(persistentIpPortClientManager.contains(persistentIpPortId)).thenReturn(true);
-        when(connectionBasedClientManager.allClientId()).thenReturn(Collections.singletonList(connectionId));
-        when(ephemeralIpPortClientManager.allClientId()).thenReturn(Collections.singletonList(ephemeralIpPortId));
-        when(persistentIpPortClientManager.allClientId()).thenReturn(Collections.singletonList(persistentIpPortId));
+        when(connectionBasedClientManager.allClientId())
+            .thenReturn(Collections.singletonList(connectionId));
+        when(ephemeralIpPortClientManager.allClientId())
+            .thenReturn(Collections.singletonList(ephemeralIpPortId));
+        when(persistentIpPortClientManager.allClientId())
+            .thenReturn(Collections.singletonList(persistentIpPortId));
     }
     
     @Test

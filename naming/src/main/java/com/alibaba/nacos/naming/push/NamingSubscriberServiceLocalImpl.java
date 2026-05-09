@@ -33,7 +33,8 @@ public class NamingSubscriberServiceLocalImpl implements NamingSubscriberService
     
     private final NamingSubscriberServiceV2Impl namingSubscriberServiceV2;
     
-    public NamingSubscriberServiceLocalImpl(NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
+    public NamingSubscriberServiceLocalImpl(
+        NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
         this.namingSubscriberServiceV2 = namingSubscriberServiceV2;
     }
     
@@ -49,7 +50,8 @@ public class NamingSubscriberServiceLocalImpl implements NamingSubscriberService
     
     @Override
     public Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName) {
-        return new HashSet<>(namingSubscriberServiceV2.getFuzzySubscribers(namespaceId, serviceName));
+        return new HashSet<>(
+            namingSubscriberServiceV2.getFuzzySubscribers(namespaceId, serviceName));
     }
     
     @Override

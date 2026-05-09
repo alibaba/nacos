@@ -30,9 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SwitchServiceTest {
-
+    
     private ListAppender<ILoggingEvent> fatalLogAppender;
-
+    
     @BeforeEach
     void attachFatalLogAppender() {
         Logger fatalLogger = (Logger) LoggerFactory.getLogger("com.alibaba.nacos.config.fatal");
@@ -40,24 +40,24 @@ class SwitchServiceTest {
         fatalLogAppender.start();
         fatalLogger.addAppender(fatalLogAppender);
     }
-
+    
     @AfterEach
     void detachFatalLogAppender() {
         Logger fatalLogger = (Logger) LoggerFactory.getLogger("com.alibaba.nacos.config.fatal");
         fatalLogger.detachAppender(fatalLogAppender);
         fatalLogAppender.stop();
     }
-
+    
     @Test
     void testLoadAppliesAllEntriesAfterFullParse() {
         String config = "fixedDelayTime=10\n"
-                + "isHealthCheck=true\n"
-                + "defaultPushCacheMillis=500\n"
-                + "switchA=valueA\n"
-                + "switchB=valueB";
-
+            + "isHealthCheck=true\n"
+            + "defaultPushCacheMillis=500\n"
+            + "switchA=valueA\n"
+            + "switchB=valueB";
+        
         SwitchService.load(config);
-
+        
         assertEquals(10, SwitchService.getSwitchInteger("fixedDelayTime", -1));
         assertEquals(500, SwitchService.getSwitchInteger("defaultPushCacheMillis", -1));
         String dump = SwitchService.getSwitches();
@@ -65,108 +65,108 @@ class SwitchServiceTest {
         assertTrue(dump.contains("switchA=valueA"));
         assertTrue(dump.contains("switchB=valueB"));
     }
-
+    
     @Test
     void testLoadSkipsBlankAndCommentLines() {
         String config = "# leading comment\n"
-                + "\n"
-                + "fixedDelayTime=20\n"
-                + "# inline comment\n"
-                + "switchX=ok";
-
+            + "\n"
+            + "fixedDelayTime=20\n"
+            + "# inline comment\n"
+            + "switchX=ok";
+        
         SwitchService.load(config);
-
+        
         assertEquals(20, SwitchService.getSwitchInteger("fixedDelayTime", -1));
         String dump = SwitchService.getSwitches();
         assertTrue(dump.contains("switchX=ok"));
         assertFalse(dump.contains("# leading comment"));
         assertFalse(dump.contains("# inline comment"));
     }
-
+    
     @Test
     void testLoadIsAtomicWithRespectToReplacement() {
         SwitchService.load("first=1\nsecond=2\nthird=3");
         assertEquals(1, SwitchService.getSwitchInteger("first", -1));
         assertEquals(3, SwitchService.getSwitchInteger("third", -1));
-
+        
         SwitchService.load("alpha=10\nbeta=20");
-
+        
         assertEquals(-1, SwitchService.getSwitchInteger("first", -1));
         assertEquals(-1, SwitchService.getSwitchInteger("third", -1));
         assertEquals(10, SwitchService.getSwitchInteger("alpha", -1));
         assertEquals(20, SwitchService.getSwitchInteger("beta", -1));
     }
-
+    
     @Test
     void testLoadIgnoresCorruptRecord() {
         String config = "good=1\n"
-                + "corruptRecordWithoutEquals\n"
-                + "alsoGood=2";
-
+            + "corruptRecordWithoutEquals\n"
+            + "alsoGood=2";
+        
         SwitchService.load(config);
-
+        
         assertEquals(1, SwitchService.getSwitchInteger("good", -1));
         assertEquals(2, SwitchService.getSwitchInteger("alsoGood", -1));
     }
-
+    
     @Test
     void testLoadBlankConfigKeepsExistingSwitches() {
         SwitchService.load("retained=42");
-
+        
         SwitchService.load("");
-
+        
         assertEquals(42, SwitchService.getSwitchInteger("retained", -1));
     }
-
+    
     @Test
     void testLoadAllCorruptInputAtomicallyReplacesSwitches() {
         // Any non-blank input is treated as an authoritative replacement, even when
         // every record is corrupt. Operators wishing to preserve prior switches must
         // send a blank payload (covered by testLoadBlankConfigKeepsExistingSwitches).
         SwitchService.load("retained=42");
-
+        
         SwitchService.load("noEqualsAtAll\nstillCorrupt");
-
+        
         assertEquals(-1, SwitchService.getSwitchInteger("retained", -1));
     }
-
+    
     @Test
     void testLoadAllCommentInputAtomicallyReplacesSwitches() {
         SwitchService.load("retained=42");
-
+        
         SwitchService.load("# only comments\n# nothing useful");
-
+        
         assertEquals(-1, SwitchService.getSwitchInteger("retained", -1));
     }
-
+    
     @Test
     void testGetSwitchIntegerReturnsDefaultForMissingKey() {
         SwitchService.load("present=7");
-
+        
         assertEquals(99, SwitchService.getSwitchInteger("missing", 99));
     }
-
+    
     @Test
     void testGetSwitchIntegerReturnsDefaultForCorruptValue() {
         SwitchService.load("notAnInt=abc");
-
+        
         assertEquals(123, SwitchService.getSwitchInteger("notAnInt", 123));
     }
-
+    
     @Test
     void testLoadEmitsReloadSwitchesLogExactlyOnce() {
         String config = "first=1\n"
-                + "second=2\n"
-                + "third=3\n"
-                + "fourth=4\n"
-                + "fifth=5";
-
+            + "second=2\n"
+            + "third=3\n"
+            + "fourth=4\n"
+            + "fifth=5";
+        
         SwitchService.load(config);
-
+        
         long reloadLogs = fatalLogAppender.list.stream()
-                .filter(event -> event.getLevel() == Level.WARN)
-                .filter(event -> event.getFormattedMessage().contains("[reload-switches]"))
-                .count();
+            .filter(event -> event.getLevel() == Level.WARN)
+            .filter(event -> event.getFormattedMessage().contains("[reload-switches]"))
+            .count();
         assertEquals(1, reloadLogs);
     }
 }

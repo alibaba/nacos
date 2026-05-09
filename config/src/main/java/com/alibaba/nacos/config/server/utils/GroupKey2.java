@@ -89,7 +89,7 @@ public class GroupKey2 {
         if (group.length() == 0) {
             throw new IllegalArgumentException("invalid groupkey:" + groupKey);
         }
-    
+        
         return new String[] {dataId, group, tenant};
     }
     

@@ -42,8 +42,10 @@ class NamingRequestUtilTest {
     
     @BeforeEach
     void setUp() {
-        RequestContextHolder.getContext().getBasicContext().getAddressContext().setRemoteIp("1.1.1.1");
-        RequestContextHolder.getContext().getBasicContext().getAddressContext().setSourceIp("2.2.2.2");
+        RequestContextHolder.getContext().getBasicContext().getAddressContext()
+            .setRemoteIp("1.1.1.1");
+        RequestContextHolder.getContext().getBasicContext().getAddressContext()
+            .setSourceIp("2.2.2.2");
     }
     
     @AfterEach

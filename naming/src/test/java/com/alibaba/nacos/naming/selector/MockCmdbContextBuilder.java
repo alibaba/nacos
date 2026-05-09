@@ -33,7 +33,8 @@ import java.util.stream.Collectors;
  * @author chenglu
  * @date 2021-07-14 19:22
  */
-public class MockCmdbContextBuilder implements SelectorContextBuilder<CmdbContext, String, List<Instance>> {
+public class MockCmdbContextBuilder
+    implements SelectorContextBuilder<CmdbContext, String, List<Instance>> {
     
     @Override
     public CmdbContext build(String consumerIp, List<Instance> provider) {

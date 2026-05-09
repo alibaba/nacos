@@ -121,9 +121,11 @@ class ServiceOperatorV2ImplTest {
         clusterMetadataMap.put("D", clusterMetadata);
         ServiceMetadata metadata = new ServiceMetadata();
         metadata.setClusters(clusterMetadataMap);
-        Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+            .thenReturn(Optional.of(metadata));
         
-        Mockito.when(serviceStorage.getClusters(Mockito.any())).thenReturn(Collections.singleton("D"));
+        Mockito.when(serviceStorage.getClusters(Mockito.any()))
+            .thenReturn(Collections.singleton("D"));
         
         ObjectNode objectNode = serviceOperatorV2.queryService("A", "B@@C");
         

@@ -57,11 +57,15 @@ public class SubscribeManager {
      * @param aggregation aggregation
      * @return list of subscriber
      */
-    public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation) {
+    public List<Subscriber> getSubscribers(String serviceName, String namespaceId,
+        boolean aggregation) {
         if (aggregation) {
-            Collection<Subscriber> result = aggregationService.getFuzzySubscribers(namespaceId, serviceName);
-            return CollectionUtils.isNotEmpty(result) ? result.stream().filter(distinctByKey(Subscriber::toString))
-                    .collect(Collectors.toList()) : Collections.emptyList();
+            Collection<Subscriber> result =
+                aggregationService.getFuzzySubscribers(namespaceId, serviceName);
+            return CollectionUtils.isNotEmpty(result)
+                ? result.stream().filter(distinctByKey(Subscriber::toString))
+                    .collect(Collectors.toList())
+                : Collections.emptyList();
         } else {
             return new LinkedList<>(localService.getFuzzySubscribers(namespaceId, serviceName));
         }
@@ -77,8 +81,10 @@ public class SubscribeManager {
     public List<Subscriber> getSubscribers(Service service, boolean aggregation) {
         if (aggregation) {
             Collection<Subscriber> result = aggregationService.getSubscribers(service);
-            return CollectionUtils.isNotEmpty(result) ? result.stream().filter(distinctByKey(Subscriber::toString))
-                    .collect(Collectors.toList()) : Collections.emptyList();
+            return CollectionUtils.isNotEmpty(result)
+                ? result.stream().filter(distinctByKey(Subscriber::toString))
+                    .collect(Collectors.toList())
+                : Collections.emptyList();
         } else {
             return new LinkedList<>(localService.getSubscribers(service));
         }

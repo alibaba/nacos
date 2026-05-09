@@ -64,7 +64,8 @@ public abstract class AbstractMetadataSnapshotOperation extends AbstractSnapshot
         byte[] snapshotBytes = DiskUtils.decompress(sourceFile, checksum);
         LocalFileMeta fileMeta = reader.getFileMeta(getSnapshotArchive());
         if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY)) {
-            if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
+            if (!Objects.equals(Long.toHexString(checksum.getValue()),
+                fileMeta.get(CHECK_SUM_KEY))) {
                 throw new IllegalArgumentException("Snapshot checksum failed");
             }
         }

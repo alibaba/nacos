@@ -32,99 +32,101 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SwitchManagerTest {
-
+    
     private SwitchManager switchManager;
-
+    
     private SwitchDomain switchDomain;
-
+    
     @Mock
     private ProtocolManager protocolManager;
-
+    
     @Mock
     private CPProtocol cpProtocol;
-
+    
     @BeforeEach
     void setUp() {
         switchDomain = new SwitchDomain();
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         switchManager = new SwitchManager(switchDomain, protocolManager);
     }
-
+    
     @Test
     void testUpdatePushVersionWithValidJavaValue() throws Exception {
         switchManager.update(SwitchEntry.PUSH_VERSION, "java:2.0.0", true);
         assertEquals("2.0.0", switchDomain.getPushVersionOfJava());
     }
-
+    
     @Test
     void testUpdatePushVersionWithValidPythonValue() throws Exception {
         switchManager.update(SwitchEntry.PUSH_VERSION, "python:3.1.0", true);
         assertEquals("3.1.0", switchDomain.getPushVersionOfPython());
     }
-
+    
     @Test
     void testUpdatePushVersionWithMultipleColons() throws Exception {
         switchManager.update(SwitchEntry.PUSH_VERSION, "java:1.0.0:extra", true);
         assertEquals("1.0.0", switchDomain.getPushVersionOfJava());
     }
-
+    
     @Test
     void testUpdatePushVersionWithoutDelimiter() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> switchManager.update(SwitchEntry.PUSH_VERSION, "invalidvalue", true));
-        assertEquals("illegal format, must be 'type:version', but got: invalidvalue", exception.getMessage());
+            () -> switchManager.update(SwitchEntry.PUSH_VERSION, "invalidvalue", true));
+        assertEquals("illegal format, must be 'type:version', but got: invalidvalue",
+            exception.getMessage());
     }
-
+    
     @Test
     void testUpdatePushVersionWithEmptyValue() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> switchManager.update(SwitchEntry.PUSH_VERSION, "", true));
+            () -> switchManager.update(SwitchEntry.PUSH_VERSION, "", true));
         assertEquals("illegal format, must be 'type:version', but got: ", exception.getMessage());
     }
-
+    
     @Test
     void testUpdatePushVersionWithTrailingColon() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> switchManager.update(SwitchEntry.PUSH_VERSION, "java:", true));
-        assertEquals("illegal format, must be 'type:version', but got: java:", exception.getMessage());
+            () -> switchManager.update(SwitchEntry.PUSH_VERSION, "java:", true));
+        assertEquals("illegal format, must be 'type:version', but got: java:",
+            exception.getMessage());
     }
-
+    
     @Test
     void testUpdatePushVersionWithInvalidVersionFormat() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> switchManager.update(SwitchEntry.PUSH_VERSION, "java:abc", true));
+            () -> switchManager.update(SwitchEntry.PUSH_VERSION, "java:abc", true));
         assertEquals("illegal version, must match: " + UtilsAndCommons.VERSION_STRING_SYNTAX,
-                exception.getMessage());
+            exception.getMessage());
     }
-
+    
     @Test
     void testUpdatePushVersionWithUnsupportedClientType() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> switchManager.update(SwitchEntry.PUSH_VERSION, "ruby:1.0.0", true));
+            () -> switchManager.update(SwitchEntry.PUSH_VERSION, "ruby:1.0.0", true));
         assertEquals("unsupported client type: ruby", exception.getMessage());
     }
-
+    
     @Test
     void testUpdateEnableStandaloneToFalseAppliesValue() throws Exception {
         assertTrue(switchDomain.isEnableStandalone());
         switchManager.update(SwitchEntry.ENABLE_STANDALONE, "false", true);
         assertFalse(switchDomain.isEnableStandalone());
     }
-
+    
     @Test
     void testUpdateEnableStandaloneToTrueAppliesValue() throws Exception {
         switchDomain.setEnableStandalone(false);
         switchManager.update(SwitchEntry.ENABLE_STANDALONE, "true", true);
         assertTrue(switchDomain.isEnableStandalone());
     }
-
+    
     @Test
     void testUpdateEnableStandaloneWithEmptyValueIsNoOp() throws Exception {
         assertTrue(switchDomain.isEnableStandalone());
         switchManager.update(SwitchEntry.ENABLE_STANDALONE, "", true);
         assertTrue(switchDomain.isEnableStandalone());
     }
-
+    
     @Test
     void testUpdateHealthCheckEnabledWithLegacyCheckEntry() throws Exception {
         assertTrue(switchDomain.isHealthCheckEnabled());
@@ -133,7 +135,7 @@ class SwitchManagerTest {
         switchManager.update(SwitchEntry.CHECK, "true", true);
         assertTrue(switchDomain.isHealthCheckEnabled());
     }
-
+    
     @Test
     void testUpdateHealthCheckEnabledWithExposedFieldName() throws Exception {
         assertTrue(switchDomain.isHealthCheckEnabled());
@@ -142,7 +144,7 @@ class SwitchManagerTest {
         switchManager.update(SwitchEntry.HEALTH_CHECK_ENABLED, "true", true);
         assertTrue(switchDomain.isHealthCheckEnabled());
     }
-
+    
     @Test
     void testHealthCheckEnabledEntryConstantValue() {
         assertEquals("healthCheckEnabled", SwitchEntry.HEALTH_CHECK_ENABLED);

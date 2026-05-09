@@ -57,78 +57,95 @@ public class FuzzyWatchSyncNotifyExecuteTaskTest {
         
         when(fuzzyWatchPushDelayTaskEngine.getPushExecutor()).thenReturn(pushExecutor);
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
         Set<NamingFuzzyWatchSyncRequest.Context> matchedServiceKeys = new HashSet<>();
         for (int i = 0; i < 5; i++) {
             matchedServiceKeys.add(NamingFuzzyWatchSyncRequest.Context.build(
-                    NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i), ADD_SERVICE));
+                NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i),
+                ADD_SERVICE));
         }
         String clientId = "conntion1234";
         
-        FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(clientId, groupKeyPattern,
+        FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask =
+            new FuzzyWatchSyncNotifyTask(clientId, groupKeyPattern,
                 FUZZY_WATCH_DIFF_SYNC_NOTIFY, matchedServiceKeys, 0L);
-        FuzzyWatchSyncNotifyExecuteTask fuzzyWatchSyncNotifyExecuteTask = new FuzzyWatchSyncNotifyExecuteTask(clientId,
+        FuzzyWatchSyncNotifyExecuteTask fuzzyWatchSyncNotifyExecuteTask =
+            new FuzzyWatchSyncNotifyExecuteTask(clientId,
                 groupKeyPattern, fuzzyWatchPushDelayTaskEngine, fuzzyWatchSyncNotifyTask);
         fuzzyWatchSyncNotifyExecuteTask.run();
         verify(pushExecutor, times(1)).doFuzzyWatchNotifyPushWithCallBack(eq(clientId),
-                any(NamingFuzzyWatchSyncRequest.class), any(FuzzyWatchSyncNotifyCallback.class));
+            any(NamingFuzzyWatchSyncRequest.class), any(FuzzyWatchSyncNotifyCallback.class));
     }
     
     @Test
     void testCallbackSuccessForInitNotify() {
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
         Set<NamingFuzzyWatchSyncRequest.Context> matchedServiceKeys = new HashSet<>();
         for (int i = 0; i < 5; i++) {
             matchedServiceKeys.add(NamingFuzzyWatchSyncRequest.Context.build(
-                    NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i), ADD_SERVICE));
+                NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i),
+                ADD_SERVICE));
         }
         String clientId = "conntion1234";
         
         BatchTaskCounter batchTaskCounter = new BatchTaskCounter(5);
         for (int i = 1; i <= 5; i++) {
-            FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(clientId, groupKeyPattern,
+            FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask =
+                new FuzzyWatchSyncNotifyTask(clientId, groupKeyPattern,
                     FUZZY_WATCH_INIT_NOTIFY, matchedServiceKeys, 0L);
             fuzzyWatchSyncNotifyTask.setTotalBatch(5);
             fuzzyWatchSyncNotifyTask.setCurrentBatch(i);
-            FuzzyWatchSyncNotifyCallback fuzzyWatchSyncNotifyCallback = new FuzzyWatchSyncNotifyCallback(
+            FuzzyWatchSyncNotifyCallback fuzzyWatchSyncNotifyCallback =
+                new FuzzyWatchSyncNotifyCallback(
                     fuzzyWatchSyncNotifyTask, batchTaskCounter, fuzzyWatchPushDelayTaskEngine);
             fuzzyWatchSyncNotifyCallback.onSuccess();
         }
         //check batch completed
         Assertions.assertEquals(true, batchTaskCounter.batchCompleted());
         //check add init notify finish task.
-        verify(fuzzyWatchPushDelayTaskEngine, times(1)).addTask(anyString(), any(FuzzyWatchSyncNotifyTask.class));
+        verify(fuzzyWatchPushDelayTaskEngine, times(1)).addTask(anyString(),
+            any(FuzzyWatchSyncNotifyTask.class));
     }
     
     @Test
     void testCallbackSuccessForInitFinishNotify() {
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
         String clientId = "conntion1234";
-        FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(clientId, groupKeyPattern,
+        FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask =
+            new FuzzyWatchSyncNotifyTask(clientId, groupKeyPattern,
                 FINISH_FUZZY_WATCH_INIT_NOTIFY, null, 0L);
-        FuzzyWatchSyncNotifyCallback fuzzyWatchSyncNotifyCallback = new FuzzyWatchSyncNotifyCallback(
+        FuzzyWatchSyncNotifyCallback fuzzyWatchSyncNotifyCallback =
+            new FuzzyWatchSyncNotifyCallback(
                 fuzzyWatchSyncNotifyTask, null, fuzzyWatchPushDelayTaskEngine);
         
         fuzzyWatchSyncNotifyCallback.onSuccess();
         //check add init notify finish task.
-        verify(fuzzyWatchPushDelayTaskEngine, times(0)).addTask(anyString(), any(FuzzyWatchSyncNotifyTask.class));
+        verify(fuzzyWatchPushDelayTaskEngine, times(0)).addTask(anyString(),
+            any(FuzzyWatchSyncNotifyTask.class));
     }
     
     @Test
     void testCallbackFail() {
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
         String clientId = "conntion1234";
-        FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(clientId, groupKeyPattern,
+        FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask =
+            new FuzzyWatchSyncNotifyTask(clientId, groupKeyPattern,
                 FINISH_FUZZY_WATCH_INIT_NOTIFY, null, 0L);
-        FuzzyWatchSyncNotifyCallback fuzzyWatchSyncNotifyCallback = new FuzzyWatchSyncNotifyCallback(
+        FuzzyWatchSyncNotifyCallback fuzzyWatchSyncNotifyCallback =
+            new FuzzyWatchSyncNotifyCallback(
                 fuzzyWatchSyncNotifyTask, null, fuzzyWatchPushDelayTaskEngine);
         
         fuzzyWatchSyncNotifyCallback.onFail(new NacosRuntimeException(500, "exception"));
         //check add init notify finish task.
-        verify(fuzzyWatchPushDelayTaskEngine, times(1)).addTask(eq(getTaskKey(fuzzyWatchSyncNotifyTask)),
-                eq(fuzzyWatchSyncNotifyTask));
+        verify(fuzzyWatchPushDelayTaskEngine, times(1)).addTask(
+            eq(getTaskKey(fuzzyWatchSyncNotifyTask)),
+            eq(fuzzyWatchSyncNotifyTask));
     }
 }

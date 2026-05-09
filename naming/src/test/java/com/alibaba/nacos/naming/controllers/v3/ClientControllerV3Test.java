@@ -79,7 +79,8 @@ class ClientControllerV3Test extends BaseTest {
     
     @BeforeEach
     public void before() {
-        when(clientManager.allClientId()).thenReturn(Arrays.asList("127.0.0.1:8080#test1", "test2#test2"));
+        when(clientManager.allClientId())
+            .thenReturn(Arrays.asList("127.0.0.1:8080#test1", "test2#test2"));
         when(clientManager.contains(anyString())).thenReturn(true);
         mockmvc = MockMvcBuilders.standaloneSetup(clientControllerV3).build();
         ipPortBasedClient = new IpPortBasedClient("127.0.0.1:8080#test1", false);
@@ -88,8 +89,10 @@ class ClientControllerV3Test extends BaseTest {
     
     @Test
     void testGetClientList() throws Exception {
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/list");
-        MockHttpServletResponse response = mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder =
+            MockMvcRequestBuilders.get(URL + "/list");
+        MockHttpServletResponse response =
+            mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         JsonNode jsonNode = JacksonUtils.toObj(response.getContentAsString()).get("data");
         assertEquals(0, jsonNode.size());
@@ -98,9 +101,11 @@ class ClientControllerV3Test extends BaseTest {
     @Test
     void testGetClientDetail() throws Exception {
         when(clientManager.getClient("test1")).thenReturn(ipPortBasedClient);
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL)
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder =
+            MockMvcRequestBuilders.get(URL)
                 .param("clientId", "test1");
-        MockHttpServletResponse response = mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
+        MockHttpServletResponse response =
+            mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
     
@@ -114,11 +119,13 @@ class ClientControllerV3Test extends BaseTest {
         when(clientServiceV2Impl.getPublishedServiceList("test1")).thenReturn(serviceList);
         
         Service service = Service.newService("test", "test", "test");
-        connectionBasedClient.addServiceInstance(service, new InstancePublishInfo("127.0.0.1", 8848));
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/publish/list")
+        connectionBasedClient.addServiceInstance(service,
+            new InstancePublishInfo("127.0.0.1", 8848));
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder =
+            MockMvcRequestBuilders.get(URL + "/publish/list")
                 .param("clientId", "test1");
         mockmvc.perform(mockHttpServletRequestBuilder)
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
     }
     
     @Test
@@ -133,14 +140,17 @@ class ClientControllerV3Test extends BaseTest {
         
         when(clientManager.getClient("test1")).thenReturn(connectionBasedClient);
         when(clientManager.getClient("test")).thenReturn(connectionBasedClient);
-        connectionBasedClient.addServiceInstance(service, new InstancePublishInfo("127.0.0.1", 8848));
+        connectionBasedClient.addServiceInstance(service,
+            new InstancePublishInfo("127.0.0.1", 8848));
         
-        when(clientServiceV2Impl.getPublishedClientList(baseTestKey, baseTestKey, baseTestKey, "127.0.0.1",
-                8848)).thenReturn(serviceList);
+        when(clientServiceV2Impl.getPublishedClientList(baseTestKey, baseTestKey, baseTestKey,
+            "127.0.0.1",
+            8848)).thenReturn(serviceList);
         MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(
-                        URL + "/service/publisher/list").param("namespaceId", baseTestKey).param("groupName", baseTestKey)
-                .param("serviceName", baseTestKey).param("ip", "127.0.0.1").param("port", "8848");
+            URL + "/service/publisher/list").param("namespaceId", baseTestKey)
+            .param("groupName", baseTestKey)
+            .param("serviceName", baseTestKey).param("ip", "127.0.0.1").param("port", "8848");
         mockmvc.perform(mockHttpServletRequestBuilder)
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
     }
 }

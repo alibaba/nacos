@@ -34,8 +34,9 @@ class FuzzyWatchSyncNotifyCallback implements PushCallBack {
     
     private FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine;
     
-    FuzzyWatchSyncNotifyCallback(FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask, BatchTaskCounter batchTaskCounter,
-            FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine) {
+    FuzzyWatchSyncNotifyCallback(FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask,
+        BatchTaskCounter batchTaskCounter,
+        FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine) {
         this.batchTaskCounter = batchTaskCounter;
         this.fuzzyWatchPushDelayTaskEngine = fuzzyWatchPushDelayTaskEngine;
         this.fuzzyWatchSyncNotifyTask = fuzzyWatchSyncNotifyTask;
@@ -52,31 +53,38 @@ class FuzzyWatchSyncNotifyCallback implements PushCallBack {
         long now = System.currentTimeMillis();
         if (isFinishInitTask()) {
             Loggers.PUSH.info(
-                    "[fuzzy watch] init notify finish push success  ,clientId={}, pattern ={},total cost time={}ms",
-                    fuzzyWatchSyncNotifyTask.getClientId(), fuzzyWatchSyncNotifyTask.getPattern(),
-                    (now - fuzzyWatchSyncNotifyTask.getExecuteStartTime()));
+                "[fuzzy watch] init notify finish push success  ,clientId={}, pattern ={},total cost time={}ms",
+                fuzzyWatchSyncNotifyTask.getClientId(), fuzzyWatchSyncNotifyTask.getPattern(),
+                (now - fuzzyWatchSyncNotifyTask.getExecuteStartTime()));
         } else {
             Loggers.PUSH.info(
-                    "[fuzzy watch] sync notify task success, pattern {}, syncType={},clientId={},current batch size {},currentBatch={},totalBatch={}",
-                    fuzzyWatchSyncNotifyTask.getPattern(), fuzzyWatchSyncNotifyTask.getSyncType(),
-                    fuzzyWatchSyncNotifyTask.getClientId(), fuzzyWatchSyncNotifyTask.getSyncServiceKeys().size(),
-                    fuzzyWatchSyncNotifyTask.getCurrentBatch());
+                "[fuzzy watch] sync notify task success, pattern {}, syncType={},clientId={},current batch size {},currentBatch={},totalBatch={}",
+                fuzzyWatchSyncNotifyTask.getPattern(), fuzzyWatchSyncNotifyTask.getSyncType(),
+                fuzzyWatchSyncNotifyTask.getClientId(),
+                fuzzyWatchSyncNotifyTask.getSyncServiceKeys().size(),
+                fuzzyWatchSyncNotifyTask.getCurrentBatch());
             // if total batch is success sync to client send
             if (isInitNotifyTask()) {
                 Loggers.PUSH.info(
-                        "[fuzzy watch] init notify push success  ,clientId={}, pattern ={} ,currentBatch={},totalBatch={}",
-                        fuzzyWatchSyncNotifyTask.getClientId(), fuzzyWatchSyncNotifyTask.getPattern(),
-                        fuzzyWatchSyncNotifyTask.getCurrentBatch(), fuzzyWatchSyncNotifyTask.getTotalBatch());
+                    "[fuzzy watch] init notify push success  ,clientId={}, pattern ={} ,currentBatch={},totalBatch={}",
+                    fuzzyWatchSyncNotifyTask.getClientId(), fuzzyWatchSyncNotifyTask.getPattern(),
+                    fuzzyWatchSyncNotifyTask.getCurrentBatch(),
+                    fuzzyWatchSyncNotifyTask.getTotalBatch());
                 batchTaskCounter.batchSuccess(fuzzyWatchSyncNotifyTask.getCurrentBatch());
                 if (batchTaskCounter.batchCompleted()) {
                     Loggers.PUSH.info(
-                            "[fuzzy watch] init notify all batch finish ,clientId={}, pattern ={},start notify init finish task",
-                            fuzzyWatchSyncNotifyTask.getClientId(), fuzzyWatchSyncNotifyTask.getPattern());
-                    FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTaskFinish = new FuzzyWatchSyncNotifyTask(
-                            fuzzyWatchSyncNotifyTask.getClientId(), fuzzyWatchSyncNotifyTask.getPattern(),
-                            FINISH_FUZZY_WATCH_INIT_NOTIFY, null, PushConfig.getInstance().getPushTaskDelay());
-                    fuzzyWatchPushDelayTaskEngine.addTask(getTaskKey(fuzzyWatchSyncNotifyTaskFinish),
-                            fuzzyWatchSyncNotifyTaskFinish);
+                        "[fuzzy watch] init notify all batch finish ,clientId={}, pattern ={},start notify init finish task",
+                        fuzzyWatchSyncNotifyTask.getClientId(),
+                        fuzzyWatchSyncNotifyTask.getPattern());
+                    FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTaskFinish =
+                        new FuzzyWatchSyncNotifyTask(
+                            fuzzyWatchSyncNotifyTask.getClientId(),
+                            fuzzyWatchSyncNotifyTask.getPattern(),
+                            FINISH_FUZZY_WATCH_INIT_NOTIFY, null,
+                            PushConfig.getInstance().getPushTaskDelay());
+                    fuzzyWatchPushDelayTaskEngine.addTask(
+                        getTaskKey(fuzzyWatchSyncNotifyTaskFinish),
+                        fuzzyWatchSyncNotifyTaskFinish);
                 }
             }
         }
@@ -92,12 +100,15 @@ class FuzzyWatchSyncNotifyCallback implements PushCallBack {
     
     @Override
     public void onFail(Throwable e) {
-        Loggers.PUSH.warn("[fuzzy watch] sync notify fail, pattern {} ,clientId ={},currentBatch={},totalBatch={}",
-                fuzzyWatchSyncNotifyTask.getPattern(), fuzzyWatchSyncNotifyTask.getClientId(),
-                fuzzyWatchSyncNotifyTask.getCurrentBatch(), fuzzyWatchSyncNotifyTask.getTotalBatch(), e);
+        Loggers.PUSH.warn(
+            "[fuzzy watch] sync notify fail, pattern {} ,clientId ={},currentBatch={},totalBatch={}",
+            fuzzyWatchSyncNotifyTask.getPattern(), fuzzyWatchSyncNotifyTask.getClientId(),
+            fuzzyWatchSyncNotifyTask.getCurrentBatch(), fuzzyWatchSyncNotifyTask.getTotalBatch(),
+            e);
         if (!(e instanceof NoRequiredRetryException)) {
             Loggers.PUSH.warn("[fuzzy watch] reschedule this task to engine");
-            fuzzyWatchPushDelayTaskEngine.addTask(getTaskKey(fuzzyWatchSyncNotifyTask), fuzzyWatchSyncNotifyTask);
+            fuzzyWatchPushDelayTaskEngine.addTask(getTaskKey(fuzzyWatchSyncNotifyTask),
+                fuzzyWatchSyncNotifyTask);
         }
     }
 }

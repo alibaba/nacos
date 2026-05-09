@@ -70,8 +70,9 @@ class ClusterControllerV3Test extends BaseTest {
         updateClusterForm.setHealthChecker("{\"type\":\"HTTP\"}");
         
         assertEquals("ok", clusterControllerV3.update(updateClusterForm).getData());
-        verify(clusterOperatorV2).updateClusterMetadata(eq("test-namespace"), eq(TEST_GROUP_NAME), eq("test-service"),
-                eq(TEST_CLUSTER_NAME), any(ClusterMetadata.class));
+        verify(clusterOperatorV2).updateClusterMetadata(eq("test-namespace"), eq(TEST_GROUP_NAME),
+            eq("test-service"),
+            eq(TEST_CLUSTER_NAME), any(ClusterMetadata.class));
     }
     
     private void mockRequestParameter(String paramKey, String value) {

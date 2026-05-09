@@ -42,14 +42,17 @@ class PersistentHealthStatusSynchronizerTest {
     void testInstanceHealthStatusChange() {
         Service service = Service.newService("public", "DEFAULT", "nacos", true);
         InstancePublishInfo instancePublishInfo = new InstancePublishInfo("127.0.0.1", 8080);
-        PersistentHealthStatusSynchronizer persistentHealthStatusSynchronizer = new PersistentHealthStatusSynchronizer(
+        PersistentHealthStatusSynchronizer persistentHealthStatusSynchronizer =
+            new PersistentHealthStatusSynchronizer(
                 persistentClientOperationService);
-        persistentHealthStatusSynchronizer.instanceHealthStatusChange(true, client, service, instancePublishInfo);
+        persistentHealthStatusSynchronizer.instanceHealthStatusChange(true, client, service,
+            instancePublishInfo);
         
         Instance updateInstance = InstanceUtil.parseToApiInstance(service, instancePublishInfo);
         updateInstance.setHealthy(true);
         
         verify(client).getClientId();
-        verify(persistentClientOperationService).updateInstance(service, updateInstance, client.getClientId());
+        verify(persistentClientOperationService).updateInstance(service, updateInstance,
+            client.getClientId());
     }
 }

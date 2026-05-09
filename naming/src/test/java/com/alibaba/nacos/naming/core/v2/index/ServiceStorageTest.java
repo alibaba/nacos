@@ -47,7 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @ExtendWith(MockitoExtension.class)
 class ServiceStorageTest {
     
-    private static final Service SERVICE = Service.newService("namespaceId", "groupName", "serviceName");
+    private static final Service SERVICE =
+        Service.newService("namespaceId", "groupName", "serviceName");
     
     private static final String NACOS = "nacos";
     
@@ -73,17 +74,20 @@ class ServiceStorageTest {
     
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
-        serviceStorage = new ServiceStorage(clientServiceIndexesManager, clientManagerDelegate, switchDomain, namingMetadataManager);
+        serviceStorage = new ServiceStorage(clientServiceIndexesManager, clientManagerDelegate,
+            switchDomain, namingMetadataManager);
         
         Field serviceClusterIndex = ServiceStorage.class.getDeclaredField("serviceClusterIndex");
         serviceClusterIndex.setAccessible(true);
-        ConcurrentMap<Service, Set<String>> serviceSetConcurrentMap = (ConcurrentMap<Service, Set<String>>) serviceClusterIndex.get(
+        ConcurrentMap<Service, Set<String>> serviceSetConcurrentMap =
+            (ConcurrentMap<Service, Set<String>>) serviceClusterIndex.get(
                 serviceStorage);
         serviceSetConcurrentMap.put(SERVICE, new HashSet<>(Collections.singletonList(NACOS)));
         
         Field serviceDataIndexes = ServiceStorage.class.getDeclaredField("serviceDataIndexes");
         serviceDataIndexes.setAccessible(true);
-        ConcurrentMap<Service, ServiceInfo> infoConcurrentMap = (ConcurrentMap<Service, ServiceInfo>) serviceDataIndexes.get(
+        ConcurrentMap<Service, ServiceInfo> infoConcurrentMap =
+            (ConcurrentMap<Service, ServiceInfo>) serviceDataIndexes.get(
                 serviceStorage);
         infoConcurrentMap.put(SERVICE, serviceInfo);
     }
@@ -119,12 +123,14 @@ class ServiceStorageTest {
         
         Field serviceClusterIndex = ServiceStorage.class.getDeclaredField("serviceClusterIndex");
         serviceClusterIndex.setAccessible(true);
-        ConcurrentMap<Service, Set<String>> serviceSetConcurrentMap = (ConcurrentMap<Service, Set<String>>) serviceClusterIndex.get(
+        ConcurrentMap<Service, Set<String>> serviceSetConcurrentMap =
+            (ConcurrentMap<Service, Set<String>>) serviceClusterIndex.get(
                 serviceStorage);
         
         Field serviceDataIndexes = ServiceStorage.class.getDeclaredField("serviceDataIndexes");
         serviceDataIndexes.setAccessible(true);
-        ConcurrentMap<Service, ServiceInfo> infoConcurrentMap = (ConcurrentMap<Service, ServiceInfo>) serviceDataIndexes.get(
+        ConcurrentMap<Service, ServiceInfo> infoConcurrentMap =
+            (ConcurrentMap<Service, ServiceInfo>) serviceDataIndexes.get(
                 serviceStorage);
         
         assertEquals(0, serviceSetConcurrentMap.size());
@@ -132,34 +138,44 @@ class ServiceStorageTest {
     }
     
     @Test
-    void testGetAllInstancesFromIndex() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    void testGetAllInstancesFromIndex()
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<ServiceStorage> serviceStorageClass = ServiceStorage.class;
-        Method getAllInstancesFromIndex = serviceStorageClass.getDeclaredMethod("getAllInstancesFromIndex", Service.class);
+        Method getAllInstancesFromIndex =
+            serviceStorageClass.getDeclaredMethod("getAllInstancesFromIndex", Service.class);
         getAllInstancesFromIndex.setAccessible(true);
-        List<Instance> list = (List<Instance>) getAllInstancesFromIndex.invoke(serviceStorage, SERVICE);
+        List<Instance> list =
+            (List<Instance>) getAllInstancesFromIndex.invoke(serviceStorage, SERVICE);
         
         assertNotNull(list);
     }
     
     @Test
-    void testGetInstanceInfo() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    void testGetInstanceInfo()
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<ServiceStorage> serviceStorageClass = ServiceStorage.class;
-        Method getInstanceInfo = serviceStorageClass.getDeclaredMethod("getInstanceInfo", String.class, Service.class);
+        Method getInstanceInfo =
+            serviceStorageClass.getDeclaredMethod("getInstanceInfo", String.class, Service.class);
         getInstanceInfo.setAccessible(true);
-        Optional<InstancePublishInfo> optionalInstancePublishInfo = (Optional<InstancePublishInfo>) getInstanceInfo.invoke(serviceStorage,
+        Optional<InstancePublishInfo> optionalInstancePublishInfo =
+            (Optional<InstancePublishInfo>) getInstanceInfo.invoke(serviceStorage,
                 NACOS, SERVICE);
         
         assertFalse(optionalInstancePublishInfo.isPresent());
     }
     
     @Test
-    void testParseInstance() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    void testParseInstance()
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<ServiceStorage> serviceStorageClass = ServiceStorage.class;
-        Method parseInstance = serviceStorageClass.getDeclaredMethod("parseInstance", Service.class, InstancePublishInfo.class);
+        Method parseInstance = serviceStorageClass.getDeclaredMethod("parseInstance", Service.class,
+            InstancePublishInfo.class);
         parseInstance.setAccessible(true);
-        Instance instance = (Instance) parseInstance.invoke(serviceStorage, SERVICE, instancePublishInfo);
+        Instance instance =
+            (Instance) parseInstance.invoke(serviceStorage, SERVICE, instancePublishInfo);
         
-        Mockito.verify(namingMetadataManager).getInstanceMetadata(SERVICE, instancePublishInfo.getMetadataId());
+        Mockito.verify(namingMetadataManager).getInstanceMetadata(SERVICE,
+            instancePublishInfo.getMetadataId());
         assertNotNull(instance);
     }
     

@@ -87,8 +87,10 @@ public class SwitchManager extends RequestProcessor4CP {
         this.raftLock = new ReentrantReadWriteLock();
         this.requestLock = new ReentrantLock();
         this.serializer = SerializeFactory.getSerializer("JSON");
-        this.snapshotOperation = new SwitchDomainSnapshotOperation(this.raftLock, this, this.serializer);
-        this.dataFile = Paths.get(UtilsAndCommons.DATA_BASE_DIR, "data", KeyBuilder.getSwitchDomainKey()).toFile();
+        this.snapshotOperation =
+            new SwitchDomainSnapshotOperation(this.raftLock, this, this.serializer);
+        this.dataFile = Paths
+            .get(UtilsAndCommons.DATA_BASE_DIR, "data", KeyBuilder.getSwitchDomainKey()).toFile();
         try {
             DiskUtils.forceMkdir(this.dataFile.getParent());
         } catch (IOException e) {
@@ -115,7 +117,8 @@ public class SwitchManager extends RequestProcessor4CP {
             if (entry.equals(SwitchEntry.DISTRO_THRESHOLD)) {
                 float threshold = Float.parseFloat(value);
                 if (threshold <= 0) {
-                    throw new IllegalArgumentException("distroThreshold can not be zero or negative: " + threshold);
+                    throw new IllegalArgumentException(
+                        "distroThreshold can not be zero or negative: " + threshold);
                 }
                 tempSwitchDomain.setDistroThreshold(threshold);
             }
@@ -130,14 +133,14 @@ public class SwitchManager extends RequestProcessor4CP {
                 String[] parts = value.split(":");
                 if (parts.length < 2) {
                     throw new IllegalArgumentException(
-                            "illegal format, must be 'type:version', but got: " + value);
+                        "illegal format, must be 'type:version', but got: " + value);
                 }
                 String type = parts[0];
                 String version = parts[1];
                 
                 if (!version.matches(UtilsAndCommons.VERSION_STRING_SYNTAX)) {
                     throw new IllegalArgumentException(
-                            "illegal version, must match: " + UtilsAndCommons.VERSION_STRING_SYNTAX);
+                        "illegal version, must match: " + UtilsAndCommons.VERSION_STRING_SYNTAX);
                 }
                 
                 if (StringUtils.equals(SwitchEntry.CLIENT_JAVA, type)) {
@@ -159,7 +162,8 @@ public class SwitchManager extends RequestProcessor4CP {
                 long cacheMillis = Long.parseLong(value);
                 
                 if (cacheMillis < SwitchEntry.MIN_PUSH_CACHE_TIME_MIILIS) {
-                    throw new IllegalArgumentException("min cache time for http or tcp is too small(<10000)");
+                    throw new IllegalArgumentException(
+                        "min cache time for http or tcp is too small(<10000)");
                 }
                 
                 tempSwitchDomain.setDefaultPushCacheMillis(cacheMillis);
@@ -170,7 +174,8 @@ public class SwitchManager extends RequestProcessor4CP {
                 long cacheMillis = Long.parseLong(value);
                 
                 if (cacheMillis < SwitchEntry.MIN_CACHE_TIME_MIILIS) {
-                    throw new IllegalArgumentException("min default cache time  is too small(<1000)");
+                    throw new IllegalArgumentException(
+                        "min default cache time  is too small(<1000)");
                 }
                 
                 tempSwitchDomain.setDefaultCacheMillis(cacheMillis);
@@ -200,7 +205,8 @@ public class SwitchManager extends RequestProcessor4CP {
                 long millis = Long.parseLong(value);
                 
                 if (millis < SwitchEntry.MIN_SERVICE_SYNC_TIME_MIILIS) {
-                    throw new IllegalArgumentException("serviceStatusSynchronizationPeriodMillis is too small(<5000)");
+                    throw new IllegalArgumentException(
+                        "serviceStatusSynchronizationPeriodMillis is too small(<5000)");
                 }
                 
                 tempSwitchDomain.setServiceStatusSynchronizationPeriodMillis(millis);
@@ -210,7 +216,8 @@ public class SwitchManager extends RequestProcessor4CP {
                 long millis = Long.parseLong(value);
                 
                 if (millis < SwitchEntry.MIN_SERVER_SYNC_TIME_MIILIS) {
-                    throw new IllegalArgumentException("serverStatusSynchronizationPeriodMillis is too small(<15000)");
+                    throw new IllegalArgumentException(
+                        "serverStatusSynchronizationPeriodMillis is too small(<15000)");
                 }
                 
                 tempSwitchDomain.setServerStatusSynchronizationPeriodMillis(millis);
@@ -247,12 +254,14 @@ public class SwitchManager extends RequestProcessor4CP {
                         
                         String limitedUrl = parts[0];
                         if (StringUtils.isEmpty(limitedUrl)) {
-                            throw new IllegalArgumentException("url can not be empty, url: " + limitedUrl);
+                            throw new IllegalArgumentException(
+                                "url can not be empty, url: " + limitedUrl);
                         }
                         
                         int statusCode = Integer.parseInt(parts[1]);
                         if (statusCode <= 0) {
-                            throw new IllegalArgumentException("illegal normal status code: " + statusCode);
+                            throw new IllegalArgumentException(
+                                "illegal normal status code: " + statusCode);
                         }
                         
                         limitedUrlMap.put(limitedUrl, statusCode);
@@ -296,17 +305,20 @@ public class SwitchManager extends RequestProcessor4CP {
             
             try {
                 if (SwitchEntry.HTTP_HEALTH_PARAMS.equals(entry)) {
-                    SwitchDomain.HttpHealthParams httpHealthParams = JacksonUtils.toObj(value, SwitchDomain.HttpHealthParams.class);
+                    SwitchDomain.HttpHealthParams httpHealthParams =
+                        JacksonUtils.toObj(value, SwitchDomain.HttpHealthParams.class);
                     tempSwitchDomain.setHttpHealthParams(httpHealthParams);
                     validateHealthParams(httpHealthParams);
                 }
                 if (SwitchEntry.TCP_HEALTH_PARAMS.equals(entry)) {
-                    SwitchDomain.TcpHealthParams tcpHealthParams = JacksonUtils.toObj(value, SwitchDomain.TcpHealthParams.class);
+                    SwitchDomain.TcpHealthParams tcpHealthParams =
+                        JacksonUtils.toObj(value, SwitchDomain.TcpHealthParams.class);
                     tempSwitchDomain.setTcpHealthParams(tcpHealthParams);
                     validateHealthParams(tcpHealthParams);
                 }
                 if (SwitchEntry.MYSQL_HEALTH_PARAMS.equals(entry)) {
-                    tempSwitchDomain.setMysqlHealthParams(JacksonUtils.toObj(value, SwitchDomain.MysqlHealthParams.class));
+                    tempSwitchDomain.setMysqlHealthParams(
+                        JacksonUtils.toObj(value, SwitchDomain.MysqlHealthParams.class));
                 }
             } catch (NacosDeserializationException e) {
                 throw new IllegalArgumentException("json param invalid.");
@@ -337,7 +349,8 @@ public class SwitchManager extends RequestProcessor4CP {
         switchDomain.setDefaultCacheMillis(newSwitchDomain.getDefaultCacheMillis());
         switchDomain.setDistroThreshold(newSwitchDomain.getDistroThreshold());
         switchDomain.setHealthCheckEnabled(newSwitchDomain.isHealthCheckEnabled());
-        switchDomain.setAutoChangeHealthCheckEnabled(newSwitchDomain.isAutoChangeHealthCheckEnabled());
+        switchDomain
+            .setAutoChangeHealthCheckEnabled(newSwitchDomain.isAutoChangeHealthCheckEnabled());
         switchDomain.setDistroEnabled(newSwitchDomain.isDistroEnabled());
         switchDomain.setPushEnabled(newSwitchDomain.isPushEnabled());
         switchDomain.setEnableStandalone(newSwitchDomain.isEnableStandalone());
@@ -347,9 +360,9 @@ public class SwitchManager extends RequestProcessor4CP {
         switchDomain.setMysqlHealthParams(newSwitchDomain.getMysqlHealthParams());
         switchDomain.setIncrementalList(newSwitchDomain.getIncrementalList());
         switchDomain.setServerStatusSynchronizationPeriodMillis(
-                newSwitchDomain.getServerStatusSynchronizationPeriodMillis());
+            newSwitchDomain.getServerStatusSynchronizationPeriodMillis());
         switchDomain.setServiceStatusSynchronizationPeriodMillis(
-                newSwitchDomain.getServiceStatusSynchronizationPeriodMillis());
+            newSwitchDomain.getServiceStatusSynchronizationPeriodMillis());
         switchDomain.setDisableAddIP(newSwitchDomain.isDisableAddIP());
         switchDomain.setSendBeatOnly(newSwitchDomain.isSendBeatOnly());
         switchDomain.setLimitedUrlMap(newSwitchDomain.getLimitedUrlMap());
@@ -377,7 +390,8 @@ public class SwitchManager extends RequestProcessor4CP {
         
         if (healthParams.getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
             
-            throw new IllegalArgumentException("max check time for http or tcp is too small(<3000)");
+            throw new IllegalArgumentException(
+                "max check time for http or tcp is too small(<3000)");
         }
         
         if (healthParams.getFactor() < 0 || healthParams.getFactor() > 1) {
@@ -393,8 +407,9 @@ public class SwitchManager extends RequestProcessor4CP {
             Datum datum = Datum.createDatum(switchDomainKey, tempSwitchDomain);
             req.append(ByteUtils.toBytes(switchDomainKey), serializer.serialize(datum));
             WriteRequest operationLog = WriteRequest.newBuilder().setGroup(group())
-                    .setOperation(OldDataOperation.Write.getDesc()).setData(ByteString.copyFrom(serializer.serialize(req)))
-                    .build();
+                .setOperation(OldDataOperation.Write.getDesc())
+                .setData(ByteString.copyFrom(serializer.serialize(req)))
+                .build();
             protocolManager.getCpProtocol().write(operationLog);
         } catch (Exception e) {
             Loggers.RAFT.error("Submit switch domain failed: ", e);
@@ -468,15 +483,18 @@ public class SwitchManager extends RequestProcessor4CP {
         this.raftLock.readLock().lock();
         try {
             final List<byte[]> keys = serializer.deserialize(request.getData().toByteArray(),
-                    TypeUtils.parameterize(List.class, byte[].class));
+                TypeUtils.parameterize(List.class, byte[].class));
             if (isNotSwitchDomainKey(keys)) {
-                return Response.newBuilder().setSuccess(false).setErrMsg("not switch domain key").build();
+                return Response.newBuilder().setSuccess(false).setErrMsg("not switch domain key")
+                    .build();
             }
             Datum datum = Datum.createDatum(KeyBuilder.getSwitchDomainKey(), switchDomain);
             final BatchReadResponse response = new BatchReadResponse();
-            response.append(ByteUtils.toBytes(KeyBuilder.getSwitchDomainKey()), serializer.serialize(datum));
-            return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(response)))
-                    .build();
+            response.append(ByteUtils.toBytes(KeyBuilder.getSwitchDomainKey()),
+                serializer.serialize(datum));
+            return Response.newBuilder().setSuccess(true)
+                .setData(ByteString.copyFrom(serializer.serialize(response)))
+                .build();
         } catch (Exception e) {
             Loggers.RAFT.warn("On read switch domain failed, ", e);
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
@@ -489,14 +507,18 @@ public class SwitchManager extends RequestProcessor4CP {
     public Response onApply(WriteRequest log) {
         this.raftLock.writeLock().lock();
         try {
-            BatchWriteRequest bwRequest = serializer.deserialize(log.getData().toByteArray(), BatchWriteRequest.class);
+            BatchWriteRequest bwRequest =
+                serializer.deserialize(log.getData().toByteArray(), BatchWriteRequest.class);
             if (isNotSwitchDomainKey(bwRequest.getKeys())) {
-                return Response.newBuilder().setSuccess(false).setErrMsg("not switch domain key").build();
+                return Response.newBuilder().setSuccess(false).setErrMsg("not switch domain key")
+                    .build();
             }
-            final Datum datum = serializer.deserialize(bwRequest.getValues().get(0), getDatumType());
+            final Datum datum =
+                serializer.deserialize(bwRequest.getValues().get(0), getDatumType());
             final Record value = null != datum ? datum.value : null;
             if (!(value instanceof SwitchDomain)) {
-                return Response.newBuilder().setSuccess(false).setErrMsg("datum is not switch domain").build();
+                return Response.newBuilder().setSuccess(false)
+                    .setErrMsg("datum is not switch domain").build();
             }
             DiskUtils.touch(dataFile);
             DiskUtils.writeFile(dataFile, bwRequest.getValues().get(0), false);

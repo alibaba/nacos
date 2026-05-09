@@ -59,14 +59,16 @@ class ConfigChangeConfigsTest {
     
     @Test
     void testEnable() {
-        assertTrue(Boolean.parseBoolean(configChangeConfigs.getPluginProperties("mockPlugin").getProperty("enabled")));
+        assertTrue(Boolean.parseBoolean(
+            configChangeConfigs.getPluginProperties("mockPlugin").getProperty("enabled")));
     }
     
     @Test
     void testUpgradeEnable() {
         environment.setProperty("nacos.core.config.plugin.mockPlugin.enabled", "false");
         configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
-        assertFalse(Boolean.parseBoolean(configChangeConfigs.getPluginProperties("mockPlugin").getProperty("enabled")));
+        assertFalse(Boolean.parseBoolean(
+            configChangeConfigs.getPluginProperties("mockPlugin").getProperty("enabled")));
     }
     
     @Test
@@ -78,7 +80,8 @@ class ConfigChangeConfigsTest {
     }
     
     @Test
-    void testGetPluginPropertiesNeverReturnsNullDuringConcurrentRefresh() throws InterruptedException {
+    void testGetPluginPropertiesNeverReturnsNullDuringConcurrentRefresh()
+        throws InterruptedException {
         // Reproduces the check-then-act race: previously `getPluginProperties` reloaded
         // the field between `containsKey` and `get`, so if a refresh swapped in a map
         // missing the key in between, `get` returned null and the method propagated null.
@@ -103,7 +106,8 @@ class ConfigChangeConfigsTest {
                     while (System.currentTimeMillis() < deadline) {
                         Properties properties = configChangeConfigs.getPluginProperties(pluginType);
                         if (properties == null) {
-                            throw new AssertionError("getPluginProperties returned null mid-refresh");
+                            throw new AssertionError(
+                                "getPluginProperties returned null mid-refresh");
                         }
                     }
                 } catch (Throwable t) {
@@ -126,13 +130,13 @@ class ConfigChangeConfigsTest {
             }
         }, "config-change-refresher");
         refresher.start();
-
+        
         start.countDown();
         refresher.join(TimeUnit.SECONDS.toMillis(5));
         for (Thread reader : readers) {
             reader.join(TimeUnit.SECONDS.toMillis(5));
         }
-
+        
         if (failure.get() != null) {
             throw new AssertionError("Concurrent reader observed failure", failure.get());
         }

@@ -43,7 +43,8 @@ class LabelSelectorTest {
     
     @Test
     void testParseSelector() throws NacosException {
-        Selector selector = selectorManager.parseSelector("label", "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
+        Selector selector = selectorManager.parseSelector("label",
+            "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
         assertTrue(selector instanceof LabelSelector);
         
         LabelSelector labelSelector = (LabelSelector) selector;

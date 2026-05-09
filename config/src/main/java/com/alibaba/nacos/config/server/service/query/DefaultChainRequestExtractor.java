@@ -46,7 +46,8 @@ public class DefaultChainRequestExtractor implements ConfigQueryChainRequestExtr
     public ConfigQueryChainRequest extract(HttpServletRequest request) {
         final String dataId = request.getParameter("dataId");
         final String group = request.getParameter("group");
-        String tenant = request.getParameter("namespaceId") != null ? request.getParameter("namespaceId") : request.getParameter("tenant");
+        String tenant = request.getParameter("namespaceId") != null
+            ? request.getParameter("namespaceId") : request.getParameter("tenant");
         if (StringUtils.isBlank(tenant)) {
             tenant = StringUtils.EMPTY;
         }

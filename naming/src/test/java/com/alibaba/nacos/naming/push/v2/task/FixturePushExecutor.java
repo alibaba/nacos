@@ -33,7 +33,8 @@ public class FixturePushExecutor implements PushExecutor {
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, NamingPushCallback callBack) {
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
+        NamingPushCallback callBack) {
         if (shouldSuccess) {
             callBack.onSuccess();
         } else {
@@ -42,8 +43,9 @@ public class FixturePushExecutor implements PushExecutor {
     }
     
     @Override
-    public void doFuzzyWatchNotifyPushWithCallBack(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest,
-            PushCallBack callBack) {
+    public void doFuzzyWatchNotifyPushWithCallBack(String clientId,
+        AbstractFuzzyWatchNotifyRequest watchNotifyRequest,
+        PushCallBack callBack) {
         if (shouldSuccess) {
             callBack.onSuccess();
         } else {

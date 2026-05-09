@@ -40,7 +40,8 @@ public interface ServiceOperator {
      * @param metadata    new metadata of service
      * @throws NacosException nacos exception during creating
      */
-    void create(String namespaceId, String serviceName, ServiceMetadata metadata) throws NacosException;
+    void create(String namespaceId, String serviceName, ServiceMetadata metadata)
+        throws NacosException;
     
     /**
      * Update service information. Due to service basic information can't be changed, so update should only update the
@@ -80,7 +81,8 @@ public interface ServiceOperator {
      * @return services name list
      * @throws NacosException nacos exception during query
      */
-    Collection<String> listService(String namespaceId, String groupName, String selector) throws NacosException;
+    Collection<String> listService(String namespaceId, String groupName, String selector)
+        throws NacosException;
     
     /**
      * list All service namespace.
@@ -111,6 +113,7 @@ public interface ServiceOperator {
      * @return a page of subscriber information
      * @throws NacosException if an error occurs during fetching subscribers
      */
-    Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName, String groupName, boolean aggregation,
-            int pageNo, int pageSize) throws NacosException;
+    Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName, String groupName,
+        boolean aggregation,
+        int pageNo, int pageSize) throws NacosException;
 }

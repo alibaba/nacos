@@ -67,7 +67,8 @@ class DefaultChainRequestExtractorTest {
         when(request.getParameter("namespaceId")).thenReturn("testNamespaceId");
         when(request.getParameter("tag")).thenReturn("tag");
         when(request.getHeader(VIPSERVER_TAG)).thenReturn("autoTag");
-        requestUtilMockedStatic.when(() -> RequestUtil.getRemoteIp(request)).thenReturn("127.0.0.1");
+        requestUtilMockedStatic.when(() -> RequestUtil.getRemoteIp(request))
+            .thenReturn("127.0.0.1");
         
         ConfigQueryChainRequest result = defaultChainRequestExtractor.extract(request);
         
@@ -86,7 +87,8 @@ class DefaultChainRequestExtractorTest {
         when(request.getParameter("namespaceId")).thenReturn("");
         when(request.getParameter("tag")).thenReturn("tag");
         when(request.getHeader(VIPSERVER_TAG)).thenReturn("autoTag");
-        requestUtilMockedStatic.when(() -> RequestUtil.getRemoteIp(request)).thenReturn("127.0.0.1");
+        requestUtilMockedStatic.when(() -> RequestUtil.getRemoteIp(request))
+            .thenReturn("127.0.0.1");
         
         ConfigQueryChainRequest result = defaultChainRequestExtractor.extract(request);
         
@@ -105,7 +107,8 @@ class DefaultChainRequestExtractorTest {
         when(request.getParameter("namespaceId")).thenReturn("testNamespaceId");
         when(request.getParameter("tag")).thenReturn("");
         when(request.getHeader(VIPSERVER_TAG)).thenReturn("");
-        requestUtilMockedStatic.when(() -> RequestUtil.getRemoteIp(request)).thenReturn("127.0.0.1");
+        requestUtilMockedStatic.when(() -> RequestUtil.getRemoteIp(request))
+            .thenReturn("127.0.0.1");
         
         ConfigQueryChainRequest result = defaultChainRequestExtractor.extract(request);
         
@@ -146,7 +149,8 @@ class DefaultChainRequestExtractorTest {
         
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
-        ConfigQueryChainRequest result = defaultChainRequestExtractor.extract(configQueryRequest, requestMeta);
+        ConfigQueryChainRequest result =
+            defaultChainRequestExtractor.extract(configQueryRequest, requestMeta);
         
         assertEquals("dataId", result.getDataId());
         assertEquals("group", result.getGroup());

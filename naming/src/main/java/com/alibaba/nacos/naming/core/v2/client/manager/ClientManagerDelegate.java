@@ -46,8 +46,8 @@ public class ClientManagerDelegate implements ClientManager {
     private final PersistentIpPortClientManager persistentIpPortClientManager;
     
     public ClientManagerDelegate(ConnectionBasedClientManager connectionBasedClientManager,
-            EphemeralIpPortClientManager ephemeralIpPortClientManager,
-            PersistentIpPortClientManager persistentIpPortClientManager) {
+        EphemeralIpPortClientManager ephemeralIpPortClientManager,
+        PersistentIpPortClientManager persistentIpPortClientManager) {
         this.connectionBasedClientManager = connectionBasedClientManager;
         this.ephemeralIpPortClientManager = ephemeralIpPortClientManager;
         this.persistentIpPortClientManager = persistentIpPortClientManager;
@@ -80,8 +80,9 @@ public class ClientManagerDelegate implements ClientManager {
     
     @Override
     public boolean contains(String clientId) {
-        return connectionBasedClientManager.contains(clientId) || ephemeralIpPortClientManager.contains(clientId)
-                || persistentIpPortClientManager.contains(clientId);
+        return connectionBasedClientManager.contains(clientId)
+            || ephemeralIpPortClientManager.contains(clientId)
+            || persistentIpPortClientManager.contains(clientId);
     }
     
     @Override
@@ -107,7 +108,8 @@ public class ClientManagerDelegate implements ClientManager {
         if (isConnectionBasedClient(clientId)) {
             return connectionBasedClientManager;
         }
-        return clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX) ? persistentIpPortClientManager : ephemeralIpPortClientManager;
+        return clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX) ? persistentIpPortClientManager
+            : ephemeralIpPortClientManager;
     }
     
     private boolean isConnectionBasedClient(String clientId) {

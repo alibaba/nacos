@@ -58,11 +58,11 @@ public class InstanceMetadataBatchOperationForm implements Serializable {
         fillDefaultValue();
         if (StringUtils.isBlank(serviceName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'serviceName' type String is not present");
+                "Required parameter 'serviceName' type String is not present");
         }
         if (StringUtils.isBlank(metadata)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'metadata' type String is not present");
+                "Required parameter 'metadata' type String is not present");
         }
     }
     
@@ -141,20 +141,25 @@ public class InstanceMetadataBatchOperationForm implements Serializable {
             return false;
         }
         InstanceMetadataBatchOperationForm that = (InstanceMetadataBatchOperationForm) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(groupName, that.groupName) && Objects
-                .equals(serviceName, that.serviceName) && Objects.equals(consistencyType, that.consistencyType)
-                && Objects.equals(instances, that.instances) && Objects.equals(metadata, that.metadata);
+        return Objects.equals(namespaceId, that.namespaceId)
+            && Objects.equals(groupName, that.groupName) && Objects
+                .equals(serviceName, that.serviceName)
+            && Objects.equals(consistencyType, that.consistencyType)
+            && Objects.equals(instances, that.instances) && Objects.equals(metadata, that.metadata);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceId, groupName, serviceName, consistencyType, instances, metadata);
+        return Objects.hash(namespaceId, groupName, serviceName, consistencyType, instances,
+            metadata);
     }
     
     @Override
     public String toString() {
-        return "InstanceMetadataBatchOperationForm{" + "namespaceId='" + namespaceId + '\'' + ", groupName='"
-                + groupName + '\'' + ", serviceName='" + serviceName + '\'' + ", consistencyType='" + consistencyType
-                + '\'' + ", instances='" + instances + '\'' + ", metadata='" + metadata + '\'' + '}';
+        return "InstanceMetadataBatchOperationForm{" + "namespaceId='" + namespaceId + '\''
+            + ", groupName='"
+            + groupName + '\'' + ", serviceName='" + serviceName + '\'' + ", consistencyType='"
+            + consistencyType
+            + '\'' + ", instances='" + instances + '\'' + ", metadata='" + metadata + '\'' + '}';
     }
 }

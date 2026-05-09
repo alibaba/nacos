@@ -57,8 +57,9 @@ public class ConfigFuzzyWatchContextServiceTest {
     @BeforeEach
     public void before() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("nacos.config.cache.type"), anyString()))
-                .thenReturn("nacos");
+        envUtilMockedStatic
+            .when(() -> EnvUtil.getProperty(eq("nacos.config.cache.type"), anyString()))
+            .thenReturn("nacos");
         
         configCommonConfigMockedStatic = Mockito.mockStatic(ConfigCommonConfig.class);
         
@@ -66,7 +67,8 @@ public class ConfigFuzzyWatchContextServiceTest {
         when(configCommonConfig.getMaxPatternCount()).thenReturn(mocMaxPattern);
         when(configCommonConfig.getMaxMatchedConfigCount()).thenReturn(mocMaxPatternConfigCount);
         
-        configCommonConfigMockedStatic.when(() -> ConfigCommonConfig.getInstance()).thenReturn(configCommonConfig);
+        configCommonConfigMockedStatic.when(() -> ConfigCommonConfig.getInstance())
+            .thenReturn(configCommonConfig);
     }
     
     @AfterEach
@@ -78,7 +80,8 @@ public class ConfigFuzzyWatchContextServiceTest {
     @Test
     public void testTrimFuzzyWatchContext() throws NacosException {
         
-        ConfigFuzzyWatchContextService configFuzzyWatchContextService = new ConfigFuzzyWatchContextService();
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
         String groupKey = GroupKey.getKeyTenant("data124", "group", "12345");
         //init
         String collectionId = "id";
@@ -92,10 +95,11 @@ public class ConfigFuzzyWatchContextServiceTest {
         Assertions.assertTrue(matchedClients.size() == 1);
         
         Set<String> notMatchedClients = configFuzzyWatchContextService.getMatchedClients(
-                GroupKey.getKeyTenant("da124", "group", "12345"));
+            GroupKey.getKeyTenant("da124", "group", "12345"));
         Assertions.assertTrue(notMatchedClients.size() == 0);
         
-        Set<String> matchedGroupKeys = configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern);
+        Set<String> matchedGroupKeys =
+            configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern);
         
         Assertions.assertTrue(matchedGroupKeys.size() > 0);
         Assertions.assertTrue(matchedGroupKeys.contains(groupKey));
@@ -108,33 +112,40 @@ public class ConfigFuzzyWatchContextServiceTest {
         Set<String> matchedClients2 = configFuzzyWatchContextService.getMatchedClients(groupKey);
         Assertions.assertTrue(matchedClients2 != null && matchedClients2.isEmpty());
         
-        Set<String> matchedGroupKeys2 = configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern);
+        Set<String> matchedGroupKeys2 =
+            configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern);
         Assertions.assertTrue(matchedGroupKeys2 != null && matchedGroupKeys2.contains(groupKey));
         
         //trim twice, matchedGroupKeys2 is  empty
         configFuzzyWatchContextService.trimFuzzyWatchContext();
-        Set<String> matchedGroupKeys3 = configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern);
+        Set<String> matchedGroupKeys3 =
+            configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern);
         Assertions.assertTrue(matchedGroupKeys3.isEmpty());
     }
     
     @Test
     public void testSyncGroupKeyContext() throws NacosException {
-        ConfigFuzzyWatchContextService configFuzzyWatchContextService = new ConfigFuzzyWatchContextService();
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
         
         //init
         String collectionId = "id";
         String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("data*", "group", "12345");
         configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, collectionId);
         String keyTenant = GroupKey.getKeyTenant("data1245", "group", "12345");
-        boolean needNotify1 = configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, ADD_CONFIG);
+        boolean needNotify1 =
+            configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, ADD_CONFIG);
         Assertions.assertTrue(needNotify1);
-        boolean needNotify2 = configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, ADD_CONFIG);
+        boolean needNotify2 =
+            configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, ADD_CONFIG);
         Assertions.assertFalse(needNotify2);
         
-        boolean needNotify3 = configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, DELETE_CONFIG);
+        boolean needNotify3 =
+            configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, DELETE_CONFIG);
         Assertions.assertTrue(needNotify3);
         
-        boolean needNotify4 = configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, DELETE_CONFIG);
+        boolean needNotify4 =
+            configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, DELETE_CONFIG);
         Assertions.assertFalse(needNotify4);
         
     }
@@ -142,7 +153,8 @@ public class ConfigFuzzyWatchContextServiceTest {
     @Test
     public void testMakeupGroupKeyContext() throws NacosException {
         
-        ConfigFuzzyWatchContextService configFuzzyWatchContextService = new ConfigFuzzyWatchContextService();
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
         
         //init
         String collectionId = "id";
@@ -151,65 +163,77 @@ public class ConfigFuzzyWatchContextServiceTest {
         
         for (int i = 0; i <= mocMaxPatternConfigCount; i++) {
             String keyTenant = GroupKey.getKeyTenant("data1" + i, "group", "12345");
-            boolean needNotify1 = configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, ADD_CONFIG);
+            boolean needNotify1 =
+                configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, ADD_CONFIG);
             Assertions.assertEquals(i < mocMaxPatternConfigCount ? true : false, needNotify1);
         }
         
-        String overLimitKey = GroupKey.getKeyTenant("data1" + mocMaxPatternConfigCount, "group", "12345");
-        Assertions.assertFalse(configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern).contains(overLimitKey));
+        String overLimitKey =
+            GroupKey.getKeyTenant("data1" + mocMaxPatternConfigCount, "group", "12345");
+        Assertions.assertFalse(
+            configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern).contains(overLimitKey));
         
         //sync init cache service
         ConfigCacheService.dump("data1" + mocMaxPatternConfigCount, "group", "12345", "content",
-                System.currentTimeMillis(), null, null);
+            System.currentTimeMillis(), null, null);
         
         String deletedKey = GroupKey.getKeyTenant("data1" + 0, "group", "12345");
         
         configFuzzyWatchContextService.syncGroupKeyContext(deletedKey, DELETE_CONFIG);
         
-        Assertions.assertTrue(configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern).contains(overLimitKey));
+        Assertions.assertTrue(
+            configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern).contains(overLimitKey));
         
     }
     
     @Test
     public void testInitGroupKeyContext() throws NacosException {
         
-        ConfigFuzzyWatchContextService configFuzzyWatchContextService = new ConfigFuzzyWatchContextService();
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
         String dataIdPrefix = "testinitD";
         // init config
         for (int i = 0; i <= mocMaxPatternConfigCount; i++) {
-            ConfigCacheService.dump(dataIdPrefix + i, "group", "12345", "content", System.currentTimeMillis(), null,
-                    null);
+            ConfigCacheService.dump(dataIdPrefix + i, "group", "12345", "content",
+                System.currentTimeMillis(), null,
+                null);
         }
         
         String collectionId = "id";
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataIdPrefix + "*", "group", "12345");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern(dataIdPrefix + "*", "group", "12345");
         
         // test init config
         configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, collectionId);
         Assertions.assertEquals(mocMaxPatternConfigCount,
-                configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern).size());
+            configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern).size());
         
         for (int i = 1; i < mocMaxPattern; i++) {
-            String groupKeyPattern0 = FuzzyGroupKeyPattern.generatePattern(dataIdPrefix + "*" + i, "group", "12345");
+            String groupKeyPattern0 =
+                FuzzyGroupKeyPattern.generatePattern(dataIdPrefix + "*" + i, "group", "12345");
             configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern0, collectionId);
         }
         
         try {
-            String groupKeyPatternOver = FuzzyGroupKeyPattern.generatePattern(dataIdPrefix + "*" + mocMaxPattern,
+            String groupKeyPatternOver =
+                FuzzyGroupKeyPattern.generatePattern(dataIdPrefix + "*" + mocMaxPattern,
                     "group", "12345");
             
             configFuzzyWatchContextService.addFuzzyWatch(groupKeyPatternOver, collectionId);
             Assertions.assertTrue(false);
         } catch (NacosException nacosException) {
-            Assertions.assertEquals(FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(), nacosException.getErrCode());
-            Assertions.assertEquals(FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg(), nacosException.getErrMsg());
+            Assertions.assertEquals(FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(),
+                nacosException.getErrCode());
+            Assertions.assertEquals(FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg(),
+                nacosException.getErrMsg());
         }
         
     }
     
     @Test
     public void testFuzzyWatch() throws NacosException {
-        ConfigFuzzyWatchContextService configFuzzyWatchContextService = new ConfigFuzzyWatchContextService();
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
         
         //init
         String collectionId = "id";
@@ -217,7 +241,8 @@ public class ConfigFuzzyWatchContextServiceTest {
         configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, collectionId);
         String groupKey = GroupKey.getKeyTenant("data1245", "group", "12345");
         
-        boolean needNotify = configFuzzyWatchContextService.syncGroupKeyContext(groupKey, ADD_CONFIG);
+        boolean needNotify =
+            configFuzzyWatchContextService.syncGroupKeyContext(groupKey, ADD_CONFIG);
         Assertions.assertTrue(needNotify);
         
         Set<String> matchedClients1 = configFuzzyWatchContextService.getMatchedClients(groupKey);
@@ -232,14 +257,16 @@ public class ConfigFuzzyWatchContextServiceTest {
     
     @Test
     public void testFuzzyWatchOverLimit() throws NacosException {
-        ConfigFuzzyWatchContextService configFuzzyWatchContextService = new ConfigFuzzyWatchContextService();
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
         
         //init
         String collectionId = "id";
         String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("data*", "group", "12345");
         configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, collectionId);
         String groupKey = GroupKey.getKeyTenant("data1245", "group", "12345");
-        boolean needNotify = configFuzzyWatchContextService.syncGroupKeyContext(groupKey, ADD_CONFIG);
+        boolean needNotify =
+            configFuzzyWatchContextService.syncGroupKeyContext(groupKey, ADD_CONFIG);
         
         Assertions.assertTrue(needNotify);
         

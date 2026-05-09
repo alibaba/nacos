@@ -31,7 +31,8 @@ class UtilsAndCommonsTest {
         
         MockEnvironment environment = new MockEnvironment();
         
-        assertEquals(DEFAULT_NACOS_NAMING_CONTEXT, environment.resolvePlaceholders(NACOS_NAMING_CONTEXT));
+        assertEquals(DEFAULT_NACOS_NAMING_CONTEXT,
+            environment.resolvePlaceholders(NACOS_NAMING_CONTEXT));
     }
     
     @Test

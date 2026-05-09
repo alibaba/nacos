@@ -101,22 +101,27 @@ class SubscribeServiceRequestHandlerTest {
         Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
         
         ServiceMetadata serviceMetadata = new ServiceMetadata();
-        Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(serviceMetadata));
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+            .thenReturn(Optional.of(serviceMetadata));
         
         SubscribeServiceRequest subscribeServiceRequest = new SubscribeServiceRequest();
         subscribeServiceRequest.setNamespace("A");
         subscribeServiceRequest.setGroupName("B");
         subscribeServiceRequest.setServiceName("C");
         subscribeServiceRequest.setSubscribe(true);
-        SubscribeServiceResponse subscribeServiceResponse = subscribeServiceRequestHandler.handle(subscribeServiceRequest,
+        SubscribeServiceResponse subscribeServiceResponse =
+            subscribeServiceRequestHandler.handle(subscribeServiceRequest,
                 new RequestMeta());
         assertEquals("C", subscribeServiceResponse.getServiceInfo().getName());
-        Mockito.verify(clientOperationService).subscribeService(Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(clientOperationService).subscribeService(Mockito.any(), Mockito.any(),
+            Mockito.anyString());
         
         subscribeServiceRequest.setSubscribe(false);
-        subscribeServiceResponse = subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta());
+        subscribeServiceResponse =
+            subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta());
         assertEquals("C", subscribeServiceResponse.getServiceInfo().getName());
-        Mockito.verify(clientOperationService).subscribeService(Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(clientOperationService).subscribeService(Mockito.any(), Mockito.any(),
+            Mockito.anyString());
     }
     
     @Test
@@ -128,7 +133,8 @@ class SubscribeServiceRequestHandlerTest {
         subscribeServiceRequest.setSubscribe(true);
         
         NacosException exception = assertThrows(NacosException.class,
-                () -> subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta()));
+            () -> subscribeServiceRequestHandler.handle(subscribeServiceRequest,
+                new RequestMeta()));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals("Param 'serviceName' is illegal, serviceName is blank", exception.getErrMsg());
     }
@@ -142,7 +148,8 @@ class SubscribeServiceRequestHandlerTest {
         subscribeServiceRequest.setSubscribe(true);
         
         NacosException exception = assertThrows(NacosException.class,
-                () -> subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta()));
+            () -> subscribeServiceRequestHandler.handle(subscribeServiceRequest,
+                new RequestMeta()));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals("Param 'groupName' is illegal, groupName is blank", exception.getErrMsg());
     }

@@ -65,10 +65,12 @@ class ConfigChangeListenContextTest {
     @Test
     void testClearContextForConnectionId() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
-        Map<String, String> connectionIdBefore = configChangeListenContext.getListenKeys("connectionId");
+        Map<String, String> connectionIdBefore =
+            configChangeListenContext.getListenKeys("connectionId");
         assertNotNull(connectionIdBefore);
         configChangeListenContext.clearContextForConnectionId("connectionId");
-        Map<String, String> connectionIdAfter = configChangeListenContext.getListenKeys("connectionId");
+        Map<String, String> connectionIdAfter =
+            configChangeListenContext.getListenKeys("connectionId");
         assertNull(connectionIdAfter);
     }
     
@@ -90,7 +92,7 @@ class ConfigChangeListenContextTest {
     void testGetConfigListenState() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
         ConfigListenState configListenState = configChangeListenContext
-                .getConfigListenState("connectionId", "groupKey");
+            .getConfigListenState("connectionId", "groupKey");
         assertEquals("md5", configListenState.getMd5());
         assertFalse(configListenState.isNamespaceTransfer());
     }
@@ -99,7 +101,7 @@ class ConfigChangeListenContextTest {
     void testGetConfigListenStates() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
         Map<String, ConfigListenState> configListenStates = configChangeListenContext
-                .getConfigListenStates("connectionId");
+            .getConfigListenStates("connectionId");
         assertEquals(1, configListenStates.size());
         assertEquals("md5", configListenStates.get("groupKey").getMd5());
         assertFalse(configListenStates.get("groupKey").isNamespaceTransfer());

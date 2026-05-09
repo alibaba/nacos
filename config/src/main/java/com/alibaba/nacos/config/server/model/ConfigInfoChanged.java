@@ -41,7 +41,7 @@ public class ConfigInfoChanged implements Serializable {
     }
     
     public ConfigInfoChanged() {
-    
+        
     }
     
     public String getDataId() {
@@ -88,12 +88,12 @@ public class ConfigInfoChanged implements Serializable {
         }
         return true;
     }
-
+    
     @Override
     public int hashCode() {
         return Objects.hash(dataId, group);
     }
-
+    
     @Override
     public String toString() {
         return "ConfigInfoChanged [dataId=" + dataId + ", group=" + group + "]";

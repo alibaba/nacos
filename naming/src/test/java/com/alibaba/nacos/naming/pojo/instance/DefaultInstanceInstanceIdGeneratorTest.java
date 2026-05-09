@@ -32,6 +32,7 @@ class DefaultInstanceInstanceIdGeneratorTest {
         instance.setClusterName("cluster");
         instance.setIp("1.1.1.1");
         instance.setPort(1000);
-        assertThat(instanceIdGenerator.generateInstanceId(instance), is("1.1.1.1#1000#cluster#service"));
+        assertThat(instanceIdGenerator.generateInstanceId(instance),
+            is("1.1.1.1#1000#cluster#service"));
     }
 }

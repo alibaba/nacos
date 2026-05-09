@@ -29,7 +29,8 @@ import java.util.List;
  * @author chenglu
  * @date 2021-08-04 13:31
  */
-public class NoneSelectorContextBuilder<T extends Instance>  implements SelectorContextBuilder<List<T>, String, List<T>> {
+public class NoneSelectorContextBuilder<T extends Instance>
+    implements SelectorContextBuilder<List<T>, String, List<T>> {
     
     private static final String CONTEXT_TYPE = "NONE";
     

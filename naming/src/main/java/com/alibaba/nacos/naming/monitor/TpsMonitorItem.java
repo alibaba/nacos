@@ -37,7 +37,7 @@ public enum TpsMonitorItem {
      * Naming rpc failed push.
      */
     NAMING_RPC_PUSH_FAIL,
-
+    
     /**
      * Naming rpc distro sync total count.
      */

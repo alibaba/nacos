@@ -104,7 +104,8 @@ public class InstancePublishInfo implements Serializable {
             return false;
         }
         InstancePublishInfo that = (InstancePublishInfo) o;
-        return port == that.port && healthy == that.healthy && Objects.equals(ip, that.ip) && Objects
+        return port == that.port && healthy == that.healthy && Objects.equals(ip, that.ip)
+            && Objects
                 .equals(extendDatum, that.extendDatum);
     }
     
@@ -116,14 +117,15 @@ public class InstancePublishInfo implements Serializable {
     @Override
     public String toString() {
         return "InstancePublishInfo{"
-                + "ip='" + ip + '\''
-                + ", port=" + port
-                + ", healthy=" + healthy
-                + ", cluster='" + cluster + '\''
-                + '}';
+            + "ip='" + ip + '\''
+            + ", port=" + port
+            + ", healthy=" + healthy
+            + ", cluster='" + cluster + '\''
+            + '}';
     }
     
     public static String genMetadataId(String ip, int port, String cluster) {
-        return ip + InternetAddressUtil.IP_PORT_SPLITER + port + InternetAddressUtil.IP_PORT_SPLITER + cluster;
+        return ip + InternetAddressUtil.IP_PORT_SPLITER + port + InternetAddressUtil.IP_PORT_SPLITER
+            + cluster;
     }
 }

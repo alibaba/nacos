@@ -64,7 +64,8 @@ class DistroMapperTest {
         serverList.put(ip2, Member.builder().ip(ip2).port(port).build());
         serverList.put(ip3, Member.builder().ip(ip3).port(port).build());
         EnvUtil.setLocalAddress(ip4);
-        serverList.put(EnvUtil.getLocalAddress(), Member.builder().ip(EnvUtil.getLocalAddress()).port(port).build());
+        serverList.put(EnvUtil.getLocalAddress(),
+            Member.builder().ip(EnvUtil.getLocalAddress()).port(port).build());
         HashSet<Member> set = new HashSet<>(serverList.values());
         switchDomain = new SwitchDomain();
         distroMapper = new DistroMapper(memberManager, switchDomain);

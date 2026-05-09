@@ -74,7 +74,8 @@ class ServiceMetadataProcessorTest {
         Mockito.when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         ApplicationUtils.injectContext(context);
         
-        serviceMetadataProcessor = new ServiceMetadataProcessor(namingMetadataManager, protocolManager, serviceStorage);
+        serviceMetadataProcessor =
+            new ServiceMetadataProcessor(namingMetadataManager, protocolManager, serviceStorage);
     }
     
     @Test
@@ -116,7 +117,8 @@ class ServiceMetadataProcessorTest {
         // ADD
         Response addResponse = serviceMetadataProcessor.onApply(defaultInstance);
         
-        Service service = Service.newService(metadataOperation.getNamespace(), metadataOperation.getGroup(),
+        Service service =
+            Service.newService(metadataOperation.getNamespace(), metadataOperation.getGroup(),
                 metadataOperation.getServiceName(), metadataOperation.getMetadata().isEphemeral());
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         namingMetadataManager.updateServiceMetadata(singleton, metadataOperation.getMetadata());

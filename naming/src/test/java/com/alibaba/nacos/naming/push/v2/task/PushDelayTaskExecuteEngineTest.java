@@ -78,12 +78,14 @@ class PushDelayTaskExecuteEngineTest {
     @BeforeEach
     void setUp() throws Exception {
         when(serviceStorage.getPushData(service)).thenReturn(new ServiceInfo("G@@S"));
-        when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(clientId));
+        when(indexesManager.getAllClientsSubscribeService(service))
+            .thenReturn(Collections.singletonList(clientId));
         when(clientManager.getClient(clientId)).thenReturn(client);
         when(client.getSubscriber(service)).thenReturn(subscriber);
         when(switchDomain.isPushEnabled()).thenReturn(true);
-        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, metadataManager, pushExecutor,
-                switchDomain);
+        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager,
+            serviceStorage, metadataManager, pushExecutor,
+            switchDomain);
     }
     
     @AfterEach
@@ -96,7 +98,8 @@ class PushDelayTaskExecuteEngineTest {
         PushDelayTask pushDelayTask = new PushDelayTask(service, 0L);
         executeEngine.addTask(service, pushDelayTask);
         TimeUnit.MILLISECONDS.sleep(200L);
-        verify(pushExecutor).doPushWithCallback(anyString(), any(Subscriber.class), any(PushDataWrapper.class),
-                any(NamingPushCallback.class));
+        verify(pushExecutor).doPushWithCallback(anyString(), any(Subscriber.class),
+            any(PushDataWrapper.class),
+            any(NamingPushCallback.class));
     }
 }

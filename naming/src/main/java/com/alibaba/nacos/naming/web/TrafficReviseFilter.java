@@ -52,7 +52,7 @@ public class TrafficReviseFilter implements Filter {
     
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
-            throws IOException, ServletException {
+        throws IOException, ServletException {
         
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
@@ -87,23 +87,25 @@ public class TrafficReviseFilter implements Filter {
         
         // write operation should be let pass in WRITE_ONLY status:
         if (serverStatusManager.getServerStatus() == ServerStatus.WRITE_ONLY && !HttpMethod.GET
-                .equals(req.getMethod())) {
+            .equals(req.getMethod())) {
             filterChain.doFilter(req, resp);
             return;
         }
         
         // read operation should be let pass in READ_ONLY status:
-        if (serverStatusManager.getServerStatus() == ServerStatus.READ_ONLY && HttpMethod.GET.equals(req.getMethod())) {
+        if (serverStatusManager.getServerStatus() == ServerStatus.READ_ONLY
+            && HttpMethod.GET.equals(req.getMethod())) {
             filterChain.doFilter(req, resp);
             return;
         }
         
-        final String statusMsg = "server is " + serverStatusManager.getServerStatus().name() + "now";
+        final String statusMsg =
+            "server is " + serverStatusManager.getServerStatus().name() + "now";
         Optional<String> errorMsg = serverStatusManager.getErrorMsg();
         if (errorMsg.isPresent()) {
             resp.getWriter().write(statusMsg + ", detailed error message: " + errorMsg.get());
         } else {
-            resp.getWriter().write(statusMsg  + ", please try again later!");
+            resp.getWriter().write(statusMsg + ", please try again later!");
         }
         resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
     }

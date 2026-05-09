@@ -65,7 +65,8 @@ class ServerStatusManagerTest {
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
-        serverStatusManager = new ServerStatusManager(globalConfig, distroProtocol, protocolManager, switchDomain);
+        serverStatusManager =
+            new ServerStatusManager(globalConfig, distroProtocol, protocolManager, switchDomain);
     }
     
     @Test
@@ -110,7 +111,8 @@ class ServerStatusManagerTest {
     void testUpdaterFromSwitch() {
         String expect = ServerStatus.DOWN.toString();
         when(switchDomain.getOverriddenServerStatus()).thenReturn(expect);
-        ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+        ServerStatusManager.ServerStatusUpdater updater =
+            serverStatusManager.new ServerStatusUpdater();
         //then
         updater.run();
         //then
@@ -120,7 +122,8 @@ class ServerStatusManagerTest {
     
     @Test
     void testUpdaterStatusForWarmUpDisabled() {
-        ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+        ServerStatusManager.ServerStatusUpdater updater =
+            serverStatusManager.new ServerStatusUpdater();
         updater.run();
         assertEquals(ServerStatus.UP, serverStatusManager.getServerStatus());
         assertFalse(serverStatusManager.getErrorMsg().isPresent());
@@ -129,7 +132,8 @@ class ServerStatusManagerTest {
     @Test
     void testUpdaterStatusBySwitch() {
         when(switchDomain.getOverriddenServerStatus()).thenReturn("UP");
-        ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+        ServerStatusManager.ServerStatusUpdater updater =
+            serverStatusManager.new ServerStatusUpdater();
         updater.run();
         assertEquals(ServerStatus.UP, serverStatusManager.getServerStatus());
         when(switchDomain.getOverriddenServerStatus()).thenReturn("DOWN");
@@ -142,7 +146,8 @@ class ServerStatusManagerTest {
         when(protocolManager.isCpInit()).thenReturn(true);
         when(globalConfig.isDataWarmup()).thenReturn(true);
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
-        ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+        ServerStatusManager.ServerStatusUpdater updater =
+            serverStatusManager.new ServerStatusUpdater();
         updater.run();
         assertEquals(ServerStatus.DOWN, serverStatusManager.getServerStatus());
     }
@@ -151,7 +156,8 @@ class ServerStatusManagerTest {
     void testUpdaterStatusForRaftFailed() {
         when(protocolManager.isCpInit()).thenReturn(true);
         when(globalConfig.isDataWarmup()).thenReturn(true);
-        ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+        ServerStatusManager.ServerStatusUpdater updater =
+            serverStatusManager.new ServerStatusUpdater();
         updater.run();
         assertEquals(ServerStatus.DOWN, serverStatusManager.getServerStatus());
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
@@ -167,7 +173,8 @@ class ServerStatusManagerTest {
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         when(cpProtocol.isReady()).thenReturn(true);
         when(distroProtocol.isInitialized()).thenReturn(true);
-        ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+        ServerStatusManager.ServerStatusUpdater updater =
+            serverStatusManager.new ServerStatusUpdater();
         updater.run();
         assertEquals(ServerStatus.UP, serverStatusManager.getServerStatus());
     }

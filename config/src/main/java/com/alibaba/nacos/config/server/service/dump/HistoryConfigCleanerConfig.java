@@ -48,7 +48,8 @@ public class HistoryConfigCleanerConfig extends AbstractDynamicConfig {
     
     @Override
     protected void getConfigFromEnv() {
-        activeHistoryConfigCleaner = EnvUtil.getProperty("nacos.config.history.clear.name", String.class, "nacos");
+        activeHistoryConfigCleaner =
+            EnvUtil.getProperty("nacos.config.history.clear.name", String.class, "nacos");
         if (StringUtils.isBlank(activeHistoryConfigCleaner)) {
             activeHistoryConfigCleaner = "nacos";
         }
@@ -74,6 +75,7 @@ public class HistoryConfigCleanerConfig extends AbstractDynamicConfig {
     
     @Override
     protected String printConfig() {
-        return "activeHistoryConfigCleaner{ " + "activeHistoryConfigCleaner=" + activeHistoryConfigCleaner + "}";
+        return "activeHistoryConfigCleaner{ " + "activeHistoryConfigCleaner="
+            + activeHistoryConfigCleaner + "}";
     }
 }

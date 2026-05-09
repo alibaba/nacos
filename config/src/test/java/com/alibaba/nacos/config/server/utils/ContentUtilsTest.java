@@ -100,9 +100,11 @@ class ContentUtilsTest {
         String result = ContentUtils.truncateContent(content);
         assertEquals(content, result);
         
-        String content2 = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+        String content2 =
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
         String result2 = ContentUtils.truncateContent(content2);
-        String expected = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv...";
+        String expected =
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv...";
         assertEquals(expected, result2);
         
         assertEquals("", ContentUtils.truncateContent(null));

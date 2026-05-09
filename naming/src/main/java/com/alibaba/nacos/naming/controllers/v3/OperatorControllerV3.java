@@ -59,7 +59,8 @@ public class OperatorControllerV3 {
      * Get switch information.
      */
     @GetMapping("/switches")
-    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH,
+        action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<SwitchDomain> switches() {
         return Result.success(operatorV2Impl.switches());
     }
@@ -68,16 +69,18 @@ public class OperatorControllerV3 {
      * Update switch information.
      */
     @PutMapping("/switches")
-    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH,
+        action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> updateSwitch(UpdateSwitchForm updateSwitchForm) throws Exception {
         updateSwitchForm.validate();
         try {
             operatorV2Impl.updateSwitch(updateSwitchForm.getEntry(), updateSwitchForm.getValue(),
-                    updateSwitchForm.getDebug());
+                updateSwitchForm.getDebug());
             return Result.success("ok");
         } catch (IllegalArgumentException e) {
-            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.SERVER_ERROR,
-                    e.getMessage());
+            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ErrorCode.SERVER_ERROR,
+                e.getMessage());
         }
     }
     
@@ -85,9 +88,11 @@ public class OperatorControllerV3 {
      * Get metrics information.
      */
     @GetMapping("/metrics")
-    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH,
+        action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<MetricsInfo> metrics(
-            @RequestParam(value = "onlyStatus", required = false, defaultValue = "true") Boolean onlyStatus) {
+        @RequestParam(value = "onlyStatus", required = false,
+            defaultValue = "true") Boolean onlyStatus) {
         return Result.success(MetricsInfoVo.toNewMetricsInfo(operatorV2Impl.metrics(onlyStatus)));
     }
     
@@ -95,7 +100,8 @@ public class OperatorControllerV3 {
      * Set log level.
      */
     @PutMapping("/log")
-    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH,
+        action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         operatorV2Impl.setLogLevel(logName, logLevel);
         

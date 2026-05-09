@@ -78,7 +78,8 @@ class NamingMetadataOperateServiceTest {
         assertThrows(NacosRuntimeException.class, () -> {
             String metadataId = "metadataId";
             InstanceMetadata instanceMetadata = new InstanceMetadata();
-            namingMetadataOperateService.updateInstanceMetadata(service, metadataId, instanceMetadata);
+            namingMetadataOperateService.updateInstanceMetadata(service, metadataId,
+                instanceMetadata);
             
             Mockito.verify(service).getNamespace();
             Mockito.verify(service).getGroup();

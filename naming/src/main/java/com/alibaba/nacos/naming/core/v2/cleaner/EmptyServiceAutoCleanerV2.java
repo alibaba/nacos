@@ -47,11 +47,11 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
     private final ServiceStorage serviceStorage;
     
     public EmptyServiceAutoCleanerV2(ClientServiceIndexesManager clientServiceIndexesManager,
-            ServiceStorage serviceStorage) {
+        ServiceStorage serviceStorage) {
         this.clientServiceIndexesManager = clientServiceIndexesManager;
         this.serviceStorage = serviceStorage;
         GlobalExecutor.scheduleExpiredClientCleaner(this, TimeUnit.SECONDS.toMillis(30),
-                GlobalConfig.getEmptyServiceCleanInterval(), TimeUnit.MILLISECONDS);
+            GlobalConfig.getEmptyServiceCleanInterval(), TimeUnit.MILLISECONDS);
         
     }
     
@@ -68,16 +68,19 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
         
         for (String each : serviceManager.getAllNamespaces()) {
             Set<Service> services = serviceManager.getSingletons(each);
-            Stream<Service> stream = services.size() > parallelSize ? services.parallelStream() : services.stream();
+            Stream<Service> stream =
+                services.size() > parallelSize ? services.parallelStream() : services.stream();
             stream.forEach(this::cleanEmptyService);
         }
     }
     
     private void cleanEmptyService(Service service) {
-        Collection<String> registeredService = clientServiceIndexesManager.getAllClientsRegisteredService(service);
+        Collection<String> registeredService =
+            clientServiceIndexesManager.getAllClientsRegisteredService(service);
         if (registeredService.isEmpty() && isTimeExpired(service)) {
-            Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned", service.getNamespace(),
-                    service.getGroupedServiceName());
+            Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned",
+                service.getNamespace(),
+                service.getGroupedServiceName());
             clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
             ServiceManager.getInstance().removeSingleton(service);
             serviceStorage.removeData(service);
@@ -87,6 +90,7 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
     
     private boolean isTimeExpired(Service service) {
         long currentTimeMillis = System.currentTimeMillis();
-        return currentTimeMillis - service.getLastUpdatedTime() >= GlobalConfig.getEmptyServiceExpiredTime();
+        return currentTimeMillis - service.getLastUpdatedTime() >= GlobalConfig
+            .getEmptyServiceExpiredTime();
     }
 }

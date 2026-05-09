@@ -72,16 +72,20 @@ public class SelectorManager {
      * init SelectorContextBuilders.
      */
     private void initSelectorContextBuilders() {
-        Collection<SelectorContextBuilder> selectorContextBuilders = NacosServiceLoader.load(SelectorContextBuilder.class);
+        Collection<SelectorContextBuilder> selectorContextBuilders =
+            NacosServiceLoader.load(SelectorContextBuilder.class);
         for (SelectorContextBuilder selectorContextBuilder : selectorContextBuilders) {
             if (contextBuilders.containsKey(selectorContextBuilder.getContextType())) {
-                Loggers.SRV_LOG.warn("[SelectorManager] init selectorContextBuilders, SelectorContextBuilder type {} has value, ignore it.",
-                        selectorContextBuilder.getContextType());
+                Loggers.SRV_LOG.warn(
+                    "[SelectorManager] init selectorContextBuilders, SelectorContextBuilder type {} has value, ignore it.",
+                    selectorContextBuilder.getContextType());
                 continue;
             }
             contextBuilders.put(selectorContextBuilder.getContextType(), selectorContextBuilder);
-            Loggers.SRV_LOG.info("[SelectorManager] Load SelectorContextBuilder({}) contextType({}) successfully.", selectorContextBuilder.getClass(),
-                    selectorContextBuilder.getContextType());
+            Loggers.SRV_LOG.info(
+                "[SelectorManager] Load SelectorContextBuilder({}) contextType({}) successfully.",
+                selectorContextBuilder.getClass(),
+                selectorContextBuilder.getContextType());
         }
     }
     
@@ -92,7 +96,9 @@ public class SelectorManager {
         Collection<Selector> selectors = NacosServiceLoader.load(Selector.class);
         for (Selector selector : selectors) {
             if (selectorTypes.containsKey(selector.getType())) {
-                Loggers.SRV_LOG.warn("[SelectorManager] init Selectors, Selector type {} has value, ignore it.", selector.getType());
+                Loggers.SRV_LOG.warn(
+                    "[SelectorManager] init Selectors, Selector type {} has value, ignore it.",
+                    selector.getType());
                 continue;
             }
             Class<? extends Selector> selectorClass = selector.getClass();
@@ -104,11 +110,14 @@ public class SelectorManager {
                 // register json serial.
                 JacksonUtils.registerSubtype(selectorClass, selector.getType());
                 selectorTypes.put(selector.getType(), selectorClass);
-                Loggers.SRV_LOG.info("[SelectorManager] Load Selector({}) type({}) contextType({}) successfully.", selectorClass, selector.getType(),
-                        selector.getContextType());
+                Loggers.SRV_LOG.info(
+                    "[SelectorManager] Load Selector({}) type({}) contextType({}) successfully.",
+                    selectorClass, selector.getType(),
+                    selector.getContextType());
             } catch (Exception e) {
-                Loggers.SRV_LOG.warn("[SelectorManager] Selector {} cannot find public access default constructor, will be ignored.",
-                        selectorClass);
+                Loggers.SRV_LOG.warn(
+                    "[SelectorManager] Selector {} cannot find public access default constructor, will be ignored.",
+                    selectorClass);
             }
         }
     }
@@ -142,7 +151,9 @@ public class SelectorManager {
             selector.parse(condition);
             return selector;
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[SelectorManager] Parse Selector failed, type: {}, condition: {}.", type, condition, e);
+            Loggers.SRV_LOG.warn(
+                "[SelectorManager] Parse Selector failed, type: {}, condition: {}.", type,
+                condition, e);
             throw new NacosException(SERVER_ERROR, "Selector parses failed: " + e.getMessage());
         }
     }
@@ -155,20 +166,24 @@ public class SelectorManager {
      * @param providers the provider list for select.
      * @return the select instance list.
      */
-    public <T extends Instance> List<T> select(Selector selector, String consumerIp, List<T> providers) {
+    public <T extends Instance> List<T> select(Selector selector, String consumerIp,
+        List<T> providers) {
         if (Objects.isNull(selector)) {
             return providers;
         }
-        SelectorContextBuilder selectorContextBuilder = contextBuilders.get(selector.getContextType());
+        SelectorContextBuilder selectorContextBuilder =
+            contextBuilders.get(selector.getContextType());
         if (Objects.isNull(selectorContextBuilder)) {
-            Loggers.SRV_LOG.info("[SelectorManager] cannot find the contextBuilder of type {}.", selector.getType());
+            Loggers.SRV_LOG.info("[SelectorManager] cannot find the contextBuilder of type {}.",
+                selector.getType());
             return providers;
         }
         try {
             Object context = selectorContextBuilder.build(consumerIp, providers);
             return (List<T>) selector.select(context);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[SelectorManager] execute select failed, will return all providers.", e);
+            Loggers.SRV_LOG
+                .warn("[SelectorManager] execute select failed, will return all providers.", e);
             return providers;
         }
     }

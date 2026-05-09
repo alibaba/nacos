@@ -72,8 +72,9 @@ class HealthOperatorV2ImplTest {
         clusterMap.put("cluster-a", cluster);
         metadata.setClusters(clusterMap);
         when(cluster.getHealthyCheckType()).thenReturn(HealthCheckType.NONE.name());
-        when(metadataManager.getServiceMetadata(argThat(service -> isPersistentService(service, "A", "B", "C"))))
-                .thenReturn(Optional.of(metadata));
+        when(metadataManager
+            .getServiceMetadata(argThat(service -> isPersistentService(service, "A", "B", "C"))))
+            .thenReturn(Optional.of(metadata));
         
         ConnectionBasedClient client = Mockito.mock(ConnectionBasedClient.class);
         when(clientManager.getClient(anyString())).thenReturn(client);
@@ -84,22 +85,27 @@ class HealthOperatorV2ImplTest {
         instancePublishInfo.setHealthy(false);
         instancePublishInfo.setCluster("cluster-a");
         instancePublishInfo.setExtendDatum(new HashMap<>(2));
-        when(client.getInstancePublishInfo(argThat(service -> isPersistentService(service, "A", "B", "C"))))
-                .thenReturn(instancePublishInfo);
+        when(client.getInstancePublishInfo(
+            argThat(service -> isPersistentService(service, "A", "B", "C"))))
+            .thenReturn(instancePublishInfo);
         
-        healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C", "cluster-a", "1.1.1.1", 8080,
-                true);
+        healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C", "cluster-a",
+            "1.1.1.1", 8080,
+            true);
         
         verify(clientOperationService).registerInstance(
-                argThat(service -> isPersistentService(service, "A", "B", "C")),
-                argThat(instance -> !instance.isEphemeral() && instance.isHealthy() && "1.1.1.1".equals(instance.getIp())
-                        && instance.getPort() == 8080 && "cluster-a".equals(instance.getClusterName())),
-                anyString());
+            argThat(service -> isPersistentService(service, "A", "B", "C")),
+            argThat(instance -> !instance.isEphemeral() && instance.isHealthy()
+                && "1.1.1.1".equals(instance.getIp())
+                && instance.getPort() == 8080 && "cluster-a".equals(instance.getClusterName())),
+            anyString());
     }
-
-    private boolean isPersistentService(Service service, String namespace, String groupName, String serviceName) {
-        return null != service && namespace.equals(service.getNamespace()) && groupName.equals(service.getGroup())
-                && serviceName.equals(service.getName()) && !service.isEphemeral();
+    
+    private boolean isPersistentService(Service service, String namespace, String groupName,
+        String serviceName) {
+        return null != service && namespace.equals(service.getNamespace())
+            && groupName.equals(service.getGroup())
+            && serviceName.equals(service.getName()) && !service.isEphemeral();
     }
     
 }

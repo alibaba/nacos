@@ -25,7 +25,7 @@ import java.util.Objects;
  * @author Nacos
  */
 public class ConfigQueryChainRequest {
-
+    
     private String dataId;
     
     private String group;
@@ -84,7 +84,8 @@ public class ConfigQueryChainRequest {
      * @param namespaceId namespaceId
      * @return ConfigQueryChainRequest
      */
-    public static ConfigQueryChainRequest buildConfigQueryChainRequest(String dataId, String groupName, String namespaceId) {
+    public static ConfigQueryChainRequest buildConfigQueryChainRequest(String dataId,
+        String groupName, String namespaceId) {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setDataId(dataId);
         request.setGroup(groupName);
@@ -102,10 +103,10 @@ public class ConfigQueryChainRequest {
         }
         ConfigQueryChainRequest that = (ConfigQueryChainRequest) o;
         return Objects.equals(dataId, that.dataId)
-                && Objects.equals(group, that.group)
-                && Objects.equals(tenant, that.tenant)
-                && Objects.equals(tag, that.tag)
-                && Objects.equals(appLabels, that.appLabels);
+            && Objects.equals(group, that.group)
+            && Objects.equals(tenant, that.tenant)
+            && Objects.equals(tag, that.tag)
+            && Objects.equals(appLabels, that.appLabels);
     }
     
     @Override

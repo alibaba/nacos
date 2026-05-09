@@ -42,13 +42,15 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
+public class ServiceQueryRequestHandler
+    extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
     
     private final ServiceStorage serviceStorage;
     
     private final NamingMetadataManager metadataManager;
     
-    public ServiceQueryRequestHandler(ServiceStorage serviceStorage, NamingMetadataManager metadataManager) {
+    public ServiceQueryRequestHandler(ServiceStorage serviceStorage,
+        NamingMetadataManager metadataManager) {
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
     }
@@ -58,7 +60,8 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
     @TpsControl(pointName = "RemoteNamingServiceQuery", name = "RemoteNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
     @ExtractorManager.Extractor(rpcExtractor = ServiceQueryRequestParamExtractor.class)
-    public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta) throws NacosException {
+    public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta)
+        throws NacosException {
         String namespaceId = request.getNamespace();
         String groupName = request.getGroupName();
         String serviceName = request.getServiceName();
@@ -67,8 +70,9 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
         boolean healthyOnly = request.isHealthyOnly();
         ServiceInfo result = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
-        result = ServiceUtil.selectInstancesWithHealthyProtection(result, serviceMetadata, cluster, healthyOnly, true,
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta));
+        result = ServiceUtil.selectInstancesWithHealthyProtection(result, serviceMetadata, cluster,
+            healthyOnly, true,
+            NamingRequestUtil.getSourceIpForGrpcRequest(meta));
         return QueryServiceResponse.buildSuccessResponse(result);
     }
 }

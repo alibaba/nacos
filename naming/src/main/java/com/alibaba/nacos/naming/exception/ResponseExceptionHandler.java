@@ -83,7 +83,8 @@ public class ResponseExceptionHandler {
     public ResponseEntity<String> handleMissingParams(MissingServletRequestParameterException ex) {
         Loggers.SRV_LOG.error("got exception. {}", ExceptionUtil.getAllExceptionMsg(ex));
         String name = ex.getParameterName();
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter '" + name + "' is missing");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body("Parameter '" + name + "' is missing");
     }
     
     /**
@@ -95,6 +96,7 @@ public class ResponseExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
         Loggers.SRV_LOG.error("got exception. {}", ExceptionUtil.getAllExceptionMsg(e));
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ExceptionUtil.getAllExceptionMsg(e));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ExceptionUtil.getAllExceptionMsg(e));
     }
 }

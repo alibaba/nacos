@@ -79,8 +79,10 @@ public class FuzzyWatchSyncNotifyCallbackTest {
         tMockedStatic = Mockito.mockStatic(ConfigExecutor.class);
         controlManagerCenterMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
         Mockito.when(ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
-        Mockito.when(ControlManagerCenter.getInstance().getTpsControlManager()).thenReturn(tpsControlManager);
-        FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(connectionManager,
+        Mockito.when(ControlManagerCenter.getInstance().getTpsControlManager())
+            .thenReturn(tpsControlManager);
+        FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask =
+            new FuzzyWatchSyncNotifyTask(connectionManager,
                 rpcPushService, configFuzzyWatchSyncRequest, taskCounter, 5, "con1");
         fuzzyWatchSyncNotifyCallback = new FuzzyWatchSyncNotifyCallback(fuzzyWatchSyncNotifyTask);
     }
@@ -98,8 +100,10 @@ public class FuzzyWatchSyncNotifyCallbackTest {
         fuzzyWatchSyncNotifyCallback.onSuccess();
         //create a new init finish task;
         tMockedStatic.verify(
-                () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class), eq(0L),
-                        eq(TimeUnit.SECONDS)), times(1));
+            () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class),
+                eq(0L),
+                eq(TimeUnit.SECONDS)),
+            times(1));
     }
     
     @Test
@@ -109,7 +113,9 @@ public class FuzzyWatchSyncNotifyCallbackTest {
         fuzzyWatchSyncNotifyCallback.onFail(new RuntimeException());
         // schedule self ,after 2 sec.
         tMockedStatic.verify(
-                () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class), eq(2L),
-                        eq(TimeUnit.SECONDS)), times(1));
+            () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class),
+                eq(2L),
+                eq(TimeUnit.SECONDS)),
+            times(1));
     }
 }

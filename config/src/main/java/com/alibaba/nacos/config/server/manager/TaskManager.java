@@ -145,7 +145,8 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
      */
     public void init() {
         try {
-            ObjectName oName = new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
+            ObjectName oName =
+                new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
             ManagementFactory.getPlatformMBeanServer().registerMBean(this, oName);
         } catch (Exception e) {
             LOGGER.error("registerMBean_fail", e);

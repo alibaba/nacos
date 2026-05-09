@@ -52,11 +52,13 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH
  * @date 2024/3/4
  */
 @Component
-public class ConfigFuzzyWatchRequestHandler extends RequestHandler<ConfigFuzzyWatchRequest, ConfigFuzzyWatchResponse> {
+public class ConfigFuzzyWatchRequestHandler
+    extends RequestHandler<ConfigFuzzyWatchRequest, ConfigFuzzyWatchResponse> {
     
     private ConfigFuzzyWatchContextService configFuzzyWatchContextService;
     
-    public ConfigFuzzyWatchRequestHandler(ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
+    public ConfigFuzzyWatchRequestHandler(
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
         this.configFuzzyWatchContextService = configFuzzyWatchContextService;
     }
     
@@ -77,7 +79,8 @@ public class ConfigFuzzyWatchRequestHandler extends RequestHandler<ConfigFuzzyWa
     @TpsControl(pointName = "ConfigFuzzyWatch")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigFuzzyWatchRequestParamsExtractor.class)
-    public ConfigFuzzyWatchResponse handle(ConfigFuzzyWatchRequest request, RequestMeta meta) throws NacosException {
+    public ConfigFuzzyWatchResponse handle(ConfigFuzzyWatchRequest request, RequestMeta meta)
+        throws NacosException {
         String connectionId = StringPool.get(meta.getConnectionId());
         String groupKeyPattern = request.getGroupKeyPattern();
         if (WATCH_TYPE_WATCH.equals(request.getWatchType())) {
@@ -87,19 +90,22 @@ public class ConfigFuzzyWatchRequestHandler extends RequestHandler<ConfigFuzzyWa
                 // Get existing group keys for the client and publish initialization event
                 Set<String> clientExistingGroupKeys = request.getReceivedGroupKeys();
                 NotifyCenter.publishEvent(
-                        new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
-                                request.isInitializing()));
+                    new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys,
+                        groupKeyPattern,
+                        request.isInitializing()));
             } catch (NacosException nacosException) {
                 ConfigFuzzyWatchResponse configFuzzyWatchResponse = new ConfigFuzzyWatchResponse();
-                configFuzzyWatchResponse.setErrorInfo(nacosException.getErrCode(), nacosException.getErrMsg());
+                configFuzzyWatchResponse.setErrorInfo(nacosException.getErrCode(),
+                    nacosException.getErrMsg());
                 return configFuzzyWatchResponse;
             }
             
             boolean reachToUpLimit = configFuzzyWatchContextService.reachToUpLimit(groupKeyPattern);
             if (reachToUpLimit) {
                 ConfigFuzzyWatchResponse configFuzzyWatchResponse = new ConfigFuzzyWatchResponse();
-                configFuzzyWatchResponse.setErrorInfo(FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(),
-                        FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg());
+                configFuzzyWatchResponse.setErrorInfo(
+                    FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(),
+                    FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg());
                 return configFuzzyWatchResponse;
             }
             

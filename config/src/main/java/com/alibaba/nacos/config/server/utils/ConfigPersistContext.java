@@ -23,12 +23,13 @@ package com.alibaba.nacos.config.server.utils;
  * for internal batch operations such as data migration or skill upload.</p>
  */
 public final class ConfigPersistContext {
-
-    private static final ThreadLocal<Boolean> SKIP_HISTORY = ThreadLocal.withInitial(() -> Boolean.FALSE);
-
+    
+    private static final ThreadLocal<Boolean> SKIP_HISTORY =
+        ThreadLocal.withInitial(() -> Boolean.FALSE);
+    
     private ConfigPersistContext() {
     }
-
+    
     /**
      * Whether current thread should skip writing config history.
      */
@@ -36,7 +37,7 @@ public final class ConfigPersistContext {
         Boolean v = SKIP_HISTORY.get();
         return v != null && v;
     }
-
+    
     /**
      * Set whether to skip history for current thread.
      *
@@ -49,33 +50,33 @@ public final class ConfigPersistContext {
             clear();
         }
     }
-
+    
     /**
      * Clear thread local context.
      */
     public static void clear() {
         SKIP_HISTORY.remove();
     }
-
+    
     /**
      * Enable skip-history in try-with-resources style.
      */
     public static Guard withSkipHistory() {
         return new Guard(true);
     }
-
+    
     /**
      * A guard which restores previous value when closed.
      */
     public static final class Guard implements AutoCloseable {
-
+        
         private final Boolean previous;
-
+        
         private Guard(boolean skipHistory) {
             this.previous = SKIP_HISTORY.get();
             setSkipHistory(skipHistory);
         }
-
+        
         @Override
         public void close() {
             if (previous == null || !previous) {

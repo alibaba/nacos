@@ -103,15 +103,21 @@ class EphemeralIpPortClientManagerTest {
     
     @Test
     void testVerifyClient0() {
-        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 0)));
-        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(syncedClientId, 0)));
+        assertTrue(ephemeralIpPortClientManager
+            .verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 0)));
+        assertTrue(ephemeralIpPortClientManager
+            .verifyClient(new DistroClientVerifyInfo(syncedClientId, 0)));
     }
     
     @Test
     void testVerifyClient() {
-        assertFalse(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 1)));
-        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 1320)));
-        assertFalse(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(syncedClientId, 1)));
-        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(syncedClientId, 5120)));
+        assertFalse(ephemeralIpPortClientManager
+            .verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 1)));
+        assertTrue(ephemeralIpPortClientManager
+            .verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 1320)));
+        assertFalse(ephemeralIpPortClientManager
+            .verifyClient(new DistroClientVerifyInfo(syncedClientId, 1)));
+        assertTrue(ephemeralIpPortClientManager
+            .verifyClient(new DistroClientVerifyInfo(syncedClientId, 5120)));
     }
 }

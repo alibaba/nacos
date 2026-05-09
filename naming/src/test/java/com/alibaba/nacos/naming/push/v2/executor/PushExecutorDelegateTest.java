@@ -33,24 +33,24 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PushExecutorDelegateTest {
-
+    
     private final String rpcClientId = UUID.randomUUID().toString();
-
+    
     @Mock
     private PushExecutorRpcImpl pushExecutorRpc;
-
+    
     @Mock
     private Subscriber subscriber;
-
+    
     @Mock
     private NamingPushCallback pushCallBack;
-
+    
     private PushDataWrapper pushdata;
-
+    
     private PushExecutorDelegate delegate;
-
+    
     private ServiceMetadata serviceMetadata;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         serviceMetadata = new ServiceMetadata();
@@ -63,7 +63,7 @@ class PushExecutorDelegateTest {
         delegate.doPush(rpcClientId, subscriber, pushdata);
         verify(pushExecutorRpc).doPush(rpcClientId, subscriber, pushdata);
     }
-
+    
     @Test
     void doPushWithCallbackForRpc() {
         delegate.doPushWithCallback(rpcClientId, subscriber, pushdata, pushCallBack);

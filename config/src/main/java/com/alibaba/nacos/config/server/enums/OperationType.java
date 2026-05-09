@@ -22,37 +22,37 @@ package com.alibaba.nacos.config.server.enums;
  * @author dirtybit
  */
 public enum OperationType {
-
+    
     /**
      * Insert.
      */
     INSERT("I"),
-
+    
     /**
      * Update.
      */
     UPDATE("U"),
-
+    
     /**
      * Delete.
      */
     DELETE("D");
-
+    
     /**
      * operation type value.
      */
     private String value;
-
+    
     OperationType(String value) {
         this.value = value;
     }
-
+    
     public void setValue(String value) {
         this.value = value;
     }
-
+    
     public String getValue() {
         return this.value;
     }
-
+    
 }

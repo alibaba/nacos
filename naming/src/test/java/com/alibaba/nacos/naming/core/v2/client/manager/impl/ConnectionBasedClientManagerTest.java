@@ -74,11 +74,14 @@ class ConnectionBasedClientManagerTest {
         when(client.isNative()).thenReturn(true);
         when(connectionMeta.getConnectionId()).thenReturn(connectionId);
         when(connection.getMetaInfo()).thenReturn(connectionMeta);
-        when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE)).thenReturn(RemoteConstants.LABEL_MODULE_NAMING);
+        when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE))
+            .thenReturn(RemoteConstants.LABEL_MODULE_NAMING);
         
         when(clientAttributes.getClientAttribute(ClientConstants.REVISION, 0)).thenReturn(0);
-        assertTrue(connectionBasedClientManager.syncClientConnected(connectionId, clientAttributes));
-        assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
+        assertTrue(
+            connectionBasedClientManager.syncClientConnected(connectionId, clientAttributes));
+        assertTrue(
+            connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         connectionBasedClientManager.clientConnected(connection);
         
     }
@@ -87,16 +90,19 @@ class ConnectionBasedClientManagerTest {
     void testAllClientId() {
         Collection<String> allClientIds = connectionBasedClientManager.allClientId();
         assertEquals(1, allClientIds.size());
-        assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
+        assertTrue(
+            connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         assertTrue(allClientIds.contains(connectionId));
     }
     
     @Test
     void testContainsConnectionId() {
-        assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
+        assertTrue(
+            connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         assertTrue(connectionBasedClientManager.contains(connectionId));
         String unUsedClientId = "127.0.0.1:8888#true";
-        assertFalse(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(unUsedClientId, 0)));
+        assertFalse(connectionBasedClientManager
+            .verifyClient(new DistroClientVerifyInfo(unUsedClientId, 0)));
         assertFalse(connectionBasedClientManager.contains(unUsedClientId));
     }
     

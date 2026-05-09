@@ -47,10 +47,11 @@ public final class HttpClientManager {
     
     static {
         // build nacos rest template
-        NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(new ConfigHttpClientFactory(TIMEOUT, TIMEOUT));
+        NACOS_REST_TEMPLATE = HttpClientBeanHolder
+            .getNacosRestTemplate(new ConfigHttpClientFactory(TIMEOUT, TIMEOUT));
         NACOS_ASYNC_REST_TEMPLATE = HttpClientBeanHolder.getNacosAsyncRestTemplate(
-                new ConfigHttpClientFactory(PropertyUtil.getNotifyConnectTimeout(),
-                        PropertyUtil.getNotifySocketTimeout()));
+            new ConfigHttpClientFactory(PropertyUtil.getNotifyConnectTimeout(),
+                PropertyUtil.getNotifySocketTimeout()));
         
         ThreadUtils.addShutdownHook(HttpClientManager::shutdown);
     }
@@ -70,8 +71,9 @@ public final class HttpClientManager {
             HttpClientBeanHolder.shutdownNacosSyncRest(httpClientFactoryBeanName);
             HttpClientBeanHolder.shutdownNacosAsyncRest(httpClientFactoryBeanName);
         } catch (Exception ex) {
-            LOGGER.error("[ConfigServer-HttpClientManager] An exception occurred when the HTTP client was closed : {}",
-                    ExceptionUtil.getStackTrace(ex));
+            LOGGER.error(
+                "[ConfigServer-HttpClientManager] An exception occurred when the HTTP client was closed : {}",
+                ExceptionUtil.getStackTrace(ex));
         }
         LOGGER.info("[ConfigServer-HttpClientManager] Completed destruction of NacosRestTemplate");
     }
@@ -93,7 +95,7 @@ public final class HttpClientManager {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(conTimeOutMillis)
-                    .setReadTimeOutMillis(readTimeOutMillis).build();
+                .setReadTimeOutMillis(readTimeOutMillis).build();
         }
         
         @Override

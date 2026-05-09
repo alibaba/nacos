@@ -57,8 +57,9 @@ public class NamingMetadataOperateService {
         MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
         operation.setMetadata(serviceMetadata);
         WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.SERVICE_METADATA)
-                .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+            .setOperation(DataOperation.CHANGE.name())
+            .setData(ByteString.copyFrom(serializer.serialize(operation)))
+            .build();
         submitMetadataOperation(operationLog);
     }
     
@@ -70,8 +71,9 @@ public class NamingMetadataOperateService {
     public void deleteServiceMetadata(Service service) {
         MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
         WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.SERVICE_METADATA)
-                .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+            .setOperation(DataOperation.DELETE.name())
+            .setData(ByteString.copyFrom(serializer.serialize(operation)))
+            .build();
         submitMetadataOperation(operationLog);
     }
     
@@ -82,13 +84,15 @@ public class NamingMetadataOperateService {
      * @param metadataId       instance metadataId Id
      * @param instanceMetadata metadata
      */
-    public void updateInstanceMetadata(Service service, String metadataId, InstanceMetadata instanceMetadata) {
+    public void updateInstanceMetadata(Service service, String metadataId,
+        InstanceMetadata instanceMetadata) {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
         operation.setTag(metadataId);
         operation.setMetadata(instanceMetadata);
         WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
-                .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+            .setOperation(DataOperation.CHANGE.name())
+            .setData(ByteString.copyFrom(serializer.serialize(operation)))
+            .build();
         submitMetadataOperation(operationLog);
     }
     
@@ -102,8 +106,9 @@ public class NamingMetadataOperateService {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
         operation.setTag(metadataId);
         WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
-                .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+            .setOperation(DataOperation.DELETE.name())
+            .setData(ByteString.copyFrom(serializer.serialize(operation)))
+            .build();
         submitMetadataOperation(operationLog);
     }
     
@@ -114,15 +119,17 @@ public class NamingMetadataOperateService {
      * @param clusterName     cluster name
      * @param clusterMetadata cluster metadata
      */
-    public void addClusterMetadata(Service service, String clusterName, ClusterMetadata clusterMetadata) {
+    public void addClusterMetadata(Service service, String clusterName,
+        ClusterMetadata clusterMetadata) {
         MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setEphemeral(service.isEphemeral());
         serviceMetadata.getClusters().put(clusterName, clusterMetadata);
         operation.setMetadata(serviceMetadata);
         WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.SERVICE_METADATA)
-                .setOperation(DataOperation.ADD.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+            .setOperation(DataOperation.ADD.name())
+            .setData(ByteString.copyFrom(serializer.serialize(operation)))
+            .build();
         submitMetadataOperation(operationLog);
     }
     
@@ -139,10 +146,11 @@ public class NamingMetadataOperateService {
             Response response = cpProtocol.write(operationLog);
             if (!response.getSuccess()) {
                 throw new NacosRuntimeException(NacosException.SERVER_ERROR,
-                        "do metadata operation failed " + response.getErrMsg());
+                    "do metadata operation failed " + response.getErrMsg());
             }
         } catch (Exception e) {
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "do metadata operation failed", e);
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                "do metadata operation failed", e);
         }
     }
 }

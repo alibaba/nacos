@@ -101,14 +101,17 @@ class NamingEventPublisherTest {
         namingEventPublisher.publish(new TestEvent());
         namingEventPublisher.publish(new TestEvent.TestEvent1());
         namingEventPublisher.publish(new TestEvent.TestEvent2());
-        String expectedStatus = "Publisher TestEvent                     : shutdown=false, queue=      3/8      ";
+        String expectedStatus =
+            "Publisher TestEvent                     : shutdown=false, queue=      3/8      ";
         assertThat(namingEventPublisher.getStatus(), is(expectedStatus));
         namingEventPublisher.addSubscriber(subscriber, TestEvent.TestEvent1.class);
         ThreadUtils.sleep(2000L);
-        expectedStatus = "Publisher TestEvent                     : shutdown=false, queue=      0/8      ";
+        expectedStatus =
+            "Publisher TestEvent                     : shutdown=false, queue=      0/8      ";
         assertThat(namingEventPublisher.getStatus(), is(expectedStatus));
         namingEventPublisher.shutdown();
-        expectedStatus = "Publisher TestEvent                     : shutdown= true, queue=      0/8      ";
+        expectedStatus =
+            "Publisher TestEvent                     : shutdown= true, queue=      0/8      ";
         assertThat(namingEventPublisher.getStatus(), is(expectedStatus));
     }
     

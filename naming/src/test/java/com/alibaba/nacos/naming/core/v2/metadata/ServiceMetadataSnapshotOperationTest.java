@@ -53,7 +53,8 @@ class ServiceMetadataSnapshotOperationTest {
         Map<Service, ServiceMetadata> map = new HashMap<>();
         map.put(Service.newService("namespace", "group", "name"), new ServiceMetadata());
         Mockito.when(namingMetadataManager.getServiceMetadataSnapshot()).thenReturn(map);
-        serviceMetadataSnapshotOperation = new ServiceMetadataSnapshotOperation(namingMetadataManager, new ReentrantReadWriteLock());
+        serviceMetadataSnapshotOperation = new ServiceMetadataSnapshotOperation(
+            namingMetadataManager, new ReentrantReadWriteLock());
     }
     
     @Test
@@ -72,7 +73,8 @@ class ServiceMetadataSnapshotOperationTest {
         Serializer aDefault = SerializeFactory.getDefault();
         serviceMetadataSnapshotOperation.loadSnapshot(aDefault.serialize(map));
         
-        Map<Service, ServiceMetadata> serviceMetadataSnapshot = namingMetadataManager.getServiceMetadataSnapshot();
+        Map<Service, ServiceMetadata> serviceMetadataSnapshot =
+            namingMetadataManager.getServiceMetadataSnapshot();
         assertNotNull(serviceMetadataSnapshot);
         assertEquals(1, serviceMetadataSnapshot.size());
     }
@@ -88,13 +90,15 @@ class ServiceMetadataSnapshotOperationTest {
     void testGetSnapshotSaveTag() {
         String snapshotSaveTag = serviceMetadataSnapshotOperation.getSnapshotSaveTag();
         
-        assertEquals(snapshotSaveTag, ServiceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE");
+        assertEquals(snapshotSaveTag,
+            ServiceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE");
     }
     
     @Test
     void testGetSnapshotLoadTag() {
         String snapshotLoadTag = serviceMetadataSnapshotOperation.getSnapshotLoadTag();
         
-        assertEquals(snapshotLoadTag, ServiceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD");
+        assertEquals(snapshotLoadTag,
+            ServiceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD");
     }
 }

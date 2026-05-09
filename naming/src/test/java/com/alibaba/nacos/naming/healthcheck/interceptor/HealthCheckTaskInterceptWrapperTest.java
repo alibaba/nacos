@@ -84,7 +84,8 @@ class HealthCheckTaskInterceptWrapperTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        when(applicationContext.getBean(NamingMetadataManager.class)).thenReturn(namingMetadataManager);
+        when(applicationContext.getBean(NamingMetadataManager.class))
+            .thenReturn(namingMetadataManager);
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
         when(applicationContext.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(applicationContext.getBean(DistroMapper.class)).thenReturn(distroMapper);
@@ -122,7 +123,9 @@ class HealthCheckTaskInterceptWrapperTest {
         injectInstance(true, 0);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     @Test
@@ -147,17 +150,22 @@ class HealthCheckTaskInterceptWrapperTest {
         when(globalConfig.isExpireInstance()).thenReturn(true);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertTrue(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertTrue(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     @Test
     void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
-        injectInstance(true, System.currentTimeMillis()).getExtendDatum().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
+        injectInstance(true, System.currentTimeMillis()).getExtendDatum()
+            .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.MILLISECONDS.sleep(1100);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     @Test
@@ -166,12 +174,15 @@ class HealthCheckTaskInterceptWrapperTest {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
         metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000L);
-        when(namingMetadataManager.getInstanceMetadata(service, instance.getMetadataId())).thenReturn(Optional.of(metadata));
+        when(namingMetadataManager.getInstanceMetadata(service, instance.getMetadataId()))
+            .thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.MILLISECONDS.sleep(1100);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     private HealthCheckInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {

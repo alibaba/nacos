@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 public class ConfigFormTest {
     
     private ConfigForm original;
-
+    
     @BeforeEach
     void setUp() {
         // 1. 初始化并填充原始对象的所有类型字段
@@ -60,7 +60,7 @@ public class ConfigFormTest {
     @Test
     void testCloneInstance() {
         ConfigForm cloned = original.clone();
-
+        
         // 验证非空
         assertNotNull(cloned);
         // 验证内存地址不同（不是同一个引用）
@@ -68,11 +68,11 @@ public class ConfigFormTest {
         // 验证类类型一致
         assertEquals(original.getClass(), cloned.getClass());
     }
-
+    
     @Test
     void testCloneFields() {
         ConfigForm cloned = original.clone();
-
+        
         // 逐一验证关键属性
         assertEquals(original.getDataId(), cloned.getDataId());
         assertEquals(original.getGroup(), cloned.getGroup());
@@ -83,7 +83,7 @@ public class ConfigFormTest {
         assertEquals(original.getGrayName(), cloned.getGrayName());
         assertEquals(original.getDesc(), cloned.getDesc());
     }
-
+    
     @Test
     void testDeepCopyIndependence() {
         ConfigForm cloned = original.clone();
@@ -91,7 +91,7 @@ public class ConfigFormTest {
         // 修改克隆体的属性
         String newContent = "new-content-modified";
         cloned.setContent(newContent);
-
+        
         // 断言原对象的属性没有改变
         assertNotEquals(original.getContent(), cloned.getContent());
         assertEquals("content", original.getContent());

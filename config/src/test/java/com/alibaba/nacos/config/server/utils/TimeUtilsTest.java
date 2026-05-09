@@ -32,7 +32,8 @@ class TimeUtilsTest {
         Date date1 = new Date(TimeUtils.getCurrentTime().getTime());
         assertNotNull(date1.toString());
         
-        Date date2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(TimeUtils.getCurrentTimeStr());
+        Date date2 =
+            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(TimeUtils.getCurrentTimeStr());
         assertNotNull(date2.toString());
         
     }

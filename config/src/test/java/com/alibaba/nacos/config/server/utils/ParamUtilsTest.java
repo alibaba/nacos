@@ -297,8 +297,10 @@ class ParamUtilsTest {
     void testCheckParamWithNamespaceGroupDataId() {
         assertThrows(NacosApiException.class, () -> ParamUtils.checkParam("../", "group", ""));
         assertThrows(NacosApiException.class, () -> ParamUtils.checkParam("dataId", "../", ""));
-        assertThrows(NacosApiException.class, () -> ParamUtils.checkParam("dataId", "group", "../"));
+        assertThrows(NacosApiException.class,
+            () -> ParamUtils.checkParam("dataId", "group", "../"));
         assertDoesNotThrow(() -> ParamUtils.checkParam("dataId", "group", ""));
-        assertDoesNotThrow(() -> ParamUtils.checkParam("dataId", "group", UUID.randomUUID().toString()));
+        assertDoesNotThrow(
+            () -> ParamUtils.checkParam("dataId", "group", UUID.randomUUID().toString()));
     }
 }

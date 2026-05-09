@@ -60,8 +60,9 @@ public class HealthControllerV3 {
     public Result<String> update(UpdateHealthForm updateHealthForm) throws NacosException {
         updateHealthForm.validate();
         healthOperatorV2.updateHealthStatusForPersistentInstance(updateHealthForm.getNamespaceId(),
-                updateHealthForm.getGroupName(), updateHealthForm.getServiceName(), updateHealthForm.getClusterName(),
-                updateHealthForm.getIp(), updateHealthForm.getPort(), updateHealthForm.getHealthy());
+            updateHealthForm.getGroupName(), updateHealthForm.getServiceName(),
+            updateHealthForm.getClusterName(),
+            updateHealthForm.getIp(), updateHealthForm.getPort(), updateHealthForm.getHealthy());
         
         return Result.success("ok");
     }
