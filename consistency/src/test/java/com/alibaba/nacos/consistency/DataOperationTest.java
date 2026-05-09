@@ -21,13 +21,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DataOperationTest {
-
+    
     @Test
     void testValues() {
         DataOperation[] values = DataOperation.values();
         assertEquals(6, values.length);
     }
-
+    
     @Test
     void testValueOf() {
         assertEquals(DataOperation.ADD, DataOperation.valueOf("ADD"));

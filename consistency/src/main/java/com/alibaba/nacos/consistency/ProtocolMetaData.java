@@ -43,9 +43,10 @@ public final class ProtocolMetaData {
      */
     public Map<String, Map<Object, Object>> getMetaDataMap() {
         return metaDataMap.entrySet().stream().map(entry -> Pair.with(entry.getKey(),
-                        entry.getValue().getItemMap().entrySet().stream()
-                                .collect(TreeMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), TreeMap::putAll)))
-                .collect(TreeMap::new, (m, e) -> m.put(e.getFirst(), e.getSecond()), TreeMap::putAll);
+            entry.getValue().getItemMap().entrySet().stream()
+                .collect(TreeMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()),
+                    TreeMap::putAll)))
+            .collect(TreeMap::new, (m, e) -> m.put(e.getFirst(), e.getSecond()), TreeMap::putAll);
     }
     // Does not guarantee thread safety, there may be two updates of
     // time-1 and time-2 (time-1 <time-2), but time-1 data overwrites time-2
@@ -118,7 +119,8 @@ public final class ProtocolMetaData {
         // If ValueItem does not exist, actively create a ValueItem
         
         void subscribe(final String key, final Observer observer) {
-            final ValueItem item = itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
+            final ValueItem item =
+                itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
             item.addObserver(observer);
         }
         

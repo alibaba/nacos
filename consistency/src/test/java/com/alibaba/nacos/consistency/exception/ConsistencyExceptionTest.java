@@ -23,14 +23,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ConsistencyExceptionTest {
-
+    
     @Test
     void testDefaultConstructor() {
         ConsistencyException ex = new ConsistencyException();
         assertNull(ex.getMessage());
         assertNull(ex.getCause());
     }
-
+    
     @Test
     void testMessageConstructor() {
         String message = "test message";
@@ -38,7 +38,7 @@ class ConsistencyExceptionTest {
         assertEquals(message, ex.getMessage());
         assertNull(ex.getCause());
     }
-
+    
     @Test
     void testMessageAndCauseConstructor() {
         String message = "test message";
@@ -47,7 +47,7 @@ class ConsistencyExceptionTest {
         assertEquals(message, ex.getMessage());
         assertEquals(cause, ex.getCause());
     }
-
+    
     @Test
     void testCauseConstructor() {
         Throwable cause = new IllegalArgumentException("cause");
@@ -55,7 +55,7 @@ class ConsistencyExceptionTest {
         assertEquals(cause, ex.getCause());
         assertNotNull(ex.getMessage());
     }
-
+    
     @Test
     void testProtectedConstructorViaAnonymousSubclass() {
         String message = "protected message";
