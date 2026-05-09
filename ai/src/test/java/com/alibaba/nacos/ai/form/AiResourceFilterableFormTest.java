@@ -28,13 +28,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests for {@link AiResourceFilterableForm}.
  */
 class AiResourceFilterableFormTest {
-
+    
     @Test
     void validateShouldPassWhenBothFieldsNull() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void validateShouldPassWhenBothFieldsEmpty() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
@@ -42,42 +42,42 @@ class AiResourceFilterableFormTest {
         form.setScope("");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void validateShouldPassWhenScopeIsPublicLowercase() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
         form.setScope("public");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void validateShouldPassWhenScopeIsPublicUppercase() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
         form.setScope("PUBLIC");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void validateShouldPassWhenScopeIsPublicMixedCase() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
         form.setScope("Public");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void validateShouldPassWhenScopeIsPrivateLowercase() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
         form.setScope("private");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void validateShouldPassWhenScopeIsPrivateUppercase() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
         form.setScope("PRIVATE");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void validateShouldThrowWhenScopeIsInvalid() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
@@ -85,7 +85,7 @@ class AiResourceFilterableFormTest {
         NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
     }
-
+    
     @Test
     void validateShouldThrowWhenScopeIsRandomString() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
@@ -93,14 +93,14 @@ class AiResourceFilterableFormTest {
         NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
     }
-
+    
     @Test
     void validateShouldPassWithOwnerSetAndNoScope() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
         form.setOwner("alice");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void validateShouldPassWithOwnerAndValidScope() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
@@ -108,7 +108,7 @@ class AiResourceFilterableFormTest {
         form.setScope("PUBLIC");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void gettersAndSettersShouldWork() {
         AiResourceFilterableForm form = new AiResourceFilterableForm();

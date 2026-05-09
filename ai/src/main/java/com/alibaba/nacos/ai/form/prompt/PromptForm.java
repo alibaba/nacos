@@ -44,7 +44,7 @@ public class PromptForm implements NacosForm {
         fillDefaultNamespaceId();
         if (StringUtils.isEmpty(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'promptKey' type String is not present");
+                "Required parameter 'promptKey' type String is not present");
         }
     }
     

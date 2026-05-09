@@ -45,7 +45,7 @@ public class AgentSpecDetailForm extends AgentSpecForm {
         // Only agentSpecCard is required
         if (StringUtils.isEmpty(agentSpecCard)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `agentSpecCard` should not be `null` or empty.");
+                "Request parameter `agentSpecCard` should not be `null` or empty.");
         }
     }
     

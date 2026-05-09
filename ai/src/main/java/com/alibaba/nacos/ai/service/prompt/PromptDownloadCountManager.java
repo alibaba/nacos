@@ -48,56 +48,59 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Component
 public class PromptDownloadCountManager extends SmartSubscriber {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(PromptDownloadCountManager.class);
-
+    
     private static final String RESOURCE_TYPE_PROMPT = "prompt";
-
+    
     /**
      * Flush interval in seconds.
      */
     private static final long FLUSH_INTERVAL_SECONDS = 10;
-
+    
     /**
      * In-memory counter. Key = composite key (ns + name + version), Value = accumulated count.
      */
-    private final ConcurrentHashMap<DownloadCountKey, AtomicLong> counterMap = new ConcurrentHashMap<>();
-
+    private final ConcurrentHashMap<DownloadCountKey, AtomicLong> counterMap =
+        new ConcurrentHashMap<>();
+    
     private final AiResourcePersistService aiResourcePersistService;
-
+    
     private final AiResourceVersionPersistService aiResourceVersionPersistService;
-
+    
     private final ScheduledExecutorService scheduler;
-
+    
     public PromptDownloadCountManager(AiResourcePersistService aiResourcePersistService,
-            AiResourceVersionPersistService aiResourceVersionPersistService) {
+        AiResourceVersionPersistService aiResourceVersionPersistService) {
         this.aiResourcePersistService = aiResourcePersistService;
         this.aiResourceVersionPersistService = aiResourceVersionPersistService;
         this.scheduler = ExecutorFactory.newSingleScheduledExecutorService(
-                r -> {
-                    Thread t = new Thread(r, "com.alibaba.nacos.ai.prompt-download-count-flusher");
-                    t.setDaemon(true);
-                    return t;
-                });
-        this.scheduler.scheduleWithFixedDelay(this::flush, FLUSH_INTERVAL_SECONDS, FLUSH_INTERVAL_SECONDS,
-                TimeUnit.SECONDS);
+            r -> {
+                Thread t = new Thread(r, "com.alibaba.nacos.ai.prompt-download-count-flusher");
+                t.setDaemon(true);
+                return t;
+            });
+        this.scheduler.scheduleWithFixedDelay(this::flush, FLUSH_INTERVAL_SECONDS,
+            FLUSH_INTERVAL_SECONDS,
+            TimeUnit.SECONDS);
         NotifyCenter.registerSubscriber(this);
     }
-
+    
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         return Collections.singletonList(PromptDownloadEvent.class);
     }
-
+    
     @Override
     public void onEvent(Event event) {
         if (event instanceof PromptDownloadEvent downloadEvent) {
-            DownloadCountKey key = new DownloadCountKey(downloadEvent.getNamespaceId(), downloadEvent.getName(),
+            DownloadCountKey key =
+                new DownloadCountKey(downloadEvent.getNamespaceId(), downloadEvent.getName(),
                     downloadEvent.getVersion());
             counterMap.computeIfAbsent(key, k -> new AtomicLong(0)).incrementAndGet();
         }
     }
-
+    
     /**
      * Swap and flush all accumulated counts to DB.
      */
@@ -115,19 +118,21 @@ public class PromptDownloadCountManager extends SmartSubscriber {
             try {
                 // Increment version-level count
                 aiResourceVersionPersistService.incrementDownloadCount(key.namespaceId, key.name,
-                        RESOURCE_TYPE_PROMPT, key.version, count);
+                    RESOURCE_TYPE_PROMPT, key.version, count);
                 // Increment total count on resource
-                aiResourcePersistService.incrementDownloadCount(key.namespaceId, key.name, RESOURCE_TYPE_PROMPT,
-                        count);
+                aiResourcePersistService.incrementDownloadCount(key.namespaceId, key.name,
+                    RESOURCE_TYPE_PROMPT,
+                    count);
             } catch (Exception e) {
-                LOGGER.warn("Failed to flush prompt download count for {}@{}: {}", key.name, key.version,
-                        e.getMessage());
+                LOGGER.warn("Failed to flush prompt download count for {}@{}: {}", key.name,
+                    key.version,
+                    e.getMessage());
                 // Put the count back for retry on next flush
                 counterMap.computeIfAbsent(key, k -> new AtomicLong(0)).addAndGet(count);
             }
         }
     }
-
+    
     /**
      * Flush remaining counts and shut down the scheduler.
      */
@@ -141,24 +146,24 @@ public class PromptDownloadCountManager extends SmartSubscriber {
         scheduler.shutdown();
         NotifyCenter.deregisterSubscriber(this);
     }
-
+    
     /**
      * Composite key for download counter.
      */
     private static final class DownloadCountKey {
-
+        
         private final String namespaceId;
-
+        
         private final String name;
-
+        
         private final String version;
-
+        
         DownloadCountKey(String namespaceId, String name, String version) {
             this.namespaceId = namespaceId;
             this.name = name;
             this.version = version;
         }
-
+        
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -168,9 +173,9 @@ public class PromptDownloadCountManager extends SmartSubscriber {
                 return false;
             }
             return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(name, that.name)
-                    && Objects.equals(version, that.version);
+                && Objects.equals(version, that.version);
         }
-
+        
         @Override
         public int hashCode() {
             return Objects.hash(namespaceId, name, version);

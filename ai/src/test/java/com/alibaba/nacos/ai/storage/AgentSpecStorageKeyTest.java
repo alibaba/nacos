@@ -32,30 +32,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 3.2.0
  */
 class AgentSpecStorageKeyTest {
-
+    
     private static final String PROVIDER = NacosConfigAiResourceStorage.TYPE;
-
+    
     private static String[] validNamespaceIds() {
         return new String[] {"public", "test-ns", "ns-1", "namespace_abc"};
     }
-
+    
     private static String[] validNames() {
         return new String[] {"myAgent", "agent-1", "spec_v2", "a"};
     }
-
+    
     private static String[] validVersions() {
         return new String[] {"1.0.0", "2.3.4", "10.0.99"};
     }
-
+    
     private static String[] validResourceTypes() {
         return new String[] {"config", "skill", "cron", "dockerfile", "other"};
     }
-
+    
     private static String[] validResourceNames() {
         return new String[] {"SOUL.md", "AGENTS.md", "MEMORY.md", "jobs.json",
                 "my-skill.md", "Dockerfile", "tool-analysis.json"};
     }
-
+    
     /**
      * AgentSpec storage group follows {@code agentspec__{name}__{version}} format.
      */
@@ -65,21 +65,22 @@ class AgentSpecStorageKeyTest {
             for (String name : validNames()) {
                 for (String version : validVersions()) {
                     StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
-                            PROVIDER, namespaceId,
-                            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
-                            name, version, AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
-                    NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
-
+                        PROVIDER, namespaceId,
+                        NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                        name, version, AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
+                    NacosConfigAiResourceStorage.KeyParts parts =
+                        NacosConfigAiResourceStorage.parse(key);
+                    
                     String expectedGroup = AgentSpecUtils.buildAgentSpecVersionGroup(name, version);
                     assertEquals(expectedGroup, parts.group(),
-                            "Group must follow agentspec__{name}__{version} format");
+                        "Group must follow agentspec__{name}__{version} format");
                     assertTrue(parts.group().startsWith(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX),
-                            "Group must start with agentspec__ prefix");
+                        "Group must start with agentspec__ prefix");
                 }
             }
         }
     }
-
+    
     /**
      * AgentSpec main dataId is always {@code manifest.json}.
      */
@@ -89,20 +90,21 @@ class AgentSpecStorageKeyTest {
             for (String name : validNames()) {
                 for (String version : validVersions()) {
                     String mainFilePath = NacosConfigAiResourceStorage.getMainFilePath(
-                            AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
+                        AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
                     StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
-                            PROVIDER, namespaceId,
-                            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
-                            name, version, mainFilePath);
-                    NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
-
+                        PROVIDER, namespaceId,
+                        NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                        name, version, mainFilePath);
+                    NacosConfigAiResourceStorage.KeyParts parts =
+                        NacosConfigAiResourceStorage.parse(key);
+                    
                     assertEquals("manifest.json", parts.dataId(),
-                            "Main dataId must be manifest.json");
+                        "Main dataId must be manifest.json");
                 }
             }
         }
     }
-
+    
     /**
      * AgentSpec resource dataId preserves original file path encoding.
      */
@@ -113,27 +115,31 @@ class AgentSpecStorageKeyTest {
                 for (String version : validVersions()) {
                     for (String resourceType : validResourceTypes()) {
                         for (String resourceName : validResourceNames()) {
-                            String resourceFilePath = NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(
+                            String resourceFilePath =
+                                NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(
                                     resourceType, resourceName);
                             StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
-                                    PROVIDER, namespaceId,
-                                    NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
-                                    agentSpecName, version, resourceFilePath);
-                            NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
-
+                                PROVIDER, namespaceId,
+                                NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                                agentSpecName, version, resourceFilePath);
+                            NacosConfigAiResourceStorage.KeyParts parts =
+                                NacosConfigAiResourceStorage.parse(key);
+                            
                             assertEquals(resourceFilePath, parts.dataId(),
-                                    "Resource dataId must match the generated resource file path");
-                            assertTrue(parts.dataId().startsWith(AgentSpecUtils.RESOURCE_DATA_ID_PREFIX),
-                                    "Resource dataId must start with resource_ prefix");
-                            assertTrue(parts.dataId().endsWith(AgentSpecUtils.RESOURCE_DATA_ID_SUFFIX),
-                                    "Resource dataId must end with .json suffix");
+                                "Resource dataId must match the generated resource file path");
+                            assertTrue(
+                                parts.dataId().startsWith(AgentSpecUtils.RESOURCE_DATA_ID_PREFIX),
+                                "Resource dataId must start with resource_ prefix");
+                            assertTrue(
+                                parts.dataId().endsWith(AgentSpecUtils.RESOURCE_DATA_ID_SUFFIX),
+                                "Resource dataId must end with .json suffix");
                         }
                     }
                 }
             }
         }
     }
-
+    
     /**
      * AgentSpec group prefix is distinct from Skill group prefix.
      */
@@ -143,15 +149,18 @@ class AgentSpecStorageKeyTest {
             for (String name : validNames()) {
                 for (String version : validVersions()) {
                     StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
-                            PROVIDER, namespaceId,
-                            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
-                            name, version, AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
-                    NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
-
+                        PROVIDER, namespaceId,
+                        NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                        name, version, AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
+                    NacosConfigAiResourceStorage.KeyParts parts =
+                        NacosConfigAiResourceStorage.parse(key);
+                    
                     assertTrue(parts.group().startsWith("agentspec__"),
-                            "AgentSpec group must start with agentspec__");
-                    assertTrue(!parts.group().startsWith("skill_") || parts.group().startsWith("agentspec__"),
-                            "AgentSpec group must not use skill_ prefix");
+                        "AgentSpec group must start with agentspec__");
+                    assertTrue(
+                        !parts.group().startsWith("skill_")
+                            || parts.group().startsWith("agentspec__"),
+                        "AgentSpec group must not use skill_ prefix");
                 }
             }
         }

@@ -39,9 +39,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * @since 3.2.0
  */
 class AgentSpecVersionResolutionTest {
-
+    
     private static final String LABEL_LATEST = "latest";
-
+    
     private static String resolveVersion(AiResource meta, String explicitVersion, String label) {
         if (StringUtils.isNotBlank(label)) {
             VersionInfo info = parseVersionInfo(meta.getVersionInfo());
@@ -64,7 +64,7 @@ class AgentSpecVersionResolutionTest {
         }
         return null;
     }
-
+    
     private static VersionInfo parseVersionInfo(String json) {
         if (StringUtils.isBlank(json)) {
             return null;
@@ -75,28 +75,30 @@ class AgentSpecVersionResolutionTest {
             return null;
         }
     }
-
+    
     static class VersionInfo {
+        
         public String editingVersion;
         public String reviewingVersion;
         public Integer onlineCnt;
         public Map<String, String> labels;
     }
-
+    
     static class VersionResolutionTestData {
+        
         final Map<String, String> labels;
         final String labelParam;
         final String explicitVersion;
         final String latestVersion;
-
+        
         VersionResolutionTestData(Map<String, String> labels, String labelParam,
-                String explicitVersion, String latestVersion) {
+            String explicitVersion, String latestVersion) {
             this.labels = labels;
             this.labelParam = labelParam;
             this.explicitVersion = explicitVersion;
             this.latestVersion = latestVersion;
         }
-
+        
         AiResource toAiResource() {
             AiResource resource = new AiResource();
             resource.setNamespaceId("test-ns");
@@ -104,7 +106,7 @@ class AgentSpecVersionResolutionTest {
             resource.setType("agentspec");
             resource.setStatus("enable");
             resource.setMetaVersion(1L);
-
+            
             Map<String, Object> versionInfoMap = new HashMap<>(4);
             versionInfoMap.put("onlineCnt", 1);
             versionInfoMap.put("labels", labels);
@@ -112,7 +114,7 @@ class AgentSpecVersionResolutionTest {
             return resource;
         }
     }
-
+    
     private static List<VersionResolutionTestData> labelPresentScenarios() {
         List<VersionResolutionTestData> list = new ArrayList<>();
         for (String labelName : new String[] {"stable", "canary", "beta"}) {
@@ -122,26 +124,28 @@ class AgentSpecVersionResolutionTest {
                         Map<String, String> labels = new HashMap<>();
                         labels.put(labelName, labelVersion);
                         labels.put(LABEL_LATEST, latestVersion);
-                        list.add(new VersionResolutionTestData(labels, labelName, explicitVersion, latestVersion));
+                        list.add(new VersionResolutionTestData(labels, labelName, explicitVersion,
+                            latestVersion));
                     }
                 }
             }
         }
         return list;
     }
-
+    
     private static List<VersionResolutionTestData> explicitVersionScenarios() {
         List<VersionResolutionTestData> list = new ArrayList<>();
         for (String explicitVersion : new String[] {"v1", "v2", "v10"}) {
             for (String latestVersion : new String[] {"v3", "v4"}) {
                 Map<String, String> labels = new HashMap<>();
                 labels.put(LABEL_LATEST, latestVersion);
-                list.add(new VersionResolutionTestData(labels, null, explicitVersion, latestVersion));
+                list.add(
+                    new VersionResolutionTestData(labels, null, explicitVersion, latestVersion));
             }
         }
         return list;
     }
-
+    
     private static List<VersionResolutionTestData> latestFallbackScenarios() {
         List<VersionResolutionTestData> list = new ArrayList<>();
         for (String latestVersion : new String[] {"v1", "v2", "v20"}) {
@@ -151,7 +155,7 @@ class AgentSpecVersionResolutionTest {
         }
         return list;
     }
-
+    
     private static List<VersionResolutionTestData> noResolutionScenarios() {
         List<VersionResolutionTestData> list = new ArrayList<>();
         list.add(new VersionResolutionTestData(new HashMap<>(), null, null, null));
@@ -161,51 +165,52 @@ class AgentSpecVersionResolutionTest {
         list.add(new VersionResolutionTestData(other, null, null, null));
         return list;
     }
-
+    
     @Test
     void labelTakesHighestPriority() {
         for (VersionResolutionTestData data : labelPresentScenarios()) {
             AiResource meta = data.toAiResource();
             String resolved = resolveVersion(meta, data.explicitVersion, data.labelParam);
-
+            
             String expectedFromLabel = data.labels.get(data.labelParam);
-            assertNotNull(resolved, "Resolved version should not be null when label maps to a version");
+            assertNotNull(resolved,
+                "Resolved version should not be null when label maps to a version");
             assertEquals(expectedFromLabel, resolved,
-                    "Label should take priority over explicit version. Label='" + data.labelParam
-                            + "' should resolve to '" + expectedFromLabel + "' but got '" + resolved + "'");
+                "Label should take priority over explicit version. Label='" + data.labelParam
+                    + "' should resolve to '" + expectedFromLabel + "' but got '" + resolved + "'");
         }
     }
-
+    
     @Test
     void explicitVersionUsedWhenNoLabel() {
         for (VersionResolutionTestData data : explicitVersionScenarios()) {
             AiResource meta = data.toAiResource();
             String resolved = resolveVersion(meta, data.explicitVersion, null);
-
+            
             assertEquals(data.explicitVersion, resolved,
-                    "Explicit version should be returned when no label is provided");
+                "Explicit version should be returned when no label is provided");
         }
     }
-
+    
     @Test
     void latestLabelFallbackUsedWhenNeitherLabelNorExplicitVersion() {
         for (VersionResolutionTestData data : latestFallbackScenarios()) {
             AiResource meta = data.toAiResource();
             String resolved = resolveVersion(meta, null, null);
-
+            
             assertEquals(data.latestVersion, resolved,
-                    "Latest label fallback should be used when neither label nor explicit version is provided");
+                "Latest label fallback should be used when neither label nor explicit version is provided");
         }
     }
-
+    
     @Test
     void nullReturnedWhenNoResolutionPathSucceeds() {
         for (VersionResolutionTestData data : noResolutionScenarios()) {
             AiResource meta = data.toAiResource();
             String resolved = resolveVersion(meta, null, null);
-
+            
             assertNull(resolved,
-                    "Resolution should return null when no label, no explicit version, and no 'latest' label");
+                "Resolution should return null when no label, no explicit version, and no 'latest' label");
         }
     }
 }

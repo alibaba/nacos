@@ -36,8 +36,10 @@ public interface McpServerIndex {
      * @param limit       page size limit
      * @return MCP Server Index Data page
      */
-    Page<McpServerIndexData> searchMcpServerByNameWithPage(String namespaceId, String name, String search, int pageNo,
-            int limit);
+    Page<McpServerIndexData> searchMcpServerByNameWithPage(String namespaceId, String name,
+        String search, int pageNo,
+        int limit);
+    
     /**
      * Get mcp server by id.
      *

@@ -42,7 +42,8 @@ import org.springframework.stereotype.Component;
  * @author nacos
  */
 @Component
-public class QueryPromptRequestHandler extends RequestHandler<QueryPromptRequest, QueryPromptResponse> {
+public class QueryPromptRequestHandler
+    extends RequestHandler<QueryPromptRequest, QueryPromptResponse> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryPromptRequestHandler.class);
     
@@ -60,13 +61,15 @@ public class QueryPromptRequestHandler extends RequestHandler<QueryPromptRequest
         request.setNamespaceId(NamespaceUtil.processNamespaceParameter(request.getNamespaceId()));
         if (StringUtils.isBlank(request.getPromptKey())) {
             QueryPromptResponse errorResponse = new QueryPromptResponse();
-            errorResponse.setErrorInfo(NacosException.INVALID_PARAM, "parameters `promptKey` can't be empty or null");
+            errorResponse.setErrorInfo(NacosException.INVALID_PARAM,
+                "parameters `promptKey` can't be empty or null");
             return errorResponse;
         }
         QueryPromptResponse response = new QueryPromptResponse();
         try {
             PromptVersionInfo result = promptOperationService.queryPrompt(
-                    request.getNamespaceId(), request.getPromptKey(), request.getVersion(), request.getLabel(), request.getMd5());
+                request.getNamespaceId(), request.getPromptKey(), request.getVersion(),
+                request.getLabel(), request.getMd5());
             response.setPromptInfo(PromptConvertUtils.toClientPrompt(result));
         } catch (NacosException e) {
             if (e.getErrCode() == NacosException.NOT_MODIFIED) {

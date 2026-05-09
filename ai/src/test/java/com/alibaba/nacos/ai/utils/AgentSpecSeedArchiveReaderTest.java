@@ -37,65 +37,71 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentSpecSeedArchiveReaderTest {
-
+    
     @Test
     void shouldBuildStandaloneAgentSpecZipWithNestedLayout() throws Exception {
         String manifest = "{\"version\":\"1.0\",\"tags\":[\"vendor\"],"
-                + "\"worker\":{\"suggested_name\":\"演示坐席\"}}";
+            + "\"worker\":{\"suggested_name\":\"演示坐席\"}}";
         byte[] archive = buildArchive(
-                new ArchiveEntry("vendor/demo-agent/manifest.json", manifest),
-                new ArchiveEntry("vendor/demo-agent/config/SOUL.md", "# soul\n"));
-
+            new ArchiveEntry("vendor/demo-agent/manifest.json", manifest),
+            new ArchiveEntry("vendor/demo-agent/config/SOUL.md", "# soul\n"));
+        
         List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-                AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
-
+            AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        
         assertEquals(1, actual.size());
         assertEquals("演示坐席", actual.get(0).getAgentSpecName());
         assertEquals("vendor", actual.get(0).getFrom());
-
-        AgentSpec spec = AgentSpecZipParser.parseAgentSpecFromZip(actual.get(0).getZipBytes(), "public");
+        
+        AgentSpec spec =
+            AgentSpecZipParser.parseAgentSpecFromZip(actual.get(0).getZipBytes(), "public");
         assertEquals("演示坐席", spec.getName());
         assertEquals("[\"vendor\"]", spec.getBizTags());
         assertNotNull(spec.getResource());
         assertFalse(spec.getResource().isEmpty());
     }
-
+    
     @Test
     void shouldSkipDuplicateAgentSpecNames() throws Exception {
         String manifest = "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"同名坐席\"}}";
         byte[] archive = buildArchive(
-                new ArchiveEntry("source-a/demo/manifest.json", manifest),
-                new ArchiveEntry("source-b/demo/manifest.json", manifest));
-
+            new ArchiveEntry("source-a/demo/manifest.json", manifest),
+            new ArchiveEntry("source-b/demo/manifest.json", manifest));
+        
         List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-                AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
-
+            AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        
         assertEquals(1, actual.size());
         assertEquals("同名坐席", actual.get(0).getAgentSpecName());
     }
-
+    
     @Test
     void shouldParseNestedFromPath() throws Exception {
-        String manifest = "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"find-agentspec\"}}";
-        byte[] archive = buildArchive(new ArchiveEntry("github.com/nacos/find-agentspec/manifest.json", manifest));
+        String manifest =
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"find-agentspec\"}}";
+        byte[] archive = buildArchive(
+            new ArchiveEntry("github.com/nacos/find-agentspec/manifest.json", manifest));
         List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-                AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+            AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
         assertEquals(1, actual.size());
         assertEquals("github.com/nacos", actual.get(0).getFrom());
     }
-
+    
     @Test
     void shouldParseBundledAgentspecArchive() throws Exception {
         ClassPathResource resource = new ClassPathResource("bootstrap/agentspec-data.zip");
-        Assumptions.assumeTrue(resource.exists(), "bootstrap/agentspec-data.zip is not bundled in this test runtime");
+        Assumptions.assumeTrue(resource.exists(),
+            "bootstrap/agentspec-data.zip is not bundled in this test runtime");
         try (InputStream inputStream = resource.getInputStream()) {
-            List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual = AgentSpecSeedArchiveReader.read(inputStream);
-
+            List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
+                AgentSpecSeedArchiveReader.read(inputStream);
+            
             assertTrue(actual.size() > 100);
             Set<String> names = new HashSet<>();
             for (AgentSpecSeedArchiveReader.AgentSpecPackage each : actual) {
                 names.add(each.getAgentSpecName());
-                AgentSpec spec = AgentSpecZipParser.parseAgentSpecFromZip(each.getZipBytes(), "public");
+                AgentSpec spec =
+                    AgentSpecZipParser.parseAgentSpecFromZip(each.getZipBytes(), "public");
                 assertNotNull(spec);
                 assertEquals(each.getAgentSpecName(), spec.getName());
                 assertTrue(spec.getDescription() != null && !spec.getDescription().isBlank());
@@ -112,7 +118,7 @@ class AgentSpecSeedArchiveReaderTest {
             assertFalse(names.contains("find-skills"));
         }
     }
-
+    
     private static byte[] buildArchive(ArchiveEntry... entries) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(out, StandardCharsets.UTF_8)) {
@@ -124,13 +130,13 @@ class AgentSpecSeedArchiveReaderTest {
         }
         return out.toByteArray();
     }
-
+    
     private static final class ArchiveEntry {
-
+        
         private final String path;
-
+        
         private final String content;
-
+        
         private ArchiveEntry(String path, String content) {
             this.path = path;
             this.content = content;

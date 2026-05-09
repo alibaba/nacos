@@ -72,7 +72,7 @@ class McpServerIndexConfigurationTest {
         void shouldInjectCachedMcpServerIndexWhenCacheEnabled() {
             assertNotNull(mcpServerIndex, "McpServerIndex should be injected");
             assertInstanceOf(CachedMcpServerIndex.class, mcpServerIndex,
-                    "Should be CachedMcpServerIndex when cache enabled");
+                "Should be CachedMcpServerIndex when cache enabled");
         }
     }
     
@@ -89,7 +89,7 @@ class McpServerIndexConfigurationTest {
         void shouldInjectPlainMcpServerIndexWhenCacheDisabled() {
             assertNotNull(mcpServerIndex, "McpServerIndex should be injected");
             assertInstanceOf(PlainMcpServerIndex.class, mcpServerIndex,
-                    "Should be PlainMcpServerIndex when cache disabled");
+                "Should be PlainMcpServerIndex when cache disabled");
         }
     }
-} 
+}

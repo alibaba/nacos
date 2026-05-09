@@ -70,7 +70,8 @@ class PromptDownloadCountManagerTest {
     
     @BeforeEach
     void setUp() {
-        manager = new PromptDownloadCountManager(aiResourcePersistService, aiResourceVersionPersistService);
+        manager = new PromptDownloadCountManager(aiResourcePersistService,
+            aiResourceVersionPersistService);
     }
     
     @AfterEach
@@ -103,9 +104,9 @@ class PromptDownloadCountManagerTest {
         manager.shutdown();
         
         verify(aiResourceVersionPersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(2L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(2L));
         verify(aiResourcePersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(2L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(2L));
     }
     
     @Test
@@ -117,12 +118,12 @@ class PromptDownloadCountManagerTest {
         manager.shutdown();
         
         verify(aiResourceVersionPersistService)
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
         verify(aiResourceVersionPersistService)
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_B), eq(2L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_B), eq(2L));
         // Two separate increments on the resource-level aggregate (one per version batch).
         verify(aiResourcePersistService, times(2))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), anyLong());
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), anyLong());
     }
     
     @Test
@@ -147,8 +148,9 @@ class PromptDownloadCountManagerTest {
     @Test
     void testFlushPutsCountBackOnFailure() {
         // Simulate a DB failure during version-level increment.
-        when(aiResourceVersionPersistService.incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
-                eq(VERSION_A), eq(2L))).thenThrow(new RuntimeException("simulated db error"));
+        when(aiResourceVersionPersistService.incrementDownloadCount(eq(NS), eq(PROMPT_KEY),
+            eq(PROMPT_TYPE),
+            eq(VERSION_A), eq(2L))).thenThrow(new RuntimeException("simulated db error"));
         
         manager.onEvent(new PromptDownloadEvent(NS, PROMPT_KEY, VERSION_A));
         manager.onEvent(new PromptDownloadEvent(NS, PROMPT_KEY, VERSION_A));
@@ -159,17 +161,17 @@ class PromptDownloadCountManagerTest {
         manager.shutdown();
         
         verify(aiResourceVersionPersistService)
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(2L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(2L));
         // Aggregate update should NOT happen when version-level update throws.
         verify(aiResourcePersistService, never())
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), anyLong());
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), anyLong());
     }
     
     @Test
     void testShutdownIsTolerantToFlushException() {
         // If flush throws, shutdown must not propagate the exception.
         doThrow(new RuntimeException("boom")).when(aiResourceVersionPersistService)
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
         
         manager.onEvent(new PromptDownloadEvent(NS, PROMPT_KEY, VERSION_A));
         
@@ -190,23 +192,24 @@ class PromptDownloadCountManagerTest {
         manager.shutdown();
         
         verify(aiResourceVersionPersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
         verify(aiResourcePersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L));
     }
     
     @Test
     void testPutBackCountsAreRetriedOnNextFlush() {
         // First flush: version-level increment throws. Counter should be put back.
-        when(aiResourceVersionPersistService.incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
-                eq(VERSION_A), eq(1L))).thenThrow(new RuntimeException("simulated db error"));
+        when(aiResourceVersionPersistService.incrementDownloadCount(eq(NS), eq(PROMPT_KEY),
+            eq(PROMPT_TYPE),
+            eq(VERSION_A), eq(1L))).thenThrow(new RuntimeException("simulated db error"));
         
         manager.onEvent(new PromptDownloadEvent(NS, PROMPT_KEY, VERSION_A));
         manager.shutdown();
         
         // Aggregate increment must NOT have been called because the version-level update failed.
         verify(aiResourcePersistService, never())
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), anyLong());
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), anyLong());
         
         // Now reset the mock so the next flush succeeds and the put-back counter gets drained.
         reset(aiResourceVersionPersistService, aiResourcePersistService);
@@ -215,9 +218,9 @@ class PromptDownloadCountManagerTest {
         manager.shutdown();
         
         verify(aiResourceVersionPersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
         verify(aiResourcePersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L));
     }
     
     @Test
@@ -235,19 +238,20 @@ class PromptDownloadCountManagerTest {
         manager.shutdown();
         
         verify(aiResourceVersionPersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(1L));
         verify(aiResourceVersionPersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(3L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(VERSION_A), eq(3L));
         verify(aiResourcePersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L));
         verify(aiResourcePersistService, times(1))
-                .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(3L));
+            .incrementDownloadCount(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(3L));
     }
     
     /**
      * A dummy event that {@link PromptDownloadCountManager#onEvent(Event)} should ignore.
      */
     private static final class UnrelatedEvent extends Event {
+        
         private static final long serialVersionUID = 1L;
     }
 }

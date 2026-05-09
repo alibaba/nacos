@@ -36,7 +36,8 @@ import java.util.concurrent.TimeUnit;
 public class SimpleSyncEffectService implements SyncEffectService {
     
     @Override
-    public void toSync(ConfigForm configForm, long startTimeStamp, long timeout, TimeUnit timeUnit) {
+    public void toSync(ConfigForm configForm, long startTimeStamp, long timeout,
+        TimeUnit timeUnit) {
         try {
             Thread.sleep(timeout);
         } catch (InterruptedException ignored) {

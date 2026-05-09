@@ -48,65 +48,73 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class McpResourceOperationServiceTest {
-
+    
     @Mock
     private ConfigQueryChainService configQueryChainService;
-
+    
     @Mock
     private ConfigOperationService configOperationService;
-
+    
     private McpResourceOperationService resourceOperationService;
-
+    
     @BeforeEach
     void setUp() {
-        resourceOperationService = new McpResourceOperationService(configQueryChainService, configOperationService);
+        resourceOperationService =
+            new McpResourceOperationService(configQueryChainService, configOperationService);
     }
-
+    
     @Test
     void refreshMcpResource() throws NacosException {
         McpServerBasicInfo serverBasicInfo = getMcpServerBasicInfo();
         McpResourceSpecification resourceSpecification = getMcpResourceSpecification();
-        resourceOperationService.refreshMcpResource(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, serverBasicInfo,
-                resourceSpecification);
-        verify(configOperationService).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class), isNull());
+        resourceOperationService.refreshMcpResource(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            serverBasicInfo,
+            resourceSpecification);
+        verify(configOperationService).publishConfig(any(ConfigFormV3.class),
+            any(ConfigRequestInfo.class), isNull());
     }
-
+    
     @Test
     void getMcpResource() {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         response.setContent(JacksonUtils.toJson(getMcpResourceSpecification()));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
         String id = UUID.randomUUID().toString();
         String version = "1.0.0";
         String resourceRef = McpConfigUtils.formatServerResourceSpecDataId(id, version);
         McpResourceSpecification actual = resourceOperationService.getMcpResource(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, resourceRef);
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, resourceRef);
         assertNotNull(actual);
     }
-
+    
     @Test
     void getMcpResourceNotFound() {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
         String id = UUID.randomUUID().toString();
         String version = "1.0.0";
         String resourceRef = McpConfigUtils.formatServerResourceSpecDataId(id, version);
         McpResourceSpecification actual = resourceOperationService.getMcpResource(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, resourceRef);
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, resourceRef);
         assertNull(actual);
     }
-
+    
     @Test
     void deleteMcpResource() throws NacosException {
         String id = UUID.randomUUID().toString();
-        resourceOperationService.deleteMcpResource(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, "1.0.0");
-        verify(configOperationService).deleteConfig(McpConfigUtils.formatServerResourceSpecDataId(id, "1.0.0"),
-                Constants.MCP_SERVER_RESOURCE_GROUP, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos",
-                null);
+        resourceOperationService.deleteMcpResource(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id,
+            "1.0.0");
+        verify(configOperationService).deleteConfig(
+            McpConfigUtils.formatServerResourceSpecDataId(id, "1.0.0"),
+            Constants.MCP_SERVER_RESOURCE_GROUP, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null,
+            "nacos",
+            null);
     }
-
+    
     private McpServerBasicInfo getMcpServerBasicInfo() {
         String id = UUID.randomUUID().toString();
         McpServerBasicInfo serverBasicInfo = new McpServerBasicInfo();
@@ -121,7 +129,7 @@ class McpResourceOperationServiceTest {
         serverBasicInfo.setVersionDetail(serverVersionDetail);
         return serverBasicInfo;
     }
-
+    
     private McpResourceSpecification getMcpResourceSpecification() {
         McpResourceSpecification resourceSpecification = new McpResourceSpecification();
         HashMap<String, Object> resource = new HashMap<>();

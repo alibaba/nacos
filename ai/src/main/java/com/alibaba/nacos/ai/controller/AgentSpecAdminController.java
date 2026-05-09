@@ -89,7 +89,8 @@ public class AgentSpecAdminController {
     public Result<AgentSpecMeta> getAgentSpec(AgentSpecForm form) throws NacosException {
         form.validate();
         return Result.success(
-                agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(), form.getAgentSpecName()));
+            agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(),
+                form.getAgentSpecName()));
     }
     
     /**
@@ -104,8 +105,9 @@ public class AgentSpecAdminController {
     public Result<AgentSpec> getAgentSpecVersion(AgentSpecForm form) throws NacosException {
         form.validate();
         return Result.success(
-                agentSpecOperationService.getAgentSpecVersionDetail(form.getNamespaceId(), form.getAgentSpecName(),
-                        form.getVersion()));
+            agentSpecOperationService.getAgentSpecVersionDetail(form.getNamespaceId(),
+                form.getAgentSpecName(),
+                form.getVersion()));
     }
     
     /**
@@ -121,8 +123,9 @@ public class AgentSpecAdminController {
     public Result<AgentSpec> getAgentSpecVersionMeta(AgentSpecForm form) throws NacosException {
         form.validate();
         return Result.success(
-                agentSpecOperationService.getAgentSpecVersionMeta(form.getNamespaceId(), form.getAgentSpecName(),
-                        form.getVersion()));
+            agentSpecOperationService.getAgentSpecVersionMeta(form.getNamespaceId(),
+                form.getAgentSpecName(),
+                form.getVersion()));
     }
     
     /**
@@ -150,17 +153,18 @@ public class AgentSpecAdminController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
-            tags = {ALLOW_ANONYMOUS})
+        tags = {ALLOW_ANONYMOUS})
     public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm,
-            AiResourceFilterableForm filterableForm, PageForm pageForm)
-            throws NacosException {
+        AiResourceFilterableForm filterableForm, PageForm pageForm)
+        throws NacosException {
         agentSpecListForm.validate();
         filterableForm.validate();
         pageForm.validate();
-        return Result.success(agentSpecOperationService.listAgentSpecs(agentSpecListForm.getNamespaceId(),
-                agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(),
-                agentSpecListForm.getOrderBy(), filterableForm.getOwner(), filterableForm.getScope(),
-                pageForm.getPageNo(), pageForm.getPageSize()));
+        return Result.success(agentSpecOperationService.listAgentSpecs(
+            agentSpecListForm.getNamespaceId(),
+            agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(),
+            agentSpecListForm.getOrderBy(), filterableForm.getOwner(), filterableForm.getScope(),
+            pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
     /**
@@ -176,12 +180,14 @@ public class AgentSpecAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<String> uploadAgentSpec(HttpServletRequest request,
-            @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
-            @RequestParam("file") MultipartFile file) throws NacosException {
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "overwrite", required = false,
+            defaultValue = "false") boolean overwrite,
+        @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = AgentSpecRequestUtil.validateAndExtractZipBytes(file);
-        String agentSpecName = agentSpecOperationService.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
+        String agentSpecName =
+            agentSpecOperationService.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
         return Result.success(agentSpecName);
     }
     
@@ -192,7 +198,8 @@ public class AgentSpecAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> createDraft(AgentSpecDraftCreateForm form) throws NacosException {
         form.validate();
-        String v = agentSpecOperationService.createDraft(form.getNamespaceId(), form.getAgentSpecName(),
+        String v =
+            agentSpecOperationService.createDraft(form.getNamespaceId(), form.getAgentSpecName(),
                 form.getBasedOnVersion(), form.getTargetVersion());
         return Result.success(v);
     }
@@ -227,7 +234,8 @@ public class AgentSpecAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> submit(AgentSpecSubmitForm form) throws NacosException {
         form.validate();
-        String result = agentSpecOperationService.submit(form.getNamespaceId(), form.getAgentSpecName(),
+        String result =
+            agentSpecOperationService.submit(form.getNamespaceId(), form.getAgentSpecName(),
                 form.getVersion());
         return Result.success(result);
     }
@@ -240,8 +248,9 @@ public class AgentSpecAdminController {
     public Result<String> publish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        agentSpecOperationService.publish(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion(),
-                updateLatest);
+        agentSpecOperationService.publish(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getVersion(),
+            updateLatest);
         return Result.success("ok");
     }
     
@@ -251,12 +260,14 @@ public class AgentSpecAdminController {
      */
     @PostMapping("/force-publish")
     @Secured(resource = Constants.AgentSpecs.ADMIN_PATH
-            + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        apiType = ApiType.ADMIN_API)
     public Result<String> forcePublish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion(),
-                updateLatest);
+        agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getVersion(),
+            updateLatest);
         return Result.success("ok");
     }
     
@@ -268,10 +279,11 @@ public class AgentSpecAdminController {
     public Result<String> updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
         form.validate();
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
-        agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(), labels);
+        agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(),
+            labels);
         return Result.success("ok");
     }
-
+    
     /**
      * Update agentspec biz tags without changing version status.
      */
@@ -279,7 +291,8 @@ public class AgentSpecAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
         form.validate();
-        agentSpecOperationService.updateBizTags(form.getNamespaceId(), form.getAgentSpecName(), form.getBizTags());
+        agentSpecOperationService.updateBizTags(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getBizTags());
         return Result.success("ok");
     }
     
@@ -290,11 +303,12 @@ public class AgentSpecAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> online(AgentSpecOnlineForm form) throws NacosException {
         form.validate();
-        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(), form.getScope(),
-                form.getVersion(), true);
+        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getScope(),
+            form.getVersion(), true);
         return Result.success("ok");
     }
-
+    
     /**
      * Update agentspec visibility scope (PUBLIC or PRIVATE).
      *
@@ -306,7 +320,8 @@ public class AgentSpecAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateScope(AgentSpecScopeForm form) throws NacosException {
         form.validate();
-        agentSpecOperationService.updateScope(form.getNamespaceId(), form.getAgentSpecName(), form.getScope());
+        agentSpecOperationService.updateScope(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getScope());
         return Result.success("ok");
     }
     
@@ -317,8 +332,9 @@ public class AgentSpecAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> offline(AgentSpecOnlineForm form) throws NacosException {
         form.validate();
-        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(), form.getScope(),
-                form.getVersion(), false);
+        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getScope(),
+            form.getVersion(), false);
         return Result.success("ok");
     }
 }

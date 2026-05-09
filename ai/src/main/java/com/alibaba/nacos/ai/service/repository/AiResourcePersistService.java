@@ -26,9 +26,9 @@ import com.alibaba.nacos.api.model.Page;
  * @since 3.2.0
  */
 public interface AiResourcePersistService {
-
+    
     String PATTERN_STR = "*";
-
+    
     /**
      * Convert a search argument that may contain Nacos wildcard ({@code *}) to SQL LIKE syntax ({@code %}).
      * Also escapes the SQL single-char wildcard ({@code _}) with backslash.
@@ -51,16 +51,17 @@ public interface AiResourcePersistService {
             return s;
         }
     }
-
+    
     long insert(AiResource resource);
-
+    
     AiResource find(String namespaceId, String name, String type);
-
+    
     /**
      * List resources with basic filters.
      */
-    default Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, int pageNo,
-            int pageSize) {
+    default Page<AiResource> list(String namespaceId, String type, String nameLike,
+        String bizTagsLike, int pageNo,
+        int pageSize) {
         QueryCondition condition = new QueryCondition();
         condition.setNamespaceId(namespaceId);
         condition.setType(type);
@@ -68,14 +69,15 @@ public interface AiResourcePersistService {
         condition.setBizTagsLike(bizTagsLike);
         return list(condition, pageNo, pageSize);
     }
-
+    
     /**
      * List resources with optional ordering.
      *
      * @param orderBy sort field (e.g. "download_count"), null defaults to gmt_modified
      */
-    default Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, String orderBy,
-            int pageNo, int pageSize) {
+    default Page<AiResource> list(String namespaceId, String type, String nameLike,
+        String bizTagsLike, String orderBy,
+        int pageNo, int pageSize) {
         QueryCondition condition = new QueryCondition();
         condition.setNamespaceId(namespaceId);
         condition.setType(type);
@@ -94,14 +96,15 @@ public interface AiResourcePersistService {
      * @return paged resources
      */
     Page<AiResource> list(QueryCondition queryCondition, int pageNo, int pageSize);
-
+    
     /**
      * Update meta with optimistic lock on meta_version.
      *
      * @return true if updated successfully (affectedRows == 1)
      */
-    boolean updateMetaCas(String namespaceId, String name, String type, long expectedMetaVersion, AiResource newValue);
-
+    boolean updateMetaCas(String namespaceId, String name, String type, long expectedMetaVersion,
+        AiResource newValue);
+    
     int delete(String namespaceId, String name, String type);
     
     /**
@@ -110,7 +113,7 @@ public interface AiResourcePersistService {
      * @return true if updated successfully (affectedRows == 1)
      */
     boolean updateScope(String namespaceId, String name, String type, String scope);
-
+    
     /**
      * Increment download count for a skill (total).
      *
@@ -123,4 +126,3 @@ public interface AiResourcePersistService {
     boolean incrementDownloadCount(String namespaceId, String name, String type, long increment);
     
 }
-

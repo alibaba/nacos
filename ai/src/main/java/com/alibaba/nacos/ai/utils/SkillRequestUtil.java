@@ -46,7 +46,8 @@ public class SkillRequestUtil {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillRequestUtil.class);
     
-    private static final Pattern FRONTMATTER_PATTERN = Pattern.compile("^---\\r?\\n([\\s\\S]*?)\\r?\\n---");
+    private static final Pattern FRONTMATTER_PATTERN =
+        Pattern.compile("^---\\r?\\n([\\s\\S]*?)\\r?\\n---");
     
     /**
      * Build a ZIP download {@link ResponseEntity} from a {@link Skill} object.
@@ -65,10 +66,10 @@ public class SkillRequestUtil {
             return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR,
-                    "Failed to create skill zip: " + e.getMessage(), e);
+                "Failed to create skill zip: " + e.getMessage(), e);
         }
     }
-
+    
     /**
      * Parse Skill request form to {@link Skill}.
      *
@@ -78,15 +79,18 @@ public class SkillRequestUtil {
      */
     public static Skill parseSkill(SkillDetailForm skillDetailForm) throws NacosApiException {
         try {
-            Skill result = JacksonUtils.toObj(skillDetailForm.getSkillCard(), new TypeReference<>() {
-            });
+            Skill result =
+                JacksonUtils.toObj(skillDetailForm.getSkillCard(), new TypeReference<>() {
+                });
             validateSkill(result);
             return result;
         } catch (NacosDeserializationException e) {
-            LOGGER.error(String.format("Deserialize %s from %s failed, ", Skill.class.getSimpleName(),
+            LOGGER
+                .error(String.format("Deserialize %s from %s failed, ", Skill.class.getSimpleName(),
                     skillDetailForm.getSkillCard()), e);
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "skillCard is invalid. Can't be parsed.");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "skillCard is invalid. Can't be parsed.");
         }
     }
     
@@ -119,8 +123,9 @@ public class SkillRequestUtil {
      * @param resolvedVersion    the version string determined by the service layer
      * @param isFirstCreate      true when this is the first import/creation (no existing meta)
      */
-    public static void normalizeSkillFrontmatter(Skill skill, String authoritativeName, String resolvedVersion,
-            boolean isFirstCreate) {
+    public static void normalizeSkillFrontmatter(Skill skill, String authoritativeName,
+        String resolvedVersion,
+        boolean isFirstCreate) {
         String md = skill.getSkillMd();
         if (StringUtils.isEmpty(md)) {
             return;
@@ -192,7 +197,8 @@ public class SkillRequestUtil {
         if (updatedBlock.endsWith("\n")) {
             updatedBlock = updatedBlock.substring(0, updatedBlock.length() - 1);
         }
-        return md.substring(0, matcher.start()) + "---\n" + updatedBlock + "\n---" + md.substring(matcher.end());
+        return md.substring(0, matcher.start()) + "---\n" + updatedBlock + "\n---"
+            + md.substring(matcher.end());
     }
     
     /**
@@ -219,7 +225,7 @@ public class SkillRequestUtil {
                     String value = line.substring(colonIdx + 1).trim();
                     // Strip surrounding quotes
                     if (value.length() >= 2 && ((value.startsWith("\"") && value.endsWith("\""))
-                            || (value.startsWith("'") && value.endsWith("'")))) {
+                        || (value.startsWith("'") && value.endsWith("'")))) {
                         value = value.substring(1, value.length() - 1);
                     }
                     return value;
@@ -229,13 +235,15 @@ public class SkillRequestUtil {
         return null;
     }
     
-    private static void validateSkillField(String fieldName, String fieldValue) throws NacosApiException {
+    private static void validateSkillField(String fieldName, String fieldValue)
+        throws NacosApiException {
         if (StringUtils.isEmpty(fieldValue)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `skillCard." + fieldName + "` not present");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Required parameter `skillCard." + fieldName + "` not present");
         }
     }
-
+    
     /**
      * Validate markdown content is present and has non-empty body after removing frontmatter.
      *
@@ -243,17 +251,20 @@ public class SkillRequestUtil {
      * @param markdown markdown content to validate
      * @throws NacosApiException if markdown is missing or body is empty
      */
-    public static void validateSkillMarkdownBody(String fieldPath, String markdown) throws NacosApiException {
+    public static void validateSkillMarkdownBody(String fieldPath, String markdown)
+        throws NacosApiException {
         if (StringUtils.isEmpty(markdown)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `" + fieldPath + "` not present");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Required parameter `" + fieldPath + "` not present");
         }
         if (!hasNonFrontmatterContent(markdown)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Required parameter `" + fieldPath + "` markdown body should not be empty");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Required parameter `" + fieldPath + "` markdown body should not be empty");
         }
     }
-
+    
     /**
      * Check if markdown has non-empty body after removing YAML frontmatter.
      *
@@ -268,7 +279,7 @@ public class SkillRequestUtil {
         String body = matcher.find() ? markdown.substring(matcher.end()) : markdown;
         return StringUtils.isNotBlank(body);
     }
-
+    
     /**
      * Validates parsed draft-create skill against request namespace and resolved skill name, then sets
      * {@link Skill#setNamespaceId(String)}. Call after {@link #parseSkill(SkillDetailForm)} when handling POST draft.
@@ -277,23 +288,27 @@ public class SkillRequestUtil {
      * @param namespaceId   request namespace
      * @param expectedName  resolved name (query {@code skillName} or name inside skillCard)
      */
-    public static void validateInitialDraftSkill(Skill skill, String namespaceId, String expectedName)
-            throws NacosApiException {
+    public static void validateInitialDraftSkill(Skill skill, String namespaceId,
+        String expectedName)
+        throws NacosApiException {
         if (skill == null || StringUtils.isBlank(skill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill name is required in skillCard when creating draft with content");
+                "Skill name is required in skillCard when creating draft with content");
         }
         if (!expectedName.equals(skill.getName())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "skillCard name must match skillName parameter");
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "skillCard name must match skillName parameter");
         }
-        if (StringUtils.isNotBlank(skill.getNamespaceId()) && !namespaceId.equals(skill.getNamespaceId())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "skillCard namespaceId must match request namespaceId");
+        if (StringUtils.isNotBlank(skill.getNamespaceId())
+            && !namespaceId.equals(skill.getNamespaceId())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "skillCard namespaceId must match request namespaceId");
         }
         skill.setNamespaceId(namespaceId);
     }
-
+    
     /**
      * Validate uploaded skill zip file and extract bytes.
      *
@@ -306,18 +321,21 @@ public class SkillRequestUtil {
      */
     public static byte[] validateAndExtractZipBytes(MultipartFile file) throws NacosException {
         if (file == null || file.isEmpty()) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.DATA_EMPTY, "File is required");
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.DATA_EMPTY,
+                "File is required");
         }
         if (file.getSize() > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Skill zip size must not exceed " + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
-                            + "MB, current: " + (file.getSize() / 1024 / 1024) + "MB");
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Skill zip size must not exceed "
+                    + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
+                    + "MB, current: " + (file.getSize() / 1024 / 1024) + "MB");
         }
         try {
             return file.getBytes();
         } catch (IOException e) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.PARSING_DATA_FAILED,
-                    "Failed to read file: " + e.getMessage());
+                "Failed to read file: " + e.getMessage());
         }
     }
 }

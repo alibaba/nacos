@@ -21,28 +21,28 @@ package com.alibaba.nacos.ai.enums;
  * @author xinluo
  */
 public enum McpImportResultStatusEnum {
-
+    
     /**
      * SKIPPED.
      */
     SKIPPED("skipped"),
-
+    
     /**
      * FAILED.
      */
     FAILED("failed"),
-
+    
     /**
      * SUCCESS.
      */
     SUCCESS("success");
-
+    
     private final String name;
-
+    
     McpImportResultStatusEnum(String name) {
         this.name = name;
     }
-
+    
     public String getName() {
         return name;
     }

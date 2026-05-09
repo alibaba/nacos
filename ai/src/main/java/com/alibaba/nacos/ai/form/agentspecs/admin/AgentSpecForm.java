@@ -46,7 +46,7 @@ public class AgentSpecForm implements NacosForm {
         fillDefaultNamespaceId();
         if (StringUtils.isEmpty(agentSpecName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'agentSpecName' type String is not present");
+                "Required parameter 'agentSpecName' type String is not present");
         }
     }
     

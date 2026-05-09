@@ -46,8 +46,9 @@ public class AgentSpecQueryForm {
             namespaceId = Constants.AgentSpecs.AGENTSPEC_DEFAULT_NAMESPACE;
         }
         if (StringUtils.isBlank(name)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "AgentSpec name is required");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "AgentSpec name is required");
         }
     }
     

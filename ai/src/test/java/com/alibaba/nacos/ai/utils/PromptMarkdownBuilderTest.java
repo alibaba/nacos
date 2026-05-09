@@ -45,8 +45,8 @@ class PromptMarkdownBuilderTest {
         info.setCommitMsg("initial version");
         info.setTemplate("Hello {{name}}, welcome to {{place}}!");
         info.setVariables(Arrays.asList(
-                new PromptVariable("name", "guest", "user name"),
-                new PromptVariable("place", null, "location")));
+            new PromptVariable("name", "guest", "user name"),
+            new PromptVariable("place", null, "location")));
         
         String md = PromptMarkdownBuilder.build(info);
         
@@ -90,12 +90,12 @@ class PromptMarkdownBuilderTest {
         info.setVersion("1.0.0");
         info.setTemplate("body");
         info.setVariables(Arrays.asList(
-                new PromptVariable("col", "a|b", "line1\nline2")));
+            new PromptVariable("col", "a|b", "line1\nline2")));
         
         String md = PromptMarkdownBuilder.build(info);
         
         assertTrue(md.contains("| col | a\\|b | line1 line2 |"),
-                "pipe should be escaped and newline collapsed to space");
+            "pipe should be escaped and newline collapsed to space");
     }
     
     @Test
@@ -105,7 +105,8 @@ class PromptMarkdownBuilderTest {
     
     @Test
     void buildFilenameShouldSanitizeUnsafeChars() {
-        assertEquals("my_prompt_1.0.0.md", PromptMarkdownBuilder.buildFilename("my/prompt", "1.0.0"));
+        assertEquals("my_prompt_1.0.0.md",
+            PromptMarkdownBuilder.buildFilename("my/prompt", "1.0.0"));
         assertEquals("a_b__.md", PromptMarkdownBuilder.buildFilename("a b", "?"));
     }
     
@@ -126,7 +127,8 @@ class PromptMarkdownBuilderTest {
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getHeaders().getContentType());
-        assertTrue(response.getHeaders().getContentType().toString().toLowerCase().contains("text/markdown"));
+        assertTrue(response.getHeaders().getContentType().toString().toLowerCase()
+            .contains("text/markdown"));
         
         String disposition = response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION);
         assertNotNull(disposition);

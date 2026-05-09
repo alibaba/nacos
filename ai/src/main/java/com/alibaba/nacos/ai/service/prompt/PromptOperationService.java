@@ -37,9 +37,9 @@ import java.util.Map;
  * @author nacos
  */
 public interface PromptOperationService {
-
+    
     // ========== Admin APIs ==========
-
+    
     /**
      * Create a new draft version for a prompt.
      *
@@ -58,10 +58,12 @@ public interface PromptOperationService {
      * @return the created draft version string
      * @throws NacosException if validation fails or conflict exists
      */
-    String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
-            String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
-            throws NacosException;
-
+    String createDraft(String namespaceId, String promptKey, String basedOnVersion,
+        String targetVersion,
+        String template, List<PromptVariable> variables, String commitMsg, String description,
+        String bizTags)
+        throws NacosException;
+    
     /**
      * Update existing draft content.
      *
@@ -72,9 +74,10 @@ public interface PromptOperationService {
      * @param commitMsg   updated commit message
      * @throws NacosException if no editing draft exists or version is not in draft status
      */
-    void updateDraft(String namespaceId, String promptKey, String template, List<PromptVariable> variables,
-            String commitMsg) throws NacosException;
-
+    void updateDraft(String namespaceId, String promptKey, String template,
+        List<PromptVariable> variables,
+        String commitMsg) throws NacosException;
+    
     /**
      * Delete current draft and release editing pointer.
      *
@@ -83,7 +86,7 @@ public interface PromptOperationService {
      * @throws NacosException if prompt not found
      */
     void deleteDraft(String namespaceId, String promptKey) throws NacosException;
-
+    
     /**
      * Submit a draft version for publish. If no pipeline plugins are configured, publishes directly.
      *
@@ -94,7 +97,7 @@ public interface PromptOperationService {
      * @throws NacosException if no draft version exists or submission fails
      */
     String submit(String namespaceId, String promptKey, String version) throws NacosException;
-
+    
     /**
      * Publish a reviewing version. Pipeline must have passed when pipeline is configured.
      *
@@ -104,8 +107,9 @@ public interface PromptOperationService {
      * @param updateLatestLabel whether to update the "latest" label to this version
      * @throws NacosException if version is not in reviewing/online status or pipeline not approved
      */
-    void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel) throws NacosException;
-
+    void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+        throws NacosException;
+    
     /**
      * Force-publish a prompt version, bypassing pipeline validation. Should only be invoked by admin users.
      *
@@ -115,9 +119,10 @@ public interface PromptOperationService {
      * @param updateLatestLabel whether to update the "latest" label
      * @throws NacosException if version not found
      */
-    void forcePublish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
-            throws NacosException;
-
+    void forcePublish(String namespaceId, String promptKey, String version,
+        boolean updateLatestLabel)
+        throws NacosException;
+    
     /**
      * Online/offline operation for a prompt version.
      *
@@ -127,8 +132,9 @@ public interface PromptOperationService {
      * @param online      true means online, false means offline
      * @throws NacosException if version not found
      */
-    void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online) throws NacosException;
-
+    void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)
+        throws NacosException;
+    
     /**
      * Update labels mapping (label -> version) without changing any version status.
      *
@@ -137,8 +143,9 @@ public interface PromptOperationService {
      * @param labels      label-to-version mapping
      * @throws NacosException if prompt not found
      */
-    void updateLabels(String namespaceId, String promptKey, Map<String, String> labels) throws NacosException;
-
+    void updateLabels(String namespaceId, String promptKey, Map<String, String> labels)
+        throws NacosException;
+    
     /**
      * Update prompt biz tags.
      *
@@ -148,7 +155,7 @@ public interface PromptOperationService {
      * @throws NacosException if prompt not found
      */
     void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException;
-
+    
     /**
      * Update prompt description.
      *
@@ -157,8 +164,9 @@ public interface PromptOperationService {
      * @param description new description
      * @throws NacosException if prompt not found
      */
-    void updateDescription(String namespaceId, String promptKey, String description) throws NacosException;
-
+    void updateDescription(String namespaceId, String promptKey, String description)
+        throws NacosException;
+    
     /**
      * Delete an entire prompt and all its versions (DB + storage).
      *
@@ -167,7 +175,7 @@ public interface PromptOperationService {
      * @throws NacosException if deletion fails
      */
     void deletePrompt(String namespaceId, String promptKey) throws NacosException;
-
+    
     /**
      * Get prompt governance detail (admin view). Returns version governance metadata and all version summaries.
      *
@@ -177,7 +185,7 @@ public interface PromptOperationService {
      * @throws NacosException if prompt not found
      */
     PromptMetaInfo getPromptDetail(String namespaceId, String promptKey) throws NacosException;
-
+    
     /**
      * Get prompt version detail. Returns full content for a specific version.
      *
@@ -188,7 +196,7 @@ public interface PromptOperationService {
      * @throws NacosException if prompt or version not found
      */
     PromptVersionInfo getPromptVersionDetail(String namespaceId, String promptKey, String version)
-            throws NacosException;
+        throws NacosException;
     
     /**
      * Download a specific prompt version (same as getPromptVersionDetail but also publishes a download event for
@@ -201,8 +209,8 @@ public interface PromptOperationService {
      * @throws NacosException if prompt or version not found
      */
     PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version)
-            throws NacosException;
-
+        throws NacosException;
+    
     /**
      * List prompts with pagination for admin usage.
      *
@@ -215,9 +223,10 @@ public interface PromptOperationService {
      * @return paged prompt summary list
      * @throws NacosException if query fails
      */
-    Page<PromptMetaSummary> listPrompts(String namespaceId, String promptKey, String search, String bizTags, int pageNo,
-            int pageSize) throws NacosException;
-
+    Page<PromptMetaSummary> listPrompts(String namespaceId, String promptKey, String search,
+        String bizTags, int pageNo,
+        int pageSize) throws NacosException;
+    
     /**
      * List prompt versions with pagination.
      *
@@ -228,11 +237,12 @@ public interface PromptOperationService {
      * @return paged version summary list
      * @throws NacosException if prompt not found
      */
-    Page<PromptVersionSummary> listPromptVersions(String namespaceId, String promptKey, int pageNo, int pageSize)
-            throws NacosException;
-
+    Page<PromptVersionSummary> listPromptVersions(String namespaceId, String promptKey, int pageNo,
+        int pageSize)
+        throws NacosException;
+    
     // ========== Client APIs ==========
-
+    
     /**
      * Query prompt for runtime client usage. Priority: version > label > latest(label).
      *
@@ -243,9 +253,10 @@ public interface PromptOperationService {
      * @return prompt version content
      * @throws NacosException if prompt not found or no matching version
      */
-    PromptVersionInfo queryPrompt(String namespaceId, String promptKey, String version, String label)
-            throws NacosException;
-
+    PromptVersionInfo queryPrompt(String namespaceId, String promptKey, String version,
+        String label)
+        throws NacosException;
+    
     /**
      * Refresh the latest mirror config in the legacy nacos-ai-prompt group for backward compatibility.
      * Called after publish or label update to keep old clients working.
@@ -266,9 +277,10 @@ public interface PromptOperationService {
      * @deprecated Use {@link #createDraft} + {@link #submit} instead.
      */
     @Deprecated
-    boolean publishPromptVersion(String namespaceId, String promptKey, String version, String template,
-            String commitMsg, String description, String bizTags, List<PromptVariable> variables)
-            throws NacosException;
+    boolean publishPromptVersion(String namespaceId, String promptKey, String version,
+        String template,
+        String commitMsg, String description, String bizTags, List<PromptVariable> variables)
+        throws NacosException;
     
     /**
      * Legacy get prompt metadata.
@@ -284,8 +296,9 @@ public interface PromptOperationService {
      * @deprecated Use {@link #getPromptVersionDetail} for admin or {@link #queryPrompt} for client.
      */
     @Deprecated
-    PromptVersionInfo queryPromptDetail(String namespaceId, String promptKey, String version, String label)
-            throws NacosException;
+    PromptVersionInfo queryPromptDetail(String namespaceId, String promptKey, String version,
+        String label)
+        throws NacosException;
     
     /**
      * Legacy bind label to a prompt version.
@@ -293,7 +306,8 @@ public interface PromptOperationService {
      * @deprecated Use {@link #updateLabels} instead.
      */
     @Deprecated
-    boolean bindLabel(String namespaceId, String promptKey, String label, String version) throws NacosException;
+    boolean bindLabel(String namespaceId, String promptKey, String label, String version)
+        throws NacosException;
     
     /**
      * Legacy unbind label from a prompt.
@@ -309,6 +323,7 @@ public interface PromptOperationService {
      * @deprecated Use {@link #updateDescription} and {@link #updateBizTags} instead.
      */
     @Deprecated
-    boolean updatePromptMetadata(String namespaceId, String promptKey, String description, String bizTags)
-            throws NacosException;
+    boolean updatePromptMetadata(String namespaceId, String promptKey, String description,
+        String bizTags)
+        throws NacosException;
 }

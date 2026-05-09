@@ -40,22 +40,26 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 @Service
-public class AiConnectionBasedClientManager extends ClientConnectionEventListener implements ClientManager {
+public class AiConnectionBasedClientManager extends ClientConnectionEventListener
+    implements ClientManager {
     
     private final ConnectionBasedClientManager delegate;
     
-    public AiConnectionBasedClientManager(ConnectionBasedClientManager connectionBasedClientManager) {
+    public AiConnectionBasedClientManager(
+        ConnectionBasedClientManager connectionBasedClientManager) {
         this.delegate = connectionBasedClientManager;
     }
     
     @Override
     public void clientConnected(Connection connect) {
         // ignore `naming`, `config` and `lock` module connection
-        if (!RemoteConstants.LABEL_MODULE_AI.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
+        if (!RemoteConstants.LABEL_MODULE_AI
+            .equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
             return;
         }
         ClientAttributes attributes = new ClientAttributes();
-        attributes.addClientAttribute(ClientConstants.CONNECTION_TYPE, connect.getMetaInfo().getConnectType());
+        attributes.addClientAttribute(ClientConstants.CONNECTION_TYPE,
+            connect.getMetaInfo().getConnectType());
         attributes.addClientAttribute(ClientConstants.CONNECTION_METADATA, connect.getMetaInfo());
         clientConnected(connect.getMetaInfo().getConnectionId(), attributes);
     }
@@ -78,7 +82,8 @@ public class AiConnectionBasedClientManager extends ClientConnectionEventListene
     @Override
     public void clientDisConnected(Connection connect) {
         // ignore `naming`, `config` and `lock` module connection
-        if (!RemoteConstants.LABEL_MODULE_AI.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
+        if (!RemoteConstants.LABEL_MODULE_AI
+            .equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
             return;
         }
         clientDisconnected(connect.getMetaInfo().getConnectionId());

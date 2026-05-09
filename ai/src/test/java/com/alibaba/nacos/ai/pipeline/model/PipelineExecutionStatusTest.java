@@ -25,34 +25,39 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PipelineExecutionStatusTest {
-
+    
     @Test
     void testApprovedStatusRequiresAllNodesPassed() {
         PipelineExecution execution = newExecution(PipelineExecutionStatus.APPROVED,
-                newNodeResult("parse", true), newNodeResult("scan", true));
-        boolean allNodesPassed = execution.getPipeline().stream().allMatch(PipelineNodeResult::isPassed);
+            newNodeResult("parse", true), newNodeResult("scan", true));
+        boolean allNodesPassed =
+            execution.getPipeline().stream().allMatch(PipelineNodeResult::isPassed);
         assertTrue(allNodesPassed);
         assertEquals(PipelineExecutionStatus.APPROVED, execution.getStatus());
     }
-
+    
     @Test
     void testRejectedStatusWhenAnyNodeFailed() {
         PipelineExecution execution = newExecution(PipelineExecutionStatus.REJECTED,
-                newNodeResult("parse", true), newNodeResult("scan", false));
-        boolean allNodesPassed = execution.getPipeline().stream().allMatch(PipelineNodeResult::isPassed);
+            newNodeResult("parse", true), newNodeResult("scan", false));
+        boolean allNodesPassed =
+            execution.getPipeline().stream().allMatch(PipelineNodeResult::isPassed);
         assertTrue(!allNodesPassed);
         assertEquals(PipelineExecutionStatus.REJECTED, execution.getStatus());
     }
-
+    
     @Test
     void testApprovedStatusAlsoHoldsForSinglePassedNode() {
-        PipelineExecution execution = newExecution(PipelineExecutionStatus.APPROVED, newNodeResult("scan", true));
-        boolean allNodesPassed = execution.getPipeline().stream().allMatch(PipelineNodeResult::isPassed);
+        PipelineExecution execution =
+            newExecution(PipelineExecutionStatus.APPROVED, newNodeResult("scan", true));
+        boolean allNodesPassed =
+            execution.getPipeline().stream().allMatch(PipelineNodeResult::isPassed);
         assertTrue(allNodesPassed);
         assertEquals(PipelineExecutionStatus.APPROVED, execution.getStatus());
     }
-
-    private PipelineExecution newExecution(PipelineExecutionStatus status, PipelineNodeResult... nodes) {
+    
+    private PipelineExecution newExecution(PipelineExecutionStatus status,
+        PipelineNodeResult... nodes) {
         PipelineExecution execution = new PipelineExecution();
         execution.setExecutionId("exec-1");
         execution.setResourceType("AGENTSPEC");
@@ -60,12 +65,13 @@ class PipelineExecutionStatusTest {
         execution.setNamespaceId("public");
         execution.setVersion("1.0.0");
         execution.setStatus(status);
-        execution.setPipeline(nodes == null ? Collections.<PipelineNodeResult>emptyList() : Arrays.asList(nodes));
+        execution.setPipeline(
+            nodes == null ? Collections.<PipelineNodeResult>emptyList() : Arrays.asList(nodes));
         execution.setCreateTime(1L);
         execution.setUpdateTime(2L);
         return execution;
     }
-
+    
     private PipelineNodeResult newNodeResult(String nodeId, boolean passed) {
         PipelineNodeResult result = new PipelineNodeResult();
         result.setNodeId(nodeId);

@@ -45,9 +45,11 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class ReleaseAgentCardRequestHandler extends RequestHandler<ReleaseAgentCardRequest, ReleaseAgentCardResponse> {
+public class ReleaseAgentCardRequestHandler
+    extends RequestHandler<ReleaseAgentCardRequest, ReleaseAgentCardResponse> {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseAgentCardRequestHandler.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ReleaseAgentCardRequestHandler.class);
     
     private final A2aServerOperationService a2aServerOperationService;
     
@@ -59,7 +61,8 @@ public class ReleaseAgentCardRequestHandler extends RequestHandler<ReleaseAgentC
     @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = AgentRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
-    public ReleaseAgentCardResponse handle(ReleaseAgentCardRequest request, RequestMeta meta) throws NacosException {
+    public ReleaseAgentCardResponse handle(ReleaseAgentCardRequest request, RequestMeta meta)
+        throws NacosException {
         AgentRequestUtil.fillNamespaceId(request);
         ReleaseAgentCardResponse response = new ReleaseAgentCardResponse();
         try {
@@ -69,7 +72,8 @@ public class ReleaseAgentCardRequestHandler extends RequestHandler<ReleaseAgentC
         } catch (NacosException e) {
             response.setErrorInfo(e.getErrCode(), e.getErrMsg());
             LOGGER.error("[{}] Release agent card {} error: {}", meta.getConnectionId(),
-                    null == request.getAgentCard() ? null : JacksonUtils.toJson(request.getAgentCard()), e.getErrMsg());
+                null == request.getAgentCard() ? null : JacksonUtils.toJson(request.getAgentCard()),
+                e.getErrMsg());
         }
         return response;
     }
@@ -77,21 +81,24 @@ public class ReleaseAgentCardRequestHandler extends RequestHandler<ReleaseAgentC
     private void validateRequest(ReleaseAgentCardRequest request) throws NacosApiException {
         if (null == request.getAgentCard()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentCard` can't be null");
+                "parameters `agentCard` can't be null");
         }
         AgentRequestUtil.validateAgentCard(request.getAgentCard());
     }
     
-    private void doHandler(ReleaseAgentCardRequest request, RequestMeta meta) throws NacosException {
+    private void doHandler(ReleaseAgentCardRequest request, RequestMeta meta)
+        throws NacosException {
         String namespaceId = request.getNamespaceId();
         AgentCard agentCard = request.getAgentCard();
-        LOGGER.info("Release new agent {}, version {} into namespaceId {} from connectionId {}.", agentCard.getName(),
-                agentCard.getVersion(), namespaceId, meta.getConnectionId());
+        LOGGER.info("Release new agent {}, version {} into namespaceId {} from connectionId {}.",
+            agentCard.getName(),
+            agentCard.getVersion(), namespaceId, meta.getConnectionId());
         try {
             AgentCardDetailInfo existAgentCard = a2aServerOperationService.getAgentCard(namespaceId,
-                    agentCard.getName(), agentCard.getVersion(), StringUtils.EMPTY);
-            LOGGER.info("AgentCard {} and target version {} already exist.", existAgentCard.getName(),
-                    existAgentCard.getVersion());
+                agentCard.getName(), agentCard.getVersion(), StringUtils.EMPTY);
+            LOGGER.info("AgentCard {} and target version {} already exist.",
+                existAgentCard.getName(),
+                existAgentCard.getVersion());
         } catch (NacosApiException e) {
             if (ErrorCode.AGENT_NOT_FOUND.getCode() == e.getDetailErrCode()) {
                 // agent card not found, create new agent card.
@@ -99,8 +106,10 @@ public class ReleaseAgentCardRequestHandler extends RequestHandler<ReleaseAgentC
                 LOGGER.info("AgentCard {} released.", agentCard.getName());
             } else if (ErrorCode.AGENT_VERSION_NOT_FOUND.getCode() == e.getDetailErrCode()) {
                 // agent card found but version not found, update agent card.
-                createNewVersionAgentCard(namespaceId, agentCard, request.getRegistrationType(), request.isSetAsLatest());
-                LOGGER.info("AgentCard {} new version {} released.", agentCard.getName(), agentCard.getVersion());
+                createNewVersionAgentCard(namespaceId, agentCard, request.getRegistrationType(),
+                    request.isSetAsLatest());
+                LOGGER.info("AgentCard {} new version {} released.", agentCard.getName(),
+                    agentCard.getVersion());
             } else {
                 LOGGER.error("AgentCard {} released failed.", agentCard.getName(), e);
                 throw e;
@@ -109,12 +118,14 @@ public class ReleaseAgentCardRequestHandler extends RequestHandler<ReleaseAgentC
     }
     
     private void createAgentCard(String namespaceId, AgentCard agentCard, String registrationType)
-            throws NacosException {
+        throws NacosException {
         a2aServerOperationService.registerAgent(agentCard, namespaceId, registrationType);
     }
     
-    private void createNewVersionAgentCard(String namespaceId, AgentCard agentCard, String registrationType,
-            boolean setAsLatest) throws NacosException {
-        a2aServerOperationService.updateAgentCard(agentCard, namespaceId, registrationType, setAsLatest);
+    private void createNewVersionAgentCard(String namespaceId, AgentCard agentCard,
+        String registrationType,
+        boolean setAsLatest) throws NacosException {
+        a2aServerOperationService.updateAgentCard(agentCard, namespaceId, registrationType,
+            setAsLatest);
     }
 }

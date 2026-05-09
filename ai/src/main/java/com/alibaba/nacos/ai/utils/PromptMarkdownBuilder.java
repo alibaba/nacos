@@ -81,7 +81,8 @@ public final class PromptMarkdownBuilder {
         
         // Commit message
         if (StringUtils.isNotBlank(info.getCommitMsg())) {
-            sb.append("> ").append(info.getCommitMsg().replace(NEW_LINE, " ")).append(NEW_LINE).append(NEW_LINE);
+            sb.append("> ").append(info.getCommitMsg().replace(NEW_LINE, " ")).append(NEW_LINE)
+                .append(NEW_LINE);
         }
         
         // Variables section (human readable)
@@ -91,9 +92,9 @@ public final class PromptMarkdownBuilder {
             sb.append("| --- | --- | --- |").append(NEW_LINE);
             for (PromptVariable v : info.getVariables()) {
                 sb.append("| ").append(mdCell(v.getName()))
-                        .append(" | ").append(mdCell(v.getDefaultValue()))
-                        .append(" | ").append(mdCell(v.getDescription()))
-                        .append(" |").append(NEW_LINE);
+                    .append(" | ").append(mdCell(v.getDefaultValue()))
+                    .append(" | ").append(mdCell(v.getDescription()))
+                    .append(" |").append(NEW_LINE);
             }
             sb.append(NEW_LINE);
         }
@@ -155,17 +156,19 @@ public final class PromptMarkdownBuilder {
         for (PromptVariable v : variables) {
             sb.append("  - name: ").append(yamlQuote(safe(v.getName()))).append(NEW_LINE);
             if (v.getDefaultValue() != null) {
-                sb.append("    defaultValue: ").append(yamlQuote(v.getDefaultValue())).append(NEW_LINE);
+                sb.append("    defaultValue: ").append(yamlQuote(v.getDefaultValue()))
+                    .append(NEW_LINE);
             }
             if (StringUtils.isNotBlank(v.getDescription())) {
-                sb.append("    description: ").append(yamlQuote(v.getDescription())).append(NEW_LINE);
+                sb.append("    description: ").append(yamlQuote(v.getDescription()))
+                    .append(NEW_LINE);
             }
         }
     }
     
     private static String yamlQuote(String raw) {
         String escaped = raw.replace("\\", "\\\\").replace("\"", "\\\"")
-                .replace("\n", "\\n").replace("\r", "\\r");
+            .replace("\n", "\\n").replace("\r", "\\r");
         return "\"" + escaped + "\"";
     }
     

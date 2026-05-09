@@ -50,7 +50,8 @@ class VisibilityHelperTest {
         resetCachedVisibilityServiceName();
         visibilityPluginManager = mock(VisibilityPluginManager.class);
         visibilityManagerStatic = mockStatic(VisibilityPluginManager.class);
-        visibilityManagerStatic.when(VisibilityPluginManager::getInstance).thenReturn(visibilityPluginManager);
+        visibilityManagerStatic.when(VisibilityPluginManager::getInstance)
+            .thenReturn(visibilityPluginManager);
     }
     
     @AfterEach
@@ -64,7 +65,8 @@ class VisibilityHelperTest {
     
     @Test
     void resolveDefaultScopeForCreateShouldFallbackToPrivateWhenPluginAbsent() {
-        when(visibilityPluginManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
+        when(visibilityPluginManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.empty());
         String actual = VisibilityHelper.resolveDefaultScopeForCreate("skill");
         assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual);
     }
@@ -72,8 +74,10 @@ class VisibilityHelperTest {
     @Test
     void resolveDefaultScopeForCreateShouldUsePluginScopeAndNormalizeUppercase() {
         VisibilityService visibilityService = mock(VisibilityService.class);
-        when(visibilityService.resolveDefaultScopeForCreate(anyString(), anyString(), anyString())).thenReturn("public");
-        when(visibilityPluginManager.findVisibilityService(anyString())).thenReturn(Optional.of(visibilityService));
+        when(visibilityService.resolveDefaultScopeForCreate(anyString(), anyString(), anyString()))
+            .thenReturn("public");
+        when(visibilityPluginManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
         String actual = VisibilityHelper.resolveDefaultScopeForCreate("skill");
         assertEquals(VisibilityConstants.SCOPE_PUBLIC, actual);
     }
@@ -81,8 +85,10 @@ class VisibilityHelperTest {
     @Test
     void resolveDefaultScopeForCreateShouldFallbackToPrivateWhenPluginReturnsBlank() {
         VisibilityService visibilityService = mock(VisibilityService.class);
-        when(visibilityService.resolveDefaultScopeForCreate(anyString(), anyString(), anyString())).thenReturn("  ");
-        when(visibilityPluginManager.findVisibilityService(anyString())).thenReturn(Optional.of(visibilityService));
+        when(visibilityService.resolveDefaultScopeForCreate(anyString(), anyString(), anyString()))
+            .thenReturn("  ");
+        when(visibilityPluginManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
         String actual = VisibilityHelper.resolveDefaultScopeForCreate("skill");
         assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual);
     }

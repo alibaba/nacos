@@ -25,135 +25,134 @@ import java.sql.Timestamp;
  * @since 3.2.0
  */
 public class AiResourceVersion {
-
+    
     private Long id;
-
+    
     private Timestamp gmtCreate;
-
+    
     private Timestamp gmtModified;
-
+    
     private String type;
-
+    
     private String author;
-
+    
     private String name;
-
+    
     private String desc;
-
+    
     private String status;
-
+    
     private String version;
-
+    
     private String namespaceId;
-
+    
     private String storage;
-
+    
     private String publishPipelineInfo;
-
+    
     private Long downloadCount;
-
+    
     public Long getId() {
         return id;
     }
-
+    
     public void setId(Long id) {
         this.id = id;
     }
-
+    
     public Timestamp getGmtCreate() {
         return gmtCreate;
     }
-
+    
     public void setGmtCreate(Timestamp gmtCreate) {
         this.gmtCreate = gmtCreate;
     }
-
+    
     public Timestamp getGmtModified() {
         return gmtModified;
     }
-
+    
     public void setGmtModified(Timestamp gmtModified) {
         this.gmtModified = gmtModified;
     }
-
+    
     public String getType() {
         return type;
     }
-
+    
     public void setType(String type) {
         this.type = type;
     }
-
+    
     public String getAuthor() {
         return author;
     }
-
+    
     public void setAuthor(String author) {
         this.author = author;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getDesc() {
         return desc;
     }
-
+    
     public void setDesc(String desc) {
         this.desc = desc;
     }
-
+    
     public String getStatus() {
         return status;
     }
-
+    
     public void setStatus(String status) {
         this.status = status;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getStorage() {
         return storage;
     }
-
+    
     public void setStorage(String storage) {
         this.storage = storage;
     }
-
+    
     public String getPublishPipelineInfo() {
         return publishPipelineInfo;
     }
-
+    
     public void setPublishPipelineInfo(String publishPipelineInfo) {
         this.publishPipelineInfo = publishPipelineInfo;
     }
-
+    
     public Long getDownloadCount() {
         return downloadCount;
     }
-
+    
     public void setDownloadCount(Long downloadCount) {
         this.downloadCount = downloadCount;
     }
 }
-

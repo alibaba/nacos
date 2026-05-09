@@ -24,39 +24,49 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class PipelineExecutionRepositoryDialectTest {
-
+    
     @Test
     void appendPageClauseShouldUseMysqlStyleForMysqlLikeDatasources() {
-        PipelineExecutionRepositoryImpl repository = new PipelineExecutionRepositoryImpl(newJdbcTemplate(),
+        PipelineExecutionRepositoryImpl repository =
+            new PipelineExecutionRepositoryImpl(newJdbcTemplate(),
                 DataSourceConstant.MYSQL);
-
-        String actual = repository.appendPageClause("SELECT * FROM pipeline_execution ORDER BY create_time DESC", 20, 10);
-
-        assertEquals("SELECT * FROM pipeline_execution ORDER BY create_time DESC LIMIT 10 OFFSET 20", actual);
+        
+        String actual = repository
+            .appendPageClause("SELECT * FROM pipeline_execution ORDER BY create_time DESC", 20, 10);
+        
+        assertEquals(
+            "SELECT * FROM pipeline_execution ORDER BY create_time DESC LIMIT 10 OFFSET 20",
+            actual);
     }
-
+    
     @Test
     void appendPageClauseShouldUseOffsetFetchForDerby() {
-        PipelineExecutionRepositoryImpl repository = new PipelineExecutionRepositoryImpl(newJdbcTemplate(),
+        PipelineExecutionRepositoryImpl repository =
+            new PipelineExecutionRepositoryImpl(newJdbcTemplate(),
                 DataSourceConstant.DERBY);
-
-        String actual = repository.appendPageClause("SELECT * FROM pipeline_execution ORDER BY create_time DESC", 20, 10);
-
-        assertEquals("SELECT * FROM pipeline_execution ORDER BY create_time DESC OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY",
-                actual);
+        
+        String actual = repository
+            .appendPageClause("SELECT * FROM pipeline_execution ORDER BY create_time DESC", 20, 10);
+        
+        assertEquals(
+            "SELECT * FROM pipeline_execution ORDER BY create_time DESC OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY",
+            actual);
     }
-
+    
     @Test
     void buildSingleLatestSqlShouldUseDerbyCompatibleFetchFirst() {
-        PipelineExecutionRepositoryImpl repository = new PipelineExecutionRepositoryImpl(newJdbcTemplate(),
+        PipelineExecutionRepositoryImpl repository =
+            new PipelineExecutionRepositoryImpl(newJdbcTemplate(),
                 DataSourceConstant.DERBY);
-
+        
         String actual = repository.buildSingleLatestSql();
-
-        assertEquals("SELECT * FROM pipeline_execution WHERE resource_type=? AND resource_name=? AND namespace_id=? AND version=? "
-                + "ORDER BY create_time DESC FETCH FIRST 1 ROW ONLY", actual);
+        
+        assertEquals(
+            "SELECT * FROM pipeline_execution WHERE resource_type=? AND resource_name=? AND namespace_id=? AND version=? "
+                + "ORDER BY create_time DESC FETCH FIRST 1 ROW ONLY",
+            actual);
     }
-
+    
     private JdbcTemplate newJdbcTemplate() {
         JdbcDataSource dataSource = new JdbcDataSource();
         dataSource.setURL("jdbc:h2:mem:pipeline_dialect_test;DB_CLOSE_DELAY=-1");
