@@ -29,34 +29,33 @@ import java.io.Serial;
  * @author nacos
  */
 public class SkillLabelsUpdateForm extends SkillForm {
-
+    
     @Serial
     private static final long serialVersionUID = 1L;
-
+    
     /**
      * JSON string: {"latest":"v3","stable":"v2"}.
      */
     private String labels;
-
+    
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
         if (StringUtils.isBlank(getSkillName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `skillName` should not be blank.");
+                "Request parameter `skillName` should not be blank.");
         }
         if (StringUtils.isBlank(labels)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `labels` should not be blank.");
+                "Request parameter `labels` should not be blank.");
         }
     }
-
+    
     public String getLabels() {
         return labels;
     }
-
+    
     public void setLabels(String labels) {
         this.labels = labels;
     }
 }
-

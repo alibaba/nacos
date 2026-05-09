@@ -39,9 +39,10 @@ public class AgentListForm extends AgentForm {
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
         if (!Constants.MCP_LIST_SEARCH_ACCURATE.equalsIgnoreCase(search)
-                && !Constants.MCP_LIST_SEARCH_BLUR.equalsIgnoreCase(search)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Request parameter `search` should be `accurate` or `blur`.");
+            && !Constants.MCP_LIST_SEARCH_BLUR.equalsIgnoreCase(search)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Request parameter `search` should be `accurate` or `blur`.");
         }
     }
     

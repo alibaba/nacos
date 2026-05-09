@@ -60,7 +60,8 @@ class QueryPromptRequestHandlerTest {
         QueryPromptRequest request = new QueryPromptRequest();
         request.setPromptKey("p1");
         when(promptClientOperationService.queryPrompt("public", "p1", null, null, null))
-                .thenThrow(new NacosException(NacosException.NOT_MODIFIED, "prompt data is up to date"));
+            .thenThrow(
+                new NacosException(NacosException.NOT_MODIFIED, "prompt data is up to date"));
         
         QueryPromptResponse response = handler.handle(request, null);
         
@@ -77,7 +78,8 @@ class QueryPromptRequestHandlerTest {
         versionInfo.setVersion("1.0.0");
         versionInfo.setTemplate("hello");
         versionInfo.setMd5("m1");
-        when(promptClientOperationService.queryPrompt("public", "p1", null, null, null)).thenReturn(versionInfo);
+        when(promptClientOperationService.queryPrompt("public", "p1", null, null, null))
+            .thenReturn(versionInfo);
         
         QueryPromptResponse response = handler.handle(request, null);
         Prompt prompt = response.getPromptInfo();
@@ -94,7 +96,8 @@ class QueryPromptRequestHandlerTest {
         QueryPromptRequest request = new QueryPromptRequest();
         request.setPromptKey("p1");
         request.setNamespaceId("");
-        when(promptClientOperationService.queryPrompt("public", "p1", null, null, null)).thenReturn(new PromptVersionInfo());
+        when(promptClientOperationService.queryPrompt("public", "p1", null, null, null))
+            .thenReturn(new PromptVersionInfo());
         
         handler.handle(request, null);
         

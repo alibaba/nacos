@@ -37,11 +37,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DefaultVisibilityAdvisorConverterTest {
     
-    private final DefaultVisibilityAdvisorConverter converter = new DefaultVisibilityAdvisorConverter();
+    private final DefaultVisibilityAdvisorConverter converter =
+        new DefaultVisibilityAdvisorConverter();
     
     @Test
     void convertShouldReturnDefaultConditionWhenConditionAndAdvisorAreNull() {
-        QueryCondition actual = converter.convert(null, "userA", null, new VisibilityQueryContext());
+        QueryCondition actual =
+            converter.convert(null, "userA", null, new VisibilityQueryContext());
         
         assertNotNull(actual);
         assertEquals(Constants.DEFAULT_NAMESPACE_ID, actual.getNamespaceId());
@@ -56,7 +58,8 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryAdvisor advisor = new QueryAdvisor();
         advisor.setBasePredicate(null);
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
         
         assertSame(condition, actual);
         assertTrue(actual.getOrGroup().isEmpty());
@@ -69,7 +72,8 @@ class DefaultVisibilityAdvisorConverterTest {
         condition.setScope(VisibilityConstants.SCOPE_PRIVATE);
         condition.setOwner("ownerA");
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.ALL),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.ALL),
                 new VisibilityQueryContext());
         
         assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual.getScope());
@@ -82,7 +86,8 @@ class DefaultVisibilityAdvisorConverterTest {
     void convertShouldSetPublicScopeForPublicPredicateWhenScopeIsBlank() {
         QueryCondition condition = new QueryCondition();
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC),
                 new VisibilityQueryContext());
         
         assertEquals(VisibilityConstants.SCOPE_PUBLIC, actual.getScope());
@@ -94,7 +99,8 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryCondition condition = new QueryCondition();
         condition.setScope(VisibilityConstants.SCOPE_PRIVATE);
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC),
                 new VisibilityQueryContext());
         
         assertTrue(actual.isAlwaysEmpty());
@@ -105,7 +111,8 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryCondition condition = new QueryCondition();
         condition.setScope(VisibilityConstants.SCOPE_PUBLIC);
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC),
                 new VisibilityQueryContext());
         
         assertEquals(VisibilityConstants.SCOPE_PUBLIC, actual.getScope());
@@ -116,7 +123,8 @@ class DefaultVisibilityAdvisorConverterTest {
     void convertShouldMarkAlwaysEmptyForOwnerPredicateWhenIdentityIsBlank() {
         QueryCondition condition = new QueryCondition();
         
-        QueryCondition actual = converter.convert(condition, null, advisor(BaseVisibilityPredicate.OWNER),
+        QueryCondition actual =
+            converter.convert(condition, null, advisor(BaseVisibilityPredicate.OWNER),
                 new VisibilityQueryContext());
         
         assertTrue(actual.isAlwaysEmpty());
@@ -126,7 +134,8 @@ class DefaultVisibilityAdvisorConverterTest {
     void convertShouldFillOwnerForOwnerPredicateWhenOwnerIsBlank() {
         QueryCondition condition = new QueryCondition();
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.OWNER),
                 new VisibilityQueryContext());
         
         assertEquals("userA", actual.getOwner());
@@ -138,7 +147,8 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryCondition condition = new QueryCondition();
         condition.setOwner("anotherUser");
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.OWNER),
                 new VisibilityQueryContext());
         
         assertTrue(actual.isAlwaysEmpty());
@@ -149,7 +159,8 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryCondition condition = new QueryCondition();
         condition.setOwner("userA");
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.OWNER),
                 new VisibilityQueryContext());
         
         assertEquals("userA", actual.getOwner());
@@ -160,7 +171,8 @@ class DefaultVisibilityAdvisorConverterTest {
     void convertShouldFallbackToPublicForPublicAndOwnerWhenIdentityBlank() {
         QueryCondition condition = new QueryCondition();
         
-        QueryCondition actual = converter.convert(condition, "", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
                 new VisibilityQueryContext());
         
         assertEquals(VisibilityConstants.SCOPE_PUBLIC, actual.getScope());
@@ -173,7 +185,8 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryCondition condition = new QueryCondition();
         condition.setScope(VisibilityConstants.SCOPE_PUBLIC);
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
                 new VisibilityQueryContext());
         
         assertTrue(actual.getOrGroup().isEmpty());
@@ -186,7 +199,8 @@ class DefaultVisibilityAdvisorConverterTest {
         condition.setScope(VisibilityConstants.SCOPE_PRIVATE);
         condition.setOwner("userA");
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
                 new VisibilityQueryContext());
         
         assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual.getScope());
@@ -201,7 +215,8 @@ class DefaultVisibilityAdvisorConverterTest {
         condition.setScope(VisibilityConstants.SCOPE_PRIVATE);
         condition.setOwner("anotherUser");
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
                 new VisibilityQueryContext());
         
         assertTrue(actual.isAlwaysEmpty());
@@ -211,7 +226,8 @@ class DefaultVisibilityAdvisorConverterTest {
     void convertShouldBuildOrGroupForPublicAndOwnerWhenNoScopeAndNoOwner() {
         QueryCondition condition = new QueryCondition();
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
                 new VisibilityQueryContext());
         
         Map<String, Object> expected = new LinkedHashMap<>();
@@ -226,7 +242,8 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryCondition condition = new QueryCondition();
         condition.setScope(VisibilityConstants.SCOPE_PRIVATE);
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
                 new VisibilityQueryContext());
         
         assertEquals("userA", actual.getOwner());
@@ -239,7 +256,8 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryCondition condition = new QueryCondition();
         condition.setOwner("anotherUser");
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
                 new VisibilityQueryContext());
         
         assertEquals(VisibilityConstants.SCOPE_PUBLIC, actual.getScope());
@@ -255,7 +273,8 @@ class DefaultVisibilityAdvisorConverterTest {
         authorizedResources.setResources(List.of("skillA", "skillB"));
         advisor.setAuthorizedPredicate(authorizedResources);
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
         
         assertEquals(List.of("skillA", "skillB"), actual.getAuthorizedResourceNames());
         assertEquals(List.of("skillA", "skillB"), actual.getOrGroup().get("name"));
@@ -270,7 +289,8 @@ class DefaultVisibilityAdvisorConverterTest {
         authorizedResources.setResources(List.of("skillA"));
         advisor.setAuthorizedPredicate(authorizedResources);
         
-        QueryCondition actual = converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
         
         assertTrue(actual.getOwner() == null || actual.getOwner().isEmpty());
         assertEquals("userA", actual.getOrGroup().get("owner"));

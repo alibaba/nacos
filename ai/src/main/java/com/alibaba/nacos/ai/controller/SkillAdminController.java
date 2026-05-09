@@ -90,7 +90,8 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<SkillMeta> getSkill(SkillForm form) throws NacosException {
         form.validate();
-        return Result.success(skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
+        return Result.success(
+            skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
     }
     
     /**
@@ -104,7 +105,8 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<Skill> getSkillVersion(SkillForm form) throws NacosException {
         form.validate();
-        return Result.success(skillOperationService.getSkillVersionDetail(form.getNamespaceId(), form.getSkillName(),
+        return Result.success(
+            skillOperationService.getSkillVersionDetail(form.getNamespaceId(), form.getSkillName(),
                 form.getVersion()));
     }
     
@@ -119,7 +121,8 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public ResponseEntity<byte[]> downloadSkillVersion(SkillForm form) throws NacosException {
         form.validate();
-        Skill skill = skillOperationService.downloadSkillVersion(form.getNamespaceId(), form.getSkillName(),
+        Skill skill =
+            skillOperationService.downloadSkillVersion(form.getNamespaceId(), form.getSkillName(),
                 form.getVersion());
         return SkillRequestUtil.buildSkillZipResponse(skill);
     }
@@ -148,17 +151,19 @@ public class SkillAdminController {
      * @throws NacosException if the skill list fails
      */
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API, tags = {ALLOW_ANONYMOUS})
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        tags = {ALLOW_ANONYMOUS})
     public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm,
-            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
+        AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         skillListForm.validate();
         filterableForm.validate();
         pageForm.validate();
         return Result.success(
-                skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
-                        skillListForm.getSearch(), skillListForm.getOrderBy(),
-                        filterableForm.getOwner(), filterableForm.getScope(), filterableForm.getBizTag(),
-                        pageForm.getPageNo(), pageForm.getPageSize()));
+            skillOperationService.listSkills(skillListForm.getNamespaceId(),
+                skillListForm.getSkillName(),
+                skillListForm.getSearch(), skillListForm.getOrderBy(),
+                filterableForm.getOwner(), filterableForm.getScope(), filterableForm.getBizTag(),
+                pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
     /**
@@ -174,14 +179,16 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<String> uploadSkill(HttpServletRequest request,
-            @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
-            @RequestParam(value = "targetVersion", required = false) String targetVersion,
-            @RequestParam("file") MultipartFile file) throws NacosException {
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "overwrite", required = false,
+            defaultValue = "false") boolean overwrite,
+        @RequestParam(value = "targetVersion", required = false) String targetVersion,
+        @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        String skillName = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, file.getOriginalFilename(),
-                overwrite, targetVersion);
+        String skillName = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes,
+            file.getOriginalFilename(),
+            overwrite, targetVersion);
         return Result.success(skillName);
     }
     
@@ -193,8 +200,8 @@ public class SkillAdminController {
     public Result<String> createDraft(SkillDraftCreateForm form) throws NacosException {
         form.prepareCreateDraftRequest();
         String v = skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(),
-                form.getBasedOnVersion(), form.getTargetVersion(), form.getResolvedInitialSkillOrNull(),
-                form.getCommitMsg());
+            form.getBasedOnVersion(), form.getTargetVersion(), form.getResolvedInitialSkillOrNull(),
+            form.getCommitMsg());
         return Result.success(v);
     }
     
@@ -228,7 +235,8 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> submit(SkillSubmitForm form) throws NacosException {
         form.validate();
-        String result = skillOperationService.submit(form.getNamespaceId(), form.getSkillName(), form.getVersion());
+        String result = skillOperationService.submit(form.getNamespaceId(), form.getSkillName(),
+            form.getVersion());
         return Result.success(result);
     }
     
@@ -240,7 +248,8 @@ public class SkillAdminController {
     public Result<String> publish(SkillPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        skillOperationService.publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(), updateLatest);
+        skillOperationService.publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(),
+            updateLatest);
         return Result.success("ok");
     }
     
@@ -250,11 +259,13 @@ public class SkillAdminController {
      */
     @PostMapping("/force-publish")
     @Secured(resource = ADMIN_PATH
-            + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        apiType = ApiType.ADMIN_API)
     public Result<String> forcePublish(SkillPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        skillOperationService.forcePublish(form.getNamespaceId(), form.getSkillName(), form.getVersion(), updateLatest);
+        skillOperationService.forcePublish(form.getNamespaceId(), form.getSkillName(),
+            form.getVersion(), updateLatest);
         return Result.success("ok");
     }
     
@@ -277,7 +288,8 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
         form.validate();
-        skillOperationService.updateBizTags(form.getNamespaceId(), form.getSkillName(), form.getBizTags());
+        skillOperationService.updateBizTags(form.getNamespaceId(), form.getSkillName(),
+            form.getBizTags());
         return Result.success("ok");
     }
     
@@ -288,8 +300,9 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> online(SkillOnlineForm form) throws NacosException {
         form.validate();
-        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(),
-                form.getVersion(), true);
+        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(),
+            form.getScope(),
+            form.getVersion(), true);
         return Result.success("ok");
     }
     
@@ -304,7 +317,8 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateScope(SkillScopeForm form) throws NacosException {
         form.validate();
-        skillOperationService.updateScope(form.getNamespaceId(), form.getSkillName(), form.getScope());
+        skillOperationService.updateScope(form.getNamespaceId(), form.getSkillName(),
+            form.getScope());
         return Result.success("ok");
     }
     
@@ -315,8 +329,9 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> offline(SkillOnlineForm form) throws NacosException {
         form.validate();
-        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(),
-                form.getVersion(), false);
+        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(),
+            form.getScope(),
+            form.getVersion(), false);
         return Result.success("ok");
     }
 }

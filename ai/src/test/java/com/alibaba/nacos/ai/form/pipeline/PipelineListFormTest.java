@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PipelineListFormTest {
-
+    
     @Test
     void testBlankResourceTypeThrowsInvalidParam() {
         List<String> blanks = Arrays.asList("", " ", "  ", "\t", "\n", " \t\n ");
@@ -38,7 +38,7 @@ class PipelineListFormTest {
             assertEquals(400, ex.getErrCode());
         }
     }
-
+    
     @Test
     void testNonBlankResourceTypeWithMissingOptionalsPassesValidation() {
         List<String> resourceTypes = Arrays.asList("SKILL", "AGENTSPEC", "PIPELINE", "type-1");

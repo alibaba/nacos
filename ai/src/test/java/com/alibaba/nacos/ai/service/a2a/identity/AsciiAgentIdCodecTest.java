@@ -120,7 +120,7 @@ class AsciiAgentIdCodecTest {
     void testMixedUnicodeAndControlCharactersRoundTrip() {
         String original = "A B\tC_";
         String encoded = agentIdCodec.encode(original);
-        assertEquals("____:A_032B_009C_095",  encoded);
+        assertEquals("____:A_032B_009C_095", encoded);
         String decoded = agentIdCodec.decode(encoded);
         assertEquals(original, decoded);
     }

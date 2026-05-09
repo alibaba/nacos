@@ -37,11 +37,11 @@ public class PromptLabelBindForm extends PromptForm {
         super.validate();
         if (StringUtils.isBlank(label)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'label' type String is not present");
+                "Required parameter 'label' type String is not present");
         }
         if (StringUtils.isBlank(version)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'version' type String is not present");
+                "Required parameter 'version' type String is not present");
         }
     }
     

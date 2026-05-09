@@ -64,16 +64,16 @@ class PublishPipelineManagerRoutingTest {
         
         // Plugin A: supports only SKILL
         builders.add(createBuilder(PLUGIN_A_ID, 1,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.SKILL}));
+            new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL}));
         
         // Plugin B: supports only AGENTSPEC
         builders.add(createBuilder(PLUGIN_B_ID, 2,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.AGENTSPEC}));
+            new PublishPipelineResourceType[] {PublishPipelineResourceType.AGENTSPEC}));
         
         // Plugin C: supports both SKILL and AGENTSPEC
         builders.add(createBuilder(PLUGIN_C_ID, 3,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.SKILL,
-                        PublishPipelineResourceType.AGENTSPEC}));
+            new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL,
+                    PublishPipelineResourceType.AGENTSPEC}));
         
         PipelineConfig config = new PipelineConfig();
         config.setEnabled(true);
@@ -83,7 +83,7 @@ class PublishPipelineManagerRoutingTest {
         
         // Build nodes list referencing all three plugins
         allNodes = new ArrayList<>();
-        for (String id : new String[]{PLUGIN_A_ID, PLUGIN_B_ID, PLUGIN_C_ID}) {
+        for (String id : new String[] {PLUGIN_A_ID, PLUGIN_B_ID, PLUGIN_C_ID}) {
             PipelineNodeConfig node = new PipelineNodeConfig();
             node.setPipelineId(id);
             node.setProperties(new Properties());
@@ -99,20 +99,20 @@ class PublishPipelineManagerRoutingTest {
     @Test
     void testAgentspecRoutingOnlyReturnsAgentspecPlugins() {
         List<PublishPipelineService> result = manager.getPipelineServices(
-                PublishPipelineResourceType.AGENTSPEC, allNodes);
+            PublishPipelineResourceType.AGENTSPEC, allNodes);
         
         Set<String> resultIds = result.stream()
-                .map(PublishPipelineService::pipelineId)
-                .collect(Collectors.toSet());
+            .map(PublishPipelineService::pipelineId)
+            .collect(Collectors.toSet());
         
         assertTrue(resultIds.contains(PLUGIN_B_ID),
-                "AGENTSPEC-only plugin should be included in AGENTSPEC routing");
+            "AGENTSPEC-only plugin should be included in AGENTSPEC routing");
         assertTrue(resultIds.contains(PLUGIN_C_ID),
-                "Dual-support plugin should be included in AGENTSPEC routing");
+            "Dual-support plugin should be included in AGENTSPEC routing");
         assertFalse(resultIds.contains(PLUGIN_A_ID),
-                "SKILL-only plugin should NOT be included in AGENTSPEC routing");
+            "SKILL-only plugin should NOT be included in AGENTSPEC routing");
         assertEquals(2, result.size(),
-                "Exactly 2 plugins should be returned for AGENTSPEC routing");
+            "Exactly 2 plugins should be returned for AGENTSPEC routing");
     }
     
     /**
@@ -123,14 +123,14 @@ class PublishPipelineManagerRoutingTest {
     @Test
     void testSkillOnlyPluginNotRoutedToAgentspec() {
         List<PublishPipelineService> result = manager.getPipelineServices(
-                PublishPipelineResourceType.AGENTSPEC, allNodes);
+            PublishPipelineResourceType.AGENTSPEC, allNodes);
         
         Set<String> resultIds = result.stream()
-                .map(PublishPipelineService::pipelineId)
-                .collect(Collectors.toSet());
+            .map(PublishPipelineService::pipelineId)
+            .collect(Collectors.toSet());
         
         assertFalse(resultIds.contains(PLUGIN_A_ID),
-                "SKILL-only plugin must NOT be routed to AGENTSPEC requests");
+            "SKILL-only plugin must NOT be routed to AGENTSPEC requests");
     }
     
     /**
@@ -142,37 +142,38 @@ class PublishPipelineManagerRoutingTest {
     @Test
     void testDualSupportPluginRoutedToBothTypes() {
         List<PublishPipelineService> skillResult = manager.getPipelineServices(
-                PublishPipelineResourceType.SKILL, allNodes);
+            PublishPipelineResourceType.SKILL, allNodes);
         List<PublishPipelineService> agentspecResult = manager.getPipelineServices(
-                PublishPipelineResourceType.AGENTSPEC, allNodes);
+            PublishPipelineResourceType.AGENTSPEC, allNodes);
         
         Set<String> skillIds = skillResult.stream()
-                .map(PublishPipelineService::pipelineId)
-                .collect(Collectors.toSet());
+            .map(PublishPipelineService::pipelineId)
+            .collect(Collectors.toSet());
         Set<String> agentspecIds = agentspecResult.stream()
-                .map(PublishPipelineService::pipelineId)
-                .collect(Collectors.toSet());
+            .map(PublishPipelineService::pipelineId)
+            .collect(Collectors.toSet());
         
         // SKILL routing: contains A and C
         assertTrue(skillIds.contains(PLUGIN_A_ID),
-                "SKILL-only plugin should be in SKILL routing");
+            "SKILL-only plugin should be in SKILL routing");
         assertTrue(skillIds.contains(PLUGIN_C_ID),
-                "Dual-support plugin should be in SKILL routing");
+            "Dual-support plugin should be in SKILL routing");
         
         // AGENTSPEC routing: contains B and C
         assertTrue(agentspecIds.contains(PLUGIN_B_ID),
-                "AGENTSPEC-only plugin should be in AGENTSPEC routing");
+            "AGENTSPEC-only plugin should be in AGENTSPEC routing");
         assertTrue(agentspecIds.contains(PLUGIN_C_ID),
-                "Dual-support plugin should be in AGENTSPEC routing");
+            "Dual-support plugin should be in AGENTSPEC routing");
         
         // Dual-support plugin C is in both
         assertTrue(skillIds.contains(PLUGIN_C_ID) && agentspecIds.contains(PLUGIN_C_ID),
-                "Dual-support plugin must appear in both SKILL and AGENTSPEC routing");
+            "Dual-support plugin must appear in both SKILL and AGENTSPEC routing");
     }
     
     private PublishPipelineServiceBuilder createBuilder(String pipelineId, int order,
-            PublishPipelineResourceType[] supportedTypes) {
+        PublishPipelineResourceType[] supportedTypes) {
         return new PublishPipelineServiceBuilder() {
+            
             @Override
             public String pipelineId() {
                 return pipelineId;
@@ -181,6 +182,7 @@ class PublishPipelineManagerRoutingTest {
             @Override
             public PublishPipelineService build(Properties properties) {
                 return new PublishPipelineService() {
+                    
                     @Override
                     public String pipelineId() {
                         return pipelineId;

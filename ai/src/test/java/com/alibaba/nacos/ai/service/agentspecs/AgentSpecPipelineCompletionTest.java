@@ -58,9 +58,9 @@ import static org.mockito.Mockito.when;
  * @since 3.2.0
  */
 class AgentSpecPipelineCompletionTest {
-
+    
     private static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
-
+    
     private static PipelineNodeResult sampleNode(String id, boolean passed) {
         PipelineNodeResult r = new PipelineNodeResult();
         r.setNodeId(id);
@@ -70,20 +70,22 @@ class AgentSpecPipelineCompletionTest {
         r.setDurationMs(1L);
         return r;
     }
-
+    
     private static List<ApprovedInput> sampleApprovedInputs() {
         return Arrays.asList(
-                new ApprovedInput("ns", "a", "v1", "e1", Collections.emptyList()),
-                new ApprovedInput("public", "b", "v2", "exec-2",
-                        Arrays.asList(sampleNode("n1", true), sampleNode("n2", false))));
+            new ApprovedInput("ns", "a", "v1", "e1", Collections.emptyList()),
+            new ApprovedInput("public", "b", "v2", "exec-2",
+                Arrays.asList(sampleNode("n1", true), sampleNode("n2", false))));
     }
-
+    
     private static List<RejectedInput> sampleRejectedInputs() {
         return Arrays.asList(
-                new RejectedInput("ns", "c", "v1", "r1", Collections.singletonList(sampleNode("x", false))),
-                new RejectedInput("x", "y", "z", "rid", Arrays.asList(sampleNode("a", true), sampleNode("b", true))));
+            new RejectedInput("ns", "c", "v1", "r1",
+                Collections.singletonList(sampleNode("x", false))),
+            new RejectedInput("x", "y", "z", "rid",
+                Arrays.asList(sampleNode("a", true), sampleNode("b", true))));
     }
-
+    
     /**
      * For any APPROVED pipeline result, the publishPipelineInfo
      * is updated with APPROVED status.
@@ -92,73 +94,83 @@ class AgentSpecPipelineCompletionTest {
     void pipelineApprovedUpdatesStatusToApproved() throws Exception {
         for (ApprovedInput input : sampleApprovedInputs()) {
             EnvUtil.setEnvironment(new StandardEnvironment());
-
+            
             // Mock dependencies
-            final AiResourcePersistService aiResourcePersistService = mock(AiResourcePersistService.class);
+            final AiResourcePersistService aiResourcePersistService =
+                mock(AiResourcePersistService.class);
             final AiResourceVersionPersistService aiResourceVersionPersistService =
-                    mock(AiResourceVersionPersistService.class);
-            final PublishPipelineExecutor publishPipelineExecutor = mock(PublishPipelineExecutor.class);
-            final PipelineExecutionRepository pipelineExecutionRepository = mock(PipelineExecutionRepository.class);
-
+                mock(AiResourceVersionPersistService.class);
+            final PublishPipelineExecutor publishPipelineExecutor =
+                mock(PublishPipelineExecutor.class);
+            final PipelineExecutionRepository pipelineExecutionRepository =
+                mock(PipelineExecutionRepository.class);
+            
             // Build valid meta with versionInfo containing editingVersion
             AiResource meta = buildMeta(input.namespaceId, input.name, input.version);
-            when(aiResourcePersistService.find(eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC)))
-                    .thenReturn(meta);
-
+            when(aiResourcePersistService.find(eq(input.namespaceId), eq(input.name),
+                eq(RESOURCE_TYPE_AGENTSPEC)))
+                .thenReturn(meta);
+            
             // Build valid version row
-            AiResourceVersion versionRow = buildVersionRow(input.namespaceId, input.name, input.version);
+            AiResourceVersion versionRow =
+                buildVersionRow(input.namespaceId, input.name, input.version);
             when(aiResourceVersionPersistService.find(
-                    eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version)))
-                    .thenReturn(versionRow);
-
+                eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC),
+                eq(input.version)))
+                .thenReturn(versionRow);
+            
             // Mock updateMetaCas to return true
             when(aiResourcePersistService.updateMetaCas(
-                    eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), any(Long.class), any()))
-                    .thenReturn(true);
-
+                eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), any(Long.class),
+                any()))
+                .thenReturn(true);
+            
             // isPipelineAvailable returns true
-            when(publishPipelineExecutor.isPipelineAvailable(any(PublishPipelineResourceType.class)))
-                    .thenReturn(true);
-
+            when(
+                publishPipelineExecutor.isPipelineAvailable(any(PublishPipelineResourceType.class)))
+                .thenReturn(true);
+            
             // Capture the callback from execute() and return caller's executionId
-            ArgumentCaptor<PipelineCallback> callbackCaptor = ArgumentCaptor.forClass(PipelineCallback.class);
-            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class), callbackCaptor.capture(),
-                    any(String.class)))
-                    .thenAnswer(invocation -> invocation.getArgument(2));
-
+            ArgumentCaptor<PipelineCallback> callbackCaptor =
+                ArgumentCaptor.forClass(PipelineCallback.class);
+            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class),
+                callbackCaptor.capture(),
+                any(String.class)))
+                .thenAnswer(invocation -> invocation.getArgument(2));
+            
             // Construct service and call submit to trigger pipeline
             AgentSpecOperationServiceImpl service = new AgentSpecOperationServiceImpl(
-                    aiResourcePersistService, aiResourceVersionPersistService,
-                    publishPipelineExecutor,
-                    new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
-                            pipelineExecutionRepository));
+                aiResourcePersistService, aiResourceVersionPersistService,
+                publishPipelineExecutor,
+                new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                    pipelineExecutionRepository));
             service.submit(input.namespaceId, input.name, input.version);
-
+            
             // Build APPROVED result and invoke the captured callback
             PipelineExecutionResult result = new PipelineExecutionResult();
             result.setExecutionId(input.executionId);
             result.setStatus(PipelineExecutionStatus.APPROVED);
             result.setPipeline(input.nodeResults);
-
+            
             PipelineCallback callback = callbackCaptor.getValue();
             callback.onComplete(result);
-
+            
             // Verify: updatePublishPipelineInfo was called and the JSON contains APPROVED
             ArgumentCaptor<String> pipelineInfoCaptor = ArgumentCaptor.forClass(String.class);
             // Called twice: once during submit (IN_PROGRESS), once during callback (APPROVED)
             verify(aiResourceVersionPersistService, org.mockito.Mockito.atLeast(2))
-                    .updatePublishPipelineInfo(eq(input.namespaceId), eq(input.name),
-                            eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version), pipelineInfoCaptor.capture());
-
+                .updatePublishPipelineInfo(eq(input.namespaceId), eq(input.name),
+                    eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version), pipelineInfoCaptor.capture());
+            
             // The last call should contain APPROVED
             List<String> allValues = pipelineInfoCaptor.getAllValues();
             String lastPipelineInfoJson = allValues.get(allValues.size() - 1);
             assertTrue(lastPipelineInfoJson.contains("APPROVED"),
-                    "publishPipelineInfo should contain APPROVED status after approved callback, but was: "
-                            + lastPipelineInfoJson);
+                "publishPipelineInfo should contain APPROVED status after approved callback, but was: "
+                    + lastPipelineInfoJson);
         }
     }
-
+    
     /**
      * For any REJECTED pipeline result, the version status reverts to draft
      * and meta pointers are updated (reviewingVersion cleared, editingVersion restored).
@@ -167,98 +179,111 @@ class AgentSpecPipelineCompletionTest {
     void pipelineRejectedRevertsVersionToDraft() throws Exception {
         for (RejectedInput input : sampleRejectedInputs()) {
             EnvUtil.setEnvironment(new StandardEnvironment());
-
+            
             // Mock dependencies
-            final AiResourcePersistService aiResourcePersistService = mock(AiResourcePersistService.class);
+            final AiResourcePersistService aiResourcePersistService =
+                mock(AiResourcePersistService.class);
             final AiResourceVersionPersistService aiResourceVersionPersistService =
-                    mock(AiResourceVersionPersistService.class);
-            final PublishPipelineExecutor publishPipelineExecutor = mock(PublishPipelineExecutor.class);
-            final PipelineExecutionRepository pipelineExecutionRepository = mock(PipelineExecutionRepository.class);
-
+                mock(AiResourceVersionPersistService.class);
+            final PublishPipelineExecutor publishPipelineExecutor =
+                mock(PublishPipelineExecutor.class);
+            final PipelineExecutionRepository pipelineExecutionRepository =
+                mock(PipelineExecutionRepository.class);
+            
             // Build valid meta with versionInfo containing editingVersion
             AiResource meta = buildMeta(input.namespaceId, input.name, input.version);
-            when(aiResourcePersistService.find(eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC)))
-                    .thenReturn(meta);
-
+            when(aiResourcePersistService.find(eq(input.namespaceId), eq(input.name),
+                eq(RESOURCE_TYPE_AGENTSPEC)))
+                .thenReturn(meta);
+            
             // Build valid version row
-            AiResourceVersion versionRow = buildVersionRow(input.namespaceId, input.name, input.version);
+            AiResourceVersion versionRow =
+                buildVersionRow(input.namespaceId, input.name, input.version);
             when(aiResourceVersionPersistService.find(
-                    eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version)))
-                    .thenReturn(versionRow);
-
+                eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC),
+                eq(input.version)))
+                .thenReturn(versionRow);
+            
             // Mock updateMetaCas to return true
             when(aiResourcePersistService.updateMetaCas(
-                    eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), any(Long.class), any()))
-                    .thenReturn(true);
-
+                eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), any(Long.class),
+                any()))
+                .thenReturn(true);
+            
             // isPipelineAvailable returns true
-            when(publishPipelineExecutor.isPipelineAvailable(any(PublishPipelineResourceType.class)))
-                    .thenReturn(true);
-
+            when(
+                publishPipelineExecutor.isPipelineAvailable(any(PublishPipelineResourceType.class)))
+                .thenReturn(true);
+            
             // Capture the callback from execute() and return caller's executionId
-            ArgumentCaptor<PipelineCallback> callbackCaptor = ArgumentCaptor.forClass(PipelineCallback.class);
-            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class), callbackCaptor.capture(),
-                    any(String.class)))
-                    .thenAnswer(invocation -> invocation.getArgument(2));
-
+            ArgumentCaptor<PipelineCallback> callbackCaptor =
+                ArgumentCaptor.forClass(PipelineCallback.class);
+            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class),
+                callbackCaptor.capture(),
+                any(String.class)))
+                .thenAnswer(invocation -> invocation.getArgument(2));
+            
             // After submit(), the meta's reviewingVersion will be set to the version.
             // For the callback's find() call, return meta with reviewingVersion set.
-            AiResource reviewingMeta = buildMetaWithReviewingVersion(input.namespaceId, input.name, input.version);
+            AiResource reviewingMeta =
+                buildMetaWithReviewingVersion(input.namespaceId, input.name, input.version);
             // First call returns editingVersion meta (for submit), subsequent calls return reviewingVersion meta
-            when(aiResourcePersistService.find(eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC)))
-                    .thenReturn(meta)
-                    .thenReturn(reviewingMeta);
-
+            when(aiResourcePersistService.find(eq(input.namespaceId), eq(input.name),
+                eq(RESOURCE_TYPE_AGENTSPEC)))
+                .thenReturn(meta)
+                .thenReturn(reviewingMeta);
+            
             // Construct service and call submit to trigger pipeline
             AgentSpecOperationServiceImpl service = new AgentSpecOperationServiceImpl(
-                    aiResourcePersistService, aiResourceVersionPersistService,
-                    publishPipelineExecutor,
-                    new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
-                            pipelineExecutionRepository));
+                aiResourcePersistService, aiResourceVersionPersistService,
+                publishPipelineExecutor,
+                new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                    pipelineExecutionRepository));
             service.submit(input.namespaceId, input.name, input.version);
-
+            
             // Build REJECTED result and invoke the captured callback
             PipelineExecutionResult result = new PipelineExecutionResult();
             result.setExecutionId(input.executionId);
             result.setStatus(PipelineExecutionStatus.REJECTED);
             result.setPipeline(input.nodeResults);
-
+            
             PipelineCallback callback = callbackCaptor.getValue();
             callback.onComplete(result);
-
+            
             // Verify: version status was reverted to "draft"
             // updateStatus is called twice: once during submit (reviewing), once during callback (draft)
             ArgumentCaptor<String> statusCaptor = ArgumentCaptor.forClass(String.class);
             verify(aiResourceVersionPersistService, org.mockito.Mockito.atLeast(2))
-                    .updateStatus(eq(input.namespaceId), eq(input.name),
-                            eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version), statusCaptor.capture());
-
+                .updateStatus(eq(input.namespaceId), eq(input.name),
+                    eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version), statusCaptor.capture());
+            
             List<String> allStatuses = statusCaptor.getAllValues();
             String lastStatus = allStatuses.get(allStatuses.size() - 1);
             assertTrue("draft".equals(lastStatus),
-                    "Version status should be reverted to 'draft' after REJECTED callback, but was: " + lastStatus);
-
+                "Version status should be reverted to 'draft' after REJECTED callback, but was: "
+                    + lastStatus);
+            
             // Verify: updatePublishPipelineInfo was called with REJECTED
             ArgumentCaptor<String> pipelineInfoCaptor = ArgumentCaptor.forClass(String.class);
             verify(aiResourceVersionPersistService, org.mockito.Mockito.atLeast(2))
-                    .updatePublishPipelineInfo(eq(input.namespaceId), eq(input.name),
-                            eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version), pipelineInfoCaptor.capture());
-
+                .updatePublishPipelineInfo(eq(input.namespaceId), eq(input.name),
+                    eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version), pipelineInfoCaptor.capture());
+            
             List<String> allPipelineInfos = pipelineInfoCaptor.getAllValues();
             String lastPipelineInfo = allPipelineInfos.get(allPipelineInfos.size() - 1);
             assertTrue(lastPipelineInfo.contains("REJECTED"),
-                    "publishPipelineInfo should contain REJECTED status after rejected callback, but was: "
-                            + lastPipelineInfo);
-
+                "publishPipelineInfo should contain REJECTED status after rejected callback, but was: "
+                    + lastPipelineInfo);
+            
             // Verify: meta was updated (updateMetaCas called at least twice: submit + callback rollback)
             verify(aiResourcePersistService, org.mockito.Mockito.atLeast(2))
-                    .updateMetaCas(eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC),
-                            any(Long.class), any());
+                .updateMetaCas(eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC),
+                    any(Long.class), any());
         }
     }
-
+    
     // ---- Helper methods ----
-
+    
     private static AiResource buildMeta(String namespaceId, String name, String version) {
         AiResource meta = new AiResource();
         meta.setNamespaceId(namespaceId);
@@ -267,11 +292,12 @@ class AgentSpecPipelineCompletionTest {
         meta.setStatus("enable");
         meta.setMetaVersion(1L);
         meta.setVersionInfo("{\"editingVersion\":\"" + version
-                + "\",\"onlineCnt\":0,\"labels\":{}}");
+            + "\",\"onlineCnt\":0,\"labels\":{}}");
         return meta;
     }
-
-    private static AiResource buildMetaWithReviewingVersion(String namespaceId, String name, String version) {
+    
+    private static AiResource buildMetaWithReviewingVersion(String namespaceId, String name,
+        String version) {
         AiResource meta = new AiResource();
         meta.setNamespaceId(namespaceId);
         meta.setName(name);
@@ -279,11 +305,12 @@ class AgentSpecPipelineCompletionTest {
         meta.setStatus("enable");
         meta.setMetaVersion(2L);
         meta.setVersionInfo("{\"reviewingVersion\":\"" + version
-                + "\",\"onlineCnt\":0,\"labels\":{}}");
+            + "\",\"onlineCnt\":0,\"labels\":{}}");
         return meta;
     }
-
-    private static AiResourceVersion buildVersionRow(String namespaceId, String name, String version) {
+    
+    private static AiResourceVersion buildVersionRow(String namespaceId, String name,
+        String version) {
         AiResourceVersion versionRow = new AiResourceVersion();
         versionRow.setNamespaceId(namespaceId);
         versionRow.setName(name);
@@ -292,52 +319,54 @@ class AgentSpecPipelineCompletionTest {
         versionRow.setStatus("draft");
         return versionRow;
     }
-
+    
     // ---- Test input models ----
-
+    
     static class ApprovedInput {
+        
         final String namespaceId;
         final String name;
         final String version;
         final String executionId;
         final List<PipelineNodeResult> nodeResults;
-
+        
         ApprovedInput(String namespaceId, String name, String version,
-                String executionId, List<PipelineNodeResult> nodeResults) {
+            String executionId, List<PipelineNodeResult> nodeResults) {
             this.namespaceId = namespaceId;
             this.name = name;
             this.version = version;
             this.executionId = executionId;
             this.nodeResults = nodeResults;
         }
-
+        
         @Override
         public String toString() {
             return "ApprovedInput{ns='" + namespaceId + "', name='" + name
-                    + "', version='" + version + "', execId='" + executionId + "'}";
+                + "', version='" + version + "', execId='" + executionId + "'}";
         }
     }
-
+    
     static class RejectedInput {
+        
         final String namespaceId;
         final String name;
         final String version;
         final String executionId;
         final List<PipelineNodeResult> nodeResults;
-
+        
         RejectedInput(String namespaceId, String name, String version,
-                String executionId, List<PipelineNodeResult> nodeResults) {
+            String executionId, List<PipelineNodeResult> nodeResults) {
             this.namespaceId = namespaceId;
             this.name = name;
             this.version = version;
             this.executionId = executionId;
             this.nodeResults = nodeResults;
         }
-
+        
         @Override
         public String toString() {
             return "RejectedInput{ns='" + namespaceId + "', name='" + name
-                    + "', version='" + version + "', execId='" + executionId + "'}";
+                + "', version='" + version + "', execId='" + executionId + "'}";
         }
     }
 }

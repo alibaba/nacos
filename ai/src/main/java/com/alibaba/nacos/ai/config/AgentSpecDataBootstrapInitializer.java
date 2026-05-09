@@ -62,51 +62,58 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author nacos
  */
 @Component
-public class AgentSpecDataBootstrapInitializer implements ApplicationListener<ApplicationReadyEvent> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AgentSpecDataBootstrapInitializer.class);
-
+public class AgentSpecDataBootstrapInitializer
+    implements ApplicationListener<ApplicationReadyEvent> {
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(AgentSpecDataBootstrapInitializer.class);
+    
     private static final String BOOTSTRAP_MARKER_DATA_ID = "nacos.ai.agentspec.bootstrap";
-
+    
     private static final String BOOTSTRAP_MARKER_GROUP = "nacos_internal";
-
+    
     private static final long BOOTSTRAP_MARKER_STALE_MILLIS = 10 * 60 * 1000L;
-
+    
     private static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
-
+    
     private static final int MAX_BOOTSTRAP_IMPORT_CONCURRENCY = 4;
-
+    
     private static final int BOOTSTRAP_IMPORT_CONCURRENCY = Math.max(1,
-            Math.min(EnvUtil.getAvailableProcessors(), MAX_BOOTSTRAP_IMPORT_CONCURRENCY));
-
+        Math.min(EnvUtil.getAvailableProcessors(), MAX_BOOTSTRAP_IMPORT_CONCURRENCY));
+    
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-
-    private final ExecutorService bootstrapExecutor = ExecutorFactory.Managed.newSingleExecutorService(
+    
+    private final ExecutorService bootstrapExecutor =
+        ExecutorFactory.Managed.newSingleExecutorService(
             AgentSpecDataBootstrapInitializer.class.getCanonicalName(),
-            new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-ai-agentspec-bootstrap-%d").build());
-
-    private final ExecutorService bootstrapImportExecutor = ExecutorFactory.Managed.newFixedExecutorService(
-            AgentSpecDataBootstrapInitializer.class.getCanonicalName(), BOOTSTRAP_IMPORT_CONCURRENCY,
-            new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-ai-agentspec-bootstrap-import-%d").build());
-
+            new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-ai-agentspec-bootstrap-%d")
+                .build());
+    
+    private final ExecutorService bootstrapImportExecutor =
+        ExecutorFactory.Managed.newFixedExecutorService(
+            AgentSpecDataBootstrapInitializer.class.getCanonicalName(),
+            BOOTSTRAP_IMPORT_CONCURRENCY,
+            new ThreadFactoryBuilder().daemon(true)
+                .nameFormat("nacos-ai-agentspec-bootstrap-import-%d").build());
+    
     private final AiResourcePersistService aiResourcePersistService;
-
+    
     private final AgentSpecOperationService agentSpecOperationService;
-
+    
     private final ConfigOperationService configOperationService;
-
+    
     private final ConfigQueryChainService configQueryChainService;
-
+    
     public AgentSpecDataBootstrapInitializer(AiResourcePersistService aiResourcePersistService,
-            AgentSpecOperationService agentSpecOperationService,
-            ConfigOperationService configOperationService,
-            ConfigQueryChainService configQueryChainService) {
+        AgentSpecOperationService agentSpecOperationService,
+        ConfigOperationService configOperationService,
+        ConfigQueryChainService configQueryChainService) {
         this.aiResourcePersistService = aiResourcePersistService;
         this.agentSpecOperationService = agentSpecOperationService;
         this.configOperationService = configOperationService;
         this.configQueryChainService = configQueryChainService;
     }
-
+    
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         if (event.getApplicationContext().getParent() != null) {
@@ -117,19 +124,21 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
         }
         bootstrapExecutor.execute(this::bootstrapBuiltInAgentSpecs);
     }
-
+    
     private void bootstrapBuiltInAgentSpecs() {
         boolean markerCreated = false;
         try {
             Resource bundledAgentSpecArchive = resolveBundledAgentSpecArchive();
             if (!bundledAgentSpecArchive.exists()) {
-                LOGGER.warn("Built-in agentspec archive `{}` not found, skip bootstrap", bundledAgentSpecArchive);
+                LOGGER.warn("Built-in agentspec archive `{}` not found, skip bootstrap",
+                    bundledAgentSpecArchive);
                 return;
             }
-
+            
             List<AgentSpecSeedArchiveReader.AgentSpecPackage> packages = readAgentSpecPackages();
             if (packages.isEmpty()) {
-                LOGGER.info("No built-in agentspecs found in archive `{}`", bundledAgentSpecArchive);
+                LOGGER.info("No built-in agentspecs found in archive `{}`",
+                    bundledAgentSpecArchive);
                 return;
             }
             BootstrapPlan bootstrapPlan = buildBootstrapPlan(packages);
@@ -137,28 +146,32 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
                 LOGGER.info(bootstrapPlan.getSkipReason());
                 return;
             }
-
+            
             markerCreated = tryAcquireBootstrapMarker();
             if (!markerCreated) {
-                LOGGER.info("Skip built-in agentspec bootstrap because another node is initializing");
+                LOGGER
+                    .info("Skip built-in agentspec bootstrap because another node is initializing");
                 return;
             }
-
+            
             bootstrapPlan = buildBootstrapPlan(packages);
             if (!bootstrapPlan.shouldBootstrap()) {
                 LOGGER.info(bootstrapPlan.getSkipReason());
                 return;
             }
-
+            
             int imported = 0;
             int skipped = bootstrapPlan.getExistingBuiltInCount();
             List<String> failed = new ArrayList<>();
             LOGGER.info(
-                    "Start built-in agentspec bootstrap in namespace `{}`, total {}, missing {}, existing {}, concurrency {}",
-                    Constants.DEFAULT_NAMESPACE_ID, packages.size(), bootstrapPlan.getMissingPackages().size(),
-                    bootstrapPlan.getExistingBuiltInCount(), BOOTSTRAP_IMPORT_CONCURRENCY);
-            List<Future<ImportTaskResult>> futures = new ArrayList<>(bootstrapPlan.getMissingPackages().size());
-            for (AgentSpecSeedArchiveReader.AgentSpecPackage pkg : bootstrapPlan.getMissingPackages()) {
+                "Start built-in agentspec bootstrap in namespace `{}`, total {}, missing {}, existing {}, concurrency {}",
+                Constants.DEFAULT_NAMESPACE_ID, packages.size(),
+                bootstrapPlan.getMissingPackages().size(),
+                bootstrapPlan.getExistingBuiltInCount(), BOOTSTRAP_IMPORT_CONCURRENCY);
+            List<Future<ImportTaskResult>> futures =
+                new ArrayList<>(bootstrapPlan.getMissingPackages().size());
+            for (AgentSpecSeedArchiveReader.AgentSpecPackage pkg : bootstrapPlan
+                .getMissingPackages()) {
                 futures.add(bootstrapImportExecutor.submit(() -> importBuiltInAgentSpec(pkg)));
             }
             for (Future<ImportTaskResult> future : futures) {
@@ -169,10 +182,13 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
                     failed.add(taskResult.getAgentSpecName());
                 }
             }
-            LOGGER.info("Built-in agentspec bootstrap completed, imported {}, skipped {}, failed {}", imported, skipped,
-                    failed.size());
+            LOGGER.info(
+                "Built-in agentspec bootstrap completed, imported {}, skipped {}, failed {}",
+                imported, skipped,
+                failed.size());
             if (!failed.isEmpty()) {
-                LOGGER.warn("Built-in agentspec bootstrap still missing {} agentspecs: {}", failed.size(), failed);
+                LOGGER.warn("Built-in agentspec bootstrap still missing {} agentspecs: {}",
+                    failed.size(), failed);
             }
         } catch (Exception e) {
             LOGGER.error("Failed to bootstrap built-in agentspecs", e);
@@ -182,44 +198,53 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
             }
         }
     }
-
-    private List<AgentSpecSeedArchiveReader.AgentSpecPackage> readAgentSpecPackages() throws IOException {
+    
+    private List<AgentSpecSeedArchiveReader.AgentSpecPackage> readAgentSpecPackages()
+        throws IOException {
         Resource bundledAgentSpecArchive = resolveBundledAgentSpecArchive();
         try (InputStream inputStream = bundledAgentSpecArchive.getInputStream()) {
             return AgentSpecSeedArchiveReader.read(inputStream);
         }
     }
-
+    
     private Resource resolveBundledAgentSpecArchive() {
         Path archivePath = Paths.get(EnvUtil.getNacosHome(), "data", "agentspec-data.zip");
         return new FileSystemResource(archivePath);
     }
-
-    private ImportTaskResult importBuiltInAgentSpec(AgentSpecSeedArchiveReader.AgentSpecPackage pkg) {
+    
+    private ImportTaskResult importBuiltInAgentSpec(
+        AgentSpecSeedArchiveReader.AgentSpecPackage pkg) {
         try {
-            LOGGER.info("Import built-in agentspec `{}` from `{}`", pkg.getAgentSpecName(), pkg.getSourcePath());
-            agentSpecOperationService.bootstrapAgentSpecFromZip(Constants.DEFAULT_NAMESPACE_ID, pkg.getZipBytes(),
-                    pkg.getFrom());
+            LOGGER.info("Import built-in agentspec `{}` from `{}`", pkg.getAgentSpecName(),
+                pkg.getSourcePath());
+            agentSpecOperationService.bootstrapAgentSpecFromZip(Constants.DEFAULT_NAMESPACE_ID,
+                pkg.getZipBytes(),
+                pkg.getFrom());
             return ImportTaskResult.success(pkg.getAgentSpecName());
         } catch (Exception e) {
-            LOGGER.error("Failed to bootstrap built-in agentspec `{}` from `{}`", pkg.getAgentSpecName(),
-                    pkg.getSourcePath(), e);
+            LOGGER.error("Failed to bootstrap built-in agentspec `{}` from `{}`",
+                pkg.getAgentSpecName(),
+                pkg.getSourcePath(), e);
             return ImportTaskResult.failed(pkg.getAgentSpecName());
         }
     }
-
+    
     private boolean hasExistingAiData() {
-        Page<AiResource> page = aiResourcePersistService.list(Constants.DEFAULT_NAMESPACE_ID, null, null, null, 1, 1);
+        Page<AiResource> page =
+            aiResourcePersistService.list(Constants.DEFAULT_NAMESPACE_ID, null, null, null, 1, 1);
         return page != null && page.getTotalCount() > 0;
     }
-
-    private BootstrapPlan buildBootstrapPlan(List<AgentSpecSeedArchiveReader.AgentSpecPackage> packages) {
+    
+    private BootstrapPlan buildBootstrapPlan(
+        List<AgentSpecSeedArchiveReader.AgentSpecPackage> packages) {
         boolean existingAiData = hasExistingAiData();
         int existingBuiltInCount = 0;
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> missing = new ArrayList<>(packages.size());
+        List<AgentSpecSeedArchiveReader.AgentSpecPackage> missing =
+            new ArrayList<>(packages.size());
         for (AgentSpecSeedArchiveReader.AgentSpecPackage pkg : packages) {
-            if (aiResourcePersistService.find(Constants.DEFAULT_NAMESPACE_ID, pkg.getAgentSpecName(),
-                    RESOURCE_TYPE_AGENTSPEC) != null) {
+            if (aiResourcePersistService.find(Constants.DEFAULT_NAMESPACE_ID,
+                pkg.getAgentSpecName(),
+                RESOURCE_TYPE_AGENTSPEC) != null) {
                 existingBuiltInCount++;
                 if (needsBuiltInRepair(pkg)) {
                     missing.add(pkg);
@@ -229,42 +254,48 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
             }
         }
         if (missing.isEmpty()) {
-            return BootstrapPlan.skip("Skip built-in agentspec bootstrap because all bundled agentspecs already exist",
-                    existingBuiltInCount);
+            return BootstrapPlan.skip(
+                "Skip built-in agentspec bootstrap because all bundled agentspecs already exist",
+                existingBuiltInCount);
         }
         if (!existingAiData) {
             return BootstrapPlan.bootstrap(missing, existingBuiltInCount);
         }
         if (existingBuiltInCount == 0) {
             return BootstrapPlan.skip(
-                    "Skip built-in agentspec bootstrap because AI data already exists and no built-in agentspecs were imported before",
-                    0);
+                "Skip built-in agentspec bootstrap because AI data already exists and no built-in agentspecs were imported before",
+                0);
         }
         return BootstrapPlan.bootstrap(missing, existingBuiltInCount);
     }
-
+    
     private boolean needsBuiltInRepair(AgentSpecSeedArchiveReader.AgentSpecPackage pkg) {
         try {
-            AgentSpec bundled = AgentSpecZipParser.parseAgentSpecFromZip(pkg.getZipBytes(), Constants.DEFAULT_NAMESPACE_ID);
+            AgentSpec bundled = AgentSpecZipParser.parseAgentSpecFromZip(pkg.getZipBytes(),
+                Constants.DEFAULT_NAMESPACE_ID);
             if (bundled.getResource() == null || bundled.getResource().isEmpty()) {
                 return false;
             }
-            AgentSpecMeta detail = agentSpecOperationService.getAgentSpecDetail(Constants.DEFAULT_NAMESPACE_ID,
+            AgentSpecMeta detail =
+                agentSpecOperationService.getAgentSpecDetail(Constants.DEFAULT_NAMESPACE_ID,
                     pkg.getAgentSpecName());
-            String latestVersion = detail == null || detail.getLabels() == null ? null : detail.getLabels().get("latest");
+            String latestVersion = detail == null || detail.getLabels() == null ? null
+                : detail.getLabels().get("latest");
             if (StringUtils.isBlank(latestVersion)) {
                 return true;
             }
-            AgentSpec current = agentSpecOperationService.getAgentSpecVersionDetail(Constants.DEFAULT_NAMESPACE_ID,
+            AgentSpec current =
+                agentSpecOperationService.getAgentSpecVersionDetail(Constants.DEFAULT_NAMESPACE_ID,
                     pkg.getAgentSpecName(), latestVersion);
             return isBundledAgentsContentMissing(current, bundled);
         } catch (Exception e) {
-            LOGGER.warn("Failed to inspect built-in agentspec `{}` for repair, will retry bootstrap import",
-                    pkg.getAgentSpecName(), e);
+            LOGGER.warn(
+                "Failed to inspect built-in agentspec `{}` for repair, will retry bootstrap import",
+                pkg.getAgentSpecName(), e);
             return true;
         }
     }
-
+    
     private static boolean isBundledAgentsContentMissing(AgentSpec current, AgentSpec bundled) {
         if (bundled == null) {
             return false;
@@ -279,7 +310,7 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
         String currentAgentsContent = extractAgentsContent(current.getResource());
         return StringUtils.isBlank(currentAgentsContent);
     }
-
+    
     private static String extractAgentsContent(Map<String, AgentSpecResource> resources) {
         if (resources == null || resources.isEmpty()) {
             return null;
@@ -299,7 +330,7 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
         }
         return null;
     }
-
+    
     private boolean tryAcquireBootstrapMarker() {
         for (int i = 0; i < 2; i++) {
             try {
@@ -315,7 +346,8 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
                 return true;
             } catch (ConfigAlreadyExistsException e) {
                 if (!hasExistingAiData() && isBootstrapMarkerStale()) {
-                    LOGGER.warn("Found stale built-in agentspec bootstrap marker, removing it and retrying");
+                    LOGGER.warn(
+                        "Found stale built-in agentspec bootstrap marker, removing it and retrying");
                     releaseBootstrapMarker();
                     continue;
                 }
@@ -327,14 +359,14 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
         }
         return false;
     }
-
+    
     private boolean isBootstrapMarkerStale() {
         try {
             ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-                    BOOTSTRAP_MARKER_DATA_ID, BOOTSTRAP_MARKER_GROUP, Constants.DEFAULT_NAMESPACE_ID);
+                BOOTSTRAP_MARKER_DATA_ID, BOOTSTRAP_MARKER_GROUP, Constants.DEFAULT_NAMESPACE_ID);
             ConfigQueryChainResponse response = configQueryChainService.handle(request);
             if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND
-                    || StringUtils.isBlank(response.getContent())) {
+                || StringUtils.isBlank(response.getContent())) {
                 return false;
             }
             long markerTime = Long.parseLong(response.getContent().trim());
@@ -344,83 +376,85 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
             return false;
         }
     }
-
+    
     private void releaseBootstrapMarker() {
         try {
             configOperationService.deleteConfig(BOOTSTRAP_MARKER_DATA_ID, BOOTSTRAP_MARKER_GROUP,
-                    Constants.DEFAULT_NAMESPACE_ID, null, null, "nacos", null);
+                Constants.DEFAULT_NAMESPACE_ID, null, null, "nacos", null);
         } catch (Exception e) {
             LOGGER.warn("Failed to delete built-in agentspec bootstrap marker", e);
         }
     }
-
+    
     private static final class BootstrapPlan {
-
+        
         private final boolean shouldBootstrap;
-
+        
         private final String skipReason;
-
+        
         private final List<AgentSpecSeedArchiveReader.AgentSpecPackage> missingPackages;
-
+        
         private final int existingBuiltInCount;
-
+        
         private BootstrapPlan(boolean shouldBootstrap, String skipReason,
-                List<AgentSpecSeedArchiveReader.AgentSpecPackage> missingPackages, int existingBuiltInCount) {
+            List<AgentSpecSeedArchiveReader.AgentSpecPackage> missingPackages,
+            int existingBuiltInCount) {
             this.shouldBootstrap = shouldBootstrap;
             this.skipReason = skipReason;
             this.missingPackages = missingPackages;
             this.existingBuiltInCount = existingBuiltInCount;
         }
-
-        private static BootstrapPlan bootstrap(List<AgentSpecSeedArchiveReader.AgentSpecPackage> missingPackages,
-                int existingBuiltInCount) {
+        
+        private static BootstrapPlan bootstrap(
+            List<AgentSpecSeedArchiveReader.AgentSpecPackage> missingPackages,
+            int existingBuiltInCount) {
             return new BootstrapPlan(true, null, missingPackages, existingBuiltInCount);
         }
-
+        
         private static BootstrapPlan skip(String skipReason, int existingBuiltInCount) {
             return new BootstrapPlan(false, skipReason, new ArrayList<>(0), existingBuiltInCount);
         }
-
+        
         private boolean shouldBootstrap() {
             return shouldBootstrap;
         }
-
+        
         private String getSkipReason() {
             return skipReason;
         }
-
+        
         private List<AgentSpecSeedArchiveReader.AgentSpecPackage> getMissingPackages() {
             return missingPackages;
         }
-
+        
         private int getExistingBuiltInCount() {
             return existingBuiltInCount;
         }
     }
-
+    
     private static final class ImportTaskResult {
-
+        
         private final String agentSpecName;
-
+        
         private final boolean success;
-
+        
         private ImportTaskResult(String agentSpecName, boolean success) {
             this.agentSpecName = agentSpecName;
             this.success = success;
         }
-
+        
         private static ImportTaskResult success(String agentSpecName) {
             return new ImportTaskResult(agentSpecName, true);
         }
-
+        
         private static ImportTaskResult failed(String agentSpecName) {
             return new ImportTaskResult(agentSpecName, false);
         }
-
+        
         private String getAgentSpecName() {
             return agentSpecName;
         }
-
+        
         private boolean isSuccess() {
             return success;
         }

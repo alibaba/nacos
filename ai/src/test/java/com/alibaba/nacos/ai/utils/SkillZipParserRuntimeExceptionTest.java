@@ -63,7 +63,8 @@ class SkillZipParserRuntimeExceptionTest {
     
     private static final String NAMESPACE_ID = "test-ns";
     
-    private static final String VALID_SKILL_MD = "---\nname: sample\ndescription: sample skill\n---\n\nbody\n";
+    private static final String VALID_SKILL_MD =
+        "---\nname: sample\ndescription: sample skill\n---\n\nbody\n";
     
     // -------- White-box: exact exception type + errCode on the private method --------
     
@@ -75,15 +76,16 @@ class SkillZipParserRuntimeExceptionTest {
         Throwable cause = invokeUnzipToEntriesExpectingThrow(zipBytes);
         
         assertInstanceOf(NacosRuntimeException.class, cause,
-                "Entry-count guard must throw NacosRuntimeException (not IOException); actual: "
-                        + cause.getClass().getName());
+            "Entry-count guard must throw NacosRuntimeException (not IOException); actual: "
+                + cause.getClass().getName());
         assertFalse(cause instanceof IOException,
-                "NacosRuntimeException is a RuntimeException and must not be an IOException");
+            "NacosRuntimeException is a RuntimeException and must not be an IOException");
         NacosRuntimeException nre = (NacosRuntimeException) cause;
         assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), nre.getErrCode(),
-                "Expected errCode PARAMETER_VALIDATE_ERROR for security-limit violation");
+            "Expected errCode PARAMETER_VALIDATE_ERROR for security-limit violation");
         assertTrue(nre.getMessage().contains("too many entries"),
-                "Exception message should describe the entry-count violation, got: " + nre.getMessage());
+            "Exception message should describe the entry-count violation, got: "
+                + nre.getMessage());
     }
     
     @Test
@@ -95,15 +97,16 @@ class SkillZipParserRuntimeExceptionTest {
         Throwable cause = invokeUnzipToEntriesExpectingThrow(zipBytes);
         
         assertInstanceOf(NacosRuntimeException.class, cause,
-                "Uncompressed-size guard must throw NacosRuntimeException (not IOException); actual: "
-                        + cause.getClass().getName());
+            "Uncompressed-size guard must throw NacosRuntimeException (not IOException); actual: "
+                + cause.getClass().getName());
         assertFalse(cause instanceof IOException,
-                "NacosRuntimeException is a RuntimeException and must not be an IOException");
+            "NacosRuntimeException is a RuntimeException and must not be an IOException");
         NacosRuntimeException nre = (NacosRuntimeException) cause;
         assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), nre.getErrCode(),
-                "Expected errCode PARAMETER_VALIDATE_ERROR for security-limit violation");
+            "Expected errCode PARAMETER_VALIDATE_ERROR for security-limit violation");
         assertTrue(nre.getMessage().contains("decompressed size exceeds limit"),
-                "Exception message should describe the decompressed-size violation, got: " + nre.getMessage());
+            "Exception message should describe the decompressed-size violation, got: "
+                + nre.getMessage());
     }
     
     // -------- Black-box: public entry still yields NacosApiException for the HTTP layer --------
@@ -119,12 +122,14 @@ class SkillZipParserRuntimeExceptionTest {
             // The outer catch (Exception e) inside parseSkillFromZip must still catch the runtime
             // exception and translate it into NacosApiException, so the HTTP layer is unaffected.
             assertTrue(e.getMessage().contains("too many entries"),
-                    "NacosApiException should propagate the underlying message, got: " + e.getMessage());
+                "NacosApiException should propagate the underlying message, got: "
+                    + e.getMessage());
         }
     }
     
     @Test
-    void testParseSkillFromZipUncompressedSizeExceedsStillMappedToNacosApiException() throws IOException {
+    void testParseSkillFromZipUncompressedSizeExceedsStillMappedToNacosApiException()
+        throws IOException {
         byte[] zipBytes = buildZipWithUncompressedSize(60);
         
         try {
@@ -132,7 +137,8 @@ class SkillZipParserRuntimeExceptionTest {
             fail("Expected the zip-bomb zip to be rejected, but parsing succeeded");
         } catch (NacosApiException e) {
             assertTrue(e.getMessage().contains("decompressed size exceeds limit"),
-                    "NacosApiException should propagate the underlying message, got: " + e.getMessage());
+                "NacosApiException should propagate the underlying message, got: "
+                    + e.getMessage());
         }
     }
     
@@ -180,7 +186,8 @@ class SkillZipParserRuntimeExceptionTest {
         return baos.toByteArray();
     }
     
-    private static void addZipEntry(ZipOutputStream zos, String name, byte[] data) throws IOException {
+    private static void addZipEntry(ZipOutputStream zos, String name, byte[] data)
+        throws IOException {
         ZipEntry entry = new ZipEntry(name);
         zos.putNextEntry(entry);
         zos.write(data);

@@ -46,55 +46,55 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 3.2.0
  */
 class PublishPipelineBackwardCompatibilityTest {
-
+    
     private static final String PLUGIN_SKILL_ID = "plugin-skill-only";
-
+    
     private static final String PLUGIN_AGENTSPEC_ID = "plugin-agentspec-only";
-
+    
     private static final String PLUGIN_PROMPT_ID = "plugin-prompt-only";
-
+    
     private static final String PLUGIN_SKILL_LOW_ORDER_ID = "plugin-skill-low";
-
+    
     private static final String PLUGIN_SKILL_HIGH_ORDER_ID = "plugin-skill-high";
-
+    
     private PublishPipelineManager manager;
-
+    
     private List<PipelineNodeConfig> allNodes;
-
+    
     @BeforeEach
     void setUp() {
         manager = new PublishPipelineManager();
-
+        
         List<PublishPipelineServiceBuilder> builders = new ArrayList<>();
-
+        
         // Plugin supporting only SKILL
         builders.add(createBuilder(PLUGIN_SKILL_ID, 1,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.SKILL}));
-
+            new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL}));
+        
         // Plugin supporting only AGENTSPEC
         builders.add(createBuilder(PLUGIN_AGENTSPEC_ID, 2,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.AGENTSPEC}));
-
+            new PublishPipelineResourceType[] {PublishPipelineResourceType.AGENTSPEC}));
+        
         // Plugin supporting only PROMPT
         builders.add(createBuilder(PLUGIN_PROMPT_ID, 3,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.PROMPT}));
-
+            new PublishPipelineResourceType[] {PublishPipelineResourceType.PROMPT}));
+        
         PipelineConfig config = new PipelineConfig();
         config.setEnabled(true);
         config.setNodes(new ArrayList<>());
-
+        
         manager.initWithBuilders(builders, config);
-
+        
         // Build nodes list referencing all three plugins
         allNodes = new ArrayList<>();
-        for (String id : new String[]{PLUGIN_SKILL_ID, PLUGIN_AGENTSPEC_ID, PLUGIN_PROMPT_ID}) {
+        for (String id : new String[] {PLUGIN_SKILL_ID, PLUGIN_AGENTSPEC_ID, PLUGIN_PROMPT_ID}) {
             PipelineNodeConfig node = new PipelineNodeConfig();
             node.setPipelineId(id);
             node.setProperties(new Properties());
             allNodes.add(node);
         }
     }
-
+    
     /**
      * SKILL routing returns only the SKILL plugin; the AGENTSPEC plugin is NOT included.
      *
@@ -103,22 +103,22 @@ class PublishPipelineBackwardCompatibilityTest {
     @Test
     void testSkillRoutingUnchangedAfterAgentspecAddition() {
         List<PublishPipelineService> result = manager.getPipelineServices(
-                PublishPipelineResourceType.SKILL, allNodes);
-
+            PublishPipelineResourceType.SKILL, allNodes);
+        
         Set<String> resultIds = result.stream()
-                .map(PublishPipelineService::pipelineId)
-                .collect(Collectors.toSet());
-
+            .map(PublishPipelineService::pipelineId)
+            .collect(Collectors.toSet());
+        
         assertEquals(1, result.size(),
-                "Exactly 1 plugin should be returned for SKILL routing");
+            "Exactly 1 plugin should be returned for SKILL routing");
         assertTrue(resultIds.contains(PLUGIN_SKILL_ID),
-                "SKILL-only plugin should be included in SKILL routing");
+            "SKILL-only plugin should be included in SKILL routing");
         assertFalse(resultIds.contains(PLUGIN_AGENTSPEC_ID),
-                "AGENTSPEC-only plugin should NOT be included in SKILL routing");
+            "AGENTSPEC-only plugin should NOT be included in SKILL routing");
         assertFalse(resultIds.contains(PLUGIN_PROMPT_ID),
-                "PROMPT-only plugin should NOT be included in SKILL routing");
+            "PROMPT-only plugin should NOT be included in SKILL routing");
     }
-
+    
     /**
      * PROMPT routing returns only the PROMPT plugin; the AGENTSPEC plugin is NOT included.
      *
@@ -127,22 +127,22 @@ class PublishPipelineBackwardCompatibilityTest {
     @Test
     void testPromptRoutingUnchangedAfterAgentspecAddition() {
         List<PublishPipelineService> result = manager.getPipelineServices(
-                PublishPipelineResourceType.PROMPT, allNodes);
-
+            PublishPipelineResourceType.PROMPT, allNodes);
+        
         Set<String> resultIds = result.stream()
-                .map(PublishPipelineService::pipelineId)
-                .collect(Collectors.toSet());
-
+            .map(PublishPipelineService::pipelineId)
+            .collect(Collectors.toSet());
+        
         assertEquals(1, result.size(),
-                "Exactly 1 plugin should be returned for PROMPT routing");
+            "Exactly 1 plugin should be returned for PROMPT routing");
         assertTrue(resultIds.contains(PLUGIN_PROMPT_ID),
-                "PROMPT-only plugin should be included in PROMPT routing");
+            "PROMPT-only plugin should be included in PROMPT routing");
         assertFalse(resultIds.contains(PLUGIN_AGENTSPEC_ID),
-                "AGENTSPEC-only plugin should NOT be included in PROMPT routing");
+            "AGENTSPEC-only plugin should NOT be included in PROMPT routing");
         assertFalse(resultIds.contains(PLUGIN_SKILL_ID),
-                "SKILL-only plugin should NOT be included in PROMPT routing");
+            "SKILL-only plugin should NOT be included in PROMPT routing");
     }
-
+    
     /**
      * Multiple SKILL plugins are returned sorted by order ascending, unaffected by AGENTSPEC presence.
      *
@@ -152,73 +152,76 @@ class PublishPipelineBackwardCompatibilityTest {
     void testSkillPluginOrderPreservedAfterAgentspecAddition() {
         // Re-initialize with multiple SKILL plugins and an AGENTSPEC plugin
         PublishPipelineManager orderManager = new PublishPipelineManager();
-
+        
         List<PublishPipelineServiceBuilder> builders = new ArrayList<>();
         builders.add(createBuilder(PLUGIN_SKILL_HIGH_ORDER_ID, 10,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.SKILL}));
+            new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL}));
         builders.add(createBuilder(PLUGIN_AGENTSPEC_ID, 5,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.AGENTSPEC}));
+            new PublishPipelineResourceType[] {PublishPipelineResourceType.AGENTSPEC}));
         builders.add(createBuilder(PLUGIN_SKILL_LOW_ORDER_ID, 1,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.SKILL}));
-
+            new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL}));
+        
         PipelineConfig config = new PipelineConfig();
         config.setEnabled(true);
         config.setNodes(new ArrayList<>());
-
+        
         orderManager.initWithBuilders(builders, config);
-
+        
         List<PipelineNodeConfig> nodes = new ArrayList<>();
-        for (String id : new String[]{PLUGIN_SKILL_HIGH_ORDER_ID, PLUGIN_AGENTSPEC_ID, PLUGIN_SKILL_LOW_ORDER_ID}) {
+        for (String id : new String[] {PLUGIN_SKILL_HIGH_ORDER_ID, PLUGIN_AGENTSPEC_ID,
+                PLUGIN_SKILL_LOW_ORDER_ID}) {
             PipelineNodeConfig node = new PipelineNodeConfig();
             node.setPipelineId(id);
             node.setProperties(new Properties());
             nodes.add(node);
         }
-
+        
         List<PublishPipelineService> result = orderManager.getPipelineServices(
-                PublishPipelineResourceType.SKILL, nodes);
-
+            PublishPipelineResourceType.SKILL, nodes);
+        
         assertEquals(2, result.size(),
-                "Exactly 2 SKILL plugins should be returned");
+            "Exactly 2 SKILL plugins should be returned");
         assertEquals(PLUGIN_SKILL_LOW_ORDER_ID, result.get(0).pipelineId(),
-                "Lower-order SKILL plugin should come first");
+            "Lower-order SKILL plugin should come first");
         assertEquals(PLUGIN_SKILL_HIGH_ORDER_ID, result.get(1).pipelineId(),
-                "Higher-order SKILL plugin should come second");
-
+            "Higher-order SKILL plugin should come second");
+        
         // Verify AGENTSPEC plugin is not in the SKILL results
         Set<String> resultIds = result.stream()
-                .map(PublishPipelineService::pipelineId)
-                .collect(Collectors.toSet());
+            .map(PublishPipelineService::pipelineId)
+            .collect(Collectors.toSet());
         assertFalse(resultIds.contains(PLUGIN_AGENTSPEC_ID),
-                "AGENTSPEC plugin should NOT appear in SKILL routing results");
+            "AGENTSPEC plugin should NOT appear in SKILL routing results");
     }
-
+    
     private PublishPipelineServiceBuilder createBuilder(String pipelineId, int order,
-            PublishPipelineResourceType[] supportedTypes) {
+        PublishPipelineResourceType[] supportedTypes) {
         return new PublishPipelineServiceBuilder() {
+            
             @Override
             public String pipelineId() {
                 return pipelineId;
             }
-
+            
             @Override
             public PublishPipelineService build(Properties properties) {
                 return new PublishPipelineService() {
+                    
                     @Override
                     public String pipelineId() {
                         return pipelineId;
                     }
-
+                    
                     @Override
                     public PublishPipelineResult execute(PublishPipelineContext context) {
                         return null;
                     }
-
+                    
                     @Override
                     public int getPreferOrder() {
                         return order;
                     }
-
+                    
                     @Override
                     public PublishPipelineResourceType[] pipelineResourceTypes() {
                         return supportedTypes;

@@ -26,27 +26,30 @@ import com.alibaba.nacos.api.model.Page;
  * @since 3.2.0
  */
 public interface AiResourceVersionPersistService {
-
+    
     long insert(AiResourceVersion version);
-
+    
     AiResourceVersion find(String namespaceId, String name, String type, String version);
-
-    Page<AiResourceVersion> list(String namespaceId, String name, String type, String status, int pageNo, int pageSize);
-
+    
+    Page<AiResourceVersion> list(String namespaceId, String name, String type, String status,
+        int pageNo, int pageSize);
+    
     int delete(String namespaceId, String name, String type, String version);
-
+    
     int deleteByName(String namespaceId, String name);
-
+    
     int deleteByNameAndType(String namespaceId, String name, String type);
-
+    
     int updateStatus(String namespaceId, String name, String type, String version, String status);
-
+    
     int updateStorage(String namespaceId, String name, String type, String version, String storage);
-
-    int updateStorageAndDesc(String namespaceId, String name, String type, String version, String storage, String desc);
-
-    int updatePublishPipelineInfo(String namespaceId, String name, String type, String version, String publishPipelineInfo);
-
+    
+    int updateStorageAndDesc(String namespaceId, String name, String type, String version,
+        String storage, String desc);
+    
+    int updatePublishPipelineInfo(String namespaceId, String name, String type, String version,
+        String publishPipelineInfo);
+    
     /**
      * Increment download count for a specific version.
      *
@@ -57,6 +60,6 @@ public interface AiResourceVersionPersistService {
      * @param increment   amount to add
      * @return number of rows affected
      */
-    int incrementDownloadCount(String namespaceId, String name, String type, String version, long increment);
+    int incrementDownloadCount(String namespaceId, String name, String type, String version,
+        long increment);
 }
-

@@ -55,7 +55,7 @@ public class PromptDraftCreateForm extends PromptForm {
         super.validate();
         if (StringUtils.isBlank(basedOnVersion) && StringUtils.isBlank(template)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Either 'basedOnVersion' or 'template' must be provided");
+                "Either 'basedOnVersion' or 'template' must be provided");
         }
     }
     

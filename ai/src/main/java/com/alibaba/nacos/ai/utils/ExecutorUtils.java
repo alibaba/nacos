@@ -27,35 +27,38 @@ import java.util.concurrent.ExecutorService;
  * Executor utilities for AI module.
  */
 public final class ExecutorUtils {
-
+    
     private ExecutorUtils() {
     }
-
+    
     /**
      * System config key for async concurrency when persisting skill resource files to storage.
      */
-    public static final String SKILL_STORAGE_IO_CONCURRENCY_CONFIG_KEY = "nacos.ai.skill.storage.io.concurrency";
-
+    public static final String SKILL_STORAGE_IO_CONCURRENCY_CONFIG_KEY =
+        "nacos.ai.skill.storage.io.concurrency";
+    
     /**
      * Default concurrency for async skill resource persistence.
      */
-    private static final int DEFAULT_SKILL_STORAGE_IO_CONCURRENCY = PropertyUtils.getProcessorsCount();
-
-    private static final ExecutorService SKILL_STORAGE_IO_EXECUTOR = ExecutorFactory.Managed.newFixedExecutorService(
+    private static final int DEFAULT_SKILL_STORAGE_IO_CONCURRENCY =
+        PropertyUtils.getProcessorsCount();
+    
+    private static final ExecutorService SKILL_STORAGE_IO_EXECUTOR =
+        ExecutorFactory.Managed.newFixedExecutorService(
             ExecutorUtils.class.getCanonicalName(),
             resolveStorageIoConcurrency(),
             new NameThreadFactory("com.alibaba.nacos.ai.skill.storage-io"));
-
+    
     /**
      * Executor for async storage IO of skill resources.
      */
     public static ExecutorService getSkillStorageIoExecutor() {
         return SKILL_STORAGE_IO_EXECUTOR;
     }
-
+    
     private static int resolveStorageIoConcurrency() {
         String val = EnvUtil.getProperty(SKILL_STORAGE_IO_CONCURRENCY_CONFIG_KEY,
-                String.valueOf(DEFAULT_SKILL_STORAGE_IO_CONCURRENCY));
+            String.valueOf(DEFAULT_SKILL_STORAGE_IO_CONCURRENCY));
         try {
             return Integer.max(1, Integer.parseInt(val));
         } catch (Exception ignored) {

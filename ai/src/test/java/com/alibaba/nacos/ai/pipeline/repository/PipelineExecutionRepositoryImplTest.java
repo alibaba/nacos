@@ -53,10 +53,12 @@ class PipelineExecutionRepositoryImplTest {
     void findByResourceShouldUseDialectAgnosticQuery() {
         PipelineExecution newest = createExecution("latest");
         PipelineExecution older = createExecution("older");
-        String expectedSql = "SELECT * FROM pipeline_execution WHERE resource_type=? AND resource_name=? "
-            + "AND namespace_id=? AND version=? ORDER BY create_time DESC";
-        when(jdbcTemplate.query(any(String.class), anyPipelineRowMapper(), eq(QUERY_PARAMS))).thenReturn(
-            List.of(newest, older));
+        String expectedSql =
+            "SELECT * FROM pipeline_execution WHERE resource_type=? AND resource_name=? "
+                + "AND namespace_id=? AND version=? ORDER BY create_time DESC";
+        when(jdbcTemplate.query(any(String.class), anyPipelineRowMapper(), eq(QUERY_PARAMS)))
+            .thenReturn(
+                List.of(newest, older));
         
         PipelineExecution actual = repository.findByResource("SKILL", "demo", "public", "v1");
         
@@ -69,7 +71,8 @@ class PipelineExecutionRepositoryImplTest {
     
     @Test
     void findByResourceShouldReturnNullWhenNoResult() {
-        when(jdbcTemplate.query(any(String.class), anyPipelineRowMapper(), eq(QUERY_PARAMS))).thenReturn(List.of());
+        when(jdbcTemplate.query(any(String.class), anyPipelineRowMapper(), eq(QUERY_PARAMS)))
+            .thenReturn(List.of());
         
         assertNull(repository.findByResource("SKILL", "demo", "public", "v1"));
     }
@@ -79,12 +82,15 @@ class PipelineExecutionRepositoryImplTest {
         PipelineExecution first = createExecution("first");
         PipelineExecution second = createExecution("second");
         PipelineExecution third = createExecution("third");
-        String expectedSql = "SELECT * FROM pipeline_execution WHERE resource_type = ? AND resource_name = ? "
+        String expectedSql =
+            "SELECT * FROM pipeline_execution WHERE resource_type = ? AND resource_name = ? "
                 + "AND namespace_id = ? AND version = ? ORDER BY create_time DESC";
-        when(jdbcTemplate.query(any(String.class), anyPipelineRowMapper(), eq(QUERY_PARAMS))).thenReturn(
+        when(jdbcTemplate.query(any(String.class), anyPipelineRowMapper(), eq(QUERY_PARAMS)))
+            .thenReturn(
                 List.of(first, second, third));
         
-        List<PipelineExecution> actual = repository.findByResourceWithPage("SKILL", "demo", "public", "v1", 1, 1);
+        List<PipelineExecution> actual =
+            repository.findByResourceWithPage("SKILL", "demo", "public", "v1", 1, 1);
         
         assertEquals(1, actual.size());
         assertEquals("second", actual.get(0).getExecutionId());

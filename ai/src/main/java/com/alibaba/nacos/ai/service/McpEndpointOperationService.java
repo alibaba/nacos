@@ -51,8 +51,9 @@ public class McpEndpointOperationService {
     
     private final NamingMetadataManager metadataManager;
     
-    public McpEndpointOperationService(ServiceOperator serviceOperator, InstanceOperator instanceOperator,
-            NamingMetadataManager metadataManager) {
+    public McpEndpointOperationService(ServiceOperator serviceOperator,
+        InstanceOperator instanceOperator,
+        NamingMetadataManager metadataManager) {
         this.serviceOperator = serviceOperator;
         this.instanceOperator = instanceOperator;
         this.metadataManager = metadataManager;
@@ -72,14 +73,19 @@ public class McpEndpointOperationService {
      * @return {@link Service}
      * @throws NacosException any exception during handling
      */
-    public Service createMcpServerEndpointServiceIfNecessary(String namespaceId, String mcpName, String version,
-            McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
-        if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equalsIgnoreCase(endpointSpecification.getType())) {
+    public Service createMcpServerEndpointServiceIfNecessary(String namespaceId, String mcpName,
+        String version,
+        McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
+        if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF
+            .equalsIgnoreCase(endpointSpecification.getType())) {
             Map<String, String> endpointServiceData = endpointSpecification.getData();
-            if (!endpointServiceData.containsKey(CommonParams.NAMESPACE_ID) || !endpointServiceData.containsKey(
-                    CommonParams.GROUP_NAME) || !endpointServiceData.containsKey(CommonParams.SERVICE_NAME)) {
-                throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                        "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
+            if (!endpointServiceData.containsKey(CommonParams.NAMESPACE_ID)
+                || !endpointServiceData.containsKey(
+                    CommonParams.GROUP_NAME)
+                || !endpointServiceData.containsKey(CommonParams.SERVICE_NAME)) {
+                throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_MISSING,
+                    "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
             }
             String refGroupName = endpointSpecification.getData().get(CommonParams.GROUP_NAME);
             String refServiceName = endpointSpecification.getData().get(CommonParams.SERVICE_NAME);
@@ -89,10 +95,12 @@ public class McpEndpointOperationService {
         Service service = generateService(namespaceId, versionMcpName);
         if (isNotExist(service)) {
             doCreateNewService(service);
-            doUpdateInstanceInfo(service, endpointSpecification, namespaceId, mcpName, overrideExisting, versionMcpName);
+            doUpdateInstanceInfo(service, endpointSpecification, namespaceId, mcpName,
+                overrideExisting, versionMcpName);
             return service;
         }
-        doUpdateInstanceInfo(service, endpointSpecification, namespaceId, mcpName, overrideExisting, versionMcpName);
+        doUpdateInstanceInfo(service, endpointSpecification, namespaceId, mcpName, overrideExisting,
+            versionMcpName);
         return service;
     }
     
@@ -100,9 +108,10 @@ public class McpEndpointOperationService {
         return Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName);
     }
     
-    public List<Instance> getMcpServerEndpointInstances(McpServiceRef serviceRef) throws NacosException {
+    public List<Instance> getMcpServerEndpointInstances(McpServiceRef serviceRef)
+        throws NacosException {
         return instanceOperator.listInstance(serviceRef.getNamespaceId(), serviceRef.getGroupName(),
-                serviceRef.getServiceName(), null, "", true).getHosts();
+            serviceRef.getServiceName(), null, "", true).getHosts();
     }
     
     /**
@@ -116,15 +125,18 @@ public class McpEndpointOperationService {
      * @param mcpServerName     name of mcp server
      * @throws NacosException any exception during handling
      */
-    public void deleteMcpServerEndpointService(String namespaceId, String mcpServerName) throws NacosException {
-        Service service = Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpServerName);
+    public void deleteMcpServerEndpointService(String namespaceId, String mcpServerName)
+        throws NacosException {
+        Service service =
+            Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpServerName);
         if (isNotExist(service) || !isMcpDirectService(service)) {
             return;
         }
         List<Instance> deletingInstance = instanceOperator.listInstance(namespaceId,
-                Constants.MCP_SERVER_ENDPOINT_GROUP, mcpServerName, null, "", false).getHosts();
+            Constants.MCP_SERVER_ENDPOINT_GROUP, mcpServerName, null, "", false).getHosts();
         for (Instance each : deletingInstance) {
-            instanceOperator.removeInstance(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpServerName, each);
+            instanceOperator.removeInstance(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP,
+                mcpServerName, each);
         }
         serviceOperator.delete(service.getNamespace(), service.getGroupedServiceName());
     }
@@ -134,7 +146,8 @@ public class McpEndpointOperationService {
     }
     
     private boolean isMcpDirectService(Service service) {
-        ServiceMetadata metadata = metadataManager.getServiceMetadata(service).orElse(new ServiceMetadata());
+        ServiceMetadata metadata =
+            metadataManager.getServiceMetadata(service).orElse(new ServiceMetadata());
         return metadata.getExtendData().containsKey(Constants.MCP_SERVER_ENDPOINT_METADATA_MARK);
     }
     
@@ -147,23 +160,28 @@ public class McpEndpointOperationService {
         serviceMetadata.setEphemeral(false);
         // Mark service as direct service
         serviceMetadata.getExtendData().put(Constants.MCP_SERVER_ENDPOINT_METADATA_MARK, "true");
-        serviceOperator.create(service.getNamespace(), service.getGroupedServiceName(), serviceMetadata);
+        serviceOperator.create(service.getNamespace(), service.getGroupedServiceName(),
+            serviceMetadata);
     }
     
     private void doUpdateInstanceInfo(Service service, McpEndpointSpec endpointSpecification,
-                          String namespaceId, String mcpServerName, boolean overrideExisting, String versionMcpName) throws NacosException {
+        String namespaceId, String mcpServerName, boolean overrideExisting, String versionMcpName)
+        throws NacosException {
         Instance instance = new Instance();
         instance.setIp(endpointSpecification.getData().get(Constants.MCP_SERVER_ENDPOINT_ADDRESS));
-        instance.setPort(Integer.parseInt(endpointSpecification.getData().get(Constants.MCP_SERVER_ENDPOINT_PORT)));
+        instance.setPort(Integer
+            .parseInt(endpointSpecification.getData().get(Constants.MCP_SERVER_ENDPOINT_PORT)));
         instance.setClusterName(Constants.MCP_SERVER_ENDPOINT_CLUSTER);
         instance.setEphemeral(false);
         if (overrideExisting) {
             List<Instance> oldInstances = instanceOperator.listInstance(namespaceId,
-                    Constants.MCP_SERVER_ENDPOINT_GROUP, versionMcpName, null, "", false).getHosts();
+                Constants.MCP_SERVER_ENDPOINT_GROUP, versionMcpName, null, "", false).getHosts();
             for (Instance each : oldInstances) {
-                instanceOperator.removeInstance(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, versionMcpName, each);
+                instanceOperator.removeInstance(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP,
+                    versionMcpName, each);
             }
         }
-        instanceOperator.registerInstance(service.getNamespace(), service.getGroup(), service.getName(), instance);
+        instanceOperator.registerInstance(service.getNamespace(), service.getGroup(),
+            service.getName(), instance);
     }
 }

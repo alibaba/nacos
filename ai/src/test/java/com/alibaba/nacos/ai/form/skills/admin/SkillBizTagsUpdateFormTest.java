@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SkillBizTagsUpdateFormTest {
-
+    
     @Test
     void validateShouldPassWhenSkillNameProvided() {
         SkillBizTagsUpdateForm form = new SkillBizTagsUpdateForm();
@@ -33,7 +33,7 @@ class SkillBizTagsUpdateFormTest {
         form.setBizTags("[\"tag1\",\"tag2\"]");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void validateShouldThrowWhenSkillNameBlank() {
         SkillBizTagsUpdateForm form = new SkillBizTagsUpdateForm();
@@ -41,14 +41,14 @@ class SkillBizTagsUpdateFormTest {
         NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
     }
-
+    
     @Test
     void validateShouldPassWhenBizTagsNull() {
         SkillBizTagsUpdateForm form = new SkillBizTagsUpdateForm();
         form.setSkillName("test-skill");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void gettersAndSettersShouldWork() {
         SkillBizTagsUpdateForm form = new SkillBizTagsUpdateForm();

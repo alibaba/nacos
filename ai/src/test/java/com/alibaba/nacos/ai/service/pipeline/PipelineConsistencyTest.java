@@ -41,40 +41,41 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @since 3.2.0
  */
 class PipelineConsistencyTest {
-
+    
     private static final String CREATE_TABLE_SQL = "CREATE TABLE IF NOT EXISTS pipeline_execution ("
-            + "execution_id  VARCHAR(64)  PRIMARY KEY, "
-            + "resource_type VARCHAR(32)  NOT NULL, "
-            + "resource_name VARCHAR(256) NOT NULL, "
-            + "namespace_id  VARCHAR(128), "
-            + "version       VARCHAR(64), "
-            + "status        VARCHAR(32)  NOT NULL, "
-            + "pipeline      TEXT         NOT NULL, "
-            + "create_time   BIGINT       NOT NULL, "
-            + "update_time   BIGINT       NOT NULL)";
-
+        + "execution_id  VARCHAR(64)  PRIMARY KEY, "
+        + "resource_type VARCHAR(32)  NOT NULL, "
+        + "resource_name VARCHAR(256) NOT NULL, "
+        + "namespace_id  VARCHAR(128), "
+        + "version       VARCHAR(64), "
+        + "status        VARCHAR(32)  NOT NULL, "
+        + "pipeline      TEXT         NOT NULL, "
+        + "create_time   BIGINT       NOT NULL, "
+        + "update_time   BIGINT       NOT NULL)";
+    
     private static JdbcTemplate jdbcTemplate;
-
+    
     private static PipelineQueryService adminService;
-
+    
     private static PipelineQueryService consoleService;
-
+    
     @BeforeAll
     static void setUp() {
         JdbcDataSource dataSource = new JdbcDataSource();
         dataSource.setURL("jdbc:h2:mem:pipeline_consistency_test;DB_CLOSE_DELAY=-1");
         jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.execute(CREATE_TABLE_SQL);
-        PipelineExecutionRepositoryImpl repository = new PipelineExecutionRepositoryImpl(jdbcTemplate);
+        PipelineExecutionRepositoryImpl repository =
+            new PipelineExecutionRepositoryImpl(jdbcTemplate);
         adminService = new PipelineQueryService(repository);
         consoleService = new PipelineQueryService(repository);
     }
-
+    
     @AfterEach
     void cleanUp() {
         jdbcTemplate.execute("DELETE FROM pipeline_execution");
     }
-
+    
     private static List<PipelineExecution> samplePipelineExecutions() {
         List<PipelineExecution> list = new ArrayList<>();
         long t = 1_700_000_000_000L;
@@ -96,19 +97,20 @@ class PipelineConsistencyTest {
         }
         return list;
     }
-
+    
     /**
      * getPipeline consistency — same pipelineId returns same data.
      */
     @Test
     void getPipelineConsistency() throws Exception {
         for (PipelineExecution seed : samplePipelineExecutions()) {
-            PipelineExecutionRepositoryImpl repo = new PipelineExecutionRepositoryImpl(jdbcTemplate);
+            PipelineExecutionRepositoryImpl repo =
+                new PipelineExecutionRepositoryImpl(jdbcTemplate);
             repo.save(seed);
-
+            
             PipelineExecution adminResult = adminService.getPipeline(seed.getExecutionId());
             PipelineExecution consoleResult = consoleService.getPipeline(seed.getExecutionId());
-
+            
             assertEquals(adminResult.getExecutionId(), consoleResult.getExecutionId());
             assertEquals(adminResult.getResourceType(), consoleResult.getResourceType());
             assertEquals(adminResult.getResourceName(), consoleResult.getResourceName());
@@ -116,23 +118,24 @@ class PipelineConsistencyTest {
             assertEquals(adminResult.getCreateTime(), consoleResult.getCreateTime());
         }
     }
-
+    
     /**
      * listPipelines consistency — same params return same page data.
      */
     @Test
     void listPipelinesConsistency() throws Exception {
         for (PipelineExecution seed : samplePipelineExecutions()) {
-            PipelineExecutionRepositoryImpl repo = new PipelineExecutionRepositoryImpl(jdbcTemplate);
+            PipelineExecutionRepositoryImpl repo =
+                new PipelineExecutionRepositoryImpl(jdbcTemplate);
             repo.save(seed);
-
+            
             Page<PipelineExecution> adminPage = adminService.listPipelines(
-                    seed.getResourceType(), seed.getResourceName(),
-                    seed.getNamespaceId(), seed.getVersion(), 1, 10);
+                seed.getResourceType(), seed.getResourceName(),
+                seed.getNamespaceId(), seed.getVersion(), 1, 10);
             Page<PipelineExecution> consolePage = consoleService.listPipelines(
-                    seed.getResourceType(), seed.getResourceName(),
-                    seed.getNamespaceId(), seed.getVersion(), 1, 10);
-
+                seed.getResourceType(), seed.getResourceName(),
+                seed.getNamespaceId(), seed.getVersion(), 1, 10);
+            
             assertEquals(adminPage.getTotalCount(), consolePage.getTotalCount());
             assertEquals(adminPage.getPageItems().size(), consolePage.getPageItems().size());
             assertEquals(adminPage.getPagesAvailable(), consolePage.getPagesAvailable());

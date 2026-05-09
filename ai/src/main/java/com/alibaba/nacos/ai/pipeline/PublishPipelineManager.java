@@ -64,7 +64,8 @@ public class PublishPipelineManager {
      * @param config the pipeline configuration containing node properties
      */
     public void init(PipelineConfig config) {
-        ServiceLoader<PublishPipelineServiceBuilder> builders = ServiceLoader.load(PublishPipelineServiceBuilder.class);
+        ServiceLoader<PublishPipelineServiceBuilder> builders =
+            ServiceLoader.load(PublishPipelineServiceBuilder.class);
         initWithBuilders(builders, config);
     }
     
@@ -88,7 +89,7 @@ public class PublishPipelineManager {
             try {
                 PipelineNodeConfig nodeConfig = nodeConfigMap.get(builder.pipelineId());
                 Properties properties = (nodeConfig != null && nodeConfig.getProperties() != null)
-                        ? nodeConfig.getProperties() : new Properties();
+                    ? nodeConfig.getProperties() : new Properties();
                 PublishPipelineService service = builder.build(properties);
                 if (service != null && service.pipelineId() != null) {
                     serviceMap.put(service.pipelineId(), service);
@@ -110,17 +111,18 @@ public class PublishPipelineManager {
      * @param nodes        the configured pipeline nodes to match against
      * @return sorted list of matching pipeline services, never null, no null elements
      */
-    public List<PublishPipelineService> getPipelineServices(PublishPipelineResourceType resourceType,
-            List<PipelineNodeConfig> nodes) {
+    public List<PublishPipelineService> getPipelineServices(
+        PublishPipelineResourceType resourceType,
+        List<PipelineNodeConfig> nodes) {
         Set<String> pipelineIds = nodes.stream()
-                .map(PipelineNodeConfig::getPipelineId)
-                .collect(Collectors.toSet());
+            .map(PipelineNodeConfig::getPipelineId)
+            .collect(Collectors.toSet());
         
         return serviceMap.values().stream()
-                .filter(service -> pipelineIds.contains(service.pipelineId()))
-                .filter(service -> supportsResourceType(service, resourceType))
-                .sorted(Comparator.comparingInt(PublishPipelineService::getPreferOrder))
-                .collect(Collectors.toList());
+            .filter(service -> pipelineIds.contains(service.pipelineId()))
+            .filter(service -> supportsResourceType(service, resourceType))
+            .sorted(Comparator.comparingInt(PublishPipelineService::getPreferOrder))
+            .collect(Collectors.toList());
     }
     
     /**
@@ -132,7 +134,8 @@ public class PublishPipelineManager {
         return serviceMap.values();
     }
     
-    private boolean supportsResourceType(PublishPipelineService service, PublishPipelineResourceType resourceType) {
+    private boolean supportsResourceType(PublishPipelineService service,
+        PublishPipelineResourceType resourceType) {
         PublishPipelineResourceType[] types = service.pipelineResourceTypes();
         if (types == null) {
             return false;

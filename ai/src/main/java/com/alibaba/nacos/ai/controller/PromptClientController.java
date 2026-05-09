@@ -58,10 +58,12 @@ public class PromptClientController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public Result<Prompt> queryPrompt(PromptQueryForm form, HttpServletResponse response) throws NacosException {
+    public Result<Prompt> queryPrompt(PromptQueryForm form, HttpServletResponse response)
+        throws NacosException {
         form.validate();
         try {
-            PromptVersionInfo result = promptOperationService.queryPrompt(form.getNamespaceId(), form.getPromptKey(),
+            PromptVersionInfo result =
+                promptOperationService.queryPrompt(form.getNamespaceId(), form.getPromptKey(),
                     form.getVersion(), form.getLabel(), form.getMd5());
             return Result.success(PromptConvertUtils.toClientPrompt(result));
         } catch (NacosException ex) {

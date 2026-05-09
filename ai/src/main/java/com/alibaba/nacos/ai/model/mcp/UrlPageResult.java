@@ -25,28 +25,28 @@ import java.util.List;
  * @author xinluo
  */
 public class UrlPageResult {
-
+    
     private List<McpServerDetailInfo> servers;
-
+    
     private String nextCursor;
-
+    
     public UrlPageResult(List<McpServerDetailInfo> servers, String nextCursor) {
         this.servers = servers;
         this.nextCursor = nextCursor;
     }
-
+    
     public List<McpServerDetailInfo> getServers() {
         return servers;
     }
-
+    
     public String getNextCursor() {
         return nextCursor;
     }
-
+    
     public void setNextCursor(String nextCursor) {
         this.nextCursor = nextCursor;
     }
-
+    
     public void setServers(List<McpServerDetailInfo> servers) {
         this.servers = servers;
     }

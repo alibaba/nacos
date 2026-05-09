@@ -66,15 +66,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PublishPipelineIntegrationTest {
     
     private static final String CREATE_TABLE_SQL = "CREATE TABLE IF NOT EXISTS pipeline_execution ("
-            + "execution_id  VARCHAR(64)  PRIMARY KEY, "
-            + "resource_type VARCHAR(32)  NOT NULL, "
-            + "resource_name VARCHAR(256) NOT NULL, "
-            + "namespace_id  VARCHAR(128), "
-            + "version       VARCHAR(64), "
-            + "status        VARCHAR(32)  NOT NULL, "
-            + "pipeline      TEXT         NOT NULL, "
-            + "create_time   BIGINT       NOT NULL, "
-            + "update_time   BIGINT       NOT NULL)";
+        + "execution_id  VARCHAR(64)  PRIMARY KEY, "
+        + "resource_type VARCHAR(32)  NOT NULL, "
+        + "resource_name VARCHAR(256) NOT NULL, "
+        + "namespace_id  VARCHAR(128), "
+        + "version       VARCHAR(64), "
+        + "status        VARCHAR(32)  NOT NULL, "
+        + "pipeline      TEXT         NOT NULL, "
+        + "create_time   BIGINT       NOT NULL, "
+        + "update_time   BIGINT       NOT NULL)";
     
     private JdbcTemplate jdbcTemplate;
     
@@ -83,7 +83,8 @@ class PublishPipelineIntegrationTest {
     @BeforeEach
     void setUp() {
         JdbcDataSource dataSource = new JdbcDataSource();
-        dataSource.setURL("jdbc:h2:mem:integration_test_" + System.nanoTime() + ";DB_CLOSE_DELAY=-1");
+        dataSource
+            .setURL("jdbc:h2:mem:integration_test_" + System.nanoTime() + ";DB_CLOSE_DELAY=-1");
         jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.execute(CREATE_TABLE_SQL);
         repository = new PipelineExecutionRepositoryImpl(jdbcTemplate);
@@ -93,6 +94,7 @@ class PublishPipelineIntegrationTest {
     
     private static ExecutorService directExecutor() {
         return new AbstractExecutorService() {
+            
             private volatile boolean shutdown = false;
             
             @Override
@@ -132,6 +134,7 @@ class PublishPipelineIntegrationTest {
     
     private static PublishPipelineService passingService(String id, int order) {
         return new PublishPipelineService() {
+            
             @Override
             public String pipelineId() {
                 return id;
@@ -158,6 +161,7 @@ class PublishPipelineIntegrationTest {
     
     private static PublishPipelineService failingService(String id, int order) {
         return new PublishPipelineService() {
+            
             @Override
             public String pipelineId() {
                 return id;
@@ -184,6 +188,7 @@ class PublishPipelineIntegrationTest {
     
     private static PublishPipelineServiceBuilder builderFor(PublishPipelineService service) {
         return new PublishPipelineServiceBuilder() {
+            
             @Override
             public String pipelineId() {
                 return service.pipelineId();
@@ -216,6 +221,7 @@ class PublishPipelineIntegrationTest {
     
     private static PipelineConfigProvider fixedConfigProvider(PipelineConfig config) {
         return new PipelineConfigProvider() {
+            
             @Override
             public PipelineConfig getConfig() {
                 return config;
@@ -231,7 +237,7 @@ class PublishPipelineIntegrationTest {
     // ---- Helper: build PublishPipelineManager with given services ----
     
     private static PublishPipelineManager buildManager(List<PublishPipelineService> services,
-            PipelineConfig config) {
+        PipelineConfig config) {
         PublishPipelineManager manager = new PublishPipelineManager();
         List<PublishPipelineServiceBuilder> builders = new ArrayList<>();
         for (PublishPipelineService service : services) {
@@ -269,14 +275,14 @@ class PublishPipelineIntegrationTest {
         PipelineConfig config = buildConfig(true, nodeIds);
         
         List<PublishPipelineService> services = List.of(
-                passingService("ai-review", 1),
-                passingService("security-scan", 2));
+            passingService("ai-review", 1),
+            passingService("security-scan", 2));
         
         PublishPipelineManager manager = buildManager(services, config);
         PipelineConfigProvider configProvider = fixedConfigProvider(config);
         
         PublishPipelineExecutor executor = new PublishPipelineExecutor(
-                manager, configProvider, repository, directExecutor());
+            manager, configProvider, repository, directExecutor());
         
         AtomicReference<PipelineExecutionResult> resultRef = new AtomicReference<>();
         AtomicInteger callbackCount = new AtomicInteger(0);
@@ -328,14 +334,14 @@ class PublishPipelineIntegrationTest {
         PipelineConfig config = buildConfig(false, List.of("ai-review", "security-scan"));
         
         List<PublishPipelineService> services = List.of(
-                passingService("ai-review", 1),
-                passingService("security-scan", 2));
+            passingService("ai-review", 1),
+            passingService("security-scan", 2));
         
         PublishPipelineManager manager = buildManager(services, config);
         PipelineConfigProvider configProvider = fixedConfigProvider(config);
         
         PublishPipelineExecutor executor = new PublishPipelineExecutor(
-                manager, configProvider, repository, directExecutor());
+            manager, configProvider, repository, directExecutor());
         
         AtomicInteger callbackCount = new AtomicInteger(0);
         PipelineCallback callback = result -> callbackCount.incrementAndGet();
@@ -350,7 +356,7 @@ class PublishPipelineIntegrationTest {
         
         // Verify: no records in database
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM pipeline_execution", Integer.class);
+            "SELECT COUNT(*) FROM pipeline_execution", Integer.class);
         assertEquals(0, count, "No records should exist in database");
     }
     
@@ -370,14 +376,14 @@ class PublishPipelineIntegrationTest {
         PipelineConfig config = buildConfig(true, nodeIds);
         
         List<PublishPipelineService> services = List.of(
-                passingService("ai-review", 1),
-                failingService("security-scan", 2));
+            passingService("ai-review", 1),
+            failingService("security-scan", 2));
         
         PublishPipelineManager manager = buildManager(services, config);
         PipelineConfigProvider configProvider = fixedConfigProvider(config);
         
         PublishPipelineExecutor executor = new PublishPipelineExecutor(
-                manager, configProvider, repository, directExecutor());
+            manager, configProvider, repository, directExecutor());
         
         AtomicReference<PipelineExecutionResult> resultRef = new AtomicReference<>();
         AtomicInteger callbackCount = new AtomicInteger(0);

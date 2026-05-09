@@ -68,10 +68,11 @@ public class PromptListForm implements NacosForm {
         fillDefaultNamespaceId();
         
         if (StringUtils.isNotBlank(search)
-                && !Constants.Prompt.SEARCH_ACCURATE.equalsIgnoreCase(search)
-                && !Constants.Prompt.SEARCH_BLUR.equalsIgnoreCase(search)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Request parameter 'search' should be 'accurate' or 'blur'.");
+            && !Constants.Prompt.SEARCH_ACCURATE.equalsIgnoreCase(search)
+            && !Constants.Prompt.SEARCH_BLUR.equalsIgnoreCase(search)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Request parameter 'search' should be 'accurate' or 'blur'.");
         }
         
         if (pageNo < 1) {

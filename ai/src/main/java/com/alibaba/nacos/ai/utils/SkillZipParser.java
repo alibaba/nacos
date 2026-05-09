@@ -73,12 +73,12 @@ public class SkillZipParser {
     
     /** File extensions treated as binary; content will be stored as Base64. */
     private static final Set<String> BINARY_EXTENSIONS = new HashSet<>();
-
+    
     /**
      * Maximum total decompressed size allowed (50MB). Prevents Zip Bomb attacks.
      */
     private static final long MAX_TOTAL_UNCOMPRESSED_BYTES = 50L * 1024 * 1024;
-
+    
     /**
      * Maximum number of entries allowed in a ZIP file.
      */
@@ -102,8 +102,8 @@ public class SkillZipParser {
     }
     
     private static final Pattern YAML_FRONT_MATTER = Pattern.compile(
-            "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
-
+        "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
+    
     /**
      * Parse YAML front matter map from full SKILL.md content.
      *
@@ -121,7 +121,7 @@ public class SkillZipParser {
         String yamlContent = matcher.group(1);
         return parseYamlFrontMatter(yamlContent);
     }
-
+    
     /**
      * Resolve version using SKILL.md sibling _meta.json as compensation.
      *
@@ -149,14 +149,15 @@ public class SkillZipParser {
             if (StringUtils.isNotBlank(version)) {
                 return version.trim();
             }
-
+            
             String metaJsonPath = buildSiblingMetaJsonPath(skillMdEntry.name);
             ZipEntryData metaEntry = findEntryByPath(entries, metaJsonPath);
             if (metaEntry == null) {
                 return null;
             }
             @SuppressWarnings("unchecked")
-            Map<String, Object> meta = JacksonUtils.toObj(new String(metaEntry.data, StandardCharsets.UTF_8), Map.class);
+            Map<String, Object> meta =
+                JacksonUtils.toObj(new String(metaEntry.data, StandardCharsets.UTF_8), Map.class);
             if (meta == null) {
                 return null;
             }
@@ -167,7 +168,8 @@ public class SkillZipParser {
             String resolved = String.valueOf(metaVersion).trim();
             return StringUtils.isBlank(resolved) ? null : resolved;
         } catch (Exception e) {
-            LOGGER.warn("Failed to resolve version from zip (fallback to default later): {}", e.getMessage());
+            LOGGER.warn("Failed to resolve version from zip (fallback to default later): {}",
+                e.getMessage());
             return null;
         }
     }
@@ -181,15 +183,19 @@ public class SkillZipParser {
      * @return parsed skill
      * @throws NacosApiException if parsing failed or zip exceeds size limit
      */
-    public static Skill parseSkillFromZip(byte[] zipBytes, String namespaceId) throws NacosApiException {
+    public static Skill parseSkillFromZip(byte[] zipBytes, String namespaceId)
+        throws NacosApiException {
         if (zipBytes == null || zipBytes.length == 0) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Skill zip file is empty");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Skill zip file is empty");
         }
         if (zipBytes.length > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Skill zip size must not exceed " + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024) + "MB, current: "
-                            + (zipBytes.length / 1024 / 1024) + "MB");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Skill zip size must not exceed "
+                    + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024) + "MB, current: "
+                    + (zipBytes.length / 1024 / 1024) + "MB");
         }
         try {
             List<ZipEntryData> entries = unzipToEntries(zipBytes);
@@ -210,8 +216,9 @@ public class SkillZipParser {
             }
             
             if (StringUtils.isBlank(skillMdContent)) {
-                throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                        "SKILL.md file not found in zip");
+                throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "SKILL.md file not found in zip");
             }
             
             Skill skill = parseSkillMarkdown(skillMdContent, namespaceId);
@@ -223,8 +230,9 @@ public class SkillZipParser {
             throw e;
         } catch (Exception e) {
             LOGGER.error("Failed to parse skill zip file", e);
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARSING_DATA_FAILED,
-                    "Failed to parse zip file: " + e.getMessage());
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARSING_DATA_FAILED,
+                "Failed to parse zip file: " + e.getMessage());
         }
     }
     
@@ -248,7 +256,8 @@ public class SkillZipParser {
     private static List<ZipEntryData> unzipToEntries(byte[] zipBytes) throws IOException {
         List<ZipEntryData> result = new ArrayList<>();
         long totalSize = 0;
-        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes),
+        try (ZipArchiveInputStream zis =
+            new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes),
                 StandardCharsets.UTF_8.name(), true, true)) {
             ZipArchiveEntry entry;
             byte[] buffer = new byte[8192];
@@ -259,22 +268,24 @@ public class SkillZipParser {
                 String name = entry.getName();
                 // Security: reject path traversal and absolute paths
                 SkillUtils.validatePathSafety(name);
-                boolean isMacOsxEntry = name != null && (name.contains("__MACOSX") || name.contains("/__MACOSX/"));
+                boolean isMacOsxEntry =
+                    name != null && (name.contains("__MACOSX") || name.contains("/__MACOSX/"));
                 if (isMacOsxEntry) {
                     continue;
                 }
                 if (result.size() >= MAX_ZIP_ENTRIES) {
                     throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
-                            "ZIP file contains too many entries (max " + MAX_ZIP_ENTRIES + ")");
+                        "ZIP file contains too many entries (max " + MAX_ZIP_ENTRIES + ")");
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 int n;
                 while ((n = zis.read(buffer)) != -1) {
                     totalSize += n;
                     if (totalSize > MAX_TOTAL_UNCOMPRESSED_BYTES) {
-                        throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
-                                "ZIP decompressed size exceeds limit ("
-                                        + (MAX_TOTAL_UNCOMPRESSED_BYTES / 1024 / 1024) + "MB)");
+                        throw new NacosRuntimeException(
+                            ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
+                            "ZIP decompressed size exceeds limit ("
+                                + (MAX_TOTAL_UNCOMPRESSED_BYTES / 1024 / 1024) + "MB)");
                     }
                     out.write(buffer, 0, n);
                 }
@@ -283,7 +294,7 @@ public class SkillZipParser {
         }
         return result;
     }
-
+    
     private static ZipEntryData findSkillMdEntry(List<ZipEntryData> entries) {
         if (entries == null || entries.isEmpty()) {
             return null;
@@ -302,7 +313,7 @@ public class SkillZipParser {
         }
         return null;
     }
-
+    
     private static String buildSiblingMetaJsonPath(String skillMdPath) {
         if (StringUtils.isBlank(skillMdPath)) {
             return "_meta.json";
@@ -313,7 +324,7 @@ public class SkillZipParser {
         }
         return skillMdPath.substring(0, idx + 1) + "_meta.json";
     }
-
+    
     private static ZipEntryData findEntryByPath(List<ZipEntryData> entries, String targetPath) {
         if (entries == null || entries.isEmpty() || StringUtils.isBlank(targetPath)) {
             return null;
@@ -329,7 +340,8 @@ public class SkillZipParser {
     /**
      * Parse resources from zip entries. Text files use UTF-8 content; binary (by extension) use Base64 content and metadata encoding=base64.
      */
-    private static Map<String, SkillResource> parseResources(List<ZipEntryData> entries, String skillName) {
+    private static Map<String, SkillResource> parseResources(List<ZipEntryData> entries,
+        String skillName) {
         Map<String, SkillResource> resources = new HashMap<>(16);
         
         for (ZipEntryData entry : entries) {
@@ -398,7 +410,7 @@ public class SkillZipParser {
         
         return resources;
     }
-
+    
     /**
      * check is binary
      * @param fileName file name
@@ -408,11 +420,13 @@ public class SkillZipParser {
         if (StringUtils.isBlank(fileName) || !fileName.contains(DOT)) {
             return false;
         }
-        String ext = fileName.substring(fileName.lastIndexOf(DOT.charAt(0)) + 1).trim().toLowerCase();
+        String ext =
+            fileName.substring(fileName.lastIndexOf(DOT.charAt(0)) + 1).trim().toLowerCase();
         return BINARY_EXTENSIONS.contains(ext);
     }
     
     private static final class ZipEntryData {
+        
         final String name;
         final byte[] data;
         
@@ -425,12 +439,14 @@ public class SkillZipParser {
     /**
      * Parse skill from SKILL.md markdown content.
      */
-    private static Skill parseSkillMarkdown(String markdownContent, String namespaceId) throws NacosApiException {
+    private static Skill parseSkillMarkdown(String markdownContent, String namespaceId)
+        throws NacosApiException {
         Matcher matcher = YAML_FRONT_MATTER.matcher(markdownContent);
         
         if (!matcher.matches()) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "SKILL.md must contain YAML front matter (---)");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "SKILL.md must contain YAML front matter (---)");
         }
         
         String yamlContent = matcher.group(1);
@@ -441,18 +457,21 @@ public class SkillZipParser {
         String description = yamlMap.get("description");
         
         if (StringUtils.isBlank(name)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill name is required in YAML front matter");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Skill name is required in YAML front matter");
         }
         
         if (StringUtils.isBlank(description)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill description is required in YAML front matter");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Skill description is required in YAML front matter");
         }
         
         if (!SkillRequestUtil.hasNonFrontmatterContent(markdownContent)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill markdown body is required");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Skill markdown body is required");
         }
         
         Skill skill = new Skill();
@@ -492,12 +511,12 @@ public class SkillZipParser {
                 result.put(currentKey, currentValue.toString());
                 continue;
             }
-
+            
             String trimmedLine = line.trim();
             if (trimmedLine.startsWith("#")) {
                 continue;
             }
-
+            
             int colonIndex = trimmedLine.indexOf(':');
             if (colonIndex > 0) {
                 String key = trimmedLine.substring(0, colonIndex).trim();
@@ -514,7 +533,7 @@ public class SkillZipParser {
         
         return result;
     }
-
+    
     private static String parseYamlScalarValue(String value) {
         if (value == null) {
             return null;
@@ -531,7 +550,7 @@ public class SkillZipParser {
         }
         return result;
     }
-
+    
     /**
      * Minimal unescape for double-quoted YAML scalar values.
      * Only revert the escape sequences that are emitted by SKILL.md exporters:
@@ -542,7 +561,8 @@ public class SkillZipParser {
         if (StringUtils.isBlank(value)) {
             return value;
         }
-        return value.replace(DOUBLE_BACKSLASH, BACKSLASH).replace(ESCAPED_DOUBLE_QUOTE, DOUBLE_QUOTE);
+        return value.replace(DOUBLE_BACKSLASH, BACKSLASH).replace(ESCAPED_DOUBLE_QUOTE,
+            DOUBLE_QUOTE);
     }
     
     private static boolean isMacOsMetadataFile(String itemName) {

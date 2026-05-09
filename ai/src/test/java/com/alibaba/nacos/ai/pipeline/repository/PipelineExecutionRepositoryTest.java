@@ -42,22 +42,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @since 3.2.0
  */
 class PipelineExecutionRepositoryTest {
-
+    
     private static final String CREATE_TABLE_SQL = "CREATE TABLE IF NOT EXISTS pipeline_execution ("
-            + "execution_id  VARCHAR(64)  PRIMARY KEY, "
-            + "resource_type VARCHAR(32)  NOT NULL, "
-            + "resource_name VARCHAR(256) NOT NULL, "
-            + "namespace_id  VARCHAR(128), "
-            + "version       VARCHAR(64), "
-            + "status        VARCHAR(32)  NOT NULL, "
-            + "pipeline      TEXT         NOT NULL, "
-            + "create_time   BIGINT       NOT NULL, "
-            + "update_time   BIGINT       NOT NULL)";
-
+        + "execution_id  VARCHAR(64)  PRIMARY KEY, "
+        + "resource_type VARCHAR(32)  NOT NULL, "
+        + "resource_name VARCHAR(256) NOT NULL, "
+        + "namespace_id  VARCHAR(128), "
+        + "version       VARCHAR(64), "
+        + "status        VARCHAR(32)  NOT NULL, "
+        + "pipeline      TEXT         NOT NULL, "
+        + "create_time   BIGINT       NOT NULL, "
+        + "update_time   BIGINT       NOT NULL)";
+    
     private static JdbcTemplate jdbcTemplate;
-
+    
     private static PipelineExecutionRepositoryImpl repository;
-
+    
     @BeforeAll
     static void setUp() {
         JdbcDataSource dataSource = new JdbcDataSource();
@@ -66,12 +66,12 @@ class PipelineExecutionRepositoryTest {
         jdbcTemplate.execute(CREATE_TABLE_SQL);
         repository = new PipelineExecutionRepositoryImpl(jdbcTemplate);
     }
-
+    
     @AfterEach
     void cleanUp() {
         jdbcTemplate.execute("DELETE FROM pipeline_execution");
     }
-
+    
     private static PipelineNodeResult sampleNode(String id, boolean passed) {
         PipelineNodeResult result = new PipelineNodeResult();
         result.setNodeId(id);
@@ -81,7 +81,7 @@ class PipelineExecutionRepositoryTest {
         result.setDurationMs(1L);
         return result;
     }
-
+    
     private static List<PipelineExecution> samplePipelineExecutions() {
         List<PipelineExecution> list = new ArrayList<>();
         long t = 1_700_000_000_000L;
@@ -95,7 +95,8 @@ class PipelineExecutionRepositoryTest {
                 execution.setNamespaceId("ns1");
                 execution.setVersion("1.0");
                 execution.setStatus(status);
-                execution.setPipeline(Arrays.asList(sampleNode("n1", true), sampleNode("n2", false)));
+                execution
+                    .setPipeline(Arrays.asList(sampleNode("n1", true), sampleNode("n2", false)));
                 execution.setCreateTime(t++);
                 execution.setUpdateTime(t++);
                 list.add(execution);
@@ -114,7 +115,7 @@ class PipelineExecutionRepositoryTest {
         list.add(minimal);
         return list;
     }
-
+    
     /**
      * Execution record persistence round-trip.
      *
@@ -124,19 +125,19 @@ class PipelineExecutionRepositoryTest {
     void persistenceRoundTrip() {
         for (PipelineExecution original : samplePipelineExecutions()) {
             repository.save(original);
-
+            
             PipelineExecution foundById = repository.findById(original.getExecutionId());
             assertNotNull(foundById, "findById should return a non-null record");
             assertExecutionEquals(original, foundById);
-
+            
             PipelineExecution foundByResource = repository.findByResource(
-                    original.getResourceType(), original.getResourceName(),
-                    original.getNamespaceId(), original.getVersion());
+                original.getResourceType(), original.getResourceName(),
+                original.getNamespaceId(), original.getVersion());
             assertNotNull(foundByResource, "findByResource should return a non-null record");
             assertExecutionEquals(original, foundByResource);
         }
     }
-
+    
     /**
      * listPipelines filter correctness.
      *
@@ -159,11 +160,11 @@ class PipelineExecutionRepositoryTest {
                 other.setUpdateTime(seed.getUpdateTime());
                 repository.save(other);
             }
-
+            
             List<PipelineExecution> results = repository.findByResourceWithPage(
-                    seed.getResourceType(), seed.getResourceName(),
-                    seed.getNamespaceId(), seed.getVersion(), 0, 100);
-
+                seed.getResourceType(), seed.getResourceName(),
+                seed.getNamespaceId(), seed.getVersion(), 0, 100);
+            
             for (PipelineExecution r : results) {
                 assertEquals(seed.getResourceType(), r.getResourceType());
                 assertEquals(seed.getResourceName(), r.getResourceName());
@@ -173,7 +174,7 @@ class PipelineExecutionRepositoryTest {
             jdbcTemplate.execute("DELETE FROM pipeline_execution");
         }
     }
-
+    
     /**
      * count and find filter consistency.
      *
@@ -196,20 +197,20 @@ class PipelineExecutionRepositoryTest {
                 other.setUpdateTime(seed.getUpdateTime());
                 repository.save(other);
             }
-
+            
             int count = repository.countByResource(
-                    seed.getResourceType(), seed.getResourceName(),
-                    seed.getNamespaceId(), seed.getVersion());
+                seed.getResourceType(), seed.getResourceName(),
+                seed.getNamespaceId(), seed.getVersion());
             List<PipelineExecution> all = repository.findByResourceWithPage(
-                    seed.getResourceType(), seed.getResourceName(),
-                    seed.getNamespaceId(), seed.getVersion(), 0, Integer.MAX_VALUE);
-
+                seed.getResourceType(), seed.getResourceName(),
+                seed.getNamespaceId(), seed.getVersion(), 0, Integer.MAX_VALUE);
+            
             assertEquals(count, all.size(),
-                    "countByResource should equal findByResourceWithPage size with unlimited pagination");
+                "countByResource should equal findByResourceWithPage size with unlimited pagination");
             jdbcTemplate.execute("DELETE FROM pipeline_execution");
         }
     }
-
+    
     private void assertExecutionEquals(PipelineExecution expected, PipelineExecution actual) {
         assertEquals(expected.getExecutionId(), actual.getExecutionId());
         assertEquals(expected.getResourceType(), actual.getResourceType());
