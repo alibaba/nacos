@@ -40,5 +40,5 @@ public interface AiClientProxy extends Closeable {
      * @throws NacosException if request parameter is invalid or handle error
      */
     Prompt queryPrompt(String promptKey, String version, String label, String md5)
-            throws NacosException;
+        throws NacosException;
 }

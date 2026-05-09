@@ -69,14 +69,14 @@ public class NacosMcpServerCacheHolder implements Closeable {
         this.mcpServerCache = new ConcurrentHashMap<>(4);
         this.updateTaskMap = new ConcurrentHashMap<>(4);
         this.objectMapper =
-                JsonMapper.builder().configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
-                        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
-                        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            JsonMapper.builder().configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
         this.updaterExecutor = new ScheduledThreadPoolExecutor(1,
-                new NameThreadFactory("com.alibaba.nacos.client.ai.mcp.server.updater"));
+            new NameThreadFactory("com.alibaba.nacos.client.ai.mcp.server.updater"));
         this.updateIntervalMillis =
-                properties.getLong(AiConstants.AI_MCP_SERVER_CACHE_UPDATE_INTERVAL,
-                        AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL);
+            properties.getLong(AiConstants.AI_MCP_SERVER_CACHE_UPDATE_INTERVAL,
+                AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL);
     }
     
     public McpServerDetailInfo getMcpServer(String mcpName, String version) {
@@ -136,7 +136,7 @@ public class NacosMcpServerCacheHolder implements Closeable {
     }
     
     private boolean isMcpServerChanged(McpServerDetailInfo oldMcpServer,
-            McpServerDetailInfo detailInfo) {
+        McpServerDetailInfo detailInfo) {
         try {
             String newJson = objectMapper.writeValueAsString(detailInfo);
             if (null == oldMcpServer) {

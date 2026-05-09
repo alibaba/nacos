@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * @author xiweng.yy
  */
 public class AgentCardListenerInvoker
-        extends AbstractAiListenerInvoker<NacosAgentCardEvent, AbstractNacosAgentCardListener> {
+    extends AbstractAiListenerInvoker<NacosAgentCardEvent, AbstractNacosAgentCardListener> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentCardListenerInvoker.class);
     
@@ -37,6 +37,6 @@ public class AgentCardListenerInvoker
     
     protected void logInvoke(NacosAgentCardEvent event) {
         LOGGER.info("Invoke event agentName: {} to Listener: {}", event.getAgentName(),
-                listener.toString());
+            listener.toString());
     }
 }

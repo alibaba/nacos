@@ -45,7 +45,7 @@ public class PropertiesListProvider extends AbstractServerListProvider {
     
     @Override
     public void init(final NacosClientProperties properties,
-            final NacosRestTemplate nacosRestTemplate) throws NacosException {
+        final NacosRestTemplate nacosRestTemplate) throws NacosException {
         super.init(properties, nacosRestTemplate);
         serverList = new ArrayList<>();
         String serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
@@ -58,8 +58,8 @@ public class PropertiesListProvider extends AbstractServerListProvider {
                 String[] serverAddrArr = InternetAddressUtil.splitIpPortStr(serverAddr);
                 if (serverAddrArr.length == 1) {
                     this.serverList
-                            .add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER
-                                    + ClientBasicParamUtil.getDefaultServerPort());
+                        .add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER
+                            + ClientBasicParamUtil.getDefaultServerPort());
                 } else {
                     this.serverList.add(serverAddr);
                 }
@@ -75,9 +75,9 @@ public class PropertiesListProvider extends AbstractServerListProvider {
     @Override
     public String getServerName() {
         return FIXED_NAME + "-"
-                + (StringUtils.isNotBlank(namespace) ? (StringUtils.trim(namespace) + "-")
-                        : "")
-                + ClientBasicParamUtil.getNameSuffixByServerIps(serverList.toArray(new String[0]));
+            + (StringUtils.isNotBlank(namespace) ? (StringUtils.trim(namespace) + "-")
+                : "")
+            + ClientBasicParamUtil.getNameSuffixByServerIps(serverList.toArray(new String[0]));
     }
     
     @Override

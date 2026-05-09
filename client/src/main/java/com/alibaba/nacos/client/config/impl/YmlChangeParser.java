@@ -40,7 +40,7 @@ import java.util.Map;
 public class YmlChangeParser extends AbstractConfigChangeParser {
     
     private static final String INVALID_CONSTRUCTOR_ERROR_INFO =
-            "could not determine a constructor for the tag";
+        "could not determine a constructor for the tag";
     
     private static final String CONFIG_TYPE = "yaml";
     
@@ -50,7 +50,7 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
     
     @Override
     public Map<String, ConfigChangeItem> doParse(String oldContent, String newContent,
-            String type) {
+        String type) {
         Map<String, Object> oldMap = Collections.emptyMap();
         Map<String, Object> newMap = Collections.emptyMap();
         try {
@@ -72,11 +72,11 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
     
     private void handleYamlException(MarkedYAMLException e) {
         if (e.getMessage().startsWith(INVALID_CONSTRUCTOR_ERROR_INFO)
-                || e instanceof ComposerException) {
+            || e instanceof ComposerException) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    "AbstractConfigChangeListener only support basic java data type for yaml. If you want to listen "
-                            + "key changes for custom classes, please use `Listener` to listener whole yaml configuration and parse it by yourself.",
-                    e);
+                "AbstractConfigChangeListener only support basic java data type for yaml. If you want to listen "
+                    + "key changes for custom classes, please use `Listener` to listener whole yaml configuration and parse it by yourself.",
+                e);
         }
         throw e;
     }
@@ -88,9 +88,9 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
     }
     
     private void buildFlattenedMap(Map<String, Object> result, Map<String, Object> source,
-            String path) {
+        String path) {
         for (Iterator<Map.Entry<String, Object>> itr = source.entrySet().iterator(); itr
-                .hasNext();) {
+            .hasNext();) {
             Map.Entry<String, Object> e = itr.next();
             String key = e.getKey();
             if (StringUtils.isNotBlank(path)) {
@@ -115,7 +115,7 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
                     int count = 0;
                     for (Object object : collection) {
                         buildFlattenedMap(result,
-                                Collections.singletonMap("[" + (count++) + "]", object), key);
+                            Collections.singletonMap("[" + (count++) + "]", object), key);
                     }
                 }
             } else {

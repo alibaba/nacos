@@ -55,7 +55,7 @@ public class SecurityProxy implements Closeable {
      * @Param nacosRestTemplate http request template.
      */
     public SecurityProxy(AbstractServerListManager serverListManager,
-            NacosRestTemplate nacosRestTemplate) {
+        NacosRestTemplate nacosRestTemplate) {
         clientAuthPluginManager = new ClientAuthPluginManager();
         clientAuthPluginManager.init(serverListManager.getServerList(), nacosRestTemplate);
         NotifyCenter.registerSubscriber(new Subscriber<ServerListChangeEvent>() {
@@ -82,7 +82,7 @@ public class SecurityProxy implements Closeable {
             return;
         }
         for (ClientAuthService clientAuthService : clientAuthPluginManager
-                .getAuthServiceSpiImplSet()) {
+            .getAuthServiceSpiImplSet()) {
             clientAuthService.login(properties);
         }
     }
@@ -95,9 +95,9 @@ public class SecurityProxy implements Closeable {
     public Map<String, String> getIdentityContext(RequestResource resource) {
         Map<String, String> header = new HashMap<>(1);
         for (ClientAuthService clientAuthService : clientAuthPluginManager
-                .getAuthServiceSpiImplSet()) {
+            .getAuthServiceSpiImplSet()) {
             LoginIdentityContext loginIdentityContext =
-                    clientAuthService.getLoginIdentityContext(resource);
+                clientAuthService.getLoginIdentityContext(resource);
             for (String key : loginIdentityContext.getAllKey()) {
                 header.put(key, loginIdentityContext.getParameter(key));
             }
@@ -118,10 +118,10 @@ public class SecurityProxy implements Closeable {
             return;
         }
         for (ClientAuthService clientAuthService : clientAuthPluginManager
-                .getAuthServiceSpiImplSet()) {
+            .getAuthServiceSpiImplSet()) {
             try {
                 LoginIdentityContext loginIdentityContext =
-                        clientAuthService.getLoginIdentityContext(new RequestResource());
+                    clientAuthService.getLoginIdentityContext(new RequestResource());
                 if (loginIdentityContext != null) {
                     loginIdentityContext.setParameter(NacosAuthLoginConstant.RELOGINFLAG, "true");
                 }

@@ -72,17 +72,17 @@ class NamingServerListManagerTest {
         Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
         restMapField.setAccessible(true);
         Map<String, NacosRestTemplate> restMap =
-                (Map<String, NacosRestTemplate>) restMapField.get(null);
+            (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
-                "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory");
+            "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory");
         restMap.put(
-                "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory",
-                nacosRestTemplate);
+            "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory",
+            nacosRestTemplate);
         httpRestResult = new HttpRestResult<>();
         httpRestResult.setData("127.0.0.1:8848");
         httpRestResult.setCode(200);
         Mockito.when(nacosRestTemplate.get(contains("127.0.0.1"), any(), any(), any()))
-                .thenReturn(httpRestResult);
+            .thenReturn(httpRestResult);
     }
     
     @AfterEach
@@ -91,10 +91,10 @@ class NamingServerListManagerTest {
             Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
             restMapField.setAccessible(true);
             Map<String, NacosRestTemplate> restMap =
-                    (Map<String, NacosRestTemplate>) restMapField.get(null);
+                (Map<String, NacosRestTemplate>) restMapField.get(null);
             restMap.put(
-                    "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory",
-                    cachedNacosRestTemplate);
+                "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory",
+                cachedNacosRestTemplate);
         }
         if (null != serverListManager) {
             serverListManager.shutdown();
@@ -202,8 +202,8 @@ class NamingServerListManagerTest {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(
-                nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
-                .thenReturn(httpRestResult);
+            nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
+            .thenReturn(httpRestResult);
         serverListManager = new NamingServerListManager(clientProperties, "");
         serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
@@ -218,8 +218,8 @@ class NamingServerListManagerTest {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(
-                nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
-                .thenReturn(httpRestResult);
+            nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
+            .thenReturn(httpRestResult);
         serverListManager = new NamingServerListManager(clientProperties, "");
         serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
@@ -235,8 +235,8 @@ class NamingServerListManagerTest {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(
-                nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/ccc"), any(), any(), any()))
-                .thenReturn(httpRestResult);
+            nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/ccc"), any(), any(), any()))
+            .thenReturn(httpRestResult);
         serverListManager = new NamingServerListManager(clientProperties, "");
         serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
@@ -252,8 +252,8 @@ class NamingServerListManagerTest {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(
-                nacosRestTemplate.get(eq("http://127.0.0.1:8080/bbb/ccc"), any(), any(), any()))
-                .thenReturn(httpRestResult);
+            nacosRestTemplate.get(eq("http://127.0.0.1:8080/bbb/ccc"), any(), any(), any()))
+            .thenReturn(httpRestResult);
         serverListManager = new NamingServerListManager(clientProperties, "");
         serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
@@ -302,21 +302,21 @@ class NamingServerListManagerTest {
     }
     
     private void mockThreadInvoke(NamingServerListManager serverListManager,
-            boolean expectedInvoked)
-            throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
-            InvocationTargetException {
+        boolean expectedInvoked)
+        throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
+        InvocationTargetException {
         Field providerField =
-                AbstractServerListManager.class.getDeclaredField("serverListProvider");
+            AbstractServerListManager.class.getDeclaredField("serverListProvider");
         providerField.setAccessible(true);
         ServerListProvider serverListProvider =
-                (ServerListProvider) providerField.get(serverListManager);
+            (ServerListProvider) providerField.get(serverListManager);
         assertInstanceOf(EndpointServerListProvider.class, serverListProvider);
         Field field =
-                EndpointServerListProvider.class.getDeclaredField("lastServerListRefreshTime");
+            EndpointServerListProvider.class.getDeclaredField("lastServerListRefreshTime");
         field.setAccessible(true);
         field.set(serverListProvider, expectedInvoked ? 0 : System.currentTimeMillis());
         Method method =
-                EndpointServerListProvider.class.getDeclaredMethod("refreshServerListIfNeed");
+            EndpointServerListProvider.class.getDeclaredMethod("refreshServerListIfNeed");
         method.setAccessible(true);
         method.invoke(serverListProvider);
     }

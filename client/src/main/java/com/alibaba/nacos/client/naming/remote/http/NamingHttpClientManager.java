@@ -39,10 +39,10 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 public class NamingHttpClientManager implements Closeable {
     
     private static final int READ_TIME_OUT_MILLIS = Integer
-            .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
+        .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
     
     private static final int CON_TIME_OUT_MILLIS =
-            Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+        Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
     
     private static final boolean ENABLE_HTTPS = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
@@ -74,8 +74,8 @@ public class NamingHttpClientManager implements Closeable {
             HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
             NAMING_LOGGER.error(
-                    "[NamingHttpClientManager] An exception occurred when the HTTP client was closed : {}",
-                    ExceptionUtil.getStackTrace(ex));
+                "[NamingHttpClientManager] An exception occurred when the HTTP client was closed : {}",
+                ExceptionUtil.getStackTrace(ex));
         }
         NAMING_LOGGER.info("[NamingHttpClientManager] Completed destruction of NacosRestTemplate");
     }
@@ -85,8 +85,8 @@ public class NamingHttpClientManager implements Closeable {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).setMaxRedirects(MAX_REDIRECTS)
-                    .build();
+                .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).setMaxRedirects(MAX_REDIRECTS)
+                .build();
         }
         
         @Override

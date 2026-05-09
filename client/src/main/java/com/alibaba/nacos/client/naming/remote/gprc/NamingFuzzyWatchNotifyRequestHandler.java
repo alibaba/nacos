@@ -45,7 +45,7 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
     NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder;
     
     public NamingFuzzyWatchNotifyRequestHandler(
-            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) {
+        NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) {
         this.namingFuzzyWatchServiceListHolder = namingFuzzyWatchServiceListHolder;
         NotifyCenter.registerToPublisher(NamingFuzzyWatchNotifyEvent.class, 1000);
     }
@@ -55,30 +55,30 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
         
         if (request instanceof NamingFuzzyWatchSyncRequest) {
             NamingFuzzyWatchSyncRequest watchNotifySyncRequest =
-                    (NamingFuzzyWatchSyncRequest) request;
+                (NamingFuzzyWatchSyncRequest) request;
             NamingFuzzyWatchContext namingFuzzyWatchContext =
-                    namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap()
-                            .get(watchNotifySyncRequest.getGroupKeyPattern());
+                namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap()
+                    .get(watchNotifySyncRequest.getGroupKeyPattern());
             if (namingFuzzyWatchContext != null) {
                 Collection<NamingFuzzyWatchSyncRequest.Context> serviceKeys =
-                        watchNotifySyncRequest.getContexts();
+                    watchNotifySyncRequest.getContexts();
                 if (watchNotifySyncRequest.getSyncType().equals(Constants.FUZZY_WATCH_INIT_NOTIFY)
-                        || watchNotifySyncRequest.getSyncType()
-                                .equals(Constants.FUZZY_WATCH_DIFF_SYNC_NOTIFY)) {
+                    || watchNotifySyncRequest.getSyncType()
+                        .equals(Constants.FUZZY_WATCH_DIFF_SYNC_NOTIFY)) {
                     for (NamingFuzzyWatchSyncRequest.Context serviceKey : serviceKeys) {
                         // may have a 'change event' sent to client before 'init event'
                         if (namingFuzzyWatchContext
-                                .addReceivedServiceKey(serviceKey.getServiceKey())) {
+                            .addReceivedServiceKey(serviceKey.getServiceKey())) {
                             NotifyCenter.publishEvent(NamingFuzzyWatchNotifyEvent.build(
-                                    namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
-                                    watchNotifySyncRequest.getGroupKeyPattern(),
-                                    serviceKey.getServiceKey(),
-                                    serviceKey.getChangedType(),
-                                    watchNotifySyncRequest.getSyncType()));
+                                namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
+                                watchNotifySyncRequest.getGroupKeyPattern(),
+                                serviceKey.getServiceKey(),
+                                serviceKey.getChangedType(),
+                                watchNotifySyncRequest.getSyncType()));
                         }
                     }
                 } else if (watchNotifySyncRequest.getSyncType()
-                        .equals(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY)) {
+                    .equals(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY)) {
                     namingFuzzyWatchContext.markInitializationComplete();
                 }
             }
@@ -87,17 +87,17 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
             
         } else if (request instanceof NamingFuzzyWatchChangeNotifyRequest) {
             NamingFuzzyWatchChangeNotifyRequest notifyChangeRequest =
-                    (NamingFuzzyWatchChangeNotifyRequest) request;
+                (NamingFuzzyWatchChangeNotifyRequest) request;
             String[] serviceKeyItems =
-                    NamingUtils.parseServiceKey(notifyChangeRequest.getServiceKey());
+                NamingUtils.parseServiceKey(notifyChangeRequest.getServiceKey());
             String namespace = serviceKeyItems[0];
             String groupName = serviceKeyItems[1];
             String serviceName = serviceKeyItems[2];
             
             Collection<String> matchedPattern = FuzzyGroupKeyPattern.filterMatchedPatterns(
-                    namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap().keySet(),
-                    serviceName, groupName,
-                    namespace);
+                namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap().keySet(),
+                serviceName, groupName,
+                namespace);
             String serviceChangeType = notifyChangeRequest.getChangedType();
             
             switch (serviceChangeType) {
@@ -105,36 +105,36 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
                 case Constants.ServiceChangedType.INSTANCE_CHANGED:
                     for (String pattern : matchedPattern) {
                         NamingFuzzyWatchContext namingFuzzyWatchContext =
-                                namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap()
-                                        .get(pattern);
+                            namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap()
+                                .get(pattern);
                         if (namingFuzzyWatchContext != null
-                                && namingFuzzyWatchContext.addReceivedServiceKey(
-                                        ((NamingFuzzyWatchChangeNotifyRequest) request)
-                                                .getServiceKey())) {
+                            && namingFuzzyWatchContext.addReceivedServiceKey(
+                                ((NamingFuzzyWatchChangeNotifyRequest) request)
+                                    .getServiceKey())) {
                             //publish local service add event
                             NotifyCenter.publishEvent(NamingFuzzyWatchNotifyEvent.build(
-                                    namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
-                                    pattern,
-                                    notifyChangeRequest.getServiceKey(),
-                                    Constants.ServiceChangedType.ADD_SERVICE,
-                                    FUZZY_WATCH_RESOURCE_CHANGED));
+                                namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
+                                pattern,
+                                notifyChangeRequest.getServiceKey(),
+                                Constants.ServiceChangedType.ADD_SERVICE,
+                                FUZZY_WATCH_RESOURCE_CHANGED));
                         }
                     }
                     break;
                 case Constants.ServiceChangedType.DELETE_SERVICE:
                     for (String pattern : matchedPattern) {
                         NamingFuzzyWatchContext namingFuzzyWatchContext =
-                                namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap()
-                                        .get(pattern);
+                            namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap()
+                                .get(pattern);
                         if (namingFuzzyWatchContext != null
-                                && namingFuzzyWatchContext.removeReceivedServiceKey(
-                                        notifyChangeRequest.getServiceKey())) {
+                            && namingFuzzyWatchContext.removeReceivedServiceKey(
+                                notifyChangeRequest.getServiceKey())) {
                             NotifyCenter.publishEvent(NamingFuzzyWatchNotifyEvent.build(
-                                    namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
-                                    pattern,
-                                    notifyChangeRequest.getServiceKey(),
-                                    Constants.ServiceChangedType.DELETE_SERVICE,
-                                    FUZZY_WATCH_RESOURCE_CHANGED));
+                                namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
+                                pattern,
+                                notifyChangeRequest.getServiceKey(),
+                                Constants.ServiceChangedType.DELETE_SERVICE,
+                                FUZZY_WATCH_RESOURCE_CHANGED));
                         }
                     }
                     break;

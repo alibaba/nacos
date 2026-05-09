@@ -40,10 +40,10 @@ class SearchableProperties implements NacosClientProperties {
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchableProperties.class);
     
     private static final JvmArgsPropertySource JVM_ARGS_PROPERTY_SOURCE =
-            new JvmArgsPropertySource();
+        new JvmArgsPropertySource();
     
     private static final SystemEnvPropertySource SYSTEM_ENV_PROPERTY_SOURCE =
-            new SystemEnvPropertySource();
+        new SystemEnvPropertySource();
     
     private static final List<SourceType> SEARCH_ORDER;
     
@@ -63,7 +63,7 @@ class SearchableProperties implements NacosClientProperties {
     
     private static List<SourceType> init() {
         List<SourceType> initOrder =
-                Arrays.asList(SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV);
+            Arrays.asList(SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV);
         
         String firstEnv = JVM_ARGS_PROPERTY_SOURCE.getProperty(Constants.SysEnv.NACOS_ENV_FIRST);
         if (StringUtils.isBlank(firstEnv)) {
@@ -98,7 +98,7 @@ class SearchableProperties implements NacosClientProperties {
     private SearchableProperties(PropertiesPropertySource propertiesPropertySource) {
         this.propertiesPropertySource = propertiesPropertySource;
         this.propertySources = build(propertiesPropertySource, JVM_ARGS_PROPERTY_SOURCE,
-                SYSTEM_ENV_PROPERTY_SOURCE);
+            SYSTEM_ENV_PROPERTY_SOURCE);
     }
     
     @Override
@@ -189,7 +189,7 @@ class SearchableProperties implements NacosClientProperties {
     public Properties asProperties() {
         Properties properties = new Properties();
         final ListIterator<AbstractPropertySource> iterator =
-                propertySources.listIterator(propertySources.size());
+            propertySources.listIterator(propertySources.size());
         while (iterator.hasPrevious()) {
             final AbstractPropertySource previous = iterator.previous();
             properties.putAll(previous.asProperties());
@@ -223,15 +223,15 @@ class SearchableProperties implements NacosClientProperties {
     
     private List<AbstractPropertySource> build(AbstractPropertySource... propertySources) {
         final Map<SourceType, AbstractPropertySource> sourceMap = Arrays.stream(propertySources)
-                .collect(Collectors.toMap(AbstractPropertySource::getType,
-                        propertySource -> propertySource));
+            .collect(Collectors.toMap(AbstractPropertySource::getType,
+                propertySource -> propertySource));
         return SEARCH_ORDER.stream().map(sourceMap::get).collect(Collectors.toList());
     }
     
     @Override
     public NacosClientProperties derive() {
         return new SearchableProperties(
-                new PropertiesPropertySource(this.propertiesPropertySource));
+            new PropertiesPropertySource(this.propertiesPropertySource));
     }
     
     @Override

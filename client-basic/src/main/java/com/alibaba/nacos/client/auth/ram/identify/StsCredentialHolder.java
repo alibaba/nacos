@@ -58,7 +58,7 @@ public class StsCredentialHolder {
             long currentTime = System.currentTimeMillis();
             long expirationTime = stsCredential.getExpiration().getTime();
             int timeToRefreshInMillisecond =
-                    StsConfig.getInstance().getTimeToRefreshInMillisecond();
+                StsConfig.getInstance().getTimeToRefreshInMillisecond();
             if (expirationTime - currentTime > timeToRefreshInMillisecond) {
                 return stsCredential;
             }
@@ -67,9 +67,9 @@ public class StsCredentialHolder {
         stsCredential = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
         });
         LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
-                stsCredential.getCode(), stsCredential.getAccessKeyId(),
-                stsCredential.getLastUpdated(),
-                stsCredential.getExpiration());
+            stsCredential.getCode(), stsCredential.getAccessKeyId(),
+            stsCredential.getLastUpdated(),
+            stsCredential.getExpiration());
         return stsCredential;
     }
     
@@ -81,16 +81,16 @@ public class StsCredentialHolder {
         String securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
         try {
             HttpRestResult<String> result = HttpClientManager.getInstance().getNacosRestTemplate()
-                    .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
+                .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
             
             if (!result.ok()) {
                 LOGGER.error(
-                        "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
-                        securityCredentialsUrl, result.getCode(), result.getMessage());
+                    "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
+                    securityCredentialsUrl, result.getCode(), result.getMessage());
                 throw new NacosRuntimeException(NacosException.SERVER_ERROR,
-                        "can not get security credentials, responseCode: " + result.getCode()
-                                + ", response: " + result
-                                        .getMessage());
+                    "can not get security credentials, responseCode: " + result.getCode()
+                        + ", response: " + result
+                            .getMessage());
             }
             return result.getData();
         } catch (Exception e) {

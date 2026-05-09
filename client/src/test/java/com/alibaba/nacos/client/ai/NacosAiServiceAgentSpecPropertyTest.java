@@ -44,20 +44,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class NacosAiServiceAgentSpecPropertyTest {
     
     private static final AbstractNacosAgentSpecListener DUMMY_LISTENER =
-            new AbstractNacosAgentSpecListener() {
-                
-                @Override
-                public void onEvent(NacosAgentSpecEvent event) {
-                    // no-op
-                }
-            };
+        new AbstractNacosAgentSpecListener() {
+            
+            @Override
+            public void onEvent(NacosAgentSpecEvent event) {
+                // no-op
+            }
+        };
     
     @Provide
     Arbitrary<String> blankStrings() {
         return Arbitraries.oneOf(
-                Arbitraries.just(null),
-                Arbitraries.just(""),
-                Arbitraries.strings().whitespace().ofMinLength(1).ofMaxLength(20));
+            Arbitraries.just(null),
+            Arbitraries.just(""),
+            Arbitraries.strings().whitespace().ofMinLength(1).ofMaxLength(20));
     }
     
     /**
@@ -70,7 +70,7 @@ class NacosAiServiceAgentSpecPropertyTest {
         NacosAiService service = Mockito.mock(NacosAiService.class, Mockito.CALLS_REAL_METHODS);
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> service.loadAgentSpec(blankName));
+            () -> service.loadAgentSpec(blankName));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
     }
     
@@ -84,7 +84,7 @@ class NacosAiServiceAgentSpecPropertyTest {
         NacosAiService service = Mockito.mock(NacosAiService.class, Mockito.CALLS_REAL_METHODS);
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> service.subscribeAgentSpec(blankName, DUMMY_LISTENER));
+            () -> service.subscribeAgentSpec(blankName, DUMMY_LISTENER));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
     }
     
@@ -98,7 +98,7 @@ class NacosAiServiceAgentSpecPropertyTest {
         NacosAiService service = Mockito.mock(NacosAiService.class, Mockito.CALLS_REAL_METHODS);
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> service.unsubscribeAgentSpec(blankName, DUMMY_LISTENER));
+            () -> service.unsubscribeAgentSpec(blankName, DUMMY_LISTENER));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
     }
 }

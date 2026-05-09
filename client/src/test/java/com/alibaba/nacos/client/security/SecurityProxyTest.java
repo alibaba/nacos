@@ -70,7 +70,7 @@ class SecurityProxyTest {
         result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
         result.setCode(200);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenReturn(result);
+            .thenReturn(result);
         
         List<String> serverList = new ArrayList<>();
         serverList.add("localhost");
@@ -129,7 +129,7 @@ class SecurityProxyTest {
     @Test
     void testLoginWithoutAnyPlugin() throws NoSuchFieldException, IllegalAccessException {
         Field clientAuthPluginManagerField =
-                SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
+            SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
         clientAuthPluginManagerField.setAccessible(true);
         ClientAuthPluginManager clientAuthPluginManager = mock(ClientAuthPluginManager.class);
         clientAuthPluginManagerField.set(securityProxy, clientAuthPluginManager);
@@ -142,65 +142,65 @@ class SecurityProxyTest {
     @Test
     void testReLogin() throws NoSuchFieldException, IllegalAccessException {
         Field clientAuthPluginManagerField =
-                SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
+            SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
         clientAuthPluginManagerField.setAccessible(true);
         ClientAuthPluginManager clientAuthPluginManager = mock(ClientAuthPluginManager.class);
         clientAuthPluginManagerField.set(securityProxy, clientAuthPluginManager);
         when(clientAuthPluginManager.getAuthServiceSpiImplSet()).thenReturn(
-                Collections.singleton(new AbstractClientAuthService() {
-                    
-                    private LoginIdentityContext loginIdentityContext;
-                    
-                    @Override
-                    public Boolean login(Properties properties) {
-                        return null;
+            Collections.singleton(new AbstractClientAuthService() {
+                
+                private LoginIdentityContext loginIdentityContext;
+                
+                @Override
+                public Boolean login(Properties properties) {
+                    return null;
+                }
+                
+                @Override
+                public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
+                    if (loginIdentityContext == null) {
+                        loginIdentityContext = new LoginIdentityContext();
                     }
+                    return loginIdentityContext;
+                }
+                
+                @Override
+                public void shutdown() throws NacosException {
                     
-                    @Override
-                    public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
-                        if (loginIdentityContext == null) {
-                            loginIdentityContext = new LoginIdentityContext();
-                        }
-                        return loginIdentityContext;
-                    }
-                    
-                    @Override
-                    public void shutdown() throws NacosException {
-                        
-                    }
-                }));
+                }
+            }));
         securityProxy.reLogin();
         Map<String, String> identityContext =
-                securityProxy.getIdentityContext(new RequestResource());
+            securityProxy.getIdentityContext(new RequestResource());
         assertEquals(identityContext.get(NacosAuthLoginConstant.RELOGINFLAG), "true");
     }
     
     @Test
     void testReLoginWithEmptyPlugin() throws NoSuchFieldException, IllegalAccessException {
         Field clientAuthPluginManagerField =
-                SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
+            SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
         clientAuthPluginManagerField.setAccessible(true);
         ClientAuthPluginManager clientAuthPluginManager = mock(ClientAuthPluginManager.class);
         clientAuthPluginManagerField.set(securityProxy, clientAuthPluginManager);
         when(clientAuthPluginManager.getAuthServiceSpiImplSet()).thenReturn(Collections.emptySet());
         securityProxy.reLogin();
         Map<String, String> identityContext =
-                securityProxy.getIdentityContext(new RequestResource());
+            securityProxy.getIdentityContext(new RequestResource());
         assertFalse(identityContext.containsKey(NacosAuthLoginConstant.RELOGINFLAG));
     }
     
     @Test
     void testReLoginWithException() throws NoSuchFieldException, IllegalAccessException {
         Field clientAuthPluginManagerField =
-                SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
+            SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
         clientAuthPluginManagerField.setAccessible(true);
         ClientAuthPluginManager clientAuthPluginManager = mock(ClientAuthPluginManager.class);
         clientAuthPluginManagerField.set(securityProxy, clientAuthPluginManager);
         ClientAuthService mockClientAuthService = mock(ClientAuthService.class);
         when(mockClientAuthService.getLoginIdentityContext(any()))
-                .thenThrow(new RuntimeException("test"));
+            .thenThrow(new RuntimeException("test"));
         when(clientAuthPluginManager.getAuthServiceSpiImplSet())
-                .thenReturn(Collections.singleton(mockClientAuthService));
+            .thenReturn(Collections.singleton(mockClientAuthService));
         assertDoesNotThrow(() -> securityProxy.reLogin());
     }
 }

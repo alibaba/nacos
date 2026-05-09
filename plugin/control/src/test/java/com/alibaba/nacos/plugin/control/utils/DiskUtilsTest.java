@@ -141,6 +141,41 @@ class DiskUtilsTest {
         assertEquals(second, DiskUtils.readFile(f));
     }
 
+    @Test
+    void testReadFileWithMultiByteUtf8AcrossChunkBoundary() throws IOException {
+        // Reproduces the corruption that happens when a multi-byte UTF-8 character straddles the
+        // 4096-byte read-buffer boundary. The decode loop reads the first chunk, the decoder
+        // reports UNDERFLOW because the trailing bytes are an incomplete UTF-8 sequence, and the
+        // unconsumed bytes are dropped if the buffer is cleared instead of compacted.
+        //
+        // Layout (UTF-8): 4094 ASCII bytes + 3-byte CJK ('中', E4 B8 AD) + 200 ASCII bytes.
+        // The CJK character occupies bytes 4094..4096, so its trailing byte falls in the second
+        // chunk. With buffer.clear() the leading two bytes are discarded and the second chunk
+        // starts at the orphaned continuation byte AD, producing a malformed sequence and
+        // truncating the rest of the file. With buffer.compact() the leading bytes are preserved
+        // and the character round-trips cleanly.
+        File f = Files.createTempFile("nacos-disk-utils-chunk-boundary", ".txt").toFile();
+        f.deleteOnExit();
+        StringBuilder content = new StringBuilder(4094 + 1 + 200);
+        for (int i = 0; i < 4094; i++) {
+            content.append('a');
+        }
+        content.append('中'); // '中', encodes to E4 B8 AD in UTF-8
+        for (int i = 0; i < 200; i++) {
+            content.append('b');
+        }
+        String expected = content.toString();
+        byte[] encoded = expected.getBytes(StandardCharsets.UTF_8);
+        // Sanity-check the layout so future edits to the test cannot accidentally make it pass.
+        assertEquals(4094 + 3 + 200, encoded.length);
+        assertEquals((byte) 0xe4, encoded[4094]);
+        assertEquals((byte) 0xb8, encoded[4095]);
+        assertEquals((byte) 0xad, encoded[4096]);
+        Files.write(f.toPath(), encoded);
+
+        assertEquals(expected, DiskUtils.readFile(f));
+    }
+
     private static String repeat(String token, int times) {
         StringBuilder sb = new StringBuilder(token.length() * times);
         for (int i = 0; i < times; i++) {

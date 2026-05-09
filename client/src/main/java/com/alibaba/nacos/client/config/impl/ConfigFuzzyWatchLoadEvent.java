@@ -59,7 +59,7 @@ public class ConfigFuzzyWatchLoadEvent extends Event {
      * @return A new FuzzyListenNotifyEvent instance.
      */
     public static ConfigFuzzyWatchLoadEvent buildEvent(int code, String groupKeyPattern,
-            String clientUuid) {
+        String clientUuid) {
         return new ConfigFuzzyWatchLoadEvent(code, groupKeyPattern, clientUuid);
     }
     

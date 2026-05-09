@@ -27,7 +27,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 public class StsConfig {
     
     private static final String RAM_SECURITY_CREDENTIALS_URL =
-            "http://100.100.100.200/latest/meta-data/ram/security-credentials/";
+        "http://100.100.100.200/latest/meta-data/ram/security-credentials/";
     
     private String ramRoleName;
     
@@ -59,31 +59,31 @@ public class StsConfig {
     
     private StsConfig() {
         String ramRoleName = NacosClientProperties.PROTOTYPE
-                .getProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY);
+            .getProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY);
         if (!StringUtils.isBlank(ramRoleName)) {
             setRamRoleName(ramRoleName);
         }
         
         String timeToRefreshInMillisecond = NacosClientProperties.PROTOTYPE
-                .getProperty(IdentifyConstants.REFRESH_TIME_PROPERTY);
+            .getProperty(IdentifyConstants.REFRESH_TIME_PROPERTY);
         if (!StringUtils.isBlank(timeToRefreshInMillisecond)) {
             setTimeToRefreshInMillisecond(Integer.parseInt(timeToRefreshInMillisecond));
         }
         
         String securityCredentials =
-                NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.SECURITY_PROPERTY);
+            NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.SECURITY_PROPERTY);
         if (!StringUtils.isBlank(securityCredentials)) {
             setSecurityCredentials(securityCredentials);
         }
         
         String securityCredentialsUrl = NacosClientProperties.PROTOTYPE
-                .getProperty(IdentifyConstants.SECURITY_URL_PROPERTY);
+            .getProperty(IdentifyConstants.SECURITY_URL_PROPERTY);
         if (!StringUtils.isBlank(securityCredentialsUrl)) {
             setSecurityCredentialsUrl(securityCredentialsUrl);
         }
         
         String cacheSecurityCredentials = NacosClientProperties.PROTOTYPE
-                .getProperty(IdentifyConstants.SECURITY_CACHE_PROPERTY);
+            .getProperty(IdentifyConstants.SECURITY_CACHE_PROPERTY);
         if (!StringUtils.isBlank(cacheSecurityCredentials)) {
             setCacheSecurityCredentials(Boolean.parseBoolean(cacheSecurityCredentials));
         }
@@ -130,7 +130,7 @@ public class StsConfig {
     
     public boolean isStsOn() {
         return StringUtils.isNotEmpty(getSecurityCredentials())
-                || StringUtils.isNotEmpty(getSecurityCredentialsUrl());
+            || StringUtils.isNotEmpty(getSecurityCredentialsUrl());
     }
     
     public boolean isCacheSecurityCredentials() {

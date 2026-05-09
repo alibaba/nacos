@@ -58,7 +58,7 @@ class OidcClientAuthServiceImplTest {
         
         // LoginIdentityContext should not contain accessToken
         LoginIdentityContext ctx = oidcClientAuthService.getLoginIdentityContext(
-                RequestResource.configBuilder().build());
+            RequestResource.configBuilder().build());
         assertNotNull(ctx);
         assertNull(ctx.getParameter(OidcProtocolConstants.ACCESS_TOKEN_PARAM));
     }
@@ -90,7 +90,7 @@ class OidcClientAuthServiceImplTest {
         // Then: should succeed (incomplete OIDC config, skip)
         assertTrue(result);
         LoginIdentityContext ctx = oidcClientAuthService.getLoginIdentityContext(
-                RequestResource.configBuilder().build());
+            RequestResource.configBuilder().build());
         assertNull(ctx.getParameter(OidcProtocolConstants.ACCESS_TOKEN_PARAM));
     }
     
@@ -107,14 +107,14 @@ class OidcClientAuthServiceImplTest {
         // Then: should succeed (incomplete OIDC config, skip)
         assertTrue(result);
         LoginIdentityContext ctx = oidcClientAuthService.getLoginIdentityContext(
-                RequestResource.configBuilder().build());
+            RequestResource.configBuilder().build());
         assertNull(ctx.getParameter(OidcProtocolConstants.ACCESS_TOKEN_PARAM));
     }
     
     @Test
     void testGetLoginIdentityContextReturnsEmptyByDefault() {
         LoginIdentityContext ctx = oidcClientAuthService.getLoginIdentityContext(
-                RequestResource.configBuilder().build());
+            RequestResource.configBuilder().build());
         assertNotNull(ctx);
     }
 }

@@ -96,6 +96,6 @@ class SearchablePropertiesTest {
         NacosClientProperties properties = SearchableProperties.INSTANCE.derive();
         properties.setProperty("testFromSource", "properties");
         assertEquals(properties.getProperty("testFromSource"),
-                properties.getPropertyFrom(SourceType.UNKNOWN, "testFromSource"));
+            properties.getPropertyFrom(SourceType.UNKNOWN, "testFromSource"));
     }
 }

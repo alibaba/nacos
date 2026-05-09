@@ -37,7 +37,7 @@ public class LockResourceInjector extends AbstractResourceInjector {
     
     @Override
     public void doInject(RequestResource resource, RamContext context,
-            LoginIdentityContext result) {
+        LoginIdentityContext result) {
         String accessKey = context.getAccessKey();
         String secretKey = context.getSecretKey();
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
@@ -46,7 +46,7 @@ public class LockResourceInjector extends AbstractResourceInjector {
             accessKey = stsCredential.getAccessKeyId();
             secretKey = stsCredential.getAccessKeySecret();
             result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER,
-                    stsCredential.getSecurityToken());
+                stsCredential.getSecurityToken());
         }
         
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {

@@ -42,7 +42,7 @@ public class TestConnection extends Connection {
     
     @Override
     public void asyncRequest(Request request, RequestCallBack requestCallBack)
-            throws NacosException {
+        throws NacosException {
         
     }
     

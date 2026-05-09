@@ -234,13 +234,18 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
             return;
         }
         
-        String key = buildNameKey(namespaceId, mcpName);
-        String id = nameKeyToId.remove(key);
-        if (id != null) {
-            CacheNode node = idToEntry.remove(id);
-            if (node != null) {
-                removeFromLru(node);
+        writeLock.lock();
+        try {
+            String key = buildNameKey(namespaceId, mcpName);
+            String id = nameKeyToId.remove(key);
+            if (id != null) {
+                CacheNode node = idToEntry.remove(id);
+                if (node != null) {
+                    removeFromLru(node);
+                }
             }
+        } finally {
+            writeLock.unlock();
         }
     }
     
@@ -250,11 +255,16 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
             return;
         }
         
-        CacheNode node = idToEntry.remove(mcpId);
-        if (node != null) {
-            removeFromLru(node);
+        writeLock.lock();
+        try {
+            CacheNode node = idToEntry.remove(mcpId);
+            if (node != null) {
+                removeFromLru(node);
+            }
+            cleanupInvalidMappings(mcpId);
+        } finally {
+            writeLock.unlock();
         }
-        cleanupInvalidMappings(mcpId);
     }
     
     @Override

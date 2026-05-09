@@ -58,7 +58,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     private long redoDelayTime;
     
     private final ConcurrentMap<String, InstanceRedoData> registeredInstances =
-            new ConcurrentHashMap<>();
+        new ConcurrentHashMap<>();
     
     private final ConcurrentMap<String, SubscriberRedoData> subscribes = new ConcurrentHashMap<>();
     
@@ -69,22 +69,22 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     private volatile boolean connected = false;
     
     public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy,
-            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder,
-            NacosClientProperties properties) {
+        NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder,
+        NacosClientProperties properties) {
         setProperties(properties);
         this.namingFuzzyWatchServiceListHolder = namingFuzzyWatchServiceListHolder;
         this.redoExecutor = new ScheduledThreadPoolExecutor(redoThreadCount,
-                new NameThreadFactory(REDO_THREAD_NAME));
+            new NameThreadFactory(REDO_THREAD_NAME));
         this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this),
-                redoDelayTime, redoDelayTime,
-                TimeUnit.MILLISECONDS);
+            redoDelayTime, redoDelayTime,
+            TimeUnit.MILLISECONDS);
     }
     
     private void setProperties(NacosClientProperties properties) {
         redoDelayTime = properties.getLong(PropertyKeyConst.REDO_DELAY_TIME,
-                Constants.DEFAULT_REDO_DELAY_TIME);
+            Constants.DEFAULT_REDO_DELAY_TIME);
         redoThreadCount = properties.getInteger(PropertyKeyConst.REDO_DELAY_THREAD_COUNT,
-                Constants.DEFAULT_REDO_THREAD_COUNT);
+            Constants.DEFAULT_REDO_THREAD_COUNT);
     }
     
     public ConcurrentMap<String, InstanceRedoData> getRegisteredInstances() {
@@ -107,11 +107,11 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
         LogUtils.NAMING_LOGGER.warn("Grpc connection disconnect, mark to redo");
         synchronized (registeredInstances) {
             registeredInstances.values()
-                    .forEach(instanceRedoData -> instanceRedoData.setRegistered(false));
+                .forEach(instanceRedoData -> instanceRedoData.setRegistered(false));
         }
         synchronized (subscribes) {
             subscribes.values()
-                    .forEach(subscriberRedoData -> subscriberRedoData.setRegistered(false));
+                .forEach(subscriberRedoData -> subscriberRedoData.setRegistered(false));
         }
         synchronized (namingFuzzyWatchServiceListHolder) {
             namingFuzzyWatchServiceListHolder.resetConsistenceStatus();
@@ -142,10 +142,10 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param instances   batch registered instance
      */
     public void cacheInstanceForRedo(String serviceName, String groupName,
-            List<Instance> instances) {
+        List<Instance> instances) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
         BatchInstanceRedoData redoData =
-                BatchInstanceRedoData.build(serviceName, groupName, instances);
+            BatchInstanceRedoData.build(serviceName, groupName, instances);
         synchronized (registeredInstances) {
             registeredInstances.put(key, redoData);
         }
@@ -242,7 +242,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      */
     public void cacheSubscriberForRedo(String serviceName, String groupName, String cluster) {
         String key =
-                ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
+            ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         SubscriberRedoData redoData = SubscriberRedoData.build(serviceName, groupName, cluster);
         synchronized (subscribes) {
             subscribes.put(key, redoData);
@@ -258,7 +258,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      */
     public void subscriberRegistered(String serviceName, String groupName, String cluster) {
         String key =
-                ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
+            ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
             SubscriberRedoData redoData = subscribes.get(key);
             if (null != redoData) {
@@ -276,7 +276,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      */
     public void subscriberDeregister(String serviceName, String groupName, String cluster) {
         String key =
-                ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
+            ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
             SubscriberRedoData redoData = subscribes.get(key);
             if (null != redoData) {
@@ -296,7 +296,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      */
     public boolean isSubscriberRegistered(String serviceName, String groupName, String cluster) {
         String key =
-                ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
+            ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
             SubscriberRedoData redoData = subscribes.get(key);
             return null != redoData && redoData.isRegistered();
@@ -312,7 +312,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      */
     public void removeSubscriberForRedo(String serviceName, String groupName, String cluster) {
         String key =
-                ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
+            ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
             SubscriberRedoData redoData = subscribes.get(key);
             if (null != redoData && !redoData.isExpectedRegistered()) {

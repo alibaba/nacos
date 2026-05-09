@@ -154,8 +154,8 @@ public abstract class RedoData<T> {
         }
         RedoData<?> redoData = (RedoData<?>) o;
         return registered == redoData.registered && unregistering == redoData.unregistering
-                && Objects.equals(data,
-                        redoData.data);
+            && Objects.equals(data,
+                redoData.data);
     }
     
     @Override

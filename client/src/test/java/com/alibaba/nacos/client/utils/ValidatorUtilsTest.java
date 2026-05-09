@@ -79,7 +79,7 @@ class ValidatorUtilsTest {
             Properties properties = new Properties();
             properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "test");
             final NacosClientProperties nacosClientProperties =
-                    NacosClientProperties.PROTOTYPE.derive(properties);
+                NacosClientProperties.PROTOTYPE.derive(properties);
             ValidatorUtils.checkInitParam(nacosClientProperties);
         });
     }

@@ -94,7 +94,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
         if (event instanceof ClientOperationEvent.ClientRegisterServiceEvent) {
             // If service changed, push to all subscribers.
             ClientOperationEvent.ClientRegisterServiceEvent clientRegisterServiceEvent =
-                    (ClientOperationEvent.ClientRegisterServiceEvent) event;
+                (ClientOperationEvent.ClientRegisterServiceEvent) event;
             Service service = clientRegisterServiceEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
             
@@ -110,7 +110,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             pushRequestQueue.add(pushRequest);
         } else if (event instanceof ClientOperationEvent.ClientDeregisterServiceEvent) {
             ClientOperationEvent.ClientDeregisterServiceEvent clientDeregisterServiceEvent =
-                    (ClientOperationEvent.ClientDeregisterServiceEvent) event;
+                (ClientOperationEvent.ClientDeregisterServiceEvent) event;
             Service service = clientDeregisterServiceEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
             PushRequest pushRequest;
@@ -125,7 +125,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             pushRequestQueue.add(pushRequest);
         } else if (event instanceof InfoChangeEvent.ServiceInfoChangeEvent) {
             InfoChangeEvent.ServiceInfoChangeEvent serviceInfoChangeEvent =
-                    (InfoChangeEvent.ServiceInfoChangeEvent) event;
+                (InfoChangeEvent.ServiceInfoChangeEvent) event;
             Service service = serviceInfoChangeEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
             PushRequest pushRequest = new PushRequest(serviceName, true);
@@ -135,7 +135,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             
         } else if (event instanceof InfoChangeEvent.InstanceInfoChangeEvent) {
             InfoChangeEvent.InstanceInfoChangeEvent instanceInfoChangeEvent =
-                    (InfoChangeEvent.InstanceInfoChangeEvent) event;
+                (InfoChangeEvent.InstanceInfoChangeEvent) event;
             Service service = instanceInfoChangeEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
             
@@ -189,7 +189,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
                 if (pushRequestQueue.size() > 0) {
                     PushRequest updatePush;
                     Future<PushRequest> futureUpdate =
-                            debouncePushChange(new Debounce(pushRequestQueue, istioConfig));
+                        debouncePushChange(new Debounce(pushRequestQueue, istioConfig));
                     
                     try {
                         updatePush = futureUpdate.get();

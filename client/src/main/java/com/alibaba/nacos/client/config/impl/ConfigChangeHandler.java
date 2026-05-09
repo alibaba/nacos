@@ -63,7 +63,7 @@ public class ConfigChangeHandler {
      * @throws IOException io exception
      */
     public Map<String, ConfigChangeItem> parseChangeData(String oldContent, String newContent,
-            String type) throws IOException {
+        String type) throws IOException {
         for (ConfigChangeParser changeParser : this.parserList) {
             if (changeParser.isResponsibleFor(type)) {
                 return changeParser.doParse(oldContent, newContent, type);

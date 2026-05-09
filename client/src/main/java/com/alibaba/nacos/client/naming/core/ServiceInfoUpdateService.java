@@ -65,11 +65,11 @@ public class ServiceInfoUpdateService implements Closeable {
     private final boolean asyncQuerySubscribeService;
     
     public ServiceInfoUpdateService(NacosClientProperties properties,
-            ServiceInfoHolder serviceInfoHolder,
-            NamingClientProxy namingClientProxy, InstancesChangeNotifier changeNotifier) {
+        ServiceInfoHolder serviceInfoHolder,
+        NamingClientProxy namingClientProxy, InstancesChangeNotifier changeNotifier) {
         this.asyncQuerySubscribeService = isAsyncQueryForSubscribeService(properties);
         this.executor = new ScheduledThreadPoolExecutor(initPollingThreadCount(properties),
-                new NameThreadFactory("com.alibaba.nacos.client.naming.updater"));
+            new NameThreadFactory("com.alibaba.nacos.client.naming.updater"));
         this.serviceInfoHolder = serviceInfoHolder;
         this.namingClientProxy = namingClientProxy;
         this.changeNotifier = changeNotifier;
@@ -77,23 +77,23 @@ public class ServiceInfoUpdateService implements Closeable {
     
     private boolean isAsyncQueryForSubscribeService(NacosClientProperties properties) {
         if (properties == null
-                || !properties.containsKey(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE)) {
+            || !properties.containsKey(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE)) {
             return false;
         }
         return ConvertUtils.toBoolean(
-                properties.getProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE),
-                false);
+            properties.getProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE),
+            false);
     }
     
     private int initPollingThreadCount(NacosClientProperties properties) {
         int count = ThreadUtils.getSuitableThreadCount(1) > 1
-                ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
+            ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
         if (properties == null) {
             return count;
         }
         count = Math.min(
-                properties.getInteger(PropertyKeyConst.NAMING_POLLING_MAX_THREAD_COUNT, count),
-                count);
+            properties.getInteger(PropertyKeyConst.NAMING_POLLING_MAX_THREAD_COUNT, count),
+            count);
         count = Math.max(count, MIN_THREAD_NUM);
         return properties.getInteger(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT, count);
     }
@@ -110,7 +110,7 @@ public class ServiceInfoUpdateService implements Closeable {
             return;
         }
         String serviceKey =
-                ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
+            ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
         if (futureMap.get(serviceKey) != null) {
             return;
         }
@@ -137,7 +137,7 @@ public class ServiceInfoUpdateService implements Closeable {
      */
     public void stopUpdateIfContain(String serviceName, String groupName, String clusters) {
         String serviceKey =
-                ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
+            ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
         if (!futureMap.containsKey(serviceKey)) {
             return;
         }
@@ -192,9 +192,9 @@ public class ServiceInfoUpdateService implements Closeable {
             
             try {
                 if (!changeNotifier.isSubscribed(groupName, serviceName) && !futureMap.containsKey(
-                        serviceKey)) {
+                    serviceKey)) {
                     NAMING_LOGGER.info("update task is stopped, service:{}, clusters:{}",
-                            groupedServiceName, clusters);
+                        groupedServiceName, clusters);
                     isCancel = true;
                     return;
                 }
@@ -202,7 +202,7 @@ public class ServiceInfoUpdateService implements Closeable {
                 ServiceInfo serviceObj = serviceInfoHolder.getServiceInfoMap().get(serviceKey);
                 if (serviceObj == null) {
                     serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName,
-                            clusters, false);
+                        clusters, false);
                     serviceInfoHolder.processServiceInfo(serviceObj);
                     // TODO multiple time can be configured.
                     delayTime = serviceObj.getCacheMillis() * DEFAULT_UPDATE_CACHE_TIME_MULTIPLE;
@@ -212,7 +212,7 @@ public class ServiceInfoUpdateService implements Closeable {
                 
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
                     serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName,
-                            clusters, false);
+                        clusters, false);
                     serviceInfoHolder.processServiceInfo(serviceObj);
                 }
                 lastRefTime = serviceObj.getLastRefTime();
@@ -230,7 +230,7 @@ public class ServiceInfoUpdateService implements Closeable {
             } finally {
                 if (!isCancel) {
                     executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60),
-                            TimeUnit.MILLISECONDS);
+                        TimeUnit.MILLISECONDS);
                 }
             }
         }
@@ -242,13 +242,13 @@ public class ServiceInfoUpdateService implements Closeable {
                 handleUnknownException(e);
             }
             NAMING_LOGGER.warn("Can't update serviceName: {}, reason: {}", groupedServiceName,
-                    e.getErrMsg());
+                e.getErrMsg());
         }
         
         private void handleUnknownException(Throwable throwable) {
             incFailCount();
             NAMING_LOGGER.warn("[NA] failed to update serviceName: {}", groupedServiceName,
-                    throwable);
+                throwable);
         }
         
         private void incFailCount() {

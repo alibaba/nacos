@@ -69,6 +69,6 @@ class AiChangeNotifierAgentSpecDispatchPropertyTest {
         
         // After receiving the matching event, invoker should have been invoked
         assertTrue(invoker.isInvoked(),
-                "Invoker should be invoked after receiving matching AgentSpecChangedEvent");
+            "Invoker should be invoked after receiving matching AgentSpecChangedEvent");
     }
 }

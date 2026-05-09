@@ -106,7 +106,7 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
     private boolean notFountInjector(String type) {
         if (!resourceInjectors.containsKey(type)) {
             LOGGER.warn("Injector for type {} not found, will use default ram identity context.",
-                    type);
+                type);
             return true;
         }
         return false;

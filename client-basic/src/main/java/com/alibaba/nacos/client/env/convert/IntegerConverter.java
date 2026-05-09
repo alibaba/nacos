@@ -29,7 +29,7 @@ class IntegerConverter extends AbstractPropertyConverter<Integer> {
             return Integer.valueOf(property);
         } catch (Exception e) {
             throw new IllegalArgumentException(
-                    "Cannot convert String [" + property + "] to Integer");
+                "Cannot convert String [" + property + "] to Integer");
         }
     }
 }

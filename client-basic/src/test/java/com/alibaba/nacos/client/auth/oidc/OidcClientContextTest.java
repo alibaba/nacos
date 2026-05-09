@@ -43,7 +43,7 @@ class OidcClientContextTest {
     void testInitWithFullConfig() {
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_ISSUER_URI,
-                "https://idp.example.com/realms/test");
+            "https://idp.example.com/realms/test");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
         properties.setProperty(OidcClientConstants.PROP_SCOPE, "openid profile");
@@ -78,7 +78,7 @@ class OidcClientContextTest {
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
         properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT,
-                "https://idp.example.com/token");
+            "https://idp.example.com/token");
         
         boolean configured = context.init(properties);
         
@@ -136,7 +136,7 @@ class OidcClientContextTest {
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
         properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT,
-                "https://idp.example.com/token");
+            "https://idp.example.com/token");
         context.init(properties);
         
         // Already discovered via direct token endpoint

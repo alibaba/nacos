@@ -82,7 +82,7 @@ public class Chooser<K, T> {
         
         if (ref.weights.length == 0) {
             throw new IllegalStateException(
-                    "Cumulative Weight wrong , the array length is equal to 0.");
+                "Cumulative Weight wrong , the array length is equal to 0.");
         }
         
         /* This should never happen, but it ensures we will return a correct
@@ -174,7 +174,7 @@ public class Chooser<K, T> {
                 return;
             }
             throw new IllegalStateException(
-                    "Cumulative Weight calculate wrong , the sum of probabilities does not equals 1.");
+                "Cumulative Weight calculate wrong , the sum of probabilities does not equals 1.");
         }
         
         @Override

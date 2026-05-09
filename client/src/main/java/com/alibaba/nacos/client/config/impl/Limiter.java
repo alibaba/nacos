@@ -39,8 +39,8 @@ public class Limiter {
     private static final int LIMIT_TIME = 1000;
     
     private static final Cache<String, RateLimiter> CACHE =
-            CacheBuilder.newBuilder().initialCapacity(CAPACITY_SIZE)
-                    .expireAfterAccess(1, TimeUnit.MINUTES).build();
+        CacheBuilder.newBuilder().initialCapacity(CAPACITY_SIZE)
+            .expireAfterAccess(1, TimeUnit.MINUTES).build();
     
     private static final String LIMIT_TIME_PROPERTY = "limitTime";
     
@@ -52,7 +52,7 @@ public class Limiter {
     static {
         try {
             String limitTimeStr = NacosClientProperties.PROTOTYPE.getProperty(LIMIT_TIME_PROPERTY,
-                    String.valueOf(limit));
+                String.valueOf(limit));
             limit = Double.parseDouble(limitTimeStr);
             LOGGER.info("limitTime:{}", limit);
         } catch (Exception e) {

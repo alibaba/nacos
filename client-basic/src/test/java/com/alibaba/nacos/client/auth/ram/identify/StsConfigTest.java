@@ -87,7 +87,7 @@ class StsConfigTest {
     void testGetSecurityCredentialsUrlDefault() {
         StsConfig.getInstance().setRamRoleName("test");
         assertEquals("http://100.100.100.200/latest/meta-data/ram/security-credentials/test",
-                StsConfig.getInstance().getSecurityCredentialsUrl());
+            StsConfig.getInstance().getSecurityCredentialsUrl());
     }
     
     @Test
@@ -120,8 +120,8 @@ class StsConfigTest {
     
     @Test
     void testFromEnv()
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
-            InstantiationException {
+        throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
+        InstantiationException {
         Constructor<StsConfig> constructor = StsConfig.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         System.setProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY, "test");

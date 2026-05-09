@@ -30,7 +30,7 @@ public class MockServerListProvider implements ServerListProvider {
     
     @Override
     public void init(NacosClientProperties properties, NacosRestTemplate nacosRestTemplate)
-            throws NacosException {
+        throws NacosException {
         this.properties = properties;
         nacosRestTemplate.getInterceptors();
     }

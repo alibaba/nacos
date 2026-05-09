@@ -53,7 +53,7 @@ public class TenantUtil {
         
         if (StringUtils.isBlank(USER_TENANT)) {
             tmp = NacosClientProperties.PROTOTYPE.getProperty(ACM_NAMESPACE_PROPERTY,
-                    DEFAULT_ACM_NAMESPACE);
+                DEFAULT_ACM_NAMESPACE);
         }
         
         return tmp;

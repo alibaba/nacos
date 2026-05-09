@@ -54,7 +54,7 @@ class PropertiesChangeParserTest {
     @Test
     void testModifyKey() throws IOException {
         Map<String, ConfigChangeItem> map =
-                parser.doParse("app.name = rocketMQ", "app.name = nacos", type);
+            parser.doParse("app.name = rocketMQ", "app.name = nacos", type);
         assertEquals("rocketMQ", map.get("app.name").getOldValue());
         assertEquals("nacos", map.get("app.name").getNewValue());
     }

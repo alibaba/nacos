@@ -105,8 +105,8 @@ public class IstioConfigProcessor {
         String kind = obj.containsKey("kind") ? (String) obj.get("kind") : "";
         
         return API_VERSION.equals(apiVersion) && (VIRTUAL_SERVICE.equals(kind)
-                || DESTINATION_RULE.equals(kind)) && obj.containsKey("metadata")
-                && obj.containsKey("spec");
+            || DESTINATION_RULE.equals(kind)) && obj.containsKey("metadata")
+            && obj.containsKey("spec");
     }
     
     public boolean tryParseContent(String content) {
@@ -122,11 +122,11 @@ public class IstioConfigProcessor {
             if (VIRTUAL_SERVICE.equals(kind)) {
                 VirtualService virtualService = yaml.loadAs(content, VirtualService.class);
                 Loggers.MAIN
-                        .info("Configuration Content was successfully parsed as VirtualService.");
+                    .info("Configuration Content was successfully parsed as VirtualService.");
             } else if (DESTINATION_RULE.equals(kind)) {
                 DestinationRule destinationRule = yaml.loadAs(content, DestinationRule.class);
                 Loggers.MAIN
-                        .info("Configuration Content was successfully parsed as DestinationRule.");
+                    .info("Configuration Content was successfully parsed as DestinationRule.");
             } else {
                 Loggers.MAIN.warn("Unknown Config : Unknown 'kind' field in content: {}", kind);
                 return false;

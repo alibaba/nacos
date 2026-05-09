@@ -93,7 +93,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         
         @Override
         public void doFilter(final IConfigRequest request, final IConfigResponse response)
-                throws NacosException {
+            throws NacosException {
             if (this.currentPosition != this.additionalFilters.size()) {
                 this.currentPosition++;
                 IConfigFilter nextFilter = this.additionalFilters.get(this.currentPosition - 1);

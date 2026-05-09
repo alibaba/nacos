@@ -46,7 +46,7 @@ public class Balancer {
             List<Instance> hosts = serviceInfo.getHosts();
             if (CollectionUtils.isEmpty(hosts)) {
                 throw new IllegalStateException(
-                        "no host to srv for serviceInfo: " + serviceInfo.getName());
+                    "no host to srv for serviceInfo: " + serviceInfo.getName());
             }
             return hosts;
         }

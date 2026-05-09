@@ -20,7 +20,7 @@
         <setting id="org.eclipse.jdt.core.formatter.tabulation.char" value="space"/>
         <setting id="org.eclipse.jdt.core.formatter.tabulation.size" value="4"/>
         <setting id="org.eclipse.jdt.core.formatter.indentation.size" value="4"/>
-        <setting id="org.eclipse.jdt.core.formatter.continuation_indentation" value="2"/>
+        <setting id="org.eclipse.jdt.core.formatter.continuation_indentation" value="1"/>
         <setting id="org.eclipse.jdt.core.formatter.continuation_indentation_for_array_initializer" value="2"/>
         <setting id="org.eclipse.jdt.core.formatter.indent_empty_lines" value="true"/>
         <setting id="org.eclipse.jdt.core.formatter.indent_switchstatements_compare_to_switch" value="true"/>

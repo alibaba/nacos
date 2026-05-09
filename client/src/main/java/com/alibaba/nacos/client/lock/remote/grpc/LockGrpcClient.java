@@ -60,17 +60,17 @@ public class LockGrpcClient extends AbstractLockClient {
     private final RpcClient rpcClient;
     
     public LockGrpcClient(NacosClientProperties properties, ServerListFactory serverListFactory,
-            SecurityProxy securityProxy) throws NacosException {
+        SecurityProxy securityProxy) throws NacosException {
         super(securityProxy);
         this.uuid = UUID.randomUUID().toString();
         this.requestTimeout = Long
-                .parseLong(properties.getProperty(PropertyConstants.LOCK_REQUEST_TIMEOUT, "-1"));
+            .parseLong(properties.getProperty(PropertyConstants.LOCK_REQUEST_TIMEOUT, "-1"));
         Map<String, String> labels = new HashMap<>();
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_LOCK);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
-                RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties.asProperties()));
+            RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties.asProperties()));
         start(serverListFactory);
     }
     
@@ -83,13 +83,13 @@ public class LockGrpcClient extends AbstractLockClient {
     public Boolean lock(LockInstance instance) throws NacosException {
         if (!isAbilitySupportedByServer()) {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
-                    "Request Nacos server version is too low, not support lock feature.");
+                "Request Nacos server version is too low, not support lock feature.");
         }
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(instance);
         request.setLockOperationEnum(LockOperationEnum.ACQUIRE);
         LockOperationResponse acquireLockResponse =
-                requestToServer(request, LockOperationResponse.class);
+            requestToServer(request, LockOperationResponse.class);
         return (Boolean) acquireLockResponse.getResult();
     }
     
@@ -97,13 +97,13 @@ public class LockGrpcClient extends AbstractLockClient {
     public Boolean unLock(LockInstance instance) throws NacosException {
         if (!isAbilitySupportedByServer()) {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
-                    "Request Nacos server version is too low, not support lock feature.");
+                "Request Nacos server version is too low, not support lock feature.");
         }
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(instance);
         request.setLockOperationEnum(LockOperationEnum.RELEASE);
         LockOperationResponse acquireLockResponse =
-                requestToServer(request, LockOperationResponse.class);
+            requestToServer(request, LockOperationResponse.class);
         return (Boolean) acquireLockResponse.getResult();
     }
     
@@ -113,13 +113,13 @@ public class LockGrpcClient extends AbstractLockClient {
     }
     
     private <T extends Response> T requestToServer(AbstractLockRequest request,
-            Class<T> responseClass)
-            throws NacosException {
+        Class<T> responseClass)
+        throws NacosException {
         try {
             request.putAllHeader(getSecurityHeaders());
             Response response =
-                    requestTimeout < 0 ? rpcClient.request(request)
-                            : rpcClient.request(request, requestTimeout);
+                requestTimeout < 0 ? rpcClient.request(request)
+                    : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }
@@ -130,13 +130,13 @@ public class LockGrpcClient extends AbstractLockClient {
             throw e;
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ",
-                    e);
+                e);
         }
         throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
     }
     
     private boolean isAbilitySupportedByServer() {
         return rpcClient.getConnectionAbility(
-                AbilityKey.SERVER_DISTRIBUTED_LOCK) == AbilityStatus.SUPPORTED;
+            AbilityKey.SERVER_DISTRIBUTED_LOCK) == AbilityStatus.SUPPORTED;
     }
 }

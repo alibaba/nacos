@@ -34,9 +34,9 @@ class AiChangeNotifierPromptTest {
         AtomicBoolean v1Called = new AtomicBoolean(false);
         AtomicBoolean v2Called = new AtomicBoolean(false);
         notifier.registerListener("p1", "1.0.0", null,
-                new PromptListenerInvoker(newPromptListener(v1Called)));
+            new PromptListenerInvoker(newPromptListener(v1Called)));
         notifier.registerListener("p1", "2.0.0", null,
-                new PromptListenerInvoker(newPromptListener(v2Called)));
+            new PromptListenerInvoker(newPromptListener(v2Called)));
         
         Prompt prompt = new Prompt();
         prompt.setPromptKey("p1");
@@ -62,7 +62,7 @@ class AiChangeNotifierPromptTest {
     void isPromptSubscribedShouldMatchTripleKey() {
         AiChangeNotifier notifier = new AiChangeNotifier();
         PromptListenerInvoker invoker =
-                new PromptListenerInvoker(newPromptListener(new AtomicBoolean(false)));
+            new PromptListenerInvoker(newPromptListener(new AtomicBoolean(false)));
         notifier.registerListener("p1", null, "prod", invoker);
         
         assertTrue(notifier.isPromptSubscribed("p1", null, "prod"));

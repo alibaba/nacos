@@ -65,8 +65,8 @@ class HttpLoginProcessorTest {
     void testGetResponseSuccess() throws Exception {
         properties.setProperty(NacosAuthLoginConstant.SERVER, "http://localhost:8848");
         when(restTemplate.postForm(eq("http://localhost:8848/nacos/v3/auth/user/login"),
-                eq(Header.EMPTY),
-                any(Query.class), anyMap(), eq(String.class))).thenReturn(result);
+            eq(Header.EMPTY),
+            any(Query.class), anyMap(), eq(String.class))).thenReturn(result);
         when(result.ok()).thenReturn(true);
         Map<String, String> mockMap = new HashMap<>();
         mockMap.put(Constants.ACCESS_TOKEN, "mock_access_token");
@@ -81,8 +81,8 @@ class HttpLoginProcessorTest {
     void testGetResponseFailed() throws Exception {
         properties.setProperty(NacosAuthLoginConstant.SERVER, "localhost");
         when(restTemplate.postForm(eq("http://localhost:8848/nacos/v3/auth/user/login"),
-                eq(Header.EMPTY),
-                any(Query.class), anyMap(), eq(String.class))).thenReturn(result);
+            eq(Header.EMPTY),
+            any(Query.class), anyMap(), eq(String.class))).thenReturn(result);
         assertNull(loginProcessor.getResponse(properties));
     }
     
@@ -90,9 +90,9 @@ class HttpLoginProcessorTest {
     void testGetResponseException() throws Exception {
         properties.setProperty(NacosAuthLoginConstant.SERVER, "localhost");
         when(restTemplate.postForm(eq("http://localhost:8848/nacos/v3/auth/user/login"),
-                eq(Header.EMPTY),
-                any(Query.class), anyMap(), eq(String.class)))
-                .thenThrow(new RuntimeException("test"));
+            eq(Header.EMPTY),
+            any(Query.class), anyMap(), eq(String.class)))
+            .thenThrow(new RuntimeException("test"));
         assertNull(loginProcessor.getResponse(properties));
     }
     
@@ -102,16 +102,16 @@ class HttpLoginProcessorTest {
         HttpRestResult httpRes = new HttpRestResult<>();
         httpRes.setCode(NacosException.SERVER_NOT_IMPLEMENTED);
         when(restTemplate.postForm(eq("http://localhost:8848/nacos/v3/auth/user/login"),
-                eq(Header.EMPTY),
-                any(Query.class), anyMap(), eq(String.class))).thenReturn(httpRes);
+            eq(Header.EMPTY),
+            any(Query.class), anyMap(), eq(String.class))).thenReturn(httpRes);
         when(result.ok()).thenReturn(true);
         Map<String, String> mockMap = new HashMap<>();
         mockMap.put(Constants.ACCESS_TOKEN, "mock_access_token");
         mockMap.put(Constants.TOKEN_TTL, "100L");
         when(result.getData()).thenReturn(JacksonUtils.toJson(mockMap));
         when(restTemplate.postForm(eq("http://localhost:8848/nacos/v1/auth/users/login"),
-                eq(Header.EMPTY),
-                any(Query.class), anyMap(), eq(String.class))).thenReturn(result);
+            eq(Header.EMPTY),
+            any(Query.class), anyMap(), eq(String.class))).thenReturn(result);
         LoginIdentityContext actual = loginProcessor.getResponse(properties);
         assertEquals("mock_access_token", actual.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
         assertEquals("100L", actual.getParameter(NacosAuthLoginConstant.TOKENTTL));

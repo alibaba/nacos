@@ -51,7 +51,7 @@ public class BatchInstanceRedoData extends InstanceRedoData {
      * @return build BatchInstanceRedoData
      */
     public static BatchInstanceRedoData build(String serviceName, String groupName,
-            List<Instance> instances) {
+        List<Instance> instances) {
         BatchInstanceRedoData result = new BatchInstanceRedoData(serviceName, groupName);
         result.setInstances(instances);
         return result;

@@ -49,34 +49,34 @@ class K8sSyncEnabledFilterTest {
     @Test
     void getResponsiblePackagePrefix() {
         assertEquals("com.alibaba.nacos.k8s.sync",
-                k8sSyncEnabledFilter.getResponsiblePackagePrefix());
+            k8sSyncEnabledFilter.getResponsiblePackagePrefix());
     }
     
     @Test
     void isExcludedOnlyNamingFunction() {
         ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "naming");
         assertTrue(k8sSyncEnabledFilter
-                .isExcluded("com.alibaba.nacos.k8s.sync.K8sSyncEnabledFilter", null));
+            .isExcluded("com.alibaba.nacos.k8s.sync.K8sSyncEnabledFilter", null));
     }
     
     @Test
     void isExcludedOnlyConfigFunction() {
         ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", "config");
         assertTrue(k8sSyncEnabledFilter
-                .isExcluded("com.alibaba.nacos.k8s.sync.K8sSyncEnabledFilter", null));
+            .isExcluded("com.alibaba.nacos.k8s.sync.K8sSyncEnabledFilter", null));
     }
     
     @Test
     void isExcludedDisabled() {
         environment.setProperty("nacos.k8s.sync.enabled", "false");
         assertTrue(k8sSyncEnabledFilter
-                .isExcluded("com.alibaba.nacos.k8s.sync.K8sSyncEnabledFilter", null));
+            .isExcluded("com.alibaba.nacos.k8s.sync.K8sSyncEnabledFilter", null));
     }
     
     @Test
     void isExcludedEnabled() {
         environment.setProperty("nacos.k8s.sync.enabled", "true");
         assertFalse(k8sSyncEnabledFilter
-                .isExcluded("com.alibaba.nacos.k8s.sync.K8sSyncEnabledFilter", null));
+            .isExcluded("com.alibaba.nacos.k8s.sync.K8sSyncEnabledFilter", null));
     }
 }

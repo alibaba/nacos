@@ -60,8 +60,8 @@ class RamClientAuthServiceImplTest {
     void setUp() throws Exception {
         ramClientAuthService = new RamClientAuthServiceImpl();
         Map<String, AbstractResourceInjector> resourceInjectors =
-                (Map<String, AbstractResourceInjector>) ReflectUtils.getFieldValue(
-                        ramClientAuthService, "resourceInjectors");
+            (Map<String, AbstractResourceInjector>) ReflectUtils.getFieldValue(
+                ramClientAuthService, "resourceInjectors");
         resourceInjectors.clear();
         resourceInjectors.put(MOCK, mockResourceInjector);
         ramContext = (RamContext) ReflectUtils.getFieldValue(ramClientAuthService, "ramContext");

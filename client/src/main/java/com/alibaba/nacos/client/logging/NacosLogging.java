@@ -49,22 +49,22 @@ public class NacosLogging {
     private void initLoggingAdapter() {
         Class<? extends Logger> loggerClass = LOGGER.getClass();
         for (NacosLoggingAdapterBuilder each : NacosServiceLoader
-                .load(NacosLoggingAdapterBuilder.class)) {
+            .load(NacosLoggingAdapterBuilder.class)) {
             LOGGER.info("Nacos Logging Adapter Builder: {}", each.getClass().getName());
             NacosLoggingAdapter tempLoggingAdapter = buildLoggingAdapterFromBuilder(each);
             if (isAdaptLogging(tempLoggingAdapter, loggerClass)) {
                 LOGGER.info("Nacos Logging Adapter: {} match {} success.",
-                        tempLoggingAdapter.getClass().getName(),
-                        loggerClass.getName());
+                    tempLoggingAdapter.getClass().getName(),
+                    loggerClass.getName());
                 loggingProperties =
-                        new NacosLoggingProperties(tempLoggingAdapter.getDefaultConfigLocation(),
-                                NacosClientProperties.PROTOTYPE.asProperties());
+                    new NacosLoggingProperties(tempLoggingAdapter.getDefaultConfigLocation(),
+                        NacosClientProperties.PROTOTYPE.asProperties());
                 loggingAdapter = tempLoggingAdapter;
             }
         }
         if (null == loggingAdapter) {
             LOGGER.warn(
-                    "Nacos Logging don't find adapter, logging will print into application logs.");
+                "Nacos Logging don't find adapter, logging will print into application logs.");
             return;
         }
         scheduleReloadTask();
@@ -80,15 +80,15 @@ public class NacosLogging {
     }
     
     private boolean isAdaptLogging(NacosLoggingAdapter loggingAdapter,
-            Class<? extends Logger> loggerClass) {
+        Class<? extends Logger> loggerClass) {
         return null != loggingAdapter && loggingAdapter.isEnabled()
-                && loggingAdapter.isAdaptedLogger(loggerClass);
+            && loggingAdapter.isAdaptedLogger(loggerClass);
     }
     
     private void scheduleReloadTask() {
         ScheduledExecutorService reloadContextService = ExecutorFactory.Managed
-                .newSingleScheduledExecutorService("Nacos-Client",
-                        new NameThreadFactory("com.alibaba.nacos.client.logging"));
+            .newSingleScheduledExecutorService("Nacos-Client",
+                new NameThreadFactory("com.alibaba.nacos.client.logging"));
         reloadContextService.scheduleAtFixedRate(() -> {
             if (loggingAdapter.isNeedReloadConfiguration()) {
                 loggingAdapter.loadConfiguration(loggingProperties);
@@ -115,8 +115,8 @@ public class NacosLogging {
             }
         } catch (Throwable t) {
             LOGGER.warn("Load {} Configuration of Nacos fail, message: {}",
-                    LOGGER.getClass().getName(),
-                    t.getMessage());
+                LOGGER.getClass().getName(),
+                t.getMessage());
         }
     }
 }

@@ -55,13 +55,13 @@ import static com.alibaba.nacos.istio.xds.RdsGenerator.DEFAULT_ROUTE_CONFIGURATI
  */
 @Service
 public class NacosXdsService
-        extends AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase {
+    extends AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase {
     
     private final Map<String, AbstractConnection<DiscoveryResponse>> connections =
-            new ConcurrentHashMap<>(16);
+        new ConcurrentHashMap<>(16);
     
     private final Map<String, AbstractConnection<DeltaDiscoveryResponse>> deltaConnections =
-            new ConcurrentHashMap<>(16);
+        new ConcurrentHashMap<>(16);
     
     public boolean hasClientConnection() {
         return connections.size() != 0 || deltaConnections.size() != 0;
@@ -75,7 +75,7 @@ public class NacosXdsService
     
     @Override
     public StreamObserver<DiscoveryRequest> streamAggregatedResources(
-            StreamObserver<DiscoveryResponse> responseObserver) {
+        StreamObserver<DiscoveryResponse> responseObserver) {
         // TODO add authN
         
         // Init snapshot of nacos service info.
@@ -101,7 +101,7 @@ public class NacosXdsService
             @Override
             public void onError(Throwable throwable) {
                 Loggers.MAIN.error("xds: {} stream error.", newConnection.getConnectionId(),
-                        throwable);
+                    throwable);
                 clear();
             }
             
@@ -119,7 +119,7 @@ public class NacosXdsService
     }
     
     public void process(DiscoveryRequest discoveryRequest,
-            AbstractConnection<DiscoveryResponse> connection) {
+        AbstractConnection<DiscoveryResponse> connection) {
         if (!shouldPush(discoveryRequest, connection)) {
             return;
         }
@@ -131,19 +131,19 @@ public class NacosXdsService
         if (discoveryRequest.getTypeUrl().equals(CLUSTER_TYPE)) {
             for (String resourceName : resourceNames) {
                 String reason =
-                        parseClusterNameToServiceName(resourceName, istioConfig.getDomainSuffix());
+                    parseClusterNameToServiceName(resourceName, istioConfig.getDomainSuffix());
                 pushRequest.addReason(reason);
             }
         }
         
         if (discoveryRequest.getTypeUrl().equals(LISTENER_TYPE)
-                && discoveryRequest.getResponseNonce().isEmpty()) {
+            && discoveryRequest.getResponseNonce().isEmpty()) {
             String reason = INIT_LISTENER;
             pushRequest.addReason(reason);
         }
         
         if (discoveryRequest.getTypeUrl().equals(ROUTE_TYPE)
-                && discoveryRequest.getResponseNonce().isEmpty()) {
+            && discoveryRequest.getResponseNonce().isEmpty()) {
             String reason = DEFAULT_ROUTE_CONFIGURATION;
             pushRequest.addReason(reason);
             for (String resourceName : resourceNames) {
@@ -152,12 +152,12 @@ public class NacosXdsService
         }
         
         DiscoveryResponse response =
-                buildDiscoveryResponse(discoveryRequest.getTypeUrl(), pushRequest);
+            buildDiscoveryResponse(discoveryRequest.getTypeUrl(), pushRequest);
         connection.push(response, connection.getWatchedStatusByType(discoveryRequest.getTypeUrl()));
     }
     
     private boolean shouldPush(DiscoveryRequest discoveryRequest,
-            AbstractConnection<DiscoveryResponse> connection) {
+        AbstractConnection<DiscoveryResponse> connection) {
         String type = discoveryRequest.getTypeUrl();
         String connectionId = connection.getConnectionId();
         
@@ -170,23 +170,23 @@ public class NacosXdsService
         
         if (discoveryRequest.getErrorDetail().getCode() != 0) {
             Loggers.MAIN.error("xds: ACK error, connection-id: {}, code: {}, message: {}",
-                    connectionId,
-                    discoveryRequest.getErrorDetail().getCode(),
-                    discoveryRequest.getErrorDetail().getMessage());
+                connectionId,
+                discoveryRequest.getErrorDetail().getCode(),
+                discoveryRequest.getErrorDetail().getMessage());
             return false;
         }
         
         WatchedStatus watchedStatus;
         if (discoveryRequest.getResponseNonce().isEmpty()) {
             Loggers.MAIN.info("xds: init request, type {}, connection-id {}, version {}",
-                    type, connectionId, discoveryRequest.getVersionInfo());
+                type, connectionId, discoveryRequest.getVersionInfo());
             Loggers.MAIN.info("xds: content {},{}",
-                    discoveryRequest.getTypeUrl(), discoveryRequest.getResourceNamesList());
+                discoveryRequest.getTypeUrl(), discoveryRequest.getResourceNamesList());
             watchedStatus = new WatchedStatus();
             
             watchedStatus.setType(discoveryRequest.getTypeUrl());
             Loggers.MAIN.info("watchedStatus: {}",
-                    watchedStatus);
+                watchedStatus);
             connection.addWatchedResource(discoveryRequest.getTypeUrl(), watchedStatus);
             
             return true;
@@ -195,15 +195,15 @@ public class NacosXdsService
         watchedStatus = connection.getWatchedStatusByType(discoveryRequest.getTypeUrl());
         if (watchedStatus == null) {
             Loggers.MAIN.info("xds: reconnect, type {}, connection-id {}, version {}, nonce {}.",
-                    type, connectionId, discoveryRequest.getVersionInfo(),
-                    discoveryRequest.getResponseNonce());
+                type, connectionId, discoveryRequest.getVersionInfo(),
+                discoveryRequest.getResponseNonce());
             Loggers.MAIN.info("xds: content {},{}",
-                    discoveryRequest.getTypeUrl(), discoveryRequest.getResourceNamesList());
+                discoveryRequest.getTypeUrl(), discoveryRequest.getResourceNamesList());
             
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(discoveryRequest.getTypeUrl());
             Loggers.MAIN.info("watchedStatus: {}",
-                    watchedStatus);
+                watchedStatus);
             connection.addWatchedResource(discoveryRequest.getTypeUrl(), watchedStatus);
             
             return true;
@@ -211,8 +211,8 @@ public class NacosXdsService
         
         if (!watchedStatus.getLatestNonce().equals(discoveryRequest.getResponseNonce())) {
             Loggers.MAIN.warn("xds: request dis match, type {}, connection-id {}",
-                    discoveryRequest.getTypeUrl(),
-                    connection.getConnectionId());
+                discoveryRequest.getTypeUrl(),
+                connection.getConnectionId());
             return false;
         }
         
@@ -220,8 +220,8 @@ public class NacosXdsService
         watchedStatus.setAckedVersion(discoveryRequest.getVersionInfo());
         watchedStatus.setAckedNonce(discoveryRequest.getResponseNonce());
         Loggers.MAIN.info("xds: ack, type {}, connection-id {}, version {}, nonce {}", type,
-                connectionId,
-                discoveryRequest.getVersionInfo(), discoveryRequest.getResponseNonce());
+            connectionId,
+            discoveryRequest.getVersionInfo(), discoveryRequest.getResponseNonce());
         return false;
     }
     
@@ -233,10 +233,10 @@ public class NacosXdsService
         for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
             //mcp
             WatchedStatus watchedStatus =
-                    connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
+                connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
             if (watchedStatus != null) {
                 DiscoveryResponse serviceEntryResponse =
-                        buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushRequest);
+                    buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushRequest);
                 connection.push(serviceEntryResponse, watchedStatus);
             }
             //CDS
@@ -299,19 +299,19 @@ public class NacosXdsService
         
         String nonce = NonceGenerator.generateNonce();
         return DiscoveryResponse.newBuilder()
-                .setTypeUrl(type)
-                .addAllResources(rawResources)
-                .setVersionInfo(pushRequest.getResourceSnapshot().getVersion())
-                .setNonce(nonce).build();
+            .setTypeUrl(type)
+            .addAllResources(rawResources)
+            .setVersionInfo(pushRequest.getResourceSnapshot().getVersion())
+            .setNonce(nonce).build();
     }
     
     @Override
     public StreamObserver<DeltaDiscoveryRequest> deltaAggregatedResources(
-            StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+        StreamObserver<DeltaDiscoveryResponse> responseObserver) {
         // Init snapshot of nacos service info.
         resourceManager.initResourceSnapshot();
         AbstractConnection<DeltaDiscoveryResponse> newConnection =
-                new DeltaConnection(responseObserver);
+            new DeltaConnection(responseObserver);
         
         return new StreamObserver<DeltaDiscoveryRequest>() {
             
@@ -332,7 +332,7 @@ public class NacosXdsService
             @Override
             public void onError(Throwable throwable) {
                 Loggers.MAIN.error("delta xds: {} stream error.", newConnection.getConnectionId(),
-                        throwable);
+                    throwable);
                 clear();
             }
             
@@ -350,7 +350,7 @@ public class NacosXdsService
     }
     
     public void deltaProcess(DeltaDiscoveryRequest deltaDiscoveryRequest,
-            AbstractConnection<DeltaDiscoveryResponse> connection) {
+        AbstractConnection<DeltaDiscoveryResponse> connection) {
         if (!deltaShouldPush(deltaDiscoveryRequest, connection)) {
             return;
         }
@@ -358,19 +358,19 @@ public class NacosXdsService
         PushRequest pushRequest = new PushRequest(resourceSnapshot, true);
         
         Set<String> subscribe =
-                new HashSet<>(deltaDiscoveryRequest.getResourceNamesSubscribeList());
+            new HashSet<>(deltaDiscoveryRequest.getResourceNamesSubscribeList());
         pushRequest.setSubscribe(subscribe);
         connection.getWatchedStatusByType(deltaDiscoveryRequest.getTypeUrl())
-                .setLastSubscribe(subscribe);
+            .setLastSubscribe(subscribe);
         
         DeltaDiscoveryResponse response =
-                buildDeltaDiscoveryResponse(deltaDiscoveryRequest.getTypeUrl(), pushRequest);
+            buildDeltaDiscoveryResponse(deltaDiscoveryRequest.getTypeUrl(), pushRequest);
         connection.push(response,
-                connection.getWatchedStatusByType(deltaDiscoveryRequest.getTypeUrl()));
+            connection.getWatchedStatusByType(deltaDiscoveryRequest.getTypeUrl()));
     }
     
     private boolean deltaShouldPush(DeltaDiscoveryRequest deltaDiscoveryRequest,
-            AbstractConnection<DeltaDiscoveryResponse> connection) {
+        AbstractConnection<DeltaDiscoveryResponse> connection) {
         String type = deltaDiscoveryRequest.getTypeUrl();
         String connectionId = connection.getConnectionId();
         
@@ -384,7 +384,7 @@ public class NacosXdsService
         WatchedStatus watchedStatus;
         if (deltaDiscoveryRequest.getResponseNonce().isEmpty()) {
             Loggers.MAIN.info("delta xds: init request, type {}, connection-id {}",
-                    type, connectionId);
+                type, connectionId);
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(deltaDiscoveryRequest.getTypeUrl());
             connection.addWatchedResource(deltaDiscoveryRequest.getTypeUrl(), watchedStatus);
@@ -395,7 +395,7 @@ public class NacosXdsService
         watchedStatus = connection.getWatchedStatusByType(deltaDiscoveryRequest.getTypeUrl());
         if (watchedStatus == null) {
             Loggers.MAIN.info("delta xds: reconnect, type {}, connection-id {}, nonce {}.",
-                    type, connectionId, deltaDiscoveryRequest.getResponseNonce());
+                type, connectionId, deltaDiscoveryRequest.getResponseNonce());
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(deltaDiscoveryRequest.getTypeUrl());
             connection.addWatchedResource(deltaDiscoveryRequest.getTypeUrl(), watchedStatus);
@@ -405,17 +405,17 @@ public class NacosXdsService
         
         if (deltaDiscoveryRequest.getErrorDetail().getCode() != 0) {
             Loggers.MAIN.error("delta xds: ACK error, connection-id: {}, code: {}, message: {}",
-                    connectionId,
-                    deltaDiscoveryRequest.getErrorDetail().getCode(),
-                    deltaDiscoveryRequest.getErrorDetail().getMessage());
+                connectionId,
+                deltaDiscoveryRequest.getErrorDetail().getCode(),
+                deltaDiscoveryRequest.getErrorDetail().getMessage());
             watchedStatus.setLastAckOrNack(true);
             return false;
         }
         
         if (!watchedStatus.getLatestNonce().equals(deltaDiscoveryRequest.getResponseNonce())) {
             Loggers.MAIN.warn("delta xds: request dis match, type {}, connection-id {}",
-                    deltaDiscoveryRequest.getTypeUrl(),
-                    connection.getConnectionId());
+                deltaDiscoveryRequest.getTypeUrl(),
+                connection.getConnectionId());
             return false;
         }
         
@@ -423,9 +423,9 @@ public class NacosXdsService
         //TODO: setAckedVersion
         watchedStatus.setAckedNonce(deltaDiscoveryRequest.getResponseNonce());
         watchedStatus.setLastSubscribe(
-                new HashSet<>(deltaDiscoveryRequest.getResourceNamesSubscribeList()));
+            new HashSet<>(deltaDiscoveryRequest.getResourceNamesSubscribeList()));
         Loggers.MAIN.info("delta xds: ack, type {}, connection-id {}, nonce {}", type, connectionId,
-                deltaDiscoveryRequest.getResponseNonce());
+            deltaDiscoveryRequest.getResponseNonce());
         return false;
     }
     
@@ -436,11 +436,11 @@ public class NacosXdsService
         pushRequest.setFull(pushRequest.getResourceSnapshot().getIstioConfig().isFullEnabled());
         for (AbstractConnection<DeltaDiscoveryResponse> connection : deltaConnections.values()) {
             WatchedStatus watchedStatus =
-                    connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
+                connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
             if (watchedStatus != null && watchedStatus.isLastAckOrNack()) {
                 pushRequest.setSubscribe(watchedStatus.getLastSubscribe());
                 DeltaDiscoveryResponse serviceEntryResponse =
-                        buildDeltaDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushRequest);
+                    buildDeltaDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushRequest);
                 if (serviceEntryResponse != null) {
                     connection.push(serviceEntryResponse, watchedStatus);
                 }
@@ -450,7 +450,7 @@ public class NacosXdsService
             if (edsWatchedStatus != null && edsWatchedStatus.isLastAckOrNack()) {
                 pushRequest.setSubscribe(edsWatchedStatus.getLastSubscribe());
                 DeltaDiscoveryResponse edsResponse =
-                        buildDeltaDiscoveryResponse(ENDPOINT_TYPE, pushRequest);
+                    buildDeltaDiscoveryResponse(ENDPOINT_TYPE, pushRequest);
                 if (edsResponse != null) {
                     connection.push(edsResponse, edsWatchedStatus);
                 }
@@ -459,10 +459,10 @@ public class NacosXdsService
     }
     
     private DeltaDiscoveryResponse buildDeltaDiscoveryResponse(String type,
-            PushRequest pushRequest) {
+        PushRequest pushRequest) {
         @SuppressWarnings("unchecked")
         ApiGenerator<Resource> generator =
-                (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
+            (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
         List<Resource> rawResources = generator.deltaGenerate(pushRequest);
         if (rawResources == null) {
             return null;
@@ -470,10 +470,10 @@ public class NacosXdsService
         
         String nonce = NonceGenerator.generateNonce();
         return DeltaDiscoveryResponse.newBuilder()
-                .setTypeUrl(type)
-                .addAllResources(rawResources)
-                .addAllRemovedResources(pushRequest.getRemoved())
-                .setSystemVersionInfo(pushRequest.getResourceSnapshot().getVersion())
-                .setNonce(nonce).build();
+            .setTypeUrl(type)
+            .addAllResources(rawResources)
+            .addAllRemovedResources(pushRequest.getRemoved())
+            .setSystemVersionInfo(pushRequest.getResourceSnapshot().getVersion())
+            .setNonce(nonce).build();
     }
 }

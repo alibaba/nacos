@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * @author xiweng.yy
  */
 public class McpServerListenerInvoker
-        extends AbstractAiListenerInvoker<NacosMcpServerEvent, AbstractNacosMcpServerListener> {
+    extends AbstractAiListenerInvoker<NacosMcpServerEvent, AbstractNacosMcpServerListener> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(McpServerListenerInvoker.class);
     
@@ -37,7 +37,7 @@ public class McpServerListenerInvoker
     
     protected void logInvoke(NacosMcpServerEvent event) {
         LOGGER.info("Invoke event namespaceId: {}, mcpId: {}, mcpName: {} to Listener: {}",
-                event.getNamespaceId(),
-                event.getMcpId(), event.getMcpName(), listener.toString());
+            event.getNamespaceId(),
+            event.getMcpId(), event.getMcpName(), listener.toString());
     }
 }

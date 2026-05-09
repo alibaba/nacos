@@ -84,8 +84,8 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     @Override
     public void init(final NacosClientProperties properties,
-            final NacosRestTemplate nacosRestTemplate)
-            throws NacosException {
+        final NacosRestTemplate nacosRestTemplate)
+        throws NacosException {
         super.init(properties, nacosRestTemplate);
         this.nacosRestTemplate = nacosRestTemplate;
         initEndpoint(properties);
@@ -105,12 +105,12 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     @Override
     public String getServerName() {
         String contextPathTmp =
-                StringUtils.isNotBlank(this.endpointContextPath) ? this.endpointContextPath
-                        : this.contextPath;
+            StringUtils.isNotBlank(this.endpointContextPath) ? this.endpointContextPath
+                : this.contextPath;
         return CUSTOM_NAME + "-"
-                + String.join("_", endpoint, String.valueOf(endpointPort), contextPathTmp,
-                        serverListName)
-                + (StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
+            + String.join("_", endpoint, String.valueOf(endpointPort), contextPathTmp,
+                serverListName)
+            + (StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
     }
     
     @Override
@@ -132,9 +132,9 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     private String getEndPointTmp(NacosClientProperties properties) {
         String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
         String isUseEndpointRuleParsing =
-                properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                        properties.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                                String.valueOf(USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
+            properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                properties.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                    String.valueOf(USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
         if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
             endpointTmp = ClientBasicParamUtil.parsingEndpointRule(endpointTmp);
         }
@@ -161,26 +161,26 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         
         if (serversFromEndpoint.isEmpty()) {
             LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! url: {}",
-                    addressServerUrl);
+                addressServerUrl);
             throw new NacosException(NacosException.SERVER_ERROR,
-                    "fail to get NACOS-server serverlist! not connnect url:" + addressServerUrl);
+                "fail to get NACOS-server serverlist! not connnect url:" + addressServerUrl);
         }
         
         refreshServerListExecutor = new ScheduledThreadPoolExecutor(1,
-                new NameThreadFactory(
-                        "com.alibaba.nacos.client.address.EndpointServerListProvider.refreshServerList"));
+            new NameThreadFactory(
+                "com.alibaba.nacos.client.address.EndpointServerListProvider.refreshServerList"));
         // executor schedules the timer task
         long refreshInterval = Long.parseLong(
-                properties.getProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "30"));
+            properties.getProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "30"));
         refreshServerListExecutor.scheduleWithFixedDelay(this::refreshServerListIfNeed, 0L,
-                refreshInterval,
-                TimeUnit.SECONDS);
+            refreshInterval,
+            TimeUnit.SECONDS);
     }
     
     private void refreshServerListIfNeed() {
         try {
             if (System.currentTimeMillis()
-                    - lastServerListRefreshTime < refreshServerListInternal) {
+                - lastServerListRefreshTime < refreshServerListInternal) {
                 return;
             }
             List<String> list = getServerListFromEndpoint();
@@ -202,12 +202,12 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     private List<String> getServerListFromEndpoint() {
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.get(addressServerUrl,
-                    HttpUtils.builderHeader(moduleName), Query.EMPTY, String.class);
+                HttpUtils.builderHeader(moduleName), Query.EMPTY, String.class);
             
             if (!httpResult.ok()) {
                 LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}",
-                        addressServerUrl,
-                        httpResult.getCode());
+                    addressServerUrl,
+                    httpResult.getCode());
                 return null;
             }
             List<String> lines = IoUtils.readLines(new StringReader(httpResult.getData()));
@@ -217,7 +217,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
                 String ip = ipPort[0].trim();
                 if (ipPort.length == 1) {
                     result.add(ip + InternetAddressUtil.IP_PORT_SPLITER
-                            + ClientBasicParamUtil.getDefaultServerPort());
+                        + ClientBasicParamUtil.getDefaultServerPort());
                 } else {
                     result.add(serverAddr);
                 }
@@ -236,8 +236,8 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private void initEndpointPort(NacosClientProperties properties) {
         String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(
-                properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
-                () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
+            properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
+            () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
         if (StringUtils.isNotBlank(endpointPortTmp)) {
             this.endpointPort = Integer.parseInt(endpointPortTmp);
         }
@@ -245,9 +245,9 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private void initEndpointContextPath(NacosClientProperties properties) {
         String endpointContextPathTmp = TemplateUtils.stringEmptyAndThenExecute(
-                properties.getProperty(
-                        PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_CONTEXT_PATH),
-                () -> properties.getProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH));
+            properties.getProperty(
+                PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_CONTEXT_PATH),
+            () -> properties.getProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH));
         if (StringUtils.isNotBlank(endpointContextPathTmp)) {
             this.endpointContextPath = endpointContextPathTmp;
         }
@@ -256,7 +256,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     private void initServerListName(NacosClientProperties properties) {
         String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME);
         boolean isUseClusterName = Boolean.parseBoolean(
-                properties.getProperty(PropertyKeyConst.IS_ADAPT_CLUSTER_NAME_USAGE));
+            properties.getProperty(PropertyKeyConst.IS_ADAPT_CLUSTER_NAME_USAGE));
         if (StringUtils.isBlank(serverListNameTmp) && isUseClusterName) {
             serverListNameTmp = properties.getProperty(PropertyKeyConst.CLUSTER_NAME);
         }
@@ -267,12 +267,12 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private void initAddressServerUrl(NacosClientProperties properties) {
         String contextPathTmp = StringUtils.isNotBlank(this.endpointContextPath)
-                ? ContextPathUtil.normalizeContextPath(
-                        this.endpointContextPath)
-                : ContextPathUtil.normalizeContextPath(this.contextPath);
+            ? ContextPathUtil.normalizeContextPath(
+                this.endpointContextPath)
+            : ContextPathUtil.normalizeContextPath(this.contextPath);
         StringBuilder addressServerUrlTem = new StringBuilder(
-                String.format("http://%s:%d%s/%s", this.endpoint, this.endpointPort, contextPathTmp,
-                        this.serverListName));
+            String.format("http://%s:%d%s/%s", this.endpoint, this.endpointPort, contextPathTmp,
+                this.serverListName));
         boolean hasQueryString = false;
         if (StringUtils.isNotBlank(namespace)) {
             addressServerUrlTem.append("?namespace=").append(namespace);
@@ -281,7 +281,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         if (properties.containsKey(PropertyKeyConst.ENDPOINT_QUERY_PARAMS)) {
             addressServerUrlTem.append(hasQueryString ? "&" : "?");
             addressServerUrlTem
-                    .append(properties.getProperty(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
+                .append(properties.getProperty(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
         }
         this.addressServerUrl = addressServerUrlTem.toString();
         LOGGER.info("address server url = {}", this.addressServerUrl);

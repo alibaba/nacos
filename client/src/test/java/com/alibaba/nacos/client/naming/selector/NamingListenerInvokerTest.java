@@ -63,7 +63,7 @@ public class NamingListenerInvokerTest {
         AbstractNamingChangeListener listener = spy(AbstractNamingChangeListener.class);
         NamingListenerInvoker listenerInvoker = new NamingListenerInvoker(listener);
         NamingChangeEvent event =
-                new NamingChangeEvent("serviceName", Collections.emptyList(), new InstancesDiff());
+            new NamingChangeEvent("serviceName", Collections.emptyList(), new InstancesDiff());
         assertFalse(listenerInvoker.isInvoked());
         listenerInvoker.invoke(event);
         verify(listener).onChange(event);

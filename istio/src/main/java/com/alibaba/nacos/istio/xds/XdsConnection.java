@@ -44,11 +44,11 @@ public class XdsConnection extends AbstractConnection<DiscoveryResponse> {
         watchedStatus.setLatestNonce(response.getNonce());
         
         Loggers.MAIN.info(
-                "xds: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
-                watchedStatus.getType(),
-                getConnectionId(),
-                response.getVersionInfo(),
-                response.getNonce(),
-                response.getResourcesCount());
+            "xds: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
+            watchedStatus.getType(),
+            getConnectionId(),
+            response.getVersionInfo(),
+            response.getNonce(),
+            response.getResourcesCount());
     }
 }

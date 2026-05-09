@@ -44,10 +44,10 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
     
     @Override
     public void doFilter(IConfigRequest request, IConfigResponse response,
-            IConfigFilterChain filterChain)
-            throws NacosException {
+        IConfigFilterChain filterChain)
+        throws NacosException {
         if (Objects.nonNull(request) && request instanceof ConfigRequest
-                && Objects.isNull(response)) {
+            && Objects.isNull(response)) {
             
             // Publish configuration, encrypt
             ConfigRequest configRequest = (ConfigRequest) request;
@@ -61,15 +61,15 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
                 ((ConfigRequest) request).setContent(encryptContent);
             }
             if (!StringUtils.isBlank(secretKey)
-                    && !secretKey.equals(((ConfigRequest) request).getEncryptedDataKey())) {
+                && !secretKey.equals(((ConfigRequest) request).getEncryptedDataKey())) {
                 ((ConfigRequest) request).setEncryptedDataKey(secretKey);
             } else if (StringUtils.isBlank(((ConfigRequest) request).getEncryptedDataKey())
-                    && StringUtils.isBlank(secretKey)) {
+                && StringUtils.isBlank(secretKey)) {
                 ((ConfigRequest) request).setEncryptedDataKey("");
             }
         }
         if (Objects.nonNull(response) && response instanceof ConfigResponse
-                && Objects.isNull(request)) {
+            && Objects.isNull(request)) {
             
             // Get configuration, decrypt
             ConfigResponse configResponse = (ConfigResponse) response;
@@ -79,17 +79,17 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
             String content = configResponse.getContent();
             
             Pair<String, String> pair =
-                    EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
+                EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
             String secretKey = pair.getFirst();
             String decryptContent = pair.getSecond();
             if (!StringUtils.isBlank(decryptContent) && !decryptContent.equals(content)) {
                 ((ConfigResponse) response).setContent(decryptContent);
             }
             if (!StringUtils.isBlank(secretKey)
-                    && !secretKey.equals(((ConfigResponse) response).getEncryptedDataKey())) {
+                && !secretKey.equals(((ConfigResponse) response).getEncryptedDataKey())) {
                 ((ConfigResponse) response).setEncryptedDataKey(secretKey);
             } else if (StringUtils.isBlank(((ConfigResponse) response).getEncryptedDataKey())
-                    && StringUtils.isBlank(secretKey)) {
+                && StringUtils.isBlank(secretKey)) {
                 ((ConfigResponse) response).setEncryptedDataKey("");
             }
         }

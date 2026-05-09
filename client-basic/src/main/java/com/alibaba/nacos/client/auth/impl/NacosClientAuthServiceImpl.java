@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     
     private static final Logger SECURITY_LOGGER =
-            LoggerFactory.getLogger(NacosClientAuthServiceImpl.class);
+        LoggerFactory.getLogger(NacosClientAuthServiceImpl.class);
     
     /**
      * TTL of token in seconds.
@@ -77,14 +77,14 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     public Boolean login(Properties properties) {
         try {
             boolean reLoginFlag = Boolean.parseBoolean(
-                    loginIdentityContext.getParameter(NacosAuthLoginConstant.RELOGINFLAG, "false"));
+                loginIdentityContext.getParameter(NacosAuthLoginConstant.RELOGINFLAG, "false"));
             if (reLoginFlag) {
                 if ((System.currentTimeMillis() - lastRefreshTime) < reLoginWindow) {
                     return true;
                 }
             } else {
                 if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
-                        .toMillis(tokenTtl - tokenRefreshWindow)) {
+                    .toMillis(tokenTtl - tokenRefreshWindow)) {
                     return true;
                 }
             }
@@ -101,13 +101,13 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
                 if (identityContext != null) {
                     if (identityContext.getAllKey().contains(NacosAuthLoginConstant.ACCESSTOKEN)) {
                         tokenTtl = Long.parseLong(
-                                identityContext.getParameter(NacosAuthLoginConstant.TOKENTTL));
+                            identityContext.getParameter(NacosAuthLoginConstant.TOKENTTL));
                         tokenRefreshWindow = generateTokenRefreshWindow(tokenTtl);
                         lastRefreshTime = System.currentTimeMillis();
                         
                         LoginIdentityContext newCtx = new LoginIdentityContext();
                         newCtx.setParameter(NacosAuthLoginConstant.ACCESSTOKEN,
-                                identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+                            identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
                         this.loginIdentityContext = newCtx;
                     }
                     return true;

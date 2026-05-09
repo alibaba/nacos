@@ -121,95 +121,95 @@ public class K8sSyncServer {
         
         factory = new SharedInformerFactory(apiClient);
         SharedIndexInformer<V1Service> serviceInformer =
-                factory.sharedIndexInformerFor(
-                        (CallGeneratorParams params) -> {
-                            CoreV1Api.APIlistServiceForAllNamespacesRequest request =
-                                    coreV1Api.listServiceForAllNamespaces();
-                            request.resourceVersion(params.resourceVersion);
-                            request.timeoutSeconds(params.timeoutSeconds);
-                            request.watch(params.watch);
-                            return request.buildCall(null);
-                        },
-                        V1Service.class,
-                        V1ServiceList.class);
+            factory.sharedIndexInformerFor(
+                (CallGeneratorParams params) -> {
+                    CoreV1Api.APIlistServiceForAllNamespacesRequest request =
+                        coreV1Api.listServiceForAllNamespaces();
+                    request.resourceVersion(params.resourceVersion);
+                    request.timeoutSeconds(params.timeoutSeconds);
+                    request.watch(params.watch);
+                    return request.buildCall(null);
+                },
+                V1Service.class,
+                V1ServiceList.class);
         
         SharedIndexInformer<V1Endpoints> endpointInformer =
-                factory.sharedIndexInformerFor(
-                        (CallGeneratorParams params) -> {
-                            CoreV1Api.APIlistEndpointsForAllNamespacesRequest request =
-                                    coreV1Api.listEndpointsForAllNamespaces();
-                            request.resourceVersion(params.resourceVersion);
-                            request.timeoutSeconds(params.timeoutSeconds);
-                            request.watch(params.watch);
-                            return request.buildCall(null);
-                        },
-                        V1Endpoints.class,
-                        V1EndpointsList.class);
+            factory.sharedIndexInformerFor(
+                (CallGeneratorParams params) -> {
+                    CoreV1Api.APIlistEndpointsForAllNamespacesRequest request =
+                        coreV1Api.listEndpointsForAllNamespaces();
+                    request.resourceVersion(params.resourceVersion);
+                    request.timeoutSeconds(params.timeoutSeconds);
+                    request.watch(params.watch);
+                    return request.buildCall(null);
+                },
+                V1Endpoints.class,
+                V1EndpointsList.class);
         
         serviceInformer.addEventHandler(
-                new ResourceEventHandler<V1Service>() {
-                    
-                    @Override
-                    public void onAdd(V1Service service) {
-                        if (service.getMetadata() == null || service.getSpec() == null) {
-                            return;
-                        }
-                        String serviceName = service.getMetadata().getName();
-                        String namespace = service.getMetadata().getNamespace();
-                        List<V1ServicePort> servicePorts = service.getSpec().getPorts();
-                        try {
-                            registerService(namespace, serviceName, servicePorts, false,
-                                    endpointInformer);
-                            Loggers.MAIN.info("add service, namespace:" + namespace
-                                    + " serviceName: " + serviceName);
-                        } catch (Exception e) {
-                            Loggers.MAIN.warn(
-                                    "add service fail, message:" + e.getMessage() + " namespace:"
-                                            + namespace + " serviceName: " + serviceName);
-                        }
+            new ResourceEventHandler<V1Service>() {
+                
+                @Override
+                public void onAdd(V1Service service) {
+                    if (service.getMetadata() == null || service.getSpec() == null) {
+                        return;
                     }
-                    
-                    @Override
-                    public void onUpdate(V1Service oldService, V1Service newService) {
-                        if (oldService.getMetadata() == null || oldService.getSpec() == null
-                                || newService.getMetadata() == null
-                                || newService.getSpec() == null) {
-                            return;
-                        }
-                        List<V1ServicePort> oldServicePorts = oldService.getSpec().getPorts();
-                        String serviceName = newService.getMetadata().getName();
-                        String namespace = newService.getMetadata().getNamespace();
-                        List<V1ServicePort> newServicePorts = newService.getSpec().getPorts();
-                        boolean portChanged = compareServicePorts(oldServicePorts, newServicePorts);
-                        try {
-                            registerService(namespace, serviceName, newServicePorts, portChanged,
-                                    endpointInformer);
-                            Loggers.MAIN.info("update service, namespace: " + namespace
-                                    + " serviceName: " + serviceName);
-                        } catch (Exception e) {
-                            Loggers.MAIN.warn("update service fail, message: " + e.getMessage()
-                                    + " namespace: "
-                                    + namespace + " serviceName: " + serviceName);
-                        }
+                    String serviceName = service.getMetadata().getName();
+                    String namespace = service.getMetadata().getNamespace();
+                    List<V1ServicePort> servicePorts = service.getSpec().getPorts();
+                    try {
+                        registerService(namespace, serviceName, servicePorts, false,
+                            endpointInformer);
+                        Loggers.MAIN.info("add service, namespace:" + namespace
+                            + " serviceName: " + serviceName);
+                    } catch (Exception e) {
+                        Loggers.MAIN.warn(
+                            "add service fail, message:" + e.getMessage() + " namespace:"
+                                + namespace + " serviceName: " + serviceName);
                     }
-                    
-                    @Override
-                    public void onDelete(V1Service service, boolean deletedFinalStateUnknown) {
-                        if (service.getMetadata() == null) {
-                            return;
-                        }
-                        String serviceName = service.getMetadata().getName();
-                        String namespace = service.getMetadata().getNamespace();
-                        try {
-                            unregisterService(namespace, serviceName);
-                            Loggers.MAIN.info("delete service, namespace:" + namespace
-                                    + " serviceName:" + serviceName);
-                        } catch (Exception e) {
-                            Loggers.MAIN.warn("delete service fail, message: " + e.getMessage()
-                                    + " namespace:" + namespace + " serviceName:" + serviceName);
-                        }
+                }
+                
+                @Override
+                public void onUpdate(V1Service oldService, V1Service newService) {
+                    if (oldService.getMetadata() == null || oldService.getSpec() == null
+                        || newService.getMetadata() == null
+                        || newService.getSpec() == null) {
+                        return;
                     }
-                });
+                    List<V1ServicePort> oldServicePorts = oldService.getSpec().getPorts();
+                    String serviceName = newService.getMetadata().getName();
+                    String namespace = newService.getMetadata().getNamespace();
+                    List<V1ServicePort> newServicePorts = newService.getSpec().getPorts();
+                    boolean portChanged = compareServicePorts(oldServicePorts, newServicePorts);
+                    try {
+                        registerService(namespace, serviceName, newServicePorts, portChanged,
+                            endpointInformer);
+                        Loggers.MAIN.info("update service, namespace: " + namespace
+                            + " serviceName: " + serviceName);
+                    } catch (Exception e) {
+                        Loggers.MAIN.warn("update service fail, message: " + e.getMessage()
+                            + " namespace: "
+                            + namespace + " serviceName: " + serviceName);
+                    }
+                }
+                
+                @Override
+                public void onDelete(V1Service service, boolean deletedFinalStateUnknown) {
+                    if (service.getMetadata() == null) {
+                        return;
+                    }
+                    String serviceName = service.getMetadata().getName();
+                    String namespace = service.getMetadata().getNamespace();
+                    try {
+                        unregisterService(namespace, serviceName);
+                        Loggers.MAIN.info("delete service, namespace:" + namespace
+                            + " serviceName:" + serviceName);
+                    } catch (Exception e) {
+                        Loggers.MAIN.warn("delete service fail, message: " + e.getMessage()
+                            + " namespace:" + namespace + " serviceName:" + serviceName);
+                    }
+                }
+            });
         
         endpointInformer.addEventHandler(new ResourceEventHandler<V1Endpoints>() {
             
@@ -224,16 +224,16 @@ public class K8sSyncServer {
                 
                 //TODO 因为需要指定namespace，这里servicelister需要重新new，是否可以优化,比如说作为单例的放到map中
                 Lister<V1Service> serviceLister =
-                        new Lister<>(serviceInformer.getIndexer(), namespace);
+                    new Lister<>(serviceInformer.getIndexer(), namespace);
                 V1Service service = serviceLister.get(serviceName);
                 List<V1ServicePort> servicePorts = service.getSpec().getPorts();
                 try {
                     registerInstances(addIpSet, namespace, serviceName, servicePorts);
                     Loggers.MAIN.info("add instances, namespace:" + namespace + " serviceName: "
-                            + serviceName);
+                        + serviceName);
                 } catch (NacosException e) {
                     Loggers.MAIN.warn("add instances fail, message:" + e.getMessage()
-                            + " namespace:" + namespace + ", serviceName: " + serviceName);
+                        + " namespace:" + namespace + ", serviceName: " + serviceName);
                 }
             }
             
@@ -245,17 +245,17 @@ public class K8sSyncServer {
                 String serviceName = newObj.getMetadata().getName();
                 String namespace = newObj.getMetadata().getNamespace();
                 Lister<V1Service> serviceLister =
-                        new Lister<>(serviceInformer.getIndexer(), namespace);
+                    new Lister<>(serviceInformer.getIndexer(), namespace);
                 V1Service service = serviceLister.get(serviceName);
                 List<V1ServicePort> servicePorts = service.getSpec().getPorts();
                 try {
                     registerService(namespace, serviceName, servicePorts, false, endpointInformer);
                     Loggers.MAIN.info("update instances, namespace:" + namespace + " serviceName: "
-                            + serviceName);
+                        + serviceName);
                 } catch (NacosException e) {
                     Loggers.MAIN
-                            .warn("update instances fail, message:" + e.getMessage() + " namespace:"
-                                    + namespace + ", serviceName: " + serviceName);
+                        .warn("update instances fail, message:" + e.getMessage() + " namespace:"
+                            + namespace + ", serviceName: " + serviceName);
                 }
             }
             
@@ -269,13 +269,13 @@ public class K8sSyncServer {
                 Set<String> deleteIpSet = getIpFromEndpoints(obj);
                 try {
                     List<? extends Instance> oldInstanceList =
-                            instanceOperatorClient.listAllInstances(namespace, serviceName);
+                        instanceOperatorClient.listAllInstances(namespace, serviceName);
                     unregisterInstances(deleteIpSet, namespace, serviceName, oldInstanceList);
                     Loggers.MAIN.info("delete instances, namespace:" + namespace + ", serviceName: "
-                            + serviceName);
+                        + serviceName);
                 } catch (NacosException e) {
                     Loggers.MAIN.info("delete instances fail, namespace:" + namespace
-                            + ", serviceName: " + serviceName);
+                        + ", serviceName: " + serviceName);
                 }
             }
         });
@@ -331,12 +331,12 @@ public class K8sSyncServer {
      * @throws NacosException nacos exception during registering
      */
     public void registerService(String namespace, String serviceName,
-            List<V1ServicePort> servicePorts, boolean portChanged,
-            SharedIndexInformer<V1Endpoints> endpointInformer) throws NacosException {
+        List<V1ServicePort> servicePorts, boolean portChanged,
+        SharedIndexInformer<V1Endpoints> endpointInformer) throws NacosException {
         //TODO defaultnamespace 常量
         
         Service service =
-                Service.newService(namespace, Constants.DEFAULT_GROUP, serviceName, false);
+            Service.newService(namespace, Constants.DEFAULT_GROUP, serviceName, false);
         ServiceManager.getInstance().getSingleton(service);
         
         //NotifyCenter.publishEvent(new NamingTraceEvent.RegisterServiceTraceEvent(System.currentTimeMillis(),
@@ -344,7 +344,7 @@ public class K8sSyncServer {
         
         Set<String> oldIpSet = new HashSet<>();
         List<? extends Instance> oldInstanceList =
-                instanceOperatorClient.listAllInstances(namespace, serviceName);
+            instanceOperatorClient.listAllInstances(namespace, serviceName);
         for (Instance instance : oldInstanceList) {
             oldIpSet.add(instance.getIp());
         }
@@ -375,7 +375,7 @@ public class K8sSyncServer {
      */
     public void unregisterService(String namespace, String serviceName) throws NacosException {
         List<? extends Instance> instancelist =
-                instanceOperatorClient.listAllInstances(namespace, serviceName);
+            instanceOperatorClient.listAllInstances(namespace, serviceName);
         for (Instance instance : instancelist) {
             instanceOperatorClient.removeInstance(namespace, serviceName, instance);
         }
@@ -392,7 +392,7 @@ public class K8sSyncServer {
      * @throws NacosException nacos exception during registering instances
      */
     public void registerInstances(Set<String> addIpSet, String namespace, String serviceName,
-            List<V1ServicePort> servicePorts) throws NacosException {
+        List<V1ServicePort> servicePorts) throws NacosException {
         for (V1ServicePort servicePort : servicePorts) {
             int port = servicePort.getPort();
             if (!servicePort.getTargetPort().isInteger()) {
@@ -416,7 +416,7 @@ public class K8sSyncServer {
      * @param oldInstanceList old instance list from nacos service
      */
     public void unregisterInstances(Set<String> deleteIpSet, String namespace, String serviceName,
-            List<? extends Instance> oldInstanceList) throws NacosException {
+        List<? extends Instance> oldInstanceList) throws NacosException {
         for (Instance instance : oldInstanceList) {
             if (deleteIpSet.contains(instance.getIp())) {
                 instanceOperatorClient.removeInstance(namespace, serviceName, instance);
@@ -442,12 +442,12 @@ public class K8sSyncServer {
      * @param newServicePorts new service ports list
      */
     public boolean compareServicePorts(List<V1ServicePort> oldServicePorts,
-            List<V1ServicePort> newServicePorts) {
+        List<V1ServicePort> newServicePorts) {
         if (oldServicePorts.size() != newServicePorts.size()) {
             return false;
         }
         return oldServicePorts.containsAll(newServicePorts)
-                && newServicePorts.containsAll(oldServicePorts);
+            && newServicePorts.containsAll(oldServicePorts);
     }
     
     /**
@@ -459,9 +459,9 @@ public class K8sSyncServer {
         
         // loading the out-of-cluster config, a kubeconfig from file-system
         ApiClient apiClient = ClientBuilder
-                .kubeconfig(KubeConfig.loadKubeConfig(
-                        Files.newBufferedReader(Paths.get(kubeConfigPath), StandardCharsets.UTF_8)))
-                .build();
+            .kubeconfig(KubeConfig.loadKubeConfig(
+                Files.newBufferedReader(Paths.get(kubeConfigPath), StandardCharsets.UTF_8)))
+            .build();
         
         // set the global default api-client to the in-cluster one from above
         Configuration.setDefaultApiClient(apiClient);

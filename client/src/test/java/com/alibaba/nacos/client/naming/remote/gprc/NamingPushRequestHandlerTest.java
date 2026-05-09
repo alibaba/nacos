@@ -47,7 +47,7 @@ class NamingPushRequestHandlerTest {
         Request req = NotifySubscriberRequest.buildNotifySubscriberRequest(info);
         //when
         Response response =
-                handler.requestReply(req, new TestConnection(new RpcClient.ServerInfo()));
+            handler.requestReply(req, new TestConnection(new RpcClient.ServerInfo()));
         //then
         assertTrue(response instanceof NotifySubscriberResponse);
         verify(holder, times(1)).processServiceInfo(info);
@@ -59,6 +59,6 @@ class NamingPushRequestHandlerTest {
         
         NamingPushRequestHandler handler = new NamingPushRequestHandler(holder);
         assertNull(handler.requestReply(new HealthCheckRequest(),
-                new TestConnection(new RpcClient.ServerInfo())));
+            new TestConnection(new RpcClient.ServerInfo())));
     }
 }

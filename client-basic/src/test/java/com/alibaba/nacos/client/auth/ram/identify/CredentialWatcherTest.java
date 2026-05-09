@@ -63,11 +63,11 @@ class CredentialWatcherTest {
     void setUp() throws Exception {
         credentialWatcher = new CredentialWatcher("testApp", credentialService);
         loadCredentialMethod =
-                CredentialWatcher.class.getDeclaredMethod("loadCredential", boolean.class);
+            CredentialWatcher.class.getDeclaredMethod("loadCredential", boolean.class);
         loadCredentialMethod.setAccessible(true);
         loadCredentialFromPropertiesMethod =
-                CredentialWatcher.class.getDeclaredMethod("loadCredentialFromProperties",
-                        InputStream.class, boolean.class, Credentials.class);
+            CredentialWatcher.class.getDeclaredMethod("loadCredentialFromProperties",
+                InputStream.class, boolean.class, Credentials.class);
         loadCredentialFromPropertiesMethod.setAccessible(true);
     }
     
@@ -86,7 +86,7 @@ class CredentialWatcherTest {
         Field executorField = CredentialWatcher.class.getDeclaredField("executor");
         executorField.setAccessible(true);
         ScheduledExecutorService executor =
-                (ScheduledExecutorService) executorField.get(credentialWatcher);
+            (ScheduledExecutorService) executorField.get(credentialWatcher);
         assertTrue(executor.isShutdown());
     }
     
@@ -112,7 +112,7 @@ class CredentialWatcherTest {
     
     @Test
     void testLoadCredentialByIdentityFile()
-            throws InvocationTargetException, IllegalAccessException {
+        throws InvocationTargetException, IllegalAccessException {
         URL url = CredentialWatcherTest.class.getClassLoader().getResource("spas.identity");
         System.setProperty("spas.identity", url.getPath());
         final AtomicReference<String> readAk = new AtomicReference<>("");
@@ -133,7 +133,7 @@ class CredentialWatcherTest {
     
     @Test
     void testLoadCredentialByInvalidIdentityFile()
-            throws InvocationTargetException, IllegalAccessException {
+        throws InvocationTargetException, IllegalAccessException {
         URL url = CredentialWatcherTest.class.getClassLoader().getResource("spas_invalid.identity");
         System.setProperty("spas.identity", url.getPath());
         final AtomicReference<String> readAk = new AtomicReference<>("");
@@ -157,8 +157,8 @@ class CredentialWatcherTest {
      */
     @Test
     void testLoadCredentialByDockerFile()
-            throws FileNotFoundException, InvocationTargetException, IllegalAccessException,
-            NoSuchFieldException {
+        throws FileNotFoundException, InvocationTargetException, IllegalAccessException,
+        NoSuchFieldException {
         URL url = CredentialWatcherTest.class.getClassLoader().getResource("spas_docker.identity");
         InputStream propertiesIS = new FileInputStream(url.getPath());
         Credentials actual = new Credentials();
@@ -173,7 +173,7 @@ class CredentialWatcherTest {
     
     @Test
     void testLoadCredentialByFileWithIoException()
-            throws IOException, InvocationTargetException, IllegalAccessException {
+        throws IOException, InvocationTargetException, IllegalAccessException {
         InputStream propertiesIS = mock(InputStream.class);
         when(propertiesIS.read(any())).thenThrow(new IOException("test"));
         doThrow(new IOException("test")).when(propertiesIS).close();
@@ -186,9 +186,9 @@ class CredentialWatcherTest {
     
     @Test
     void testReLoadCredential()
-            throws InvocationTargetException, IllegalAccessException, InterruptedException {
+        throws InvocationTargetException, IllegalAccessException, InterruptedException {
         URL url =
-                CredentialWatcherTest.class.getClassLoader().getResource("spas_modified.identity");
+            CredentialWatcherTest.class.getClassLoader().getResource("spas_modified.identity");
         modifiedFile(url, true);
         System.setProperty("spas.identity", url.getPath());
         final AtomicReference<String> readAk = new AtomicReference<>("");

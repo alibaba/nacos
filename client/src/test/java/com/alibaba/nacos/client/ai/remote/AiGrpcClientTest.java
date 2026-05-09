@@ -126,7 +126,7 @@ class AiGrpcClientTest {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
         QueryMcpServerResponse response = new QueryMcpServerResponse();
         response.setMcpServerDetailInfo(mcpServerDetailInfo);
@@ -137,11 +137,11 @@ class AiGrpcClientTest {
     
     @Test
     void queryMcpServerWithErrorCode()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         Response response = ErrorResponse.build(NacosException.INVALID_PARAM, "test");
         when(rpcClient.request(any(QueryMcpServerRequest.class))).thenReturn(response);
         assertThrows(NacosException.class, () -> aiGrpcClient.queryMcpServer("test", "1.0.0"));
@@ -149,11 +149,11 @@ class AiGrpcClientTest {
     
     @Test
     void queryMcpServerWithNoRight()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         Response response = ErrorResponse.build(NacosException.NO_RIGHT, "test");
         when(rpcClient.request(any(QueryMcpServerRequest.class))).thenReturn(response);
         assertThrows(NacosException.class, () -> aiGrpcClient.queryMcpServer("test", "1.0.0"));
@@ -162,11 +162,11 @@ class AiGrpcClientTest {
     
     @Test
     void queryMcpServerWithUnExpectedResponse()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         ReleaseMcpServerResponse response = new ReleaseMcpServerResponse();
         when(rpcClient.request(any(QueryMcpServerRequest.class))).thenReturn(response);
         assertThrows(NacosException.class, () -> aiGrpcClient.queryMcpServer("test", "1.0.0"));
@@ -174,13 +174,13 @@ class AiGrpcClientTest {
     
     @Test
     void queryMcpServerWithException()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         when(rpcClient.request(any(QueryMcpServerRequest.class)))
-                .thenThrow(new RuntimeException("test"));
+            .thenThrow(new RuntimeException("test"));
         assertThrows(NacosException.class, () -> aiGrpcClient.queryMcpServer("test", "1.0.0"));
     }
     
@@ -199,7 +199,7 @@ class AiGrpcClientTest {
         
         assertEquals("p1", actual.getPromptKey());
         ArgumentCaptor<QueryPromptRequest> reqCaptor =
-                ArgumentCaptor.forClass(QueryPromptRequest.class);
+            ArgumentCaptor.forClass(QueryPromptRequest.class);
         verify(rpcClient).request(reqCaptor.capture());
         QueryPromptRequest captured = reqCaptor.getValue();
         assertEquals("test", captured.getNamespaceId());
@@ -223,7 +223,7 @@ class AiGrpcClientTest {
         
         verify(securityProxy).getIdentityContext(any());
         ArgumentCaptor<QueryPromptRequest> reqCaptor =
-                ArgumentCaptor.forClass(QueryPromptRequest.class);
+            ArgumentCaptor.forClass(QueryPromptRequest.class);
         verify(rpcClient).request(reqCaptor.capture());
         assertEquals("v", reqCaptor.getValue().getHeader("k"));
     }
@@ -254,7 +254,7 @@ class AiGrpcClientTest {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName("test");
         serverSpec.setVersionDetail(new ServerVersionDetail());
@@ -264,16 +264,16 @@ class AiGrpcClientTest {
         response.setMcpId(id);
         when(rpcClient.request(any(ReleaseMcpServerRequest.class))).thenReturn(response);
         assertEquals(id,
-                aiGrpcClient.releaseMcpServer(serverSpec, new McpToolSpecification(), null));
+            aiGrpcClient.releaseMcpServer(serverSpec, new McpToolSpecification(), null));
     }
     
     @Test
     void registerMcpServerEndpoint()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         McpServerEndpointResponse response = new McpServerEndpointResponse();
         response.setType(AiRemoteConstants.REGISTER_ENDPOINT);
         when(rpcClient.request(any(McpServerEndpointRequest.class))).thenReturn(response);
@@ -284,11 +284,11 @@ class AiGrpcClientTest {
     
     @Test
     void deregisterMcpServerEndpoint()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         McpServerEndpointResponse response = new McpServerEndpointResponse();
         response.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
         when(rpcClient.request(any(McpServerEndpointRequest.class))).thenReturn(response);
@@ -302,7 +302,7 @@ class AiGrpcClientTest {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
         QueryMcpServerResponse response = new QueryMcpServerResponse();
         response.setMcpServerDetailInfo(mcpServerDetailInfo);
@@ -314,11 +314,11 @@ class AiGrpcClientTest {
     
     @Test
     void subscribeMcpServerAlreadySubscribed()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
         when(mcpServerCacheHolder.getMcpServer("test", null)).thenReturn(mcpServerDetailInfo);
         assertEquals(mcpServerDetailInfo, aiGrpcClient.subscribeMcpServer("test", null));
@@ -329,11 +329,11 @@ class AiGrpcClientTest {
     
     @Test
     void unsubscribeMcpServer()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         aiGrpcClient.unsubscribeMcpServer("test", null);
         verify(mcpServerCacheHolder).removeMcpServerUpdateTask("test", null);
     }
@@ -343,28 +343,28 @@ class AiGrpcClientTest {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
         NacosRuntimeException exception = assertThrows(NacosRuntimeException.class,
-                () -> aiGrpcClient.queryMcpServer("test", "1.0.0"));
+            () -> aiGrpcClient.queryMcpServer("test", "1.0.0"));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode());
     }
     
     @Test
     void queryMcpServerWithDisconnectedShouldThrowConnectionError()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(false);
         NacosRuntimeException exception = assertThrows(NacosRuntimeException.class,
-                () -> aiGrpcClient.queryMcpServer("test", "1.0.0"));
+            () -> aiGrpcClient.queryMcpServer("test", "1.0.0"));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
     }
     
     @Test
     void queryMcpServerWithUnknownAbilityButConnectedShouldProceed()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.UNKNOWN);
+            .thenReturn(AbilityStatus.UNKNOWN);
         when(rpcClient.isRunning()).thenReturn(true);
         QueryMcpServerResponse response = new QueryMcpServerResponse();
         response.setMcpServerDetailInfo(new McpServerDetailInfo());
@@ -377,74 +377,74 @@ class AiGrpcClientTest {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName("test");
         serverSpec.setVersionDetail(new ServerVersionDetail());
         serverSpec.getVersionDetail().setVersion("1.0.0");
         assertThrows(NacosRuntimeException.class,
-                () -> aiGrpcClient.releaseMcpServer(serverSpec, null, null));
+            () -> aiGrpcClient.releaseMcpServer(serverSpec, null, null));
     }
     
     @Test
     void registerMcpServerEndpointWithFeatureDisabled()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
         assertThrows(NacosRuntimeException.class,
-                () -> aiGrpcClient.registerMcpServerEndpoint("test", "127.0.0.1", 8080, "1.0.0"));
+            () -> aiGrpcClient.registerMcpServerEndpoint("test", "127.0.0.1", 8080, "1.0.0"));
     }
     
     @Test
     void deregisterMcpServerEndpointWithFeatureDisabled()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
         assertThrows(NacosRuntimeException.class,
-                () -> aiGrpcClient.deregisterMcpServerEndpoint("test", "127.0.0.1", 8080));
+            () -> aiGrpcClient.deregisterMcpServerEndpoint("test", "127.0.0.1", 8080));
     }
     
     @Test
     void subscribeMcpServerWithFeatureDisabled()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
         assertThrows(NacosRuntimeException.class,
-                () -> aiGrpcClient.subscribeMcpServer("test", null));
+            () -> aiGrpcClient.subscribeMcpServer("test", null));
     }
     
     @Test
     void unsubscribeMcpServerWithFeatureDisabled()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
-                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
         assertThrows(NacosRuntimeException.class,
-                () -> aiGrpcClient.unsubscribeMcpServer("test", null));
+            () -> aiGrpcClient.unsubscribeMcpServer("test", null));
     }
     
     @Test
     void releaseAgentCardShouldUseLegacyFormatWhenServerV1NotSupported()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_AGENT_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_AGENT_CARD_V1))
-                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
         ReleaseAgentCardResponse response = new ReleaseAgentCardResponse();
         when(rpcClient.request(any(ReleaseAgentCardRequest.class))).thenReturn(response);
         AgentCard agentCard = buildV1AgentCard();
         aiGrpcClient.releaseAgentCard(agentCard, "service", true);
         ArgumentCaptor<ReleaseAgentCardRequest> captor =
-                ArgumentCaptor.forClass(ReleaseAgentCardRequest.class);
+            ArgumentCaptor.forClass(ReleaseAgentCardRequest.class);
         verify(rpcClient).request(captor.capture());
         AgentCard actual = captor.getValue().getAgentCard();
         assertEquals("http://127.0.0.1:8080/agent", actual.getUrl());
@@ -454,18 +454,18 @@ class AiGrpcClientTest {
     
     @Test
     void releaseAgentCardShouldRetryLegacyWhenServerReturnsLegacyValidationError()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_AGENT_REGISTRY))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_AGENT_CARD_V1))
-                .thenReturn(AbilityStatus.SUPPORTED);
+            .thenReturn(AbilityStatus.SUPPORTED);
         Response invalidParam = ErrorResponse.build(NacosException.INVALID_PARAM,
-                "Required parameter `agentCard.protocolVersion` not present");
+            "Required parameter `agentCard.protocolVersion` not present");
         ReleaseAgentCardResponse success = new ReleaseAgentCardResponse();
         when(rpcClient.request(any(ReleaseAgentCardRequest.class))).thenReturn(invalidParam)
-                .thenReturn(success);
+            .thenReturn(success);
         aiGrpcClient.releaseAgentCard(buildV1AgentCard(), "service", true);
         verify(rpcClient, org.mockito.Mockito.times(2)).request(any(ReleaseAgentCardRequest.class));
     }
@@ -480,9 +480,9 @@ class AiGrpcClientTest {
     
     @Test
     void requestToServerWithoutMcpRequest()
-            throws NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
+        throws NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
         Method method =
-                AiGrpcClient.class.getDeclaredMethod("requestToServer", Request.class, Class.class);
+            AiGrpcClient.class.getDeclaredMethod("requestToServer", Request.class, Class.class);
         method.setAccessible(true);
         injectMock();
         try {
@@ -503,7 +503,7 @@ class AiGrpcClientTest {
         field = AiGrpcClient.class.getDeclaredField("serverListManager");
         field.setAccessible(true);
         AbstractServerListManager autoServerListManager =
-                (AbstractServerListManager) field.get(aiGrpcClient);
+            (AbstractServerListManager) field.get(aiGrpcClient);
         field.set(aiGrpcClient, serverListManager);
         
         field = AiGrpcClient.class.getDeclaredField("redoService");

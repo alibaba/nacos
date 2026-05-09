@@ -60,7 +60,7 @@ public class ServiceInfoHolder implements Closeable {
     private boolean enableClientMetrics = true;
     
     public ServiceInfoHolder(String namespace, String notifierEventScope,
-            NacosClientProperties properties) {
+        NacosClientProperties properties) {
         cacheDir = CacheDirUtil.initCacheDir(namespace, properties);
         instancesDiffer = new InstancesDiffer();
         if (isLoadCacheAtStart(properties)) {
@@ -72,15 +72,15 @@ public class ServiceInfoHolder implements Closeable {
         this.pushEmptyProtection = isPushEmptyProtect(properties);
         this.notifierEventScope = notifierEventScope;
         this.enableClientMetrics = Boolean.parseBoolean(
-                properties.getProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "true"));
+            properties.getProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "true"));
     }
     
     private boolean isLoadCacheAtStart(NacosClientProperties properties) {
         boolean loadCacheAtStart = false;
         if (properties != null && StringUtils.isNotEmpty(
-                properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
+            properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
             loadCacheAtStart = ConvertUtils.toBoolean(
-                    properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
+                properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
         }
         return loadCacheAtStart;
     }
@@ -88,9 +88,9 @@ public class ServiceInfoHolder implements Closeable {
     private boolean isPushEmptyProtect(NacosClientProperties properties) {
         boolean pushEmptyProtection = false;
         if (properties != null && StringUtils.isNotEmpty(
-                properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION))) {
+            properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION))) {
             pushEmptyProtection = ConvertUtils.toBoolean(
-                    properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION));
+                properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION));
         }
         return pushEmptyProtection;
     }
@@ -127,16 +127,16 @@ public class ServiceInfoHolder implements Closeable {
         String serviceKey = serviceInfo.getKeyWithoutClusters();
         if (serviceKey == null) {
             NAMING_LOGGER.warn("process service info but serviceKey is null, service host: {}",
-                    JacksonUtils.toJson(serviceInfo.getHosts()));
+                JacksonUtils.toJson(serviceInfo.getHosts()));
             return null;
         }
         ServiceInfo oldService = serviceInfoMap.get(serviceKey);
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
             NAMING_LOGGER.warn(
-                    "process service info but found empty or error push, serviceKey: {}, "
-                            + "pushEmptyProtection: {}, hosts: {}",
-                    serviceKey, pushEmptyProtection, serviceInfo.getHosts());
+                "process service info but found empty or error push, serviceKey: {}, "
+                    + "pushEmptyProtection: {}, hosts: {}",
+                serviceKey, pushEmptyProtection, serviceInfo.getHosts());
             return oldService;
         }
         serviceInfoMap.put(serviceKey, serviceInfo);
@@ -155,14 +155,14 @@ public class ServiceInfoHolder implements Closeable {
         
         if (diff.hasDifferent()) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(),
-                    serviceKey,
-                    JacksonUtils.toJson(serviceInfo.getHosts()));
+                serviceKey,
+                JacksonUtils.toJson(serviceInfo.getHosts()));
             
             if (!failoverReactor.isFailoverSwitch(serviceKey)) {
                 NotifyCenter.publishEvent(
-                        new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(),
-                                serviceInfo.getGroupName(),
-                                serviceInfo.getClusters(), serviceInfo.getHosts(), diff));
+                    new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(),
+                        serviceInfo.getGroupName(),
+                        serviceInfo.getClusters(), serviceInfo.getHosts(), diff));
             }
             DiskCache.write(serviceInfo, cacheDir);
         }

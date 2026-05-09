@@ -82,7 +82,7 @@ class PropertiesPropertySource extends AbstractPropertySource {
         
         Properties ret = new Properties();
         final ListIterator<Properties> iterator =
-                propertiesList.listIterator(propertiesList.size());
+            propertiesList.listIterator(propertiesList.size());
         while (iterator.hasPrevious()) {
             final Properties properties = iterator.previous();
             ret.putAll(properties);
@@ -91,7 +91,7 @@ class PropertiesPropertySource extends AbstractPropertySource {
     }
     
     List<Properties> lookForProperties(PropertiesPropertySource propertiesPropertySource,
-            List<Properties> propertiesList) {
+        List<Properties> propertiesList) {
         propertiesList.add(propertiesPropertySource.properties);
         final PropertiesPropertySource parent = propertiesPropertySource.parent;
         if (parent == null) {
