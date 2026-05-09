@@ -80,15 +80,18 @@ public class InstanceProxyTest {
         
         Page<Instance> expectedPage = new Page<>();
         doReturn(expectedPage).when(instanceHandler)
-                .listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName, page, pageSize);
+            .listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName, page,
+                pageSize);
         
-        Page<? extends Instance> result = instanceProxy.listInstances(namespaceId, serviceNameWithoutGroup, groupName,
+        Page<? extends Instance> result =
+            instanceProxy.listInstances(namespaceId, serviceNameWithoutGroup, groupName,
                 clusterName, page, pageSize);
         
         assertNotNull(result);
         assertEquals(expectedPage, result);
-        verify(instanceHandler, times(1)).listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName,
-                page, pageSize);
+        verify(instanceHandler, times(1)).listInstances(namespaceId, serviceNameWithoutGroup,
+            groupName, clusterName,
+            page, pageSize);
     }
     
 }

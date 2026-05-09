@@ -72,7 +72,7 @@ public interface A2aHandler {
      * @throws NacosException nacos exception
      */
     void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form) throws NacosException;
-
+    
     /**
      * List agents.
      *
@@ -81,7 +81,8 @@ public interface A2aHandler {
      * @return agent card list
      * @throws NacosException nacos exception
      */
-    Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException;
+    Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm)
+        throws NacosException;
     
     /**
      * List agent versions.
@@ -90,5 +91,6 @@ public interface A2aHandler {
      * @return agent version detail list
      * @throws NacosException nacos exception
      */
-    List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException;
+    List<AgentVersionDetail> listAgentVersions(String namespaceId, String name)
+        throws NacosException;
 }

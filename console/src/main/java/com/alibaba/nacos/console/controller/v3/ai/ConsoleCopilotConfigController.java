@@ -49,7 +49,8 @@ public class ConsoleCopilotConfigController {
     private final CopilotAgentManager agentManager;
     
     @Autowired
-    public ConsoleCopilotConfigController(CopilotConfigStorage configStorage, CopilotAgentManager agentManager) {
+    public ConsoleCopilotConfigController(CopilotConfigStorage configStorage,
+        CopilotAgentManager agentManager) {
         this.configStorage = configStorage;
         this.agentManager = agentManager;
     }

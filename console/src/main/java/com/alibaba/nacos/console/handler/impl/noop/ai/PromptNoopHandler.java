@@ -45,17 +45,19 @@ import java.util.Map;
 public class PromptNoopHandler implements PromptHandler {
     
     private static final String PROMPT_NOT_ENABLED_MESSAGE =
-            "Nacos AI Prompt module and API required both `naming` and `config` module.";
+        "Nacos AI Prompt module and API required both `naming` and `config` module.";
     
     private NacosApiException notImplemented() {
-        return new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
+        return new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            PROMPT_NOT_ENABLED_MESSAGE);
     }
     
     // ========== Common APIs ==========
     
     @Override
-    public boolean deletePrompt(PromptForm form, String srcUser, String srcIp) throws NacosException {
+    public boolean deletePrompt(PromptForm form, String srcUser, String srcIp)
+        throws NacosException {
         throw notImplemented();
     }
     
@@ -65,39 +67,45 @@ public class PromptNoopHandler implements PromptHandler {
     }
     
     @Override
-    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
+    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form)
+        throws NacosException {
         throw notImplemented();
     }
     
     // ========== Lifecycle APIs ==========
     
     @Override
-    public PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey) throws NacosException {
+    public PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey)
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
     public PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version)
-            throws NacosException {
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
-    public PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version)
-            throws NacosException {
+    public PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey,
+        String version)
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
-    public String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
-            String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
-            throws NacosException {
+    public String createDraft(String namespaceId, String promptKey, String basedOnVersion,
+        String targetVersion,
+        String template, List<PromptVariable> variables, String commitMsg, String description,
+        String bizTags)
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
-    public void updateDraft(String namespaceId, String promptKey, String template, List<PromptVariable> variables,
-            String commitMsg) throws NacosException {
+    public void updateDraft(String namespaceId, String promptKey, String template,
+        List<PromptVariable> variables,
+        String commitMsg) throws NacosException {
         throw notImplemented();
     }
     
@@ -107,40 +115,47 @@ public class PromptNoopHandler implements PromptHandler {
     }
     
     @Override
-    public String submit(String namespaceId, String promptKey, String version) throws NacosException {
+    public String submit(String namespaceId, String promptKey, String version)
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
-    public void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
-            throws NacosException {
+    public void publish(String namespaceId, String promptKey, String version,
+        boolean updateLatestLabel)
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
-    public void forcePublish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
-            throws NacosException {
+    public void forcePublish(String namespaceId, String promptKey, String version,
+        boolean updateLatestLabel)
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
-    public void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)
-            throws NacosException {
+    public void changeOnlineStatus(String namespaceId, String promptKey, String version,
+        boolean online)
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
-    public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels) throws NacosException {
+    public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels)
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
-    public void updateDescription(String namespaceId, String promptKey, String description) throws NacosException {
+    public void updateDescription(String namespaceId, String promptKey, String description)
+        throws NacosException {
         throw notImplemented();
     }
     
     @Override
-    public void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException {
+    public void updateBizTags(String namespaceId, String promptKey, String bizTags)
+        throws NacosException {
         throw notImplemented();
     }
 }

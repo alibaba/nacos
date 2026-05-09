@@ -65,17 +65,21 @@ class ConsoleMaintainerClientAuthPluginTest {
         EnvUtil.setEnvironment(environment);
         authPlugin = new ConsoleMaintainerClientAuthPlugin();
         cachedConsoleAuthConfig = NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
-        Map<String, NacosAuthConfig> nacosAuthConfigMap = (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
+            .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
+        Map<String, NacosAuthConfig> nacosAuthConfigMap =
+            (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
                 NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
-        nacosAuthConfigMap.put(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE, mockNacosAuthConfig);
+        nacosAuthConfigMap.put(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE,
+            mockNacosAuthConfig);
     }
     
     @AfterEach
     void tearDown() throws NacosException {
-        Map<String, NacosAuthConfig> nacosAuthConfigMap = (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
+        Map<String, NacosAuthConfig> nacosAuthConfigMap =
+            (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
                 NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
-        nacosAuthConfigMap.put(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE, cachedConsoleAuthConfig);
+        nacosAuthConfigMap.put(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE,
+            cachedConsoleAuthConfig);
         authPlugin.shutdown();
         EnvUtil.setEnvironment(cachedEnvironment);
     }

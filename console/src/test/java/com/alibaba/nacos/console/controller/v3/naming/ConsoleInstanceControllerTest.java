@@ -76,17 +76,20 @@ public class ConsoleInstanceControllerTest {
     void testGetInstanceList() throws Exception {
         Page<? extends Instance> page = new Page<>();
         doReturn(page).when(instanceProxy)
-                .listInstances(anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt());
+            .listInstances(anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt());
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/ns/instance/list")
-                .param("namespaceId", "default").param("serviceName", "testService").param("pageNo", "1")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/ns/instance/list")
+                .param("namespaceId", "default").param("serviceName", "testService")
+                .param("pageNo", "1")
                 .param("pageSize", "10");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<Page<? extends Instance>> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
-        });
+        Result<Page<? extends Instance>> result =
+            new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+            });
         
         assertNotNull(result.getData());
     }
@@ -104,7 +107,8 @@ public class ConsoleInstanceControllerTest {
         instance.setPort(8080);
         instance.setWeight(1.0);
         
-        doNothing().when(instanceProxy).updateInstance(any(InstanceForm.class), any(Instance.class));
+        doNothing().when(instanceProxy).updateInstance(any(InstanceForm.class),
+            any(Instance.class));
         
         Result<String> result = consoleInstanceController.updateInstance(instanceForm);
         
@@ -126,7 +130,8 @@ public class ConsoleInstanceControllerTest {
         instance.setPort(8080);
         instance.setWeight(-1.0);
         
-        assertThrows(NacosApiException.class, () -> consoleInstanceController.updateInstance(instanceForm));
+        assertThrows(NacosApiException.class,
+            () -> consoleInstanceController.updateInstance(instanceForm));
         verify(instanceProxy, never()).updateInstance(any(InstanceForm.class), any(Instance.class));
     }
     
@@ -139,7 +144,8 @@ public class ConsoleInstanceControllerTest {
         instanceForm.setClusterName("cluster");
         instanceForm.setEphemeral(false);
         
-        doNothing().when(instanceProxy).removeInstance(any(InstanceForm.class), any(Instance.class));
+        doNothing().when(instanceProxy).removeInstance(any(InstanceForm.class),
+            any(Instance.class));
         
         Result<String> result = consoleInstanceController.removeInstance(instanceForm);
         
@@ -161,7 +167,8 @@ public class ConsoleInstanceControllerTest {
         instanceForm.setIp("127.0.0.1");
         instanceForm.setPort(8080);
         
-        doNothing().when(instanceProxy).removeInstance(any(InstanceForm.class), any(Instance.class));
+        doNothing().when(instanceProxy).removeInstance(any(InstanceForm.class),
+            any(Instance.class));
         
         consoleInstanceController.removeInstance(instanceForm);
         
@@ -179,7 +186,7 @@ public class ConsoleInstanceControllerTest {
         instanceForm.setEphemeral(true);
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> consoleInstanceController.removeInstance(instanceForm));
+            () -> consoleInstanceController.removeInstance(instanceForm));
         
         assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
         verify(instanceProxy, never()).removeInstance(any(InstanceForm.class), any(Instance.class));

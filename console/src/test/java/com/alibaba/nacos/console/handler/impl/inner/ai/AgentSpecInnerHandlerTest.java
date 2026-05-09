@@ -38,48 +38,51 @@ import static org.mockito.Mockito.verify;
  */
 @ExtendWith(MockitoExtension.class)
 class AgentSpecInnerHandlerTest {
-
+    
     private static final String NAMESPACE_ID = "test-ns";
-
+    
     private static final String AGENTSPEC_NAME = "test-agentspec";
-
+    
     @Mock
     private AgentSpecOperationService agentSpecOperationService;
-
+    
     private AgentSpecInnerHandler agentSpecInnerHandler;
-
+    
     @BeforeEach
     void setUp() {
         agentSpecInnerHandler = new AgentSpecInnerHandler(agentSpecOperationService);
     }
-
+    
     @Test
     void testUpdateScope() throws NacosException {
         AgentSpecScopeForm form = new AgentSpecScopeForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setAgentSpecName(AGENTSPEC_NAME);
         form.setScope("PUBLIC");
-        doNothing().when(agentSpecOperationService).updateScope(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME), eq("PUBLIC"));
-
+        doNothing().when(agentSpecOperationService).updateScope(eq(NAMESPACE_ID),
+            eq(AGENTSPEC_NAME), eq("PUBLIC"));
+        
         agentSpecInnerHandler.updateScope(form);
-
+        
         verify(agentSpecOperationService).updateScope(NAMESPACE_ID, AGENTSPEC_NAME, "PUBLIC");
     }
-
+    
     @Test
     void testUpdateBizTags() throws NacosException {
         AgentSpecBizTagsUpdateForm form = new AgentSpecBizTagsUpdateForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setAgentSpecName(AGENTSPEC_NAME);
         form.setBizTags("[\"finance\"]");
-        doNothing().when(agentSpecOperationService).updateBizTags(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME),
-                eq("[\"finance\"]"));
-
+        doNothing().when(agentSpecOperationService).updateBizTags(eq(NAMESPACE_ID),
+            eq(AGENTSPEC_NAME),
+            eq("[\"finance\"]"));
+        
         agentSpecInnerHandler.updateBizTags(form);
-
-        verify(agentSpecOperationService).updateBizTags(NAMESPACE_ID, AGENTSPEC_NAME, "[\"finance\"]");
+        
+        verify(agentSpecOperationService).updateBizTags(NAMESPACE_ID, AGENTSPEC_NAME,
+            "[\"finance\"]");
     }
-
+    
     @Test
     void testForcePublish() throws NacosException {
         AgentSpecPublishForm form = new AgentSpecPublishForm();
@@ -87,14 +90,15 @@ class AgentSpecInnerHandlerTest {
         form.setAgentSpecName(AGENTSPEC_NAME);
         form.setVersion("v1");
         form.setUpdateLatestLabel(true);
-        doNothing().when(agentSpecOperationService).forcePublish(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME), eq("v1"),
-                eq(true));
-
+        doNothing().when(agentSpecOperationService).forcePublish(eq(NAMESPACE_ID),
+            eq(AGENTSPEC_NAME), eq("v1"),
+            eq(true));
+        
         agentSpecInnerHandler.forcePublish(form);
-
+        
         verify(agentSpecOperationService).forcePublish(NAMESPACE_ID, AGENTSPEC_NAME, "v1", true);
     }
-
+    
     @Test
     void testForcePublishWithNullUpdateLatestLabel() throws NacosException {
         AgentSpecPublishForm form = new AgentSpecPublishForm();
@@ -102,11 +106,12 @@ class AgentSpecInnerHandlerTest {
         form.setAgentSpecName(AGENTSPEC_NAME);
         form.setVersion("v1");
         form.setUpdateLatestLabel(null);
-        doNothing().when(agentSpecOperationService).forcePublish(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME), eq("v1"),
-                eq(true));
-
+        doNothing().when(agentSpecOperationService).forcePublish(eq(NAMESPACE_ID),
+            eq(AGENTSPEC_NAME), eq("v1"),
+            eq(true));
+        
         agentSpecInnerHandler.forcePublish(form);
-
+        
         verify(agentSpecOperationService).forcePublish(NAMESPACE_ID, AGENTSPEC_NAME, "v1", true);
     }
 }

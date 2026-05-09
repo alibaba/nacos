@@ -66,8 +66,10 @@ class InstanceInnerHandlerTest {
     void listInstances() throws NacosException {
         List<Instance> mockInstances = List.of(new Instance());
         doReturn(mockInstances).when(catalogService)
-                .listInstances(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, Constants.DEFAULT_CLUSTER_NAME);
-        Page<? extends Instance> actual = instanceInnerHandler.listInstances(TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
+            .listInstances(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME,
+                Constants.DEFAULT_CLUSTER_NAME);
+        Page<? extends Instance> actual =
+            instanceInnerHandler.listInstances(TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
                 TEST_GROUP_NAME, Constants.DEFAULT_CLUSTER_NAME, 1, 10);
         assertEquals(mockInstances.size(), actual.getPageItems().size());
         assertEquals(mockInstances.get(0), actual.getPageItems().get(0));
@@ -84,7 +86,8 @@ class InstanceInnerHandlerTest {
         instanceForm.setServiceName(TEST_SERVICE_NAME);
         Instance instance = new Instance();
         instanceInnerHandler.updateInstance(instanceForm, instance);
-        verify(instanceServiceV2).updateInstance(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, instance);
+        verify(instanceServiceV2).updateInstance(TEST_NAMESPACE_ID, TEST_GROUP_NAME,
+            TEST_SERVICE_NAME, instance);
     }
     
     @Test
@@ -97,6 +100,7 @@ class InstanceInnerHandlerTest {
         instance.setIp("127.0.0.1");
         instance.setPort(8848);
         instanceInnerHandler.removeInstance(instanceForm, instance);
-        verify(instanceServiceV2).removeInstance(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, instance);
+        verify(instanceServiceV2).removeInstance(TEST_NAMESPACE_ID, TEST_GROUP_NAME,
+            TEST_SERVICE_NAME, instance);
     }
 }

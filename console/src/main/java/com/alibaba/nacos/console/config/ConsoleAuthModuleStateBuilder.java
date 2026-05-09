@@ -46,7 +46,7 @@ public class ConsoleAuthModuleStateBuilder extends AbstractConsoleModuleStateBui
     public ModuleState build() {
         ModuleState result = new ModuleState(AUTH_MODULE);
         NacosAuthConfig authConfig = NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
+            .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
         result.newState(AUTH_ENABLED, authConfig.isAuthEnabled());
         result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfig));
         result.newState(AUTH_SYSTEM_TYPE, authConfig.getNacosAuthSystemType());
@@ -60,7 +60,7 @@ public class ConsoleAuthModuleStateBuilder extends AbstractConsoleModuleStateBui
     
     private Boolean isLoginPageEnabled(NacosAuthConfig authConfigs) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+            .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         return authPluginService.map(AuthPluginService::isLoginEnabled).orElse(false);
     }
     

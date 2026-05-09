@@ -34,15 +34,17 @@ class NacosConsoleBeanPostProcessorConfigurationTest {
     
     @Test
     void nacosDuplicateSpringBeanPostProcessor() {
-        NacosConsoleBeanPostProcessorConfiguration configuration = new NacosConsoleBeanPostProcessorConfiguration();
+        NacosConsoleBeanPostProcessorConfiguration configuration =
+            new NacosConsoleBeanPostProcessorConfiguration();
         assertInstanceOf(NacosDuplicateSpringBeanPostProcessor.class,
-                configuration.nacosDuplicateSpringBeanPostProcessor(applicationContext));
+            configuration.nacosDuplicateSpringBeanPostProcessor(applicationContext));
     }
     
     @Test
     void nacosDuplicateConfigurationBeanPostProcessor() {
-        NacosConsoleBeanPostProcessorConfiguration configuration = new NacosConsoleBeanPostProcessorConfiguration();
+        NacosConsoleBeanPostProcessorConfiguration configuration =
+            new NacosConsoleBeanPostProcessorConfiguration();
         assertInstanceOf(NacosDuplicateConfigurationBeanPostProcessor.class,
-                configuration.nacosDuplicateConfigurationBeanPostProcessor(applicationContext));
+            configuration.nacosDuplicateConfigurationBeanPostProcessor(applicationContext));
     }
 }

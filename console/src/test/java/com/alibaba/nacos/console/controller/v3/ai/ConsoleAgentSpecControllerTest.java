@@ -71,8 +71,8 @@ public class ConsoleAgentSpecControllerTest {
         doNothing().when(agentSpecProxy).forcePublish(any(AgentSpecPublishForm.class));
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
-                        Constants.AgentSpecs.CONSOLE_PATH + "/force-publish").param("namespaceId", "test-ns")
-                .param("agentSpecName", "test-agentspec").param("version", "v1");
+            Constants.AgentSpecs.CONSOLE_PATH + "/force-publish").param("namespaceId", "test-ns")
+            .param("agentSpecName", "test-agentspec").param("version", "v1");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String content = response.getContentAsString();
@@ -94,13 +94,14 @@ public class ConsoleAgentSpecControllerTest {
         page.setPageItems(java.util.List.of(item));
         when(agentSpecProxy.listAgentSpecs(any(), any(), any())).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.AgentSpecs.CONSOLE_PATH + "/list")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.AgentSpecs.CONSOLE_PATH + "/list")
                 .param("pageNo", "1").param("pageSize", "10");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         Result<Page<AgentSpecSummary>> result = JacksonUtils.toObj(response.getContentAsString(),
-                new TypeReference<>() {
-                });
+            new TypeReference<>() {
+            });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(1, result.getData().getTotalCount());
     }
@@ -112,7 +113,8 @@ public class ConsoleAgentSpecControllerTest {
         page.setPageItems(java.util.Collections.emptyList());
         when(agentSpecProxy.listAgentSpecs(any(), any(), any())).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.AgentSpecs.CONSOLE_PATH + "/list")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.AgentSpecs.CONSOLE_PATH + "/list")
                 .param("scope", "PUBLIC").param("pageNo", "1").param("pageSize", "10");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();

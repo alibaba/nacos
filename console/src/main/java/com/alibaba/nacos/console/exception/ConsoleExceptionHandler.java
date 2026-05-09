@@ -50,9 +50,10 @@ public class ConsoleExceptionHandler {
     
     @ExceptionHandler(IllegalArgumentException.class)
     private ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionUtil.getAllExceptionMsg(e));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ExceptionUtil.getAllExceptionMsg(e));
     }
-
+    
     @ExceptionHandler(NacosRuntimeException.class)
     private ResponseEntity<String> handleNacosRuntimeException(NacosRuntimeException e) {
         LOGGER.error("got exception. {}", e.getMessage());
@@ -65,9 +66,10 @@ public class ConsoleExceptionHandler {
         LOGGER.error("CONSOLE {}", uri, e);
         if (uri.contains(Commons.NACOS_SERVER_VERSION_V2)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RestResultUtils.failed(HtmlUtils.htmlEscape(ExceptionUtil.getAllExceptionMsg(e), "utf-8")));
+                .body(RestResultUtils
+                    .failed(HtmlUtils.htmlEscape(ExceptionUtil.getAllExceptionMsg(e), "utf-8")));
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(HtmlUtils.htmlEscape(ExceptionUtil.getAllExceptionMsg(e), "utf-8"));
+            .body(HtmlUtils.htmlEscape(ExceptionUtil.getAllExceptionMsg(e), "utf-8"));
     }
 }

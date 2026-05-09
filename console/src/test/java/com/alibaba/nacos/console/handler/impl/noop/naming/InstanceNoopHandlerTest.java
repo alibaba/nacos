@@ -38,19 +38,20 @@ class InstanceNoopHandlerTest {
     
     @Test
     void listInstances() {
-        assertThrows(NacosApiException.class, () -> instanceNoopHandler.listInstances("", "", "", "", 0, 0),
-                "Current functionMode is `config`, naming module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> instanceNoopHandler.listInstances("", "", "", "", 0, 0),
+            "Current functionMode is `config`, naming module is disabled.");
     }
     
     @Test
     void updateInstance() {
         assertThrows(NacosApiException.class, () -> instanceNoopHandler.updateInstance(null, null),
-                "Current functionMode is `config`, naming module is disabled.");
+            "Current functionMode is `config`, naming module is disabled.");
     }
     
     @Test
     void removeInstance() {
         assertThrows(NacosApiException.class, () -> instanceNoopHandler.removeInstance(null, null),
-                "Current functionMode is `config`, naming module is disabled.");
+            "Current functionMode is `config`, naming module is disabled.");
     }
 }

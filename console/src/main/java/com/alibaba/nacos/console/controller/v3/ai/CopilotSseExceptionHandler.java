@@ -60,8 +60,10 @@ public class CopilotSseExceptionHandler {
         String requestPath = request.getRequestURI();
         
         // Check if this is an SSE endpoint (optimize or generate endpoint) or accepts SSE
-        boolean isSseRequest = (acceptHeader != null && acceptHeader.contains(MediaType.TEXT_EVENT_STREAM_VALUE))
-                || (requestPath != null && (requestPath.contains("/skill/optimize") || requestPath.contains("/skill/generate")));
+        boolean isSseRequest =
+            (acceptHeader != null && acceptHeader.contains(MediaType.TEXT_EVENT_STREAM_VALUE))
+                || (requestPath != null && (requestPath.contains("/skill/optimize")
+                    || requestPath.contains("/skill/generate")));
         
         if (!isSseRequest) {
             // Not an SSE request, rethrow to let other exception handlers process it
@@ -83,8 +85,8 @@ public class CopilotSseExceptionHandler {
             }
             errorResponse.setExplanation("请求处理失败：" + errorMsg);
             emitter.send(SseEmitter.event()
-                    .data(JacksonUtils.toJson(errorResponse))
-                    .name("error"));
+                .data(JacksonUtils.toJson(errorResponse))
+                .name("error"));
             emitter.complete();
         } catch (IOException ioException) {
             LOGGER.error("Failed to send exception SSE event", ioException);

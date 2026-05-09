@@ -71,33 +71,34 @@ class ConsolePromptControllerTest {
         info.setPromptKey(PROMPT_KEY);
         info.setVersion(VERSION);
         info.setTemplate("Hello {{name}}");
-        when(promptProxy.downloadPromptVersion(eq(NS), eq(PROMPT_KEY), eq(VERSION))).thenReturn(info);
+        when(promptProxy.downloadPromptVersion(eq(NS), eq(PROMPT_KEY), eq(VERSION)))
+            .thenReturn(info);
         
         MockHttpServletResponse response = mockMvc.perform(
-                        MockMvcRequestBuilders.get(Constants.Prompt.CONSOLE_PATH + "/version/download")
-                                .param("namespaceId", NS)
-                                .param("promptKey", PROMPT_KEY)
-                                .param("version", VERSION))
-                .andReturn().getResponse();
+            MockMvcRequestBuilders.get(Constants.Prompt.CONSOLE_PATH + "/version/download")
+                .param("namespaceId", NS)
+                .param("promptKey", PROMPT_KEY)
+                .param("version", VERSION))
+            .andReturn().getResponse();
         
         assertEquals(200, response.getStatus());
         String contentType = response.getContentType();
         assertNotNull(contentType);
         assertTrue(contentType.toLowerCase().contains("text/markdown"),
-                "Content-Type should be text/markdown, but was: " + contentType);
+            "Content-Type should be text/markdown, but was: " + contentType);
         
         String disposition = response.getHeader(HttpHeaders.CONTENT_DISPOSITION);
         assertNotNull(disposition);
         assertTrue(disposition.startsWith("attachment;"),
-                "Content-Disposition should declare attachment, but was: " + disposition);
+            "Content-Disposition should declare attachment, but was: " + disposition);
         assertTrue(disposition.contains(PROMPT_KEY),
-                "Content-Disposition filename should contain prompt key, but was: " + disposition);
+            "Content-Disposition filename should contain prompt key, but was: " + disposition);
         
         String body = response.getContentAsString();
         assertNotNull(body);
         // Markdown body must render the prompt template.
         assertTrue(body.contains("Hello"),
-                "Markdown body should contain prompt template content, but was: " + body);
+            "Markdown body should contain prompt template content, but was: " + body);
         
         verify(promptProxy).downloadPromptVersion(eq(NS), eq(PROMPT_KEY), eq(VERSION));
     }

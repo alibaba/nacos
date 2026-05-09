@@ -29,7 +29,7 @@ import java.util.Map;
  * @author WangzJi
  */
 public interface PluginHandler {
-
+    
     /**
      * Get a list of plugins.
      *
@@ -38,7 +38,7 @@ public interface PluginHandler {
      * @throws NacosException if there is an issue fetching the plugins
      */
     List<PluginInfoVO> listPlugins(String pluginType) throws NacosException;
-
+    
     /**
      * Get plugin detail.
      *
@@ -48,7 +48,7 @@ public interface PluginHandler {
      * @throws NacosException if there is an issue fetching the plugin detail
      */
     PluginDetailVO getPluginDetail(String pluginType, String pluginName) throws NacosException;
-
+    
     /**
      * Update plugin enabled/disabled status.
      *
@@ -58,9 +58,10 @@ public interface PluginHandler {
      * @param localOnly  whether only apply to local node
      * @throws NacosException if there is an issue updating the plugin status
      */
-    void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
-            throws NacosException;
-
+    void updatePluginStatus(String pluginType, String pluginName, boolean enabled,
+        boolean localOnly)
+        throws NacosException;
+    
     /**
      * Update plugin configuration.
      *
@@ -70,9 +71,10 @@ public interface PluginHandler {
      * @param localOnly  whether only apply to local node
      * @throws NacosException if there is an issue updating the plugin config
      */
-    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config, boolean localOnly)
-            throws NacosException;
-
+    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config,
+        boolean localOnly)
+        throws NacosException;
+    
     /**
      * Get plugin availability across cluster nodes.
      *
@@ -81,5 +83,6 @@ public interface PluginHandler {
      * @return node availability map
      * @throws NacosException if there is an issue fetching the availability
      */
-    Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName) throws NacosException;
+    Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName)
+        throws NacosException;
 }

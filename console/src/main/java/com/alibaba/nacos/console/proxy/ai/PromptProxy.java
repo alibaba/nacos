@@ -48,7 +48,8 @@ public class PromptProxy {
     
     // ========== Common APIs ==========
     
-    public boolean deletePrompt(PromptForm form, String srcUser, String srcIp) throws NacosException {
+    public boolean deletePrompt(PromptForm form, String srcUser, String srcIp)
+        throws NacosException {
         return promptHandler.deletePrompt(form, srcUser, srcIp);
     }
     
@@ -56,35 +57,43 @@ public class PromptProxy {
         return promptHandler.listPrompts(form);
     }
     
-    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
+    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form)
+        throws NacosException {
         return promptHandler.listPromptVersions(form);
     }
     
     // ========== Lifecycle APIs ==========
     
-    public PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey) throws NacosException {
+    public PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey)
+        throws NacosException {
         return promptHandler.getPromptGovernanceDetail(namespaceId, promptKey);
     }
     
     public PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version)
-            throws NacosException {
+        throws NacosException {
         return promptHandler.getVersionDetail(namespaceId, promptKey, version);
     }
     
-    public PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version)
-            throws NacosException {
+    public PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey,
+        String version)
+        throws NacosException {
         return promptHandler.downloadPromptVersion(namespaceId, promptKey, version);
     }
     
-    public String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
-            String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
-            throws NacosException {
-        return promptHandler.createDraft(namespaceId, promptKey, basedOnVersion, targetVersion, template, variables,
-                commitMsg, description, bizTags);
+    /** Create a prompt draft. */
+    public String createDraft(String namespaceId, String promptKey, String basedOnVersion,
+        String targetVersion,
+        String template, List<PromptVariable> variables, String commitMsg, String description,
+        String bizTags)
+        throws NacosException {
+        return promptHandler.createDraft(namespaceId, promptKey, basedOnVersion, targetVersion,
+            template, variables,
+            commitMsg, description, bizTags);
     }
     
-    public void updateDraft(String namespaceId, String promptKey, String template, List<PromptVariable> variables,
-            String commitMsg) throws NacosException {
+    public void updateDraft(String namespaceId, String promptKey, String template,
+        List<PromptVariable> variables,
+        String commitMsg) throws NacosException {
         promptHandler.updateDraft(namespaceId, promptKey, template, variables, commitMsg);
     }
     
@@ -92,34 +101,41 @@ public class PromptProxy {
         promptHandler.deleteDraft(namespaceId, promptKey);
     }
     
-    public String submit(String namespaceId, String promptKey, String version) throws NacosException {
+    public String submit(String namespaceId, String promptKey, String version)
+        throws NacosException {
         return promptHandler.submit(namespaceId, promptKey, version);
     }
     
-    public void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
-            throws NacosException {
+    public void publish(String namespaceId, String promptKey, String version,
+        boolean updateLatestLabel)
+        throws NacosException {
         promptHandler.publish(namespaceId, promptKey, version, updateLatestLabel);
     }
     
-    public void forcePublish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
-            throws NacosException {
+    public void forcePublish(String namespaceId, String promptKey, String version,
+        boolean updateLatestLabel)
+        throws NacosException {
         promptHandler.forcePublish(namespaceId, promptKey, version, updateLatestLabel);
     }
     
-    public void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)
-            throws NacosException {
+    public void changeOnlineStatus(String namespaceId, String promptKey, String version,
+        boolean online)
+        throws NacosException {
         promptHandler.changeOnlineStatus(namespaceId, promptKey, version, online);
     }
     
-    public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels) throws NacosException {
+    public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels)
+        throws NacosException {
         promptHandler.updateLabels(namespaceId, promptKey, labels);
     }
     
-    public void updateDescription(String namespaceId, String promptKey, String description) throws NacosException {
+    public void updateDescription(String namespaceId, String promptKey, String description)
+        throws NacosException {
         promptHandler.updateDescription(namespaceId, promptKey, description);
     }
     
-    public void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException {
+    public void updateBizTags(String namespaceId, String promptKey, String bizTags)
+        throws NacosException {
         promptHandler.updateBizTags(namespaceId, promptKey, bizTags);
     }
 }

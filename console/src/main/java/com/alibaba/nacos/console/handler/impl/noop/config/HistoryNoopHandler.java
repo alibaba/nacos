@@ -39,33 +39,41 @@ import java.util.List;
 @ConditionalOnMissingBean(value = HistoryHandler.class, ignored = HistoryNoopHandler.class)
 public class HistoryNoopHandler implements HistoryHandler {
     
-    private static final String MCP_NOT_ENABLED_MESSAGE = "Current functionMode is `naming`, config module is disabled.";
+    private static final String MCP_NOT_ENABLED_MESSAGE =
+        "Current functionMode is `naming`, config module is disabled.";
     
     @Override
-    public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
-            throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group,
+        String namespaceId, Long nid)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group, String namespaceId,
-            Integer pageNo, Integer pageSize) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group,
+        String namespaceId,
+        Integer pageNo, Integer pageSize) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId,
-            Long id) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group,
+        String namespaceId,
+        Long id) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public List<ConfigBasicInfo> getConfigsByTenant(String namespaceId) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
 }

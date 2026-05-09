@@ -64,8 +64,9 @@ class NacosRuntimeHintsTest {
         nacosRuntimeHints.registerHints(runtimeHints, null);
         verify(resourceHints, atLeastOnce()).registerPattern(anyString());
         verify(serializationHints, atLeastOnce()).registerType(any(Class.class));
-        verify(reflectionHints, atLeastOnce()).registerType(any(Class.class), eq(MemberCategory.INVOKE_DECLARED_CONSTRUCTORS),
-                eq(MemberCategory.INVOKE_DECLARED_METHODS), eq(MemberCategory.DECLARED_FIELDS),
-                eq(MemberCategory.DECLARED_CLASSES));
+        verify(reflectionHints, atLeastOnce()).registerType(any(Class.class),
+            eq(MemberCategory.INVOKE_DECLARED_CONSTRUCTORS),
+            eq(MemberCategory.INVOKE_DECLARED_METHODS), eq(MemberCategory.DECLARED_FIELDS),
+            eq(MemberCategory.DECLARED_CLASSES));
     }
 }

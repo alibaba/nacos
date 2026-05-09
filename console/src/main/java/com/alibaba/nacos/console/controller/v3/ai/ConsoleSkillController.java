@@ -144,7 +144,7 @@ public class ConsoleSkillController {
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm,
-            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
+        AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         skillListForm.validate();
         filterableForm.validate();
         pageForm.validate();
@@ -164,13 +164,15 @@ public class ConsoleSkillController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<String> uploadSkill(HttpServletRequest request,
-            @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
-            @RequestParam(value = "targetVersion", required = false) String targetVersion,
-            @RequestParam("file") MultipartFile file) throws NacosException {
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "overwrite", required = false,
+            defaultValue = "false") boolean overwrite,
+        @RequestParam(value = "targetVersion", required = false) String targetVersion,
+        @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        String skillName = skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
+        String skillName =
+            skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
         return Result.success(skillName);
     }
     
@@ -234,7 +236,8 @@ public class ConsoleSkillController {
      */
     @PostMapping("/force-publish")
     @Secured(resource = CONSOLE_RESOURCE_NAME_PREFIX
-            + "skills", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+        + "skills", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        apiType = ApiType.CONSOLE_API)
     public Result<String> forcePublish(SkillPublishForm form) throws NacosException {
         form.validate();
         skillProxy.forcePublish(form);

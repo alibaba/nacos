@@ -45,41 +45,52 @@ import java.util.List;
 @ConditionalOnMissingBean(value = A2aHandler.class, ignored = A2aNoopHandler.class)
 public class A2aNoopHandler implements A2aHandler {
     
-    private static final String A2A_NOT_ENABLED_MESSAGE = "Nacos AI A2A module and API required both `naming` and `config` module.";
+    private static final String A2A_NOT_ENABLED_MESSAGE =
+        "Nacos AI A2A module and API required both `naming` and `config` module.";
     
     @Override
-    public void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                A2A_NOT_ENABLED_MESSAGE);
+    public void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            A2A_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                A2A_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            A2A_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public void deleteAgent(AgentForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                A2A_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            A2A_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                A2A_NOT_ENABLED_MESSAGE);
+    public void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            A2A_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                A2A_NOT_ENABLED_MESSAGE);
+    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            A2A_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                A2A_NOT_ENABLED_MESSAGE);
+    public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            A2A_NOT_ENABLED_MESSAGE);
     }
 }

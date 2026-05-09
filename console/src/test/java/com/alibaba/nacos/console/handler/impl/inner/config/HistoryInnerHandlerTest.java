@@ -62,17 +62,18 @@ class HistoryInnerHandlerTest {
     void getConfigHistoryInfo() throws NacosException {
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         injectMockDataToHistoryInfo(configHistoryInfo);
-        when(historyService.getConfigHistoryInfo("dataId", "group", "tenant", 1L)).thenReturn(configHistoryInfo);
+        when(historyService.getConfigHistoryInfo("dataId", "group", "tenant", 1L))
+            .thenReturn(configHistoryInfo);
         assertNotNull(historyInnerHandler.getConfigHistoryInfo("dataId", "group", "tenant", 1L));
     }
     
     @Test
     void getConfigHistoryInfoNotFound() throws NacosException {
         when(historyService.getConfigHistoryInfo("dataId", "group", "tenant", 1L)).thenThrow(
-                new EmptyResultDataAccessException(1));
+            new EmptyResultDataAccessException(1));
         assertThrows(NacosApiException.class,
-                () -> historyInnerHandler.getConfigHistoryInfo("dataId", "group", "tenant", 1L),
-                "certain config history for nid = 1 not exist");
+            () -> historyInnerHandler.getConfigHistoryInfo("dataId", "group", "tenant", 1L),
+            "certain config history for nid = 1 not exist");
     }
     
     @Test
@@ -84,8 +85,10 @@ class HistoryInnerHandlerTest {
         ConfigHistoryInfo mockConfigHistoryInfo = new ConfigHistoryInfo();
         injectMockDataToHistoryInfo(mockConfigHistoryInfo);
         mockPage.setPageItems(Collections.singletonList(mockConfigHistoryInfo));
-        when(historyService.listConfigHistory("dataId", "group", "tenant", 1, 1)).thenReturn(mockPage);
-        Page<ConfigHistoryBasicInfo> actual = historyInnerHandler.listConfigHistory("dataId", "group", "tenant", 1, 1);
+        when(historyService.listConfigHistory("dataId", "group", "tenant", 1, 1))
+            .thenReturn(mockPage);
+        Page<ConfigHistoryBasicInfo> actual =
+            historyInnerHandler.listConfigHistory("dataId", "group", "tenant", 1, 1);
         assertNotNull(actual);
         assertEquals(1, actual.getPageNumber());
         assertEquals(1, actual.getPagesAvailable());
@@ -94,25 +97,29 @@ class HistoryInnerHandlerTest {
         assertEquals(mockConfigHistoryInfo.getId(), actual.getPageItems().get(0).getId());
         assertEquals(mockConfigHistoryInfo.getDataId(), actual.getPageItems().get(0).getDataId());
         assertEquals(mockConfigHistoryInfo.getGroup(), actual.getPageItems().get(0).getGroupName());
-        assertEquals(mockConfigHistoryInfo.getTenant(), actual.getPageItems().get(0).getNamespaceId());
+        assertEquals(mockConfigHistoryInfo.getTenant(),
+            actual.getPageItems().get(0).getNamespaceId());
     }
     
     @Test
     void getPreviousConfigHistoryInfo() throws NacosException {
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         injectMockDataToHistoryInfo(configHistoryInfo);
-        when(historyService.getPreviousConfigHistoryInfo("dataId", "group", "tenant", 1L)).thenReturn(
+        when(historyService.getPreviousConfigHistoryInfo("dataId", "group", "tenant", 1L))
+            .thenReturn(
                 configHistoryInfo);
-        assertNotNull(historyInnerHandler.getPreviousConfigHistoryInfo("dataId", "group", "tenant", 1L));
+        assertNotNull(
+            historyInnerHandler.getPreviousConfigHistoryInfo("dataId", "group", "tenant", 1L));
     }
     
     @Test
     void getPreviousConfigHistoryInfoNotFound() throws AccessException {
-        when(historyService.getPreviousConfigHistoryInfo("dataId", "group", "tenant", 1L)).thenThrow(
+        when(historyService.getPreviousConfigHistoryInfo("dataId", "group", "tenant", 1L))
+            .thenThrow(
                 new EmptyResultDataAccessException(1));
         assertThrows(NacosApiException.class,
-                () -> historyInnerHandler.getPreviousConfigHistoryInfo("dataId", "group", "tenant", 1L),
-                "previous config history for id = 1 not exist");
+            () -> historyInnerHandler.getPreviousConfigHistoryInfo("dataId", "group", "tenant", 1L),
+            "previous config history for id = 1 not exist");
     }
     
     @Test
@@ -123,7 +130,7 @@ class HistoryInnerHandlerTest {
         configInfoWrapper.setGroup("group");
         configInfoWrapper.setTenant("tenant");
         when(historyService.getConfigListByNamespace("tenant")).thenReturn(
-                Collections.singletonList(configInfoWrapper));
+            Collections.singletonList(configInfoWrapper));
         List<ConfigBasicInfo> actual = historyInnerHandler.getConfigsByTenant("tenant");
         assertEquals(1, actual.size());
         assertEquals(configInfoWrapper.getId(), actual.get(0).getId());

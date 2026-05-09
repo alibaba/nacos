@@ -38,10 +38,12 @@ public class ConsoleMaintainerClientAuthPlugin extends AbstractClientAuthService
     
     @Override
     public Boolean login(Properties properties) {
-        NacosConsoleAuthConfig authConfig = (NacosConsoleAuthConfig) NacosAuthConfigHolder.getInstance()
+        NacosConsoleAuthConfig authConfig =
+            (NacosConsoleAuthConfig) NacosAuthConfigHolder.getInstance()
                 .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
         if (authConfig.isSupportServerIdentity()) {
-            identityContext.setParameter(authConfig.getServerIdentityKey(), authConfig.getServerIdentityValue());
+            identityContext.setParameter(authConfig.getServerIdentityKey(),
+                authConfig.getServerIdentityValue());
         }
         return true;
     }
@@ -61,6 +63,6 @@ public class ConsoleMaintainerClientAuthPlugin extends AbstractClientAuthService
     
     @Override
     public void shutdown() throws NacosException {
-    
+        
     }
 }

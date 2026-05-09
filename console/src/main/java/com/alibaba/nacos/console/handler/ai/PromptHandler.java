@@ -59,30 +59,36 @@ public interface PromptHandler {
     /**
      * Get prompt governance detail.
      */
-    PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey) throws NacosException;
+    PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey)
+        throws NacosException;
     
     /**
      * Get specific version detail.
      */
-    PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version) throws NacosException;
+    PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version)
+        throws NacosException;
     
     /**
      * Download a specific prompt version (triggers download count increment).
      */
-    PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version) throws NacosException;
+    PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version)
+        throws NacosException;
     
     /**
      * Create draft version.
      */
-    String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
-            String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
-            throws NacosException;
+    String createDraft(String namespaceId, String promptKey, String basedOnVersion,
+        String targetVersion,
+        String template, List<PromptVariable> variables, String commitMsg, String description,
+        String bizTags)
+        throws NacosException;
     
     /**
      * Update draft content.
      */
-    void updateDraft(String namespaceId, String promptKey, String template, List<PromptVariable> variables,
-            String commitMsg) throws NacosException;
+    void updateDraft(String namespaceId, String promptKey, String template,
+        List<PromptVariable> variables,
+        String commitMsg) throws NacosException;
     
     /**
      * Delete draft.
@@ -97,28 +103,33 @@ public interface PromptHandler {
     /**
      * Publish a reviewed version.
      */
-    void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel) throws NacosException;
+    void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+        throws NacosException;
     
     /**
      * Force-publish bypassing pipeline.
      */
-    void forcePublish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
-            throws NacosException;
+    void forcePublish(String namespaceId, String promptKey, String version,
+        boolean updateLatestLabel)
+        throws NacosException;
     
     /**
      * Online or offline a version.
      */
-    void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online) throws NacosException;
+    void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)
+        throws NacosException;
     
     /**
      * Update labels.
      */
-    void updateLabels(String namespaceId, String promptKey, Map<String, String> labels) throws NacosException;
+    void updateLabels(String namespaceId, String promptKey, Map<String, String> labels)
+        throws NacosException;
     
     /**
      * Update prompt description.
      */
-    void updateDescription(String namespaceId, String promptKey, String description) throws NacosException;
+    void updateDescription(String namespaceId, String promptKey, String description)
+        throws NacosException;
     
     /**
      * Update biz tags.

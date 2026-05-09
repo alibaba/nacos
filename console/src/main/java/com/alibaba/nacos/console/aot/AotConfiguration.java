@@ -28,7 +28,7 @@ import java.lang.reflect.Field;
  * @since 2.4.0
  */
 public class AotConfiguration {
-
+    
     /**
      * To help find rocksdb inner fields' value.
      */
@@ -37,13 +37,14 @@ public class AotConfiguration {
         try {
             Field jniLibraryFileNameField = clazz.getDeclaredField("jniLibraryFileName");
             jniLibraryFileNameField.setAccessible(true);
-            Field fallbackJniLibraryFileNameField = clazz.getDeclaredField("fallbackJniLibraryFileName");
+            Field fallbackJniLibraryFileNameField =
+                clazz.getDeclaredField("fallbackJniLibraryFileName");
             fallbackJniLibraryFileNameField.setAccessible(true);
             return (String) jniLibraryFileNameField.get(null);
         } catch (NoSuchFieldException
-                 | IllegalAccessException e) {
+            | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
-
+    
 }

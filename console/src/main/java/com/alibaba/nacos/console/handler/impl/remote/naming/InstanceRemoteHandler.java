@@ -47,25 +47,25 @@ public class InstanceRemoteHandler implements InstanceHandler {
     }
     
     @Override
-    public Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
-            String clusterName, int page, int pageSize) throws NacosException {
+    public Page<? extends Instance> listInstances(String namespaceId,
+        String serviceNameWithoutGroup, String groupName,
+        String clusterName, int page, int pageSize) throws NacosException {
         List<Instance> instances = clientHolder.getNamingMaintainerService()
-                .listInstances(namespaceId, groupName, serviceNameWithoutGroup, clusterName, false);
+            .listInstances(namespaceId, groupName, serviceNameWithoutGroup, clusterName, false);
         return PageUtil.subPage(instances, page, pageSize);
     }
     
     @Override
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
         clientHolder.getNamingMaintainerService()
-                .updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                        instanceForm.getServiceName(), instance);
+            .updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance);
     }
     
     @Override
     public void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
         clientHolder.getNamingMaintainerService()
-                .deregisterInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                        instanceForm.getServiceName(), instance);
+            .deregisterInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance);
     }
 }
-

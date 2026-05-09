@@ -28,7 +28,8 @@ class CopilotSseExceptionHandlerTest {
     
     @Test
     void testControllerAdviceShouldOnlyApplyToCopilotController() {
-        ControllerAdvice advice = CopilotSseExceptionHandler.class.getAnnotation(ControllerAdvice.class);
+        ControllerAdvice advice =
+            CopilotSseExceptionHandler.class.getAnnotation(ControllerAdvice.class);
         assertArrayEquals(new Class[] {ConsoleCopilotController.class}, advice.assignableTypes());
     }
 }

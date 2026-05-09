@@ -71,8 +71,8 @@ public class ConsoleSkillControllerTest {
         doNothing().when(skillProxy).forcePublish(any(SkillPublishForm.class));
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
-                        Constants.Skills.CONSOLE_PATH + "/force-publish").param("namespaceId", "test-ns")
-                .param("skillName", "test-skill").param("version", "v1");
+            Constants.Skills.CONSOLE_PATH + "/force-publish").param("namespaceId", "test-ns")
+            .param("skillName", "test-skill").param("version", "v1");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String content = response.getContentAsString();
@@ -94,12 +94,14 @@ public class ConsoleSkillControllerTest {
         page.setPageItems(java.util.List.of(item));
         when(skillProxy.listSkills(any(), any(), any())).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.Skills.CONSOLE_PATH + "/list")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.Skills.CONSOLE_PATH + "/list")
                 .param("pageNo", "1").param("pageSize", "10");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        Result<Page<SkillSummary>> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
-        });
+        Result<Page<SkillSummary>> result =
+            JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+            });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(1, result.getData().getTotalCount());
     }
@@ -111,7 +113,8 @@ public class ConsoleSkillControllerTest {
         page.setPageItems(java.util.Collections.emptyList());
         when(skillProxy.listSkills(any(), any(), any())).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.Skills.CONSOLE_PATH + "/list")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.Skills.CONSOLE_PATH + "/list")
                 .param("owner", "alice").param("pageNo", "1").param("pageSize", "10");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();

@@ -39,30 +39,32 @@ class McpNoopHandlerTest {
     @Test
     void listMcpServers() {
         assertThrows(NacosApiException.class, () -> mcpNoopHandler.listMcpServers("", "", "", 1, 1),
-                "Nacos AI MCP module and API required both `naming` and `config` module.");
+            "Nacos AI MCP module and API required both `naming` and `config` module.");
     }
     
     @Test
     void getMcpServer() {
         assertThrows(NacosApiException.class, () -> mcpNoopHandler.getMcpServer("", "", "", ""),
-                "Nacos AI MCP module and API required both `naming` and `config` module.");
+            "Nacos AI MCP module and API required both `naming` and `config` module.");
     }
     
     @Test
     void createMcpServer() {
-        assertThrows(NacosApiException.class, () -> mcpNoopHandler.createMcpServer("", null, null, null),
-                "Nacos AI MCP module and API required both `naming` and `config` module.");
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.createMcpServer("", null, null, null),
+            "Nacos AI MCP module and API required both `naming` and `config` module.");
     }
     
     @Test
     void updateMcpServer() {
-        assertThrows(NacosApiException.class, () -> mcpNoopHandler.updateMcpServer("", true, null, null, null, false),
-                "Nacos AI MCP module and API required both `naming` and `config` module.");
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.updateMcpServer("", true, null, null, null, false),
+            "Nacos AI MCP module and API required both `naming` and `config` module.");
     }
     
     @Test
     void deleteMcpServer() {
         assertThrows(NacosApiException.class, () -> mcpNoopHandler.deleteMcpServer("", "", "", ""),
-                "Nacos AI MCP module and API required both `naming` and `config` module.");
+            "Nacos AI MCP module and API required both `naming` and `config` module.");
     }
 }

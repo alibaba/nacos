@@ -46,8 +46,9 @@ public interface McpHandler {
      * @return list of {@link McpServerBasicInfo} matched input parameters.
      * @throws NacosException any exception during handling
      */
-    Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo, int pageSize)
-            throws NacosException;
+    Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search,
+        int pageNo, int pageSize)
+        throws NacosException;
     
     /**
      * Get specified mcp server detail info.
@@ -59,7 +60,8 @@ public interface McpHandler {
      * @return detail info with {@link McpServerDetailInfo}
      * @throws NacosException any exception during handling
      */
-    McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException;
+    McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId,
+        String version) throws NacosException;
     
     /**
      * Create new mcp server.
@@ -72,7 +74,8 @@ public interface McpHandler {
      * @throws NacosException any exception during handling
      */
     String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
+        McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification)
+        throws NacosException;
     
     /**
      * Update existed mcp server.
@@ -89,8 +92,10 @@ public interface McpHandler {
      * @param overrideExisting      if replace all the instances when update the mcp server
      * @throws NacosException any exception during handling
      */
-    void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException;
+    void updateMcpServer(String namespaceId, boolean isPublish,
+        McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification,
+        boolean overrideExisting) throws NacosException;
     
     /**
      * Delete existed mcp server.
@@ -101,7 +106,8 @@ public interface McpHandler {
      * @param mcpName     name of mcp server
      * @throws NacosException any exception during handling
      */
-    void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException;
+    void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version)
+        throws NacosException;
     
     /**
      * Validate MCP server import request.
@@ -111,7 +117,8 @@ public interface McpHandler {
      * @return validation result with details about potential issues
      * @throws NacosException any exception during validation
      */
-    McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) throws NacosException;
+    McpServerImportValidationResult validateImport(String namespaceId,
+        McpServerImportRequest request) throws NacosException;
     
     /**
      * Execute MCP server import operation.
@@ -121,5 +128,6 @@ public interface McpHandler {
      * @return import response with results and statistics
      * @throws NacosException any exception during import execution
      */
-    McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) throws NacosException;
+    McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
+        throws NacosException;
 }

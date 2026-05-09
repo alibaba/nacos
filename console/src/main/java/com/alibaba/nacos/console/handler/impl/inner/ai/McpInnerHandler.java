@@ -47,48 +47,60 @@ public class McpInnerHandler implements McpHandler {
     private final McpServerImportService mcpServerImportService;
     
     public McpInnerHandler(McpServerOperationService mcpServerOperationService,
-                          McpServerImportService mcpServerImportService) {
+        McpServerImportService mcpServerImportService) {
         this.mcpServerOperationService = mcpServerOperationService;
         this.mcpServerImportService = mcpServerImportService;
     }
     
     @Override
-    public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
-            int pageSize) {
-        return mcpServerOperationService.listMcpServerWithPage(namespaceId, mcpName, search, pageNo, pageSize);
+    public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName,
+        String search, int pageNo,
+        int pageSize) {
+        return mcpServerOperationService.listMcpServerWithPage(namespaceId, mcpName, search, pageNo,
+            pageSize);
     }
     
     @Override
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
-        return mcpServerOperationService.getMcpServerDetail(namespaceId, mcpServerId, mcpName, version);
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpServerId,
+        String version) throws NacosException {
+        return mcpServerOperationService.getMcpServerDetail(namespaceId, mcpServerId, mcpName,
+            version);
     }
     
     @Override
     public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        return mcpServerOperationService.createMcpServer(namespaceId, serverSpecification, toolSpecification,
-                endpointSpecification);
+        McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification)
+        throws NacosException {
+        return mcpServerOperationService.createMcpServer(namespaceId, serverSpecification,
+            toolSpecification,
+            endpointSpecification);
     }
     
     @Override
-    public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
-        mcpServerOperationService.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification,
-                endpointSpecification, overrideExisting);
+    public void updateMcpServer(String namespaceId, boolean isPublish,
+        McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification,
+        boolean overrideExisting) throws NacosException {
+        mcpServerOperationService.updateMcpServer(namespaceId, isPublish, serverSpecification,
+            toolSpecification,
+            endpointSpecification, overrideExisting);
     }
     
     @Override
-    public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
+    public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId,
+        String version) throws NacosException {
         mcpServerOperationService.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
     }
     
     @Override
-    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+    public McpServerImportValidationResult validateImport(String namespaceId,
+        McpServerImportRequest request) throws NacosException {
         return mcpServerImportService.validateImport(namespaceId, request);
     }
     
     @Override
-    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
+        throws NacosException {
         return mcpServerImportService.executeImport(namespaceId, request);
     }
 }
