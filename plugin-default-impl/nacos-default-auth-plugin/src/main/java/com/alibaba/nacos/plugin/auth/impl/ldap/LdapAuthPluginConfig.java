@@ -82,22 +82,26 @@ public class LdapAuthPluginConfig {
     
     @Bean
     public LdapAuthenticationProvider ldapAuthenticationProvider(LdapTemplate ldapTemplate,
-            NacosUserService userDetailsService, NacosRoleService nacosRoleService) {
-        return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix,
-                caseSensitive);
+        NacosUserService userDetailsService, NacosRoleService nacosRoleService) {
+        return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService,
+            filterPrefix,
+            caseSensitive);
     }
     
     @Bean
     public IAuthenticationManager ldapAuthenticatoinManager(LdapTemplate ldapTemplate,
-            NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager, NacosRoleService roleService) {
-        return new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager, roleService,
-                filterPrefix, caseSensitive);
+        NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
+        NacosRoleService roleService) {
+        return new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager,
+            roleService,
+            filterPrefix, caseSensitive);
     }
     
     @Bean
     public GlobalAuthenticationConfigurerAdapter authenticationConfigurer(
-            LdapAuthenticationProvider ldapAuthenticationProvider) {
+        LdapAuthenticationProvider ldapAuthenticationProvider) {
         return new GlobalAuthenticationConfigurerAdapter() {
+            
             @Override
             public void init(AuthenticationManagerBuilder auth) throws Exception {
                 auth.authenticationProvider(ldapAuthenticationProvider);

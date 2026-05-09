@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author qiacheng.cxy
  */
 class SkillScannerScanOptionsTest {
-
+    
     @Test
     void fromPropertiesEmptyTest() {
         SkillScannerScanOptions o = SkillScannerScanOptions.fromProperties(new Properties());
@@ -44,7 +44,7 @@ class SkillScannerScanOptionsTest {
         o.applyLlmEnvironment(env);
         assertTrue(env.isEmpty());
     }
-
+    
     @Test
     void fromPropertiesLlmTest() {
         Properties p = new Properties();
@@ -53,12 +53,12 @@ class SkillScannerScanOptionsTest {
         p.setProperty(SkillScannerScanOptions.PROP_LLM_MODEL, "qwen-max");
         p.setProperty(SkillScannerScanOptions.PROP_LLM_PROVIDER, "openai");
         p.setProperty(SkillScannerScanOptions.PROP_ENABLE_META, "true");
-
+        
         SkillScannerScanOptions o = SkillScannerScanOptions.fromProperties(p);
         assertTrue(o.isUseLlm());
         assertTrue(o.isEnableMeta());
         assertEquals("openai", o.getLlmProvider());
-
+        
         Map<String, String> env = new HashMap<>();
         o.applyLlmEnvironment(env);
         assertEquals("your_api_key", env.get("SKILL_SCANNER_LLM_API_KEY"));

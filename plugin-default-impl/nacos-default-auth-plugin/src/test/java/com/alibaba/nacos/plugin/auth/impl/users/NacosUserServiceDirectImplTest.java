@@ -58,7 +58,7 @@ class NacosUserServiceDirectImplTest {
         String password = "testPassword";
         
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> nacosUserService.createUser(blankUsername, password));
+            () -> nacosUserService.createUser(blankUsername, password));
         
         assertEquals("username is blank", exception.getMessage());
         verify(userPersistService, never()).createUser(anyString(), anyString());
@@ -70,7 +70,7 @@ class NacosUserServiceDirectImplTest {
         String blankPassword = "";
         
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> nacosUserService.createUser(username, blankPassword));
+            () -> nacosUserService.createUser(username, blankPassword));
         
         assertEquals("password is blank", exception.getMessage());
         verify(userPersistService, never()).createUser(anyString(), anyString());
@@ -79,7 +79,7 @@ class NacosUserServiceDirectImplTest {
     @Test
     void testCreateUserWithReservedAnonymousUsername() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> nacosUserService.createUser("__nacos_anonymous__", "password"));
+            () -> nacosUserService.createUser("__nacos_anonymous__", "password"));
         
         assertTrue(exception.getMessage().contains("reserved by the system"));
         verify(userPersistService, never()).createUser(anyString(), anyString());
@@ -88,7 +88,7 @@ class NacosUserServiceDirectImplTest {
     @Test
     void testDeleteUserWithReservedAnonymousUsername() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> nacosUserService.deleteUser("__nacos_anonymous__"));
+            () -> nacosUserService.deleteUser("__nacos_anonymous__"));
         
         assertTrue(exception.getMessage().contains("reserved by the system"));
         verify(userPersistService, never()).deleteUser(anyString());

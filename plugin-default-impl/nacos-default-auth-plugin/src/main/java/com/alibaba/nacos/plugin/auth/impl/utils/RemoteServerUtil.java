@@ -51,7 +51,8 @@ public class RemoteServerUtil {
     }
     
     private static void initRemoteServerContextPath() {
-        remoteServerContextPath = EnvUtil.getProperty("nacos.console.remote.server.context-path", "/nacos");
+        remoteServerContextPath =
+            EnvUtil.getProperty("nacos.console.remote.server.context-path", "/nacos");
     }
     
     private static void registerWatcher() {
@@ -117,7 +118,8 @@ public class RemoteServerUtil {
     public static Header buildServerRemoteHeader(AuthConfigs authConfigs) {
         Header header = Header.newInstance();
         if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey())) {
-            header.addParam(authConfigs.getServerIdentityKey(), authConfigs.getServerIdentityValue());
+            header.addParam(authConfigs.getServerIdentityKey(),
+                authConfigs.getServerIdentityValue());
         }
         return header;
     }

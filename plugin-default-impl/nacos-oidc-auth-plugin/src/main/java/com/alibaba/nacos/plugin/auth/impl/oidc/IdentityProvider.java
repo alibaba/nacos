@@ -26,7 +26,7 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
  * @author WangzJi
  */
 public interface IdentityProvider {
-
+    
     /**
      * Validate the identity context.
      *

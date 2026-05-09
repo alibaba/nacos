@@ -34,28 +34,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author qiacheng.cxy
  */
 class SkillScannerPipelineServiceBuilderTest {
-
+    
     private SkillScannerPipelineServiceBuilder builder;
-
+    
     @BeforeEach
     void setUp() {
         builder = new SkillScannerPipelineServiceBuilder();
     }
-
+    
     @Test
     void pipelineIdTest() {
         assertEquals("skill-scanner", builder.pipelineId());
     }
-
+    
     @Test
     void buildTest() {
         PublishPipelineService service = builder.build(new Properties());
-
+        
         assertNotNull(service);
         assertEquals("skill-scanner", service.pipelineId());
-        assertTrue(Arrays.asList(service.pipelineResourceTypes()).contains(PublishPipelineResourceType.SKILL));
-        assertTrue(Arrays.asList(service.pipelineResourceTypes()).contains(PublishPipelineResourceType.AGENTSPEC));
-        assertTrue(Arrays.asList(service.pipelineResourceTypes()).contains(PublishPipelineResourceType.PROMPT));
+        assertTrue(Arrays.asList(service.pipelineResourceTypes())
+            .contains(PublishPipelineResourceType.SKILL));
+        assertTrue(Arrays.asList(service.pipelineResourceTypes())
+            .contains(PublishPipelineResourceType.AGENTSPEC));
+        assertTrue(Arrays.asList(service.pipelineResourceTypes())
+            .contains(PublishPipelineResourceType.PROMPT));
         assertEquals(100, service.getPreferOrder());
     }
 }

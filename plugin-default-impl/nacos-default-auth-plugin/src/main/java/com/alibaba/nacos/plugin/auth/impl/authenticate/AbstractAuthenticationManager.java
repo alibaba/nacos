@@ -38,7 +38,8 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public class AbstractAuthenticationManager implements IAuthenticationManager {
     
-    private static final String USER_NOT_FOUND_MESSAGE = "User not found! Please check user exist or password is right!";
+    private static final String USER_NOT_FOUND_MESSAGE =
+        "User not found! Please check user exist or password is right!";
     
     protected NacosUserService userDetailsService;
     
@@ -46,8 +47,9 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
     
     protected NacosRoleService roleService;
     
-    public AbstractAuthenticationManager(NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
-            NacosRoleService roleService) {
+    public AbstractAuthenticationManager(NacosUserService userDetailsService,
+        TokenManagerDelegate jwtTokenManager,
+        NacosRoleService roleService) {
         this.userDetailsService = userDetailsService;
         this.jwtTokenManager = jwtTokenManager;
         this.roleService = roleService;
@@ -58,8 +60,10 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
         if (StringUtils.isBlank(username) || StringUtils.isBlank(rawPassword)) {
             throw new AccessException(USER_NOT_FOUND_MESSAGE);
         }
-        NacosUserDetails nacosUserDetails = (NacosUserDetails) userDetailsService.loadUserByUsername(username);
-        if (nacosUserDetails == null || !PasswordEncoderUtil.matches(rawPassword, nacosUserDetails.getPassword())) {
+        NacosUserDetails nacosUserDetails =
+            (NacosUserDetails) userDetailsService.loadUserByUsername(username);
+        if (nacosUserDetails == null
+            || !PasswordEncoderUtil.matches(rawPassword, nacosUserDetails.getPassword())) {
             throw new AccessException(USER_NOT_FOUND_MESSAGE);
         }
         return new NacosUser(nacosUserDetails.getUsername(), jwtTokenManager.createToken(username));
@@ -108,7 +112,8 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
     
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AuthConstants.AUTHORIZATION_HEADER);
-        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
+        if (StringUtils.isNotBlank(bearerToken)
+            && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
             return bearerToken.substring(AuthConstants.TOKEN_PREFIX.length());
         }
         bearerToken = request.getParameter(Constants.ACCESS_TOKEN);

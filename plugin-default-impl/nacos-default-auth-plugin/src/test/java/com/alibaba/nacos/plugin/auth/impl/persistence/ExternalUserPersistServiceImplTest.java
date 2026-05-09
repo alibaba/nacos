@@ -67,7 +67,8 @@ class ExternalUserPersistServiceImplTest {
         DatasourceConfiguration.setEmbeddedStorage(false);
         Field datasourceField = DynamicDataSource.class.getDeclaredField("basicDataSourceService");
         datasourceField.setAccessible(true);
-        dataSourceServiceCache = (DataSourceService) datasourceField.get(DynamicDataSource.getInstance());
+        dataSourceServiceCache =
+            (DataSourceService) datasourceField.get(DynamicDataSource.getInstance());
         datasourceField.set(DynamicDataSource.getInstance(), dataSourceService);
         externalUserPersistService.init();
     }

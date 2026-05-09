@@ -40,10 +40,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  */
 @ExtendWith(MockitoExtension.class)
 class NacosRoleServiceRemoteImplTest {
-
+    
     @Mock
     private AuthConfigs authConfigs;
-
+    
     @Test
     void testGetPermissionsReadsCachedMapOnceOnHit() throws Exception {
         // Reproduces the same TOCTOU pattern as getUser/getRoles: previously
@@ -59,14 +59,15 @@ class NacosRoleServiceRemoteImplTest {
         CountingMap<String, List<PermissionInfo>> cache = new CountingMap<>();
         cache.put("admin", permissions);
         injectField("permissionInfoMap", service, cache);
-
+        
         List<PermissionInfo> result = service.getPermissions("admin");
-
+        
         assertSame(permissions, result, "cache hit must return the cached permission list");
         assertEquals(1, cache.getCount.get(), "cache hit must read the map exactly once");
-        assertEquals(0, cache.containsKeyCount.get(), "fix must not consult containsKey separately");
+        assertEquals(0, cache.containsKeyCount.get(),
+            "fix must not consult containsKey separately");
     }
-
+    
     @Test
     void testGetRolesReadsCachedMapOnceOnHit() throws Exception {
         NacosRoleServiceRemoteImpl service = new NacosRoleServiceRemoteImpl(authConfigs);
@@ -77,35 +78,37 @@ class NacosRoleServiceRemoteImplTest {
         CountingMap<String, List<RoleInfo>> cache = new CountingMap<>();
         cache.put("alice", roles);
         injectField("roleInfoMap", service, cache);
-
+        
         List<RoleInfo> result = service.getRoles("alice");
-
+        
         assertSame(roles, result, "cache hit must return the cached role list");
         assertEquals(1, cache.getCount.get(), "cache hit must read the map exactly once");
-        assertEquals(0, cache.containsKeyCount.get(), "fix must not consult containsKey separately");
+        assertEquals(0, cache.containsKeyCount.get(),
+            "fix must not consult containsKey separately");
     }
-
-    private static void injectField(String fieldName, NacosRoleServiceRemoteImpl service, Map<String, ?> map)
-            throws Exception {
+    
+    private static void injectField(String fieldName, NacosRoleServiceRemoteImpl service,
+        Map<String, ?> map)
+        throws Exception {
         Field field = AbstractCachedRoleService.class.getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(service, map);
     }
-
+    
     private static final class CountingMap<K, V> extends ConcurrentHashMap<K, V> {
-
+        
         private static final long serialVersionUID = 1L;
-
+        
         final AtomicInteger getCount = new AtomicInteger();
-
+        
         final AtomicInteger containsKeyCount = new AtomicInteger();
-
+        
         @Override
         public V get(Object key) {
             getCount.incrementAndGet();
             return super.get(key);
         }
-
+        
         @Override
         public boolean containsKey(Object key) {
             containsKeyCount.incrementAndGet();

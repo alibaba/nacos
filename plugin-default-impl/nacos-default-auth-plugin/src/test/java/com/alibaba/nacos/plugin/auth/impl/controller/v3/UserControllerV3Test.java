@@ -192,7 +192,8 @@ class UserControllerV3Test {
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
         Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
         
-        verify(userDetailsService, times(1)).updateUserPassword(eq("nacos"), passwordCaptor.capture());
+        verify(userDetailsService, times(1)).updateUserPassword(eq("nacos"),
+            passwordCaptor.capture());
         
         assertEquals("newPass", passwordCaptor.getValue());
         assertEquals("update user ok!", result.getData());
@@ -210,7 +211,8 @@ class UserControllerV3Test {
         when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
         when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
         
-        Result<String> result = userControllerV3.updateUser("anyUser", "newPass", response, request);
+        Result<String> result =
+            userControllerV3.updateUser("anyUser", "newPass", response, request);
         
         verify(userDetailsService, times(1)).updateUserPassword(eq("anyUser"), anyString());
         assertEquals("update user ok!", result.getData());
@@ -228,12 +230,13 @@ class UserControllerV3Test {
         when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
         // 不设置用户上下文，模拟无权限情况
         
-        Result<String> result = userControllerV3.updateUser("anyUser", "newPass", response, request);
+        Result<String> result =
+            userControllerV3.updateUser("anyUser", "newPass", response, request);
         
         assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
         assertEquals(null, result);
     }
-
+    
     @Test
     void testLoginSuccess() throws AccessException, IOException {
         NacosUser user = new NacosUser();
@@ -256,7 +259,8 @@ class UserControllerV3Test {
         assertTrue(actualString.contains("\"tokenTtl\":18000"));
         assertTrue(actualString.contains("\"globalAdmin\":true"));
         
-        assertEquals(AuthConstants.TOKEN_PREFIX + "1234567890", response.getHeader(AuthConstants.AUTHORIZATION_HEADER));
+        assertEquals(AuthConstants.TOKEN_PREFIX + "1234567890",
+            response.getHeader(AuthConstants.AUTHORIZATION_HEADER));
     }
     
     @Test
@@ -269,7 +273,8 @@ class UserControllerV3Test {
         ArgumentCaptor<String> usernameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
         
-        verify(userDetailsService, times(1)).createUser(usernameCaptor.capture(), passwordCaptor.capture());
+        verify(userDetailsService, times(1)).createUser(usernameCaptor.capture(),
+            passwordCaptor.capture());
         
         assertEquals(AuthConstants.DEFAULT_USER, usernameCaptor.getValue());
         
@@ -290,4 +295,3 @@ class UserControllerV3Test {
         assertEquals(HttpStatus.CONFLICT.value(), result.getCode());
     }
 }
-

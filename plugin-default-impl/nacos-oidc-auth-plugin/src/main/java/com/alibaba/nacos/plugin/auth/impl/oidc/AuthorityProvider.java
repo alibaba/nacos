@@ -26,7 +26,7 @@ import com.alibaba.nacos.plugin.auth.api.Permission;
  * @author WangzJi
  */
 public interface AuthorityProvider {
-
+    
     /**
      * Validate the authority.
      *

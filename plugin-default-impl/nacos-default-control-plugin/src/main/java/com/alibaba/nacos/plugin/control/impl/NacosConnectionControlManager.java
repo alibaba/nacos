@@ -47,9 +47,11 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
     @Override
     public void applyConnectionLimitRule(ConnectionControlRule connectionControlRule) {
         super.connectionControlRule = connectionControlRule;
-        Loggers.CONTROL.info("Connection control rule updated to ->" + (this.connectionControlRule == null ? null
+        Loggers.CONTROL.info(
+            "Connection control rule updated to ->" + (this.connectionControlRule == null ? null
                 : JacksonUtils.toJson(this.connectionControlRule)));
-        Loggers.CONTROL.warn("Connection control updated, But connection control manager is no limit implementation.");
+        Loggers.CONTROL.warn(
+            "Connection control updated, But connection control manager is no limit implementation.");
     }
     
     @Override
@@ -65,7 +67,8 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
         
         // Get total connection from metrics
         Map<String, Integer> metricsTotalCount = metricsCollectorList.stream().collect(
-                Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
+            Collectors.toMap(ConnectionMetricsCollector::getName,
+                ConnectionMetricsCollector::getTotalCount));
         int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();
         if (totalCount >= totalCountLimit) {
             connectionCheckResponse.setSuccess(false);

@@ -125,7 +125,8 @@ public class AbstractAuthenticationManagerTest {
         when(jwtTokenManager.parseToken(anyString())).thenReturn(nacosUser);
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
-        mockHttpServletRequest.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + "-token");
+        mockHttpServletRequest.addHeader(AuthConstants.AUTHORIZATION_HEADER,
+            AuthConstants.TOKEN_PREFIX + "-token");
         NacosUser authenticate = abstractAuthenticationManager.authenticate(mockHttpServletRequest);
         
         assertEquals(nacosUser, authenticate);

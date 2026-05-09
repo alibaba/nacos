@@ -54,8 +54,9 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     
     private final boolean caseSensitive;
     
-    public LdapAuthenticationProvider(LdapTemplate ldapTemplate, NacosUserService userDetailsService,
-            NacosRoleService nacosRoleService, String filterPrefix, boolean caseSensitive) {
+    public LdapAuthenticationProvider(LdapTemplate ldapTemplate,
+        NacosUserService userDetailsService,
+        NacosRoleService nacosRoleService, String filterPrefix, boolean caseSensitive) {
         this.ldapTemplate = ldapTemplate;
         this.nacosRoleService = nacosRoleService;
         this.userDetailsService = userDetailsService;
@@ -64,14 +65,16 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     }
     
     @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+    public Authentication authenticate(Authentication authentication)
+        throws AuthenticationException {
         String username = (String) authentication.getPrincipal();
         String password = (String) authentication.getCredentials();
         
         if (isAdmin(username)) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             if (PasswordEncoderUtil.matches(password, userDetails.getPassword())) {
-                return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
+                return new UsernamePasswordAuthenticationToken(userDetails, password,
+                    userDetails.getAuthorities());
             } else {
                 return null;
             }
@@ -92,16 +95,18 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         
         UserDetails userDetails;
         try {
-            userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
+            userDetails =
+                userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
             userDetailsService.createUser(AuthConstants.LDAP_PREFIX + username,
-                    AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD, false);
+                AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD, false);
             User user = new User();
             user.setUsername(AuthConstants.LDAP_PREFIX + username);
             user.setPassword(AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
             userDetails = new NacosUserDetails(user);
         }
-        return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
+        return new UsernamePasswordAuthenticationToken(userDetails, password,
+            userDetails.getAuthorities());
     }
     
     private boolean isAdmin(String username) {

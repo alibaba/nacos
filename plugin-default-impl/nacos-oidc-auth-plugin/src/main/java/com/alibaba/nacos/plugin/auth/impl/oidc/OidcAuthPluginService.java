@@ -39,61 +39,60 @@ import java.util.List;
  */
 @SuppressWarnings("PMD")
 public class OidcAuthPluginService implements AuthPluginService {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(OidcAuthPluginService.class);
-
+    
     /**
      * Identity names that this plugin looks for in requests.
      */
     private static final List<String> IDENTITY_NAMES = Arrays.asList(
-            OidcProtocolConstants.AUTHORIZATION_HEADER,
-            OidcProtocolConstants.ACCESS_TOKEN_PARAM
-    );
-
+        OidcProtocolConstants.AUTHORIZATION_HEADER,
+        OidcProtocolConstants.ACCESS_TOKEN_PARAM);
+    
     private volatile IdentityProvider identityProvider;
     private volatile AuthorityProvider authorityProvider;
-
+    
     @Override
     public Collection<String> identityNames() {
         return IDENTITY_NAMES;
     }
-
+    
     @Override
     public boolean enableAuth(ActionTypes action, String type) {
         // Enable authentication for all actions and types
         return true;
     }
-
+    
     @Override
     public AuthResult validateIdentity(IdentityContext identityContext, Resource resource) {
         initializeIfNeeded();
         return identityProvider.validateIdentity(identityContext, resource);
     }
-
+    
     @Override
     public AuthResult validateAuthority(IdentityContext identityContext, Permission permission) {
         initializeIfNeeded();
         return authorityProvider.validateAuthority(identityContext, permission);
     }
-
+    
     @Override
     public String getAuthServiceName() {
         return OidcProtocolConstants.AUTH_PLUGIN_TYPE;
     }
-
+    
     @Override
     public boolean isLoginEnabled() {
         // Login is enabled - will be handled by OIDC login controller
         return true;
     }
-
+    
     @Override
     public boolean isAdminRequest() {
         // Return false to indicate that we don't need to initialize a local admin user
         // The Identity Provider handles all user management
         return false;
     }
-
+    
     /**
      * Initialize components lazily.
      */

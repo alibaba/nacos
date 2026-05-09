@@ -61,7 +61,8 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
             where = " 1=1 ";
         }
         
-        Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+        Page<PermissionInfo> pageInfo =
+            helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
                 pageNo, pageSize, PERMISSION_ROW_MAPPER);
         
         if (pageInfo == null) {
@@ -116,7 +117,8 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
             params.add(generateLikeArgument(role));
         }
         
-        Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+        Page<PermissionInfo> pageInfo =
+            helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
                 pageNo, pageSize, PERMISSION_ROW_MAPPER);
         
         if (pageInfo == null) {

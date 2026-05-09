@@ -29,8 +29,11 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * @author karsonto
  */
 public class ConditionOnLdapAuth implements Condition {
+    
     @Override
-    public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
-        return AuthSystemTypes.LDAP.name().equalsIgnoreCase(EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE));
+    public boolean matches(ConditionContext conditionContext,
+        AnnotatedTypeMetadata annotatedTypeMetadata) {
+        return AuthSystemTypes.LDAP.name()
+            .equalsIgnoreCase(EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE));
     }
 }

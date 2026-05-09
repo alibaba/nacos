@@ -69,7 +69,8 @@ class NacosAuthPluginServiceTest {
     
     @Test
     void testValidateIdentityAnonymousAllowed() throws AccessException {
-        when(authenticationManager.authenticate(any(), any())).thenThrow(new AccessException("no credentials"));
+        when(authenticationManager.authenticate(any(), any()))
+            .thenThrow(new AccessException("no credentials"));
         when(authConfigs.isAiAnonymousEnabled()).thenReturn(true);
         
         Properties properties = new Properties();
@@ -85,12 +86,14 @@ class NacosAuthPluginServiceTest {
         Object nacosUserInContext = identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
         assertInstanceOf(NacosUser.class, nacosUserInContext);
         assertEquals(AuthConstants.ANONYMOUS_USER, ((NacosUser) nacosUserInContext).getUserName());
-        assertEquals(AuthConstants.ANONYMOUS_USER, identityContext.getParameter(Identity.IDENTITY_ID, ""));
+        assertEquals(AuthConstants.ANONYMOUS_USER,
+            identityContext.getParameter(Identity.IDENTITY_ID, ""));
     }
     
     @Test
     void testValidateIdentityNoTagDenied() throws AccessException {
-        when(authenticationManager.authenticate(any(), any())).thenThrow(new AccessException("no credentials"));
+        when(authenticationManager.authenticate(any(), any()))
+            .thenThrow(new AccessException("no credentials"));
         
         Resource resource = new Resource("ns", "g", "name", "type", new Properties());
         IdentityContext identityContext = new IdentityContext();
@@ -104,7 +107,8 @@ class NacosAuthPluginServiceTest {
     
     @Test
     void testValidateIdentitySwitchOffDenied() throws AccessException {
-        when(authenticationManager.authenticate(any(), any())).thenThrow(new AccessException("no credentials"));
+        when(authenticationManager.authenticate(any(), any()))
+            .thenThrow(new AccessException("no credentials"));
         when(authConfigs.isAiAnonymousEnabled()).thenReturn(false);
         
         Properties properties = new Properties();

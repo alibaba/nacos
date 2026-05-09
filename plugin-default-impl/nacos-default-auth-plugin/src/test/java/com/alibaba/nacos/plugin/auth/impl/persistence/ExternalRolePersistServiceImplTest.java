@@ -66,7 +66,8 @@ class ExternalRolePersistServiceImplTest {
         DatasourceConfiguration.setEmbeddedStorage(false);
         Field datasourceField = DynamicDataSource.class.getDeclaredField("basicDataSourceService");
         datasourceField.setAccessible(true);
-        dataSourceServiceCache = (DataSourceService) datasourceField.get(DynamicDataSource.getInstance());
+        dataSourceServiceCache =
+            (DataSourceService) datasourceField.get(DynamicDataSource.getInstance());
         datasourceField.set(DynamicDataSource.getInstance(), dataSourceService);
         externalRolePersistService.init();
     }
@@ -88,7 +89,8 @@ class ExternalRolePersistServiceImplTest {
     
     @Test
     void testGetRolesByUserName() {
-        Page<RoleInfo> userName = externalRolePersistService.getRolesByUserNameAndRoleName("userName", "roleName", 1, 10);
+        Page<RoleInfo> userName =
+            externalRolePersistService.getRolesByUserNameAndRoleName("userName", "roleName", 1, 10);
         assertNotNull(userName);
     }
     

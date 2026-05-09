@@ -48,14 +48,17 @@ class EmbeddedPermissionPersistServiceImplTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class))).thenReturn(0);
-        embeddedPermissionPersistService = new EmbeddedPermissionPersistServiceImpl(databaseOperate);
+        when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class)))
+            .thenReturn(0);
+        embeddedPermissionPersistService =
+            new EmbeddedPermissionPersistServiceImpl(databaseOperate);
     }
     
     @Test
     void testGetPermissions() {
         String role = "role";
-        Page<PermissionInfo> permissions = embeddedPermissionPersistService.getPermissions(role, 1, 10);
+        Page<PermissionInfo> permissions =
+            embeddedPermissionPersistService.getPermissions(role, 1, 10);
         
         assertNotNull(permissions);
     }

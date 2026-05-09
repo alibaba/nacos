@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/1/15 21:38
  */
 public class NacosJwtParser {
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(NacosJwtParser.class);
     
     private final NacosSignatureAlgorithm signatureAlgorithm;
@@ -46,10 +46,10 @@ public class NacosJwtParser {
         int bitLength = decode.length << 3;
         if (bitLength < 256) {
             String msg = "The specified key byte array is " + bitLength + " bits which "
-                    + "is not secure enough for any JWT HMAC-SHA algorithm.  The JWT "
-                    + "JWA Specification (RFC 7518, Section 3.2) states that keys used with HMAC-SHA algorithms MUST have a "
-                    + "size >= 256 bits (the key size must be greater than or equal to the hash "
-                    + "output size).  See https://tools.ietf.org/html/rfc7518#section-3.2 for more information.";
+                + "is not secure enough for any JWT HMAC-SHA algorithm.  The JWT "
+                + "JWA Specification (RFC 7518, Section 3.2) states that keys used with HMAC-SHA algorithms MUST have a "
+                + "size >= 256 bits (the key size must be greater than or equal to the hash "
+                + "output size).  See https://tools.ietf.org/html/rfc7518#section-3.2 for more information.";
             throw new IllegalArgumentException(msg);
         }
         
@@ -62,12 +62,12 @@ public class NacosJwtParser {
         }
         this.key = new SecretKeySpec(decode, signatureAlgorithm.getJcaName());
     }
-
+    
     private void validKey(String base64edKey) {
         int length = base64edKey.toCharArray().length;
         if (length % 4 != 0) {
             LOG.warn("The secret Key currently in use is not a standard Base64 encoding"
-                    + " and will no longer be supported in future versions;");
+                + " and will no longer be supported in future versions;");
         }
     }
     
@@ -97,7 +97,8 @@ public class NacosJwtParser {
         }
         
         public JwtBuilder setExpiredTime(long validSeconds) {
-            this.nacosJwtPayload.setExp(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + validSeconds);
+            this.nacosJwtPayload
+                .setExp(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + validSeconds);
             return this;
         }
         

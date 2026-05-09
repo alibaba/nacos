@@ -32,10 +32,12 @@ import org.springframework.security.authentication.AuthenticationManager;
  */
 @Deprecated
 public class NacosAuthPluginOldControllerConfig {
-
+    
     @Bean
-    public UserController userController(AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
-            TokenManagerDelegate jwtTokenManager, AuthenticationManager authenticationManager) {
-        return new UserController(jwtTokenManager, authConfigs, iAuthenticationManager, authenticationManager);
+    public UserController userController(AuthConfigs authConfigs,
+        IAuthenticationManager iAuthenticationManager,
+        TokenManagerDelegate jwtTokenManager, AuthenticationManager authenticationManager) {
+        return new UserController(jwtTokenManager, authConfigs, iAuthenticationManager,
+            authenticationManager);
     }
 }

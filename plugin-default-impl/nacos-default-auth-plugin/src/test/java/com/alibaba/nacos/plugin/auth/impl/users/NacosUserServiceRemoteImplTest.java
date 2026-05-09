@@ -35,10 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  */
 @ExtendWith(MockitoExtension.class)
 class NacosUserServiceRemoteImplTest {
-
+    
     @Mock
     private AuthConfigs authConfigs;
-
+    
     @Test
     void testGetUserReadsCachedMapOnceOnHit() throws Exception {
         // Reproduces the TOCTOU pattern where getUser previously called containsKey
@@ -53,35 +53,37 @@ class NacosUserServiceRemoteImplTest {
         CountingMap<String, User> cache = new CountingMap<>();
         cache.put("alice", alice);
         injectCachedUserMap(service, cache);
-
+        
         User result = service.getUser("alice");
-
+        
         assertSame(alice, result, "cache hit must return the cached user");
         assertEquals(1, cache.getCount.get(), "cache hit must read the map exactly once");
-        assertEquals(0, cache.containsKeyCount.get(), "fix must not consult containsKey separately");
+        assertEquals(0, cache.containsKeyCount.get(),
+            "fix must not consult containsKey separately");
     }
-
-    private static void injectCachedUserMap(NacosUserServiceRemoteImpl service, java.util.Map<String, User> map)
-            throws Exception {
+    
+    private static void injectCachedUserMap(NacosUserServiceRemoteImpl service,
+        java.util.Map<String, User> map)
+        throws Exception {
         Field field = AbstractCachedUserService.class.getDeclaredField("userMap");
         field.setAccessible(true);
         field.set(service, map);
     }
-
+    
     private static final class CountingMap<K, V> extends ConcurrentHashMap<K, V> {
-
+        
         private static final long serialVersionUID = 1L;
-
+        
         final AtomicInteger getCount = new AtomicInteger();
-
+        
         final AtomicInteger containsKeyCount = new AtomicInteger();
-
+        
         @Override
         public V get(Object key) {
             getCount.incrementAndGet();
             return super.get(key);
         }
-
+        
         @Override
         public boolean containsKey(Object key) {
             containsKeyCount.incrementAndGet();
