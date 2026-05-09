@@ -78,10 +78,11 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         this.lockManager = lockManager;
         this.protocol = ApplicationUtils.getBean(ProtocolManager.class).getCpProtocol();
         this.protocol.addRequestProcessors(Collections.singletonList(this));
-        this.defaultExpireTime = EnvUtil.getProperty(PropertiesConstant.DEFAULT_AUTO_EXPIRE, Long.class,
+        this.defaultExpireTime =
+            EnvUtil.getProperty(PropertiesConstant.DEFAULT_AUTO_EXPIRE, Long.class,
                 PropertiesConstant.DEFAULT_AUTO_EXPIRE_TIME);
         this.maxExpireTime = EnvUtil.getProperty(PropertiesConstant.MAX_AUTO_EXPIRE, Long.class,
-                PropertiesConstant.MAX_AUTO_EXPIRE_TIME);
+            PropertiesConstant.MAX_AUTO_EXPIRE_TIME);
     }
     
     @Override
@@ -92,16 +93,19 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             LockOperationEnum lockOperation = LockOperationEnum.valueOf(request.getOperation());
             Object data = null;
             if (lockOperation == LockOperationEnum.ACQUIRE) {
-                final MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
+                final MutexLockRequest mutexLockRequest =
+                    serializer.deserialize(request.getData().toByteArray());
                 data = acquireLock(mutexLockRequest);
             } else if (lockOperation == LockOperationEnum.RELEASE) {
-                final MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
+                final MutexLockRequest mutexLockRequest =
+                    serializer.deserialize(request.getData().toByteArray());
                 data = releaseLock(mutexLockRequest);
             } else {
                 throw new NacosLockException("lockOperation is not exist.");
             }
-            LOGGER.info("thread: {}, operator: {}, request: {}, success: {}", Thread.currentThread().getName(),
-                    lockOperation, serializer.deserialize(request.getData().toByteArray()), data);
+            LOGGER.info("thread: {}, operator: {}, request: {}, success: {}",
+                Thread.currentThread().getName(),
+                lockOperation, serializer.deserialize(request.getData().toByteArray()), data);
             ByteString bytes = ByteString.copyFrom(serializer.serialize(data));
             return Response.newBuilder().setSuccess(true).setData(bytes).build();
         } catch (NacosLockException e) {
@@ -142,8 +146,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
         request.setLockInfo(lockInfo);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
-                .setData(ByteString.copyFrom(serializer.serialize(request)))
-                .setOperation(LockOperationEnum.ACQUIRE.name()).build();
+            .setData(ByteString.copyFrom(serializer.serialize(request)))
+            .setOperation(LockOperationEnum.ACQUIRE.name()).build();
         try {
             Response response = protocol.write(writeRequest);
             if (response.getSuccess()) {
@@ -152,8 +156,9 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             throw new NacosLockException(response.getErrMsg());
         } catch (NacosLockException e) {
             int paramSize = lockInstance.getParams() == null ? 0 : lockInstance.getParams().size();
-            LOGGER.error("key: {}, lockType:{}, paramSize:{} lock fail, errorMsg: {}", lockInstance.getKey(),
-                    lockInstance.getLockType(), paramSize, e.getMessage());
+            LOGGER.error("key: {}, lockType:{}, paramSize:{} lock fail, errorMsg: {}",
+                lockInstance.getKey(),
+                lockInstance.getLockType(), paramSize, e.getMessage());
             throw e;
         } catch (Exception e) {
             LOGGER.error("lock fail.", e);
@@ -163,7 +168,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(new NacosLockSnapshotOperation(lockManager, lock.writeLock()));
+        return Collections
+            .singletonList(new NacosLockSnapshotOperation(lockManager, lock.writeLock()));
     }
     
     @Override
@@ -174,8 +180,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         lockInfo.setParams(lockInstance.getParams());
         request.setLockInfo(lockInfo);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
-                .setData(ByteString.copyFrom(serializer.serialize(request)))
-                .setOperation(LockOperationEnum.RELEASE.name()).build();
+            .setData(ByteString.copyFrom(serializer.serialize(request)))
+            .setOperation(LockOperationEnum.RELEASE.name()).build();
         try {
             Response response = protocol.write(writeRequest);
             if (response.getSuccess()) {
@@ -184,8 +190,9 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             throw new NacosLockException(response.getErrMsg());
         } catch (NacosLockException e) {
             int paramSize = lockInstance.getParams() == null ? 0 : lockInstance.getParams().size();
-            LOGGER.error("key: {}, lockType:{}, paramSize:{} lock fail, errorMsg: {}", lockInstance.getKey(),
-                    lockInstance.getLockType(), paramSize, e.getMessage());
+            LOGGER.error("key: {}, lockType:{}, paramSize:{} lock fail, errorMsg: {}",
+                lockInstance.getKey(),
+                lockInstance.getLockType(), paramSize, e.getMessage());
             throw e;
         } catch (Exception e) {
             throw new NacosLockException("unLock error.", e);

@@ -60,15 +60,18 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosLockSnapshotOperation.class);
     
-    private static final String LOCK_SNAPSHOT_SAVE = NacosLockSnapshotOperation.class.getSimpleName() + ".SAVE";
+    private static final String LOCK_SNAPSHOT_SAVE =
+        NacosLockSnapshotOperation.class.getSimpleName() + ".SAVE";
     
-    private static final String LOCK_SNAPSHOT_LOAD = NacosLockSnapshotOperation.class.getSimpleName() + ".LOAD";
+    private static final String LOCK_SNAPSHOT_LOAD =
+        NacosLockSnapshotOperation.class.getSimpleName() + ".LOAD";
     
     private final Serializer serializer = SerializeFactory.getDefault();
     
     private static final String SNAPSHOT_ARCHIVE = "nacos_lock.zip";
     
-    public NacosLockSnapshotOperation(LockManager lockManager, ReentrantReadWriteLock.WriteLock writeLock) {
+    public NacosLockSnapshotOperation(LockManager lockManager,
+        ReentrantReadWriteLock.WriteLock writeLock) {
         this.lockManager = lockManager;
         this.writeLock = writeLock;
     }
@@ -82,8 +85,9 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
             try {
                 callFinally.accept(writeSnapshot(writer), null);
             } catch (Throwable t) {
-                Loggers.RAFT.error("Fail to compress snapshot, path={}, file list={}.", writer.getPath(),
-                        writer.listFiles(), t);
+                Loggers.RAFT.error("Fail to compress snapshot, path={}, file list={}.",
+                    writer.getPath(),
+                    writer.listFiles(), t);
                 callFinally.accept(false, t);
             } finally {
                 lock.unlock();
@@ -117,8 +121,9 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         try {
             return readSnapshot(reader);
         } catch (final Throwable t) {
-            Loggers.RAFT.error("Fail to load snapshot, path={}, file list={}.", reader.getPath(), reader.listFiles(),
-                    t);
+            Loggers.RAFT.error("Fail to load snapshot, path={}, file list={}.", reader.getPath(),
+                reader.listFiles(),
+                t);
             return false;
         } finally {
             lock.unlock();
@@ -133,7 +138,8 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         final Checksum checksum = new CRC64();
         byte[] snapshotBytes = DiskUtils.decompress(sourceFile, checksum);
         LocalFileMeta fileMeta = reader.getFileMeta(SNAPSHOT_ARCHIVE);
-        if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY) && !Objects.equals(Long.toHexString(checksum.getValue()),
+        if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY)
+            && !Objects.equals(Long.toHexString(checksum.getValue()),
                 fileMeta.get(CHECK_SUM_KEY))) {
             throw new IllegalArgumentException("Snapshot checksum failed");
         }
@@ -143,7 +149,8 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
     }
     
     private void loadSnapshot(byte[] snapshotBytes) {
-        ConcurrentHashMap<LockKey, AtomicLockService> newData = serializer.deserialize(snapshotBytes);
+        ConcurrentHashMap<LockKey, AtomicLockService> newData =
+            serializer.deserialize(snapshotBytes);
         ConcurrentHashMap<LockKey, AtomicLockService> lockMap = lockManager.showLocks();
         //loadSnapshot
         lockMap.putAll(newData);
