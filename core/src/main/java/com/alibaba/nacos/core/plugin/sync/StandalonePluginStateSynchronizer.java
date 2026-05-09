@@ -40,20 +40,21 @@ import java.util.Map;
 @Component
 @Conditional(ConditionOnStandaloneMode.class)
 public class StandalonePluginStateSynchronizer implements PluginStateSynchronizer {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(StandalonePluginStateSynchronizer.class);
-
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(StandalonePluginStateSynchronizer.class);
+    
     private final PluginStatePersistenceService persistence;
-
+    
     private final PluginStateApplier applier;
-
+    
     public StandalonePluginStateSynchronizer(PluginStatePersistenceService persistence,
-            PluginStateApplier applier) {
+        PluginStateApplier applier) {
         this.persistence = persistence;
         this.applier = applier;
         LOGGER.info("[StandalonePluginStateSynchronizer] Initialized in standalone mode");
     }
-
+    
     @Override
     public void syncStateChange(String pluginId, boolean enabled) throws NacosApiException {
         try {
@@ -61,18 +62,19 @@ public class StandalonePluginStateSynchronizer implements PluginStateSynchronize
             persistence.saveState(pluginId, enabled);
         } catch (PluginPersistenceException e) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
-                    "Failed to persist plugin state: " + pluginId);
+                "Failed to persist plugin state: " + pluginId);
         }
     }
-
+    
     @Override
-    public void syncConfigChange(String pluginId, Map<String, String> config) throws NacosApiException {
+    public void syncConfigChange(String pluginId, Map<String, String> config)
+        throws NacosApiException {
         try {
             applier.applyConfigChange(pluginId, config);
             persistence.saveConfig(pluginId, config);
         } catch (PluginPersistenceException e) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
-                    "Failed to persist plugin config: " + pluginId);
+                "Failed to persist plugin config: " + pluginId);
         }
     }
 }

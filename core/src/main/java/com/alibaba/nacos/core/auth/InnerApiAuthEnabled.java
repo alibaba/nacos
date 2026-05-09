@@ -76,7 +76,8 @@ public class InnerApiAuthEnabled {
                 return;
             }
         }
-        Loggers.CLUSTER.info("All Nacos server upgrade to upper 3.x, enabled inner api auth identity check");
+        Loggers.CLUSTER
+            .info("All Nacos server upgrade to upper 3.x, enabled inner api auth identity check");
         enabled.set(true);
     }
 }

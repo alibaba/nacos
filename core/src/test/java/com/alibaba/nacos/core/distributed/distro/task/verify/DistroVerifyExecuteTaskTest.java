@@ -37,60 +37,64 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class DistroVerifyExecuteTaskTest {
-
+    
     @Mock
     private DistroTransportAgent transportAgent;
-
+    
     private DistroVerifyExecuteTask task;
-
+    
     @BeforeEach
     void setUp() {
         DistroData data = new DistroData(new DistroKey("k", "type"), new byte[0]);
-        task = new DistroVerifyExecuteTask(transportAgent, Collections.singletonList(data), "1.1.1.1:8848", "type");
+        task = new DistroVerifyExecuteTask(transportAgent, Collections.singletonList(data),
+            "1.1.1.1:8848", "type");
     }
-
+    
     @Test
     void testRunWithSyncVerifyData() {
         when(transportAgent.supportCallbackTransport()).thenReturn(false);
-        when(transportAgent.syncVerifyData(any(DistroData.class), eq("1.1.1.1:8848"))).thenReturn(true);
+        when(transportAgent.syncVerifyData(any(DistroData.class), eq("1.1.1.1:8848")))
+            .thenReturn(true);
         task.run();
         verify(transportAgent).syncVerifyData(any(DistroData.class), eq("1.1.1.1:8848"));
     }
-
+    
     @Test
     void testRunWithCallbackTransport() {
         when(transportAgent.supportCallbackTransport()).thenReturn(true);
         task.run();
         verify(transportAgent).syncVerifyData(any(DistroData.class), eq("1.1.1.1:8848"), any());
     }
-
+    
     @Test
     void testRunWithCallbackTransportInvokesOnSuccess() {
         when(transportAgent.supportCallbackTransport()).thenReturn(true);
         org.mockito.Mockito.doAnswer(invocation -> {
-            com.alibaba.nacos.core.distributed.distro.component.DistroCallback cb = invocation.getArgument(2);
+            com.alibaba.nacos.core.distributed.distro.component.DistroCallback cb =
+                invocation.getArgument(2);
             cb.onSuccess();
             return null;
         }).when(transportAgent).syncVerifyData(any(DistroData.class), eq("1.1.1.1:8848"), any());
         task.run();
     }
-
+    
     @Test
     void testRunWithCallbackTransportInvokesOnFailed() {
         when(transportAgent.supportCallbackTransport()).thenReturn(true);
         org.mockito.Mockito.doAnswer(invocation -> {
-            com.alibaba.nacos.core.distributed.distro.component.DistroCallback cb = invocation.getArgument(2);
+            com.alibaba.nacos.core.distributed.distro.component.DistroCallback cb =
+                invocation.getArgument(2);
             cb.onFailed(new RuntimeException("verify fail"));
             return null;
         }).when(transportAgent).syncVerifyData(any(DistroData.class), eq("1.1.1.1:8848"), any());
         task.run();
     }
-
+    
     @Test
     void testRunWhenSyncVerifyDataThrows() {
         when(transportAgent.supportCallbackTransport()).thenReturn(false);
         when(transportAgent.syncVerifyData(any(DistroData.class), eq("1.1.1.1:8848")))
-                .thenThrow(new RuntimeException("network error"));
+            .thenThrow(new RuntimeException("network error"));
         task.run();
     }
 }

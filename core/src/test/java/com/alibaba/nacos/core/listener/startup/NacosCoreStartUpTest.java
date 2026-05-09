@@ -57,36 +57,37 @@ import static org.mockito.Mockito.verify;
  */
 @ExtendWith(MockitoExtension.class)
 class NacosCoreStartUpTest {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosCoreStartUpTest.class);
-
+    
     @AfterEach
     void tearDown() {
         System.clearProperty("nacos.mode");
         System.clearProperty("nacos.function.mode");
         System.clearProperty("nacos.local.ip");
     }
-
+    
     @Test
     void startUpPhaseReturnsCore() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         assertEquals(NacosStartUp.CORE_START_UP_PHASE, startUp.startUpPhase());
     }
-
+    
     @Test
     void makeWorkDirCreatesLogsConfData() throws Exception {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         String nacosHome = java.nio.file.Files.createTempDirectory("nacos_test").toString();
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-             MockedStatic<DiskUtils> diskMock = mockStatic(DiskUtils.class)) {
+            MockedStatic<DiskUtils> diskMock = mockStatic(DiskUtils.class)) {
             envMock.when(EnvUtil::getNacosHome).thenReturn(nacosHome);
             String[] dirs = startUp.makeWorkDir();
             assertNotNull(dirs);
             assertEquals(3, dirs.length);
-            diskMock.verify(() -> DiskUtils.forceMkdir(any(File.class)), org.mockito.Mockito.times(3));
+            diskMock.verify(() -> DiskUtils.forceMkdir(any(File.class)),
+                org.mockito.Mockito.times(3));
         }
     }
-
+    
     @Test
     void injectEnvironmentSetsEnvUtil() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
@@ -96,12 +97,12 @@ class NacosCoreStartUpTest {
             envMock.verify(() -> EnvUtil.setEnvironment(environment));
         }
     }
-
+    
     @Test
     void initSystemPropertyStandaloneMode() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-             MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
+            MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
             envMock.when(EnvUtil::getStandaloneMode).thenReturn(true);
             envMock.when(EnvUtil::getFunctionMode).thenReturn(null);
             inetMock.when(InetUtils::getSelfIP).thenReturn("127.0.0.1");
@@ -111,12 +112,12 @@ class NacosCoreStartUpTest {
             assertEquals("127.0.0.1", System.getProperty("nacos.local.ip"));
         }
     }
-
+    
     @Test
     void initSystemPropertyClusterMode() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-             MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
+            MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
             envMock.when(EnvUtil::getStandaloneMode).thenReturn(false);
             envMock.when(EnvUtil::getFunctionMode).thenReturn(null);
             inetMock.when(InetUtils::getSelfIP).thenReturn("192.168.1.1");
@@ -124,12 +125,12 @@ class NacosCoreStartUpTest {
             assertEquals("cluster", System.getProperty("nacos.mode"));
         }
     }
-
+    
     @Test
     void initSystemPropertyFunctionModeConfig() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-             MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
+            MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
             envMock.when(EnvUtil::getStandaloneMode).thenReturn(true);
             envMock.when(EnvUtil::getFunctionMode).thenReturn(EnvUtil.FUNCTION_MODE_CONFIG);
             inetMock.when(InetUtils::getSelfIP).thenReturn("127.0.0.1");
@@ -142,7 +143,7 @@ class NacosCoreStartUpTest {
     void initSystemPropertyFunctionModeNaming() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-                MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
+            MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
             envMock.when(EnvUtil::getStandaloneMode).thenReturn(true);
             envMock.when(EnvUtil::getFunctionMode).thenReturn(EnvUtil.FUNCTION_MODE_NAMING);
             inetMock.when(InetUtils::getSelfIP).thenReturn("127.0.0.1");
@@ -150,25 +151,26 @@ class NacosCoreStartUpTest {
             assertEquals(EnvUtil.FUNCTION_MODE_NAMING, System.getProperty("nacos.function.mode"));
         }
     }
-
+    
     @Test
     void initSystemPropertyFunctionModeMicroService() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-                MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
+            MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
             envMock.when(EnvUtil::getStandaloneMode).thenReturn(true);
             envMock.when(EnvUtil::getFunctionMode).thenReturn(EnvUtil.FUNCTION_MODE_MICROSERVICE);
             inetMock.when(InetUtils::getSelfIP).thenReturn("127.0.0.1");
             startUp.initSystemProperty();
-            assertEquals(EnvUtil.FUNCTION_MODE_MICROSERVICE, System.getProperty("nacos.function.mode"));
+            assertEquals(EnvUtil.FUNCTION_MODE_MICROSERVICE,
+                System.getProperty("nacos.function.mode"));
         }
     }
-
+    
     @Test
     void initSystemPropertyFunctionModeAi() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-                MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
+            MockedStatic<InetUtils> inetMock = mockStatic(InetUtils.class)) {
             envMock.when(EnvUtil::getStandaloneMode).thenReturn(true);
             envMock.when(EnvUtil::getFunctionMode).thenReturn(EnvUtil.FUNCTION_MODE_AI);
             inetMock.when(InetUtils::getSelfIP).thenReturn("127.0.0.1");
@@ -176,7 +178,7 @@ class NacosCoreStartUpTest {
             assertEquals(EnvUtil.FUNCTION_MODE_AI, System.getProperty("nacos.function.mode"));
         }
     }
-
+    
     @Test
     void customEnvironmentCallsEnvUtil() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
@@ -185,7 +187,7 @@ class NacosCoreStartUpTest {
             envMock.verify(EnvUtil::customEnvironment);
         }
     }
-
+    
     @Test
     void startedSetsApplicationUtilsStarted() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
@@ -195,7 +197,7 @@ class NacosCoreStartUpTest {
             appMock.verify(() -> ApplicationUtils.setStarted(true));
         }
     }
-
+    
     @Test
     void logStartedLogsWithStorageMode() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
@@ -206,18 +208,18 @@ class NacosCoreStartUpTest {
         }
         startUp.started();
     }
-
+    
     @Test
     void failedShutsDownServices() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         startUp.starting();
         ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
         try (MockedStatic<com.alibaba.nacos.common.executor.ThreadPoolManager> tpMock =
-                     mockStatic(com.alibaba.nacos.common.executor.ThreadPoolManager.class);
-             MockedStatic<com.alibaba.nacos.sys.file.WatchFileCenter> wfMock =
-                     mockStatic(com.alibaba.nacos.sys.file.WatchFileCenter.class);
-             MockedStatic<com.alibaba.nacos.common.notify.NotifyCenter> ncMock =
-                     mockStatic(com.alibaba.nacos.common.notify.NotifyCenter.class)) {
+            mockStatic(com.alibaba.nacos.common.executor.ThreadPoolManager.class);
+            MockedStatic<com.alibaba.nacos.sys.file.WatchFileCenter> wfMock =
+                mockStatic(com.alibaba.nacos.sys.file.WatchFileCenter.class);
+            MockedStatic<com.alibaba.nacos.common.notify.NotifyCenter> ncMock =
+                mockStatic(com.alibaba.nacos.common.notify.NotifyCenter.class)) {
             startUp.failed(new RuntimeException("test"), context);
             verify(context).close();
             tpMock.verify(com.alibaba.nacos.common.executor.ThreadPoolManager::shutdown);
@@ -225,41 +227,44 @@ class NacosCoreStartUpTest {
             ncMock.verify(com.alibaba.nacos.common.notify.NotifyCenter::shutdown);
         }
     }
-
+    
     @Test
     void loadPrePropertiesThrowsWhenLoadFails() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         ConfigurableEnvironment environment = new MockEnvironment();
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class)) {
-            envMock.when(EnvUtil::getApplicationConfFileResource).thenThrow(new RuntimeException("no resource"));
+            envMock.when(EnvUtil::getApplicationConfFileResource)
+                .thenThrow(new RuntimeException("no resource"));
             assertThrows(NacosRuntimeException.class, () -> startUp.loadPreProperties(environment));
         }
     }
-
+    
     @Test
     void makeWorkDirThrowsWhenForceMkdirFails() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         String nacosHome = "/tmp/nacos-test";
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-             MockedStatic<DiskUtils> diskMock = mockStatic(DiskUtils.class)) {
+            MockedStatic<DiskUtils> diskMock = mockStatic(DiskUtils.class)) {
             envMock.when(EnvUtil::getNacosHome).thenReturn(nacosHome);
-            diskMock.when(() -> DiskUtils.forceMkdir(any(File.class))).thenThrow(new IOException("perm denied"));
+            diskMock.when(() -> DiskUtils.forceMkdir(any(File.class)))
+                .thenThrow(new IOException("perm denied"));
             assertThrows(NacosRuntimeException.class, startUp::makeWorkDir);
         }
     }
-
+    
     @Test
     void logStartingInfoInClusterModeLogsClusterConf() throws Exception {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class)) {
             envMock.when(EnvUtil::getStandaloneMode).thenReturn(false);
-            envMock.when(EnvUtil::readClusterConf).thenReturn(java.util.Arrays.asList("127.0.0.1:8848"));
+            envMock.when(EnvUtil::readClusterConf)
+                .thenReturn(java.util.Arrays.asList("127.0.0.1:8848"));
             startUp.starting();
             startUp.logStartingInfo(LOGGER);
             startUp.started();
         }
     }
-
+    
     @Test
     void logStartingInfoInClusterModeWhenReadClusterConfThrows() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
@@ -271,7 +276,7 @@ class NacosCoreStartUpTest {
             startUp.started();
         }
     }
-
+    
     @Test
     void logStartedWithExternalStorageMode() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
@@ -287,7 +292,7 @@ class NacosCoreStartUpTest {
         }
         startUp.started();
     }
-
+    
     @Test
     void logStartedWithEmbeddedStorageMode() {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
@@ -302,7 +307,7 @@ class NacosCoreStartUpTest {
         }
         startUp.started();
     }
-
+    
     @Test
     void loadPrePropertiesSuccessRegistersWatcherAndWatcherInterestAndOnChange() throws Exception {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
@@ -311,19 +316,20 @@ class NacosCoreStartUpTest {
         Map<String, ?> props = Collections.singletonMap("key", "value");
         ArgumentCaptor<FileWatcher> watcherCaptor = ArgumentCaptor.forClass(FileWatcher.class);
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-             MockedStatic<WatchFileCenter> wfMock = mockStatic(WatchFileCenter.class)) {
+            MockedStatic<WatchFileCenter> wfMock = mockStatic(WatchFileCenter.class)) {
             envMock.when(EnvUtil::getApplicationConfFileResource).thenReturn(resource);
             envMock.when(() -> EnvUtil.loadProperties(resource)).thenReturn(props);
             envMock.when(EnvUtil::getConfPath).thenReturn("/conf");
             startUp.loadPreProperties(environment);
-            wfMock.verify(() -> WatchFileCenter.registerWatcher(org.mockito.ArgumentMatchers.eq("/conf"), watcherCaptor.capture()));
+            wfMock.verify(() -> WatchFileCenter.registerWatcher(
+                org.mockito.ArgumentMatchers.eq("/conf"), watcherCaptor.capture()));
             FileWatcher watcher = watcherCaptor.getValue();
             assertTrue(watcher.interest("path/application.properties"));
             assertFalse(watcher.interest("other"));
             watcher.onChange(null);
         }
     }
-
+    
     @Test
     void loadPrePropertiesRegisteredWatcherOnChangeIgnoresIoException() throws Exception {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
@@ -332,12 +338,14 @@ class NacosCoreStartUpTest {
         Map<String, ?> props = Collections.singletonMap("k", "v");
         ArgumentCaptor<FileWatcher> watcherCaptor = ArgumentCaptor.forClass(FileWatcher.class);
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class);
-             MockedStatic<WatchFileCenter> wfMock = mockStatic(WatchFileCenter.class)) {
+            MockedStatic<WatchFileCenter> wfMock = mockStatic(WatchFileCenter.class)) {
             envMock.when(EnvUtil::getApplicationConfFileResource).thenReturn(resource);
-            envMock.when(() -> EnvUtil.loadProperties(resource)).thenReturn(props).thenThrow(new IOException("load fail"));
+            envMock.when(() -> EnvUtil.loadProperties(resource)).thenReturn(props)
+                .thenThrow(new IOException("load fail"));
             envMock.when(EnvUtil::getConfPath).thenReturn("/conf");
             startUp.loadPreProperties(environment);
-            wfMock.verify(() -> WatchFileCenter.registerWatcher(org.mockito.ArgumentMatchers.eq("/conf"), watcherCaptor.capture()));
+            wfMock.verify(() -> WatchFileCenter.registerWatcher(
+                org.mockito.ArgumentMatchers.eq("/conf"), watcherCaptor.capture()));
             FileWatcher watcher = watcherCaptor.getValue();
             watcher.onChange(null);
         }

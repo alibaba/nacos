@@ -78,22 +78,25 @@ class FileConfigMemberLookupTest {
     void testUseAddressServer() {
         assertFalse(fileConfigMemberLookup.useAddressServer());
     }
-
+    
     @Test
     void testWatcherInterest() {
-        FileWatcher watcher = (FileWatcher) ReflectionTestUtils.getField(fileConfigMemberLookup, "watcher");
+        FileWatcher watcher =
+            (FileWatcher) ReflectionTestUtils.getField(fileConfigMemberLookup, "watcher");
         assertTrue(watcher.interest("/conf/cluster.conf"));
         assertTrue(watcher.interest("cluster.conf"));
         assertFalse(watcher.interest("other.txt"));
     }
-
+    
     @Test
     void testWatcherOnChange() {
-        FileWatcher watcher = (FileWatcher) ReflectionTestUtils.getField(fileConfigMemberLookup, "watcher");
-        FileChangeEvent event = FileChangeEvent.builder().paths(EnvUtil.getConfPath()).context("cluster.conf").build();
+        FileWatcher watcher =
+            (FileWatcher) ReflectionTestUtils.getField(fileConfigMemberLookup, "watcher");
+        FileChangeEvent event =
+            FileChangeEvent.builder().paths(EnvUtil.getConfPath()).context("cluster.conf").build();
         watcher.onChange(event);
     }
-
+    
     @Test
     void testDoStartWhenRegisterWatcherThrows() throws NacosException {
         String previousConfPath = EnvUtil.getConfPath();

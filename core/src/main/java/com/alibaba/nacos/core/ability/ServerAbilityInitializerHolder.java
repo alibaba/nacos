@@ -29,14 +29,17 @@ import java.util.HashSet;
  */
 public class ServerAbilityInitializerHolder {
     
-    private static final ServerAbilityInitializerHolder INSTANCE = new ServerAbilityInitializerHolder();
+    private static final ServerAbilityInitializerHolder INSTANCE =
+        new ServerAbilityInitializerHolder();
     
     private final Collection<ServerAbilityInitializer> initializers;
     
     private ServerAbilityInitializerHolder() {
         initializers = new HashSet<>();
-        for (ServerAbilityInitializer each : NacosServiceLoader.load(ServerAbilityInitializer.class)) {
-            Loggers.CORE.info("Load {} for ServerAbilityInitializer", each.getClass().getCanonicalName());
+        for (ServerAbilityInitializer each : NacosServiceLoader
+            .load(ServerAbilityInitializer.class)) {
+            Loggers.CORE.info("Load {} for ServerAbilityInitializer",
+                each.getClass().getCanonicalName());
             initializers.add(each);
         }
     }

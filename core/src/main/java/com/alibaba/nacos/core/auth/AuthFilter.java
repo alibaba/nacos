@@ -36,7 +36,7 @@ public class AuthFilter extends AbstractWebAuthFilter {
     private final InnerApiAuthEnabled innerApiAuthEnabled;
     
     public AuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache,
-            InnerApiAuthEnabled innerApiAuthEnabled) {
+        InnerApiAuthEnabled innerApiAuthEnabled) {
         super(authConfig, methodsCache);
         this.authConfig = authConfig;
         this.innerApiAuthEnabled = innerApiAuthEnabled;
@@ -54,7 +54,8 @@ public class AuthFilter extends AbstractWebAuthFilter {
     }
     
     @Override
-    protected ServerIdentityResult checkServerIdentity(HttpServletRequest request, Secured secured) {
+    protected ServerIdentityResult checkServerIdentity(HttpServletRequest request,
+        Secured secured) {
         // During Upgrading, Old Nacos server might not with server identity for some Inner API, follow old version logic.
         if (ApiType.INNER_API.equals(secured.apiType()) && !innerApiAuthEnabled.isEnabled()) {
             return ServerIdentityResult.success();

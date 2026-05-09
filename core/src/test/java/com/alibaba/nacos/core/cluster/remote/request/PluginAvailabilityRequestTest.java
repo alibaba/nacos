@@ -27,40 +27,40 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * @author WangzJi
  */
 class PluginAvailabilityRequestTest {
-
+    
     @Test
     void defaultConstructorTest() {
         PluginAvailabilityRequest request = new PluginAvailabilityRequest();
-
+        
         assertNull(request.getPluginId());
     }
-
+    
     @Test
     void setPluginIdTest() {
         PluginAvailabilityRequest request = new PluginAvailabilityRequest();
-
+        
         request.setPluginId("trace:otel");
-
+        
         assertEquals("trace:otel", request.getPluginId());
     }
-
+    
     @Test
     void setPluginIdMultipleTimesTest() {
         PluginAvailabilityRequest request = new PluginAvailabilityRequest();
-
+        
         request.setPluginId("trace:otel");
         request.setPluginId("auth:nacos");
-
+        
         assertEquals("auth:nacos", request.getPluginId());
     }
-
+    
     @Test
     void setPluginIdNullTest() {
         PluginAvailabilityRequest request = new PluginAvailabilityRequest();
-
+        
         request.setPluginId("trace:test");
         request.setPluginId(null);
-
+        
         assertNull(request.getPluginId());
     }
 }

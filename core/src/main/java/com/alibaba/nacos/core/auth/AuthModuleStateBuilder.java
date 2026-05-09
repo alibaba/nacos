@@ -45,8 +45,8 @@ public class AuthModuleStateBuilder extends AbstractServerModuleStateBuilder {
     public ModuleState build() {
         ModuleState result = new ModuleState(AUTH_MODULE);
         boolean authEnabled = NacosAuthConfigHolder.getInstance()
-                .isAnyAuthEnabled(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE,
-                        NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE);
+            .isAnyAuthEnabled(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE,
+                NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE);
         String authSystemType = NacosAuthConfigHolder.getInstance().getNacosAuthSystemType();
         result.newState(AUTH_ENABLED, authEnabled);
         result.newState(AUTH_SYSTEM_TYPE, authSystemType);
@@ -61,8 +61,9 @@ public class AuthModuleStateBuilder extends AbstractServerModuleStateBuilder {
     
     private Boolean isAdminRequest(String authConfigs) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs);
-        boolean isAdminRequest = authPluginService.map(AuthPluginService::isAdminRequest).orElse(true);
+            .findAuthServiceSpiImpl(authConfigs);
+        boolean isAdminRequest =
+            authPluginService.map(AuthPluginService::isAdminRequest).orElse(true);
         if (!isAdminRequest) {
             cacheable = true;
         }

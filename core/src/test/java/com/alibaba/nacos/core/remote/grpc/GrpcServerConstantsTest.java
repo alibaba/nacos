@@ -24,10 +24,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class GrpcServerConstantsTest {
-
+    
     @Test
     void testGrpcConfigConstants() throws Exception {
-        Class<?> grpcConfig = Class.forName("com.alibaba.nacos.core.remote.grpc.GrpcServerConstants$GrpcConfig");
+        Class<?> grpcConfig =
+            Class.forName("com.alibaba.nacos.core.remote.grpc.GrpcServerConstants$GrpcConfig");
         Field maxInbound = grpcConfig.getDeclaredField("DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE");
         maxInbound.setAccessible(true);
         assertEquals(10 * 1024 * 1024, maxInbound.get(null));

@@ -50,18 +50,19 @@ class DistroModuleStateBuilderTest {
         ModuleState actual = new DistroModuleStateBuilder().build();
         Map<String, Object> states = actual.getStates();
         assertEquals(DistroConstants.DISTRO_MODULE, actual.getModuleName());
-        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS, states.get(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS_STATE));
+        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS,
+            states.get(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS_STATE));
         assertEquals(DistroConstants.DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS,
-                states.get(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS_STATE));
+            states.get(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS_STATE));
         assertEquals(DistroConstants.DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS,
-                states.get(DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS_STATE));
+            states.get(DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS_STATE));
         assertEquals(DistroConstants.DEFAULT_DATA_VERIFY_INTERVAL_MILLISECONDS,
-                states.get(DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS_STATE));
+            states.get(DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS_STATE));
         assertEquals(DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS,
-                states.get(DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS_STATE));
+            states.get(DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS_STATE));
         assertEquals(DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS,
-                states.get(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS_STATE));
+            states.get(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS_STATE));
         assertEquals(DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS,
-                states.get(DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS_STATE));
+            states.get(DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS_STATE));
     }
 }

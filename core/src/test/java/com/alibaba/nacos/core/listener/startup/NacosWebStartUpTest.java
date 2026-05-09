@@ -33,22 +33,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @ExtendWith(MockitoExtension.class)
 class NacosWebStartUpTest {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosWebStartUpTest.class);
-
+    
     @Test
     void startUpPhaseReturnsWeb() {
         NacosWebStartUp startUp = new NacosWebStartUp();
         assertEquals(NacosStartUp.WEB_START_UP_PHASE, startUp.startUpPhase());
     }
-
+    
     @Test
     void getPhaseNameInStartingInfoReturnsApiName() throws Exception {
         NacosWebStartUp startUp = new NacosWebStartUp();
-        String name = (String) ReflectionTestUtils.invokeMethod(startUp, "getPhaseNameInStartingInfo");
+        String name =
+            (String) ReflectionTestUtils.invokeMethod(startUp, "getPhaseNameInStartingInfo");
         assertEquals("Nacos Server API", name);
     }
-
+    
     @Test
     void startingThenStartedStopsScheduler() {
         NacosWebStartUp startUp = new NacosWebStartUp();
@@ -57,7 +58,7 @@ class NacosWebStartUpTest {
         startUp.started();
         assertFalse((Boolean) ReflectionTestUtils.getField(startUp, "starting"));
     }
-
+    
     @Test
     void logStartedLogsWithCost() {
         NacosWebStartUp startUp = new NacosWebStartUp();
@@ -65,12 +66,13 @@ class NacosWebStartUpTest {
         startUp.logStarted(LOGGER);
         startUp.started();
     }
-
+    
     @Test
     void failedClosesContext() {
         NacosWebStartUp startUp = new NacosWebStartUp();
         startUp.starting();
-        ConfigurableApplicationContext context = org.mockito.Mockito.mock(ConfigurableApplicationContext.class);
+        ConfigurableApplicationContext context =
+            org.mockito.Mockito.mock(ConfigurableApplicationContext.class);
         startUp.failed(new RuntimeException("test"), context);
         org.mockito.Mockito.verify(context).close();
     }

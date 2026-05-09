@@ -87,14 +87,18 @@ class AddressServerMemberLookupTest {
     void setUp() throws Exception {
         EnvUtil.setEnvironment(environment);
         when(environment.getProperty("maxHealthCheckFailCount", "12")).thenReturn("12");
-        when(environment.getProperty("nacos.core.address-server.retry", Integer.class, 5)).thenReturn(5);
-        when(environment.getProperty("address.server.domain", "jmenv.tbsite.net")).thenReturn("jmenv.tbsite.net");
+        when(environment.getProperty("nacos.core.address-server.retry", Integer.class, 5))
+            .thenReturn(5);
+        when(environment.getProperty("address.server.domain", "jmenv.tbsite.net"))
+            .thenReturn("jmenv.tbsite.net");
         when(environment.getProperty("address.server.port", "8080")).thenReturn("8080");
-        when(environment.getProperty(eq("address.server.url"), any(String.class))).thenReturn("/nacos/serverlist");
+        when(environment.getProperty(eq("address.server.url"), any(String.class)))
+            .thenReturn("/nacos/serverlist");
         when(environment.getProperty(Constants.WEB_CONTEXT_PATH)).thenReturn("/nacos");
         initAddressSys();
-        when(restTemplate.<String>get(eq(addressServerUrl), any(Header.EMPTY.getClass()), any(Query.EMPTY.getClass()),
-                any(Type.class))).thenReturn(result);
+        when(restTemplate.<String>get(eq(addressServerUrl), any(Header.EMPTY.getClass()),
+            any(Query.EMPTY.getClass()),
+            any(Type.class))).thenReturn(result);
         addressServerMemberLookup = new AddressServerMemberLookup();
         ReflectionTestUtils.setField(addressServerMemberLookup, "restTemplate", restTemplate);
         
@@ -111,7 +115,8 @@ class AddressServerMemberLookupTest {
     @Test
     void testMemberChange() throws Exception {
         addressServerMemberLookup.injectMemberManager(memberManager);
-        verify(restTemplate).get(eq(addressServerUrl), any(Header.EMPTY.getClass()), any(Query.EMPTY.getClass()), any(Type.class));
+        verify(restTemplate).get(eq(addressServerUrl), any(Header.EMPTY.getClass()),
+            any(Query.EMPTY.getClass()), any(Type.class));
     }
     
     @Test
@@ -128,40 +133,45 @@ class AddressServerMemberLookupTest {
     
     @Test
     void testSyncFromAddressUrl() throws Exception {
-        RestResult<String> result = restTemplate.get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
+        RestResult<String> result =
+            restTemplate.get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
         assertEquals("1.1.1.1:8848", result.getData());
     }
-
+    
     @Test
     void testAddressServerSyncTaskRun() throws Exception {
-        Class<?> taskClass = Class.forName("com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup$AddressServerSyncTask");
+        Class<?> taskClass = Class.forName(
+            "com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup$AddressServerSyncTask");
         Constructor<?> ctor = taskClass.getDeclaredConstructor(AddressServerMemberLookup.class);
         ctor.setAccessible(true);
         Runnable task = (Runnable) ctor.newInstance(addressServerMemberLookup);
         task.run();
     }
-
+    
     @Test
     void testAddressServerSyncTaskRunWhenShutdown() throws Exception {
         ReflectionTestUtils.setField(addressServerMemberLookup, "shutdown", true);
-        Class<?> taskClass = Class.forName("com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup$AddressServerSyncTask");
+        Class<?> taskClass = Class.forName(
+            "com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup$AddressServerSyncTask");
         Constructor<?> ctor = taskClass.getDeclaredConstructor(AddressServerMemberLookup.class);
         ctor.setAccessible(true);
         Runnable task = (Runnable) ctor.newInstance(addressServerMemberLookup);
         task.run();
     }
-
+    
     @Test
     void testAddressServerSyncTaskRunWhenSyncThrows() throws Exception {
-        when(restTemplate.get(eq(addressServerUrl), any(Header.EMPTY.getClass()), any(Query.EMPTY.getClass()),
-                any(Type.class))).thenThrow(new RuntimeException("mock error"));
-        Class<?> taskClass = Class.forName("com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup$AddressServerSyncTask");
+        when(restTemplate.get(eq(addressServerUrl), any(Header.EMPTY.getClass()),
+            any(Query.EMPTY.getClass()),
+            any(Type.class))).thenThrow(new RuntimeException("mock error"));
+        Class<?> taskClass = Class.forName(
+            "com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup$AddressServerSyncTask");
         Constructor<?> ctor = taskClass.getDeclaredConstructor(AddressServerMemberLookup.class);
         ctor.setAccessible(true);
         Runnable task = (Runnable) ctor.newInstance(addressServerMemberLookup);
         task.run();
     }
-
+    
     private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {
@@ -177,7 +187,8 @@ class AddressServerMemberLookupTest {
         }
         String envAddressUrl = System.getenv("address_server_url");
         if (StringUtils.isBlank(envAddressUrl)) {
-            addressUrl = EnvUtil.getProperty("address.server.url", EnvUtil.getContextPath() + "/" + "serverlist");
+            addressUrl = EnvUtil.getProperty("address.server.url",
+                EnvUtil.getContextPath() + "/" + "serverlist");
         } else {
             addressUrl = envAddressUrl;
         }

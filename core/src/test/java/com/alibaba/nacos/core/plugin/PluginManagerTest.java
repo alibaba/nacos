@@ -60,404 +60,406 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class PluginManagerTest {
-
+    
     @Mock
     private PluginStatePersistenceService persistence;
-
+    
     @Mock
     private PluginStateSynchronizer synchronizer;
-
+    
     @Mock
     private ApplicationReadyEvent applicationReadyEvent;
-
+    
     private PluginManager manager;
-
+    
     @BeforeEach
     void setUp() {
         lenient().when(persistence.loadAllStates()).thenReturn(new HashMap<>());
         lenient().when(persistence.loadAllConfigs()).thenReturn(new HashMap<>());
         lenient().doNothing().when(persistence).saveState(any(), anyBoolean());
         lenient().doNothing().when(persistence).saveConfig(any(), anyMap());
-
+        
         manager = new PluginManager(persistence, synchronizer);
     }
-
+    
     @Test
     void isPluginEnabledDefaultValueTest() {
         boolean enabled = manager.isPluginEnabled("auth", "test");
         assertTrue(enabled);
     }
-
+    
     @Test
     void isPluginEnabledExistingPluginTest() throws NacosApiException {
         registerTestPlugin("trace", "test", false, false, false);
-
+        
         manager.setPluginEnabled("trace:test", false);
-
+        
         boolean enabled = manager.isPluginEnabled("trace", "test");
         assertFalse(enabled);
     }
-
+    
     @Test
     void setPluginEnabledNonCriticalPluginTest() throws NacosApiException {
         registerTestPlugin("trace", "test", false, false, false);
-
+        
         manager.setPluginEnabled("trace:test", false);
-
+        
         verify(synchronizer, times(1)).syncStateChange("trace:test", false);
     }
-
+    
     @Test
     void setPluginEnabledPluginNotFoundTest() {
         NacosApiException exception = assertThrows(NacosApiException.class, () -> {
             manager.setPluginEnabled("nonexistent:plugin", false);
         });
-
+        
         assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
         assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode(), exception.getDetailErrCode());
     }
-
+    
     @Test
     void setPluginEnabledDisableCriticalPluginTest() {
         registerTestPlugin("auth", "nacos", true, false, false);
-
+        
         NacosApiException exception = assertThrows(NacosApiException.class, () -> {
             manager.setPluginEnabled("auth:nacos", false);
         });
-
+        
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
         assertTrue(exception.getErrMsg().contains("Cannot disable critical plugin"));
     }
-
+    
     @Test
     void setPluginEnabledEnableCriticalPluginTest() throws NacosApiException {
         registerTestPlugin("auth", "nacos", true, false, false);
-
+        
         manager.setPluginEnabled("auth:nacos", true);
-
+        
         verify(synchronizer, times(1)).syncStateChange("auth:nacos", true);
     }
-
+    
     @Test
     void updatePluginConfigPluginNotFoundTest() {
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-
+        
         NacosApiException exception = assertThrows(NacosApiException.class, () -> {
             manager.updatePluginConfig("nonexistent:plugin", config);
         });
-
+        
         assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
         assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode(), exception.getDetailErrCode());
     }
-
+    
     @Test
     void updatePluginConfigNotConfigurablePluginTest() {
         registerTestPlugin("trace", "test", false, false, false);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-
+        
         NacosApiException exception = assertThrows(NacosApiException.class, () -> {
             manager.updatePluginConfig("trace:test", config);
         });
-
+        
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
         assertTrue(exception.getErrMsg().contains("does not support configuration"));
     }
-
+    
     @Test
     void updatePluginConfigMissingRequiredConfigTest() {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         ConfigItemDefinition requiredDef = new ConfigItemDefinition();
         requiredDef.setKey("requiredKey");
         requiredDef.setRequired(true);
-
+        
         List<ConfigItemDefinition> definitions = new ArrayList<>();
         definitions.add(requiredDef);
         plugin.setConfigDefinitions(definitions);
-
+        
         registerConfigurablePlugin("trace", "test", plugin);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("otherKey", "value");
-
+        
         NacosApiException exception = assertThrows(NacosApiException.class, () -> {
             manager.updatePluginConfig("trace:test", config);
         });
-
+        
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals(ErrorCode.PARAMETER_MISSING.getCode(), exception.getDetailErrCode());
         assertTrue(exception.getErrMsg().contains("Required config missing"));
     }
-
+    
     @Test
     void updatePluginConfigSuccessTest() throws NacosApiException {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         ConfigItemDefinition requiredDef = new ConfigItemDefinition();
         requiredDef.setKey("requiredKey");
         requiredDef.setRequired(true);
-
+        
         List<ConfigItemDefinition> definitions = new ArrayList<>();
         definitions.add(requiredDef);
         plugin.setConfigDefinitions(definitions);
-
+        
         registerConfigurablePlugin("trace", "test", plugin);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("requiredKey", "value");
-
+        
         manager.updatePluginConfig("trace:test", config);
-
+        
         verify(synchronizer, times(1)).syncConfigChange(eq("trace:test"), eq(config));
     }
-
+    
     @Test
     void listAllPluginsTest() {
         registerTestPlugin("trace", "test1", false, false, false);
         registerTestPlugin("auth", "test2", true, false, false);
-
+        
         List<PluginInfo> plugins = manager.listAllPlugins();
-
+        
         assertNotNull(plugins);
         assertEquals(2, plugins.size());
     }
-
+    
     @Test
     void listAllPluginsEmptyTest() {
         List<PluginInfo> plugins = manager.listAllPlugins();
-
+        
         assertNotNull(plugins);
         assertEquals(0, plugins.size());
     }
-
+    
     @Test
     void getPluginExistingPluginTest() {
         registerTestPlugin("trace", "test", false, false, false);
-
+        
         Optional<PluginInfo> plugin = manager.getPlugin("trace:test");
-
+        
         assertTrue(plugin.isPresent());
         assertEquals("trace:test", plugin.get().getPluginId());
         assertEquals("test", plugin.get().getPluginName());
     }
-
+    
     @Test
     void getPluginNonExistingPluginTest() {
         Optional<PluginInfo> plugin = manager.getPlugin("nonexistent:plugin");
-
+        
         assertFalse(plugin.isPresent());
     }
-
+    
     @Test
     void onApplicationEventTest() {
         manager.onApplicationEvent(applicationReadyEvent);
-
+        
         verify(persistence, times(1)).loadAllStates();
         verify(persistence, times(1)).loadAllConfigs();
     }
-
+    
     @Test
     void loadPersistedStatesTest() {
         registerTestPlugin("trace", "test", false, false, false);
-
+        
         Map<String, Boolean> states = new HashMap<>();
         states.put("trace:test", false);
         when(persistence.loadAllStates()).thenReturn(states);
-
+        
         manager.onApplicationEvent(applicationReadyEvent);
-
+        
         assertFalse(manager.isPluginEnabled("trace", "test"));
     }
-
+    
     @Test
     void loadPersistedConfigsTest() {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         registerConfigurablePlugin("trace", "test", plugin);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-
+        
         Map<String, Map<String, String>> configs = new HashMap<>();
         configs.put("trace:test", config);
         when(persistence.loadAllConfigs()).thenReturn(configs);
-
+        
         manager.onApplicationEvent(applicationReadyEvent);
-
+        
         assertEquals("value", plugin.getCurrentConfig().get("key"));
     }
-
+    
     @Test
     void validateConfigOptionalFieldTest() throws NacosApiException {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         ConfigItemDefinition optionalDef = new ConfigItemDefinition();
         optionalDef.setKey("optionalKey");
         optionalDef.setRequired(false);
-
+        
         List<ConfigItemDefinition> definitions = new ArrayList<>();
         definitions.add(optionalDef);
         plugin.setConfigDefinitions(definitions);
-
+        
         registerConfigurablePlugin("trace", "test", plugin);
-
+        
         Map<String, String> config = new HashMap<>();
-
+        
         manager.updatePluginConfig("trace:test", config);
-
+        
         verify(synchronizer, times(1)).syncConfigChange(eq("trace:test"), eq(config));
     }
-
+    
     @Test
     void validateConfigEmptyValueTest() {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         ConfigItemDefinition requiredDef = new ConfigItemDefinition();
         requiredDef.setKey("requiredKey");
         requiredDef.setRequired(true);
-
+        
         List<ConfigItemDefinition> definitions = new ArrayList<>();
         definitions.add(requiredDef);
         plugin.setConfigDefinitions(definitions);
-
+        
         registerConfigurablePlugin("trace", "test", plugin);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("requiredKey", "");
-
+        
         NacosApiException exception = assertThrows(NacosApiException.class, () -> {
             manager.updatePluginConfig("trace:test", config);
         });
-
+        
         assertEquals(ErrorCode.PARAMETER_MISSING.getCode(), exception.getDetailErrCode());
     }
-
+    
     @Test
     void applyConfigToNonConfigurablePluginTest() throws NacosApiException {
         Object plainPlugin = new Object();
         registerPluginInstance("trace", "test", plainPlugin, false, false);
-
+        
         TestConfigurablePlugin configurablePlugin = new TestConfigurablePlugin();
         registerConfigurablePlugin("trace", "configurable", configurablePlugin);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-
+        
         manager.updatePluginConfig("trace:configurable", config);
-
+        
         verify(synchronizer, times(1)).syncConfigChange(eq("trace:configurable"), eq(config));
     }
-
+    
     @Test
     void setPluginEnabledLocalOnlyTest() throws NacosApiException {
         registerTestPlugin("trace", "test", false, false, true);
-
+        
         manager.setPluginEnabled("trace:test", false, true);
-
+        
         assertFalse(manager.isPluginEnabled("trace", "test"));
         verify(synchronizer, times(0)).syncStateChange(any(), anyBoolean());
     }
-
+    
     @Test
     void updatePluginConfigLocalOnlyTest() throws NacosApiException {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         registerConfigurablePlugin("trace", "test", plugin);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-
+        
         manager.updatePluginConfig("trace:test", config, true);
-
+        
         assertEquals("value", plugin.getCurrentConfig().get("key"));
         verify(synchronizer, times(0)).syncConfigChange(any(), anyMap());
     }
-
+    
     @Test
     void getLocalPluginIdsTest() {
         registerTestPlugin("trace", "test1", false, false, false);
         registerTestPlugin("auth", "test2", false, false, false);
-
+        
         java.util.Set<String> ids = manager.getLocalPluginIds();
-
+        
         assertEquals(2, ids.size());
         assertTrue(ids.contains("trace:test1"));
         assertTrue(ids.contains("auth:test2"));
     }
-
+    
     @Test
     void isPluginAvailableTest() {
         registerTestPlugin("trace", "test", false, false, false);
-
+        
         assertTrue(manager.isPluginAvailable("trace:test"));
         assertFalse(manager.isPluginAvailable("nonexistent:plugin"));
     }
-
+    
     @Test
     void applyStateChangeDirectTest() {
         registerTestPlugin("trace", "test", false, false, true);
-
+        
         manager.applyStateChange("trace:test", false);
-
+        
         assertFalse(manager.isPluginEnabled("trace", "test"));
     }
-
+    
     @Test
     void applyConfigChangeDirectTest() {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         registerConfigurablePlugin("trace", "test", plugin);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("k", "v");
-
+        
         manager.applyConfigChange("trace:test", config);
-
+        
         assertEquals("v", plugin.getCurrentConfig().get("k"));
     }
-
+    
     @Test
     void updatePluginConfigWithNullDefinitionsTest() throws NacosApiException {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         plugin.setConfigDefinitions(null);
         registerConfigurablePlugin("trace", "test", plugin);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-
+        
         manager.updatePluginConfig("trace:test", config, true);
-
+        
         assertEquals("value", plugin.getCurrentConfig().get("key"));
     }
-
+    
     @Test
     void applyConfigChangeWhenApplyConfigThrowsTest() {
         ThrowingConfigurablePlugin plugin = new ThrowingConfigurablePlugin();
         registerConfigurablePlugin("trace", "test", plugin);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("k", "v");
-
+        
         assertThrows(RuntimeException.class, () -> manager.applyConfigChange("trace:test", config));
     }
-
+    
     @Test
     void applyStateChangeWithUnknownPluginIdTest() {
         manager.applyStateChange("unknown:plugin", true);
         assertTrue(manager.isPluginEnabled("unknown", "plugin"));
     }
-
-    private void registerTestPlugin(String type, String name, boolean critical, boolean configurable,
-            boolean enabled) {
+    
+    private void registerTestPlugin(String type, String name, boolean critical,
+        boolean configurable,
+        boolean enabled) {
         Object instance = new Object();
         registerPluginInstance(type, name, instance, critical, enabled);
     }
-
-    private void registerConfigurablePlugin(String type, String name, TestConfigurablePlugin plugin) {
+    
+    private void registerConfigurablePlugin(String type, String name,
+        TestConfigurablePlugin plugin) {
         registerConfigurablePlugin(type, name, (PluginConfigSpec) plugin);
     }
-
+    
     private void registerConfigurablePlugin(String type, String name, PluginConfigSpec plugin) {
         String pluginId = type + ":" + name;
-
+        
         PluginInfo info = new PluginInfo();
         info.setPluginId(pluginId);
         info.setPluginName(name);
@@ -469,21 +471,21 @@ class PluginManagerTest {
         info.setConfigurable(true);
         info.setConfigDefinitions(plugin.getConfigDefinitions());
         info.setConfig(plugin.getCurrentConfig());
-
+        
         Map<String, PluginInfo> registry = getPluginRegistry();
         registry.put(pluginId, info);
-
+        
         Map<String, Object> instances = getPluginInstances();
         instances.put(pluginId, plugin);
-
+        
         Map<String, Boolean> states = getPluginStates();
         states.put(pluginId, true);
     }
-
+    
     private void registerPluginInstance(String type, String name, Object instance, boolean critical,
-            boolean enabled) {
+        boolean enabled) {
         String pluginId = type + ":" + name;
-
+        
         PluginInfo info = new PluginInfo();
         info.setPluginId(pluginId);
         info.setPluginName(name);
@@ -493,71 +495,71 @@ class PluginManagerTest {
         info.setLoadTimestamp(System.currentTimeMillis());
         info.setEnabled(enabled);
         info.setConfigurable(false);
-
+        
         Map<String, PluginInfo> registry = getPluginRegistry();
         registry.put(pluginId, info);
-
+        
         Map<String, Object> instances = getPluginInstances();
         instances.put(pluginId, instance);
-
+        
         Map<String, Boolean> states = getPluginStates();
         states.put(pluginId, enabled);
     }
-
+    
     @SuppressWarnings("unchecked")
     private Map<String, PluginInfo> getPluginRegistry() {
         return (Map<String, PluginInfo>) ReflectionTestUtils.getField(manager, "pluginRegistry");
     }
-
+    
     @SuppressWarnings("unchecked")
     private Map<String, Object> getPluginInstances() {
         return (Map<String, Object>) ReflectionTestUtils.getField(manager, "pluginInstances");
     }
-
+    
     @SuppressWarnings("unchecked")
     private Map<String, Boolean> getPluginStates() {
         return (Map<String, Boolean>) ReflectionTestUtils.getField(manager, "pluginStates");
     }
-
+    
     static class TestConfigurablePlugin implements PluginConfigSpec {
-
+        
         private List<ConfigItemDefinition> configDefinitions = new ArrayList<>();
-
+        
         private Map<String, String> currentConfig = new HashMap<>();
-
+        
         @Override
         public List<ConfigItemDefinition> getConfigDefinitions() {
             return configDefinitions;
         }
-
+        
         public void setConfigDefinitions(List<ConfigItemDefinition> definitions) {
             this.configDefinitions = definitions;
         }
-
+        
         @Override
         public void applyConfig(Map<String, String> config) {
             this.currentConfig.clear();
             this.currentConfig.putAll(config);
         }
-
+        
         @Override
         public Map<String, String> getCurrentConfig() {
             return currentConfig;
         }
     }
-
+    
     static class ThrowingConfigurablePlugin implements PluginConfigSpec {
-
+        
         @Override
         public List<ConfigItemDefinition> getConfigDefinitions() {
             return new ArrayList<>();
         }
-
+        
         @Override
         public void applyConfig(Map<String, String> config) {
             throw new RuntimeException("applyConfig failed");
         }
-
+        
         @Override
         public Map<String, String> getCurrentConfig() {
             return new HashMap<>();

@@ -23,23 +23,23 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginStatusFormTest {
-
+    
     @Test
     void gettersSettersAndDefaults() {
         PluginStatusForm form = new PluginStatusForm();
         assertEquals(false, form.isLocalOnly());
-
+        
         form.setPluginType("auth");
         form.setPluginName("nacos");
         form.setEnabled(true);
         form.setLocalOnly(true);
-
+        
         assertEquals("auth", form.getPluginType());
         assertEquals("nacos", form.getPluginName());
         assertTrue(form.isEnabled());
         assertTrue(form.isLocalOnly());
     }
-
+    
     @Test
     void defaultLocalOnlyIsFalse() {
         PluginStatusForm form = new PluginStatusForm();

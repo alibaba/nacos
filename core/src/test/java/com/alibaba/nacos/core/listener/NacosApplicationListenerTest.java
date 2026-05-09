@@ -29,14 +29,15 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
  */
 @ExtendWith(MockitoExtension.class)
 class NacosApplicationListenerTest {
-
+    
     @Test
     void defaultMethodsDoNotThrow() {
         NacosApplicationListener listener = new NacosApplicationListener() {
         };
         assertDoesNotThrow(listener::starting);
         assertDoesNotThrow(() -> listener.environmentPrepared(new MockEnvironment()));
-        ConfigurableApplicationContext ctx = org.mockito.Mockito.mock(ConfigurableApplicationContext.class);
+        ConfigurableApplicationContext ctx =
+            org.mockito.Mockito.mock(ConfigurableApplicationContext.class);
         assertDoesNotThrow(() -> listener.contextPrepared(ctx));
         assertDoesNotThrow(() -> listener.contextLoaded(ctx));
         assertDoesNotThrow(() -> listener.started(ctx));

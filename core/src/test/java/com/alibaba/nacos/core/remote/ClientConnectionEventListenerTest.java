@@ -29,17 +29,18 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class ClientConnectionEventListenerTest {
-
+    
     @Mock
     private ClientConnectionEventListenerRegistry registry;
-
+    
     @Test
     void testInitRegistersListener() {
         ClientConnectionEventListener listener = new ClientConnectionEventListener() {
+            
             @Override
             public void clientConnected(Connection connect) {
             }
-
+            
             @Override
             public void clientDisConnected(Connection connect) {
             }
@@ -48,14 +49,15 @@ class ClientConnectionEventListenerTest {
         listener.init();
         verify(registry).registerClientConnectionEventListener(listener);
     }
-
+    
     @Test
     void testGetNameAndSetName() {
         ClientConnectionEventListener listener = new ClientConnectionEventListener() {
+            
             @Override
             public void clientConnected(Connection connect) {
             }
-
+            
             @Override
             public void clientDisConnected(Connection connect) {
             }
@@ -64,17 +66,18 @@ class ClientConnectionEventListenerTest {
         listener.setName("test-listener");
         assertEquals("test-listener", listener.getName());
     }
-
+    
     @Test
     void testClientConnectedAndDisConnectedInvoked() {
         final boolean[] connected = {false};
         final boolean[] disconnected = {false};
         ClientConnectionEventListener listener = new ClientConnectionEventListener() {
+            
             @Override
             public void clientConnected(Connection connect) {
                 connected[0] = true;
             }
-
+            
             @Override
             public void clientDisConnected(Connection connect) {
                 disconnected[0] = true;

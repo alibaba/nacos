@@ -71,7 +71,8 @@ class SystemUtilsTest {
     @Test
     void testPreferHostModeConstants() {
         
-        System.out.printf("System property \"%s\" = %s \n", "nacos.preferrHostnameOverIp", preferHostMode);
+        System.out.printf("System property \"%s\" = %s \n", "nacos.preferrHostnameOverIp",
+            preferHostMode);
         
         if ("true".equalsIgnoreCase(System.getProperty("nacos.preferHostnameOverIp"))) {
             assertTrue(Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME));
@@ -94,7 +95,8 @@ class SystemUtilsTest {
          * #example
          * 192.168.1.1:8848
          */
-        EnvUtil.writeClusterConf("#it is ip" + lineSeparator + "#example" + lineSeparator + "192.168.1.1:8848");
+        EnvUtil.writeClusterConf(
+            "#it is ip" + lineSeparator + "#example" + lineSeparator + "192.168.1.1:8848");
         assertEquals("192.168.1.1:8848", EnvUtil.readClusterConf().get(0));
         
         /*
@@ -103,8 +105,9 @@ class SystemUtilsTest {
          *   # 192.168.1.1:8848
          *   192.168.1.2:8848 # Instance A
          */
-        EnvUtil.writeClusterConf("#it is ip" + lineSeparator + "  #example" + lineSeparator + "  # 192.168.1.1:8848" + lineSeparator
-                + "  192.168.1.2:8848 # Instance A  " + lineSeparator + "192.168.1.3#:8848");
+        EnvUtil.writeClusterConf("#it is ip" + lineSeparator + "  #example" + lineSeparator
+            + "  # 192.168.1.1:8848" + lineSeparator
+            + "  192.168.1.2:8848 # Instance A  " + lineSeparator + "192.168.1.3#:8848");
         List<String> instanceList = EnvUtil.readClusterConf();
         assertEquals("192.168.1.2:8848", instanceList.get(0));
         assertEquals("192.168.1.3", instanceList.get(1));

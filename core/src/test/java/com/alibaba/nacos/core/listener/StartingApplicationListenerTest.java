@@ -37,24 +37,26 @@ import static org.mockito.Mockito.verify;
  */
 @ExtendWith(MockitoExtension.class)
 class StartingApplicationListenerTest {
-
+    
     @Test
     void startingDelegatesToCurrentStartUp() {
         StartingApplicationListener listener = new StartingApplicationListener();
         NacosStartUp mockStartUp = mock(NacosStartUp.class);
-        try (MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
+        try (
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
             managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
             listener.starting();
             verify(mockStartUp).starting();
         }
     }
-
+    
     @Test
     void environmentPreparedDelegatesToCurrentStartUp() {
         StartingApplicationListener listener = new StartingApplicationListener();
         NacosStartUp mockStartUp = mock(NacosStartUp.class);
         ConfigurableEnvironment environment = new MockEnvironment();
-        try (MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
+        try (
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
             managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
             listener.environmentPrepared(environment);
             verify(mockStartUp).makeWorkDir();
@@ -63,53 +65,57 @@ class StartingApplicationListenerTest {
             verify(mockStartUp).initSystemProperty();
         }
     }
-
+    
     @Test
     void contextPreparedDelegatesLogStartingInfo() {
         StartingApplicationListener listener = new StartingApplicationListener();
         NacosStartUp mockStartUp = mock(NacosStartUp.class);
         ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
-        try (MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
+        try (
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
             managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
             listener.contextPrepared(context);
             verify(mockStartUp).logStartingInfo(any());
         }
     }
-
+    
     @Test
     void contextLoadedDelegatesCustomEnvironment() {
         StartingApplicationListener listener = new StartingApplicationListener();
         NacosStartUp mockStartUp = mock(NacosStartUp.class);
         ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
-        try (MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
+        try (
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
             managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
             listener.contextLoaded(context);
             verify(mockStartUp).customEnvironment();
         }
     }
-
+    
     @Test
     void startedDelegatesToCurrentStartUp() {
         StartingApplicationListener listener = new StartingApplicationListener();
         NacosStartUp mockStartUp = mock(NacosStartUp.class);
         ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
-        try (MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
+        try (
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
             managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
             listener.started(context);
             verify(mockStartUp).started();
             verify(mockStartUp).logStarted(any());
         }
     }
-
+    
     @Test
     void failedCallsReverseStartedListAndLogs() {
         StartingApplicationListener listener = new StartingApplicationListener();
         NacosStartUp mockStartUp = mock(NacosStartUp.class);
         ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
         Throwable exception = new RuntimeException("startup fail");
-        try (MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
+        try (
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
             managerMock.when(NacosStartUpManager::getReverseStartedList)
-                    .thenReturn(java.util.Collections.singletonList(mockStartUp));
+                .thenReturn(java.util.Collections.singletonList(mockStartUp));
             listener.failed(context, exception);
             verify(mockStartUp).failed(eq(exception), eq(context));
         }

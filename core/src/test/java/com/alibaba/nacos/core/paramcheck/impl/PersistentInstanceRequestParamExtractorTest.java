@@ -33,14 +33,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * {@link PersistentInstanceRequestParamExtractor} unit test.
  */
 class PersistentInstanceRequestParamExtractorTest {
-
+    
     private PersistentInstanceRequestParamExtractor extractor;
-
+    
     @BeforeEach
     void setUp() {
         extractor = new PersistentInstanceRequestParamExtractor();
     }
-
+    
     @Test
     void extractParamWithNullInstance() {
         PersistentInstanceRequest request = new PersistentInstanceRequest();
@@ -54,7 +54,7 @@ class PersistentInstanceRequestParamExtractorTest {
         assertEquals("ns1", list.get(0).getNamespaceId());
         assertNull(list.get(0).getIp());
     }
-
+    
     @Test
     void extractParamWithInstance() {
         PersistentInstanceRequest request = new PersistentInstanceRequest();

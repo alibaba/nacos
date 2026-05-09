@@ -30,19 +30,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link ClassUtils} unit tests.
  */
 class ClassUtilsTest {
-
+    
     static abstract class GenericSuper<T> {
     }
-
+    
     static class StringChild extends GenericSuper<String> {
     }
-
+    
     interface GenericInterface<T> {
     }
-
+    
     static class StringImpl implements GenericInterface<String> {
     }
-
+    
     @Test
     void testGeneric() {
         Type type = new GenericType<List<String>>() {
@@ -50,46 +50,46 @@ class ClassUtilsTest {
         assertEquals("java.util.List<java.lang.String>", type.getTypeName());
         assertTrue(type instanceof ParameterizedType);
     }
-
+    
     @Test
     void testResolveGenericType() {
         Class<String> resolved = ClassUtils.resolveGenericType(StringChild.class);
         assertEquals(String.class, resolved);
     }
-
+    
     @Test
     void testResolveGenericTypeByInterface() {
         Class<String> resolved = ClassUtils.resolveGenericTypeByInterface(StringImpl.class);
         assertEquals(String.class, resolved);
     }
-
+    
     @Test
     void testFindClassByName() {
         Class clazz = ClassUtils.findClassByName("java.lang.Integer");
         assertEquals("java.lang.Integer", clazz.getName());
     }
-
+    
     @Test
     void testFindClassByNameNotFound() {
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> ClassUtils.findClassByName("not.exist.ClassXYZ"));
+            () -> ClassUtils.findClassByName("not.exist.ClassXYZ"));
         assertEquals("this class name not found", ex.getMessage());
     }
-
+    
     @Test
     void testGetName() {
         final String name = "java.lang.Integer";
         Integer val = 1;
         assertEquals(name, ClassUtils.getName(val));
         assertEquals(name, ClassUtils.getName(Integer.class));
-
+        
         assertEquals(name, ClassUtils.getCanonicalName(val));
         assertEquals(name, ClassUtils.getCanonicalName(Integer.class));
-
+        
         assertEquals("Integer", ClassUtils.getSimplaName(val));
         assertEquals("Integer", ClassUtils.getSimplaName(Integer.class));
     }
-
+    
     @Test
     void testGetNameRequiresNonnull() {
         assertThrows(NullPointerException.class, () -> ClassUtils.getName((Object) null));

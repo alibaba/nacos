@@ -25,14 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PushAckIdGeneratorTest {
-
+    
     @Test
     void testGetNextIdIncrements() {
         long id1 = PushAckIdGenerator.getNextId();
         long id2 = PushAckIdGenerator.getNextId();
         assertTrue(id2 > id1);
     }
-
+    
     @Test
     void testGetNextIdResetWhenNearMaxValue() throws Exception {
         Field idField = PushAckIdGenerator.class.getDeclaredField("id");

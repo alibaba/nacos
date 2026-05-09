@@ -36,7 +36,8 @@ public interface ConnectionGeneratorService {
      * @param channel not null
      * @return connection
      */
-    Connection getConnection(ConnectionMeta metaInfo, StreamObserver streamObserver, Channel channel);
+    Connection getConnection(ConnectionMeta metaInfo, StreamObserver streamObserver,
+        Channel channel);
     
     /**
      * get connection type.

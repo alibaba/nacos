@@ -29,16 +29,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * {@link LoggingApplicationListener} unit test.
  */
 class LoggingApplicationListenerTest {
-
+    
     private static final String CONFIG_PROPERTY =
-            org.springframework.boot.context.logging.LoggingApplicationListener.CONFIG_PROPERTY;
-    private static final String DEFAULT_NACOS_LOGBACK_LOCATION = "classpath:META-INF/logback/nacos.xml";
-
+        org.springframework.boot.context.logging.LoggingApplicationListener.CONFIG_PROPERTY;
+    private static final String DEFAULT_NACOS_LOGBACK_LOCATION =
+        "classpath:META-INF/logback/nacos.xml";
+    
     @AfterEach
     void tearDown() {
         System.clearProperty(CONFIG_PROPERTY);
     }
-
+    
     @Test
     void environmentPreparedWhenPropertyAbsentSetsSystemProperty() {
         StandardEnvironment environment = new StandardEnvironment();
@@ -47,13 +48,14 @@ class LoggingApplicationListenerTest {
         listener.environmentPrepared(environment);
         assertEquals(DEFAULT_NACOS_LOGBACK_LOCATION, System.getProperty(CONFIG_PROPERTY));
     }
-
+    
     @Test
     void environmentPreparedWhenPropertyPresentDoesNotOverride() {
         String customLocation = "classpath:custom-logback.xml";
         StandardEnvironment environment = new StandardEnvironment();
         MutablePropertySources sources = environment.getPropertySources();
-        sources.addFirst(new MapPropertySource("test", java.util.Collections.singletonMap(CONFIG_PROPERTY, customLocation)));
+        sources.addFirst(new MapPropertySource("test",
+            java.util.Collections.singletonMap(CONFIG_PROPERTY, customLocation)));
         LoggingApplicationListener listener = new LoggingApplicationListener();
         listener.environmentPrepared(environment);
         assertEquals(customLocation, environment.getProperty(CONFIG_PROPERTY));

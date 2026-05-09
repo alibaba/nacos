@@ -116,7 +116,8 @@ class RaftConfigTest {
     void testToStringWhenJacksonThrowsReturnsDataString() {
         config.setVal("k", "v");
         try (MockedStatic<JacksonUtils> jacksonMock = Mockito.mockStatic(JacksonUtils.class)) {
-            jacksonMock.when(() -> JacksonUtils.toJson(config)).thenThrow(new RuntimeException("serialize error"));
+            jacksonMock.when(() -> JacksonUtils.toJson(config))
+                .thenThrow(new RuntimeException("serialize error"));
             String s = config.toString();
             assertNotNull(s);
             assertTrue(s.contains("k") && s.contains("v"));

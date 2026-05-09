@@ -82,9 +82,11 @@ public class ExtractorManager {
         }
     }
     
-    private static Map<Class<? extends AbstractRpcParamExtractor>, AbstractRpcParamExtractor> rpcManager = new ConcurrentHashMap<>();
+    private static Map<Class<? extends AbstractRpcParamExtractor>, AbstractRpcParamExtractor> rpcManager =
+        new ConcurrentHashMap<>();
     
-    private static Map<Class<? extends AbstractHttpParamExtractor>, AbstractHttpParamExtractor> httpManager = new ConcurrentHashMap<>();
+    private static Map<Class<? extends AbstractHttpParamExtractor>, AbstractHttpParamExtractor> httpManager =
+        new ConcurrentHashMap<>();
     
     static {
         NacosServiceLoader.load(AbstractHttpParamExtractor.class).forEach(checker -> {
@@ -96,10 +98,12 @@ public class ExtractorManager {
     }
     
     public static AbstractRpcParamExtractor getRpcExtractor(Extractor extractor) {
-        return rpcManager.computeIfAbsent(extractor.rpcExtractor(), (key) -> new DefaultGrpcExtractor());
+        return rpcManager.computeIfAbsent(extractor.rpcExtractor(),
+            (key) -> new DefaultGrpcExtractor());
     }
     
     public static AbstractHttpParamExtractor getHttpExtractor(Extractor extractor) {
-        return httpManager.computeIfAbsent(extractor.httpExtractor(), (key) -> new DefaultHttpExtractor());
+        return httpManager.computeIfAbsent(extractor.httpExtractor(),
+            (key) -> new DefaultHttpExtractor());
     }
 }

@@ -36,28 +36,31 @@ public abstract class AbstractProcessor {
     public AbstractProcessor() {
     }
     
-    protected void handleRequest(final JRaftServer server, final String group, final RpcContext rpcCtx, Message message) {
+    protected void handleRequest(final JRaftServer server, final String group,
+        final RpcContext rpcCtx, Message message) {
         try {
             final JRaftServer.RaftGroupTuple tuple = server.findTupleByGroup(group);
             if (Objects.isNull(tuple)) {
                 rpcCtx.sendResponse(Response.newBuilder().setSuccess(false)
-                        .setErrMsg("Could not find the corresponding Raft Group : " + group).build());
+                    .setErrMsg("Could not find the corresponding Raft Group : " + group).build());
                 return;
             }
             if (tuple.getNode().isLeader()) {
                 execute(server, rpcCtx, message, tuple);
             } else {
                 rpcCtx.sendResponse(
-                        Response.newBuilder().setSuccess(false).setErrMsg("Could not find leader : " + group).build());
+                    Response.newBuilder().setSuccess(false)
+                        .setErrMsg("Could not find leader : " + group).build());
             }
         } catch (Throwable e) {
             Loggers.RAFT.error("handleRequest has error : ", e);
-            rpcCtx.sendResponse(Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build());
+            rpcCtx.sendResponse(
+                Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build());
         }
     }
     
     protected void execute(JRaftServer server, final RpcContext asyncCtx, final Message message,
-            final JRaftServer.RaftGroupTuple tuple) {
+        final JRaftServer.RaftGroupTuple tuple) {
         FailoverClosure closure = new FailoverClosure() {
             
             Response data;
@@ -78,7 +81,8 @@ public abstract class AbstractProcessor {
             public void run(Status status) {
                 if (Objects.nonNull(ex)) {
                     Loggers.RAFT.error("execute has error : ", ex);
-                    asyncCtx.sendResponse(Response.newBuilder().setErrMsg(ex.toString()).setSuccess(false).build());
+                    asyncCtx.sendResponse(
+                        Response.newBuilder().setErrMsg(ex.toString()).setSuccess(false).build());
                 } else {
                     asyncCtx.sendResponse(data);
                 }

@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginInfoVOTest {
-
+    
     @Test
     void gettersSettersAndToString() {
         PluginInfoVO vo = new PluginInfoVO();
@@ -35,7 +35,7 @@ class PluginInfoVOTest {
         vo.setExclusive(true);
         vo.setAvailableNodeCount(3);
         vo.setTotalNodeCount(5);
-
+        
         assertEquals("auth:nacos", vo.getPluginId());
         assertEquals("auth", vo.getPluginType());
         assertEquals("nacos", vo.getPluginName());
@@ -45,7 +45,7 @@ class PluginInfoVOTest {
         assertEquals(true, vo.getExclusive());
         assertEquals(3, vo.getAvailableNodeCount());
         assertEquals(5, vo.getTotalNodeCount());
-
+        
         String s = vo.toString();
         assertNotNull(s);
         assertTrue(s.contains("auth:nacos"));

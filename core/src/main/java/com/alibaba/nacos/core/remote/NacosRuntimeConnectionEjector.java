@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
     
     public NacosRuntimeConnectionEjector() {
-    
+        
     }
     
     /**
@@ -62,8 +62,9 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
             Map<String, Connection> connections = connectionManager.connections;
             int totalCount = connections.size();
             int currentSdkClientCount = connectionManager.currentSdkClientCount();
-            Loggers.CONNECTION.info("Long connection metrics detail ,Total count ={}, sdkCount={},clusterCount={}",
-                    totalCount, currentSdkClientCount, (totalCount - currentSdkClientCount));
+            Loggers.CONNECTION.info(
+                "Long connection metrics detail ,Total count ={}, sdkCount={},clusterCount={}",
+                totalCount, currentSdkClientCount, (totalCount - currentSdkClientCount));
             Set<String> outDatedConnections = new HashSet<>();
             long now = System.currentTimeMillis();
             //outdated connections collect.
@@ -82,10 +83,13 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
                 final CountDownLatch latch = new CountDownLatch(outDatedConnections.size());
                 for (String outDateConnectionId : outDatedConnections) {
                     try {
-                        Connection connection = connectionManager.getConnection(outDateConnectionId);
+                        Connection connection =
+                            connectionManager.getConnection(outDateConnectionId);
                         if (connection != null) {
-                            ClientDetectionRequest clientDetectionRequest = new ClientDetectionRequest();
+                            ClientDetectionRequest clientDetectionRequest =
+                                new ClientDetectionRequest();
                             connection.asyncRequest(clientDetectionRequest, new RequestCallBack() {
+                                
                                 @Override
                                 public Executor getExecutor() {
                                     return null;
@@ -110,23 +114,27 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
                                     latch.countDown();
                                 }
                             });
-                            Loggers.CONNECTION.info("[{}]send connection active request ", outDateConnectionId);
+                            Loggers.CONNECTION.info("[{}]send connection active request ",
+                                outDateConnectionId);
                         } else {
                             latch.countDown();
                         }
                     } catch (ConnectionAlreadyClosedException e) {
                         latch.countDown();
                     } catch (Exception e) {
-                        Loggers.CONNECTION.error("[{}]Error occurs when check client active detection ,error={}",
-                                outDateConnectionId, e);
+                        Loggers.CONNECTION.error(
+                            "[{}]Error occurs when check client active detection ,error={}",
+                            outDateConnectionId, e);
                         latch.countDown();
                     }
                 }
                 latch.await(5000L, TimeUnit.MILLISECONDS);
-                Loggers.CONNECTION.info("Out dated connection check successCount={}", successConnections.size());
+                Loggers.CONNECTION.info("Out dated connection check successCount={}",
+                    successConnections.size());
                 for (String outDateConnectionId : outDatedConnections) {
                     if (!successConnections.contains(outDateConnectionId)) {
-                        Loggers.CONNECTION.info("[{}]Unregister Out dated connection....", outDateConnectionId);
+                        Loggers.CONNECTION.info("[{}]Unregister Out dated connection....",
+                            outDateConnectionId);
                         connectionManager.unregister(outDateConnectionId);
                     }
                 }
@@ -144,8 +152,9 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
         // if not count set, then give up
         if (getLoadClient() > 0) {
             try {
-                Loggers.CONNECTION.info("Connection overLimit check task start, loadCount={}, redirectAddress={}",
-                        getLoadClient(), getRedirectAddress());
+                Loggers.CONNECTION.info(
+                    "Connection overLimit check task start, loadCount={}, redirectAddress={}",
+                    getLoadClient(), getRedirectAddress());
                 // check count
                 int currentConnectionCount = connectionManager.getCurrentConnectionCount();
                 int ejectingCount = currentConnectionCount - getLoadClient();
@@ -169,8 +178,9 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
                         }
                     }
                 }
-                Loggers.CONNECTION.info("Connection overLimit task end, current loadCount={}, has ejected loadCont={}",
-                        connectionManager.getCurrentConnectionCount(), getLoadClient() - ejectingCount);
+                Loggers.CONNECTION.info(
+                    "Connection overLimit task end, current loadCount={}, has ejected loadCont={}",
+                    connectionManager.getCurrentConnectionCount(), getLoadClient() - ejectingCount);
             } catch (Throwable e) {
                 Loggers.CONNECTION.error("Error occurs during connection overLimit... ", e);
             }

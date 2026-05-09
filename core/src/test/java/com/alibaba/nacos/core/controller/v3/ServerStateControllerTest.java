@@ -102,7 +102,8 @@ class ServerStateControllerTest {
     
     @Test
     void testReadinessFailure() throws Exception {
-        when(holder.checkReadiness()).thenReturn(new ReadinessResult(false, "module1 not in readiness"));
+        when(holder.checkReadiness())
+            .thenReturn(new ReadinessResult(false, "module1 not in readiness"));
         
         Result<String> result = serverStateController.readiness();
         

@@ -62,9 +62,11 @@ class StringTopNCounterTest {
     @Test
     void testIncrement() {
         stringTopNCounter.set("test", 0);
-        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 1, new String[] {"test"}, new Integer[] {0});
+        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 1, new String[] {"test"},
+            new Integer[] {0});
         stringTopNCounter.increment("test");
-        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 1, new String[] {"test"}, new Integer[] {1});
+        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 1, new String[] {"test"},
+            new Integer[] {1});
     }
     
     @Test
@@ -72,9 +74,11 @@ class StringTopNCounterTest {
         stringTopNCounter.set("test", 1);
         stringTopNCounter.set("test1", 2);
         stringTopNCounter.set("test2", 3);
-        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 3, new String[] {"test2", "test1", "test"}, new Integer[] {3, 2, 1});
+        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 3,
+            new String[] {"test2", "test1", "test"}, new Integer[] {3, 2, 1});
         stringTopNCounter.reset();
-        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 0, new String[] {}, new Integer[] {});
+        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 0, new String[] {},
+            new Integer[] {});
     }
     
     @Test
@@ -83,8 +87,9 @@ class StringTopNCounterTest {
             stringTopNCounter.set("test" + i, i);
         }
         assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 10,
-                new String[] {"test19", "test18", "test17", "test16", "test15", "test14", "test13", "test12", "test11", "test10"},
-                new Integer[] {19, 18, 17, 16, 15, 14, 13, 12, 11, 10});
+            new String[] {"test19", "test18", "test17", "test16", "test15", "test14", "test13",
+                    "test12", "test11", "test10"},
+            new Integer[] {19, 18, 17, 16, 15, 14, 13, 12, 11, 10});
     }
     
     @Test
@@ -94,7 +99,7 @@ class StringTopNCounterTest {
         List<Pair<String, AtomicInteger>> actual = stringTopNCounter.getCounterOfTopN(10);
         assertTopNCounter(actual, 2, new String[] {"a", "b"}, new Integer[] {3, 2});
     }
-
+    
     @Test
     void testForTopnDisabled() {
         MockEnvironment env = new MockEnvironment();
@@ -104,10 +109,12 @@ class StringTopNCounterTest {
         stringTopNCounter.set("test", 1);
         stringTopNCounter.set("test1", 2);
         stringTopNCounter.set("test2", 3);
-        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 0, new String[] {}, new Integer[] {});
+        assertTopNCounter(stringTopNCounter.getCounterOfTopN(10), 0, new String[] {},
+            new Integer[] {});
     }
     
-    private void assertTopNCounter(List<Pair<String, AtomicInteger>> actual, int size, String[] keys, Integer[] value) {
+    private void assertTopNCounter(List<Pair<String, AtomicInteger>> actual, int size,
+        String[] keys, Integer[] value) {
         assertEquals(size, actual.size());
         for (int i = 0; i < size; i++) {
             assertTrue(Arrays.asList(keys).contains(actual.get(i).getFirst()));

@@ -42,45 +42,55 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class GrpcServerThreadPoolMonitorTest {
-
+    
     @Mock
     private GrpcSdkServer sdkServer;
-
+    
     @Mock
     private GrpcClusterServer clusterServer;
-
+    
     @Test
     void configureTasksWhenDisabledDoesNotAddTask() {
         GrpcServerThreadPoolMonitor monitor = new GrpcServerThreadPoolMonitor();
         org.springframework.test.util.ReflectionTestUtils.setField(monitor, "sdkServer", sdkServer);
-        org.springframework.test.util.ReflectionTestUtils.setField(monitor, "clusterServer", clusterServer);
+        org.springframework.test.util.ReflectionTestUtils.setField(monitor, "clusterServer",
+            clusterServer);
         ScheduledTaskRegistrar registrar = new ScheduledTaskRegistrar();
-
+        
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class)) {
-            envMock.when(() -> EnvUtil.getProperty(eq("nacos.metric.grpc.server.executor.enabled"), eq(Boolean.class), eq(true)))
-                    .thenReturn(false);
+            envMock
+                .when(() -> EnvUtil.getProperty(eq("nacos.metric.grpc.server.executor.enabled"),
+                    eq(Boolean.class), eq(true)))
+                .thenReturn(false);
             monitor.configureTasks(registrar);
         }
         assertTrue(registrar.getFixedRateTaskList().isEmpty());
     }
-
+    
     @Test
     void configureTasksWhenEnabledAddsFixedRateTask() {
-        ThreadPoolExecutor sdkExecutor = new ThreadPoolExecutor(1, 2, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        ThreadPoolExecutor clusterExecutor = new ThreadPoolExecutor(1, 2, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+        ThreadPoolExecutor sdkExecutor =
+            new ThreadPoolExecutor(1, 2, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+        ThreadPoolExecutor clusterExecutor =
+            new ThreadPoolExecutor(1, 2, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         when(sdkServer.getRpcExecutor()).thenReturn(sdkExecutor);
         when(clusterServer.getRpcExecutor()).thenReturn(clusterExecutor);
-
+        
         GrpcServerThreadPoolMonitor monitor = new GrpcServerThreadPoolMonitor();
         org.springframework.test.util.ReflectionTestUtils.setField(monitor, "sdkServer", sdkServer);
-        org.springframework.test.util.ReflectionTestUtils.setField(monitor, "clusterServer", clusterServer);
+        org.springframework.test.util.ReflectionTestUtils.setField(monitor, "clusterServer",
+            clusterServer);
         ScheduledTaskRegistrar registrar = new ScheduledTaskRegistrar();
-
+        
         try (MockedStatic<EnvUtil> envMock = mockStatic(EnvUtil.class)) {
-            envMock.when(() -> EnvUtil.getProperty(eq("nacos.metric.grpc.server.executor.enabled"), eq(Boolean.class), eq(true)))
-                    .thenReturn(true);
-            envMock.when(() -> EnvUtil.getProperty(eq("nacos.metric.grpc.server.executor.interval"), eq("15000")))
-                    .thenReturn("15000");
+            envMock
+                .when(() -> EnvUtil.getProperty(eq("nacos.metric.grpc.server.executor.enabled"),
+                    eq(Boolean.class), eq(true)))
+                .thenReturn(true);
+            envMock
+                .when(() -> EnvUtil.getProperty(eq("nacos.metric.grpc.server.executor.interval"),
+                    eq("15000")))
+                .thenReturn("15000");
             monitor.configureTasks(registrar);
         }
         assertFalse(registrar.getFixedRateTaskList().isEmpty());

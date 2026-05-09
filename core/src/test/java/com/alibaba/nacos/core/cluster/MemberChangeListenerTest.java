@@ -22,20 +22,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MemberChangeListenerTest {
-
+    
     @Test
     void subscribeTypeReturnsMembersChangeEvent() {
         MemberChangeListener listener = new MemberChangeListener() {
+            
             @Override
             public void onEvent(MembersChangeEvent event) {
             }
         };
         assertEquals(MembersChangeEvent.class, listener.subscribeType());
     }
-
+    
     @Test
     void ignoreExpireEventReturnsTrue() {
         MemberChangeListener listener = new MemberChangeListener() {
+            
             @Override
             public void onEvent(MembersChangeEvent event) {
             }

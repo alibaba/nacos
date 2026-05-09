@@ -30,41 +30,42 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConnectionMetaTest {
-
+    
     @Test
     void testGetLabelAndGetTag() {
         Map<String, String> labels = new HashMap<>();
         labels.put("k1", "v1");
         labels.put(Constants.VIPSERVER_TAG, "vipTag");
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "app", labels);
+            "grpc", "3.0.0", "app", labels);
         assertEquals("v1", meta.getLabel("k1"));
         assertEquals("vipTag", meta.getTag());
         assertNull(meta.getLabel("absent"));
     }
-
+    
     @Test
     void testIsSdkSourceAndIsClusterSource() {
         Map<String, String> labelsSdk = new HashMap<>();
         labelsSdk.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         ConnectionMeta metaSdk = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "app", labelsSdk);
+            "grpc", "3.0.0", "app", labelsSdk);
         assertTrue(metaSdk.isSdkSource());
         assertFalse(metaSdk.isClusterSource());
-
+        
         Map<String, String> labelsCluster = new HashMap<>();
         labelsCluster.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_CLUSTER);
-        ConnectionMeta metaCluster = new ConnectionMeta("id2", "127.0.0.1", "127.0.0.1", 8080, 18080,
+        ConnectionMeta metaCluster =
+            new ConnectionMeta("id2", "127.0.0.1", "127.0.0.1", 8080, 18080,
                 "grpc", "3.0.0", "app", labelsCluster);
         assertFalse(metaCluster.isSdkSource());
         assertTrue(metaCluster.isClusterSource());
-
+        
         ConnectionMeta metaNone = new ConnectionMeta("id3", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "app", new HashMap<>());
+            "grpc", "3.0.0", "app", new HashMap<>());
         assertFalse(metaNone.isSdkSource());
         assertFalse(metaNone.isClusterSource());
     }
-
+    
     @Test
     void testGetAppLabels() {
         Map<String, String> labels = new HashMap<>();
@@ -72,28 +73,28 @@ class ConnectionMetaTest {
         labels.put(Constants.APP_CONN_PREFIX + "key1", "value1");
         labels.put(Constants.APP_CONN_PREFIX + "key2", "value2");
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "2.0.0", "app", labels);
+            "grpc", "2.0.0", "app", labels);
         Map<String, String> appLabels = meta.getAppLabels();
         assertEquals("myApp", appLabels.get(Constants.APPNAME));
         assertEquals("2.0.0", appLabels.get(Constants.CLIENT_VERSION_KEY));
         assertEquals("value1", appLabels.get("key1"));
         assertEquals("value2", appLabels.get("key2"));
     }
-
+    
     @Test
     void testSetLabels() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "app", new HashMap<>());
+            "grpc", "3.0.0", "app", new HashMap<>());
         Map<String, String> newLabels = new HashMap<>();
         newLabels.put("a", "b");
         meta.setLabels(newLabels);
         assertEquals(newLabels, meta.getLabels());
     }
-
+    
     @Test
     void testRecordPushQueueBlockTimesAndClearAndLastOver() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "app", new HashMap<>());
+            "grpc", "3.0.0", "app", new HashMap<>());
         meta.recordPushQueueBlockTimes();
         assertFalse(meta.pushQueueBlockTimesLastOver(100_000L));
         meta.recordPushQueueBlockTimes();
@@ -109,20 +110,20 @@ class ConnectionMetaTest {
         meta.recordPushQueueBlockTimes();
         assertTrue(meta.pushQueueBlockTimesLastOver(1L));
     }
-
+    
     @Test
     void testTlsProtected() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "app", new HashMap<>());
+            "grpc", "3.0.0", "app", new HashMap<>());
         assertFalse(meta.isTlsProtected());
         meta.setTlsProtected(true);
         assertTrue(meta.isTlsProtected());
     }
-
+    
     @Test
     void testSettersAndGetters() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "app", new HashMap<>());
+            "grpc", "3.0.0", "app", new HashMap<>());
         Date d = new Date();
         meta.setCreateTime(d);
         assertEquals(d, meta.getCreateTime());
@@ -143,11 +144,11 @@ class ConnectionMetaTest {
         meta.setNamespaceId("ns1");
         assertEquals("ns1", meta.getNamespaceId());
     }
-
+    
     @Test
     void testToString() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "app", new HashMap<>());
+            "grpc", "3.0.0", "app", new HashMap<>());
         String s = meta.toString();
         assertTrue(s.contains("ConnectionMeta"));
         assertTrue(s.contains("connectionId='id'"));

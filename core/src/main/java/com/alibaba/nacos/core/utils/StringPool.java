@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class StringPool {
     
-    private static Cache<String, String> groupKeyCache = CacheBuilder.newBuilder().maximumSize(5000000)
+    private static Cache<String, String> groupKeyCache =
+        CacheBuilder.newBuilder().maximumSize(5000000)
             .expireAfterAccess(60, TimeUnit.SECONDS).build();
     
     /**

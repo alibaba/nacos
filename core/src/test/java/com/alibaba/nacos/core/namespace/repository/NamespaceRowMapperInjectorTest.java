@@ -30,37 +30,37 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.eq;
 
 class NamespaceRowMapperInjectorTest {
-
+    
     @Test
     void testInitRegistersRowMapper() {
         NamespaceRowMapperInjector injector = new NamespaceRowMapperInjector();
         String key = TENANT_INFO_ROW_MAPPER.getClass().getCanonicalName();
         assertSame(TENANT_INFO_ROW_MAPPER, RowMapperManager.getRowMapper(key));
     }
-
+    
     @Test
     void testTenantInfoRowMapperMapsRow() throws SQLException {
         ResultSet rs = Mockito.mock(ResultSet.class);
         Mockito.when(rs.getString(eq("tenant_id"))).thenReturn("tid-1");
         Mockito.when(rs.getString(eq("tenant_name"))).thenReturn("tenant-name");
         Mockito.when(rs.getString(eq("tenant_desc"))).thenReturn("tenant-desc");
-
+        
         TenantInfo info = TENANT_INFO_ROW_MAPPER.mapRow(rs, 1);
-
+        
         assertEquals("tid-1", info.getTenantId());
         assertEquals("tenant-name", info.getTenantName());
         assertEquals("tenant-desc", info.getTenantDesc());
     }
-
+    
     @Test
     void testTenantInfoRowMapperHandlesNullColumns() throws SQLException {
         ResultSet rs = Mockito.mock(ResultSet.class);
         Mockito.when(rs.getString(eq("tenant_id"))).thenReturn(null);
         Mockito.when(rs.getString(eq("tenant_name"))).thenReturn(null);
         Mockito.when(rs.getString(eq("tenant_desc"))).thenReturn(null);
-
+        
         TenantInfo info = TENANT_INFO_ROW_MAPPER.mapRow(rs, 0);
-
+        
         assertEquals(null, info.getTenantId());
         assertEquals(null, info.getTenantName());
         assertEquals(null, info.getTenantDesc());

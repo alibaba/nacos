@@ -47,16 +47,17 @@ public class AddressTransportFilter extends ServerTransportFilter {
     @Override
     public Attributes transportReady(Attributes transportAttrs) {
         InetSocketAddress remoteAddress = (InetSocketAddress) transportAttrs
-                .get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
+            .get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
         InetSocketAddress localAddress = (InetSocketAddress) transportAttrs
-                .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
+            .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
         int remotePort = remoteAddress.getPort();
         int localPort = localAddress.getPort();
         String remoteIp = remoteAddress.getAddress().getHostAddress();
         Attributes attrWrapper = transportAttrs.toBuilder()
-                .set(ATTR_TRANS_KEY_CONN_ID, System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort)
-                .set(ATTR_TRANS_KEY_REMOTE_IP, remoteIp).set(ATTR_TRANS_KEY_REMOTE_PORT, remotePort)
-                .set(ATTR_TRANS_KEY_LOCAL_PORT, localPort).build();
+            .set(ATTR_TRANS_KEY_CONN_ID,
+                System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort)
+            .set(ATTR_TRANS_KEY_REMOTE_IP, remoteIp).set(ATTR_TRANS_KEY_REMOTE_PORT, remotePort)
+            .set(ATTR_TRANS_KEY_LOCAL_PORT, localPort).build();
         String connectionId = attrWrapper.get(ATTR_TRANS_KEY_CONN_ID);
         Loggers.REMOTE_DIGEST.info("Connection transportReady,connectionId = {} ", connectionId);
         return attrWrapper;
@@ -73,7 +74,7 @@ public class AddressTransportFilter extends ServerTransportFilter {
         }
         if (StringUtils.isNotBlank(connectionId)) {
             Loggers.REMOTE_DIGEST
-                    .info("Connection transportTerminated,connectionId = {} ", connectionId);
+                .info("Connection transportTerminated,connectionId = {} ", connectionId);
             connectionManager.unregister(connectionId);
         }
     }

@@ -23,17 +23,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TaskTest {
-
+    
     @Test
     void runExecutesBodyAndAfter() {
         AtomicInteger bodyCount = new AtomicInteger(0);
         AtomicInteger afterCount = new AtomicInteger(0);
         Task task = new Task() {
+            
             @Override
             protected void executeBody() {
                 bodyCount.incrementAndGet();
             }
-
+            
             @Override
             protected void after() {
                 afterCount.incrementAndGet();
@@ -43,17 +44,18 @@ class TaskTest {
         assertTrue(bodyCount.get() == 1);
         assertTrue(afterCount.get() == 1);
     }
-
+    
     @Test
     void runWhenShutdownSkipsBodyAndAfter() {
         AtomicInteger bodyCount = new AtomicInteger(0);
         AtomicInteger afterCount = new AtomicInteger(0);
         Task task = new Task() {
+            
             @Override
             protected void executeBody() {
                 bodyCount.incrementAndGet();
             }
-
+            
             @Override
             protected void after() {
                 afterCount.incrementAndGet();
@@ -65,16 +67,17 @@ class TaskTest {
         assertTrue(bodyCount.get() == 0);
         assertTrue(afterCount.get() == 0);
     }
-
+    
     @Test
     void shutdownAfterExecuteBodySkipsAfter() {
         AtomicInteger afterCount = new AtomicInteger(0);
         Task task = new Task() {
+            
             @Override
             protected void executeBody() {
                 shutdown();
             }
-
+            
             @Override
             protected void after() {
                 afterCount.incrementAndGet();
@@ -84,16 +87,17 @@ class TaskTest {
         assertTrue(task.shutdown);
         assertTrue(afterCount.get() == 0);
     }
-
+    
     @Test
     void runWhenExecuteBodyThrowsStillCallsAfter() {
         AtomicInteger afterCount = new AtomicInteger(0);
         Task task = new Task() {
+            
             @Override
             protected void executeBody() {
                 throw new RuntimeException("test");
             }
-
+            
             @Override
             protected void after() {
                 afterCount.incrementAndGet();
@@ -102,11 +106,12 @@ class TaskTest {
         task.run();
         assertTrue(afterCount.get() == 1);
     }
-
+    
     @Test
     void runCallsDefaultAfterWhenNotOverridden() {
         AtomicInteger bodyCount = new AtomicInteger(0);
         Task task = new Task() {
+            
             @Override
             protected void executeBody() {
                 bodyCount.incrementAndGet();

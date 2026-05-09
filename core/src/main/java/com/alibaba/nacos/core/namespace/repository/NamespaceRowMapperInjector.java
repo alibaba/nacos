@@ -41,8 +41,9 @@ public class NamespaceRowMapperInjector {
     private void injectNamespaceRowMapper() {
         // TENANT_INFO_ROW_MAPPER
         RowMapperManager
-                .registerRowMapper(NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER.getClass().getCanonicalName(),
-                        NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER);
+            .registerRowMapper(
+                NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER.getClass().getCanonicalName(),
+                NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER);
     }
     
     public static final class TenantInfoRowMapper implements RowMapper<TenantInfo> {

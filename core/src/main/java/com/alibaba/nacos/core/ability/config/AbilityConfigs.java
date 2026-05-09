@@ -49,7 +49,8 @@ public class AbilityConfigs extends Subscriber<ServerConfigChangeEvent> {
     
     private final Set<AbilityKey> serverAbilityKeys = new ConcurrentHashSet<>();
     
-    private AbstractAbilityControlManager abilityHandlerRegistry = NacosAbilityManagerHolder.getInstance();
+    private AbstractAbilityControlManager abilityHandlerRegistry =
+        NacosAbilityManagerHolder.getInstance();
     
     public AbilityConfigs() {
         // load ability
@@ -70,7 +71,9 @@ public class AbilityConfigs extends Subscriber<ServerConfigChangeEvent> {
                     newValues.put(abilityKey, property);
                 }
             } catch (Exception e) {
-                LOGGER.warn("Update ability config from env failed, use old val, ability : {} , because : {}", key, e);
+                LOGGER.warn(
+                    "Update ability config from env failed, use old val, ability : {} , because : {}",
+                    key, e);
             }
         });
         // update

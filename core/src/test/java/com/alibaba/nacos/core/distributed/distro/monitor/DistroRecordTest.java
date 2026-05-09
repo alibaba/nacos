@@ -25,21 +25,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * {@link DistroRecord} unit test.
  */
 class DistroRecordTest {
-
+    
     private static final String TYPE = "testType";
-
+    
     private DistroRecord distroRecord;
-
+    
     @BeforeEach
     void setUp() {
         distroRecord = new DistroRecord(TYPE);
     }
-
+    
     @Test
     void testGetType() {
         assertEquals(TYPE, distroRecord.getType());
     }
-
+    
     @Test
     void testSyncSuccess() {
         distroRecord.syncSuccess();
@@ -48,7 +48,7 @@ class DistroRecordTest {
         assertEquals(2, distroRecord.getSuccessfulSyncCount());
         assertEquals(0, distroRecord.getFailedSyncCount());
     }
-
+    
     @Test
     void testSyncFail() {
         distroRecord.syncFail();
@@ -57,7 +57,7 @@ class DistroRecordTest {
         assertEquals(0, distroRecord.getSuccessfulSyncCount());
         assertEquals(2, distroRecord.getFailedSyncCount());
     }
-
+    
     @Test
     void testVerifyFail() {
         distroRecord.verifyFail();
@@ -65,7 +65,7 @@ class DistroRecordTest {
         distroRecord.verifyFail();
         assertEquals(3, distroRecord.getFailedVerifyCount());
     }
-
+    
     @Test
     void testMixedSyncAndVerify() {
         distroRecord.syncSuccess();

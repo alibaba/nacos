@@ -25,17 +25,17 @@ import com.alibaba.nacos.common.remote.TlsConfig;
  * @author githubcheng2978.
  */
 public class RpcServerTlsConfig extends TlsConfig {
-
+    
     /**
      *  The class representing the configuration for SSL context refreshing in the RPC server.
      */
     private String sslContextRefresher = "";
-
+    
     /**
      * Indicates whether compatibility mode is enabled.
      */
     private Boolean compatibility = true;
-
+    
     /**
      * Gets the compatibility mode status.
      *
@@ -44,7 +44,7 @@ public class RpcServerTlsConfig extends TlsConfig {
     public Boolean getCompatibility() {
         return compatibility;
     }
-
+    
     /**
      * Sets the compatibility mode status.
      *
@@ -53,7 +53,7 @@ public class RpcServerTlsConfig extends TlsConfig {
     public void setCompatibility(Boolean compatibility) {
         this.compatibility = compatibility;
     }
-
+    
     /**
      * Gets the SSL context refresher.
      *
@@ -62,7 +62,7 @@ public class RpcServerTlsConfig extends TlsConfig {
     public String getSslContextRefresher() {
         return sslContextRefresher;
     }
-
+    
     /**
      * Sets the SSL context refresher.
      *

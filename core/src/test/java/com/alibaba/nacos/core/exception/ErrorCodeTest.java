@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ErrorCodeTest {
-
+    
     @Test
     void testGetCode() {
         assertEquals(40001, ErrorCode.UnKnowError.getCode());
@@ -38,13 +38,13 @@ class ErrorCodeTest {
         assertEquals(40301, ErrorCode.ProtoSubmitError.getCode());
         assertEquals(40302, ErrorCode.ProtoReadError.getCode());
     }
-
+    
     @Test
     void testValues() {
         ErrorCode[] values = ErrorCode.values();
         assertEquals(13, values.length);
     }
-
+    
     @Test
     void testValueOf() {
         assertEquals(ErrorCode.UnKnowError, ErrorCode.valueOf("UnKnowError"));

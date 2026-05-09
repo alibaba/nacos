@@ -31,19 +31,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link TopNConfig} unit test.
  */
 class TopNConfigTest {
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(new MockEnvironment());
         TopNConfig.getInstance().onEvent(new ServerConfigChangeEvent());
     }
-
+    
     @Test
     void getInstanceReturnsSingleton() {
         assertNotNull(TopNConfig.getInstance());
         assertEquals(TopNConfig.getInstance(), TopNConfig.getInstance());
     }
-
+    
     @Test
     void defaultConfig() {
         TopNConfig config = TopNConfig.getInstance();
@@ -51,7 +51,7 @@ class TopNConfigTest {
         assertEquals(10, config.getCountOfTopN());
         assertEquals(30_000L, config.getInternalMs());
     }
-
+    
     @Test
     void configFromEnvironment() {
         MockEnvironment env = new MockEnvironment();
@@ -60,13 +60,13 @@ class TopNConfigTest {
         env.setProperty("nacos.core.monitor.topn.internalMs", "60000");
         EnvUtil.setEnvironment(env);
         TopNConfig.getInstance().onEvent(new ServerConfigChangeEvent());
-
+        
         TopNConfig config = TopNConfig.getInstance();
         assertFalse(config.isEnabled());
         assertEquals(20, config.getCountOfTopN());
         assertEquals(60_000L, config.getInternalMs());
     }
-
+    
     @Test
     void toStringContainsFields() {
         TopNConfig config = TopNConfig.getInstance();

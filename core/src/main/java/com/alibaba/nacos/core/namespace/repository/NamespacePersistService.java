@@ -41,8 +41,9 @@ public interface NamespacePersistService {
      * @param createResource create resource
      * @param time           time
      */
-    void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResource,
-            final long time);
+    void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
+        String createResource,
+        final long time);
     
     //------------------------------------------delete---------------------------------------------//
     

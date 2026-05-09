@@ -26,33 +26,35 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  * @since 2025-08-13 13:33:16
  */
 public class NamespaceValidationConfig extends AbstractDynamicConfig {
-
+    
     private static final String NAMESPACE_VALIDATION = "NamespaceValidation";
-
+    
     private static final NamespaceValidationConfig INSTANCE = new NamespaceValidationConfig();
-
+    
     private boolean namespaceValidationEnabled = true;
-
+    
     protected NamespaceValidationConfig() {
         super(NAMESPACE_VALIDATION);
         resetConfig();
     }
-
+    
     public static NamespaceValidationConfig getInstance() {
         return INSTANCE;
     }
-
+    
     @Override
     protected void getConfigFromEnv() {
-        namespaceValidationEnabled = EnvUtil.getProperty("nacos.core.namespace.validation.enabled", Boolean.class, false);
+        namespaceValidationEnabled =
+            EnvUtil.getProperty("nacos.core.namespace.validation.enabled", Boolean.class, false);
     }
-
+    
     public boolean isNamespaceValidationEnabled() {
         return namespaceValidationEnabled;
     }
-
+    
     @Override
     protected String printConfig() {
-        return "NamespaceValidationConfig{" + "namespaceValidationEnabled=" + namespaceValidationEnabled + "}";
+        return "NamespaceValidationConfig{" + "namespaceValidationEnabled="
+            + namespaceValidationEnabled + "}";
     }
 }

@@ -56,24 +56,24 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class JRaftUtilsTest {
-
+    
     private static final String GROUP = "naming_persistent_service";
-
+    
     @Mock
     private ServerMemberManager serverMemberManager;
-
+    
     @Mock
     private CliService cliService;
-
+    
     @Mock
     private RouteTable routeTable;
-
+    
     @Mock
     private JRaftServer server;
-
+    
     private MockedStatic<ApplicationUtils> applicationUtilsMock;
     private MockedStatic<RouteTable> routeTableMock;
-
+    
     @BeforeEach
     void setUp() {
         RaftConfig config = new RaftConfig();
@@ -81,7 +81,7 @@ class JRaftUtilsTest {
         config.setVal(RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM, "1");
         RaftExecutor.init(config);
     }
-
+    
     @AfterEach
     void tearDown() {
         if (applicationUtilsMock != null) {
@@ -99,7 +99,7 @@ class JRaftUtilsTest {
             routeTableMock = null;
         }
     }
-
+    
     @Test
     void testToStringsWithEmptyList() {
         List<String> result = JRaftUtils.toStrings(Collections.emptyList());
@@ -130,17 +130,18 @@ class JRaftUtilsTest {
         try {
             String parentPath = tempDir.getAbsolutePath();
             String groupName = "naming_persistent_service";
-            com.alipay.sofa.jraft.option.NodeOptions copy = new com.alipay.sofa.jraft.option.NodeOptions();
+            com.alipay.sofa.jraft.option.NodeOptions copy =
+                new com.alipay.sofa.jraft.option.NodeOptions();
             JRaftUtils.initDirectory(parentPath, groupName, copy);
             assertEquals(
-                    java.nio.file.Paths.get(parentPath, groupName, "log").toString(),
-                    copy.getLogUri());
+                java.nio.file.Paths.get(parentPath, groupName, "log").toString(),
+                copy.getLogUri());
             assertEquals(
-                    java.nio.file.Paths.get(parentPath, groupName, "snapshot").toString(),
-                    copy.getSnapshotUri());
+                java.nio.file.Paths.get(parentPath, groupName, "snapshot").toString(),
+                copy.getSnapshotUri());
             assertEquals(
-                    java.nio.file.Paths.get(parentPath, groupName, "meta-data").toString(),
-                    copy.getRaftMetaUri());
+                java.nio.file.Paths.get(parentPath, groupName, "meta-data").toString(),
+                copy.getRaftMetaUri());
             assertTrue(new java.io.File(copy.getLogUri()).isDirectory());
             assertTrue(new java.io.File(copy.getSnapshotUri()).isDirectory());
             assertTrue(new java.io.File(copy.getRaftMetaUri()).isDirectory());
@@ -151,31 +152,33 @@ class JRaftUtilsTest {
             }
         }
     }
-
+    
     @Test
     void testToStringsWithNullListThrowsNpe() {
         assertThrows(NullPointerException.class, () -> JRaftUtils.toStrings(null));
     }
-
+    
     @Test
     void testInitDirectoryWithEmptyGroupName() throws Exception {
         Path tempDir = Files.createTempDirectory("raft-utils-empty-group");
         try {
             String parentPath = tempDir.toFile().getAbsolutePath();
-            com.alipay.sofa.jraft.option.NodeOptions copy = new com.alipay.sofa.jraft.option.NodeOptions();
+            com.alipay.sofa.jraft.option.NodeOptions copy =
+                new com.alipay.sofa.jraft.option.NodeOptions();
             JRaftUtils.initDirectory(parentPath, "", copy);
             assertEquals(
-                    java.nio.file.Paths.get(parentPath, "", "log").toString(),
-                    copy.getLogUri());
+                java.nio.file.Paths.get(parentPath, "", "log").toString(),
+                copy.getLogUri());
             assertTrue(new File(copy.getLogUri()).isDirectory());
         } finally {
             try {
-                com.alibaba.nacos.sys.utils.DiskUtils.deleteDirectory(tempDir.toFile().getAbsolutePath());
+                com.alibaba.nacos.sys.utils.DiskUtils
+                    .deleteDirectory(tempDir.toFile().getAbsolutePath());
             } catch (Exception ignored) {
             }
         }
     }
-
+    
     @Test
     void testInitDirectoryThrowsWhenGroupPathIsFile() throws Exception {
         Path tempDir = Files.createTempDirectory("raft-utils-file-group");
@@ -183,83 +186,85 @@ class JRaftUtilsTest {
             File groupAsFile = new File(tempDir.toFile(), "groupName");
             assertTrue(groupAsFile.createNewFile());
             String parentPath = tempDir.toFile().getAbsolutePath();
-            com.alipay.sofa.jraft.option.NodeOptions copy = new com.alipay.sofa.jraft.option.NodeOptions();
+            com.alipay.sofa.jraft.option.NodeOptions copy =
+                new com.alipay.sofa.jraft.option.NodeOptions();
             assertThrows(RuntimeException.class,
-                    () -> JRaftUtils.initDirectory(parentPath, "groupName", copy));
+                () -> JRaftUtils.initDirectory(parentPath, "groupName", copy));
         } finally {
             try {
-                com.alibaba.nacos.sys.utils.DiskUtils.deleteDirectory(tempDir.toFile().getAbsolutePath());
+                com.alibaba.nacos.sys.utils.DiskUtils
+                    .deleteDirectory(tempDir.toFile().getAbsolutePath());
             } catch (Exception ignored) {
             }
         }
     }
-
+    
     // ---------- joinCluster ----------
-
+    
     @Test
     void joinClusterWhenNotFirstIpReturnsImmediately() {
         applicationUtilsMock = Mockito.mockStatic(ApplicationUtils.class);
         applicationUtilsMock.when(() -> ApplicationUtils.getBean(ServerMemberManager.class))
-                .thenReturn(serverMemberManager);
+            .thenReturn(serverMemberManager);
         when(serverMemberManager.isFirstIp()).thenReturn(false);
-
+        
         Configuration conf = new Configuration();
         PeerId self = PeerId.parsePeer("127.0.0.1:8080");
-
+        
         assertDoesNotThrow(() -> JRaftUtils.joinCluster(cliService,
-                Collections.singletonList("127.0.0.1:8081"), conf, GROUP, self));
-
+            Collections.singletonList("127.0.0.1:8081"), conf, GROUP, self));
+        
         verify(cliService, never()).addPeer(any(), any(), any());
     }
-
+    
     @Test
     void joinClusterWhenFirstIpAndPeerAlreadyInConfExitsLoop() {
         applicationUtilsMock = Mockito.mockStatic(ApplicationUtils.class);
         routeTableMock = Mockito.mockStatic(RouteTable.class);
         applicationUtilsMock.when(() -> ApplicationUtils.getBean(ServerMemberManager.class))
-                .thenReturn(serverMemberManager);
+            .thenReturn(serverMemberManager);
         when(serverMemberManager.isFirstIp()).thenReturn(true);
-
+        
         PeerId peer = PeerId.parsePeer("127.0.0.1:8081");
         Configuration conf = new Configuration();
         conf.addPeer(peer);
         routeTableMock.when(RouteTable::getInstance).thenReturn(routeTable);
         when(routeTable.getConfiguration(GROUP)).thenReturn(conf);
-
+        
         PeerId self = PeerId.parsePeer("127.0.0.1:8080");
-
+        
         assertDoesNotThrow(() -> JRaftUtils.joinCluster(cliService,
-                Collections.singletonList("127.0.0.1:8081"), conf, GROUP, self));
-
+            Collections.singletonList("127.0.0.1:8081"), conf, GROUP, self));
+        
         verify(cliService, never()).addPeer(any(), any(), any());
     }
-
+    
     @Test
     void joinClusterWhenFirstIpAndAddPeerSucceedsExitsLoop() {
         applicationUtilsMock = Mockito.mockStatic(ApplicationUtils.class);
         routeTableMock = Mockito.mockStatic(RouteTable.class);
         applicationUtilsMock.when(() -> ApplicationUtils.getBean(ServerMemberManager.class))
-                .thenReturn(serverMemberManager);
+            .thenReturn(serverMemberManager);
         when(serverMemberManager.isFirstIp()).thenReturn(true);
-
+        
         Configuration conf = new Configuration();
         conf.addPeer(PeerId.parsePeer("127.0.0.1:8080"));
         routeTableMock.when(RouteTable::getInstance).thenReturn(routeTable);
         when(routeTable.getConfiguration(GROUP)).thenReturn(conf);
-
+        
         when(cliService.addPeer(eq(GROUP), any(Configuration.class), any(PeerId.class)))
-                .thenReturn(Status.OK());
-
+            .thenReturn(Status.OK());
+        
         PeerId self = PeerId.parsePeer("127.0.0.1:8080");
-
+        
         assertDoesNotThrow(() -> JRaftUtils.joinCluster(cliService,
-                Collections.singletonList("127.0.0.1:8081"), conf, GROUP, self));
-
+            Collections.singletonList("127.0.0.1:8081"), conf, GROUP, self));
+        
         verify(cliService).addPeer(eq(GROUP), any(Configuration.class), any(PeerId.class));
     }
-
+    
     // ---------- initRpcServer ----------
-
+    
     @Test
     void initRpcServerReturnsNonNullAndReleasesInFinally() {
         RpcServer rpcServer = null;
@@ -271,7 +276,7 @@ class JRaftUtilsTest {
             shutdownRpcServerQuietly(rpcServer);
         }
     }
-
+    
     private static void shutdownRpcServerQuietly(RpcServer rpcServer) {
         try {
             if (rpcServer == null) {

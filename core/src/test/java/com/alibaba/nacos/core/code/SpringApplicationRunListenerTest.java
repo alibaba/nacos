@@ -46,16 +46,18 @@ class SpringApplicationRunListenerTest {
     @Test
     void getOrderReturnsHighestPrecedence() {
         SpringApplication application = new SpringApplication(Object.class);
-        SpringApplicationRunListener listener = new SpringApplicationRunListener(application, new String[0]);
+        SpringApplicationRunListener listener =
+            new SpringApplicationRunListener(application, new String[0]);
         assertEquals(HIGHEST_PRECEDENCE, listener.getOrder());
     }
     
     @Test
     void failedInvokesListeners() {
         SpringApplication application = new SpringApplication(Object.class);
-        SpringApplicationRunListener listener = new SpringApplicationRunListener(application, new String[0]);
+        SpringApplicationRunListener listener =
+            new SpringApplicationRunListener(application, new String[0]);
         ReflectionTestUtils.setField(listener, "nacosApplicationListeners",
-                Collections.singletonList(mockNacosListener));
+            Collections.singletonList(mockNacosListener));
         Throwable exception = new RuntimeException("test");
         listener.failed(mockContext, exception);
         verify(mockNacosListener).failed(mockContext, exception);

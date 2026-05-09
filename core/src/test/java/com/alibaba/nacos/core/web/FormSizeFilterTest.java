@@ -44,25 +44,25 @@ import static org.mockito.Mockito.verify;
  */
 @ExtendWith(MockitoExtension.class)
 class FormSizeFilterTest {
-
+    
     private static final long MAX_FORM_SIZE = 1024;
-
+    
     @Mock
     private FilterChain filterChain;
-
+    
     @Mock
     private HttpServletRequest request;
-
+    
     @Mock
     private HttpServletResponse response;
-
+    
     private FormSizeFilter formSizeFilter;
-
+    
     @BeforeEach
     void setUp() {
         formSizeFilter = new FormSizeFilter(MAX_FORM_SIZE);
     }
-
+    
     /**
      * 测试非表单内容类型的请求
      * 场景：Content-Type 为 application/json
@@ -71,12 +71,12 @@ class FormSizeFilterTest {
     @Test
     void testDoFilterWithNonFormContentType() throws ServletException, IOException {
         Mockito.when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON_VALUE);
-
+        
         formSizeFilter.doFilter(request, response, filterChain);
-
+        
         verify(response, never()).sendError(anyInt(), anyString());
     }
-
+    
     /**
      * 测试表单内容类型且大小在限制内的请求
      * 场景：Content-Type 为 application/x-www-form-urlencoded，Content-Length 小于限制
@@ -84,14 +84,15 @@ class FormSizeFilterTest {
      */
     @Test
     void testDoFilterWithFormContentTypeUnderLimit() throws ServletException, IOException {
-        Mockito.when(request.getContentType()).thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        Mockito.when(request.getContentType())
+            .thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         Mockito.when(request.getContentLength()).thenReturn(512);
-
+        
         formSizeFilter.doFilter(request, response, filterChain);
-
+        
         verify(response, never()).sendError(anyInt(), anyString());
     }
-
+    
     /**
      * 测试表单内容类型且大小超过限制的请求
      * 场景：Content-Type 为 application/x-www-form-urlencoded，Content-Length 大于限制
@@ -99,14 +100,15 @@ class FormSizeFilterTest {
      */
     @Test
     void testDoFilterWithFormContentTypeOverLimit() throws ServletException, IOException {
-        Mockito.when(request.getContentType()).thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        Mockito.when(request.getContentType())
+            .thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         Mockito.when(request.getContentLength()).thenReturn(2048);
-
+        
         formSizeFilter.doFilter(request, response, filterChain);
-
+        
         verify(response).sendError(HttpStatus.PAYLOAD_TOO_LARGE.value(), "Payload Too Large");
     }
-
+    
     /**
      * 测试表单大小等于限制值的边界情况
      * 场景：Content-Type 为 application/x-www-form-urlencoded，Content-Length 等于限制
@@ -114,14 +116,15 @@ class FormSizeFilterTest {
      */
     @Test
     void testDoFilterWithExactLimitSize() throws ServletException, IOException {
-        Mockito.when(request.getContentType()).thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        Mockito.when(request.getContentType())
+            .thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         Mockito.when(request.getContentLength()).thenReturn((int) MAX_FORM_SIZE);
-
+        
         formSizeFilter.doFilter(request, response, filterChain);
-
+        
         verify(response, never()).sendError(anyInt(), anyString());
     }
-
+    
     /**
      * 测试负数 maxFormSize 表示不限制大小的情况
      * 场景：maxFormSize 为 -1，Content-Length 为最大整数值
@@ -130,14 +133,15 @@ class FormSizeFilterTest {
     @Test
     void testDoFilterWithNegativeMaxFormSize() throws ServletException, IOException {
         FormSizeFilter unlimitedFilter = new FormSizeFilter(-1);
-        Mockito.when(request.getContentType()).thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        Mockito.when(request.getContentType())
+            .thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         Mockito.when(request.getContentLength()).thenReturn(Integer.MAX_VALUE);
-
+        
         unlimitedFilter.doFilter(request, response, filterChain);
-
+        
         verify(response, never()).sendError(anyInt(), anyString());
     }
-
+    
     /**
      * 测试 Content-Type 为 null 的情况
      * 场景：Content-Type 为 null
@@ -146,12 +150,12 @@ class FormSizeFilterTest {
     @Test
     void testDoFilterWithNullContentType() throws ServletException, IOException {
         Mockito.when(request.getContentType()).thenReturn(null);
-
+        
         formSizeFilter.doFilter(request, response, filterChain);
-
+        
         verify(response, never()).sendError(anyInt(), anyString());
     }
-
+    
     /**
      * 测试 maxFormSize 为 0 的情况
      * 场景：maxFormSize 为 0，Content-Length 为 1
@@ -160,14 +164,15 @@ class FormSizeFilterTest {
     @Test
     void testDoFilterWithZeroMaxFormSize() throws ServletException, IOException {
         FormSizeFilter zeroSizeFilter = new FormSizeFilter(0);
-        Mockito.when(request.getContentType()).thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        Mockito.when(request.getContentType())
+            .thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         Mockito.when(request.getContentLength()).thenReturn(1);
-
+        
         zeroSizeFilter.doFilter(request, response, filterChain);
-
+        
         verify(response).sendError(HttpStatus.PAYLOAD_TOO_LARGE.value(), "Payload Too Large");
     }
-
+    
     /**
      * 测试无效的 Content-Type 格式
      * 场景：Content-Type 为无法解析的格式
@@ -176,12 +181,12 @@ class FormSizeFilterTest {
     @Test
     void testDoFilterWithInvalidContentType() throws ServletException, IOException {
         Mockito.when(request.getContentType()).thenReturn("invalid/content-type");
-
+        
         formSizeFilter.doFilter(request, response, filterChain);
-
+        
         verify(response, never()).sendError(anyInt(), anyString());
     }
-
+    
     /**
      * 测试 FormSizeFilter 在表单过大时阻止后续过滤器执行
      * 场景：表单大小超过限制，FormSizeFilter 应该返回错误并中断过滤器链
@@ -190,17 +195,18 @@ class FormSizeFilterTest {
      */
     @Test
     void testFormSizeFilterStopsChainWhenSizeExceeded() throws ServletException, IOException {
-        Mockito.when(request.getContentType()).thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        Mockito.when(request.getContentType())
+            .thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         Mockito.when(request.getContentLength()).thenReturn(2048);
-
+        
         formSizeFilter.doFilter(request, response, filterChain);
-
+        
         // 验证返回了错误
         verify(response).sendError(HttpStatus.PAYLOAD_TOO_LARGE.value(), "Payload Too Large");
         // 验证过滤器链被中断，后续过滤器不会执行
         verify(filterChain, never()).doFilter(request, response);
     }
-
+    
     /**
      * 测试 FormSizeFilter 在表单大小正常时允许后续过滤器执行
      * 场景：表单大小在限制内，FormSizeFilter 应该放行请求
@@ -209,11 +215,12 @@ class FormSizeFilterTest {
      */
     @Test
     void testFormSizeFilterContinuesChainWhenSizeNormal() throws ServletException, IOException {
-        Mockito.when(request.getContentType()).thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        Mockito.when(request.getContentType())
+            .thenReturn(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         Mockito.when(request.getContentLength()).thenReturn(512);
-
+        
         formSizeFilter.doFilter(request, response, filterChain);
-
+        
         // 验证不返回错误
         verify(response, never()).sendError(anyInt(), anyString());
         // 验证过滤器链继续执行，后续过滤器（如 AuthFilter）会被调用

@@ -172,7 +172,8 @@ class NacosStateMachineTest {
         stateMachine.setNode(node);
         when(node.getGroupId()).thenReturn("test_group");
         when(node.isLeader()).thenReturn(true);
-        when(node.listPeers()).thenReturn(Collections.singletonList(PeerId.parsePeer("127.0.0.1:7848")));
+        when(node.listPeers())
+            .thenReturn(Collections.singletonList(PeerId.parsePeer("127.0.0.1:7848")));
         RaftException e = org.mockito.Mockito.mock(RaftException.class);
         when(e.toString()).thenReturn("RaftException: raft error");
         stateMachine.onError(e);
@@ -189,6 +190,7 @@ class NacosStateMachineTest {
     @Test
     void testOnSnapshotSaveWithOneOperation(@TempDir Path tempDir) {
         SnapshotOperation userOp = new SnapshotOperation() {
+            
             @Override
             public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
                 callFinally.accept(true, null);
@@ -212,6 +214,7 @@ class NacosStateMachineTest {
     @Test
     void testOnSnapshotLoadWithOneOperationReturnsTrue() {
         SnapshotOperation loadOp = new SnapshotOperation() {
+            
             @Override
             public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
             }
@@ -232,6 +235,7 @@ class NacosStateMachineTest {
     @Test
     void testOnSnapshotLoadWhenOperationReturnsFalse() {
         SnapshotOperation loadOp = new SnapshotOperation() {
+            
             @Override
             public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
             }
@@ -252,6 +256,7 @@ class NacosStateMachineTest {
     @Test
     void testOnSnapshotLoadWhenOperationThrows() {
         SnapshotOperation loadOp = new SnapshotOperation() {
+            
             @Override
             public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
             }
@@ -276,10 +281,12 @@ class NacosStateMachineTest {
         Iterator iter = org.mockito.Mockito.mock(Iterator.class);
         when(iter.hasNext()).thenReturn(true, false);
         when(iter.done()).thenReturn(nacosClosure);
-        when(processor.onApply(any(WriteRequest.class))).thenReturn(Response.newBuilder().setSuccess(true).build());
+        when(processor.onApply(any(WriteRequest.class)))
+            .thenReturn(Response.newBuilder().setSuccess(true).build());
         
         AtomicReference<Status> runStatus = new AtomicReference<>();
-        NacosClosure closureWithCapture = new NacosClosure(WriteRequest.getDefaultInstance(), runStatus::set);
+        NacosClosure closureWithCapture =
+            new NacosClosure(WriteRequest.getDefaultInstance(), runStatus::set);
         when(iter.done()).thenReturn(closureWithCapture);
         
         stateMachine.onApply(iter);
@@ -291,11 +298,13 @@ class NacosStateMachineTest {
     @Test
     void testOnApplyWithReadRequestAndClosure() {
         AtomicReference<Status> runStatus = new AtomicReference<>();
-        NacosClosure closureWithCapture = new NacosClosure(ReadRequest.getDefaultInstance(), runStatus::set);
+        NacosClosure closureWithCapture =
+            new NacosClosure(ReadRequest.getDefaultInstance(), runStatus::set);
         Iterator iter = org.mockito.Mockito.mock(Iterator.class);
         when(iter.hasNext()).thenReturn(true, false);
         when(iter.done()).thenReturn(closureWithCapture);
-        when(processor.onRequest(any(ReadRequest.class))).thenReturn(Response.newBuilder().setSuccess(true).build());
+        when(processor.onRequest(any(ReadRequest.class)))
+            .thenReturn(Response.newBuilder().setSuccess(true).build());
         
         stateMachine.onApply(iter);
         
@@ -310,7 +319,8 @@ class NacosStateMachineTest {
         Iterator iter = org.mockito.Mockito.mock(Iterator.class);
         doReturn(true).doReturn(false).when(iter).hasNext();
         when(iter.done()).thenReturn(nacosClosure);
-        when(processor.onApply(any(WriteRequest.class))).thenThrow(new RuntimeException("apply failed"));
+        when(processor.onApply(any(WriteRequest.class)))
+            .thenThrow(new RuntimeException("apply failed"));
         
         stateMachine.onApply(iter);
         // Outer catch in onApply catches the exception and calls setErrorAndRollback (line 144-146)
@@ -323,9 +333,11 @@ class NacosStateMachineTest {
      */
     @Test
     void testOnApplyFollowerReadRequest() {
-        byte[] prefix = new byte[] {(byte) ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG, ProtoMessageUtil.REQUEST_TYPE_READ};
+        byte[] prefix = new byte[] {(byte) ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG,
+                ProtoMessageUtil.REQUEST_TYPE_READ};
         byte[] body = ReadRequest.getDefaultInstance().toByteArray();
-        ByteBuffer data = ByteBuffer.allocate(prefix.length + body.length).put(prefix).put(body).flip();
+        ByteBuffer data =
+            ByteBuffer.allocate(prefix.length + body.length).put(prefix).put(body).flip();
         Iterator iter = org.mockito.Mockito.mock(Iterator.class);
         when(iter.hasNext()).thenReturn(true, false);
         when(iter.done()).thenReturn(null);
@@ -347,12 +359,14 @@ class NacosStateMachineTest {
         byte[] prefix = new byte[] {(byte) ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG,
                 ProtoMessageUtil.REQUEST_TYPE_WRITE};
         byte[] body = WriteRequest.getDefaultInstance().toByteArray();
-        ByteBuffer data = ByteBuffer.allocate(prefix.length + body.length).put(prefix).put(body).flip();
+        ByteBuffer data =
+            ByteBuffer.allocate(prefix.length + body.length).put(prefix).put(body).flip();
         Iterator iter = org.mockito.Mockito.mock(Iterator.class);
         when(iter.hasNext()).thenReturn(true, false);
         when(iter.done()).thenReturn(null);
         when(iter.getData()).thenReturn(data);
-        when(processor.onApply(any(WriteRequest.class))).thenReturn(Response.newBuilder().setSuccess(true).build());
+        when(processor.onApply(any(WriteRequest.class)))
+            .thenReturn(Response.newBuilder().setSuccess(true).build());
         
         stateMachine.onApply(iter);
         
@@ -377,6 +391,7 @@ class NacosStateMachineTest {
     @Test
     void testOnSnapshotSaveWhenOperationThrows(@TempDir Path tempDir) {
         SnapshotOperation userOp = new SnapshotOperation() {
+            
             @Override
             public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
                 throw new RuntimeException("save failed");
@@ -394,7 +409,7 @@ class NacosStateMachineTest {
         Closure done = org.mockito.Mockito.mock(Closure.class);
         
         org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> sm.onSnapshotSave(mockWriter, done));
+            () -> sm.onSnapshotSave(mockWriter, done));
         
         verify(done, never()).run(any(Status.class));
     }
@@ -405,6 +420,7 @@ class NacosStateMachineTest {
     @Test
     void testOnSnapshotSaveWithFilesAdded(@TempDir Path tempDir) {
         SnapshotOperation userOp = new SnapshotOperation() {
+            
             @Override
             public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
                 writer.addFile("data.dat");
@@ -435,6 +451,7 @@ class NacosStateMachineTest {
     @Test
     void testOnSnapshotLoadWithFileEmptyMeta() {
         SnapshotOperation loadOp = new SnapshotOperation() {
+            
             @Override
             public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
             }
@@ -451,7 +468,8 @@ class NacosStateMachineTest {
         Set<String> fileNames = new java.util.HashSet<>(Collections.singletonList("f1"));
         when(mockReader.listFiles()).thenReturn(fileNames);
         when(mockReader.getPath()).thenReturn("/tmp");
-        LocalFileMetaOutter.LocalFileMeta jraftMeta = LocalFileMetaOutter.LocalFileMeta.getDefaultInstance();
+        LocalFileMetaOutter.LocalFileMeta jraftMeta =
+            LocalFileMetaOutter.LocalFileMeta.getDefaultInstance();
         when(mockReader.getFileMeta("f1")).thenReturn(jraftMeta);
         
         assertTrue(sm.onSnapshotLoad(mockReader));
@@ -464,10 +482,11 @@ class NacosStateMachineTest {
     void testOnSnapshotLoadWithFileNonEmptyMeta() throws Exception {
         LocalFileMeta meta = new LocalFileMeta().append("k", "v");
         byte[] metaBytes = com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta)
-                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            .getBytes(java.nio.charset.StandardCharsets.UTF_8);
         LocalFileMetaOutter.LocalFileMeta jraftMeta = LocalFileMetaOutter.LocalFileMeta.newBuilder()
-                .setUserMeta(ByteString.copyFrom(metaBytes)).build();
+            .setUserMeta(ByteString.copyFrom(metaBytes)).build();
         SnapshotOperation loadOp = new SnapshotOperation() {
+            
             @Override
             public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
             }

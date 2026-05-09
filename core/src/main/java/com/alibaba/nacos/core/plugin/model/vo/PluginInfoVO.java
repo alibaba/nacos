@@ -22,106 +22,107 @@ package com.alibaba.nacos.core.plugin.model.vo;
  * @author Nacos
  */
 public class PluginInfoVO {
-
+    
     private String pluginId;
-
+    
     private String pluginType;
-
+    
     private String pluginName;
-
+    
     private Boolean enabled;
-
+    
     private Boolean critical;
-
+    
     private Boolean configurable;
-
+    
     /**
      * Whether this plugin type is exclusive (only one can be active at a time).
      * Exclusive plugins (AUTH, DATASOURCE_DIALECT) cannot be switched via UI.
      */
     private Boolean exclusive;
-
+    
     private Integer availableNodeCount;
-
+    
     private Integer totalNodeCount;
     
     public String getPluginId() {
         return pluginId;
     }
-
+    
     public void setPluginId(String pluginId) {
         this.pluginId = pluginId;
     }
-
+    
     public String getPluginType() {
         return pluginType;
     }
-
+    
     public void setPluginType(String pluginType) {
         this.pluginType = pluginType;
     }
-
+    
     public String getPluginName() {
         return pluginName;
     }
-
+    
     public void setPluginName(String pluginName) {
         this.pluginName = pluginName;
     }
-
+    
     public Boolean getEnabled() {
         return enabled;
     }
-
+    
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
-
+    
     public Boolean getCritical() {
         return critical;
     }
-
+    
     public void setCritical(Boolean critical) {
         this.critical = critical;
     }
-
+    
     public Boolean getConfigurable() {
         return configurable;
     }
-
+    
     public void setConfigurable(Boolean configurable) {
         this.configurable = configurable;
     }
-
+    
     public Boolean getExclusive() {
         return exclusive;
     }
-
+    
     public void setExclusive(Boolean exclusive) {
         this.exclusive = exclusive;
     }
-
+    
     public Integer getAvailableNodeCount() {
         return availableNodeCount;
     }
-
+    
     public void setAvailableNodeCount(Integer availableNodeCount) {
         this.availableNodeCount = availableNodeCount;
     }
-
+    
     public Integer getTotalNodeCount() {
         return totalNodeCount;
     }
-
+    
     public void setTotalNodeCount(Integer totalNodeCount) {
         this.totalNodeCount = totalNodeCount;
     }
     
-
     @Override
     public String toString() {
-        return "PluginInfoVO{" + "pluginId='" + pluginId + '\'' + ", pluginType='" + pluginType + '\''
-                + ", pluginName='" + pluginName + '\'' + ", enabled=" + enabled + ", critical=" + critical
-                + ", configurable=" + configurable + ", exclusive=" + exclusive + '}';
+        return "PluginInfoVO{" + "pluginId='" + pluginId + '\'' + ", pluginType='" + pluginType
+            + '\''
+            + ", pluginName='" + pluginName + '\'' + ", enabled=" + enabled + ", critical="
+            + critical
+            + ", configurable=" + configurable + ", exclusive=" + exclusive + '}';
     }
 }

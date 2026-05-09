@@ -33,7 +33,8 @@ public final class ClassUtils {
     }
     
     public static <T> Class<T> resolveGenericTypeByInterface(Class<?> declaredClass) {
-        return (Class<T>) ResolvableType.forClass(declaredClass).getInterfaces()[0].resolveGeneric(0);
+        return (Class<T>) ResolvableType.forClass(declaredClass).getInterfaces()[0]
+            .resolveGeneric(0);
     }
     
     public static Class findClassByName(String className) {

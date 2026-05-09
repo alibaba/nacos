@@ -32,50 +32,53 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 2025-08-13 13:42:00
  */
 class NamespaceValidationConfigTest {
-
+    
     @Test
     void testGetConfigFromEnvWithDefaultValue() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-
-        Constructor<NamespaceValidationConfig> declaredConstructor = NamespaceValidationConfig.class.getDeclaredConstructor();
+        
+        Constructor<NamespaceValidationConfig> declaredConstructor =
+            NamespaceValidationConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         NamespaceValidationConfig config = declaredConstructor.newInstance();
-
+        
         assertFalse(config.isNamespaceValidationEnabled());
     }
-
+    
     @Test
     void testGetConfigFromEnvWithDisabled() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         environment.setProperty("nacos.core.namespace.validation.enabled", String.valueOf(false));
-
-        Constructor<NamespaceValidationConfig> declaredConstructor = NamespaceValidationConfig.class.getDeclaredConstructor();
+        
+        Constructor<NamespaceValidationConfig> declaredConstructor =
+            NamespaceValidationConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         NamespaceValidationConfig config = declaredConstructor.newInstance();
-
+        
         assertFalse(config.isNamespaceValidationEnabled());
     }
-
+    
     @Test
     void testGetConfigFromEnvWithEnabled() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         environment.setProperty("nacos.core.namespace.validation.enabled", String.valueOf(true));
-
-        Constructor<NamespaceValidationConfig> declaredConstructor = NamespaceValidationConfig.class.getDeclaredConstructor();
+        
+        Constructor<NamespaceValidationConfig> declaredConstructor =
+            NamespaceValidationConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         NamespaceValidationConfig config = declaredConstructor.newInstance();
-
+        
         assertTrue(config.isNamespaceValidationEnabled());
     }
-
+    
     @Test
     void testPrintConfig() {
         NamespaceValidationConfig config = NamespaceValidationConfig.getInstance();
         String configStr = config.printConfig();
-
+        
         assertTrue(configStr.contains("NamespaceValidationConfig"));
         assertTrue(configStr.contains("namespaceValidationEnabled"));
     }

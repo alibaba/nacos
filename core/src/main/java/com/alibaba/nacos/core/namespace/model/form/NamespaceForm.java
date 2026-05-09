@@ -74,11 +74,11 @@ public class NamespaceForm implements NacosForm {
     public void validate() throws NacosApiException {
         if (null == namespaceId) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "required parameter 'namespaceId' is missing");
+                "required parameter 'namespaceId' is missing");
         }
         if (null == namespaceName) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "required parameter 'namespaceName' is missing");
+                "required parameter 'namespaceName' is missing");
         }
     }
 }

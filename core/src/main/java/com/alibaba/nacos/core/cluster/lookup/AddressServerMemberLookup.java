@@ -44,7 +44,8 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  */
 public class AddressServerMemberLookup extends AbstractMemberLookup {
     
-    private final GenericType<String> genericType = new GenericType<String>() { };
+    private final GenericType<String> genericType = new GenericType<String>() {
+    };
     
     public String domainName;
     
@@ -62,7 +63,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     
     private int maxFailCount = 12;
     
-    private final NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(Loggers.CORE);
+    private final NacosRestTemplate restTemplate =
+        HttpClientBeanHolder.getNacosRestTemplate(Loggers.CORE);
     
     private volatile boolean shutdown = false;
     
@@ -94,7 +96,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     
     @Override
     public void doStart() throws NacosException {
-        this.maxFailCount = Integer.parseInt(EnvUtil.getProperty(HEALTH_CHECK_FAIL_COUNT_PROPERTY, DEFAULT_HEALTH_CHECK_FAIL_COUNT));
+        this.maxFailCount = Integer.parseInt(
+            EnvUtil.getProperty(HEALTH_CHECK_FAIL_COUNT_PROPERTY, DEFAULT_HEALTH_CHECK_FAIL_COUNT));
         initAddressSys();
         run();
     }
@@ -119,7 +122,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
         }
         String envAddressUrl = System.getenv(ADDRESS_SERVER_URL_ENV);
         if (StringUtils.isBlank(envAddressUrl)) {
-            addressUrl = EnvUtil.getProperty(ADDRESS_SERVER_URL_PROPERTY, EnvUtil.getContextPath() + "/" + "serverlist");
+            addressUrl = EnvUtil.getProperty(ADDRESS_SERVER_URL_PROPERTY,
+                EnvUtil.getContextPath() + "/" + "serverlist");
         } else {
             addressUrl = envAddressUrl;
         }
@@ -135,7 +139,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
         // Repeat three times, successfully jump out
         boolean success = false;
         Throwable ex = null;
-        int maxRetry = EnvUtil.getProperty(ADDRESS_SERVER_RETRY_PROPERTY, Integer.class, DEFAULT_SERVER_RETRY_TIME);
+        int maxRetry = EnvUtil.getProperty(ADDRESS_SERVER_RETRY_PROPERTY, Integer.class,
+            DEFAULT_SERVER_RETRY_TIME);
         for (int i = 0; i < maxRetry; i++) {
             try {
                 syncFromAddressUrl();
@@ -143,7 +148,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
                 break;
             } catch (Throwable e) {
                 ex = e;
-                Loggers.CLUSTER.error("[serverlist] exception, error : {}", ExceptionUtil.getAllExceptionMsg(ex));
+                Loggers.CLUSTER.error("[serverlist] exception, error : {}",
+                    ExceptionUtil.getAllExceptionMsg(ex));
             }
         }
         if (!success) {
@@ -170,7 +176,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     
     private void syncFromAddressUrl() throws Exception {
         RestResult<String> result = restTemplate
-                .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
+            .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
         if (result.ok()) {
             isAddressServerHealth = true;
             Reader reader = new StringReader(result.getData());
@@ -178,7 +184,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
                 afterLookup(MemberUtil.readServerConf(EnvUtil.analyzeClusterConf(reader)));
             } catch (Throwable e) {
                 Loggers.CLUSTER.error("[serverlist] exception for analyzeClusterConf, error : {}",
-                        ExceptionUtil.getAllExceptionMsg(e));
+                    ExceptionUtil.getAllExceptionMsg(e));
             }
             addressServerFailCount = 0;
         } else {
@@ -186,7 +192,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
             if (addressServerFailCount >= maxFailCount) {
                 isAddressServerHealth = false;
             }
-            Loggers.CLUSTER.error("[serverlist] failed to get serverlist, error code {}", result.getCode());
+            Loggers.CLUSTER.error("[serverlist] failed to get serverlist, error code {}",
+                result.getCode());
         }
     }
     
@@ -204,7 +211,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
                 if (addressServerFailCount >= maxFailCount) {
                     isAddressServerHealth = false;
                 }
-                Loggers.CLUSTER.error("[serverlist] exception, error : {}", ExceptionUtil.getAllExceptionMsg(ex));
+                Loggers.CLUSTER.error("[serverlist] exception, error : {}",
+                    ExceptionUtil.getAllExceptionMsg(ex));
             } finally {
                 GlobalExecutor.scheduleByCommon(this, DEFAULT_SYNC_TASK_DELAY_MS);
             }

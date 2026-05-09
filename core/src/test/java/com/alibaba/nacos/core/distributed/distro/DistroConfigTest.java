@@ -78,9 +78,11 @@ class DistroConfigTest {
     
     @Test
     void testUpgradeConfig() throws InterruptedException {
-        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS, distroConfig.getSyncDelayMillis());
+        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS,
+            distroConfig.getSyncDelayMillis());
         MockEnvironment environment = new MockEnvironment();
-        environment.setProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, String.valueOf(syncDelayMillis));
+        environment.setProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS,
+            String.valueOf(syncDelayMillis));
         EnvUtil.setEnvironment(environment);
         NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
         TimeUnit.SECONDS.sleep(1);
@@ -91,12 +93,18 @@ class DistroConfigTest {
     void testInitConfigFormEnv() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-        environment.setProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, String.valueOf(syncDelayMillis));
-        environment.setProperty(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS, String.valueOf(syncTimeoutMillis));
-        environment.setProperty(DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS, String.valueOf(syncRetryDelayMillis));
-        environment.setProperty(DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS, String.valueOf(verifyIntervalMillis));
-        environment.setProperty(DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS, String.valueOf(verifyTimeoutMillis));
-        environment.setProperty(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS, String.valueOf(loadDataRetryDelayMillis));
+        environment.setProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS,
+            String.valueOf(syncDelayMillis));
+        environment.setProperty(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS,
+            String.valueOf(syncTimeoutMillis));
+        environment.setProperty(DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS,
+            String.valueOf(syncRetryDelayMillis));
+        environment.setProperty(DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS,
+            String.valueOf(verifyIntervalMillis));
+        environment.setProperty(DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS,
+            String.valueOf(verifyTimeoutMillis));
+        environment.setProperty(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS,
+            String.valueOf(loadDataRetryDelayMillis));
         
         Constructor<DistroConfig> declaredConstructor = DistroConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
@@ -110,32 +118,32 @@ class DistroConfigTest {
         assertEquals(distroConfig.getLoadDataRetryDelayMillis(), loadDataRetryDelayMillis);
         
     }
-
+    
     @Test
     void testSetAndGetSyncTimeoutMillis() {
         distroConfig.setSyncTimeoutMillis(syncTimeoutMillis);
         assertEquals(syncTimeoutMillis, distroConfig.getSyncTimeoutMillis());
     }
-
+    
     @Test
     void testSetAndGetVerifyTimeoutMillis() {
         distroConfig.setVerifyTimeoutMillis(verifyTimeoutMillis);
         assertEquals(verifyTimeoutMillis, distroConfig.getVerifyTimeoutMillis());
     }
-
+    
     @Test
     void testSetAndGetLoadDataRetryDelayMillis() {
         distroConfig.setLoadDataRetryDelayMillis(loadDataRetryDelayMillis);
         assertEquals(loadDataRetryDelayMillis, distroConfig.getLoadDataRetryDelayMillis());
     }
-
+    
     @Test
     void testSetAndGetLoadDataTimeoutMillis() {
         long loadDataTimeoutMillis = 60000L;
         distroConfig.setLoadDataTimeoutMillis(loadDataTimeoutMillis);
         assertEquals(loadDataTimeoutMillis, distroConfig.getLoadDataTimeoutMillis());
     }
-
+    
     @Test
     void testPrintConfig() {
         distroConfig.setSyncDelayMillis(1000L);

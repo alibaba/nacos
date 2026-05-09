@@ -33,37 +33,40 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * @date 2021-06-10 14:11
  */
 class OverrideParameterRequestWrapperTest {
-
+    
     @Test
     void testOverrideParameterRequestWrapper() {
         MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
         httpServletRequest.addParameter("test1", "value1");
-        OverrideParameterRequestWrapper wrapper = OverrideParameterRequestWrapper.buildRequest(httpServletRequest);
+        OverrideParameterRequestWrapper wrapper =
+            OverrideParameterRequestWrapper.buildRequest(httpServletRequest);
         String value1 = wrapper.getParameter("test1");
         assertEquals("value1", value1);
-
+        
         wrapper.addParameter("test2", "value2");
         assertEquals("value2", wrapper.getParameter("test2"));
     }
-
+    
     @Test
     void testBuildRequestWithNameAndValue() {
         MockHttpServletRequest req = new MockHttpServletRequest();
-        OverrideParameterRequestWrapper wrapper = OverrideParameterRequestWrapper.buildRequest(req, "k", "v");
+        OverrideParameterRequestWrapper wrapper =
+            OverrideParameterRequestWrapper.buildRequest(req, "k", "v");
         assertEquals("v", wrapper.getParameter("k"));
     }
-
+    
     @Test
     void testBuildRequestWithMap() {
         MockHttpServletRequest req = new MockHttpServletRequest();
         req.addParameter("a", "1");
         Map<String, String[]> append = new HashMap<>();
         append.put("b", new String[] {"2"});
-        OverrideParameterRequestWrapper wrapper = OverrideParameterRequestWrapper.buildRequest(req, append);
+        OverrideParameterRequestWrapper wrapper =
+            OverrideParameterRequestWrapper.buildRequest(req, append);
         assertEquals("1", wrapper.getParameter("a"));
         assertEquals("2", wrapper.getParameter("b"));
     }
-
+    
     @Test
     void testGetParameterWhenValuesEmptyReturnsNull() {
         MockHttpServletRequest req = new MockHttpServletRequest();
@@ -71,7 +74,7 @@ class OverrideParameterRequestWrapperTest {
         assertNull(wrapper.getParameter("absent"));
         assertNull(wrapper.getParameterValues("absent"));
     }
-
+    
     @Test
     void testAddParameterWithNullValueDoesNotPut() {
         MockHttpServletRequest req = new MockHttpServletRequest();
@@ -79,7 +82,7 @@ class OverrideParameterRequestWrapperTest {
         wrapper.addParameter("key", null);
         assertNull(wrapper.getParameter("key"));
     }
-
+    
     @Test
     void testGetParameterMapReturnsWrapperParams() {
         MockHttpServletRequest req = new MockHttpServletRequest();

@@ -43,90 +43,97 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class DistroSyncDeleteTaskTest {
-
+    
     @Mock
     private DistroComponentHolder distroComponentHolder;
-
+    
     @Mock
     private DistroTransportAgent distroTransportAgent;
-
+    
     private DistroKey distroKey;
-
+    
     @BeforeEach
     void setUp() {
         distroKey = new DistroKey("key", "type", "1.1.1.1:8848");
         when(distroComponentHolder.findTransportAgent("type")).thenReturn(distroTransportAgent);
     }
-
+    
     @Test
     void testGetDataOperation() {
         DistroSyncDeleteTask task = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
         assertEquals(DataOperation.DELETE, task.getDataOperation());
     }
-
+    
     @Test
     void testDoExecute() {
-        when(distroTransportAgent.syncData(any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
-                eq("1.1.1.1:8848"))).thenReturn(true);
+        when(distroTransportAgent.syncData(
+            any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
+            eq("1.1.1.1:8848"))).thenReturn(true);
         DistroSyncDeleteTask task = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
         assertTrue(task.doExecute());
-        verify(distroTransportAgent).syncData(any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
-                eq("1.1.1.1:8848"));
+        verify(distroTransportAgent).syncData(
+            any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
+            eq("1.1.1.1:8848"));
     }
-
+    
     @Test
     void testDoExecuteWithCallback() {
         DistroSyncDeleteTask task = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
         task.doExecuteWithCallback(new DistroCallback() {
+            
             @Override
             public void onSuccess() {
             }
-
+            
             @Override
             public void onFailed(Throwable throwable) {
             }
         });
-        verify(distroTransportAgent).syncData(any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
-                eq("1.1.1.1:8848"), any(DistroCallback.class));
+        verify(distroTransportAgent).syncData(
+            any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
+            eq("1.1.1.1:8848"), any(DistroCallback.class));
     }
-
+    
     @Test
     void testToString() {
         DistroSyncDeleteTask task = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
         assertTrue(task.toString().contains("DistroSyncDeleteTask"));
     }
-
+    
     @Test
     void testRunWhenTransportAgentNull() {
         when(distroComponentHolder.findTransportAgent("type")).thenReturn(null);
         DistroSyncDeleteTask task = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
         task.run();
     }
-
+    
     @Test
     void testRunWithCallbackTransport() {
         when(distroTransportAgent.supportCallbackTransport()).thenReturn(true);
         DistroSyncDeleteTask task = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
         task.run();
-        verify(distroTransportAgent).syncData(any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
-                eq("1.1.1.1:8848"), any(DistroCallback.class));
+        verify(distroTransportAgent).syncData(
+            any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
+            eq("1.1.1.1:8848"), any(DistroCallback.class));
     }
-
+    
     @Test
     void testRunWhenDoExecuteReturnsFalse() {
-        when(distroTransportAgent.syncData(any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
-                eq("1.1.1.1:8848"))).thenReturn(false);
+        when(distroTransportAgent.syncData(
+            any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
+            eq("1.1.1.1:8848"))).thenReturn(false);
         DistroFailedTaskHandler handler = org.mockito.Mockito.mock(DistroFailedTaskHandler.class);
         when(distroComponentHolder.findFailedTaskHandler("type")).thenReturn(handler);
         DistroSyncDeleteTask task = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
         task.run();
         verify(handler).retry(distroKey, DataOperation.DELETE);
     }
-
+    
     @Test
     void testRunWhenDoExecuteThrows() {
-        when(distroTransportAgent.syncData(any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
-                eq("1.1.1.1:8848"))).thenThrow(new RuntimeException("sync fail"));
+        when(distroTransportAgent.syncData(
+            any(com.alibaba.nacos.core.distributed.distro.entity.DistroData.class),
+            eq("1.1.1.1:8848"))).thenThrow(new RuntimeException("sync fail"));
         DistroFailedTaskHandler handler = org.mockito.Mockito.mock(DistroFailedTaskHandler.class);
         when(distroComponentHolder.findFailedTaskHandler("type")).thenReturn(handler);
         DistroSyncDeleteTask task = new DistroSyncDeleteTask(distroKey, distroComponentHolder);

@@ -74,8 +74,9 @@ class NacosServerLoaderServiceTest {
     
     @BeforeEach
     void setUp() {
-        nacosServerLoaderService = new NacosServerLoaderService(connectionManager, serverMemberManager,
-                clusterRpcClientProxy, serverReloaderRequestHandler, serverLoaderInfoRequestHandler);
+        nacosServerLoaderService = new NacosServerLoaderService(connectionManager,
+            serverMemberManager,
+            clusterRpcClientProxy, serverReloaderRequestHandler, serverLoaderInfoRequestHandler);
     }
     
     @Test
@@ -97,14 +98,15 @@ class NacosServerLoaderServiceTest {
         Member member = new Member();
         member.setIp("1.1.1.1");
         member.setPort(8848);
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(member));
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.singletonList(member));
         Map<String, String> metrics = new HashMap<>();
         metrics.put("conCount", "1");
         metrics.put("sdkConCount", "1");
         ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
         serverLoaderInfoResponse.setLoaderMetrics(metrics);
         Mockito.when(serverLoaderInfoRequestHandler.handle(Mockito.any(), Mockito.any()))
-                .thenReturn(serverLoaderInfoResponse);
+            .thenReturn(serverLoaderInfoResponse);
         Mockito.when(serverMemberManager.getSelf()).thenReturn(member);
         boolean result = nacosServerLoaderService.smartReload(1f);
         assertTrue(result);
@@ -122,7 +124,8 @@ class NacosServerLoaderServiceTest {
         Member member = new Member();
         member.setIp("1.1.1.1");
         member.setPort(8848);
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(member));
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.singletonList(member));
         
         Map<String, String> metrics = new HashMap<>();
         metrics.put("sdkConCount", "1");
@@ -132,7 +135,7 @@ class NacosServerLoaderServiceTest {
         ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
         serverLoaderInfoResponse.setLoaderMetrics(metrics);
         Mockito.when(serverLoaderInfoRequestHandler.handle(Mockito.any(), Mockito.any()))
-                .thenReturn(serverLoaderInfoResponse);
+            .thenReturn(serverLoaderInfoResponse);
         
         Mockito.when(serverMemberManager.getSelf()).thenReturn(member);
         
@@ -145,7 +148,7 @@ class NacosServerLoaderServiceTest {
         assertEquals("4", result.getDetail().get(0).getCpu());
         assertEquals("1.1.1.1:8848", result.getDetail().get(0).getAddress());
     }
-
+    
     @Test
     void testGetServerLoaderMetricsWhenAsyncRequestThrows() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
@@ -155,43 +158,45 @@ class NacosServerLoaderServiceTest {
         Member self = new Member();
         self.setIp("1.1.1.1");
         self.setPort(8848);
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(other));
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.singletonList(other));
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
         doThrow(new NacosException(500, "rpc error")).when(clusterRpcClientProxy)
-                .asyncRequest(eq(other), any(), any());
-
+            .asyncRequest(eq(other), any(), any());
+        
         Map<String, String> selfMetrics = new HashMap<>();
         selfMetrics.put("sdkConCount", "5");
         selfMetrics.put("conCount", "5");
         ServerLoaderInfoResponse selfResponse = new ServerLoaderInfoResponse();
         selfResponse.setLoaderMetrics(selfMetrics);
         Mockito.when(serverLoaderInfoRequestHandler.handle(any(), any())).thenReturn(selfResponse);
-
+        
         ServerLoaderMetrics result = nacosServerLoaderService.getServerLoaderMetrics();
-
+        
         assertNotNull(result);
         assertEquals(1, result.getDetail().size());
         assertEquals("1.1.1.1:8848", result.getDetail().get(0).getAddress());
     }
-
+    
     @Test
     void testGetServerLoaderMetricsWhenSelfHandleThrows() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.emptyList());
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.emptyList());
         Member self = new Member();
         self.setIp("1.1.1.1");
         self.setPort(8848);
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
         Mockito.when(serverLoaderInfoRequestHandler.handle(any(), any()))
-                .thenThrow(new NacosException(500, "self metrics fail"));
-
+            .thenThrow(new NacosException(500, "self metrics fail"));
+        
         ServerLoaderMetrics result = nacosServerLoaderService.getServerLoaderMetrics();
-
+        
         assertNotNull(result);
         assertEquals(1, result.getDetail().size());
         assertEquals("1.1.1.1:8848", result.getDetail().get(0).getAddress());
     }
-
+    
     @Test
     void testGetServerLoaderMetricsCallbackOnException() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
@@ -201,29 +206,30 @@ class NacosServerLoaderServiceTest {
         Member self = new Member();
         self.setIp("1.1.1.1");
         self.setPort(8848);
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(other));
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.singletonList(other));
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
-
+        
         ArgumentCaptor<com.alibaba.nacos.api.remote.RequestCallBack> callbackCaptor = ArgumentCaptor
-                .forClass(com.alibaba.nacos.api.remote.RequestCallBack.class);
+            .forClass(com.alibaba.nacos.api.remote.RequestCallBack.class);
         doAnswer(invocation -> {
             callbackCaptor.getValue().onException(new RuntimeException("remote error"));
             return null;
         }).when(clusterRpcClientProxy).asyncRequest(eq(other), any(), callbackCaptor.capture());
-
+        
         Map<String, String> selfMetrics = new HashMap<>();
         selfMetrics.put("sdkConCount", "1");
         selfMetrics.put("conCount", "1");
         ServerLoaderInfoResponse selfResponse = new ServerLoaderInfoResponse();
         selfResponse.setLoaderMetrics(selfMetrics);
         Mockito.when(serverLoaderInfoRequestHandler.handle(any(), any())).thenReturn(selfResponse);
-
+        
         ServerLoaderMetrics result = nacosServerLoaderService.getServerLoaderMetrics();
-
+        
         assertNotNull(result);
         assertEquals(1, result.getDetail().size());
     }
-
+    
     @Test
     void testGetServerLoaderMetricsCallbackOnResponseNonLoaderResponse() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
@@ -233,29 +239,30 @@ class NacosServerLoaderServiceTest {
         Member self = new Member();
         self.setIp("1.1.1.1");
         self.setPort(8848);
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(other));
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.singletonList(other));
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
-
+        
         ArgumentCaptor<com.alibaba.nacos.api.remote.RequestCallBack> callbackCaptor = ArgumentCaptor
-                .forClass(com.alibaba.nacos.api.remote.RequestCallBack.class);
+            .forClass(com.alibaba.nacos.api.remote.RequestCallBack.class);
         doAnswer(invocation -> {
             callbackCaptor.getValue().onResponse(ErrorResponse.build(0, "non-loader"));
             return null;
         }).when(clusterRpcClientProxy).asyncRequest(eq(other), any(), callbackCaptor.capture());
-
+        
         Map<String, String> selfMetrics = new HashMap<>();
         selfMetrics.put("sdkConCount", "1");
         selfMetrics.put("conCount", "1");
         ServerLoaderInfoResponse selfResponse = new ServerLoaderInfoResponse();
         selfResponse.setLoaderMetrics(selfMetrics);
         Mockito.when(serverLoaderInfoRequestHandler.handle(any(), any())).thenReturn(selfResponse);
-
+        
         ServerLoaderMetrics result = nacosServerLoaderService.getServerLoaderMetrics();
-
+        
         assertNotNull(result);
         assertEquals(1, result.getDetail().size());
     }
-
+    
     @Test
     void testSmartReloadWithRemoteMemberFailure() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
@@ -267,23 +274,26 @@ class NacosServerLoaderServiceTest {
         other.setPort(8848);
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
         Mockito.when(serverMemberManager.find("2.2.2.2:8848")).thenReturn(other);
-        Mockito.when(serverMemberManager.allMembers()).thenReturn(java.util.Arrays.asList(self, other));
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(other));
-
+        Mockito.when(serverMemberManager.allMembers())
+            .thenReturn(java.util.Arrays.asList(self, other));
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.singletonList(other));
+        
         Map<String, String> selfMetrics = new HashMap<>();
         selfMetrics.put("conCount", "1");
         selfMetrics.put("sdkConCount", "1");
         ServerLoaderInfoResponse selfResponse = new ServerLoaderInfoResponse();
         selfResponse.setLoaderMetrics(selfMetrics);
-
+        
         Map<String, String> otherMetrics = new HashMap<>();
         otherMetrics.put("conCount", "100");
         otherMetrics.put("sdkConCount", "100");
         ServerLoaderInfoResponse otherResponse = new ServerLoaderInfoResponse();
         otherResponse.setLoaderMetrics(otherMetrics);
-
+        
         Mockito.when(serverLoaderInfoRequestHandler.handle(any(), any())).thenReturn(selfResponse);
-        java.util.concurrent.atomic.AtomicInteger asyncCallCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger asyncCallCount =
+            new java.util.concurrent.atomic.AtomicInteger(0);
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             com.alibaba.nacos.api.remote.RequestCallBack<Response> cb = invocation.getArgument(2);
@@ -294,12 +304,12 @@ class NacosServerLoaderServiceTest {
             }
             return null;
         }).when(clusterRpcClientProxy).asyncRequest(eq(other), any(), any());
-
+        
         boolean result = nacosServerLoaderService.smartReload(0.1f);
-
+        
         assertFalse(result);
     }
-
+    
     @Test
     void testSmartReloadSelfHandleThrows() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
@@ -311,9 +321,11 @@ class NacosServerLoaderServiceTest {
         other.setPort(8848);
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
         Mockito.when(serverMemberManager.find("1.1.1.1:8848")).thenReturn(self);
-        Mockito.when(serverMemberManager.allMembers()).thenReturn(java.util.Arrays.asList(self, other));
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(other));
-
+        Mockito.when(serverMemberManager.allMembers())
+            .thenReturn(java.util.Arrays.asList(self, other));
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.singletonList(other));
+        
         Map<String, String> selfMetrics = new HashMap<>();
         selfMetrics.put("conCount", "100");
         selfMetrics.put("sdkConCount", "100");
@@ -326,16 +338,18 @@ class NacosServerLoaderServiceTest {
         otherResponse.setLoaderMetrics(otherMetrics);
         Mockito.when(serverLoaderInfoRequestHandler.handle(any(), any())).thenReturn(selfResponse);
         doAnswer(invocation -> {
-            invocation.getArgument(2, com.alibaba.nacos.api.remote.RequestCallBack.class).onResponse(otherResponse);
+            invocation.getArgument(2, com.alibaba.nacos.api.remote.RequestCallBack.class)
+                .onResponse(otherResponse);
             return null;
         }).when(clusterRpcClientProxy).asyncRequest(eq(other), any(), any());
-        Mockito.when(serverReloaderRequestHandler.handle(any(), any())).thenThrow(new NacosException(500, "reload fail"));
-
+        Mockito.when(serverReloaderRequestHandler.handle(any(), any()))
+            .thenThrow(new NacosException(500, "reload fail"));
+        
         boolean result = nacosServerLoaderService.smartReload(0.1f);
-
+        
         assertFalse(result);
     }
-
+    
     @Test
     void testSmartReloadRemoteAsyncThrows() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
@@ -347,9 +361,11 @@ class NacosServerLoaderServiceTest {
         other.setPort(8848);
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
         Mockito.when(serverMemberManager.find("2.2.2.2:8848")).thenReturn(other);
-        Mockito.when(serverMemberManager.allMembers()).thenReturn(java.util.Arrays.asList(self, other));
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(other));
-
+        Mockito.when(serverMemberManager.allMembers())
+            .thenReturn(java.util.Arrays.asList(self, other));
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.singletonList(other));
+        
         Map<String, String> selfMetrics = new HashMap<>();
         selfMetrics.put("conCount", "1");
         selfMetrics.put("sdkConCount", "1");
@@ -361,21 +377,23 @@ class NacosServerLoaderServiceTest {
         ServerLoaderInfoResponse otherResponse = new ServerLoaderInfoResponse();
         otherResponse.setLoaderMetrics(otherMetrics);
         Mockito.when(serverLoaderInfoRequestHandler.handle(any(), any())).thenReturn(selfResponse);
-        java.util.concurrent.atomic.AtomicInteger asyncCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger asyncCount =
+            new java.util.concurrent.atomic.AtomicInteger(0);
         doAnswer(invocation -> {
             if (asyncCount.incrementAndGet() == 1) {
-                invocation.getArgument(2, com.alibaba.nacos.api.remote.RequestCallBack.class).onResponse(otherResponse);
+                invocation.getArgument(2, com.alibaba.nacos.api.remote.RequestCallBack.class)
+                    .onResponse(otherResponse);
             } else {
                 throw new NacosException(500, "async request fail");
             }
             return null;
         }).when(clusterRpcClientProxy).asyncRequest(eq(other), any(), any());
-
+        
         boolean result = nacosServerLoaderService.smartReload(0.1f);
-
+        
         assertFalse(result);
     }
-
+    
     @Test
     void testSmartReloadRemoteCallbackOnException() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
@@ -387,9 +405,11 @@ class NacosServerLoaderServiceTest {
         other.setPort(8848);
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
         Mockito.when(serverMemberManager.find("2.2.2.2:8848")).thenReturn(other);
-        Mockito.when(serverMemberManager.allMembers()).thenReturn(java.util.Arrays.asList(self, other));
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(other));
-
+        Mockito.when(serverMemberManager.allMembers())
+            .thenReturn(java.util.Arrays.asList(self, other));
+        Mockito.when(serverMemberManager.allMembersWithoutSelf())
+            .thenReturn(Collections.singletonList(other));
+        
         Map<String, String> selfMetrics = new HashMap<>();
         selfMetrics.put("conCount", "1");
         selfMetrics.put("sdkConCount", "1");
@@ -401,7 +421,8 @@ class NacosServerLoaderServiceTest {
         ServerLoaderInfoResponse otherResponse = new ServerLoaderInfoResponse();
         otherResponse.setLoaderMetrics(otherMetrics);
         Mockito.when(serverLoaderInfoRequestHandler.handle(any(), any())).thenReturn(selfResponse);
-        java.util.concurrent.atomic.AtomicInteger asyncCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger asyncCount =
+            new java.util.concurrent.atomic.AtomicInteger(0);
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             com.alibaba.nacos.api.remote.RequestCallBack<Response> cb = invocation.getArgument(2);
@@ -412,9 +433,9 @@ class NacosServerLoaderServiceTest {
             }
             return null;
         }).when(clusterRpcClientProxy).asyncRequest(eq(other), any(), any());
-
+        
         boolean result = nacosServerLoaderService.smartReload(0.1f);
-
+        
         assertFalse(result);
     }
 }

@@ -48,11 +48,13 @@ class ParamRequestConditionTest {
     @Test
     void testGetMatchingCondition() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        ParamRequestCondition paramRequestCondition1 = paramRequestCondition.getMatchingCondition(request);
+        ParamRequestCondition paramRequestCondition1 =
+            paramRequestCondition.getMatchingCondition(request);
         assertNull(paramRequestCondition1);
         
         request.setParameter("test", "1244");
-        ParamRequestCondition paramRequestCondition2 = paramRequestCondition.getMatchingCondition(request);
+        ParamRequestCondition paramRequestCondition2 =
+            paramRequestCondition.getMatchingCondition(request);
         assertNotNull(paramRequestCondition2);
     }
     

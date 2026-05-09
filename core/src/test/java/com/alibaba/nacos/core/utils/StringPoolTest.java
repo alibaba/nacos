@@ -34,18 +34,18 @@ class StringPoolTest {
     void testStringPool() {
         String val1 = StringPool.get("test");
         assertEquals("test", val1);
-
+        
         String val2 = StringPool.get(null);
         assertNull(val2);
-
+        
         long size1 = StringPool.size();
         assertTrue(size1 >= 1);
-
+        
         StringPool.remove("test");
         long size2 = StringPool.size();
         assertTrue(size2 >= 0);
     }
-
+    
     @Test
     void testGetAfterRemoveReturnsNewInstance() {
         String key = "uniqueKeyForGetAfterRemove";

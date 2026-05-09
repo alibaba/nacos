@@ -156,7 +156,8 @@ class MemberUtilTest {
         file.getParentFile().mkdirs();
         assertTrue(file.createNewFile());
         MemberUtil.syncToFile(Collections.singleton(originalMember));
-        try (BufferedReader reader = new BufferedReader(new FileReader(EnvUtil.getClusterConfFilePath()))) {
+        try (BufferedReader reader =
+            new BufferedReader(new FileReader(EnvUtil.getClusterConfFilePath()))) {
             String line = "";
             while ((line = reader.readLine()) != null) {
                 if (!line.startsWith("#")) {
@@ -186,10 +187,11 @@ class MemberUtilTest {
         Member member = buildMember();
         member.setIp("2.2.2.2");
         input.add(member);
-        Set<Member> actual = MemberUtil.selectTargetMembers(input, member1 -> member1.getIp().equals(IP));
+        Set<Member> actual =
+            MemberUtil.selectTargetMembers(input, member1 -> member1.getIp().equals(IP));
         assertEquals(1, actual.size());
     }
-
+    
     @Test
     void testSimpleMembers() {
         Collection<Member> members = new HashSet<>();
@@ -294,7 +296,8 @@ class MemberUtilTest {
         final Member remote = buildMember();
         mockMemberAddressInfos.add(remote.getAddress());
         remote.setFailAccessCnt(1);
-        MemberUtil.onFail(memberManager, remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
+        MemberUtil.onFail(memberManager, remote,
+            new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
         assertEquals(2, remote.getFailAccessCnt());
         assertEquals(NodeState.DOWN, remote.getState());
         assertTrue(mockMemberAddressInfos.isEmpty());

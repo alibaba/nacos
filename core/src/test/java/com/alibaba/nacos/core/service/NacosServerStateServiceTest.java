@@ -38,40 +38,40 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class NacosServerStateServiceTest {
-
+    
     @Test
     void getServerStateEmpty() {
         try (MockedStatic<ModuleStateHolder> mocked = mockStatic(ModuleStateHolder.class)) {
             ModuleStateHolder holder = org.mockito.Mockito.mock(ModuleStateHolder.class);
             mocked.when(ModuleStateHolder::getInstance).thenReturn(holder);
             when(holder.getAllModuleStates()).thenReturn(Collections.emptySet());
-
+            
             NacosServerStateService service = new NacosServerStateService();
             Map<String, String> state = service.getServerState();
-
+            
             assertNotNull(state);
             assertEquals(0, state.size());
         }
     }
-
+    
     @Test
     void getServerStateWithModules() {
         try (MockedStatic<ModuleStateHolder> mocked = mockStatic(ModuleStateHolder.class)) {
             ModuleStateHolder holder = org.mockito.Mockito.mock(ModuleStateHolder.class);
             mocked.when(ModuleStateHolder::getInstance).thenReturn(holder);
-
+            
             ModuleState moduleState = new ModuleState("test-module");
             moduleState.newState("key1", "value1");
             moduleState.newState("key2", 100);
             moduleState.newState("key3", null);
-
+            
             Set<ModuleState> states = new HashSet<>();
             states.add(moduleState);
             when(holder.getAllModuleStates()).thenReturn(states);
-
+            
             NacosServerStateService service = new NacosServerStateService();
             Map<String, String> state = service.getServerState();
-
+            
             assertNotNull(state);
             assertEquals(3, state.size());
             assertEquals("value1", state.get("key1"));

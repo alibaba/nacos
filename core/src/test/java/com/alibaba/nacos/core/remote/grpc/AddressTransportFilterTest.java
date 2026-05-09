@@ -36,19 +36,19 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AddressTransportFilterTest {
-
+    
     @Mock
     private ConnectionManager connectionManager;
-
+    
     @Test
     void testTransportReady() {
         AddressTransportFilter filter = new AddressTransportFilter(connectionManager);
         InetSocketAddress remote = new InetSocketAddress("192.168.1.1", 12345);
         InetSocketAddress local = new InetSocketAddress("0.0.0.0", 9848);
         Attributes transportAttrs = Attributes.newBuilder()
-                .set(Grpc.TRANSPORT_ATTR_REMOTE_ADDR, remote)
-                .set(Grpc.TRANSPORT_ATTR_LOCAL_ADDR, local)
-                .build();
+            .set(Grpc.TRANSPORT_ATTR_REMOTE_ADDR, remote)
+            .set(Grpc.TRANSPORT_ATTR_LOCAL_ADDR, local)
+            .build();
         Attributes result = filter.transportReady(transportAttrs);
         assertNotNull(result);
         assertNotNull(result.get(ATTR_TRANS_KEY_CONN_ID));
@@ -56,23 +56,23 @@ class AddressTransportFilterTest {
         assertEquals(12345, (int) result.get(ATTR_TRANS_KEY_REMOTE_PORT));
         assertEquals(9848, (int) result.get(ATTR_TRANS_KEY_LOCAL_PORT));
     }
-
+    
     @Test
     void testTransportTerminatedWithConnectionId() {
         AddressTransportFilter filter = new AddressTransportFilter(connectionManager);
         Attributes transportAttrs = Attributes.newBuilder()
-                .set(ATTR_TRANS_KEY_CONN_ID, "conn-123")
-                .build();
+            .set(ATTR_TRANS_KEY_CONN_ID, "conn-123")
+            .build();
         filter.transportTerminated(transportAttrs);
         verify(connectionManager).unregister("conn-123");
     }
-
+    
     @Test
     void testTransportTerminatedWithBlankConnectionId() {
         AddressTransportFilter filter = new AddressTransportFilter(connectionManager);
         Attributes transportAttrs = Attributes.newBuilder()
-                .set(ATTR_TRANS_KEY_CONN_ID, "   ")
-                .build();
+            .set(ATTR_TRANS_KEY_CONN_ID, "   ")
+            .build();
         filter.transportTerminated(transportAttrs);
     }
 }

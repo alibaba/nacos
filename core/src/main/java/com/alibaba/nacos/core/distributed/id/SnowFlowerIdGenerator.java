@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("all")
 public class SnowFlowerIdGenerator implements IdGenerator {
     
-    private static final String DATETIME_PATTERN =  "yyyy-MM-dd HH:mm:ss.SSS";
+    private static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS";
     
     /**
      * Start time intercept (2018-08-05 08:34)
@@ -97,11 +97,13 @@ public class SnowFlowerIdGenerator implements IdGenerator {
             try {
                 address = InetAddress.getByName(InetUtils.getSelfIP());
             } catch (final UnknownHostException e) {
-                throw new IllegalStateException("Cannot get LocalHost InetAddress, please check your network!", e);
+                throw new IllegalStateException(
+                    "Cannot get LocalHost InetAddress, please check your network!", e);
             }
             byte[] ipAddressByteArray = address.getAddress();
-            this.workerId = (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE) + (
-                    ipAddressByteArray[ipAddressByteArray.length - 1] & 0xFF));
+            this.workerId =
+                (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE)
+                    + (ipAddressByteArray[ipAddressByteArray.length - 1] & 0xFF));
         }
     }
     
@@ -134,8 +136,9 @@ public class SnowFlowerIdGenerator implements IdGenerator {
         this.lastTime = currentMillis;
         
         if (logger.isDebugEnabled()) {
-            logger.debug("{}-{}-{}", (new SimpleDateFormat(DATETIME_PATTERN)).format(new Date(this.lastTime)),
-                    workerId, this.sequence);
+            logger.debug("{}-{}-{}",
+                (new SimpleDateFormat(DATETIME_PATTERN)).format(new Date(this.lastTime)),
+                workerId, this.sequence);
         }
         
         currentId = currentMillis - EPOCH << 22 | workerId << 12 | this.sequence;
@@ -160,8 +163,9 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     public void initialize(long workerId) {
         if (workerId > WORKER_ID_MAX_VALUE || workerId < 0) {
             throw new IllegalArgumentException(
-                    String.format("worker Id can't be greater than %d or less than 0, current workId %d",
-                            WORKER_ID_MAX_VALUE, workerId));
+                String.format(
+                    "worker Id can't be greater than %d or less than 0, current workId %d",
+                    WORKER_ID_MAX_VALUE, workerId));
         }
         this.workerId = workerId;
     }
@@ -183,7 +187,8 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     }
     
     private long currentTimeMillis() {
-        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - monotonicStartTime) + startWallTime;
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - monotonicStartTime)
+            + startWallTime;
     }
     
 }

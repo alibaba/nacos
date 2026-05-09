@@ -35,44 +35,45 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @ExtendWith(MockitoExtension.class)
 class DistroDelayTaskProcessorTest {
-
+    
     @Mock
     private DistroComponentHolder distroComponentHolder;
-
+    
     private DistroTaskEngineHolder distroTaskEngineHolder;
-
+    
     private DistroDelayTaskProcessor processor;
-
+    
     @BeforeEach
     void setUp() {
         distroTaskEngineHolder = new DistroTaskEngineHolder(distroComponentHolder);
         processor = new DistroDelayTaskProcessor(distroTaskEngineHolder, distroComponentHolder);
     }
-
+    
     @Test
     void testProcessNonDistroDelayTask() {
         assertTrue(processor.process(new NacosTask() {
+            
             @Override
             public boolean shouldProcess() {
                 return true;
             }
         }));
     }
-
+    
     @Test
     void testProcessDeleteAction() {
         DistroKey key = new DistroKey("k", "type", "target");
         DistroDelayTask task = new DistroDelayTask(key, DataOperation.DELETE, 100L);
         assertTrue(processor.process(task));
     }
-
+    
     @Test
     void testProcessChangeAction() {
         DistroKey key = new DistroKey("k", "type", "target");
         DistroDelayTask task = new DistroDelayTask(key, DataOperation.CHANGE, 100L);
         assertTrue(processor.process(task));
     }
-
+    
     @Test
     void testProcessAddAction() {
         DistroKey key = new DistroKey("k", "type", "target");

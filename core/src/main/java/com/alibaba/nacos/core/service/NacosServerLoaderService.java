@@ -66,9 +66,11 @@ public class NacosServerLoaderService {
     
     private final ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
     
-    public NacosServerLoaderService(ConnectionManager connectionManager, ServerMemberManager serverMemberManager,
-            ClusterRpcClientProxy clusterRpcClientProxy, ServerReloaderRequestHandler serverReloaderRequestHandler,
-            ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler) {
+    public NacosServerLoaderService(ConnectionManager connectionManager,
+        ServerMemberManager serverMemberManager,
+        ClusterRpcClientProxy clusterRpcClientProxy,
+        ServerReloaderRequestHandler serverReloaderRequestHandler,
+        ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler) {
         this.connectionManager = connectionManager;
         this.serverMemberManager = serverMemberManager;
         this.clusterRpcClientProxy = clusterRpcClientProxy;
@@ -125,10 +127,12 @@ public class NacosServerLoaderService {
         int overLimitCount = (int) (serverLoadMetrics.getAvg() * (1 + loaderFactor));
         int lowLimitCount = (int) (serverLoadMetrics.getAvg() * (1 - loaderFactor));
         List<ServerLoaderMetric> overLimitServer = details.stream()
-                .filter(metric -> metric.getSdkConCount() > overLimitCount).collect(Collectors.toList());
+            .filter(metric -> metric.getSdkConCount() > overLimitCount)
+            .collect(Collectors.toList());
         List<ServerLoaderMetric> lowLimitServer = details.stream()
-                .filter(metric -> metric.getSdkConCount() < lowLimitCount).collect(Collectors.toList());
-        overLimitServer.sort(Comparator.comparingInt(ServerLoaderMetric::getSdkConCount).reversed());
+            .filter(metric -> metric.getSdkConCount() < lowLimitCount).collect(Collectors.toList());
+        overLimitServer
+            .sort(Comparator.comparingInt(ServerLoaderMetric::getSdkConCount).reversed());
         LOGGER.info("Over load limit server list ={}", overLimitServer);
         lowLimitServer.sort(Comparator.comparingInt(ServerLoaderMetric::getSdkConCount));
         LOGGER.info("Low load limit server list ={}", lowLimitServer);
@@ -140,8 +144,9 @@ public class NacosServerLoaderService {
             serverLoaderInfoRequest.setReloadServer(lowLimitServer.get(i).getAddress());
             Member member = serverMemberManager.find(overLimitServer.get(i).getAddress());
             
-            LOGGER.info("Reload task submit ,fromServer ={},toServer={}, ", overLimitServer.get(i).getAddress(),
-                    lowLimitServer.get(i).getAddress());
+            LOGGER.info("Reload task submit ,fromServer ={},toServer={}, ",
+                overLimitServer.get(i).getAddress(),
+                lowLimitServer.get(i).getAddress());
             
             if (serverMemberManager.getSelf().equals(member)) {
                 try {
@@ -153,32 +158,35 @@ public class NacosServerLoaderService {
             } else {
                 
                 try {
-                    clusterRpcClientProxy.asyncRequest(member, serverLoaderInfoRequest, new RequestCallBack() {
-                        @Override
-                        public Executor getExecutor() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public long getTimeout() {
-                            return 100L;
-                        }
-                        
-                        @Override
-                        public void onResponse(Response response) {
-                            if (response == null || !response.isSuccess()) {
-                                LOGGER.error("Fail to loader member={},response={}", member.getAddress(), response);
-                                result.set(false);
-                                
+                    clusterRpcClientProxy.asyncRequest(member, serverLoaderInfoRequest,
+                        new RequestCallBack() {
+                            
+                            @Override
+                            public Executor getExecutor() {
+                                return null;
                             }
-                        }
-                        
-                        @Override
-                        public void onException(Throwable e) {
-                            LOGGER.error("Fail to loader member={}", member.getAddress(), e);
-                            result.set(false);
-                        }
-                    });
+                            
+                            @Override
+                            public long getTimeout() {
+                                return 100L;
+                            }
+                            
+                            @Override
+                            public void onResponse(Response response) {
+                                if (response == null || !response.isSuccess()) {
+                                    LOGGER.error("Fail to loader member={},response={}",
+                                        member.getAddress(), response);
+                                    result.set(false);
+                                    
+                                }
+                            }
+                            
+                            @Override
+                            public void onException(Throwable e) {
+                                LOGGER.error("Fail to loader member={}", member.getAddress(), e);
+                                result.set(false);
+                            }
+                        });
                 } catch (NacosException e) {
                     LOGGER.error("Fail to loader member={}", member.getAddress(), e);
                     result.set(false);
@@ -200,7 +208,8 @@ public class NacosServerLoaderService {
         CountDownLatch countDownLatch = new CountDownLatch(memberSize);
         for (Member member : serverMemberManager.allMembersWithoutSelf()) {
             ServerLoaderInfoRequest serverLoaderInfoRequest = new ServerLoaderInfoRequest();
-            ServerLoaderMetricCallBack callBack = new ServerLoaderMetricCallBack(member, responseList, countDownLatch);
+            ServerLoaderMetricCallBack callBack =
+                new ServerLoaderMetricCallBack(member, responseList, countDownLatch);
             try {
                 clusterRpcClientProxy.asyncRequest(member, serverLoaderInfoRequest, callBack);
             } catch (NacosException e) {
@@ -210,8 +219,10 @@ public class NacosServerLoaderService {
         }
         responseList.add(getSelfServerLoaderMetric());
         waitAsyncGetLoaderMetricFinish(countDownLatch);
-        int max = responseList.stream().mapToInt(ServerLoaderMetric::getSdkConCount).max().orElse(0);
-        int min = responseList.stream().mapToInt(ServerLoaderMetric::getSdkConCount).min().orElse(0);
+        int max =
+            responseList.stream().mapToInt(ServerLoaderMetric::getSdkConCount).max().orElse(0);
+        int min =
+            responseList.stream().mapToInt(ServerLoaderMetric::getSdkConCount).min().orElse(0);
         int total = responseList.stream().mapToInt(ServerLoaderMetric::getSdkConCount).sum();
         responseList.sort(Comparator.comparing(ServerLoaderMetric::getAddress));
         return buildMetrics(responseList, max, min, total);
@@ -221,7 +232,8 @@ public class NacosServerLoaderService {
         ServerLoaderMetric.Builder builder = ServerLoaderMetric.Builder.newBuilder();
         builder.withAddress(serverMemberManager.getSelf().getAddress());
         try {
-            ServerLoaderInfoResponse handle = serverLoaderInfoRequestHandler.handle(new ServerLoaderInfoRequest(),
+            ServerLoaderInfoResponse handle =
+                serverLoaderInfoRequestHandler.handle(new ServerLoaderInfoRequest(),
                     new RequestMeta());
             builder.convertFromMap(handle.getLoaderMetrics());
         } catch (NacosException e) {
@@ -238,12 +250,14 @@ public class NacosServerLoaderService {
         }
     }
     
-    private ServerLoaderMetrics buildMetrics(List<ServerLoaderMetric> responseList, int max, int min, int total) {
+    private ServerLoaderMetrics buildMetrics(List<ServerLoaderMetric> responseList, int max,
+        int min, int total) {
         ServerLoaderMetrics serverLoaderMetrics = new ServerLoaderMetrics();
         serverLoaderMetrics.setDetail(responseList);
         serverLoaderMetrics.setMemberCount(serverMemberManager.allMembers().size());
         serverLoaderMetrics.setMetricsCount(responseList.size());
-        serverLoaderMetrics.setCompleted(responseList.size() == serverMemberManager.allMembers().size());
+        serverLoaderMetrics
+            .setCompleted(responseList.size() == serverMemberManager.allMembers().size());
         serverLoaderMetrics.setMax(max);
         serverLoaderMetrics.setMin(min);
         serverLoaderMetrics.setAvg(total / responseList.size());
@@ -261,7 +275,7 @@ public class NacosServerLoaderService {
         private final CountDownLatch countDownLatch;
         
         private ServerLoaderMetricCallBack(Member member, List<ServerLoaderMetric> responseList,
-                CountDownLatch countDownLatch) {
+            CountDownLatch countDownLatch) {
             this.member = member;
             this.responseList = responseList;
             this.countDownLatch = countDownLatch;
@@ -282,7 +296,7 @@ public class NacosServerLoaderService {
             if (response instanceof ServerLoaderInfoResponse) {
                 ServerLoaderMetric.Builder builder = ServerLoaderMetric.Builder.newBuilder();
                 builder.withAddress(member.getAddress())
-                        .convertFromMap(((ServerLoaderInfoResponse) response).getLoaderMetrics());
+                    .convertFromMap(((ServerLoaderInfoResponse) response).getLoaderMetrics());
                 responseList.add(builder.build());
             }
             countDownLatch.countDown();

@@ -30,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * {@link SubscribeServiceRequestParamExtractor} unit test.
  */
 class SubscribeServiceRequestParamExtractorTest {
-
+    
     private SubscribeServiceRequestParamExtractor extractor;
-
+    
     @BeforeEach
     void setUp() {
         extractor = new SubscribeServiceRequestParamExtractor();
     }
-
+    
     @Test
     void extractParam() {
         SubscribeServiceRequest request = new SubscribeServiceRequest();

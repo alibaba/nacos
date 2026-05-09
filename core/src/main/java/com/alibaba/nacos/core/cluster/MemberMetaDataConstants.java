@@ -44,6 +44,7 @@ public class MemberMetaDataConstants {
     
     public static final String SUPPORT_GRAY_MODEL = "supportGrayModel";
     
-    public static final String[] BASIC_META_KEYS = new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT, WEIGHT, VERSION,
-            READY_TO_UPGRADE};
+    public static final String[] BASIC_META_KEYS =
+        new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT, WEIGHT, VERSION,
+                READY_TO_UPGRADE};
 }

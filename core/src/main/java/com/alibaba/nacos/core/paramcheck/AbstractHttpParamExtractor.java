@@ -27,7 +27,8 @@ import java.util.List;
  *
  * @author zhuoguang
  */
-public abstract class AbstractHttpParamExtractor implements ParamExtractor<HttpServletRequest, ParamInfo> {
+public abstract class AbstractHttpParamExtractor
+    implements ParamExtractor<HttpServletRequest, ParamInfo> {
     
     /**
      * Extract param.

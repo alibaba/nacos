@@ -37,7 +37,8 @@ public class ConsistencyConfiguration {
     
     @Bean(value = "strongAgreementProtocol")
     public CPProtocol strongAgreementProtocol(ServerMemberManager memberManager) throws Exception {
-        final CPProtocol protocol = getProtocol(CPProtocol.class, () -> new JRaftProtocol(memberManager));
+        final CPProtocol protocol =
+            getProtocol(CPProtocol.class, () -> new JRaftProtocol(memberManager));
         return protocol;
     }
     

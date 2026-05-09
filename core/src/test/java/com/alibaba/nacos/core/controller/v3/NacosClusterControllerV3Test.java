@@ -105,7 +105,8 @@ class NacosClusterControllerV3Test {
         member.setPort(8848);
         member.setAddress("test");
         when(nacosClusterOperationService.updateNodes(any())).thenReturn(true);
-        Result<Boolean> result = nacosClusterControllerV3.updateNodes(Collections.singletonList(member));
+        Result<Boolean> result =
+            nacosClusterControllerV3.updateNodes(Collections.singletonList(member));
         verify(nacosClusterOperationService).updateNodes(any());
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertTrue(result.getData());
@@ -126,7 +127,7 @@ class NacosClusterControllerV3Test {
     @Test
     void testListNodesWithIllegalState() {
         assertThrows(NacosApiException.class,
-                () -> nacosClusterControllerV3.listNodes(null, "INVALID_STATE"));
+            () -> nacosClusterControllerV3.listNodes(null, "INVALID_STATE"));
     }
     
     @Test
@@ -136,7 +137,8 @@ class NacosClusterControllerV3Test {
     
     @Test
     void testUpdateNodesWithEmptyList() {
-        assertThrows(NacosApiException.class, () -> nacosClusterControllerV3.updateNodes(Collections.emptyList()));
+        assertThrows(NacosApiException.class,
+            () -> nacosClusterControllerV3.updateNodes(Collections.emptyList()));
     }
     
     @Test

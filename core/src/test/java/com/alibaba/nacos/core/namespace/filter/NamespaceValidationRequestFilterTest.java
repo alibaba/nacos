@@ -58,243 +58,273 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class NamespaceValidationRequestFilterTest {
-
+    
     private NamespaceValidationRequestFilter namespaceValidationFilter;
-
+    
     @Mock
     private NamespaceOperationService namespaceOperationService;
-
+    
     @Mock
     private Request request;
-
+    
     @Mock
     private RequestMeta requestMeta;
-
+    
     @Mock
     private AbstractRpcParamExtractor paramExtractor;
-
+    
     @BeforeEach
     void setUp() {
         namespaceValidationFilter = new NamespaceValidationRequestFilter(namespaceOperationService);
     }
-
+    
     @Test
     void testFilterWithGlobalConfigDisabled() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(false);
-
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class)) {
+        
+        try (MockedStatic<NamespaceValidationConfig> mockedStatic =
+            mockStatic(NamespaceValidationConfig.class)) {
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidation.class);
-
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithEnabledValidation.class);
+            
             // When global config is disabled, filter should return null (skip validation)
             assertNull(response);
         }
     }
-
+    
     @Test
     void testFilterWithoutNamespaceValidationAnnotation() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class)) {
+        
+        try (MockedStatic<NamespaceValidationConfig> mockedStatic =
+            mockStatic(NamespaceValidationConfig.class)) {
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithoutNamespaceValidationAnnotation.class);
-
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithoutNamespaceValidationAnnotation.class);
+            
             // When no @NamespaceValidation annotation is found, should return null
             assertNull(response);
         }
     }
-
+    
     @Test
     void testFilterWithNamespaceValidationDisabled() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class)) {
+        
+        try (MockedStatic<NamespaceValidationConfig> mockedStatic =
+            mockStatic(NamespaceValidationConfig.class)) {
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithDisabledValidation.class);
-
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithDisabledValidation.class);
+            
             // When @NamespaceValidation(enable=false), should return null
             assertNull(response);
         }
     }
-
+    
     @Test
     void testFilterWithoutExtractorAnnotation() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class)) {
+        
+        try (MockedStatic<NamespaceValidationConfig> mockedStatic =
+            mockStatic(NamespaceValidationConfig.class)) {
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidationButNoExtractor.class);
-
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithEnabledValidationButNoExtractor.class);
+            
             // When no extractor annotation is found, should return null
             assertNull(response);
         }
     }
-
+    
     @Test
     void testFilterWithExtractorReturningEmptyList() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
+        
         try (
-                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
-        ) {
-
+            MockedStatic<NamespaceValidationConfig> mockedStatic =
+                mockStatic(NamespaceValidationConfig.class);
+            MockedStatic<ExtractorManager> extractorManagerMock =
+                mockStatic(ExtractorManager.class)) {
+            
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
+            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any()))
+                .thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(Collections.emptyList());
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidation.class);
-
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithEnabledValidation.class);
+            
             // When extractor returns empty list, should return null
             assertNull(response);
         }
     }
-
+    
     @Test
     void testFilterWithNullNamespaceParam() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
+        
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(null);
         List<ParamInfo> paramInfoList = Arrays.asList(paramInfo);
-
+        
         try (
-                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
-        ) {
-
+            MockedStatic<NamespaceValidationConfig> mockedStatic =
+                mockStatic(NamespaceValidationConfig.class);
+            MockedStatic<ExtractorManager> extractorManagerMock =
+                mockStatic(ExtractorManager.class)) {
+            
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
+            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any()))
+                .thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidation.class);
-
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithEnabledValidation.class);
+            
             // When namespace is null, should skip validation and return null
             assertNull(response);
         }
     }
-
+    
     @Test
     void testFilterWithExistingNamespace() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
+        
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId("existing-namespace");
         List<ParamInfo> paramInfoList = Collections.singletonList(paramInfo);
-
+        
         when(namespaceOperationService.namespaceExists("existing-namespace")).thenReturn(true);
-
+        
         try (
-                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
-        ) {
-
+            MockedStatic<NamespaceValidationConfig> mockedStatic =
+                mockStatic(NamespaceValidationConfig.class);
+            MockedStatic<ExtractorManager> extractorManagerMock =
+                mockStatic(ExtractorManager.class)) {
+            
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
+            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any()))
+                .thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidation.class);
-
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithEnabledValidation.class);
+            
             // When namespace exists, should return null (pass validation)
             assertNull(response);
         }
     }
-
+    
     @Test
     void testFilterWithNonExistingNamespace() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
+        
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId("non-existing-namespace");
         List<ParamInfo> paramInfoList = Arrays.asList(paramInfo);
-
+        
         when(namespaceOperationService.namespaceExists("non-existing-namespace")).thenReturn(false);
-
+        
         try (
-                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
-        ) {
-
+            MockedStatic<NamespaceValidationConfig> mockedStatic =
+                mockStatic(NamespaceValidationConfig.class);
+            MockedStatic<ExtractorManager> extractorManagerMock =
+                mockStatic(ExtractorManager.class)) {
+            
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
+            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any()))
+                .thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidation.class);
-
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithEnabledValidation.class);
+            
             // When namespace doesn't exist, should return error response
             assertNotNull(response);
             assertEquals(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), response.getErrorCode());
-            assertEquals("Namespace 'non-existing-namespace' does not exist. Please create the namespace first.",
-                    response.getMessage());
+            assertEquals(
+                "Namespace 'non-existing-namespace' does not exist. Please create the namespace first.",
+                response.getMessage());
         }
     }
-
+    
     @Test
     void testFilterWithMultipleParamInfos() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
+        
         ParamInfo paramInfo1 = new ParamInfo();
         paramInfo1.setNamespaceId("existing-namespace");
         ParamInfo paramInfo2 = new ParamInfo();
         paramInfo2.setNamespaceId("non-existing-namespace");
         List<ParamInfo> paramInfoList = Arrays.asList(paramInfo1, paramInfo2);
-
+        
         when(namespaceOperationService.namespaceExists("existing-namespace")).thenReturn(true);
         when(namespaceOperationService.namespaceExists("non-existing-namespace")).thenReturn(false);
-
+        
         try (
-                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
-        ) {
-
+            MockedStatic<NamespaceValidationConfig> mockedStatic =
+                mockStatic(NamespaceValidationConfig.class);
+            MockedStatic<ExtractorManager> extractorManagerMock =
+                mockStatic(ExtractorManager.class)) {
+            
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
+            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any()))
+                .thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidation.class);
-
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithEnabledValidation.class);
+            
             // When one namespace doesn't exist, should return error response
             assertNotNull(response);
             assertEquals(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), response.getErrorCode());
-            assertEquals("Namespace 'non-existing-namespace' does not exist. Please create the namespace first.",
-                    response.getMessage());
+            assertEquals(
+                "Namespace 'non-existing-namespace' does not exist. Please create the namespace first.",
+                response.getMessage());
         }
     }
-
+    
     @Test
     void testFilterWithExceptionInMainFlow() throws NacosException {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
+        
         try (
-                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
-        ) {
-
+            MockedStatic<NamespaceValidationConfig> mockedStatic =
+                mockStatic(NamespaceValidationConfig.class);
+            MockedStatic<ExtractorManager> extractorManagerMock =
+                mockStatic(ExtractorManager.class)) {
+            
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenThrow(new RuntimeException("Extractor error"));
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidation.class);
-
+            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any()))
+                .thenThrow(new RuntimeException("Extractor error"));
+            
+            Response response = namespaceValidationFilter.filter(request, requestMeta,
+                MockWithEnabledValidation.class);
+            
             // When exception occurs in main flow, should return null (caught by try-catch)
             assertNull(response);
         }
     }
-
-    static class MockWithoutNamespaceValidationAnnotation extends RequestHandler<Request, Response> {
+    
+    static class MockWithoutNamespaceValidationAnnotation
+        extends RequestHandler<Request, Response> {
+        
         @Override
         @ExtractorManager.Extractor(rpcExtractor = InstanceRequestParamExtractor.class)
         public Response handle(Request request, RequestMeta meta) throws NacosException {
@@ -302,34 +332,40 @@ class NamespaceValidationRequestFilterTest {
             };
         }
     }
-
-    static class MockWithDisabledValidation extends RequestHandler<InstanceRequest, InstanceResponse> {
-
+    
+    static class MockWithDisabledValidation
+        extends RequestHandler<InstanceRequest, InstanceResponse> {
+        
         @Override
         @NamespaceValidation(enable = false)
         @ExtractorManager.Extractor(rpcExtractor = InstanceRequestParamExtractor.class)
-        public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
+        public InstanceResponse handle(InstanceRequest request, RequestMeta meta)
+            throws NacosException {
             return new InstanceResponse();
         }
     }
-
-    static class MockWithEnabledValidationButNoExtractor extends RequestHandler<InstanceRequest, InstanceResponse> {
-
+    
+    static class MockWithEnabledValidationButNoExtractor
+        extends RequestHandler<InstanceRequest, InstanceResponse> {
+        
         @Override
         @NamespaceValidation
-        public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
+        public InstanceResponse handle(InstanceRequest request, RequestMeta meta)
+            throws NacosException {
             return new InstanceResponse();
         }
     }
-
-    static class MockWithEnabledValidation extends RequestHandler<InstanceRequest, InstanceResponse> {
-
+    
+    static class MockWithEnabledValidation
+        extends RequestHandler<InstanceRequest, InstanceResponse> {
+        
         @Override
         @NamespaceValidation
         @ExtractorManager.Extractor(rpcExtractor = InstanceRequestParamExtractor.class)
-        public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
+        public InstanceResponse handle(InstanceRequest request, RequestMeta meta)
+            throws NacosException {
             return new InstanceResponse();
         }
     }
-
+    
 }

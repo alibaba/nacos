@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DerbySnapshotOperationTest {
-
+    
     @Mock
     private LocalDataSourceServiceImpl dataSourceService;
     @Mock
@@ -61,18 +61,18 @@ class DerbySnapshotOperationTest {
     private Connection connection;
     @Mock
     private CallableStatement callableStatement;
-
+    
     private MockedStatic<DynamicDataSource> dynamicDataSourceMock;
     private MockedStatic<EnvUtil> envUtilMock;
     private MockedStatic<DiskUtils> diskUtilsMock;
     private MockedStatic<PersistenceExecutor> persistenceExecutorMock;
-
+    
     @BeforeEach
     void setUp() {
         envUtilMock = Mockito.mockStatic(EnvUtil.class);
         envUtilMock.when(EnvUtil::getNacosHome).thenReturn(System.getProperty("java.io.tmpdir"));
     }
-
+    
     @AfterEach
     void tearDown() {
         if (dynamicDataSourceMock != null) {
@@ -88,14 +88,14 @@ class DerbySnapshotOperationTest {
             persistenceExecutorMock.close();
         }
     }
-
+    
     @Test
     void testConstructor() {
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         DerbySnapshotOperation operation = new DerbySnapshotOperation(lock.writeLock());
         assertNotNull(operation);
     }
-
+    
     @Test
     void testOnSnapshotLoadWhenSnapshotFileMissing() {
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -105,15 +105,16 @@ class DerbySnapshotOperationTest {
         boolean result = operation.onSnapshotLoad(reader);
         assertFalse(result);
     }
-
+    
     @Test
     void testOnSnapshotSaveWithMocks() throws Exception {
         persistenceExecutorMock = Mockito.mockStatic(PersistenceExecutor.class);
-        persistenceExecutorMock.when(() -> PersistenceExecutor.executeSnapshot(any(Runnable.class))).thenAnswer(inv -> {
-            inv.getArgument(0, Runnable.class).run();
-            return null;
-        });
-
+        persistenceExecutorMock.when(() -> PersistenceExecutor.executeSnapshot(any(Runnable.class)))
+            .thenAnswer(inv -> {
+                inv.getArgument(0, Runnable.class).run();
+                return null;
+            });
+        
         dynamicDataSourceMock = Mockito.mockStatic(DynamicDataSource.class);
         DynamicDataSource dsHolder = Mockito.mock(DynamicDataSource.class);
         when(dsHolder.getDataSource()).thenReturn(dataSourceService);
@@ -122,58 +123,60 @@ class DerbySnapshotOperationTest {
         when(jdbcTemplate.getDataSource()).thenReturn(dataSource);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareCall(anyString())).thenReturn(callableStatement);
-
+        
         diskUtilsMock = Mockito.mockStatic(DiskUtils.class);
         diskUtilsMock.when(() -> DiskUtils.deleteDirectory(anyString())).thenAnswer(inv -> null);
         diskUtilsMock.when(() -> DiskUtils.forceMkdir(anyString())).thenAnswer(inv -> null);
-        diskUtilsMock.when(() -> DiskUtils.compress(anyString(), anyString(), anyString(), any())).thenAnswer(inv -> null);
-
+        diskUtilsMock.when(() -> DiskUtils.compress(anyString(), anyString(), anyString(), any()))
+            .thenAnswer(inv -> null);
+        
         Writer writer = new Writer(System.getProperty("java.io.tmpdir"));
         AtomicReference<Boolean> successRef = new AtomicReference<>();
         AtomicReference<Throwable> exRef = new AtomicReference<>();
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         DerbySnapshotOperation operation = new DerbySnapshotOperation(lock.writeLock());
-
+        
         operation.onSnapshotSave(writer, (success, ex) -> {
             successRef.set(success);
             exRef.set(ex);
         });
-
+        
         assertTrue(successRef.get());
         assertNull(exRef.get());
         verify(callableStatement).close();
     }
-
+    
     @Test
     void testOnSnapshotSaveCatchPath() throws Exception {
         persistenceExecutorMock = Mockito.mockStatic(PersistenceExecutor.class);
-        persistenceExecutorMock.when(() -> PersistenceExecutor.executeSnapshot(any(Runnable.class))).thenAnswer(inv -> {
-            inv.getArgument(0, Runnable.class).run();
-            return null;
-        });
-
+        persistenceExecutorMock.when(() -> PersistenceExecutor.executeSnapshot(any(Runnable.class)))
+            .thenAnswer(inv -> {
+                inv.getArgument(0, Runnable.class).run();
+                return null;
+            });
+        
         dynamicDataSourceMock = Mockito.mockStatic(DynamicDataSource.class);
         DynamicDataSource dsHolder = Mockito.mock(DynamicDataSource.class);
         when(dsHolder.getDataSource()).thenReturn(dataSourceService);
         dynamicDataSourceMock.when(DynamicDataSource::getInstance).thenReturn(dsHolder);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
         when(jdbcTemplate.getDataSource()).thenThrow(new RuntimeException("no ds"));
-
+        
         diskUtilsMock = Mockito.mockStatic(DiskUtils.class);
         diskUtilsMock.when(() -> DiskUtils.deleteDirectory(anyString())).thenAnswer(inv -> null);
         diskUtilsMock.when(() -> DiskUtils.forceMkdir(anyString())).thenAnswer(inv -> null);
-
+        
         Writer writer = new Writer(System.getProperty("java.io.tmpdir"));
         AtomicReference<Boolean> successRef = new AtomicReference<>();
         AtomicReference<Throwable> exRef = new AtomicReference<>();
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         DerbySnapshotOperation operation = new DerbySnapshotOperation(lock.writeLock());
-
+        
         operation.onSnapshotSave(writer, (success, ex) -> {
             successRef.set(success);
             exRef.set(ex);
         });
-
+        
         assertFalse(successRef.get());
         assertNotNull(exRef.get());
     }

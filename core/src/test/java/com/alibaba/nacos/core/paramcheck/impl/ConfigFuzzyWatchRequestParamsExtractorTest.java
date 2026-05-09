@@ -30,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * {@link ConfigFuzzyWatchRequestParamsExtractor} unit test.
  */
 class ConfigFuzzyWatchRequestParamsExtractorTest {
-
+    
     private ConfigFuzzyWatchRequestParamsExtractor extractor;
-
+    
     @BeforeEach
     void setUp() {
         extractor = new ConfigFuzzyWatchRequestParamsExtractor();
     }
-
+    
     @Test
     void extractParam() throws Exception {
         ConfigFuzzyWatchRequest request = new ConfigFuzzyWatchRequest();
