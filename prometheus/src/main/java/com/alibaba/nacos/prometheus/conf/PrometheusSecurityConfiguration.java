@@ -47,8 +47,10 @@ public class PrometheusSecurityConfiguration {
     @Conditional(ConditionOnNoAuthPluginType.class)
     public SecurityFilterChain prometheusSecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(
-                (authorizeHttpRequests) -> authorizeHttpRequests.requestMatchers(PROMETHEUS_CONTROLLER_PATH,
-                        PROMETHEUS_CONTROLLER_NAMESPACE_PATH, PROMETHEUS_CONTROLLER_SERVICE_PATH).permitAll());
+            (authorizeHttpRequests) -> authorizeHttpRequests
+                .requestMatchers(PROMETHEUS_CONTROLLER_PATH,
+                    PROMETHEUS_CONTROLLER_NAMESPACE_PATH, PROMETHEUS_CONTROLLER_SERVICE_PATH)
+                .permitAll());
         return http.getOrBuild();
     }
     
@@ -57,7 +59,7 @@ public class PrometheusSecurityConfiguration {
         @Override
         public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
             String nacosAuthSystemType = context.getEnvironment()
-                    .getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
+                .getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
             return StringUtils.isBlank(nacosAuthSystemType);
         }
     }

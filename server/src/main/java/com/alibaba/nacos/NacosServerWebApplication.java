@@ -32,8 +32,10 @@ import org.springframework.context.annotation.PropertySource;
  * @author xiweng.yy
  */
 @SpringBootApplication(exclude = LdapAutoConfiguration.class)
+// @formatter:off
 @ComponentScan(excludeFilters = {
         @Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class, NacosNormalBeanTypeFilter.class})})
+// @formatter:on
 @PropertySource("classpath:nacos-server.properties")
 public class NacosServerWebApplication {
     

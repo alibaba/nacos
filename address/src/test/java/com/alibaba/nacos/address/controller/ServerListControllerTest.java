@@ -55,26 +55,30 @@ class ServerListControllerTest {
     private Service service;
     
     private MockMvc mockMvc;
-
+    
     @BeforeEach
     void before() {
         this.mockMvc = MockMvcBuilders.standaloneSetup(
-                new ServerListController(new AddressServerGeneratorManager(), metadataManager, serviceStorage)).build();
+            new ServerListController(new AddressServerGeneratorManager(), metadataManager,
+                serviceStorage))
+            .build();
         service = Service
-                .newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "nacos.as.default", false);
+            .newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "nacos.as.default",
+                false);
         ServiceManager.getInstance().getSingleton(service);
     }
-
+    
     @AfterEach
     void tearDown() {
         ServiceManager.getInstance().removeSingleton(service);
     }
-
+    
     @Test
     void testGetCluster() throws Exception {
         
         final Service service = Service
-                .newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "nacos.as.default", false);
+            .newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "nacos.as.default",
+                false);
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.getClusters().put("serverList", new ClusterMetadata());
         when(metadataManager.getServiceMetadata(service)).thenReturn(Optional.of(serviceMetadata));
@@ -86,14 +90,14 @@ class ServerListControllerTest {
         when(serviceStorage.getData(service)).thenReturn(serviceInfo);
         mockMvc.perform(get("/nacos/serverList")).andExpect(status().isOk());
     }
-
+    
     @Test
     void testGetClusterCannotFindService() throws Exception {
         tearDown();
         mockMvc.perform(get("/default/serverList")).andExpect(status().isNotFound());
         
     }
-
+    
     @Test
     void testGetClusterCannotFindCluster() throws Exception {
         mockMvc.perform(get("/nacos/serverList")).andExpect(status().isNotFound());

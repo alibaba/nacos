@@ -46,7 +46,8 @@ public class NacosBootstrap {
     private static final String SPRING_JMX_ENABLED = "spring.jmx.enabled";
     
     public static void main(String[] args) {
-        String type = System.getProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
+        String type = System.getProperty(Constants.NACOS_DEPLOYMENT_TYPE,
+            Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
         DeploymentType deploymentType = DeploymentType.getType(type);
         EnvUtil.setDeploymentType(deploymentType);
         switch (deploymentType) {
@@ -67,7 +68,8 @@ public class NacosBootstrap {
     private static void prepareCoreContext(ConfigurableApplicationContext coreContext) {
         if (coreContext.getEnvironment().getProperty(SPRING_JMX_ENABLED, Boolean.class, false)) {
             // Avoid duplicate registration MBean to exporter.
-            coreContext.getBean(MBeanExporter.class).setRegistrationPolicy(RegistrationPolicy.IGNORE_EXISTING);
+            coreContext.getBean(MBeanExporter.class)
+                .setRegistrationPolicy(RegistrationPolicy.IGNORE_EXISTING);
         }
     }
     
@@ -76,7 +78,8 @@ public class NacosBootstrap {
         prepareCoreContext(coreContext);
         ConfigurableApplicationContext webContext = startServerWebContext(args, coreContext);
         if (isEnabledAiRegistry(coreContext)) {
-            ConfigurableApplicationContext aiRegistryContext = startAiRegistryContext(args, coreContext);
+            ConfigurableApplicationContext aiRegistryContext =
+                startAiRegistryContext(args, coreContext);
         }
     }
     
@@ -86,41 +89,43 @@ public class NacosBootstrap {
         ConfigurableApplicationContext serverWebContext = startServerWebContext(args, coreContext);
         ConfigurableApplicationContext consoleContext = startConsoleContext(args, coreContext);
         if (isEnabledAiRegistry(coreContext)) {
-            ConfigurableApplicationContext aiRegistryContext = startAiRegistryContext(args, coreContext);
+            ConfigurableApplicationContext aiRegistryContext =
+                startAiRegistryContext(args, coreContext);
         }
     }
     
     private static ConfigurableApplicationContext startCoreContext(String[] args) {
         NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
-        return new SpringApplicationBuilder(NacosServerBasicApplication.class).web(WebApplicationType.NONE)
-                .banner(getBanner("core-banner.txt")).run(args);
+        return new SpringApplicationBuilder(NacosServerBasicApplication.class)
+            .web(WebApplicationType.NONE)
+            .banner(getBanner("core-banner.txt")).run(args);
     }
     
     private static ConfigurableApplicationContext startServerWebContext(String[] args,
-            ConfigurableApplicationContext coreContext) {
+        ConfigurableApplicationContext coreContext) {
         NacosStartUpManager.start(NacosStartUp.WEB_START_UP_PHASE);
         return new SpringApplicationBuilder(NacosServerWebApplication.class).parent(coreContext)
-                .banner(getBanner("nacos-server-web-banner.txt")).run(args);
+            .banner(getBanner("nacos-server-web-banner.txt")).run(args);
     }
     
     private static ConfigurableApplicationContext startConsoleContext(String[] args,
-            ConfigurableApplicationContext coreContext) {
+        ConfigurableApplicationContext coreContext) {
         NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
         return new SpringApplicationBuilder(NacosConsole.class).parent(coreContext)
-                .banner(getBanner("nacos-console-banner.txt")).run(args);
+            .banner(getBanner("nacos-console-banner.txt")).run(args);
     }
     
     private static ConfigurableApplicationContext startAiRegistryContext(String[] args,
-                                                                         ConfigurableApplicationContext coreContext) {
+        ConfigurableApplicationContext coreContext) {
         NacosStartUpManager.start(NacosStartUp.AI_REGISTRY_START_UP_PHASE);
         return new SpringApplicationBuilder(NacosAiRegistry.class).parent(coreContext)
-                .banner(getBanner("nacos-ai-registry-banner.txt")).run(args);
+            .banner(getBanner("nacos-ai-registry-banner.txt")).run(args);
     }
     
     private static void startOnlyConsole(String[] args) {
         NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
         new SpringApplicationBuilder(NacosConsole.class).banner(
-                getBanner("nacos-console-banner.txt")).run(args);
+            getBanner("nacos-console-banner.txt")).run(args);
     }
     
     private static Banner getBanner(String bannerFileName) {
@@ -129,9 +134,9 @@ public class NacosBootstrap {
     
     private static boolean isEnabledAiRegistry(ConfigurableApplicationContext coreContext) {
         boolean mcpRegistryEnabled = coreContext.getEnvironment()
-                .getProperty("nacos.ai.mcp.registry.enabled", Boolean.class, false);
+            .getProperty("nacos.ai.mcp.registry.enabled", Boolean.class, false);
         boolean skillRegistryEnabled = coreContext.getEnvironment()
-                .getProperty("nacos.ai.skill.registry.enabled", Boolean.class, false);
+            .getProperty("nacos.ai.skill.registry.enabled", Boolean.class, false);
         return mcpRegistryEnabled || skillRegistryEnabled;
     }
 }

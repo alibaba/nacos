@@ -24,29 +24,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class AddressServerManagerTests {
     
     private static final AddressServerManager ADDRESS_SERVER_MANAGER = new AddressServerManager();
-
+    
     @Test
     void getRawProductName() {
-        assertEquals(AddressServerConstants.DEFAULT_PRODUCT, ADDRESS_SERVER_MANAGER.getRawProductName(""));
         assertEquals(AddressServerConstants.DEFAULT_PRODUCT,
-                ADDRESS_SERVER_MANAGER.getRawProductName(AddressServerConstants.DEFAULT_PRODUCT));
+            ADDRESS_SERVER_MANAGER.getRawProductName(""));
+        assertEquals(AddressServerConstants.DEFAULT_PRODUCT,
+            ADDRESS_SERVER_MANAGER.getRawProductName(AddressServerConstants.DEFAULT_PRODUCT));
         assertEquals("otherProduct", ADDRESS_SERVER_MANAGER.getRawProductName("otherProduct"));
     }
-
+    
     @Test
     void getDefaultClusterNameIfEmpty() {
-        assertEquals(AddressServerConstants.DEFAULT_GET_CLUSTER, ADDRESS_SERVER_MANAGER.getDefaultClusterNameIfEmpty(""));
         assertEquals(AddressServerConstants.DEFAULT_GET_CLUSTER,
-                ADDRESS_SERVER_MANAGER.getDefaultClusterNameIfEmpty(AddressServerConstants.DEFAULT_GET_CLUSTER));
-        assertEquals("otherServerList", ADDRESS_SERVER_MANAGER.getDefaultClusterNameIfEmpty("otherServerList"));
+            ADDRESS_SERVER_MANAGER.getDefaultClusterNameIfEmpty(""));
+        assertEquals(AddressServerConstants.DEFAULT_GET_CLUSTER,
+            ADDRESS_SERVER_MANAGER
+                .getDefaultClusterNameIfEmpty(AddressServerConstants.DEFAULT_GET_CLUSTER));
+        assertEquals("otherServerList",
+            ADDRESS_SERVER_MANAGER.getDefaultClusterNameIfEmpty("otherServerList"));
     }
-
+    
     @Test
     void testGetRawClusterName() {
         assertEquals("serverList", ADDRESS_SERVER_MANAGER.getRawClusterName("serverList"));
-        assertEquals(AddressServerConstants.DEFAULT_GET_CLUSTER, ADDRESS_SERVER_MANAGER.getRawClusterName(""));
+        assertEquals(AddressServerConstants.DEFAULT_GET_CLUSTER,
+            ADDRESS_SERVER_MANAGER.getRawClusterName(""));
     }
-
+    
     @Test
     void testSplitIps() {
         final String[] emptyArr = ADDRESS_SERVER_MANAGER.splitIps("");
