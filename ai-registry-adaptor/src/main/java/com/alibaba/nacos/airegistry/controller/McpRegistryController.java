@@ -49,13 +49,13 @@ import java.util.Objects;
 @ExtractorManager.Extractor(httpExtractor = McpHttpParamExtractor.class)
 @ConditionalOnProperty(name = "nacos.ai.mcp.registry.enabled", havingValue = "true")
 public class McpRegistryController {
-
+    
     private final NacosMcpRegistryService nacosMcpRegistryService;
-
+    
     public McpRegistryController(NacosMcpRegistryService nacosMcpRegistryService) {
         this.nacosMcpRegistryService = nacosMcpRegistryService;
     }
-
+    
     /**
      * List mcp servers.
      * All server info is related to the latest version of the server.
@@ -69,7 +69,8 @@ public class McpRegistryController {
      * @throws NacosApiException if request parameter is invalid or handle error
      */
     @GetMapping(value = "/v0/servers")
-    public McpRegistryServerList listMcpServers(ListServersNacosForm form) throws NacosApiException, NacosException {
+    public McpRegistryServerList listMcpServers(ListServersNacosForm form)
+        throws NacosApiException, NacosException {
         form.validate();
         int offset = form.resolveOffset();
         int limit = form.getLimit();
@@ -93,7 +94,7 @@ public class McpRegistryController {
         response.setMetadata(new McpRegistryServerList.Metadata(nextCursor, returned));
         return response;
     }
-
+    
     /**
      * Get mcp server details.
      * If version is not provided, this api will return the latest version of the
@@ -106,9 +107,11 @@ public class McpRegistryController {
      * @throws NacosApiException if request parameter is invalid or handle error
      */
     @GetMapping(value = "/v0/servers/{name}/versions")
-    public Object getServerVersions(@PathVariable String name, GetServerForm form, HttpServletResponse response)
-            throws NacosException {
-        McpRegistryServerList server = nacosMcpRegistryService.getServerVersions(form.getNamespaceId(), name);
+    public Object getServerVersions(@PathVariable String name, GetServerForm form,
+        HttpServletResponse response)
+        throws NacosException {
+        McpRegistryServerList server =
+            nacosMcpRegistryService.getServerVersions(form.getNamespaceId(), name);
         if (Objects.isNull(server)) {
             response.setStatus(404);
             response.setHeader(HttpHeaderConsts.CONTENT_TYPE, "application/json");
@@ -118,7 +121,7 @@ public class McpRegistryController {
         }
         return server;
     }
-
+    
     /**
      * Get specific MCP server version.
      * Returns detailed information about a specific version of an MCP server.
@@ -135,9 +138,10 @@ public class McpRegistryController {
      */
     @GetMapping(value = "/v0/servers/{serverName}/versions/{version}")
     public Object getVersionedServer(@PathVariable String serverName, @PathVariable String version,
-            GetServerForm form, HttpServletResponse response)
-            throws NacosException {
-        ServerResponse server = nacosMcpRegistryService.getServer(serverName, form.getNamespaceId(), version);
+        GetServerForm form, HttpServletResponse response)
+        throws NacosException {
+        ServerResponse server =
+            nacosMcpRegistryService.getServer(serverName, form.getNamespaceId(), version);
         if (Objects.isNull(server)) {
             response.setStatus(404);
             response.setHeader(HttpHeaderConsts.CONTENT_TYPE, "application/json");
