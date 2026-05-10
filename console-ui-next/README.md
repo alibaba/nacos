@@ -4,8 +4,8 @@ The new Nacos console frontend, built with React 19 + TypeScript + Vite 7 + Tail
 
 ## Prerequisites
 
-- Node.js >= 18
-- npm >= 9
+- Node.js >= 20.19+
+- npm >= 10
 
 ## Install Dependencies
 
