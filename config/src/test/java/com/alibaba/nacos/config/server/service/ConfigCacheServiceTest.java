@@ -56,7 +56,7 @@ class ConfigCacheServiceTest {
     MockedStatic<PropertyUtil> propertyUtilMockedStatic;
     
     MockedStatic<ConfigDiskServiceFactory> configDiskServiceFactoryMockedStatic;
-
+    
     @MockitoBean
     ConfigDiskService configDiskService;
     

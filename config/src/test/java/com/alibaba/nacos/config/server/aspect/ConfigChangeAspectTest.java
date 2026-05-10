@@ -57,27 +57,27 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 class ConfigChangeAspectTest {
-
+    
     ConfigChangeAspect configChangeAspect;
-
+    
     ConfigChangeConfigs configChangeConfigs;
-
+    
     @MockitoBean
     ConfigChangePluginService configChangePluginService;
-
+    
     MockedStatic<PropertiesUtil> propertiesStatic;
-
+    
     MockedStatic<RequestUtil> requestUtilMockedStatic;
-
+    
     @MockitoBean
     private ProceedingJoinPoint pjp;
-
+    
     @MockitoBean
     private ConfigForm configForm;
-
+    
     @MockitoBean
     private ConfigRequestInfo configRequestInfo;
-
+    
     @BeforeEach
     void before() {
         //mock config change service enabled.
@@ -96,25 +96,25 @@ class ConfigChangeAspectTest {
             .thenReturn(ConfigChangePointCutTypes.values());
         Mockito.when(configChangePluginService.executeType())
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
-
+        
         ConfigChangePluginManager.join(configChangePluginService);
-
+        
         configChangeConfigs = new ConfigChangeConfigs();
         configChangeAspect = new ConfigChangeAspect(configChangeConfigs);
     }
-
+    
     @AfterEach
     void after() {
         propertiesStatic.close();
         requestUtilMockedStatic.close();
         ConfigChangePluginManager.reset();
     }
-
+    
     @Test
     void testPublishOrUpdateConfigAround() throws Throwable {
         Mockito.when(configChangePluginService.executeType())
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
-
+        
         when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn("dataId");
         when(configForm.getGroup()).thenReturn("group");
@@ -123,22 +123,22 @@ class ConfigChangeAspectTest {
         when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
         when(configRequestInfo.getSrcType()).thenReturn("http");
         when(pjp.proceed(any())).thenReturn("Success");
-
+        
         Object o = configChangeAspect.publishOrUpdateConfigAround(pjp);
         Thread.sleep(20L);
-
+        
         // expect service executed.
         verify(configChangePluginService, Mockito.times(1))
             .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
         assertEquals("Success", o);
     }
-
+    
     @Test
     void testRemoveConfigByIdAround() throws Throwable {
         Mockito.when(configChangePluginService.executeType())
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
-
+        
         String dataId = "dataId1";
         String group = "group1";
         String namespaceId = "namespaceId1";
@@ -146,20 +146,20 @@ class ConfigChangeAspectTest {
         String clientIp = "127.0.0.1";
         String srcUser = "mockedUser";
         String srcType = "http";
-
+        
         when(pjp.getArgs())
             .thenReturn(new Object[] {dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
         Mockito.when(pjp.proceed(any())).thenReturn("mock success return");
         Object o = configChangeAspect.removeConfigByIdAround(pjp);
         Thread.sleep(20L);
-
+        
         // expect service executed.
         verify(configChangePluginService, Mockito.times(1))
             .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
         assertEquals("mock success return", o);
     }
-
+    
     @Test
     void testDisEnablePluginService() throws Throwable {
         Properties properties = new Properties();
@@ -171,7 +171,7 @@ class ConfigChangeAspectTest {
         String clientIp = "127.0.0.1";
         String srcUser = "mockedUser";
         String srcType = "http";
-
+        
         when(pjp.getArgs())
             .thenReturn(new Object[] {dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
         propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(),
@@ -180,7 +180,7 @@ class ConfigChangeAspectTest {
         assertFalse(Boolean.parseBoolean(
             configChangeConfigs.getPluginProperties("mockedConfigChangeService")
                 .getProperty("enabled")));
-
+        
         Mockito.when(configChangePluginService.executeType())
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
         Mockito.when(configChangePluginService.getServiceType())
@@ -194,7 +194,7 @@ class ConfigChangeAspectTest {
             .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         assertEquals(configPublishResponse, o);
     }
-
+    
     @Test
     void testBeforePluginFailurePreventsProceed() throws Throwable {
         Mockito.when(configChangePluginService.executeType())
@@ -205,30 +205,30 @@ class ConfigChangeAspectTest {
             response.setMsg("Before plugin failed");
             return null;
         }).when(configChangePluginService).execute(any(), any());
-
+        
         when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn("dataId");
         when(configRequestInfo.getSrcType()).thenReturn("http");
         Object result = configChangeAspect.publishOrUpdateConfigAround(pjp);
-
+        
         verify(pjp, never()).proceed();
         assertEquals(false, result);
         verify(configChangePluginService).execute(any(), any());
     }
-
+    
     @Test
     void testProceedThrowsExceptionHandled() throws Throwable {
         when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn("dataId");
         when(configRequestInfo.getSrcType()).thenReturn("http");
         when(pjp.proceed(any())).thenThrow(new RuntimeException("Proceed error"));
-
+        
         Object result = configChangeAspect.publishOrUpdateConfigAround(pjp);
-
+        
         verify(configChangePluginService, Mockito.timeout(1000).times(1)).execute(any(), any());
         assertEquals(false, result);
     }
-
+    
     @Test
     void testAfterPluginExecutedAsynchronously() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
@@ -238,26 +238,26 @@ class ConfigChangeAspectTest {
             latch.countDown();
             return null;
         }).when(configChangePluginService).execute(any(), any());
-
+        
         when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn("dataId");
         when(configRequestInfo.getSrcType()).thenReturn("http");
         when(pjp.proceed()).thenReturn("Success");
-
+        
         Object result = configChangeAspect.publishOrUpdateConfigAround(pjp);
-
+        
         assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
         verify(configChangePluginService).execute(any(), any());
         assertEquals(null, result);
     }
-
+    
     @Test
     void testRpcSourceTypeHandling() throws Throwable {
         when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
         when(configRequestInfo.getSrcType()).thenReturn("rpc");
         when(configForm.getDataId()).thenReturn("dataId");
         when(pjp.proceed()).thenReturn("Success");
-
+        
         configChangeAspect.publishOrUpdateConfigAround(pjp);
         ArgumentCaptor<ConfigChangeRequest> requestCaptor =
             ArgumentCaptor.forClass(ConfigChangeRequest.class);
@@ -265,7 +265,7 @@ class ConfigChangeAspectTest {
         assertEquals(ConfigChangePointCutTypes.PUBLISH_BY_RPC,
             requestCaptor.getValue().getRequestType());
     }
-
+    
     @Test
     void testNoPluginsEnabled() throws Throwable {
         Properties properties = new Properties();
@@ -273,15 +273,15 @@ class ConfigChangeAspectTest {
         propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(), any()))
             .thenReturn(properties);
         configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
-
+        
         when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
         when(configRequestInfo.getSrcType()).thenReturn("http");
         when(pjp.proceed()).thenReturn("Success");
-
+        
         Object result = configChangeAspect.publishOrUpdateConfigAround(pjp);
-
+        
         verify(configChangePluginService, never()).execute(any(), any());
         assertEquals("Success", result);
     }
-
+    
 }

@@ -459,9 +459,9 @@ class MultiTenantInstanceAPINamingITCase {
         HttpHeaders headers = new HttpHeaders();
         
         HttpEntity<?> entity = new HttpEntity<T>(headers);
-
+        
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(this.base.toString() + path).queryParams(params);
-
+        
         return this.restTemplate.exchange(builder.toUriString(), httpMethod, entity, clazz);
     }
 }

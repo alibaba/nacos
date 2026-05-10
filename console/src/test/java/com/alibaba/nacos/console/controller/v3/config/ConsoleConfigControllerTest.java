@@ -81,86 +81,86 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ConsoleConfigControllerTest {
-
+    
     private static final String TEST_DATA_ID = "test";
-
+    
     private static final String TEST_GROUP = "test";
-
+    
     private static final String TEST_NAMESPACE_ID = "";
-
+    
     private static final String TEST_TAG = "";
-
+    
     private static final String TEST_CONTENT = "test config";
-
+    
     private ConsoleConfigController consoleConfigController;
-
+    
     private MockMvc mockmvc;
-
+    
     @Mock
     private ConfigProxy configProxy;
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         consoleConfigController = new ConsoleConfigController(configProxy);
         mockmvc = MockMvcBuilders.standaloneSetup(consoleConfigController).build();
     }
-
+    
     @Test
     void testGetConfigDetail() throws Exception {
         ConfigDetailInfo configAllInfo = new ConfigDetailInfo();
         configAllInfo.setDataId("testDataId");
         configAllInfo.setGroupName("testGroup");
         configAllInfo.setContent("testContent");
-
+        
         when(configProxy.getConfigDetail("testDataId", "testGroup", "testNamespace"))
             .thenReturn(configAllInfo);
-
+        
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config")
             .param("dataId", "testDataId").param("groupName", "testGroup")
             .param("namespaceId", "testNamespace");
-
+        
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
-
+        
         Result<ConfigDetailInfo> result = JacksonUtils.toObj(actualValue,
             new TypeReference<Result<ConfigDetailInfo>>() {
             });
         ConfigDetailInfo resultConfigAllInfo = result.getData();
-
+        
         assertEquals("testDataId", resultConfigAllInfo.getDataId());
         assertEquals("testGroup", resultConfigAllInfo.getGroupName());
         assertEquals("testContent", resultConfigAllInfo.getContent());
     }
-
+    
     @Test
     void testPublishConfig() throws Exception {
-
+        
         ConfigFormV3 configForm = new ConfigFormV3();
         configForm.setDataId(TEST_DATA_ID);
         configForm.setGroupName(TEST_GROUP);
         configForm.setNamespaceId(TEST_NAMESPACE_ID);
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
-
+        
         when(configProxy.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class)))
             .thenReturn(true);
-
+        
         Result<Boolean> booleanResult = consoleConfigController.publishConfig(request, configForm);
-
+        
         verify(configProxy).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class));
-
+        
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());
     }
-
+    
     @Test
     void testDeleteConfig() throws Exception {
-
+        
         when(configProxy.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP),
             eq(Constants.DEFAULT_NAMESPACE_ID),
             eq(TEST_TAG), any(), any())).thenReturn(true);
-
+        
         ConfigFormV3 configForm = new ConfigFormV3();
         configForm.setDataId(TEST_DATA_ID);
         configForm.setGroupName(TEST_GROUP);
@@ -168,67 +168,67 @@ public class ConsoleConfigControllerTest {
         configForm.setTag(TEST_TAG);
         MockHttpServletRequest request = new MockHttpServletRequest();
         Result<Boolean> booleanResult = consoleConfigController.deleteConfig(request, configForm);
-
+        
         verify(configProxy).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP),
             eq(Constants.DEFAULT_NAMESPACE_ID),
             eq(TEST_TAG), any(), any());
-
+        
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());
     }
-
+    
     @Test
     void testBatchDeleteConfigs() throws Exception {
         String clientIp = "127.0.0.1";
         String srcUser = "testUser";
-
+        
         Mockito.mockStatic(RequestUtil.class);
         when(RequestUtil.getRemoteIp(any(HttpServletRequest.class))).thenReturn(clientIp);
         when(RequestUtil.getSrcUserName(any(HttpServletRequest.class))).thenReturn(srcUser);
         List<Long> ids = Arrays.asList(1L, 2L, 3L);
-
+        
         when(configProxy.batchDeleteConfigs(eq(ids), eq(clientIp), eq(srcUser))).thenReturn(true);
-
+        
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.delete("/v3/console/cs/config/batchDelete")
                 .param("ids", "1,2,3").header("X-Real-IP", clientIp)
                 .header("X-Forwarded-For", clientIp);
-
+        
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         int actualStatus = response.getStatus();
-
+        
         assertEquals(200, actualStatus);
-
+        
         String responseBody = response.getContentAsString();
         Result<Boolean> actualResult =
             new ObjectMapper().readValue(responseBody, new TypeReference<Result<Boolean>>() {
             });
-
+        
         assertTrue(actualResult.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), actualResult.getCode());
-
+        
         verify(configProxy).batchDeleteConfigs(eq(ids), eq(clientIp), eq(srcUser));
     }
-
+    
     @Test
     void testGetConfigList() throws Exception {
-
+        
         List<ConfigBasicInfo> configInfoList = new ArrayList<>();
         ConfigBasicInfo configInfo = new ConfigBasicInfo();
         configInfo.setDataId("testDataId");
         configInfo.setGroupName("testGroup");
         configInfoList.add(configInfo);
-
+        
         Page<ConfigBasicInfo> page = new Page<>();
         page.setTotalCount(15);
         page.setPageNumber(1);
         page.setPagesAvailable(2);
         page.setPageItems(configInfoList);
-
+        
         when(configProxy.getConfigList(eq(1), eq(10), eq("testDataId"), eq("testGroup"),
             eq("public"),
             anyMap())).thenReturn(page);
-
+        
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get("/v3/console/cs/config/list")
                 .param("dataId", "testDataId").param("groupName", "testGroup")
@@ -238,20 +238,20 @@ public class ConsoleConfigControllerTest {
                 .param("pageSize", "10");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
-
+        
         Result<Page<ConfigBasicInfo>> result =
             JacksonUtils.toObj(actualValue, new TypeReference<>() {
             });
-
+        
         Page<ConfigBasicInfo> pageResult = result.getData();
         List<ConfigBasicInfo> resultList = pageResult.getPageItems();
         ConfigBasicInfo resConfigInfo = resultList.get(0);
-
+        
         assertEquals(configInfoList.size(), resultList.size());
         assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
         assertEquals(configInfo.getGroupName(), resConfigInfo.getGroupName());
     }
-
+    
     @Test
     void testGetConfigListByContent() throws Exception {
         List<ConfigBasicInfo> configInfoList = new ArrayList<>();
@@ -259,17 +259,17 @@ public class ConsoleConfigControllerTest {
         configInfo.setDataId("test");
         configInfo.setGroupName("test");
         configInfoList.add(configInfo);
-
+        
         Page<ConfigBasicInfo> page = new Page<>();
         page.setTotalCount(15);
         page.setPageNumber(1);
         page.setPagesAvailable(2);
         page.setPageItems(configInfoList);
-
+        
         when(configProxy.getConfigListByContent(eq("blur"), eq(1), eq(10), eq("test"), eq("test"),
             eq("public"),
             anyMap())).thenReturn(page);
-
+        
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get("/v3/console/cs/config/searchDetail")
                 .param("dataId", "test").param("groupName", "test").param("appName", "testApp")
@@ -277,23 +277,23 @@ public class ConsoleConfigControllerTest {
                 .param("configTags", "testTag").param("configDetail", "server.port")
                 .param("search", "blur")
                 .param("type", "text").param("pageNo", "1").param("pageSize", "10");
-
+        
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
-
+        
         Result<Page<ConfigBasicInfo>> result =
             JacksonUtils.toObj(actualValue, new TypeReference<>() {
             });
-
+        
         Page<ConfigBasicInfo> pageResult = result.getData();
         List<ConfigBasicInfo> resultList = pageResult.getPageItems();
         ConfigBasicInfo resConfigInfo = resultList.get(0);
-
+        
         assertEquals(configInfoList.size(), resultList.size());
         assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
         assertEquals(configInfo.getGroupName(), resConfigInfo.getGroupName());
     }
-
+    
     @Test
     void getListeners() throws Exception {
         ConfigListenerInfo configListenerInfo = new ConfigListenerInfo();
@@ -309,7 +309,7 @@ public class ConsoleConfigControllerTest {
         });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
     }
-
+    
     @Test
     void getAllSubClientConfigByIp() throws Exception {
         ConfigListenerInfo configListenerInfo = new ConfigListenerInfo();
@@ -325,7 +325,7 @@ public class ConsoleConfigControllerTest {
         });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
     }
-
+    
     @Test
     void testExportConfigV2() throws Exception {
         String dataId = "dataId2.json";
@@ -340,10 +340,10 @@ public class ConsoleConfigControllerTest {
         configAllInfo.setContent("content1234");
         List<ConfigAllInfo> dataList = new ArrayList<>();
         dataList.add(configAllInfo);
-
+        
         byte[] serializedData = new ObjectMapper().writeValueAsBytes(dataList);
         ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(serializedData, HttpStatus.OK);
-
+        
         Mockito.when(
             configProxy.exportConfigV2(eq(dataId), eq(group), eq(tenant), eq(appname),
                 eq(Arrays.asList(1L, 2L))))
@@ -353,24 +353,24 @@ public class ConsoleConfigControllerTest {
                 .param("exportV2", "true").param("dataId", dataId).param("groupName", group)
                 .param("tenant", tenant)
                 .param("appName", appname).param("ids", "1,2");
-
+        
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         int actualStatus = response.getStatus();
-
+        
         assertEquals(200, actualStatus);
-
+        
     }
-
+    
     @Test
     void testExportConfigV2WithoutIds() throws Exception {
         String dataId = "dataId2.json";
         String group = "group2";
         String tenant = "tenant234";
         String appname = "appname2";
-
+        
         byte[] serializedData = new byte[] {1, 2, 3};
         ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(serializedData, HttpStatus.OK);
-
+        
         Mockito
             .when(configProxy.exportConfigV2(eq(dataId), eq(group), eq(tenant), eq(appname),
                 isNull()))
@@ -379,11 +379,11 @@ public class ConsoleConfigControllerTest {
             MockMvcRequestBuilders.get("/v3/console/cs/config/export2")
                 .param("dataId", dataId).param("groupName", group).param("tenant", tenant)
                 .param("appName", appname);
-
+        
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
-
+    
     @Test
     void testImportAndPublishConfig() throws Exception {
         String srcUser = "testUser";
@@ -391,37 +391,37 @@ public class ConsoleConfigControllerTest {
         SameConfigPolicy policy = SameConfigPolicy.ABORT;
         String srcIp = "127.0.0.1";
         String requestIpApp = null;
-
+        
         MockMultipartFile mockFile = new MockMultipartFile("file", "test-config.yaml", "text/yaml",
             "config-content".getBytes());
-
+        
         Map<String, Object> expectedResponse = new HashMap<>();
         expectedResponse.put("success", true);
         Result<Map<String, Object>> expectedResult = Result.success(expectedResponse);
-
+        
         Mockito.when(
             configProxy.importAndPublishConfig(eq(srcUser), eq(namespaceId), eq(policy),
                 eq(mockFile), eq(srcIp),
                 eq(requestIpApp)))
             .thenReturn(expectedResult);
-
+        
         MockMultipartHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.multipart("/v3/console/cs/config/import")
                 .file(mockFile).param("srcUser", "").param("namespaceId", namespaceId)
                 .param("policy", policy.toString()).header("X-Real-IP", srcIp)
                 .header("X-Forwarded-For", srcIp)
                 .header("X-App-Name", requestIpApp != null ? requestIpApp : "");
-
+        
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         int actualStatus = response.getStatus();
-
+        
         assertEquals(200, actualStatus);
-
+        
         verify(configProxy).importAndPublishConfig(any(), eq(namespaceId), eq(policy), eq(mockFile),
             eq(srcIp),
             eq(requestIpApp));
     }
-
+    
     @Test
     void testCloneConfig() throws Exception {
         SameNamespaceCloneConfigBean sameNamespaceCloneConfigBean =
@@ -431,14 +431,14 @@ public class ConsoleConfigControllerTest {
         sameNamespaceCloneConfigBean.setGroup("testGroup");
         List<SameNamespaceCloneConfigBean> configBeansList = new ArrayList<>();
         configBeansList.add(sameNamespaceCloneConfigBean);
-
+        
         Map<String, Object> expectedResponse = new HashMap<>();
         expectedResponse.put("status", "success");
         Result<Map<String, Object>> expectedResult = Result.success(expectedResponse);
-
+        
         when(configProxy.cloneConfig(eq("testUser"), eq("testNamespace"),
             argThat(new ArgumentMatcher<List<SameNamespaceCloneConfigBean>>() {
-
+                
                 @Override
                 public boolean matches(List<SameNamespaceCloneConfigBean> argument) {
                     return argument != null && argument.size() == 1 && "testDataId".equals(
@@ -448,7 +448,7 @@ public class ConsoleConfigControllerTest {
                 }
             }), eq(SameConfigPolicy.ABORT), eq("127.0.0.1"), eq(null) // 这里模拟可能为null的情况
         )).thenReturn(expectedResult);
-
+        
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post("/v3/console/cs/config/clone")
                 .param("srcUser", "").param("targetNamespaceId", "testNamespace")
@@ -456,15 +456,15 @@ public class ConsoleConfigControllerTest {
                 .content(new ObjectMapper().writeValueAsString(configBeansList))
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-Real-IP", "127.0.0.1").header("X-Forwarded-For", "127.0.0.1");
-
+        
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         int actualStatus = response.getStatus();
-
+        
         assertEquals(200, actualStatus);
-
+        
         verify(configProxy).cloneConfig(any(), eq("testNamespace"),
             argThat(new ArgumentMatcher<List<SameNamespaceCloneConfigBean>>() {
-
+                
                 @Override
                 public boolean matches(List<SameNamespaceCloneConfigBean> argument) {
                     return argument != null && argument.size() == 1 && "testDataId".equals(
@@ -474,7 +474,7 @@ public class ConsoleConfigControllerTest {
                 }
             }), eq(SameConfigPolicy.ABORT), eq("127.0.0.1"), eq(null));
     }
-
+    
     @Test
     void testStopBeta() throws Exception {
         // Mock configuration
@@ -483,11 +483,11 @@ public class ConsoleConfigControllerTest {
         String namespaceId = "testNamespaceId";
         when(configProxy.removeBetaConfig(anyString(), anyString(), anyString(), any(), any(),
             any())).thenReturn(true);
-
+        
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
             .delete("/v3/console/cs/config/beta")
             .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);
-
+        
         // Execute and validate response
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -496,7 +496,7 @@ public class ConsoleConfigControllerTest {
         assertEquals(200, response.getStatus());
         assertTrue(result.getData());
     }
-
+    
     @Test
     void testStopBetaFailure() throws Exception {
         // Mock configuration
@@ -506,7 +506,7 @@ public class ConsoleConfigControllerTest {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
             .delete("/v3/console/cs/config/beta")
             .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);
-
+        
         // Execute and validate response
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -515,13 +515,13 @@ public class ConsoleConfigControllerTest {
         assertEquals(200, response.getStatus());
         assertFalse(result.getData());
     }
-
+    
     @Test
     void testQueryBetaSuccess() throws Exception {
         // Mock configuration for successful response
         String dataId = "testDataId";
         String group = "testGroup";
-
+        
         ConfigGrayInfo mockConfigInfo = new ConfigGrayInfo();
         mockConfigInfo.setDataId(dataId);
         mockConfigInfo.setGroupName(group);
@@ -531,15 +531,15 @@ public class ConsoleConfigControllerTest {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
             .get("/v3/console/cs/config/beta")
             .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);
-
+        
         // Execute and validate response
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
-
+        
         Result<ConfigGrayInfo> result =
             new ObjectMapper().readValue(actualValue, new TypeReference<>() {
             });
-
+        
         assertEquals(200, response.getStatus());
         assertEquals(dataId, result.getData().getDataId());
         assertEquals(group, result.getData().getGroupName());

@@ -74,7 +74,7 @@ class AgentSpecAdminControllerTest {
     private MockMvc mockMvc;
     
     private ConfigurableEnvironment cachedEnvironment;
-
+    
     @MockitoBean
     private AgentSpecOperationService agentSpecOperationService;
     

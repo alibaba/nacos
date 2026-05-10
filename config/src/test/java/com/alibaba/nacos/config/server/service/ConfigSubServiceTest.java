@@ -58,17 +58,17 @@ import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(SpringExtension.class)
 class ConfigSubServiceTest {
-
+    
     @MockitoBean
     ServerMemberManager serverMemberManager;
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     MockedStatic<HttpClientManager> httpClientManagerMockedStatic;
-
+    
     @MockitoBean
     NacosRestTemplate nacosRestTemplate;
-
+    
     @MockitoBean
     NacosAsyncRestTemplate nacosAsyncRestTemplate;
     

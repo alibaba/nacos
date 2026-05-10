@@ -40,25 +40,25 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 class RequestLogAspectTest {
-
+    
     @MockitoBean
     private ProceedingJoinPoint pjp;
-
+    
     @MockitoBean
     private ConfigForm configForm;
-
+    
     @MockitoBean
     private ConfigRequestInfo configRequestInfo;
-
+    
     @MockitoBean
     private ConfigQueryChainRequest chainRequest;
-
+    
     @MockitoBean
     private ConfigBatchListenRequest request;
-
+    
     @MockitoBean
     private Response response;
-
+    
     @MockitoBean
     private RequestMeta meta;
     

@@ -79,7 +79,7 @@ class SkillAdminControllerTest {
     private MockMvc mockMvc;
     
     private ConfigurableEnvironment cachedEnvironment;
-
+    
     @MockitoBean
     private SkillOperationService skillOperationService;
     

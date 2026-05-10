@@ -64,15 +64,15 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
     MockedStatic<EmbeddedStorageContextHolder> embeddedStorageContextHolderMockedStatic;
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-
+    
     @MockitoBean
     DynamicDataSource dynamicDataSource;
-
+    
     @MockitoBean
     DatabaseOperate databaseOperate;
-
+    
     private EmbeddedConfigInfoTagPersistServiceImpl embeddedConfigInfoTagPersistService;
-
+    
     @MockitoBean
     private DataSourceService dataSourceService;
     

@@ -65,15 +65,15 @@ class ExternalConfigInfoTagPersistServiceImplTest {
     MockedStatic<ExternalStorageUtils> externalStorageUtilsMockedStatic;
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-
+    
     @MockitoBean
     DynamicDataSource dynamicDataSource;
     
     private ExternalConfigInfoTagPersistServiceImpl externalConfigInfoTagPersistService;
-
+    
     @MockitoBean
     private DataSourceService dataSourceService;
-
+    
     @MockitoBean
     private JdbcTemplate jdbcTemplate;
     

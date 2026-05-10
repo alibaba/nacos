@@ -58,7 +58,7 @@ import static org.mockito.Mockito.times;
  */
 @ExtendWith(SpringExtension.class)
 class AsyncNotifyServiceTest {
-
+    
     @MockitoBean
     ServerMemberManager serverMemberManager;
     
@@ -67,7 +67,7 @@ class AsyncNotifyServiceTest {
     MockedStatic<ConfigExecutor> configExecutorMocked;
     
     MockedStatic<InetUtils> inetUtilsMocked;
-
+    
     @MockitoBean
     private ConfigClusterRpcClientProxy configClusterRpcClientProxy;
     

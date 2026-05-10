@@ -56,26 +56,26 @@ class CapacityManagementAspectTest {
     final String mockGroup = "mockGroup";
     
     final String mockTenant = "mockTenant";
-
+    
     @MockitoBean
     private ConfigForm configForm;
-
+    
     @MockitoBean
     private ConfigRequestInfo configRequestInfo;
-
+    
     @MockitoBean
     ProceedingJoinPoint proceedingJoinPoint;
-
+    
     @MockitoBean
     ProceedingJoinPoint localMockProceedingJoinPoint;
     
     RuntimeException mockException = new RuntimeException("mock exception");
     
     CapacityManagementAspect capacityManagementAspect;
-
+    
     @MockitoBean
     CapacityService capacityService;
-
+    
     @MockitoBean
     ConfigInfoPersistService configInfoPersistService;
     

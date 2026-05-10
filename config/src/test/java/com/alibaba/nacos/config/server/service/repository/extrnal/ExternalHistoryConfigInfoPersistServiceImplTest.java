@@ -60,15 +60,15 @@ class ExternalHistoryConfigInfoPersistServiceImplTest {
     MockedStatic<ExternalStorageUtils> externalStorageUtilsMockedStatic;
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-
+    
     @MockitoBean
     DynamicDataSource dynamicDataSource;
     
     private ExternalHistoryConfigInfoPersistServiceImpl externalHistoryConfigInfoPersistService;
-
+    
     @MockitoBean
     private DataSourceService dataSourceService;
-
+    
     @MockitoBean
     private JdbcTemplate jdbcTemplate;
     

@@ -49,13 +49,13 @@ import static org.mockito.Mockito.when;
 class CapacityServiceTest {
     
     private CapacityService service;
-
+    
     @MockitoBean
     private GroupCapacityPersistService groupCapacityPersistService;
-
+    
     @MockitoBean
     private TenantCapacityPersistService tenantCapacityPersistService;
-
+    
     @MockitoBean
     private ConfigInfoPersistService configInfoPersistService;
     

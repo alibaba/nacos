@@ -54,23 +54,23 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 class ConfigOpsControllerV3Test {
-
+    
     ConfigOpsControllerV3 configOpsControllerV3;
-
+    
     @MockitoBean
     DumpService dumpService;
-
+    
     MockedStatic<DatasourceConfiguration> datasourceConfigurationMockedStatic;
-
+    
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-
+    
     MockedStatic<ApplicationUtils> applicationUtilsMockedStatic;
-
+    
     private MockMvc mockMvc;
-
+    
     @MockitoBean
     private ServletContext servletContext;
-
+    
     @AfterEach
     void after() {
         datasourceConfigurationMockedStatic.close();
@@ -78,37 +78,37 @@ class ConfigOpsControllerV3Test {
         applicationUtilsMockedStatic.close();
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(false);
     }
-
+    
     @BeforeEach
     void init() {
         when(servletContext.getContextPath()).thenReturn("/nacos");
         configOpsControllerV3 = new ConfigOpsControllerV3(dumpService);
         mockMvc = MockMvcBuilders.standaloneSetup(configOpsControllerV3).build();
-
+        
         datasourceConfigurationMockedStatic = Mockito.mockStatic(DatasourceConfiguration.class);
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
     }
-
+    
     @Test
     void testUpdateLocalCacheFromStore() throws Exception {
-
+        
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/localCache");
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
     }
-
+    
     @Test
     void testSetLogLevel() throws Exception {
-
+        
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
             .put(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/log").param("logName", "test")
             .param("logLevel", "test");
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
     }
-
+    
     @Test
     void testDerbyOps() throws Exception {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
@@ -122,22 +122,22 @@ class ConfigOpsControllerV3Test {
         JdbcTemplate template = Mockito.mock(JdbcTemplate.class);
         when(dataSourceService.getJdbcTemplate()).thenReturn(template);
         when(template.queryForList("SELECT * FROM TEST")).thenReturn(new ArrayList<>());
-
+        
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby")
                 .param("sql", "SELECT * FROM TEST");
         String actualValue =
             mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());
-
+        
     }
-
+    
     @Test
     void testImportDerby() throws Exception {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
             .thenReturn(true);
-
+        
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
                 .thenReturn(Mockito.mock(DatabaseOperate.class));
         MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());

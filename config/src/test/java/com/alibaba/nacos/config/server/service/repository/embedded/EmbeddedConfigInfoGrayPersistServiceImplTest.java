@@ -64,13 +64,13 @@ import static org.mockito.Mockito.when;
 public class EmbeddedConfigInfoGrayPersistServiceImplTest {
     
     private EmbeddedConfigInfoGrayPersistServiceImpl embeddedConfigInfoGrayPersistService;
-
+    
     @MockitoBean
     private DataSourceService dataSourceService;
-
+    
     @MockitoBean
     private IdGeneratorManager idGeneratorManager;
-
+    
     @MockitoBean
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
@@ -79,10 +79,10 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
     MockedStatic<EmbeddedStorageContextHolder> embeddedStorageContextHolderMockedStatic;
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-
+    
     @MockitoBean
     DynamicDataSource dynamicDataSource;
-
+    
     @MockitoBean
     DatabaseOperate databaseOperate;
     

@@ -57,7 +57,7 @@ class LdapAuthCoreITCase {
         private int port;
         
         private String filterPrefix = "uid";
-
+        
         @MockitoBean
         private LdapTemplate ldapTemplate;
         

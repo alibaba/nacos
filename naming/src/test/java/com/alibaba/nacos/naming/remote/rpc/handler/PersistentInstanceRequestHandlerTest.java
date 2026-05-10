@@ -48,7 +48,7 @@ class PersistentInstanceRequestHandlerTest {
     
     @Mock
     private PersistentClientOperationServiceImpl clientOperationService;
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());

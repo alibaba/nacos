@@ -46,13 +46,13 @@ import java.util.TimeZone;
  */
 @Configuration
 public class ConsoleWebConfig {
-
+    
     private final ControllerMethodsCache methodsCache;
-
+    
     public ConsoleWebConfig(ControllerMethodsCache methodsCache) {
         this.methodsCache = methodsCache;
     }
-
+    
     /**
      * Init.
      */
@@ -60,7 +60,7 @@ public class ConsoleWebConfig {
     public void init() {
         methodsCache.initClassMethod("com.alibaba.nacos.console.controller");
     }
-
+    
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
@@ -86,12 +86,12 @@ public class ConsoleWebConfig {
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
-
+    
     @Bean
     public XssFilter xssFilter() {
         return new XssFilter();
     }
-
+    
     @Bean
     public FilterRegistrationBean<NacosConsoleAuthFilter> authFilterRegistration(
         NacosConsoleAuthFilter authFilter) {
@@ -103,14 +103,14 @@ public class ConsoleWebConfig {
         registration.setOrder(6);
         return registration;
     }
-
+    
     @Bean
     public NacosConsoleAuthFilter consoleAuthFilter(ControllerMethodsCache methodsCache) {
         return new NacosConsoleAuthFilter(NacosAuthConfigHolder.getInstance()
             .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE),
             methodsCache);
     }
-
+    
     @Bean
     public FilterRegistrationBean<ParamCheckerFilter> consoleParamCheckerFilterRegistration(
         ParamCheckerFilter consoleParamCheckerFilter) {
@@ -121,17 +121,17 @@ public class ConsoleWebConfig {
         registration.setOrder(8);
         return registration;
     }
-
+    
     @Bean
     public ParamCheckerFilter consoleParamCheckerFilter(ControllerMethodsCache methodsCache) {
         return new ParamCheckerFilter(methodsCache);
     }
-
+    
     @Bean
     public JsonMapperBuilderCustomizer jacksonJsonMapperCustomization() {
         return jsonMapperBuilder -> jsonMapperBuilder.defaultTimeZone(TimeZone.getDefault());
     }
-
+    
     @Bean
     @ConditionalOnMissingBean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -140,7 +140,7 @@ public class ConsoleWebConfig {
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
-
+    
     @Bean
     public NacosApiExceptionHandler nacosApiExceptionHandler() {
         return new NacosApiExceptionHandler();

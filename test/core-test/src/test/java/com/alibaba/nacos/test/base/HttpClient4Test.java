@@ -49,7 +49,7 @@ public class HttpClient4Test {
         HttpHeaders headers = new HttpHeaders();
         
         HttpEntity<?> entity = new HttpEntity<T>(headers);
-
+        
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(this.base.toString() + path)
                 .queryParams(params);
         
@@ -62,7 +62,7 @@ public class HttpClient4Test {
         HttpHeaders headers = new HttpHeaders();
         
         HttpEntity<?> entity = new HttpEntity<T>(headers);
-
+        
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(this.base.toString() + path)
                 .queryParams(params);
         

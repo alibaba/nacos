@@ -40,36 +40,36 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ListenerControllerV3Test {
-
+    
     ListenerControllerV3 listenerControllerV3;
-
+    
     private MockMvc mockmvc;
-
+    
     @Mock
     private ConfigListenerStateDelegate configListenerStateDelegate;
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         listenerControllerV3 = new ListenerControllerV3(configListenerStateDelegate);
         mockmvc = MockMvcBuilders.standaloneSetup(listenerControllerV3).build();
     }
-
+    
     @Test
     void testGetAllSubClientConfigByIp() throws Exception {
-
+        
         ConfigListenerInfo sampleResult = new ConfigListenerInfo();
         Map<String, String> map = new HashMap<>();
         map.put("test", "test");
         sampleResult.setListenersStatus(map);
         when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
             .thenReturn(sampleResult);
-
+        
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
                 .param("ip", "localhost").param("all", "true").param("namespaceId", "test")
                 .param("sampleTime", "1");
-
+        
         String actualValue =
             mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());
@@ -78,7 +78,7 @@ class ListenerControllerV3Test {
         Map<String, String> resultMap = configListenerInfo.getListenersStatus();
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, configListenerInfo.getQueryType());
         assertEquals(map.get("test"), resultMap.get("test"));
-
+        
     }
-
+    
 }

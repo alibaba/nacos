@@ -76,7 +76,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(SpringExtension.class)
 class EmbeddedConfigInfoPersistServiceImplTest {
-
+    
     @MockitoBean
     IdGeneratorManager idGeneratorManager;
     
@@ -85,18 +85,18 @@ class EmbeddedConfigInfoPersistServiceImplTest {
     MockedStatic<EmbeddedStorageContextHolder> embeddedStorageContextHolderMockedStatic;
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-
+    
     @MockitoBean
     DynamicDataSource dynamicDataSource;
-
+    
     @MockitoBean
     DatabaseOperate databaseOperate;
     
     private EmbeddedConfigInfoPersistServiceImpl embeddedConfigInfoPersistService;
-
+    
     @MockitoBean
     private DataSourceService dataSourceService;
-
+    
     @MockitoBean
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
     

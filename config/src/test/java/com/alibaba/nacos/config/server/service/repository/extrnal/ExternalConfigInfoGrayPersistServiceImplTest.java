@@ -62,16 +62,16 @@ import static org.mockito.Mockito.when;
 public class ExternalConfigInfoGrayPersistServiceImplTest {
     
     private ExternalConfigInfoGrayPersistServiceImpl externalConfigInfoGrayPersistService;
-
+    
     @MockitoBean
     private DataSourceService dataSourceService;
-
+    
     @MockitoBean
     private JdbcTemplate jdbcTemplate;
-
+    
     @MockitoBean
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
-
+    
     @MockitoBean
     DatabaseOperate databaseOperate;
     
@@ -82,7 +82,7 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
     MockedStatic<ExternalStorageUtils> externalStorageUtilsMockedStatic;
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-
+    
     @MockitoBean
     DynamicDataSource dynamicDataSource;
     

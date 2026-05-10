@@ -56,25 +56,25 @@ class DumpServiceTest {
     private static final String BETA_TABLE_NAME = "config_info_beta";
     
     private static final String TAG_TABLE_NAME = "config_info_tag";
-
+    
     @MockitoBean
     DefaultHistoryConfigCleaner defaultHistoryConfigCleaner = new DefaultHistoryConfigCleaner();
-
+    
     @MockitoBean
     ConfigInfoPersistService configInfoPersistService;
-
+    
     @MockitoBean
     NamespacePersistService namespacePersistService;
-
+    
     @MockitoBean
     HistoryConfigInfoPersistService historyConfigInfoPersistService;
-
+    
     @MockitoBean
     ConfigInfoGrayPersistService configInfoGrayPersistService;
-
+    
     @MockitoBean
     ServerMemberManager memberManager;
-
+    
     @MockitoBean
     ConfigMigrateService configMigrateService;
     
@@ -85,12 +85,12 @@ class DumpServiceTest {
     MockedStatic<PropertyUtil> propertyUtilMockedStatic;
     
     MockedStatic<HistoryConfigCleanerManager> historyConfigCleanerManagerMockedStatic;
-
+    
     @MockitoBean
     private DataSourceService dataSourceService;
     
     private DumpService dumpService;
-
+    
     @MockitoBean
     private TaskManager dumpTaskMgr;
     

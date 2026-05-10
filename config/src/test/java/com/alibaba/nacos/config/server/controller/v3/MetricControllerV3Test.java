@@ -64,17 +64,17 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MetricControllerV3Test {
-
+    
     MetricsControllerV3 metricsControllerV3;
-
+    
     private MockMvc mockMvc;
-
+    
     @Mock
     private ServerMemberManager memberManager;
-
+    
     @Mock
     private ConnectionManager connectionManager;
-
+    
     @BeforeEach
     void setUp() {
         System.setProperty("nacos.core.auth.admin.enabled", "false");

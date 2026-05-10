@@ -40,10 +40,10 @@ import java.util.Map;
         UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 @ConditionalOnMissingClass("com.alibaba.nacos.legacy.adapter.naming.OperatorController")
 public class OperatorMetricsV1Controller {
-
+    
     public OperatorMetricsV1Controller() {
     }
-
+    
     /**
      * Get metrics (only status). Kept for old clients; full metrics available at v3 API.
      */

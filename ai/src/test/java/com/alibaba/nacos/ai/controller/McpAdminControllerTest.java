@@ -75,7 +75,7 @@ class McpAdminControllerTest {
     private MockMvc mockMvc;
     
     private ConfigurableEnvironment cachedEnvironment;
-
+    
     @MockitoBean
     private McpServerOperationService mcpServerOperationService;
     

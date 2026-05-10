@@ -54,16 +54,16 @@ import java.util.Map;
 @RestController
 @RequestMapping({"/v1/auth", "/v1/auth/users"})
 public class UserController {
-
+    
     private final TokenManagerDelegate jwtTokenManager;
-
+    
     private final AuthConfigs authConfigs;
-
+    
     private final IAuthenticationManager iAuthenticationManager;
-
+    
     @Deprecated
     private final AuthenticationManager authenticationManager;
-
+    
     public UserController(TokenManagerDelegate jwtTokenManager, AuthConfigs authConfigs,
         IAuthenticationManager iAuthenticationManager,
         AuthenticationManager authenticationManager) {
@@ -72,7 +72,7 @@ public class UserController {
         this.iAuthenticationManager = iAuthenticationManager;
         this.authenticationManager = authenticationManager;
     }
-
+    
     /**
      * Login to Nacos (v1 API, kept for old clients).
      *
@@ -89,15 +89,15 @@ public class UserController {
     public Object login(@RequestParam String username, @RequestParam String password,
         HttpServletResponse response,
         HttpServletRequest request) throws AccessException, IOException {
-
+        
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
             || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-
+            
             NacosUser user = iAuthenticationManager.authenticate(request);
-
+            
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER,
                 AuthConstants.TOKEN_PREFIX + user.getToken());
-
+            
             Map<String, Object> result = new HashMap<>();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
@@ -105,11 +105,11 @@ public class UserController {
             result.put(Constants.USERNAME, user.getUserName());
             return result;
         }
-
+        
         UsernamePasswordAuthenticationToken authenticationToken =
             new UsernamePasswordAuthenticationToken(username,
                 password);
-
+        
         try {
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
             SecurityContextHolder.getContext().setAuthentication(authentication);

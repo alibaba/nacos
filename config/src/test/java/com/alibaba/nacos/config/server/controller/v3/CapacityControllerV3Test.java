@@ -50,14 +50,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 class CapacityControllerV3Test {
-
+    
     CapacityControllerV3 capacityControllerV3;
     
     private MockMvc mockMvc;
-
+    
     @MockitoBean
     private CapacityService capacityService;
-
+    
     @MockitoBean
     private ServletContext servletContext;
     

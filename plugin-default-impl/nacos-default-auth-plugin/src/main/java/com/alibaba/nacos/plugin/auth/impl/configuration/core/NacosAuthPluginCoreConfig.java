@@ -47,17 +47,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * @author Nacos
  */
 public class NacosAuthPluginCoreConfig {
-
+    
     private final NacosUserService userDetailsService;
-
+    
     private final ControllerMethodsCache methodsCache;
-
+    
     public NacosAuthPluginCoreConfig(NacosUserService userDetailsService,
         ControllerMethodsCache methodsCache) {
         this.userDetailsService = userDetailsService;
         this.methodsCache = methodsCache;
     }
-
+    
     /**
      * Init.
      */
@@ -65,13 +65,13 @@ public class NacosAuthPluginCoreConfig {
     public void init() {
         methodsCache.initClassMethod("com.alibaba.nacos.plugin.auth.impl.controller");
     }
-
+    
     @Bean
     @ConditionalOnMissingBean
     @Conditional(value = {ConditionOnInnerDatasource.class, ConditionOnNacosAuth.class})
     public GlobalAuthenticationConfigurerAdapter authenticationConfigurer() {
         return new GlobalAuthenticationConfigurerAdapter() {
-
+            
             @Override
             public void init(AuthenticationManagerBuilder auth) {
                 if (AuthSystemTypes.NACOS.name()
@@ -83,12 +83,12 @@ public class NacosAuthPluginCoreConfig {
             }
         };
     }
-
+    
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
+    
     @Bean
     @ConditionalOnMissingBean
     @Conditional(value = ConditionOnNacosAuth.class)
@@ -96,21 +96,21 @@ public class NacosAuthPluginCoreConfig {
         TokenManagerDelegate jwtTokenManager, NacosRoleService roleService) {
         return new DefaultAuthenticationManager(userDetailsService, jwtTokenManager, roleService);
     }
-
+    
     @Bean
     @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED,
         havingValue = "false", matchIfMissing = true)
     public TokenManager tokenManager(AuthConfigs authConfigs) {
         return new JwtTokenManager(authConfigs);
     }
-
+    
     @Bean
     @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED,
         havingValue = "true")
     public TokenManager cachedTokenManager(AuthConfigs authConfigs) {
         return new CachedJwtTokenManager(new JwtTokenManager(authConfigs));
     }
-
+    
     @Bean
     public TokenManagerDelegate tokenManagerDelegate(TokenManager tokenManager) {
         return new TokenManagerDelegate(tokenManager);
