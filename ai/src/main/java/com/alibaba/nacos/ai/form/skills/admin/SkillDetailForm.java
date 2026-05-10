@@ -45,7 +45,7 @@ public class SkillDetailForm extends SkillForm {
         // Only skillCard is required
         if (StringUtils.isEmpty(skillCard)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `skillCard` should not be `null` or empty.");
+                "Request parameter `skillCard` should not be `null` or empty.");
         }
     }
     

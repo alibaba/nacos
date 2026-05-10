@@ -68,7 +68,8 @@ public class ConsoleServerStateController {
      */
     @GetMapping("/announcement")
     public Result<String> getAnnouncement(
-            @RequestParam(required = false, name = "language", defaultValue = "zh-CN") String language) {
+        @RequestParam(required = false, name = "language",
+            defaultValue = "zh-CN") String language) {
         // Validate the language parameter
         if (!SupportedLanguage.isSupported(language)) {
             return Result.failure("Unsupported language: " + language);

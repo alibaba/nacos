@@ -90,7 +90,7 @@ public class LockMetricsMonitor {
     
     public static Timer getLockHandlerTimer() {
         return NacosMeterRegistryCenter
-                .timer(METER_REGISTRY, "nacos_timer", "module", "lock", "name", "lockHandlerRt");
+            .timer(METER_REGISTRY, "nacos_timer", "module", "lock", "name", "lockHandlerRt");
     }
     
     public static AtomicInteger getSuccessMeter(LockOperationEnum lockOperationEnum) {

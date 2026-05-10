@@ -50,97 +50,112 @@ import org.springframework.stereotype.Service;
 public class AgentSpecNoopHandler implements AgentSpecHandler {
     
     private static final String AGENTSPEC_NOT_ENABLED_MESSAGE =
-            "Nacos AI AgentSpec module and API required both `naming` and `config` module.";
-
+        "Nacos AI AgentSpec module and API required both `naming` and `config` module.";
+    
     @Override
     public AgentSpecMeta getAgentSpec(AgentSpecForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public AgentSpec getAgentSpecVersion(AgentSpecForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public void deleteAgentSpec(AgentSpecForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm,
-            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-            throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public String createDraft(AgentSpecDraftCreateForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public void updateDraft(AgentSpecUpdateForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public void deleteDraft(AgentSpecForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public String submit(AgentSpecSubmitForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public void publish(AgentSpecPublishForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public void forcePublish(AgentSpecPublishForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public void updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public void updateScope(AgentSpecScopeForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
 }

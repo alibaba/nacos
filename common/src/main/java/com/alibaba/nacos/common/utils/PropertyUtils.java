@@ -22,7 +22,7 @@ package com.alibaba.nacos.common.utils;
  * @author Pixy Yuan on 2022/3/24
  */
 public class PropertyUtils {
-
+    
     private PropertyUtils() {
     }
     
@@ -47,7 +47,8 @@ public class PropertyUtils {
      * return {@link System#getProperty(String, String)} or {@code defaultValue}.
      */
     public static String getProperty(String propertyName, String envName, String defaultValue) {
-        return System.getenv().getOrDefault(envName, System.getProperty(propertyName, defaultValue));
+        return System.getenv().getOrDefault(envName,
+            System.getProperty(propertyName, defaultValue));
     }
     
     /**

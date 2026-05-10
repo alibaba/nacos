@@ -86,36 +86,39 @@ public class InternetAddressUtilTest {
     
     @Test
     void testGetIpFromString() {
-        assertEquals("[::1]", InternetAddressUtil.getIpFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        assertEquals("[::1]", InternetAddressUtil
+            .getIpFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
         assertEquals("[::1]", InternetAddressUtil.getIpFromString(
-                "jdbc:mysql://[::1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+            "jdbc:mysql://[::1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         assertEquals("127.0.0.1",
-                InternetAddressUtil.getIpFromString("http://127.0.0.1:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+            InternetAddressUtil
+                .getIpFromString("http://127.0.0.1:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
         assertEquals("127.0.0.1", InternetAddressUtil.getIpFromString(
-                "jdbc:mysql://127.0.0.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+            "jdbc:mysql://127.0.0.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         assertEquals("", InternetAddressUtil.getIpFromString("http://[::1:666"));
         
-        assertEquals("", InternetAddressUtil.getIpFromString("http://[dddd]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        assertEquals("", InternetAddressUtil
+            .getIpFromString("http://[dddd]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
         assertEquals("", InternetAddressUtil.getIpFromString(
-                "jdbc:mysql://[127.0.0.1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+            "jdbc:mysql://[127.0.0.1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         assertEquals("", InternetAddressUtil.getIpFromString(
-                "jdbc:mysql://666.288.333.444:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+            "jdbc:mysql://666.288.333.444:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         assertEquals("", InternetAddressUtil.getIpFromString(
-                "jdbc:mysql://292.168.1.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+            "jdbc:mysql://292.168.1.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         assertEquals("", InternetAddressUtil.getIpFromString(
-                "jdbc:mysql://29.168.1.288:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+            "jdbc:mysql://29.168.1.288:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         assertEquals("", InternetAddressUtil.getIpFromString(
-                "jdbc:mysql://29.168.288.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+            "jdbc:mysql://29.168.288.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         assertEquals("", InternetAddressUtil.getIpFromString(
-                "jdbc:mysql://29.288.28.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+            "jdbc:mysql://29.288.28.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         assertEquals("", InternetAddressUtil.getIpFromString(""));
         assertEquals("", InternetAddressUtil.getIpFromString(null));
     }
@@ -142,7 +145,8 @@ public class InternetAddressUtilTest {
         checkSplitIpPortStr("[::1:88", false, "[", "", "1", "88");
         checkSplitIpPortStr("[127.0.0.1]:88", false, "[127.0.0.1]", "88");
         checkSplitIpPortStr("[dead:beef]:88", false, "[dead:beef]", "88");
-        checkSplitIpPortStr("[fe80::3ce6:7132:808e:707a%19]:88", false, "[fe80::3ce6:7132:808e:707a%19]", "88");
+        checkSplitIpPortStr("[fe80::3ce6:7132:808e:707a%19]:88", false,
+            "[fe80::3ce6:7132:808e:707a%19]", "88");
         checkSplitIpPortStr("[fe80::3]e6]:88", false, "[fe80::3]", "6]:88");
         checkSplitIpPortStr("", true);
     }
@@ -154,7 +158,8 @@ public class InternetAddressUtilTest {
         assertEquals("ok", InternetAddressUtil.checkIps());
         assertEquals("ok", InternetAddressUtil.checkIps(null));
         
-        assertEquals("illegal ip: 127.100.19", InternetAddressUtil.checkIps("127.100.19", "127.0.0.1"));
+        assertEquals("illegal ip: 127.100.19",
+            InternetAddressUtil.checkIps("127.100.19", "127.0.0.1"));
     }
     
     @Test
@@ -170,7 +175,8 @@ public class InternetAddressUtilTest {
     
     @Test
     void testRemoveBrackets() {
-        assertEquals("2001:DB8:0:0:1::1", InternetAddressUtil.removeBrackets("[2001:DB8:0:0:1::1]"));
+        assertEquals("2001:DB8:0:0:1::1",
+            InternetAddressUtil.removeBrackets("[2001:DB8:0:0:1::1]"));
         assertEquals("2077", InternetAddressUtil.removeBrackets("[2077[]]]"));
         assertEquals("", InternetAddressUtil.removeBrackets(""));
         assertEquals("", InternetAddressUtil.removeBrackets(null));
@@ -190,10 +196,12 @@ public class InternetAddressUtilTest {
     
     @Test
     void testLocalHostIp()
-            throws NoSuchFieldException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        throws NoSuchFieldException, IllegalAccessException, InvocationTargetException,
+        NoSuchMethodException {
         Field field = InternetAddressUtil.class.getField("PREFER_IPV6_ADDRESSES");
         field.setAccessible(true);
-        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        Method getDeclaredFields0 =
+            Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
         getDeclaredFields0.setAccessible(true);
         Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
         Field modifiersField = null;

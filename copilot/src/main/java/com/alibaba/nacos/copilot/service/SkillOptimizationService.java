@@ -33,6 +33,6 @@ public interface SkillOptimizationService {
      * @param request  optimization request
      * @param callback stream response callback
      */
-    void optimizeSkillStream(SkillOptimizationRequest request, 
-                            StreamResponseCallback<SkillOptimizationResponse> callback);
+    void optimizeSkillStream(SkillOptimizationRequest request,
+        StreamResponseCallback<SkillOptimizationResponse> callback);
 }

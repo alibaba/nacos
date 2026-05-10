@@ -27,7 +27,8 @@ class NacosControlManagerBuilderTest {
     @Test
     void test() {
         NacosControlManagerBuilder nacosControlManagerBuilder = new NacosControlManagerBuilder();
-        ConnectionControlManager connectionControlManager = nacosControlManagerBuilder.buildConnectionControlManager();
+        ConnectionControlManager connectionControlManager =
+            nacosControlManagerBuilder.buildConnectionControlManager();
         TpsControlManager tpsControlManager = nacosControlManagerBuilder.buildTpsControlManager();
         
         assertEquals("nacos", tpsControlManager.getName());

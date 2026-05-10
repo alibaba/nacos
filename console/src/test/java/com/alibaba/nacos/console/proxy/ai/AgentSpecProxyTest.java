@@ -87,10 +87,12 @@ public class AgentSpecProxyTest {
         form.setVersion("v99");
         
         NacosApiException expectedException = new NacosApiException(NacosException.NOT_FOUND,
-                ErrorCode.RESOURCE_NOT_FOUND, "version not found");
-        doThrow(expectedException).when(agentSpecHandler).forcePublish(any(AgentSpecPublishForm.class));
+            ErrorCode.RESOURCE_NOT_FOUND, "version not found");
+        doThrow(expectedException).when(agentSpecHandler)
+            .forcePublish(any(AgentSpecPublishForm.class));
         
-        NacosApiException ex = assertThrows(NacosApiException.class, () -> agentSpecProxy.forcePublish(form));
+        NacosApiException ex =
+            assertThrows(NacosApiException.class, () -> agentSpecProxy.forcePublish(form));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
     }
     
@@ -109,10 +111,12 @@ public class AgentSpecProxyTest {
         AgentSpecSummary item = new AgentSpecSummary();
         item.setName(AGENT_SPEC_NAME);
         page.setPageItems(java.util.List.of(item));
-        when(agentSpecHandler.listAgentSpecs(any(AgentSpecListForm.class), any(AiResourceFilterableForm.class),
-                any(PageForm.class))).thenReturn(page);
+        when(agentSpecHandler.listAgentSpecs(any(AgentSpecListForm.class),
+            any(AiResourceFilterableForm.class),
+            any(PageForm.class))).thenReturn(page);
         
-        Page<AgentSpecSummary> result = agentSpecProxy.listAgentSpecs(listForm, filterableForm, pageForm);
+        Page<AgentSpecSummary> result =
+            agentSpecProxy.listAgentSpecs(listForm, filterableForm, pageForm);
         
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());

@@ -53,7 +53,8 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointRequest, AgentEndpointResponse> {
+public class AgentEndpointRequestHandler
+    extends RequestHandler<AgentEndpointRequest, AgentEndpointResponse> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentEndpointRequestHandler.class);
     
@@ -62,7 +63,7 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     private final AgentIdCodecHolder agentIdCodecHolder;
     
     public AgentEndpointRequestHandler(EphemeralClientOperationServiceImpl clientOperationService,
-            AgentIdCodecHolder agentIdCodecHolder) {
+        AgentIdCodecHolder agentIdCodecHolder) {
         this.clientOperationService = clientOperationService;
         this.agentIdCodecHolder = agentIdCodecHolder;
     }
@@ -71,7 +72,8 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = AgentRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
-    public AgentEndpointResponse handle(AgentEndpointRequest request, RequestMeta meta) throws NacosException {
+    public AgentEndpointResponse handle(AgentEndpointRequest request, RequestMeta meta)
+        throws NacosException {
         AgentEndpointResponse response = new AgentEndpointResponse();
         response.setType(request.getType());
         AgentRequestUtil.fillNamespaceId(request);
@@ -79,8 +81,10 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
             validateRequest(request);
             Instance instance = transferInstance(request);
             String serviceName =
-                    agentIdCodecHolder.encode(request.getAgentName()) + "::" + request.getEndpoint().getVersion();
-            Service service = Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
+                agentIdCodecHolder.encode(request.getAgentName()) + "::"
+                    + request.getEndpoint().getVersion();
+            Service service =
+                Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
                     serviceName);
             switch (request.getType()) {
                 case AiRemoteConstants.REGISTER_ENDPOINT:
@@ -90,15 +94,18 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
                     doDeregisterEndpoint(service, instance, meta);
                     break;
                 default:
-                    throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                            String.format("parameter `type` should be %s or %s, but was %s",
-                                    AiRemoteConstants.REGISTER_ENDPOINT, AiRemoteConstants.DE_REGISTER_ENDPOINT,
-                                    request.getType()));
+                    throw new NacosApiException(NacosException.INVALID_PARAM,
+                        ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        String.format("parameter `type` should be %s or %s, but was %s",
+                            AiRemoteConstants.REGISTER_ENDPOINT,
+                            AiRemoteConstants.DE_REGISTER_ENDPOINT,
+                            request.getType()));
             }
         } catch (NacosApiException e) {
             response.setErrorInfo(e.getErrCode(), e.getErrMsg());
-            LOGGER.error("[{}] Register agent endpoint to agent {} error: {}", meta.getConnectionId(),
-                    request.getAgentName(), e.getErrMsg());
+            LOGGER.error("[{}] Register agent endpoint to agent {} error: {}",
+                meta.getConnectionId(),
+                request.getAgentName(), e.getErrMsg());
         }
         return response;
     }
@@ -110,31 +117,34 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     private void validateRequest(AgentEndpointRequest request) throws NacosApiException {
         if (StringUtils.isBlank(request.getAgentName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `agentName` can't be empty or null");
+                "Required parameter `agentName` can't be empty or null");
         }
         if (null == request.getEndpoint()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `endpoint` can't be null");
+                "Required parameter `endpoint` can't be null");
         }
         if (StringUtils.isBlank(request.getEndpoint().getVersion())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `endpoint.version` can't be empty or null");
+                "Required parameter `endpoint.version` can't be empty or null");
         }
     }
     
-    private void doRegisterEndpoint(Service service, Instance instance, RequestMeta meta) throws NacosException {
+    private void doRegisterEndpoint(Service service, Instance instance, RequestMeta meta)
+        throws NacosException {
         clientOperationService.registerInstance(service, instance, meta.getConnectionId());
         NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(), service.getGroup(),
-                service.getName(), instance.getIp(), instance.getPort()));
+            NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(),
+            service.getGroup(),
+            service.getName(), instance.getIp(), instance.getPort()));
         
     }
     
     private void doDeregisterEndpoint(Service service, Instance instance, RequestMeta meta) {
         clientOperationService.deregisterInstance(service, instance, meta.getConnectionId());
         NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, DeregisterInstanceReason.REQUEST,
-                service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
-                instance.getPort()));
+            NamingRequestUtil.getSourceIpForGrpcRequest(meta), true,
+            DeregisterInstanceReason.REQUEST,
+            service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
+            instance.getPort()));
     }
 }

@@ -52,11 +52,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author nacos
  */
 class MemoryMcpCacheIndexRemoveLockTest {
-
+    
     private MemoryMcpCacheIndex cache;
-
+    
     private McpCacheIndexProperties props;
-
+    
     @BeforeEach
     void setUp() {
         props = new McpCacheIndexProperties();
@@ -66,26 +66,26 @@ class MemoryMcpCacheIndexRemoveLockTest {
         props.setCleanupIntervalSeconds(3600);
         cache = new MemoryMcpCacheIndex(props);
     }
-
+    
     @AfterEach
     void tearDown() {
         cache.shutdown();
     }
-
+    
     @Test
     void testConcurrentUpdateGetRemoveStaysConsistent() throws Exception {
         int preload = 200;
         for (int i = 0; i < preload; i++) {
             cache.updateIndex("ns", "name-" + i, "id-" + i);
         }
-
+        
         int threads = 16;
         int opsPerThread = 500;
         CyclicBarrier barrier = new CyclicBarrier(threads);
         CountDownLatch latch = new CountDownLatch(threads);
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         AtomicInteger leakedErrors = new AtomicInteger(0);
-
+        
         for (int t = 0; t < threads; t++) {
             final int threadIdx = t;
             pool.submit(() -> {
@@ -116,17 +116,17 @@ class MemoryMcpCacheIndexRemoveLockTest {
                 }
             });
         }
-
+        
         boolean finished = latch.await(30, TimeUnit.SECONDS);
         pool.shutdown();
         assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS), "Pool must terminate in time");
         assertTrue(finished, "All worker threads must finish in time");
         assertEquals(0, leakedErrors.get(),
-                "Concurrent updateIndex/getMcpServerById/removeIndex must not leak exceptions");
-
+            "Concurrent updateIndex/getMcpServerById/removeIndex must not leak exceptions");
+        
         // Cache must still be usable after the storm.
         cache.updateIndex("ns", "final-name", "final-id");
         assertEquals("final-id", cache.getMcpId("ns", "final-name"),
-                "Cache must remain functional after concurrent update/remove stress");
+            "Cache must remain functional after concurrent update/remove stress");
     }
 }

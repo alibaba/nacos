@@ -35,39 +35,40 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LongConnectionMetricsCollectorTest {
-
+    
     private MockedStatic<ApplicationUtils> applicationUtilsMock;
-
+    
     @Mock
     private ConnectionManager connectionManager;
-
+    
     private LongConnectionMetricsCollector collector;
-
+    
     @BeforeEach
     void setUp() {
         applicationUtilsMock = Mockito.mockStatic(ApplicationUtils.class);
-        applicationUtilsMock.when(() -> ApplicationUtils.getBean(ConnectionManager.class)).thenReturn(connectionManager);
+        applicationUtilsMock.when(() -> ApplicationUtils.getBean(ConnectionManager.class))
+            .thenReturn(connectionManager);
         collector = new LongConnectionMetricsCollector();
     }
-
+    
     @AfterEach
     void tearDown() {
         if (applicationUtilsMock != null) {
             applicationUtilsMock.close();
         }
     }
-
+    
     @Test
     void testGetName() {
         assertEquals("long_connection", collector.getName());
     }
-
+    
     @Test
     void testGetTotalCount() {
         when(connectionManager.currentClientsCount()).thenReturn(10);
         assertEquals(10, collector.getTotalCount());
     }
-
+    
     @Test
     void testGetCountForIpWhenPresent() {
         Map<String, AtomicInteger> map = new HashMap<>();
@@ -75,7 +76,7 @@ class LongConnectionMetricsCollectorTest {
         when(connectionManager.getConnectionForClientIp()).thenReturn(map);
         assertEquals(3, collector.getCountForIp("192.168.1.1"));
     }
-
+    
     @Test
     void testGetCountForIpWhenAbsent() {
         when(connectionManager.getConnectionForClientIp()).thenReturn(new HashMap<>());

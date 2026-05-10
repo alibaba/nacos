@@ -57,7 +57,8 @@ public class ConsoleCorsConfig {
     private final List<String> allowedOrigins;
     
     public ConsoleCorsConfig() {
-        this.allowCredentials = EnvUtil.getProperty(ALLOW_CREDENTIALS_KEY, Boolean.class, DEFAULT_ALLOW_CREDENTIALS);
+        this.allowCredentials =
+            EnvUtil.getProperty(ALLOW_CREDENTIALS_KEY, Boolean.class, DEFAULT_ALLOW_CREDENTIALS);
         this.allowedHeaders = parseListProperty(ALLOWED_HEADERS_KEY);
         this.maxAge = EnvUtil.getProperty(MAX_AGE_KEY, Long.class, DEFAULT_MAX_AGE);
         this.allowedMethods = parseListProperty(ALLOWED_METHODS_KEY);
@@ -94,8 +95,10 @@ public class ConsoleCorsConfig {
     
     @Override
     public String toString() {
-        return "ConsoleCorsConfig{" + "allowCredentials=" + allowCredentials + ", allowedHeaders=" + allowedHeaders
-                + ", maxAge=" + maxAge + ", allowedMethods=" + allowedMethods + ", allowedOrigins=" + allowedOrigins
-                + '}';
+        return "ConsoleCorsConfig{" + "allowCredentials=" + allowCredentials + ", allowedHeaders="
+            + allowedHeaders
+            + ", maxAge=" + maxAge + ", allowedMethods=" + allowedMethods + ", allowedOrigins="
+            + allowedOrigins
+            + '}';
     }
 }

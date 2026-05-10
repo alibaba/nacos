@@ -22,43 +22,43 @@ package com.alibaba.nacos.core.plugin.model.form;
  * @author Nacos
  */
 public class PluginStatusForm {
-
+    
     private String pluginType;
-
+    
     private String pluginName;
-
+    
     private boolean enabled;
-
+    
     private boolean localOnly = false;
-
+    
     public String getPluginType() {
         return pluginType;
     }
-
+    
     public void setPluginType(String pluginType) {
         this.pluginType = pluginType;
     }
-
+    
     public String getPluginName() {
         return pluginName;
     }
-
+    
     public void setPluginName(String pluginName) {
         this.pluginName = pluginName;
     }
-
+    
     public boolean isEnabled() {
         return enabled;
     }
-
+    
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-
+    
     public boolean isLocalOnly() {
         return localOnly;
     }
-
+    
     public void setLocalOnly(boolean localOnly) {
         this.localOnly = localOnly;
     }

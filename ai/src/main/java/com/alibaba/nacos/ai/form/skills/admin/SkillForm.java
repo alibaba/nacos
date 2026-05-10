@@ -46,7 +46,7 @@ public class SkillForm implements NacosForm {
         fillDefaultNamespaceId();
         if (StringUtils.isEmpty(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'skillName' type String is not present");
+                "Required parameter 'skillName' type String is not present");
         }
     }
     

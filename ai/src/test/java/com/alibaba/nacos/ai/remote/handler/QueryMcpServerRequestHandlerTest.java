@@ -49,7 +49,8 @@ class QueryMcpServerRequestHandlerTest {
     
     @BeforeEach
     void setUp() {
-        requestHandler = new QueryMcpServerRequestHandler(mcpServerOperationService, mcpServerIndex);
+        requestHandler =
+            new QueryMcpServerRequestHandler(mcpServerOperationService, mcpServerIndex);
     }
     
     @AfterEach
@@ -84,7 +85,8 @@ class QueryMcpServerRequestHandlerTest {
         indexData.setNamespaceId("public");
         when(mcpServerIndex.getMcpServerByName("public", "test")).thenReturn(indexData);
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
-        when(mcpServerOperationService.getMcpServerDetail("public", indexData.getId(), null, null)).thenReturn(
+        when(mcpServerOperationService.getMcpServerDetail("public", indexData.getId(), null, null))
+            .thenReturn(
                 mcpServerDetailInfo);
         QueryMcpServerResponse response = requestHandler.handle(request, null);
         assertEquals(mcpServerDetailInfo, response.getMcpServerDetailInfo());

@@ -24,22 +24,25 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NacosGrpcServerTransportFilterServiceLoaderTest {
-
+    
     @Test
     void testLoadServerTransportFiltersSdk() {
-        List<NacosGrpcServerTransportFilter> list = NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters("SDK");
+        List<NacosGrpcServerTransportFilter> list =
+            NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters("SDK");
         assertNotNull(list);
     }
-
+    
     @Test
     void testLoadServerTransportFiltersCluster() {
-        List<NacosGrpcServerTransportFilter> list = NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters("CLUSTER");
+        List<NacosGrpcServerTransportFilter> list =
+            NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters("CLUSTER");
         assertNotNull(list);
     }
-
+    
     @Test
     void testLoadServerTransportFiltersUnknownType() {
-        List<NacosGrpcServerTransportFilter> list = NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters("UNKNOWN");
+        List<NacosGrpcServerTransportFilter> list =
+            NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters("UNKNOWN");
         assertNotNull(list);
         assertTrue(list.isEmpty());
     }

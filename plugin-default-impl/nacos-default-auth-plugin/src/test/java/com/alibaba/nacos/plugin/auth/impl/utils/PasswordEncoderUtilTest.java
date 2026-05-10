@@ -48,9 +48,11 @@ class PasswordEncoderUtilTest {
     
     @Test
     void matches() {
-        Boolean result1 = PasswordEncoderUtil.matches("nacos", "$2a$10$MK2dspqy7MKcCU63x8PoI.vTGXYxhzTmjWGJ21T.WX8thVsw0K2mO");
+        Boolean result1 = PasswordEncoderUtil.matches("nacos",
+            "$2a$10$MK2dspqy7MKcCU63x8PoI.vTGXYxhzTmjWGJ21T.WX8thVsw0K2mO");
         assertTrue(result1);
-        Boolean result2 = PasswordEncoderUtil.matches("nacos", "$2a$10$MK2dspqy7MKcCU63x8PoI.vTGXcxhzTmjWGJ21T.WX8thVsw0K2mO");
+        Boolean result2 = PasswordEncoderUtil.matches("nacos",
+            "$2a$10$MK2dspqy7MKcCU63x8PoI.vTGXcxhzTmjWGJ21T.WX8thVsw0K2mO");
         assertFalse(result2);
         Boolean matches = PasswordEncoderUtil.matches("nacos", PasswordEncoderUtil.encode("nacos"));
         assertTrue(matches);
@@ -58,17 +60,18 @@ class PasswordEncoderUtilTest {
     
     @Test
     void enforcePasswordLength() {
-        String raw72Password =  StringUtils.repeat("A", AuthConstants.MAX_PASSWORD_LENGTH);
+        String raw72Password = StringUtils.repeat("A", AuthConstants.MAX_PASSWORD_LENGTH);
         String encodedPassword = PasswordEncoderUtil.encode(raw72Password);
         
         assertThrows(IllegalArgumentException.class, () -> PasswordEncoderUtil.encode(null));
         
         String raw73Password = raw72Password.concat("A");
-        assertThrows(IllegalArgumentException.class, () -> PasswordEncoderUtil.encode(raw73Password));
+        assertThrows(IllegalArgumentException.class,
+            () -> PasswordEncoderUtil.encode(raw73Password));
         
         assertTrue(new BCryptPasswordEncoder().matches(raw73Password, encodedPassword));
         assertFalse(new SafeBcryptPasswordEncoder().matches(raw73Password, encodedPassword));
         assertFalse(PasswordEncoderUtil.matches(raw73Password, encodedPassword));
-    
+        
     }
 }

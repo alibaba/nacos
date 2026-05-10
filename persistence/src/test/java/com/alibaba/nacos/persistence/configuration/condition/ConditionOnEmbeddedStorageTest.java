@@ -45,7 +45,8 @@ class ConditionOnEmbeddedStorageTest {
     
     @Test
     void testMatches() {
-        MockedStatic<DatasourceConfiguration> mockedStatic = Mockito.mockStatic(DatasourceConfiguration.class);
+        MockedStatic<DatasourceConfiguration> mockedStatic =
+            Mockito.mockStatic(DatasourceConfiguration.class);
         mockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         assertTrue(conditionOnEmbeddedStorage.matches(context, metadata));
         

@@ -59,6 +59,7 @@ class InetAddressValidatorTest {
     @Test
     void isLinkLocalIpv6WithZoneIndex() {
         assertTrue(InetAddressValidator.isLinkLocalIpv6WithZoneIndex("fe80::1%lo0"));
-        assertFalse(InetAddressValidator.isLinkLocalIpv6WithZoneIndex("2000:0000:0000:0000:0001:2345:6789:abcd"));
+        assertFalse(InetAddressValidator
+            .isLinkLocalIpv6WithZoneIndex("2000:0000:0000:0000:0001:2345:6789:abcd"));
     }
 }

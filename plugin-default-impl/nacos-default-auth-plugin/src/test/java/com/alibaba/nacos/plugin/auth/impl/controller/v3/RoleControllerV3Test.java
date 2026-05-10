@@ -92,9 +92,11 @@ public class RoleControllerV3Test {
     void testGetRoleListAccurateSearch() {
         Page<RoleInfo> rolesTest = new Page<RoleInfo>();
         
-        when(roleService.getRoles(anyString(), anyString(), anyInt(), anyInt())).thenReturn(rolesTest);
+        when(roleService.getRoles(anyString(), anyString(), anyInt(), anyInt()))
+            .thenReturn(rolesTest);
         
-        Result<Page<RoleInfo>> result = roleControllerV3.getRoleList(1, 10, "nacos", "test", "accurate");
+        Result<Page<RoleInfo>> result =
+            roleControllerV3.getRoleList(1, 10, "nacos", "test", "accurate");
         
         assertEquals(rolesTest, result.getData());
     }
@@ -103,9 +105,11 @@ public class RoleControllerV3Test {
     void testGetRoleListFuzzySearch() {
         Page<RoleInfo> rolesTest = new Page<RoleInfo>();
         
-        when(roleService.findRoles(anyString(), anyString(), anyInt(), anyInt())).thenReturn(rolesTest);
+        when(roleService.findRoles(anyString(), anyString(), anyInt(), anyInt()))
+            .thenReturn(rolesTest);
         
-        Result<Page<RoleInfo>> result = roleControllerV3.getRoleList(1, 10, "nacos", "test", "blur");
+        Result<Page<RoleInfo>> result =
+            roleControllerV3.getRoleList(1, 10, "nacos", "test", "blur");
         
         assertEquals(rolesTest, result.getData());
     }

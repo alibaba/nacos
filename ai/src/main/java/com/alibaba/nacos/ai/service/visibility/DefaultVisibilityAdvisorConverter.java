@@ -36,7 +36,7 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
     
     @Override
     public QueryCondition convert(QueryCondition condition, String identity, QueryAdvisor advisor,
-            VisibilityQueryContext context) {
+        VisibilityQueryContext context) {
         QueryCondition result = condition == null ? new QueryCondition() : condition;
         result.setOrGroup(new LinkedHashMap<>());
         if (advisor == null || advisor.getBasePredicate() == null) {
@@ -58,7 +58,8 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
                 break;
         }
         // TODO: stage-2 authorized resources integration.
-        List<String> authorized = advisor.getAuthorizedPredicate() == null ? null : advisor.getAuthorizedPredicate()
+        List<String> authorized =
+            advisor.getAuthorizedPredicate() == null ? null : advisor.getAuthorizedPredicate()
                 .getResources();
         if (authorized != null && !authorized.isEmpty()) {
             result.setAuthorizedResourceNames(authorized);
@@ -97,7 +98,8 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
             applyPublic(condition);
             return;
         }
-        boolean scopeIsPublic = VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope());
+        boolean scopeIsPublic =
+            VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope());
         boolean hasScope = StringUtils.isNotBlank(condition.getScope());
         boolean ownerIsIdentity = identity.equals(condition.getOwner());
         boolean hasOwner = StringUtils.isNotBlank(condition.getOwner());

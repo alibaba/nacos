@@ -53,140 +53,147 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class PromptMaintainerServiceDefaultMethodsTest {
-
+    
     @Mock
     private ClientHttpProxy clientHttpProxy;
-
+    
     private PromptMaintainerService promptService;
-
+    
     @BeforeEach
     void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-        AiMaintainerService aiMaintainerService = AiMaintainerFactory.createAiMaintainerService(properties);
-
-        Field promptServiceField = NacosAiMaintainerServiceImpl.class.getDeclaredField("promptMaintainerService");
+        AiMaintainerService aiMaintainerService =
+            AiMaintainerFactory.createAiMaintainerService(properties);
+        
+        Field promptServiceField =
+            NacosAiMaintainerServiceImpl.class.getDeclaredField("promptMaintainerService");
         promptServiceField.setAccessible(true);
         promptService = (PromptMaintainerService) promptServiceField.get(aiMaintainerService);
-
+        
         injectMockClientHttpProxy(promptService);
     }
-
-    private void injectMockClientHttpProxy(Object service) throws NoSuchFieldException, IllegalAccessException {
+    
+    private void injectMockClientHttpProxy(Object service)
+        throws NoSuchFieldException, IllegalAccessException {
         Field contextField = AbstractAiDelegateMaintainerService.class.getDeclaredField("context");
         contextField.setAccessible(true);
         Object context = contextField.get(service);
-        Field clientHttpProxyField = AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
+        Field clientHttpProxyField =
+            AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
         clientHttpProxyField.setAccessible(true);
         clientHttpProxyField.set(context, clientHttpProxy);
     }
-
+    
     // ========== listPrompts default method tests ==========
-
+    
     @Test
     @DisplayName("listPrompts(promptKey, pageNo, pageSize) should use default namespace and blur search")
     void testListPromptsWithDefaults() throws NacosException {
         Page<PromptMetaSummary> page = new Page<>();
         page.setTotalCount(1);
         page.setPageItems(Collections.singletonList(new PromptMetaSummary()));
-
+        
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(page)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
+        
         Page<PromptMetaSummary> result = promptService.listPrompts("testPrompt", 1, 10);
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
     }
-
+    
     // ========== deletePrompt default method tests ==========
-
+    
     @Test
     @DisplayName("deletePrompt(promptKey) should use default namespace")
     void testDeletePromptWithDefaultNamespace() throws NacosException {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
+        
         assertTrue(promptService.deletePrompt("testPrompt"));
     }
-
+    
     // ========== listPromptVersions default method tests ==========
-
+    
     @Test
     @DisplayName("listPromptVersions(promptKey, pageNo, pageSize) should use default namespace")
     void testListPromptVersionsWithDefaultNamespace() throws NacosException {
         Page<PromptVersionSummary> page = new Page<>();
         page.setTotalCount(1);
         page.setPageItems(Collections.singletonList(new PromptVersionSummary()));
-
+        
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(page)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
+        
         Page<PromptVersionSummary> result = promptService.listPromptVersions("testPrompt", 1, 10);
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
     }
-
+    
     // ========== getPromptMeta default method tests (deprecated) ==========
-
+    
     @Test
     @DisplayName("getPromptMeta(promptKey) should use default namespace")
     void testGetPromptMetaWithDefaultNamespace() throws NacosException {
         PromptMetaInfo meta = new PromptMetaInfo();
         meta.setPromptKey("testPrompt");
-
+        
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(meta)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
+        
         PromptMetaInfo result = promptService.getPromptMeta("testPrompt");
         assertNotNull(result);
         assertEquals("testPrompt", result.getPromptKey());
     }
-
+    
     // ========== publishPrompt default method tests (deprecated) ==========
-
+    
     @Test
     @DisplayName("publishPrompt(promptKey, version, template, commitMsg) should use default namespace")
     void testPublishPromptWithDefaults() throws NacosException {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        assertTrue(promptService.publishPrompt("testPrompt", "v1", "template content", "commit message"));
+        
+        assertTrue(
+            promptService.publishPrompt("testPrompt", "v1", "template content", "commit message"));
     }
-
+    
     @Test
     @DisplayName("publishPrompt(namespaceId, promptKey, version, template, commitMsg, description) should work")
     void testPublishPromptWithoutBizTags() throws NacosException {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        assertTrue(promptService.publishPrompt("public", "testPrompt", "v1", "template", "commit", "description"));
+        
+        assertTrue(promptService.publishPrompt("public", "testPrompt", "v1", "template", "commit",
+            "description"));
     }
-
+    
     @Test
     @DisplayName("publishPrompt with variables should delegate to non-variables version")
     void testPublishPromptWithVariables() throws NacosException {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        assertTrue(promptService.publishPrompt("public", "testPrompt", "v1", "template", "commit", "desc", null, "{}"));
+        
+        assertTrue(promptService.publishPrompt("public", "testPrompt", "v1", "template", "commit",
+            "desc", null, "{}"));
     }
-
+    
     // ========== updatePromptMetadata default method tests (deprecated) ==========
-
+    
     @Test
     @DisplayName("updatePromptMetadata(namespaceId, promptKey, description) should work")
     void testUpdatePromptMetadataWithoutBizTags() throws NacosException {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
+        
         assertTrue(promptService.updatePromptMetadata("public", "testPrompt", "new description"));
     }
 }

@@ -29,9 +29,9 @@ import java.util.stream.Collectors;
  **/
 
 public abstract class AbstractMapper implements Mapper {
-
+    
     private static final String COLUMN_SEPARATOR = "@";
-
+    
     @Override
     public String select(List<String> columns, List<String> where) {
         StringBuilder sql = new StringBuilder();
@@ -40,29 +40,29 @@ public abstract class AbstractMapper implements Mapper {
         sql.append(String.join(",", columns));
         sql.append(" FROM ");
         sql.append(getTableName());
-
+        
         if (CollectionUtils.isEmpty(where)) {
             return sql.toString();
         }
-
+        
         appendWhereClause(where, sql);
         return sql.toString();
     }
-
+    
     @Override
     public String insert(List<String> columns) {
         StringJoiner columnJoiner = new StringJoiner(", ", "(", ")");
         StringJoiner valueJoiner = new StringJoiner(",", "(", ")");
-
+        
         for (String col : columns) {
             String[] parts = col.split(COLUMN_SEPARATOR, 2);
             columnJoiner.add(parts[0]);
             valueJoiner.add(parts.length > 1 ? getFunction(parts[1]) : "?");
         }
-
+        
         return "INSERT INTO " + getTableName() + columnJoiner + " VALUES" + valueJoiner;
     }
-
+    
     @Override
     public String update(List<String> columns, List<String> where) {
         StringJoiner setJoiner = new StringJoiner(",");
@@ -71,29 +71,29 @@ public abstract class AbstractMapper implements Mapper {
             String value = parts.length > 1 ? getFunction(parts[1]) : "?";
             setJoiner.add(parts[0] + " = " + value);
         }
-
+        
         StringBuilder sql = new StringBuilder("UPDATE ")
-                .append(getTableName())
-                .append(" SET ")
-                .append(setJoiner);
-
+            .append(getTableName())
+            .append(" SET ")
+            .append(setJoiner);
+        
         if (CollectionUtils.isNotEmpty(where)) {
             appendWhereClause(where, sql);
         }
-
+        
         return sql.toString();
     }
-
+    
     @Override
     public String delete(List<String> params) {
         StringBuilder sql = new StringBuilder();
         String method = "DELETE ";
         sql.append(method).append("FROM ").append(getTableName());
         appendWhereClause(params, sql);
-
+        
         return sql.toString();
     }
-
+    
     @Override
     public String count(List<String> where) {
         StringBuilder sql = new StringBuilder();
@@ -101,21 +101,21 @@ public abstract class AbstractMapper implements Mapper {
         sql.append(method);
         sql.append("COUNT(*) FROM ");
         sql.append(getTableName());
-
+        
         if (CollectionUtils.isEmpty(where)) {
             return sql.toString();
         }
-
+        
         appendWhereClause(where, sql);
-
+        
         return sql.toString();
     }
-
+    
     @Override
     public String[] getPrimaryKeyGeneratedKeys() {
-        return new String[]{"id"};
+        return new String[] {"id"};
     }
-
+    
     private void appendWhereClause(List<String> where, StringBuilder sql) {
         sql.append(" WHERE ");
         sql.append(where.stream().map(str -> (str + " = ?")).collect(Collectors.joining(" AND ")));

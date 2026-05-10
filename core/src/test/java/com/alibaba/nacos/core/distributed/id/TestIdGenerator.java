@@ -25,28 +25,28 @@ import java.util.Map;
  * Test IdGenerator for SPI branch coverage in IdGeneratorManager.
  */
 public class TestIdGenerator implements IdGenerator {
-
+    
     private long current = 0;
-
+    
     @Override
     public void init() {
     }
-
+    
     @Override
     public long currentId() {
         return current;
     }
-
+    
     @Override
     public long workerId() {
         return 0;
     }
-
+    
     @Override
     public long nextId() {
         return ++current;
     }
-
+    
     @Override
     public Map<Object, Object> info() {
         Map<Object, Object> map = new HashMap<>(2);

@@ -43,8 +43,10 @@ class TypeUtilsTest {
         assertEquals(1, stringComparableType.getActualTypeArguments().length);
         assertEquals(String.class, stringComparableType.getActualTypeArguments()[0]);
         
-        ParameterizedType stringIntegerComparableType = TypeUtils.parameterize(Map.class, String.class, Integer.class);
-        assertEquals("java.util.Map<java.lang.String, java.lang.Integer>", stringIntegerComparableType.toString());
+        ParameterizedType stringIntegerComparableType =
+            TypeUtils.parameterize(Map.class, String.class, Integer.class);
+        assertEquals("java.util.Map<java.lang.String, java.lang.Integer>",
+            stringIntegerComparableType.toString());
         assertEquals(Map.class, stringIntegerComparableType.getRawType());
         assertNull(stringComparableType.getOwnerType());
         assertEquals(2, stringIntegerComparableType.getActualTypeArguments().length);

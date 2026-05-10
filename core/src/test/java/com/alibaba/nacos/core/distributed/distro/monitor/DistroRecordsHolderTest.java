@@ -28,7 +28,8 @@ class DistroRecordsHolderTest {
     
     @Test
     void testGetRecordIfExist() {
-        Optional<DistroRecord> actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetRecordIfExist");
+        Optional<DistroRecord> actual =
+            DistroRecordsHolder.getInstance().getRecordIfExist("testGetRecordIfExist");
         assertFalse(actual.isPresent());
         DistroRecordsHolder.getInstance().getRecord("testGetRecordIfExist");
         actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetRecordIfExist");
@@ -60,7 +61,8 @@ class DistroRecordsHolderTest {
     @Test
     void testGetFailedVerifyCount() {
         long expected = DistroRecordsHolder.getInstance().getFailedVerifyCount() + 1;
-        DistroRecord record = DistroRecordsHolder.getInstance().getRecord("testGetFailedVerifyCount");
+        DistroRecord record =
+            DistroRecordsHolder.getInstance().getRecord("testGetFailedVerifyCount");
         record.verifyFail();
         assertEquals(expected, DistroRecordsHolder.getInstance().getFailedVerifyCount());
     }

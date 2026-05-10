@@ -51,12 +51,14 @@ public class RaftCommandForm implements NacosForm {
     @Override
     public void validate() throws NacosApiException {
         if (StringUtils.isBlank(command)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Raft command is required.");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Raft command is required.");
         }
         if (StringUtils.isBlank(value)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Raft command value is required.");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Raft command value is required.");
         }
     }
     

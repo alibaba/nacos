@@ -29,7 +29,7 @@ public interface ConnectionEventListener {
      * @param connection connection has connected
      */
     void onConnected(Connection connection);
-
+    
     /**
      * notify when  disconnected to server.
      *

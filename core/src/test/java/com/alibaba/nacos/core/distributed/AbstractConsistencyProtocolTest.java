@@ -38,15 +38,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link AbstractConsistencyProtocol} unit test.
  */
 class AbstractConsistencyProtocolTest {
-
+    
     @Test
     void testLoadLogProcessorAndProtocolMetaData() {
         TestConsistencyProtocol protocol = new TestConsistencyProtocol();
         TestRequestProcessor p1 = new TestRequestProcessor("group1");
         TestRequestProcessor p2 = new TestRequestProcessor("group2");
-
+        
         protocol.loadLogProcessor(java.util.Arrays.asList(p1, p2));
-
+        
         assertEquals(2, protocol.getProcessorCount());
         assertTrue(protocol.hasProcessor("group1"));
         assertTrue(protocol.hasProcessor("group2"));
@@ -54,7 +54,7 @@ class AbstractConsistencyProtocolTest {
         assertNotNull(metaData);
         assertSame(metaData, protocol.protocolMetaData());
     }
-
+    
     @Test
     void testLoadLogProcessorOverwriteSameGroup() {
         TestConsistencyProtocol protocol = new TestConsistencyProtocol();
@@ -64,123 +64,127 @@ class AbstractConsistencyProtocolTest {
         protocol.loadLogProcessor(Collections.singletonList(p2));
         assertEquals(1, protocol.getProcessorCount());
     }
-
+    
     private static class TestConfig implements Config<RequestProcessor> {
+        
         private String self;
         private Set<String> members = new HashSet<>();
-
+        
         @Override
         public void setMembers(String self, Set<String> members) {
             this.self = self;
             this.members = members;
         }
-
+        
         @Override
         public void addMembers(Set<String> members) {
             this.members.addAll(members);
         }
-
+        
         @Override
         public void removeMembers(Set<String> members) {
             this.members.removeAll(members);
         }
-
+        
         @Override
         public String getSelfMember() {
             return self;
         }
-
+        
         @Override
         public Set<String> getMembers() {
             return members;
         }
-
+        
         @Override
         public void setVal(String key, String value) {
         }
-
+        
         @Override
         public String getVal(String key) {
             return null;
         }
-
+        
         @Override
         public String getValOfDefault(String key, String defaultVal) {
             return defaultVal;
         }
     }
-
+    
     private static class TestRequestProcessor extends RequestProcessor {
+        
         private final String group;
-
+        
         TestRequestProcessor(String group) {
             this.group = group;
         }
-
+        
         @Override
         public Response onRequest(ReadRequest request) {
             return null;
         }
-
+        
         @Override
         public Response onApply(WriteRequest log) {
             return null;
         }
-
+        
         @Override
         public String group() {
             return group;
         }
     }
-
-    private static class TestConsistencyProtocol extends AbstractConsistencyProtocol<TestConfig, TestRequestProcessor> {
-
+    
+    private static class TestConsistencyProtocol
+        extends AbstractConsistencyProtocol<TestConfig, TestRequestProcessor> {
+        
         @Override
         public void init(TestConfig config) {
         }
-
+        
         @Override
         public void addRequestProcessors(java.util.Collection<TestRequestProcessor> processors) {
             loadLogProcessor(new java.util.ArrayList<>(processors));
         }
-
+        
         @Override
         public com.alibaba.nacos.consistency.entity.Response getData(ReadRequest request) {
             return null;
         }
-
+        
         @Override
-        public CompletableFuture<com.alibaba.nacos.consistency.entity.Response> aGetData(ReadRequest request) {
+        public CompletableFuture<com.alibaba.nacos.consistency.entity.Response> aGetData(
+            ReadRequest request) {
             return CompletableFuture.completedFuture(null);
         }
-
+        
         @Override
         public Response write(WriteRequest request) {
             return null;
         }
-
+        
         @Override
         public CompletableFuture<Response> writeAsync(WriteRequest request) {
             return CompletableFuture.completedFuture(null);
         }
-
+        
         @Override
         public void memberChange(Set<String> addresses) {
         }
-
+        
         @Override
         public boolean isReady() {
             return false;
         }
-
+        
         @Override
         public void shutdown() {
         }
-
+        
         int getProcessorCount() {
             return allProcessor().size();
         }
-
+        
         boolean hasProcessor(String group) {
             return allProcessor().containsKey(group);
         }

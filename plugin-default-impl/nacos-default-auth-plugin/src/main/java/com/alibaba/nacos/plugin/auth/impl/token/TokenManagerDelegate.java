@@ -27,7 +27,8 @@ import org.springframework.security.core.Authentication;
  */
 public class TokenManagerDelegate implements TokenManager {
     
-    public static final String NACOS_AUTH_TOKEN_CACHING_ENABLED = "nacos.core.auth.plugin.nacos.token.cache.enable";
+    public static final String NACOS_AUTH_TOKEN_CACHING_ENABLED =
+        "nacos.core.auth.plugin.nacos.token.cache.enable";
     
     private final TokenManager delegate;
     

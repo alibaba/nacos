@@ -55,6 +55,20 @@ export const promptApi = {
   }): ApiResult<PromptVersionListResponse> =>
     client.get(`${BASE}/versions`, { params }) as ApiResult<PromptVersionListResponse>,
 
+  /**
+   * Download a specific prompt version as a Markdown document (returned as a Blob).
+   * Caller is responsible for creating an object URL and triggering the browser download.
+   */
+  downloadVersion: (params: {
+    promptKey: string;
+    version: string;
+    namespaceId?: string;
+  }): Promise<Blob> =>
+    client.get(`${BASE}/version/download`, {
+      params,
+      responseType: 'blob',
+    }) as unknown as Promise<Blob>,
+
   // ===== Lifecycle write operations =====
 
   /** Create draft */

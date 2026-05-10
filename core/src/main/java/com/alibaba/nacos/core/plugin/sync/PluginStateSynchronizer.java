@@ -28,7 +28,7 @@ import java.util.Map;
  * @since 3.2.0
  */
 public interface PluginStateSynchronizer {
-
+    
     /**
      * Synchronize plugin state change to cluster.
      *
@@ -37,7 +37,7 @@ public interface PluginStateSynchronizer {
      * @throws NacosApiException if sync fails
      */
     void syncStateChange(String pluginId, boolean enabled) throws NacosApiException;
-
+    
     /**
      * Synchronize plugin config change to cluster.
      *

@@ -51,14 +51,16 @@ public class HttpTpsPointRegistry implements ApplicationListener<ContextRefreshe
             return;
         }
         RequestMappingHandlerMapping requestMapping = event.getApplicationContext()
-                .getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
+            .getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMapping.getHandlerMethods();
         for (HandlerMethod handlerMethod : handlerMethods.values()) {
             Method method = handlerMethod.getMethod();
-            if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
+            if (method.isAnnotationPresent(TpsControl.class)
+                && TpsControlConfig.isTpsControlEnabled()) {
                 TpsControl tpsControl = method.getAnnotation(TpsControl.class);
                 String pointName = tpsControl.pointName();
-                ControlManagerCenter.getInstance().getTpsControlManager().registerTpsPoint(pointName);
+                ControlManagerCenter.getInstance().getTpsControlManager()
+                    .registerTpsPoint(pointName);
             }
         }
     }

@@ -53,11 +53,11 @@ public class SkillProxy {
     public SkillMeta getSkill(SkillForm form) throws NacosException {
         return skillHandler.getSkill(form);
     }
-
+    
     public Skill getSkillVersion(SkillForm form) throws NacosException {
         return skillHandler.getSkillVersion(form);
     }
-
+    
     public Skill downloadSkillVersion(SkillForm form) throws NacosException {
         return skillHandler.downloadSkillVersion(form);
     }
@@ -66,60 +66,63 @@ public class SkillProxy {
         skillHandler.deleteSkill(form);
     }
     
-    public Page<SkillSummary> listSkills(SkillListForm skillListForm, AiResourceFilterableForm filterableForm,
-            PageForm pageForm) throws NacosException {
+    public Page<SkillSummary> listSkills(SkillListForm skillListForm,
+        AiResourceFilterableForm filterableForm,
+        PageForm pageForm) throws NacosException {
         return skillHandler.listSkills(skillListForm, filterableForm, pageForm);
     }
     
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
         return uploadSkillFromZip(namespaceId, zipBytes, false, null);
     }
-
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
+    
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+        throws NacosException {
         return uploadSkillFromZip(namespaceId, zipBytes, overwrite, null);
     }
-
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite, String targetVersion)
-            throws NacosException {
+    
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion)
+        throws NacosException {
         return skillHandler.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
     }
-
+    
     public String createDraft(SkillDraftCreateForm form) throws NacosException {
         return skillHandler.createDraft(form);
     }
-
+    
     public void updateDraft(SkillUpdateForm form) throws NacosException {
         skillHandler.updateDraft(form);
     }
-
+    
     public void deleteDraft(SkillForm form) throws NacosException {
         skillHandler.deleteDraft(form);
     }
-
+    
     public String submit(SkillSubmitForm form) throws NacosException {
         return skillHandler.submit(form);
     }
-
+    
     public void publish(SkillPublishForm form) throws NacosException {
         skillHandler.publish(form);
     }
-
+    
     public void forcePublish(SkillPublishForm form) throws NacosException {
         skillHandler.forcePublish(form);
     }
-
+    
     public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {
         skillHandler.updateLabels(form);
     }
-
+    
     public void updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
         skillHandler.updateBizTags(form);
     }
-
+    
     public void online(SkillOnlineForm form) throws NacosException {
         skillHandler.changeOnlineStatus(form, true);
     }
-
+    
     public void offline(SkillOnlineForm form) throws NacosException {
         skillHandler.changeOnlineStatus(form, false);
     }

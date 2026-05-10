@@ -60,10 +60,13 @@ public class CopilotHttpParamExtractor extends AbstractHttpParamExtractor {
                     if (bodyStr.contains(SKILL_JSON_KEY)) {
                         // Extract skill from request body
                         try {
-                            java.util.Map<String, Object> bodyMap = JacksonUtils.toObj(bodyStr, java.util.Map.class);
-                            java.util.Map<String, Object> skillMap = (java.util.Map<String, Object>) bodyMap.get("skill");
+                            java.util.Map<String, Object> bodyMap =
+                                JacksonUtils.toObj(bodyStr, java.util.Map.class);
+                            java.util.Map<String, Object> skillMap =
+                                (java.util.Map<String, Object>) bodyMap.get("skill");
                             if (skillMap != null) {
-                                Skill skill = JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
+                                Skill skill =
+                                    JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
                                 if (skill != null && StringUtils.isNotBlank(skill.getName())) {
                                     paramInfo.setAgentName(skill.getName());
                                     paramInfo.setNamespaceId(skill.getNamespaceId());

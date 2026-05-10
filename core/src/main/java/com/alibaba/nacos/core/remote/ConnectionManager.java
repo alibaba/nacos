@@ -66,7 +66,8 @@ public class ConnectionManager {
     
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
-    public ConnectionManager(ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry) {
+    public ConnectionManager(
+        ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry) {
         this.clientConnectionEventListenerRegistry = clientConnectionEventListenerRegistry;
     }
     
@@ -77,10 +78,11 @@ public class ConnectionManager {
      * @return
      */
     public boolean traced(String clientIp) {
-        ConnectionControlRule connectionControlRule = ControlManagerCenter.getInstance().getConnectionControlManager()
+        ConnectionControlRule connectionControlRule =
+            ControlManagerCenter.getInstance().getConnectionControlManager()
                 .getConnectionLimitRule();
         return connectionControlRule != null && connectionControlRule.getMonitorIpList() != null
-                && connectionControlRule.getMonitorIpList().contains(clientIp);
+            && connectionControlRule.getMonitorIpList().contains(clientIp);
     }
     
     /**
@@ -113,12 +115,14 @@ public class ConnectionManager {
                 connection.setTraced(true);
             }
             connections.put(connectionId, connection);
-            connectionForClientIp.computeIfAbsent(clientIp, k -> new AtomicInteger(0)).getAndIncrement();
+            connectionForClientIp.computeIfAbsent(clientIp, k -> new AtomicInteger(0))
+                .getAndIncrement();
             
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
             
-            LOGGER.info("new connection registered successfully, connectionId = {},connection={} ", connectionId,
-                    connection);
+            LOGGER.info("new connection registered successfully, connectionId = {},connection={} ",
+                connectionId,
+                connection);
             return true;
             
         }
@@ -131,10 +135,12 @@ public class ConnectionManager {
             return false;
         }
         ConnectionMeta metaInfo = connection.getMetaInfo();
-        ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest(metaInfo.getClientIp(),
+        ConnectionCheckRequest connectionCheckRequest =
+            new ConnectionCheckRequest(metaInfo.getClientIp(),
                 metaInfo.getAppName(), metaInfo.getLabel(RemoteConstants.LABEL_SOURCE));
         connectionCheckRequest.setLabels(connection.getLabels());
-        ConnectionCheckResponse checkResponse = ControlManagerCenter.getInstance().getConnectionControlManager()
+        ConnectionCheckResponse checkResponse =
+            ControlManagerCenter.getInstance().getConnectionControlManager()
                 .check(connectionCheckRequest);
         return !checkResponse.isSuccess();
     }
@@ -196,10 +202,13 @@ public class ConnectionManager {
         String connectionRuntimeEjector = null;
         try {
             connectionRuntimeEjector = ControlConfigs.getInstance().getConnectionRuntimeEjector();
-            Collection<RuntimeConnectionEjector> ejectors = NacosServiceLoader.load(RuntimeConnectionEjector.class);
+            Collection<RuntimeConnectionEjector> ejectors =
+                NacosServiceLoader.load(RuntimeConnectionEjector.class);
             for (RuntimeConnectionEjector runtimeConnectionEjectorLoad : ejectors) {
-                if (runtimeConnectionEjectorLoad.getName().equalsIgnoreCase(connectionRuntimeEjector)) {
-                    Loggers.CONNECTION.info("Found connection runtime ejector for name {}", connectionRuntimeEjector);
+                if (runtimeConnectionEjectorLoad.getName()
+                    .equalsIgnoreCase(connectionRuntimeEjector)) {
+                    Loggers.CONNECTION.info("Found connection runtime ejector for name {}",
+                        connectionRuntimeEjector);
                     runtimeConnectionEjectorLoad.setConnectionManager(this);
                     runtimeConnectionEjector = runtimeConnectionEjectorLoad;
                 }
@@ -210,8 +219,10 @@ public class ConnectionManager {
         
         if (runtimeConnectionEjector == null) {
             Loggers.CONNECTION
-                    .info("Fail to find connection runtime ejector for name {},use default", connectionRuntimeEjector);
-            NacosRuntimeConnectionEjector nacosRuntimeConnectionEjector = new NacosRuntimeConnectionEjector();
+                .info("Fail to find connection runtime ejector for name {},use default",
+                    connectionRuntimeEjector);
+            NacosRuntimeConnectionEjector nacosRuntimeConnectionEjector =
+                new NacosRuntimeConnectionEjector();
             nacosRuntimeConnectionEjector.setConnectionManager(this);
             runtimeConnectionEjector = nacosRuntimeConnectionEjector;
         }
@@ -250,17 +261,20 @@ public class ConnectionManager {
             runtimeConnectionEjector.doEject();
             MetricsMonitor.getLongConnectionMonitor().set(connections.size());
         }, 1000L, 3000L, TimeUnit.MILLISECONDS);
-
-        Boolean enabled = EnvUtil.getProperty("nacos.metric.grpc.server.connection.enabled", Boolean.class, true);
+        
+        Boolean enabled =
+            EnvUtil.getProperty("nacos.metric.grpc.server.connection.enabled", Boolean.class, true);
         if (enabled) {
             RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(() -> {
                 Map<String, Integer> count = new HashMap<>(16);
                 connections.forEach((id, connection) -> {
-                    String module = connection.getLabels().getOrDefault(RemoteConstants.LABEL_MODULE, "unknown");
+                    String module = connection.getLabels()
+                        .getOrDefault(RemoteConstants.LABEL_MODULE, "unknown");
                     count.put(module, count.getOrDefault(module, 0) + 1);
                 });
                 MetricsMonitor.refreshModuleConnectionCount(count);
-            }, 1L, EnvUtil.getProperty("nacos.metric.grpc.server.connection.interval", Long.class, 15L), TimeUnit.SECONDS);
+            }, 1L, EnvUtil.getProperty("nacos.metric.grpc.server.connection.interval", Long.class,
+                15L), TimeUnit.SECONDS);
         }
     }
     
@@ -282,7 +296,8 @@ public class ConnectionManager {
         if (connection != null) {
             if (connection.getMetaInfo().isSdkSource()) {
                 ConnectResetRequest connectResetRequest = new ConnectResetRequest();
-                if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(Constants.COLON)) {
+                if (StringUtils.isNotBlank(redirectAddress)
+                    && redirectAddress.contains(Constants.COLON)) {
                     String[] split = redirectAddress.split(Constants.COLON);
                     connectResetRequest.setServerIp(split[0]);
                     connectResetRequest.setServerPort(split[1]);
@@ -293,7 +308,8 @@ public class ConnectionManager {
                 } catch (ConnectionAlreadyClosedException e) {
                     unregister(connectionId);
                 } catch (Exception e) {
-                    LOGGER.error("error occurs when expel connection, connectionId: {} ", connectionId, e);
+                    LOGGER.error("error occurs when expel connection, connectionId: {} ",
+                        connectionId, e);
                     return false;
                 }
             }

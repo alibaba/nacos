@@ -57,16 +57,19 @@ import java.util.Set;
  * @author xiweng.yy
  */
 @Component
-public class BatchAgentEndpointRequestHandler extends RequestHandler<BatchAgentEndpointRequest, AgentEndpointResponse> {
+public class BatchAgentEndpointRequestHandler
+    extends RequestHandler<BatchAgentEndpointRequest, AgentEndpointResponse> {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(BatchAgentEndpointRequestHandler.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(BatchAgentEndpointRequestHandler.class);
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
     private final AgentIdCodecHolder agentIdCodecHolder;
     
-    public BatchAgentEndpointRequestHandler(EphemeralClientOperationServiceImpl clientOperationService,
-            AgentIdCodecHolder agentIdCodecHolder) {
+    public BatchAgentEndpointRequestHandler(
+        EphemeralClientOperationServiceImpl clientOperationService,
+        AgentIdCodecHolder agentIdCodecHolder) {
         this.clientOperationService = clientOperationService;
         this.agentIdCodecHolder = agentIdCodecHolder;
     }
@@ -75,23 +78,28 @@ public class BatchAgentEndpointRequestHandler extends RequestHandler<BatchAgentE
     @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = AgentRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
-    public AgentEndpointResponse handle(BatchAgentEndpointRequest request, RequestMeta meta) throws NacosException {
+    public AgentEndpointResponse handle(BatchAgentEndpointRequest request, RequestMeta meta)
+        throws NacosException {
         AgentEndpointResponse response = new AgentEndpointResponse();
         response.setType(AiRemoteConstants.BATCH_REGISTER_ENDPOINT);
         AgentRequestUtil.fillNamespaceId(request);
         try {
             validateRequest(request);
-            List<Instance> instances = AgentEndpointUtil.transferToInstances(request.getEndpoints());
+            List<Instance> instances =
+                AgentEndpointUtil.transferToInstances(request.getEndpoints());
             String version = request.getEndpoints().stream().findFirst().get().getVersion();
             String serviceName = agentIdCodecHolder.encode(request.getAgentName()) + "::" + version;
-            Service service = Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
+            Service service =
+                Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
                     serviceName);
-            clientOperationService.batchRegisterInstance(service, instances, meta.getConnectionId());
+            clientOperationService.batchRegisterInstance(service, instances,
+                meta.getConnectionId());
             publishBatchRegisterInstanceTraceEvent(service, instances, meta);
         } catch (NacosApiException e) {
             response.setErrorInfo(e.getErrCode(), e.getErrMsg());
-            LOGGER.error("[{}] Batch Register agent endpoints to agent {} error: {}", meta.getConnectionId(),
-                    request.getAgentName(), e.getErrMsg());
+            LOGGER.error("[{}] Batch Register agent endpoints to agent {} error: {}",
+                meta.getConnectionId(),
+                request.getAgentName(), e.getErrMsg());
         }
         return response;
     }
@@ -99,33 +107,37 @@ public class BatchAgentEndpointRequestHandler extends RequestHandler<BatchAgentE
     private void validateRequest(BatchAgentEndpointRequest request) throws NacosApiException {
         if (StringUtils.isBlank(request.getAgentName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `agentName` can't be empty or null");
+                "Required parameter `agentName` can't be empty or null");
         }
         if (null == request.getEndpoints() || request.getEndpoints().isEmpty()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `endpoints` can't be empty or null, if want to deregister, please use deregister API.");
+                "Required parameter `endpoints` can't be empty or null, if want to deregister, please use deregister API.");
         }
         Collection<AgentEndpoint> endpoints = request.getEndpoints();
         Set<String> versions = new HashSet<>();
         for (AgentEndpoint each : endpoints) {
             if (StringUtils.isBlank(each.getVersion())) {
-                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                        "Required parameter `endpoint.version` can't be empty or null.");
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `endpoint.version` can't be empty or null.");
             }
             versions.add(each.getVersion());
         }
         if (versions.size() > 1) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    String.format("Required parameter `endpoint.version` can't be different, current includes: %s.",
-                            String.join(",", versions)));
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                String.format(
+                    "Required parameter `endpoint.version` can't be different, current includes: %s.",
+                    String.join(",", versions)));
         }
     }
     
-    private void publishBatchRegisterInstanceTraceEvent(Service service, List<Instance> instances, RequestMeta meta) {
+    private void publishBatchRegisterInstanceTraceEvent(Service service, List<Instance> instances,
+        RequestMeta meta) {
         long eventTime = System.currentTimeMillis();
         String clientIp = NamingRequestUtil.getSourceIpForGrpcRequest(meta);
         instances.forEach(instance -> NotifyCenter.publishEvent(
-                new BatchRegisterInstanceTraceEvent(eventTime, clientIp, true, service.getNamespace(),
-                        service.getGroup(), service.getName(), instance.getIp(), instance.getPort())));
+            new BatchRegisterInstanceTraceEvent(eventTime, clientIp, true, service.getNamespace(),
+                service.getGroup(), service.getName(), instance.getIp(), instance.getPort())));
     }
 }

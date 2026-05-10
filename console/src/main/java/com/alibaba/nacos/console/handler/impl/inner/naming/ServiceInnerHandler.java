@@ -62,8 +62,9 @@ public class ServiceInnerHandler implements ServiceHandler {
     private final ClusterOperatorV2Impl clusterOperatorV2;
     
     @Autowired
-    public ServiceInnerHandler(ServiceOperatorV2Impl serviceOperatorV2, SelectorManager selectorManager,
-            CatalogServiceV2Impl catalogServiceV2, ClusterOperatorV2Impl clusterOperatorV2) {
+    public ServiceInnerHandler(ServiceOperatorV2Impl serviceOperatorV2,
+        SelectorManager selectorManager,
+        CatalogServiceV2Impl catalogServiceV2, ClusterOperatorV2Impl clusterOperatorV2) {
         this.serviceOperatorV2 = serviceOperatorV2;
         this.selectorManager = selectorManager;
         this.catalogServiceV2 = catalogServiceV2;
@@ -71,34 +72,45 @@ public class ServiceInnerHandler implements ServiceHandler {
     }
     
     @Override
-    public void createService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
-        serviceOperatorV2.create(com.alibaba.nacos.naming.core.v2.pojo.Service.newService(serviceForm.getNamespaceId(),
-                serviceForm.getGroupName(), serviceForm.getServiceName(), serviceForm.getEphemeral()), serviceMetadata);
+    public void createService(ServiceForm serviceForm, ServiceMetadata serviceMetadata)
+        throws Exception {
+        serviceOperatorV2.create(
+            com.alibaba.nacos.naming.core.v2.pojo.Service.newService(serviceForm.getNamespaceId(),
+                serviceForm.getGroupName(), serviceForm.getServiceName(),
+                serviceForm.getEphemeral()),
+            serviceMetadata);
         NotifyCenter.publishEvent(
-                new RegisterServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
-                        serviceForm.getGroupName(), serviceForm.getServiceName()));
+            new RegisterServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
+                serviceForm.getGroupName(), serviceForm.getServiceName()));
     }
     
     @Override
-    public void deleteService(String namespaceId, String serviceName, String groupName) throws Exception {
+    public void deleteService(String namespaceId, String serviceName, String groupName)
+        throws Exception {
         serviceOperatorV2.delete(
-                com.alibaba.nacos.naming.core.v2.pojo.Service.newService(namespaceId, groupName, serviceName));
+            com.alibaba.nacos.naming.core.v2.pojo.Service.newService(namespaceId, groupName,
+                serviceName));
         NotifyCenter.publishEvent(
-                new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, groupName, serviceName));
+            new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, groupName,
+                serviceName));
     }
     
     @Override
-    public void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
-        Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+    public void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata)
+        throws Exception {
+        Service service =
+            Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
                 serviceForm.getServiceName());
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.SERVICE_NOT_EXIST,
-                    "service %s is not exist.".formatted(service.toString()));
+                "service %s is not exist.".formatted(service.toString()));
         }
         service = ServiceManager.getInstance().getSingleton(service);
         serviceOperatorV2.update(service, serviceMetadata);
-        NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
-                serviceForm.getGroupName(), serviceForm.getServiceName(), serviceMetadata.getExtendData()));
+        NotifyCenter.publishEvent(
+            new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
+                serviceForm.getGroupName(), serviceForm.getServiceName(),
+                serviceMetadata.getExtendData()));
     }
     
     @Override
@@ -107,31 +119,38 @@ public class ServiceInnerHandler implements ServiceHandler {
     }
     
     @Override
-    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
-            String groupName, boolean aggregation) throws Exception {
-        return serviceOperatorV2.getSubscribers(namespaceId, serviceName, groupName, aggregation, pageNo, pageSize);
+    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId,
+        String serviceName,
+        String groupName, boolean aggregation) throws Exception {
+        return serviceOperatorV2.getSubscribers(namespaceId, serviceName, groupName, aggregation,
+            pageNo, pageSize);
     }
     
     @Override
-    public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
-            String serviceName, String groupName, boolean ignoreEmptyService) throws NacosException {
+    public Object getServiceList(boolean withInstances, String namespaceId, int pageNo,
+        int pageSize,
+        String serviceName, String groupName, boolean ignoreEmptyService) throws NacosException {
         if (withInstances) {
-            return catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
+            return catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName,
+                pageNo, pageSize);
         }
-        return catalogServiceV2.listService(namespaceId, groupName, serviceName, pageNo, pageSize, ignoreEmptyService);
+        return catalogServiceV2.listService(namespaceId, groupName, serviceName, pageNo, pageSize,
+            ignoreEmptyService);
     }
     
     @Override
-    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName)
-            throws NacosException {
+    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName,
+        String groupName)
+        throws NacosException {
         return catalogServiceV2.getServiceDetail(namespaceId, groupName, serviceName);
     }
     
     @Override
-    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
-            ClusterMetadata clusterMetadata) throws Exception {
-        clusterOperatorV2.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName, clusterMetadata);
+    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName,
+        String clusterName,
+        ClusterMetadata clusterMetadata) throws Exception {
+        clusterOperatorV2.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName,
+            clusterMetadata);
     }
     
 }
-

@@ -60,5 +60,5 @@ public interface PipelineMaintainerService extends PipelineAdminClient {
      */
     @Deprecated
     JsonNode listPipelines(String resourceType, String resourceName, String namespaceId,
-            String version, int pageNo, int pageSize) throws NacosException;
+        String version, int pageNo, int pageSize) throws NacosException;
 }

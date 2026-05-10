@@ -60,7 +60,8 @@ public class LdapAuthenticationManagerTest {
         user = new User();
         user.setUsername("nacos");
         user.setPassword(PasswordEncoderUtil.encode("test"));
-        ldapAuthenticationManager = new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager,
+        ldapAuthenticationManager =
+            new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager,
                 roleService, "", true);
     }
     
@@ -71,26 +72,31 @@ public class LdapAuthenticationManagerTest {
         NacosUser authenticate = ldapAuthenticationManager.authenticate("nacos", "test");
         assertEquals(user.getUsername(), authenticate.getUserName());
     }
-
+    
     @Test
     void testAuthenticateWithLdapPrefixRejected() {
-        assertThrows(AccessException.class, () -> ldapAuthenticationManager.authenticate("LDAP_admin", "nacos"));
+        assertThrows(AccessException.class,
+            () -> ldapAuthenticationManager.authenticate("LDAP_admin", "nacos"));
     }
-
+    
     @Test
     void testAuthenticateWithLdapPrefixLowercaseRejected() {
-        assertThrows(AccessException.class, () -> ldapAuthenticationManager.authenticate("ldap_admin", "nacos"));
+        assertThrows(AccessException.class,
+            () -> ldapAuthenticationManager.authenticate("ldap_admin", "nacos"));
     }
-
+    
     @Test
     void testAuthenticateWithLdapPrefixMixedCaseRejected() {
-        assertThrows(AccessException.class, () -> ldapAuthenticationManager.authenticate("Ldap_admin", "nacos"));
+        assertThrows(AccessException.class,
+            () -> ldapAuthenticationManager.authenticate("Ldap_admin", "nacos"));
     }
-
+    
     @Test
     void testAuthenticateWithLdapPrefixCaseInsensitiveRejected() {
-        LdapAuthenticationManager caseInsensitiveManager = new LdapAuthenticationManager(ldapTemplate,
+        LdapAuthenticationManager caseInsensitiveManager =
+            new LdapAuthenticationManager(ldapTemplate,
                 userDetailsService, jwtTokenManager, roleService, "", false);
-        assertThrows(AccessException.class, () -> caseInsensitiveManager.authenticate("LDAP_admin", "nacos"));
+        assertThrows(AccessException.class,
+            () -> caseInsensitiveManager.authenticate("LDAP_admin", "nacos"));
     }
 }

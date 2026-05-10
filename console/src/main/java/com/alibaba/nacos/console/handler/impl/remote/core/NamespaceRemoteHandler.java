@@ -53,15 +53,16 @@ public class NamespaceRemoteHandler implements NamespaceHandler {
     
     @Override
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
-            throws NacosException {
-        return clientHolder.getNamingMaintainerService().createNamespace(namespaceId, namespaceName, namespaceDesc);
+        throws NacosException {
+        return clientHolder.getNamingMaintainerService().createNamespace(namespaceId, namespaceName,
+            namespaceDesc);
     }
     
     @Override
     public Boolean updateNamespace(NamespaceForm namespaceForm) throws NacosException {
         return clientHolder.getNamingMaintainerService()
-                .updateNamespace(namespaceForm.getNamespaceId(), namespaceForm.getNamespaceName(),
-                        namespaceForm.getNamespaceDesc());
+            .updateNamespace(namespaceForm.getNamespaceId(), namespaceForm.getNamespaceName(),
+                namespaceForm.getNamespaceDesc());
     }
     
     @Override
@@ -74,4 +75,3 @@ public class NamespaceRemoteHandler implements NamespaceHandler {
         return clientHolder.getNamingMaintainerService().checkNamespaceIdExist(namespaceId);
     }
 }
-

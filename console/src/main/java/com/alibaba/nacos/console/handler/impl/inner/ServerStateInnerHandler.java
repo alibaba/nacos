@@ -41,4 +41,3 @@ public class ServerStateInnerHandler extends AbstractServerStateHandler {
         return stateService.getServerState();
     }
 }
-

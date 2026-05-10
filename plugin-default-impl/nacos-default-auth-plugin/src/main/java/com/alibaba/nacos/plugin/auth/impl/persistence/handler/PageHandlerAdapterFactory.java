@@ -33,19 +33,19 @@ import java.util.function.Consumer;
  * @author huangKeMing
  */
 public class PageHandlerAdapterFactory {
-
+    
     private final List<PageHandlerAdapter> handlerAdapters;
-
+    
     private final Map<String, PageHandlerAdapter> handlerAdapterMap;
-
+    
     public List<PageHandlerAdapter> getHandlerAdapters() {
         return handlerAdapters;
     }
-
+    
     public Map<String, PageHandlerAdapter> getHandlerAdapterMap() {
         return handlerAdapterMap;
     }
-
+    
     private PageHandlerAdapterFactory() {
         List<PageHandlerAdapter> handlerAdapters = new ArrayList<>(3);
         Map<String, PageHandlerAdapter> handlerAdapterMap = new HashMap<>(3);
@@ -62,14 +62,14 @@ public class PageHandlerAdapterFactory {
         this.handlerAdapters = Collections.unmodifiableList(handlerAdapters);
         this.handlerAdapterMap = Collections.unmodifiableMap(handlerAdapterMap);
     }
-
+    
     private static final class InstanceHolder {
+        
         static final PageHandlerAdapterFactory INSTANCE = new PageHandlerAdapterFactory();
     }
-
+    
     public static PageHandlerAdapterFactory getInstance() {
         return InstanceHolder.INSTANCE;
     }
-
+    
 }
-

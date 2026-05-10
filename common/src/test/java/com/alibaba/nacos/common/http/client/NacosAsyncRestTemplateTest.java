@@ -74,7 +74,8 @@ class NacosAsyncRestTemplateTest {
     
     @Test
     void testGetWithException() throws Exception {
-        doThrow(new RuntimeException("test")).when(requestClient).execute(any(), any(), any(), any(), any());
+        doThrow(new RuntimeException("test")).when(requestClient).execute(any(), any(), any(),
+            any(), any());
         restTemplate.get(TEST_URL, Header.EMPTY, Query.EMPTY, String.class, mockCallback);
         verify(requestClient).execute(any(), eq("GET"), any(), any(), eq(mockCallback));
         verify(mockCallback).onError(any(RuntimeException.class));
@@ -82,7 +83,8 @@ class NacosAsyncRestTemplateTest {
     
     @Test
     void testGetLarge() throws Exception {
-        restTemplate.getLarge(TEST_URL, Header.EMPTY, Query.EMPTY, new Object(), String.class, mockCallback);
+        restTemplate.getLarge(TEST_URL, Header.EMPTY, Query.EMPTY, new Object(), String.class,
+            mockCallback);
         verify(requestClient).execute(any(), eq("GET-LARGE"), any(), any(), eq(mockCallback));
     }
     
@@ -125,15 +127,18 @@ class NacosAsyncRestTemplateTest {
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
         restTemplate.putForm(TEST_URL, header, new HashMap<>(), String.class, mockCallback);
         verify(requestClient).execute(any(), eq("PUT"), any(), any(), eq(mockCallback));
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
     void testPutFormWithQuery() throws Exception {
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        restTemplate.putForm(TEST_URL, header, Query.EMPTY, new HashMap<>(), String.class, mockCallback);
+        restTemplate.putForm(TEST_URL, header, Query.EMPTY, new HashMap<>(), String.class,
+            mockCallback);
         verify(requestClient).execute(any(), eq("PUT"), any(), any(), eq(mockCallback));
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
@@ -163,14 +168,17 @@ class NacosAsyncRestTemplateTest {
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
         restTemplate.postForm(TEST_URL, header, new HashMap<>(), String.class, mockCallback);
         verify(requestClient).execute(any(), eq("POST"), any(), any(), eq(mockCallback));
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
     
     @Test
     void testPostFormWithQuery() throws Exception {
         Header header = Header.newInstance().setContentType(MediaType.APPLICATION_XML);
-        restTemplate.postForm(TEST_URL, header, Query.EMPTY, new HashMap<>(), String.class, mockCallback);
+        restTemplate.postForm(TEST_URL, header, Query.EMPTY, new HashMap<>(), String.class,
+            mockCallback);
         verify(requestClient).execute(any(), eq("POST"), any(), any(), eq(mockCallback));
-        assertEquals(MediaType.APPLICATION_FORM_URLENCODED, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(MediaType.APPLICATION_FORM_URLENCODED,
+            header.getValue(HttpHeaderConsts.CONTENT_TYPE));
     }
 }

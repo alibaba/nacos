@@ -26,17 +26,17 @@ import java.util.Properties;
  * @author xiweng.yy
  */
 public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
-
+    
     private final SkillMaintainerService skillMaintainerService;
-
+    
     private final AgentSpecMaintainerService agentSpecMaintainerService;
-
+    
     private final McpMaintainerService mcpMaintainerService;
-
+    
     private final A2aMaintainerService a2aMaintainerService;
-
+    
     private final PromptMaintainerService promptMaintainerService;
-
+    
     private final PipelineMaintainerService pipelineMaintainerService;
     
     public NacosAiMaintainerServiceImpl(Properties properties) throws NacosException {
@@ -50,32 +50,32 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         this.skillMaintainerService = skillDelegate;
         this.agentSpecMaintainerService = agentSpecDelegate;
     }
-
+    
     @Override
     public SkillMaintainerService skill() {
         return skillMaintainerService;
     }
-
+    
     @Override
     public AgentSpecMaintainerService agentSpec() {
         return agentSpecMaintainerService;
     }
-
+    
     @Override
     public McpMaintainerService mcp() {
         return mcpMaintainerService;
     }
-
+    
     @Override
     public A2aMaintainerService a2a() {
         return a2aMaintainerService;
     }
-
+    
     @Override
     public PromptMaintainerService prompt() {
         return promptMaintainerService;
     }
-
+    
     @Override
     public PipelineMaintainerService pipeline() {
         return pipelineMaintainerService;

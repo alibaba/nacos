@@ -48,16 +48,16 @@ class RemoteUtilsTest {
         int defaultExpectVal = 1 << 14;
         int defaultVal = RemoteUtils.getRemoteExecutorQueueSize();
         assertEquals(defaultExpectVal, defaultVal);
-
+        
         System.setProperty("remote.executor.queue.size", "10");
         int val1 = RemoteUtils.getRemoteExecutorQueueSize();
         assertEquals(10, val1);
-
+        
         System.setProperty("remote.executor.queue.size", "-1");
         int val2 = RemoteUtils.getRemoteExecutorQueueSize();
         assertEquals(defaultExpectVal, val2);
     }
-
+    
     @Test
     void testGetRemoteExecutorTimesOfProcessorsWhenNotDigits() {
         System.clearProperty("remote.executor.times.of.processors");
@@ -69,7 +69,7 @@ class RemoteUtilsTest {
             System.clearProperty("remote.executor.times.of.processors");
         }
     }
-
+    
     @Test
     void testGetRemoteExecutorQueueSizeWhenNotDigits() {
         System.clearProperty("remote.executor.queue.size");

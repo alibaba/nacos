@@ -58,7 +58,8 @@ public class WatchFileCenter {
     /**
      * Maximum number of monitored file directories.
      */
-    private static final int MAX_WATCH_FILE_JOB = Integer.getInteger("nacos.watch-file.max-dirs", 16);
+    private static final int MAX_WATCH_FILE_JOB =
+        Integer.getInteger("nacos.watch-file.max-dirs", 16);
     
     private static final Map<String, WatchDirJob> MANAGER = new HashMap<>(MAX_WATCH_FILE_JOB);
     
@@ -84,7 +85,8 @@ public class WatchFileCenter {
      * @return register is success
      * @throws NacosException NacosException
      */
-    public static synchronized boolean registerWatcher(final String paths, FileWatcher watcher) throws NacosException {
+    public static synchronized boolean registerWatcher(final String paths, FileWatcher watcher)
+        throws NacosException {
         checkState();
         if (NOW_WATCH_JOB_CNT == MAX_WATCH_FILE_JOB) {
             return false;
@@ -126,7 +128,8 @@ public class WatchFileCenter {
         }
         LOGGER.warn("[WatchFileCenter] start close");
         for (Map.Entry<String, WatchDirJob> entry : MANAGER.entrySet()) {
-            LOGGER.warn("[WatchFileCenter] start to shutdown this watcher which is watch : " + entry.getKey());
+            LOGGER.warn("[WatchFileCenter] start to shutdown this watcher which is watch : "
+                + entry.getKey());
             try {
                 entry.getValue().shutdown();
             } catch (Throwable e) {
@@ -145,7 +148,8 @@ public class WatchFileCenter {
      * @param watcher {@link FileWatcher}
      * @return deregister is success
      */
-    public static synchronized boolean deregisterWatcher(final String path, final FileWatcher watcher) {
+    public static synchronized boolean deregisterWatcher(final String path,
+        final FileWatcher watcher) {
         WatchDirJob job = MANAGER.get(path);
         if (job != null) {
             job.watchers.remove(watcher);
@@ -177,12 +181,13 @@ public class WatchFileCenter {
             }
             
             this.callBackExecutor = ExecutorFactory.newSingleExecutorService(
-                    new NameThreadFactory("com.alibaba.nacos.sys.file.watch-" + paths));
+                new NameThreadFactory("com.alibaba.nacos.sys.file.watch-" + paths));
             
             try {
                 WatchService service = FILE_SYSTEM.newWatchService();
-                p.register(service, StandardWatchEventKinds.OVERFLOW, StandardWatchEventKinds.ENTRY_MODIFY,
-                        StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
+                p.register(service, StandardWatchEventKinds.OVERFLOW,
+                    StandardWatchEventKinds.ENTRY_MODIFY,
+                    StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
                 this.watchService = service;
             } catch (Throwable ex) {
                 throw new NacosException(NacosException.SERVER_ERROR, ex);
@@ -239,7 +244,8 @@ public class WatchFileCenter {
         }
         
         private void eventProcess(Object context) {
-            final FileChangeEvent fileChangeEvent = FileChangeEvent.builder().paths(paths).context(context).build();
+            final FileChangeEvent fileChangeEvent =
+                FileChangeEvent.builder().paths(paths).context(context).build();
             final String str = String.valueOf(context);
             for (final FileWatcher watcher : watchers) {
                 if (watcher.interest(str)) {

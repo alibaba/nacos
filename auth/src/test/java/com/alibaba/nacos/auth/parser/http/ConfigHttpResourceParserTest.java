@@ -64,7 +64,7 @@ class ConfigHttpResourceParserTest {
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-
+    
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     void testParseWithNamespaceId() throws NoSuchMethodException {
@@ -78,7 +78,7 @@ class ConfigHttpResourceParserTest {
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-
+    
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     void testParseWithNamespaceIdFirst() throws NoSuchMethodException {

@@ -90,12 +90,14 @@ class JRaftProtocolTest {
         raftServerField.setAccessible(true);
         raftServerField.set(raftProtocol, serverMock);
         
-        Field jRaftMaintainServiceField = JRaftProtocol.class.getDeclaredField("jRaftMaintainService");
+        Field jRaftMaintainServiceField =
+            JRaftProtocol.class.getDeclaredField("jRaftMaintainService");
         jRaftMaintainServiceField.setAccessible(true);
         jRaftMaintainServiceField.set(raftProtocol, jRaftMaintainService);
         
         when(serverMock.get(readRequest)).thenReturn(futureMock);
-        when(serverMock.commit(any(String.class), any(Message.class), any(CompletableFuture.class))).thenReturn(
+        when(serverMock.commit(any(String.class), any(Message.class), any(CompletableFuture.class)))
+            .thenReturn(
                 futureMock);
         
         groupId = "test_group";
@@ -111,7 +113,8 @@ class JRaftProtocolTest {
     @Test
     void testWrite() throws Exception {
         raftProtocol.write(writeRequest);
-        verify(serverMock).commit(any(String.class), eq(writeRequest), any(CompletableFuture.class));
+        verify(serverMock).commit(any(String.class), eq(writeRequest),
+            any(CompletableFuture.class));
     }
     
     @Test
@@ -144,7 +147,8 @@ class JRaftProtocolTest {
     @Test
     void testExecuteDelegatesToMaintainService() {
         when(jRaftMaintainService.execute(anyMap())).thenReturn(RestResultUtils.success("ok"));
-        RestResult<String> result = raftProtocol.execute(Collections.singletonMap("command", "doSnapshot"));
+        RestResult<String> result =
+            raftProtocol.execute(Collections.singletonMap("command", "doSnapshot"));
         verify(jRaftMaintainService).execute(anyMap());
     }
     
@@ -181,7 +185,8 @@ class JRaftProtocolTest {
     @Test
     void testWriteAsyncDelegatesToRaftServer() {
         raftProtocol.writeAsync(writeRequest);
-        verify(serverMock).commit(eq(writeRequest.getGroup()), eq(writeRequest), any(CompletableFuture.class));
+        verify(serverMock).commit(eq(writeRequest.getGroup()), eq(writeRequest),
+            any(CompletableFuture.class));
     }
     
     /**
@@ -190,7 +195,8 @@ class JRaftProtocolTest {
     @Test
     void testMemberChangeSucceedsOnFirstTry() {
         Set<String> addresses = new HashSet<>();
-        when(serverMock.peerChange(any(JRaftMaintainService.class), eq(addresses))).thenReturn(true);
+        when(serverMock.peerChange(any(JRaftMaintainService.class), eq(addresses)))
+            .thenReturn(true);
         raftProtocol.memberChange(addresses);
         verify(serverMock, times(1)).peerChange(any(JRaftMaintainService.class), eq(addresses));
     }

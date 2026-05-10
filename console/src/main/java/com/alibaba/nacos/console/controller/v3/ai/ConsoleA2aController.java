@@ -136,8 +136,9 @@ public class ConsoleA2aController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Page<AgentCardVersionInfo>> listAgents(AgentListForm agentListForm, PageForm pageForm)
-            throws NacosException {
+    public Result<Page<AgentCardVersionInfo>> listAgents(AgentListForm agentListForm,
+        PageForm pageForm)
+        throws NacosException {
         agentListForm.validate();
         pageForm.validate();
         return Result.success(a2aProxy.listAgents(agentListForm, pageForm));
@@ -152,9 +153,10 @@ public class ConsoleA2aController {
      */
     @GetMapping("/version/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<List<AgentVersionDetail>> listAgentVersions(AgentForm agentForm) throws NacosException {
+    public Result<List<AgentVersionDetail>> listAgentVersions(AgentForm agentForm)
+        throws NacosException {
         agentForm.validate();
-        return Result.success(a2aProxy.listAgentVersions(agentForm.getNamespaceId(), agentForm.getAgentName()));
+        return Result.success(
+            a2aProxy.listAgentVersions(agentForm.getNamespaceId(), agentForm.getAgentName()));
     }
 }
-

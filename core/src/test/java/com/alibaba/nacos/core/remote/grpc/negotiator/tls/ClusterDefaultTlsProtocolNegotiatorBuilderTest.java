@@ -65,13 +65,18 @@ class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".enableTls", "true");
         properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".compatibility", "false");
-        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".ciphers", "ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
+        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".ciphers",
+            "ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".protocols", "TLSv1.2,TLSv1.3");
-        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".certPrivateKey", "test-server-key.pem");
-        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".certChainFile", "test-server-cert.pem");
-        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".trustCollectionCertFile", "test-ca-cert.pem");
+        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".certPrivateKey",
+            "test-server-key.pem");
+        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".certChainFile",
+            "test-server-cert.pem");
+        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".trustCollectionCertFile",
+            "test-ca-cert.pem");
         
-        PropertiesPropertySource propertySource = new PropertiesPropertySource("myPropertySource", properties);
+        PropertiesPropertySource propertySource =
+            new PropertiesPropertySource("myPropertySource", properties);
         MutablePropertySources propertySources = environment.getPropertySources();
         propertySources.addLast(propertySource);
         

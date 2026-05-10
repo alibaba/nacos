@@ -48,7 +48,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ExternalDataSourceServiceImpl implements DataSourceService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDataSourceServiceImpl.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ExternalDataSourceServiceImpl.class);
     
     /**
      * JDBC execute timeout value, unit:second.
@@ -133,16 +134,16 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             final List<Boolean> isHealthListNew = new ArrayList<Boolean>();
             
             List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
-                    .build(EnvUtil.getEnvironment(), (dataSource) -> {
-                        //check datasource connection
-                        ConnectionCheckUtil.checkDataSourceConnection(dataSource);
-                        
-                        JdbcTemplate jdbcTemplate = new JdbcTemplate();
-                        jdbcTemplate.setQueryTimeout(queryTimeout);
-                        jdbcTemplate.setDataSource(dataSource);
-                        testJtListNew.add(jdbcTemplate);
-                        isHealthListNew.add(Boolean.TRUE);
-                    });
+                .build(EnvUtil.getEnvironment(), (dataSource) -> {
+                    //check datasource connection
+                    ConnectionCheckUtil.checkDataSourceConnection(dataSource);
+                    
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                    jdbcTemplate.setQueryTimeout(queryTimeout);
+                    jdbcTemplate.setDataSource(dataSource);
+                    testJtListNew.add(jdbcTemplate);
+                    isHealthListNew.add(Boolean.TRUE);
+                });
             
             final List<HikariDataSource> dataSourceListOld = dataSourceList;
             final List<JdbcTemplate> testJtListOld = testJtList;
@@ -217,10 +218,12 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
                     // The master is unhealthy.
-                    return "DOWN:" + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "DOWN:"
+                        + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     // The slave  is unhealthy.
-                    return "WARN:" + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "WARN:"
+                        + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
@@ -248,7 +251,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 testMasterJt.setDataSource(ds);
                 testMasterJt.setQueryTimeout(queryTimeout);
                 try {
-                    testMasterJt.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
+                    testMasterJt.update(
+                        "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
                         LOGGER.warn("[master-db] {}", ds.getJdbcUrl());
                     }
@@ -290,10 +294,12 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         LOGGER.error("[db-error] master db {} down.",
-                                InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl()));
+                            InternetAddressUtil
+                                .getIpFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         LOGGER.error("[db-error] slave db {} down.",
-                                InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl()));
+                            InternetAddressUtil
+                                .getIpFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     

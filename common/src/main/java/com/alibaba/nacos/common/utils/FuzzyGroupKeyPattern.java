@@ -48,9 +48,11 @@ public class FuzzyGroupKeyPattern {
      * @return A unique group key pattern for fuzzy listen.
      * @throws IllegalArgumentException If the dataId pattern or group is blank.
      */
-    public static String generatePattern(final String resourcePattern, final String groupPattern, String fixNamespace) {
+    public static String generatePattern(final String resourcePattern, final String groupPattern,
+        String fixNamespace) {
         if (StringUtils.isBlank(resourcePattern)) {
-            throw new IllegalArgumentException("Param 'resourcePattern' is illegal, resourcePattern is blank");
+            throw new IllegalArgumentException(
+                "Param 'resourcePattern' is illegal, resourcePattern is blank");
         }
         if (StringUtils.isBlank(groupPattern)) {
             throw new IllegalArgumentException("Param 'groupPattern' is illegal, group is blank");
@@ -76,8 +78,9 @@ public class FuzzyGroupKeyPattern {
      * @param groupKeyPatterns The collection of completed group key patterns to match against.
      * @return A set of patterns that match the dataId and group.
      */
-    public static Set<String> filterMatchedPatterns(Collection<String> groupKeyPatterns, String resourceName,
-            String group, String namespace) {
+    public static Set<String> filterMatchedPatterns(Collection<String> groupKeyPatterns,
+        String resourceName,
+        String group, String namespace) {
         if (CollectionUtils.isEmpty(groupKeyPatterns)) {
             return new HashSet<>(1);
         }
@@ -98,12 +101,14 @@ public class FuzzyGroupKeyPattern {
      * @param groupKeyPattern  The pattern to match.
      * @return  matched or not.
      */
-    public static boolean matchPattern(String groupKeyPattern, String resourceName, String group, String namespace) {
+    public static boolean matchPattern(String groupKeyPattern, String resourceName, String group,
+        String namespace) {
         if (StringUtils.isBlank(namespace)) {
             namespace = DEFAULT_NAMESPACE_ID;
         }
         String[] splitPatterns = groupKeyPattern.split(FUZZY_WATCH_PATTERN_SPLITTER);
-        return splitPatterns[0].equals(namespace) && itemMatched(splitPatterns[1], group) && itemMatched(
+        return splitPatterns[0].equals(namespace) && itemMatched(splitPatterns[1], group)
+            && itemMatched(
                 splitPatterns[2], resourceName);
     }
     
@@ -160,7 +165,8 @@ public class FuzzyGroupKeyPattern {
      * or removed GroupKeyState#exist true presents follow set should add,GroupKeyState#exist false presents follow set
      * should removed.
      */
-    public static List<GroupKeyState> diffGroupKeys(Set<String> basedGroupKeys, Set<String> followedGroupKeys) {
+    public static List<GroupKeyState> diffGroupKeys(Set<String> basedGroupKeys,
+        Set<String> followedGroupKeys) {
         // Calculate the set of group keys to be added and removed
         Set<String> addGroupKeys = new HashSet<>();
         if (CollectionUtils.isNotEmpty(basedGroupKeys)) {
@@ -179,9 +185,10 @@ public class FuzzyGroupKeyPattern {
         }
         
         // Convert the group keys to be added and removed into corresponding ConfigState objects and merge them into a list
-        return Stream.concat(addGroupKeys.stream().map(groupKey -> new GroupKeyState(groupKey, true)),
-                        removeGroupKeys.stream().map(groupKey -> new GroupKeyState(groupKey, false)))
-                .collect(Collectors.toList());
+        return Stream
+            .concat(addGroupKeys.stream().map(groupKey -> new GroupKeyState(groupKey, true)),
+                removeGroupKeys.stream().map(groupKey -> new GroupKeyState(groupKey, false)))
+            .collect(Collectors.toList());
     }
     
     public static class GroupKeyState {

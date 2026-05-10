@@ -122,14 +122,14 @@ class WebUtilsTest {
         Mockito.when(request.getHeader(eq(X_REAL_IP))).thenReturn("");
         assertEquals("127.0.0.1", WebUtils.getRemoteIp(request));
     }
-
+    
     @Test
     void testGetAcceptEncodingWithSemicolon() {
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addHeader(HttpHeaderConsts.ACCEPT_ENCODING, "gzip;q=1.0");
         assertEquals("gzip", WebUtils.getAcceptEncoding(servletRequest));
     }
-
+    
     @Test
     void testOptionalWithEncoding() {
         MockHttpServletRequest req = new MockHttpServletRequest();
@@ -137,7 +137,7 @@ class WebUtilsTest {
         req.addParameter("encoding", "UTF-8");
         assertEquals("value", WebUtils.optional(req, "key", "default"));
     }
-
+    
     @Test
     void testOptionalWithInvalidEncodingIgnoresException() {
         MockHttpServletRequest req = new MockHttpServletRequest();
@@ -146,7 +146,7 @@ class WebUtilsTest {
         String result = WebUtils.optional(req, "key", "default");
         assertEquals("value", result.trim());
     }
-
+    
     @Test
     void testResponse() throws IOException {
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -154,7 +154,7 @@ class WebUtilsTest {
         assertEquals(200, response.getStatus());
         assertEquals("{\"code\":0}", response.getContentAsString());
     }
-
+    
     @Test
     void testOnFileUploadNullFile() {
         DeferredResult<RestResult<String>> result = new DeferredResult<>();
@@ -164,7 +164,7 @@ class WebUtilsTest {
         assertFalse(((RestResult<?>) result.getResult()).ok());
         assertEquals("File is empty", ((RestResult<?>) result.getResult()).getMessage());
     }
-
+    
     @Test
     void testOnFileUploadEmptyFile() {
         MultipartFile emptyFile = Mockito.mock(MultipartFile.class);
@@ -176,13 +176,14 @@ class WebUtilsTest {
         assertFalse(((RestResult<?>) result.getResult()).ok());
         assertEquals("File is empty", ((RestResult<?>) result.getResult()).getMessage());
     }
-
+    
     @Test
     void testOnFileUploadExceptionInTransferTo() throws IOException {
         MultipartFile failingFile = Mockito.mock(MultipartFile.class);
         when(failingFile.isEmpty()).thenReturn(false);
         when(failingFile.getName()).thenReturn("f.txt");
-        Mockito.doThrow(new IOException("transfer failed")).when(failingFile).transferTo(Mockito.any(File.class));
+        Mockito.doThrow(new IOException("transfer failed")).when(failingFile)
+            .transferTo(Mockito.any(File.class));
         DeferredResult<RestResult<String>> result = new DeferredResult<>();
         WebUtils.onFileUpload(failingFile, f -> {
         }, result);
@@ -190,16 +191,17 @@ class WebUtilsTest {
         assertFalse(((RestResult<?>) result.getResult()).ok());
         assertEquals("transfer failed", ((RestResult<?>) result.getResult()).getMessage());
     }
-
+    
     @Test
     void testProcessWithErrorHandler() {
         DeferredResult<String> deferred = new DeferredResult<>();
-        CompletableFuture<String> future = CompletableFuture.failedFuture(new RuntimeException("test"));
+        CompletableFuture<String> future =
+            CompletableFuture.failedFuture(new RuntimeException("test"));
         Function<Throwable, String> errorHandler = ex -> "error:" + ex.getMessage();
         WebUtils.process(deferred, future, errorHandler);
         assertEquals("error:test", deferred.getResult());
     }
-
+    
     @Test
     void testProcessWithSuccessAndErrorHandler() {
         DeferredResult<String> deferred = new DeferredResult<>();
@@ -209,7 +211,7 @@ class WebUtilsTest {
         assertEquals("ok", deferred.getResult());
         assertEquals("run", run.get());
     }
-
+    
     @Test
     void testProcessSuccessPathWithoutSuccessRunnable() {
         DeferredResult<String> deferred = new DeferredResult<>();
@@ -217,20 +219,21 @@ class WebUtilsTest {
         WebUtils.process(deferred, future, ex -> "error");
         assertEquals("done", deferred.getResult());
     }
-
+    
     @Test
     void testProcessWithSuccessRunnableAndErrorPath() {
         DeferredResult<String> deferred = new DeferredResult<>();
-        CompletableFuture<String> future = CompletableFuture.failedFuture(new RuntimeException("fail"));
+        CompletableFuture<String> future =
+            CompletableFuture.failedFuture(new RuntimeException("fail"));
         WebUtils.process(deferred, future, () -> {
         }, ex -> "err:" + ex.getMessage());
         assertEquals("err:fail", deferred.getResult());
     }
-
+    
     @Test
     void testOnFileUploadSuccessWithMockFile() {
         MultipartFile mockFile = new org.springframework.mock.web.MockMultipartFile("f", "f.txt",
-                "text/plain", "data".getBytes(StandardCharsets.UTF_8));
+            "text/plain", "data".getBytes(StandardCharsets.UTF_8));
         DeferredResult<RestResult<String>> result = new DeferredResult<>();
         AtomicReference<File> capturedFile = new AtomicReference<>();
         WebUtils.onFileUpload(mockFile, capturedFile::set, result);

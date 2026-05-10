@@ -22,51 +22,51 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.authorization;
  * @author WangzJi
  */
 public class AuthorizationRequest {
-
+    
     /**
      * User's access token.
      */
     private String token;
-
+    
     /**
      * Resource identifier (e.g., "nacos:config:dev:app.yaml").
      */
     private String resource;
-
+    
     /**
      * Action to perform (e.g., "read", "write").
      */
     private String action;
-
+    
     /**
      * Resource type (e.g., "config", "naming").
      */
     private String resourceType;
-
+    
     /**
      * Namespace ID.
      */
     private String namespace;
-
+    
     /**
      * Group name.
      */
     private String group;
-
+    
     /**
      * Resource name (e.g., dataId for config).
      */
     private String resourceName;
-
+    
     public AuthorizationRequest() {
     }
-
+    
     public AuthorizationRequest(String token, String resource, String action) {
         this.token = token;
         this.resource = resource;
         this.action = action;
     }
-
+    
     /**
      * Build resource URI from components.
      *
@@ -91,7 +91,7 @@ public class AuthorizationRequest {
         }
         return uri.toString();
     }
-
+    
     /**
      * Convert to JSON string for HTTP request body.
      *
@@ -117,123 +117,123 @@ public class AuthorizationRequest {
         json.append("}");
         return json.toString();
     }
-
+    
     private String escapeJson(String value) {
         if (value == null) {
             return "";
         }
         return value.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t");
     }
-
+    
     // Getters and Setters
-
+    
     public String getToken() {
         return token;
     }
-
+    
     public void setToken(String token) {
         this.token = token;
     }
-
+    
     public String getResource() {
         return resource;
     }
-
+    
     public void setResource(String resource) {
         this.resource = resource;
     }
-
+    
     public String getAction() {
         return action;
     }
-
+    
     public void setAction(String action) {
         this.action = action;
     }
-
+    
     public String getResourceType() {
         return resourceType;
     }
-
+    
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-
+    
     public String getNamespace() {
         return namespace;
     }
-
+    
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-
+    
     public String getGroup() {
         return group;
     }
-
+    
     public void setGroup(String group) {
         this.group = group;
     }
-
+    
     public String getResourceName() {
         return resourceName;
     }
-
+    
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
     }
-
+    
     /**
      * Builder for AuthorizationRequest.
      */
     public static class Builder {
-
+        
         private final AuthorizationRequest request = new AuthorizationRequest();
-
+        
         public Builder token(String token) {
             request.setToken(token);
             return this;
         }
-
+        
         public Builder resource(String resource) {
             request.setResource(resource);
             return this;
         }
-
+        
         public Builder action(String action) {
             request.setAction(action);
             return this;
         }
-
+        
         public Builder resourceType(String resourceType) {
             request.setResourceType(resourceType);
             return this;
         }
-
+        
         public Builder namespace(String namespace) {
             request.setNamespace(namespace);
             return this;
         }
-
+        
         public Builder group(String group) {
             request.setGroup(group);
             return this;
         }
-
+        
         public Builder resourceName(String resourceName) {
             request.setResourceName(resourceName);
             return this;
         }
-
+        
         public AuthorizationRequest build() {
             return request;
         }
     }
-
+    
     public static Builder builder() {
         return new Builder();
     }

@@ -34,7 +34,8 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Conditional(ConditionOnRemoteDatasource.class)
 @Import({NacosAuthPluginPersistenceConfig.class, NacosAuthPluginRemoteServiceConfig.class,
-        NacosAuthPluginCoreConfig.class, NacosAuthPluginControllerConfig.class, LdapAuthPluginConfig.class})
+        NacosAuthPluginCoreConfig.class, NacosAuthPluginControllerConfig.class,
+        LdapAuthPluginConfig.class})
 public class NacosAuthPluginRemoteAutoConfig {
-
+    
 }

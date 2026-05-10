@@ -23,20 +23,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 class KvStorageExceptionTest {
-
+    
     @Test
     void testDefaultConstructor() {
         KvStorageException ex = new KvStorageException();
         assertNotNull(ex);
     }
-
+    
     @Test
     void testErrorCodeAndMsgConstructor() {
-        KvStorageException ex = new KvStorageException(ErrorCode.KVStorageWriteError, "write failed");
+        KvStorageException ex =
+            new KvStorageException(ErrorCode.KVStorageWriteError, "write failed");
         assertEquals(ErrorCode.KVStorageWriteError.getCode(), ex.getErrCode());
         assertEquals("write failed", ex.getErrMsg());
     }
-
+    
     @Test
     void testErrorCodeAndThrowableConstructor() {
         Throwable cause = new RuntimeException("io error");
@@ -44,23 +45,24 @@ class KvStorageExceptionTest {
         assertEquals(ErrorCode.KVStorageReadError.getCode(), ex.getErrCode());
         assertSame(cause, ex.getCause());
     }
-
+    
     @Test
     void testErrorCodeMsgAndThrowableConstructor() {
         Throwable cause = new RuntimeException("io error");
-        KvStorageException ex = new KvStorageException(ErrorCode.KVStorageDeleteError, "delete failed", cause);
+        KvStorageException ex =
+            new KvStorageException(ErrorCode.KVStorageDeleteError, "delete failed", cause);
         assertEquals(ErrorCode.KVStorageDeleteError.getCode(), ex.getErrCode());
         assertEquals("delete failed", ex.getErrMsg());
         assertSame(cause, ex.getCause());
     }
-
+    
     @Test
     void testIntErrCodeAndMsgConstructor() {
         KvStorageException ex = new KvStorageException(40100, "custom error");
         assertEquals(40100, ex.getErrCode());
         assertEquals("custom error", ex.getErrMsg());
     }
-
+    
     @Test
     void testIntErrCodeAndThrowableConstructor() {
         Throwable cause = new RuntimeException("cause");
@@ -68,7 +70,7 @@ class KvStorageExceptionTest {
         assertEquals(40101, ex.getErrCode());
         assertSame(cause, ex.getCause());
     }
-
+    
     @Test
     void testIntErrCodeMsgAndThrowableConstructor() {
         Throwable cause = new RuntimeException("cause");
@@ -77,7 +79,7 @@ class KvStorageExceptionTest {
         assertEquals("msg", ex.getErrMsg());
         assertSame(cause, ex.getCause());
     }
-
+    
     @Test
     void testSetErrCodeAndSetErrMsg() {
         KvStorageException ex = new KvStorageException(ErrorCode.UnKnowError, "init");
@@ -86,7 +88,7 @@ class KvStorageExceptionTest {
         assertEquals(40002, ex.getErrCode());
         assertEquals("updated", ex.getErrMsg());
     }
-
+    
     @Test
     void testSetCauseThrowable() {
         KvStorageException ex = new KvStorageException(ErrorCode.KVStorageWriteError, "msg");
@@ -94,10 +96,11 @@ class KvStorageExceptionTest {
         ex.setCauseThrowable(cause);
         assertNotNull(ex.getErrMsg());
     }
-
+    
     @Test
     void testToString() {
-        KvStorageException ex = new KvStorageException(ErrorCode.KVStorageWriteError, "write failed");
+        KvStorageException ex =
+            new KvStorageException(ErrorCode.KVStorageWriteError, "write failed");
         String s = ex.toString();
         assertNotNull(s);
     }

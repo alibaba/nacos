@@ -181,36 +181,38 @@ class ConnectionManagerTest {
     void testCurrentSdkCount() {
         assertEquals(1, connectionManager.currentSdkClientCount());
     }
-
+    
     @Test
     void testRegisterWhenAlreadyContainedReturnsTrue() {
         boolean again = connectionManager.register(connectId, connection);
         assertTrue(again);
     }
-
+    
     @Test
     void testGetConnectionForClientIpAndCurrentClients() {
         assertNotNull(connectionManager.getConnectionForClientIp());
         assertEquals(1, connectionManager.getConnectionForClientIp().get(clientIp).get());
         assertTrue(connectionManager.currentClients().containsKey(connectId));
     }
-
+    
     @Test
     void testLoadSingleWithRedirectAddressContainingColon() throws NacosException {
         Mockito.when(connectionMeta.isSdkSource()).thenReturn(true);
         connectionManager.loadSingle(connectId, "127.0.0.1:8848");
     }
-
+    
     @Test
     void testUnregisterRemovesFromConnectionForClientIp() {
         connectionManager.unregister(connectId);
         assertFalse(connectionManager.getConnectionForClientIp().containsKey(clientIp));
     }
-
+    
     @Test
     void testTracedReturnsTrueWhenIpInMonitorList() {
-        try (MockedStatic<ControlManagerCenter> cmMock = Mockito.mockStatic(ControlManagerCenter.class)) {
-            ConnectionControlManager connectionControlManager = Mockito.mock(ConnectionControlManager.class);
+        try (MockedStatic<ControlManagerCenter> cmMock =
+            Mockito.mockStatic(ControlManagerCenter.class)) {
+            ConnectionControlManager connectionControlManager =
+                Mockito.mock(ConnectionControlManager.class);
             ConnectionControlRule rule = new ConnectionControlRule();
             rule.setMonitorIpList(Set.of(clientIp));
             when(connectionControlManager.getConnectionLimitRule()).thenReturn(rule);
@@ -220,59 +222,61 @@ class ConnectionManagerTest {
             assertTrue(connectionManager.traced(clientIp));
         }
     }
-
+    
     @Test
     void testRegisterReturnsFalseWhenCheckLimitFails() {
         String connectionId2 = UUID.randomUUID().toString();
-        try (MockedStatic<ControlManagerCenter> cmMock = Mockito.mockStatic(ControlManagerCenter.class)) {
-            ConnectionControlManager connectionControlManager = Mockito.mock(ConnectionControlManager.class);
+        try (MockedStatic<ControlManagerCenter> cmMock =
+            Mockito.mockStatic(ControlManagerCenter.class)) {
+            ConnectionControlManager connectionControlManager =
+                Mockito.mock(ConnectionControlManager.class);
             ConnectionCheckResponse checkResponse = new ConnectionCheckResponse();
             checkResponse.setSuccess(false);
-            when(connectionControlManager.check(any(ConnectionCheckRequest.class))).thenReturn(checkResponse);
+            when(connectionControlManager.check(any(ConnectionCheckRequest.class)))
+                .thenReturn(checkResponse);
             ControlManagerCenter center = Mockito.mock(ControlManagerCenter.class);
             when(center.getConnectionControlManager()).thenReturn(connectionControlManager);
             cmMock.when(ControlManagerCenter::getInstance).thenReturn(center);
             assertFalse(connectionManager.register(connectionId2, connection));
         }
     }
-
+    
     @Test
     void testLoadSingleWhenConnectionNullReturnsTrue() {
         boolean result = connectionManager.loadSingle("absent-conn-id", "127.0.0.1:8848");
         assertTrue(result);
     }
-
+    
     @Test
     void testLoadSingleWhenNotSdkSourceReturnsTrue() {
         Mockito.when(connectionMeta.isSdkSource()).thenReturn(false);
         boolean result = connectionManager.loadSingle(connectId, "127.0.0.1:8848");
         assertTrue(result);
     }
-
+    
     @Test
     void testLoadSingleWithBlankRedirectAddress() {
         Mockito.when(connectionMeta.isSdkSource()).thenReturn(true);
         boolean result = connectionManager.loadSingle(connectId, "");
         assertFalse(result);
     }
-
+    
     @Test
     void testCurrentClientsCountWithFilterLabelsMismatch() {
         Map<String, String> filterLabels = new HashMap<>();
         filterLabels.put("key", "other-value");
         assertEquals(0, connectionManager.currentClientsCount(filterLabels));
     }
-
+    
     @Test
     void testGetConnectionWhenAbsentReturnsNull() {
         assertNotNull(connectionManager.getConnection(connectId));
         assertNull(connectionManager.getConnection("absent-id"));
     }
-
+    
     @Test
     void testUnregisterNotifiesClientDisConnected() {
         connectionManager.unregister(connectId);
         Mockito.verify(clientConnectionEventListenerRegistry).notifyClientDisConnected(connection);
     }
 }
-

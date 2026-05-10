@@ -42,4 +42,3 @@ public class HealthRemoteHandler implements HealthHandler {
         return result ? Result.success("ok") : Result.failure("Nacos server readiness failed.");
     }
 }
-

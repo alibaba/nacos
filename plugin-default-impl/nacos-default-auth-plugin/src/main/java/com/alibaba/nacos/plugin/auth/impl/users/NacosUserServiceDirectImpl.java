@@ -32,13 +32,15 @@ import java.util.List;
  * @author wfnuser
  * @author nkorange
  */
-public class NacosUserServiceDirectImpl extends AbstractCachedUserService implements NacosUserService {
+public class NacosUserServiceDirectImpl extends AbstractCachedUserService
+    implements NacosUserService {
     
     private final UserPersistService userPersistService;
     
     private final AuthConfigs authConfigs;
     
-    public NacosUserServiceDirectImpl(AuthConfigs authConfigs, UserPersistService userPersistService) {
+    public NacosUserServiceDirectImpl(AuthConfigs authConfigs,
+        UserPersistService userPersistService) {
         super();
         this.userPersistService = userPersistService;
         this.authConfigs = authConfigs;

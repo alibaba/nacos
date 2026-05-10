@@ -39,48 +39,51 @@ class ServiceNoopHandlerTest {
     @Test
     void createService() {
         assertThrows(NacosApiException.class, () -> serviceNoopHandler.createService(null, null),
-                "Current functionMode is `config`, naming module is disabled.");
+            "Current functionMode is `config`, naming module is disabled.");
     }
     
     @Test
     void deleteService() {
         assertThrows(NacosApiException.class, () -> serviceNoopHandler.deleteService("", "", ""),
-                "Current functionMode is `config`, naming module is disabled.");
+            "Current functionMode is `config`, naming module is disabled.");
     }
     
     @Test
     void updateService() {
         assertThrows(NacosApiException.class, () -> serviceNoopHandler.updateService(null, null),
-                "Current functionMode is `config`, naming module is disabled.");
+            "Current functionMode is `config`, naming module is disabled.");
     }
     
     @Test
     void getSelectorTypeList() {
         assertThrows(NacosApiException.class, serviceNoopHandler::getSelectorTypeList,
-                "Current functionMode is `config`, naming module is disabled.");
+            "Current functionMode is `config`, naming module is disabled.");
     }
     
     @Test
     void getSubscribers() {
-        assertThrows(NacosApiException.class, () -> serviceNoopHandler.getSubscribers(0, 0, "", "", "", false),
-                "Current functionMode is `config`, naming module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> serviceNoopHandler.getSubscribers(0, 0, "", "", "", false),
+            "Current functionMode is `config`, naming module is disabled.");
     }
     
     @Test
     void getServiceList() {
-        assertThrows(NacosApiException.class, () -> serviceNoopHandler.getServiceList(false, "", 0, 0, "", "", false),
-                "Current functionMode is `config`, naming module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> serviceNoopHandler.getServiceList(false, "", 0, 0, "", "", false),
+            "Current functionMode is `config`, naming module is disabled.");
     }
     
     @Test
     void getServiceDetail() {
         assertThrows(NacosApiException.class, () -> serviceNoopHandler.getServiceDetail("", "", ""),
-                "Current functionMode is `config`, naming module is disabled.");
+            "Current functionMode is `config`, naming module is disabled.");
     }
     
     @Test
     void updateClusterMetadata() {
-        assertThrows(NacosApiException.class, () -> serviceNoopHandler.updateClusterMetadata("", "", "", "", null),
-                "Current functionMode is `config`, naming module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> serviceNoopHandler.updateClusterMetadata("", "", "", "", null),
+            "Current functionMode is `config`, naming module is disabled.");
     }
 }

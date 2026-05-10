@@ -39,10 +39,10 @@ import java.io.Serializable;
  * @author nacos
  */
 public class AiResourceFilterableForm implements NacosForm, Serializable {
-
+    
     @Serial
     private static final long serialVersionUID = 1L;
-
+    
     /**
      * Optional filter by resource owner (creator identity).
      *
@@ -54,7 +54,7 @@ public class AiResourceFilterableForm implements NacosForm, Serializable {
      * When {@code null} or empty, no owner filter is applied.
      */
     private String owner;
-
+    
     /**
      * Optional filter by visibility scope.
      *
@@ -63,7 +63,7 @@ public class AiResourceFilterableForm implements NacosForm, Serializable {
      * resources that the caller is authorized to see are returned.</p>
      */
     private String scope;
-
+    
     /**
      * Optional filter by business tag.
      *
@@ -71,37 +71,38 @@ public class AiResourceFilterableForm implements NacosForm, Serializable {
      * are returned (fuzzy match). When {@code null} or empty, no bizTag filter is applied.</p>
      */
     private String bizTag;
-
+    
     @Override
     public void validate() throws NacosApiException {
         if (StringUtils.isNotBlank(scope)
-                && !VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(scope)
-                && !VisibilityConstants.SCOPE_PRIVATE.equalsIgnoreCase(scope)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Request parameter `scope` must be PUBLIC or PRIVATE.");
+            && !VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(scope)
+            && !VisibilityConstants.SCOPE_PRIVATE.equalsIgnoreCase(scope)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Request parameter `scope` must be PUBLIC or PRIVATE.");
         }
     }
-
+    
     public String getOwner() {
         return owner;
     }
-
+    
     public void setOwner(String owner) {
         this.owner = owner;
     }
-
+    
     public String getScope() {
         return scope;
     }
-
+    
     public void setScope(String scope) {
         this.scope = scope;
     }
-
+    
     public String getBizTag() {
         return bizTag;
     }
-
+    
     public void setBizTag(String bizTag) {
         this.bizTag = bizTag;
     }

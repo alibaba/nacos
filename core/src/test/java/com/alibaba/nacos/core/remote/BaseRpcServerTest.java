@@ -30,68 +30,70 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class BaseRpcServerTest {
-
+    
     private MockedStatic<EnvUtil> envUtilMock;
-
+    
     @AfterEach
     void tearDown() {
         if (envUtilMock != null) {
             envUtilMock.close();
         }
     }
-
+    
     @Test
     void testGetServicePort() {
         envUtilMock = Mockito.mockStatic(EnvUtil.class);
         envUtilMock.when(EnvUtil::getPort).thenReturn(8848);
         BaseRpcServer server = new BaseRpcServer() {
+            
             @Override
             public ConnectionType getConnectionType() {
                 return ConnectionType.GRPC;
             }
-
+            
             @Override
             public void reloadProtocolContext() {
             }
-
+            
             @Override
             public void startServer() {
             }
-
+            
             @Override
             public int rpcPortOffset() {
                 return 1000;
             }
-
+            
             @Override
             public void shutdownServer() {
             }
         };
         assertEquals(9848, server.getServicePort());
     }
-
+    
     @Test
     void testStopServerDelegatesToShutdownServer() throws Exception {
         final boolean[] shutdownCalled = {false};
         BaseRpcServer server = new BaseRpcServer() {
+            
             @Override
             public ConnectionType getConnectionType() {
                 return ConnectionType.GRPC;
             }
-
+            
             @Override
             public void reloadProtocolContext() {
             }
-
+            
             @Override
             public void startServer() {
             }
-
+            
             @Override
             public int rpcPortOffset() {
                 return 0;
             }
-
+            
             @Override
             public void shutdownServer() {
                 shutdownCalled[0] = true;

@@ -56,11 +56,12 @@ public final class RowMapperManager {
      * @param rowMapper     row mapper
      * @param <D>           class of row mapper handled
      */
-    public static synchronized <D> void registerRowMapper(String classFullName, RowMapper<D> rowMapper) {
+    public static synchronized <D> void registerRowMapper(String classFullName,
+        RowMapper<D> rowMapper) {
         if (mapperMap.containsKey(classFullName)) {
             LOGGER.warn("row mapper {} conflicts, {} will be replaced by {}", classFullName,
-                    mapperMap.get(classFullName).getClass().getCanonicalName(),
-                    rowMapper.getClass().getCanonicalName());
+                mapperMap.get(classFullName).getClass().getCanonicalName(),
+                rowMapper.getClass().getCanonicalName());
         }
         mapperMap.put(classFullName, rowMapper);
     }

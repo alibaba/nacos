@@ -50,7 +50,8 @@ class NacosConsoleStartUpTest {
     
     @BeforeAll
     static void initMockNacosHome() throws Exception {
-        String classResource = NacosConsoleStartUp.class.getClassLoader().getResource("nacos-console.properties").getPath();
+        String classResource = NacosConsoleStartUp.class.getClassLoader()
+            .getResource("nacos-console.properties").getPath();
         File file = new File(classResource).getParentFile();
         mockNacosHome = file.getAbsolutePath() + File.separator + "NacosConsoleStartUpTest";
     }
@@ -83,7 +84,8 @@ class NacosConsoleStartUpTest {
     
     @Test
     void makeWorkDir() {
-        System.setProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_CONSOLE);
+        System.setProperty(Constants.NACOS_DEPLOYMENT_TYPE,
+            Constants.NACOS_DEPLOYMENT_TYPE_CONSOLE);
         File file = new File(mockNacosHome, "logs");
         assertFalse(file.exists());
         String[] actual = nacosConsoleStartUp.makeWorkDir();
@@ -100,7 +102,8 @@ class NacosConsoleStartUpTest {
     
     @Test
     void markWorkDirWithException() {
-        System.setProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_CONSOLE);
+        System.setProperty(Constants.NACOS_DEPLOYMENT_TYPE,
+            Constants.NACOS_DEPLOYMENT_TYPE_CONSOLE);
         System.setProperty(EnvUtil.NACOS_HOME_KEY, "invalid\0path");
         assertThrows(Exception.class, () -> nacosConsoleStartUp.makeWorkDir());
     }
@@ -117,7 +120,8 @@ class NacosConsoleStartUpTest {
     
     @Test
     void loadPreProperties() {
-        String testPath = NacosConsoleStartUpTest.class.getClassLoader().getResource("nacos-console.properties").getPath();
+        String testPath = NacosConsoleStartUpTest.class.getClassLoader()
+            .getResource("nacos-console.properties").getPath();
         File file = new File(testPath).getParentFile();
         testPath = new File(file.getAbsolutePath(), "mock").getAbsolutePath();
         int oldSize = environment.getPropertySources().size();
@@ -131,9 +135,11 @@ class NacosConsoleStartUpTest {
     
     @Test
     void loadPrePropertiesWithException() {
-        environment.setProperty("spring.config.additional-location", "file:" + mockNacosHome + File.separator + "nacos-console.properties");
+        environment.setProperty("spring.config.additional-location",
+            "file:" + mockNacosHome + File.separator + "nacos-console.properties");
         changeIsConsoleDeploymentType();
-        assertThrows(NacosRuntimeException.class, () -> nacosConsoleStartUp.loadPreProperties(environment));
+        assertThrows(NacosRuntimeException.class,
+            () -> nacosConsoleStartUp.loadPreProperties(environment));
     }
     
     @Test
@@ -150,13 +156,16 @@ class NacosConsoleStartUpTest {
         assertEquals(NetUtils.localIp(), System.getProperty("nacos.local.ip"));
         assertEquals("stand alone", System.getProperty("nacos.mode"));
         assertEquals("All", System.getProperty("nacos.function.mode"));
-        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", EnvUtil.FUNCTION_MODE_CONFIG);
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType",
+            EnvUtil.FUNCTION_MODE_CONFIG);
         nacosConsoleStartUp.initSystemProperty();
         assertEquals(EnvUtil.FUNCTION_MODE_CONFIG, System.getProperty("nacos.function.mode"));
-        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", EnvUtil.FUNCTION_MODE_NAMING);
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType",
+            EnvUtil.FUNCTION_MODE_NAMING);
         nacosConsoleStartUp.initSystemProperty();
         assertEquals(EnvUtil.FUNCTION_MODE_NAMING, System.getProperty("nacos.function.mode"));
-        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", EnvUtil.FUNCTION_MODE_MICROSERVICE);
+        ReflectionTestUtils.setField(EnvUtil.class, "functionModeType",
+            EnvUtil.FUNCTION_MODE_MICROSERVICE);
         nacosConsoleStartUp.initSystemProperty();
         assertEquals(EnvUtil.FUNCTION_MODE_MICROSERVICE, System.getProperty("nacos.function.mode"));
         ReflectionTestUtils.setField(EnvUtil.class, "functionModeType", EnvUtil.FUNCTION_MODE_AI);

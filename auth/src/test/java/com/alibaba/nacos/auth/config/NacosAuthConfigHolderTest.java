@@ -49,28 +49,32 @@ class NacosAuthConfigHolderTest {
     @BeforeEach
     void setUp() {
         cachedConfigMap = (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
-                NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
+            NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
         Map<String, NacosAuthConfig> mockMap = Map.of("test", nacosAuthConfig);
-        ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap", mockMap);
+        ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+            mockMap);
     }
     
     @AfterEach
     void tearDown() {
         if (cachedConfigMap != null) {
-            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap", cachedConfigMap);
+            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+                cachedConfigMap);
         }
     }
     
     @Test
     void getNacosAuthConfigByScope() {
-        assertEquals(nacosAuthConfig, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope("test"));
+        assertEquals(nacosAuthConfig,
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope("test"));
         assertNull(NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope("test1"));
     }
     
     @Test
     void getAllNacosAuthConfig() {
         assertEquals(1, NacosAuthConfigHolder.getInstance().getAllNacosAuthConfig().size());
-        assertTrue(NacosAuthConfigHolder.getInstance().getAllNacosAuthConfig().contains(nacosAuthConfig));
+        assertTrue(
+            NacosAuthConfigHolder.getInstance().getAllNacosAuthConfig().contains(nacosAuthConfig));
     }
     
     @Test
@@ -105,20 +109,24 @@ class NacosAuthConfigHolderTest {
     
     @Test
     void testGetNacosAuthSystemTypeWhenEmpty() {
-        ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap", Map.of());
+        ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+            Map.of());
         assertNull(NacosAuthConfigHolder.getInstance().getNacosAuthSystemType());
     }
     
     @Test
     void testConstructorWithSpiProvider()
-            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        Map<Class<?>, Collection<Class<?>>> servicesMap = (Map<Class<?>, Collection<Class<?>>>) ReflectionTestUtils.getField(
+        throws NoSuchMethodException, InvocationTargetException, InstantiationException,
+        IllegalAccessException {
+        Map<Class<?>, Collection<Class<?>>> servicesMap =
+            (Map<Class<?>, Collection<Class<?>>>) ReflectionTestUtils.getField(
                 NacosServiceLoader.class, "SERVICES");
         List<Class<?>> classes = new LinkedList<>();
         classes.add(MockNacosAuthConfig.class);
         servicesMap.put(NacosAuthConfig.class, classes);
         try {
-            Constructor<NacosAuthConfigHolder> constructor = NacosAuthConfigHolder.class.getDeclaredConstructor();
+            Constructor<NacosAuthConfigHolder> constructor =
+                NacosAuthConfigHolder.class.getDeclaredConstructor();
             constructor.setAccessible(true);
             NacosAuthConfigHolder holder = constructor.newInstance();
             assertEquals(1, holder.getAllNacosAuthConfig().size());

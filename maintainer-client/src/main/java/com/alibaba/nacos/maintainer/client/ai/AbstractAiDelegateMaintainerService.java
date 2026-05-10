@@ -25,29 +25,30 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import java.util.Map;
 
 abstract class AbstractAiDelegateMaintainerService {
-
+    
     protected final AiMaintainerHttpContext context;
-
+    
     protected AbstractAiDelegateMaintainerService(AiMaintainerHttpContext context) {
         this.context = context;
     }
-
-    protected HttpRestResult<String> executeSyncHttpRequest(HttpRequest request) throws NacosException {
+    
+    protected HttpRestResult<String> executeSyncHttpRequest(HttpRequest request)
+        throws NacosException {
         return context.getClientHttpProxy().executeSyncHttpRequest(request);
     }
-
+    
     protected String resolveNamespace(String namespaceId) {
         return context.resolveNamespace(namespaceId);
     }
-
+    
     protected RequestResource buildRequestResource(String namespaceId, String resourceName) {
         return context.buildRequestResource(namespaceId, resourceName);
     }
-
+    
     protected HttpRequest.Builder buildHttpRequestBuilder(RequestResource resource) {
         return context.buildHttpRequestBuilder(resource);
     }
-
+    
     protected void putIfNotBlank(Map<String, String> params, String key, String value) {
         if (StringUtils.isNotBlank(value)) {
             params.put(key, value);

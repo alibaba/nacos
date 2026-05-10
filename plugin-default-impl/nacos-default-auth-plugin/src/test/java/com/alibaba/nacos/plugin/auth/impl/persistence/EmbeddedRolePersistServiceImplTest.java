@@ -48,7 +48,8 @@ class EmbeddedRolePersistServiceImplTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class))).thenReturn(0);
+        when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class)))
+            .thenReturn(0);
         embeddedRolePersistService = new EmbeddedRolePersistServiceImpl(databaseOperate);
     }
     
@@ -60,7 +61,8 @@ class EmbeddedRolePersistServiceImplTest {
     
     @Test
     void testGetRolesByUserName() {
-        Page<RoleInfo> page = embeddedRolePersistService.getRolesByUserNameAndRoleName("userName", "roleName", 1, 10);
+        Page<RoleInfo> page =
+            embeddedRolePersistService.getRolesByUserNameAndRoleName("userName", "roleName", 1, 10);
         
         assertNotNull(page);
     }

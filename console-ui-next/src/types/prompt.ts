@@ -28,6 +28,7 @@ export interface PromptMetaSummary {
   reviewingVersion: string | null;
   onlineCnt: number;
   labels: Record<string, string>;
+  downloadCount: number | null;
 }
 
 // ===== Prompt Meta Info (governance detail) =====
@@ -47,6 +48,7 @@ export interface PromptVersionSummary {
   srcUser: string;
   gmtModified: number;
   publishPipelineInfo: string | null;
+  downloadCount: number | null;
 }
 
 // ===== Prompt Version Info (full detail) =====

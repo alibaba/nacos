@@ -38,7 +38,7 @@ public class McpDetailForm extends McpForm {
     private String toolSpecification;
     
     private String resourceSpecification;
-
+    
     private String endpointSpecification;
     
     @Override
@@ -46,7 +46,7 @@ public class McpDetailForm extends McpForm {
         fillDefaultValue();
         if (StringUtils.isEmpty(serverSpecification)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'serverSpecification' type McpServerBasicInfo is not present");
+                "Required parameter 'serverSpecification' type McpServerBasicInfo is not present");
         }
     }
     
@@ -69,11 +69,11 @@ public class McpDetailForm extends McpForm {
     public String getResourceSpecification() {
         return resourceSpecification;
     }
-
+    
     public void setResourceSpecification(String resourceSpecification) {
         this.resourceSpecification = resourceSpecification;
     }
-
+    
     public String getEndpointSpecification() {
         return endpointSpecification;
     }

@@ -33,7 +33,7 @@ public class InternetAddressUtil {
     }
     
     public static final boolean PREFER_IPV6_ADDRESSES = Boolean.parseBoolean(
-            System.getProperty("java.net.preferIPv6Addresses"));
+        System.getProperty("java.net.preferIPv6Addresses"));
     
     public static final String IPV6_START_MARK = "[";
     
@@ -56,12 +56,13 @@ public class InternetAddressUtil {
     private static final String CHECK_OK = "ok";
     
     private static final Pattern DOMAIN_PATTERN = Pattern.compile(
-            "[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
+        "[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
     
     private static final String IPV4_TUPLE = "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])";
     
     private static final Pattern IPV4_PATTERN = Pattern.compile(
-            "(?<!\\d)" + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "(?!\\d)");
+        "(?<!\\d)" + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE
+            + "(?!\\d)");
     
     /**
      * get localhost ip.
@@ -153,7 +154,8 @@ public class InternetAddressUtil {
             return "";
         }
         String result = "";
-        if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK) && StringUtils.containsIgnoreCase(str,
+        if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK)
+            && StringUtils.containsIgnoreCase(str,
                 IPV6_END_MARK)) {
             result = str.substring(str.indexOf(IPV6_START_MARK), (str.indexOf(IPV6_END_MARK) + 1));
             if (!isIpv6(result)) {

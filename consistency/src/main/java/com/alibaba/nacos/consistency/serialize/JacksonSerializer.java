@@ -33,7 +33,8 @@ public class JacksonSerializer implements Serializer {
     
     @Override
     public <T> T deserialize(byte[] data) {
-        throw new UnsupportedOperationException("Jackson serializer can't support deserialize json without type");
+        throw new UnsupportedOperationException(
+            "Jackson serializer can't support deserialize json without type");
     }
     
     @Override

@@ -24,7 +24,7 @@ import java.util.Set;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ConvertUtils {
-
+    
     private ConvertUtils() {
     }
     
@@ -195,7 +195,7 @@ public final class ConvertUtils {
     @SuppressWarnings("all")
     public static Boolean toBooleanObject(String str) {
         String formatStr = (str == null ? StringUtils.EMPTY : str).toLowerCase();
-    
+        
         if (TRUE_SET.contains(formatStr)) {
             return true;
         } else if (FALSE_SET.contains(formatStr)) {

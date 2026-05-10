@@ -40,6 +40,7 @@ class EncryptionPluginManagerTest {
     @Test
     void testJoin() {
         EncryptionPluginManager.join(new EncryptionPluginService() {
+            
             @Override
             public String encrypt(String secretKey, String content) {
                 return content;

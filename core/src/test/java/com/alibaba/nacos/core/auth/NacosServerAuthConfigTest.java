@@ -101,7 +101,8 @@ class NacosServerAuthConfigTest {
     @Test
     void testGetServerIdentityKeyAndValue() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "identity-key");
-        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "identity-value");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE,
+            "identity-value");
         NacosServerAuthConfig config = new NacosServerAuthConfig();
         assertEquals("identity-key", config.getServerIdentityKey());
         assertEquals("identity-value", config.getServerIdentityValue());
@@ -129,7 +130,8 @@ class NacosServerAuthConfigTest {
     @Test
     void testValidateThrowsWhenAuthEnabledButEmptyType() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, "true");
-        NacosRuntimeException ex = assertThrows(NacosRuntimeException.class, NacosServerAuthConfig::new);
+        NacosRuntimeException ex =
+            assertThrows(NacosRuntimeException.class, NacosServerAuthConfig::new);
         assertEquals(AuthErrorCode.INVALID_TYPE.getCode(), ex.getErrCode());
         assertTrue(ex.getMessage().contains(AuthErrorCode.INVALID_TYPE.getMsg()));
     }
@@ -138,7 +140,8 @@ class NacosServerAuthConfigTest {
     void testValidateThrowsWhenAuthEnabledButEmptyIdentity() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, "true");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
-        NacosRuntimeException ex = assertThrows(NacosRuntimeException.class, NacosServerAuthConfig::new);
+        NacosRuntimeException ex =
+            assertThrows(NacosRuntimeException.class, NacosServerAuthConfig::new);
         assertEquals(AuthErrorCode.EMPTY_IDENTITY.getCode(), ex.getErrCode());
         assertTrue(ex.getMessage().contains(AuthErrorCode.EMPTY_IDENTITY.getMsg()));
     }
@@ -151,9 +154,10 @@ class NacosServerAuthConfigTest {
         assertTrue(str.contains("NacosServerAuthConfig"));
         assertTrue(str.contains("authEnabled"));
     }
-
+    
     @Test
-    void testGetAuthPluginPropertiesNeverReturnsNullDuringConcurrentRefresh() throws InterruptedException {
+    void testGetAuthPluginPropertiesNeverReturnsNullDuringConcurrentRefresh()
+        throws InterruptedException {
         // Reproduces the check-then-act race: previously `getAuthPluginProperties` read
         // the field twice (`containsKey` then `get`), so if a refresh swapped in a map
         // missing the key in between, `get` returned null and the method propagated null
@@ -180,7 +184,8 @@ class NacosServerAuthConfigTest {
                     while (System.currentTimeMillis() < deadline) {
                         Properties properties = config.getAuthPluginProperties(pluginType);
                         if (properties == null) {
-                            throw new AssertionError("getAuthPluginProperties returned null mid-refresh");
+                            throw new AssertionError(
+                                "getAuthPluginProperties returned null mid-refresh");
                         }
                     }
                 } catch (Throwable t) {

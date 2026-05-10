@@ -75,12 +75,15 @@ public class ConsoleInstanceController {
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @RequestMapping("/list")
-    public Result<Page<? extends Instance>> getInstanceList(InstanceListForm instanceForm, PageForm pageForm)
-            throws NacosException {
+    public Result<Page<? extends Instance>> getInstanceList(InstanceListForm instanceForm,
+        PageForm pageForm)
+        throws NacosException {
         instanceForm.validate();
         pageForm.validate();
-        Page<? extends Instance> instancePage = instanceProxy.listInstances(instanceForm.getNamespaceId(),
-                instanceForm.getServiceName(), instanceForm.getGroupName(), instanceForm.getClusterName(),
+        Page<? extends Instance> instancePage =
+            instanceProxy.listInstances(instanceForm.getNamespaceId(),
+                instanceForm.getServiceName(), instanceForm.getGroupName(),
+                instanceForm.getClusterName(),
                 pageForm.getPageNo(), pageForm.getPageSize());
         return Result.success(instancePage);
     }
@@ -121,23 +124,25 @@ public class ConsoleInstanceController {
     
     private void checkWeight(Double weight) throws NacosException {
         if (weight > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE
-                || weight < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
+            || weight < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.WEIGHT_ERROR,
-                    "instance format invalid: The weights range from "
-                            + com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE + " to "
-                            + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
+                "instance format invalid: The weights range from "
+                    + com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE + " to "
+                    + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
         }
     }
     
     private void checkDeleteInstanceEphemeral(Boolean ephemeral) throws NacosApiException {
         if (Boolean.TRUE.equals(ephemeral)) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Console only supports deregistering persistent instances");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Console only supports deregistering persistent instances");
         }
     }
     
     private Instance buildInstance(InstanceForm instanceForm) throws NacosException {
-        Instance instance = InstanceBuilder.newBuilder().setServiceName(buildCompositeServiceName(instanceForm))
+        Instance instance =
+            InstanceBuilder.newBuilder().setServiceName(buildCompositeServiceName(instanceForm))
                 .setIp(instanceForm.getIp()).setClusterName(instanceForm.getClusterName())
                 .setPort(instanceForm.getPort()).setHealthy(instanceForm.getHealthy())
                 .setWeight(instanceForm.getWeight()).setEnabled(instanceForm.getEnabled())
@@ -151,7 +156,8 @@ public class ConsoleInstanceController {
     }
     
     private String buildCompositeServiceName(InstanceForm instanceForm) {
-        return NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
+        return NamingUtils.getGroupedName(instanceForm.getServiceName(),
+            instanceForm.getGroupName());
     }
     
 }

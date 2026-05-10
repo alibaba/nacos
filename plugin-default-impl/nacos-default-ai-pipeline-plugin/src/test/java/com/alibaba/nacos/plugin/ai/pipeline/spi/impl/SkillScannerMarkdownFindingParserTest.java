@@ -31,45 +31,45 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author qiacheng.cxy
  */
 class SkillScannerMarkdownFindingParserTest {
-
+    
     @Test
     void extractFindingTitlesSingleHeading() {
         String md = ""
-                + "## Summary\n\nok\n"
-                + "## Findings\n\n"
-                + "### HIGH — Prompt injection\n\n"
-                + "detail line\n";
+            + "## Summary\n\nok\n"
+            + "## Findings\n\n"
+            + "### HIGH — Prompt injection\n\n"
+            + "detail line\n";
         List<String> titles = SkillScannerMarkdownFindingParser.extractFindingTitles(md);
         assertEquals(1, titles.size());
         assertEquals("HIGH — Prompt injection", titles.get(0));
     }
-
+    
     @Test
     void extractFindingTitlesMultipleHeadings() {
         String md = ""
-                + "## Findings\n\n"
-                + "### HIGH — Rule A\n\n"
-                + "x\n"
-                + "### MEDIUM — Rule B\n\n"
-                + "y\n";
+            + "## Findings\n\n"
+            + "### HIGH — Rule A\n\n"
+            + "x\n"
+            + "### MEDIUM — Rule B\n\n"
+            + "y\n";
         List<String> titles = SkillScannerMarkdownFindingParser.extractFindingTitles(md);
         assertEquals(2, titles.size());
         assertEquals("HIGH — Rule A", titles.get(0));
         assertEquals("MEDIUM — Rule B", titles.get(1));
     }
-
+    
     @Test
     void extractFindingTitlesStopsAtNextH2() {
         String md = ""
-                + "## Findings\n\n"
-                + "### HIGH — Only this\n\n"
-                + "## Other section\n\n"
-                + "### should not capture\n";
+            + "## Findings\n\n"
+            + "### HIGH — Only this\n\n"
+            + "## Other section\n\n"
+            + "### should not capture\n";
         List<String> titles = SkillScannerMarkdownFindingParser.extractFindingTitles(md);
         assertEquals(1, titles.size());
         assertEquals("HIGH — Only this", titles.get(0));
     }
-
+    
     @Test
     void extractFindingTitlesCaseInsensitiveSection() {
         String md = "## FINDINGS\n\n### CRITICAL — X\n";
@@ -77,7 +77,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals(1, titles.size());
         assertEquals("CRITICAL — X", titles.get(0));
     }
-
+    
     @Test
     void buildRejectCheckpointsUsesParsedTitles() {
         String md = "## Findings\n\n### HIGH — A\n\n### HIGH — B\n";
@@ -88,18 +88,20 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals("HIGH — B", cps.get(1).getTitle());
         assertFalse(cps.get(1).getPassed());
     }
-
+    
     @Test
     void buildRejectCheckpointsFallbackWhenNoFindings() {
-        List<Checkpoint> cps = SkillScannerMarkdownFindingParser.buildRejectCheckpoints("no structured report");
+        List<Checkpoint> cps =
+            SkillScannerMarkdownFindingParser.buildRejectCheckpoints("no structured report");
         assertEquals(1, cps.size());
         assertEquals("HIGH/CRITICAL 风险检测", cps.get(0).getTitle());
         assertFalse(cps.get(0).getPassed());
     }
-
+    
     @Test
     void buildPassCheckpointsBaseChecks() {
-        List<Checkpoint> cps = SkillScannerMarkdownFindingParser.buildPassCheckpoints(SkillScannerScanOptions.none());
+        List<Checkpoint> cps =
+            SkillScannerMarkdownFindingParser.buildPassCheckpoints(SkillScannerScanOptions.none());
         assertEquals(5, cps.size());
         assertEquals("Prompt injection 检查", cps.get(0).getTitle());
         assertTrue(cps.get(0).getPassed());
@@ -113,7 +115,7 @@ class SkillScannerMarkdownFindingParserTest {
         properties.setProperty(SkillScannerScanOptions.PROP_USE_LLM, "true");
         properties.setProperty(SkillScannerScanOptions.PROP_ENABLE_META, "true");
         List<Checkpoint> cps = SkillScannerMarkdownFindingParser.buildPassCheckpoints(
-                SkillScannerScanOptions.fromProperties(properties));
+            SkillScannerScanOptions.fromProperties(properties));
         assertEquals(7, cps.size());
         assertEquals("LLM semantic analysis 检查", cps.get(5).getTitle());
         assertTrue(cps.get(5).getPassed());

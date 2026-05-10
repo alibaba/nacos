@@ -37,7 +37,8 @@ class NacosTracePluginManagerTest {
     }
     
     private void assertContainsTestPlugin() {
-        for (NacosTraceSubscriber each : NacosTracePluginManager.getInstance().getAllTraceSubscribers()) {
+        for (NacosTraceSubscriber each : NacosTracePluginManager.getInstance()
+            .getAllTraceSubscribers()) {
             if ("trace-plugin-mock".equals(each.getName())) {
                 return;
             }

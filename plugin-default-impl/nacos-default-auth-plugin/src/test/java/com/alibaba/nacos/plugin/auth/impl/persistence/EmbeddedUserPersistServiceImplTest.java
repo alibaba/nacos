@@ -48,7 +48,8 @@ class EmbeddedUserPersistServiceImplTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class))).thenReturn(0);
+        when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class)))
+            .thenReturn(0);
         embeddedUserPersistService = new EmbeddedUserPersistServiceImpl(databaseOperate);
     }
     

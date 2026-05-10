@@ -38,81 +38,90 @@ class ConfigNoopHandlerTest {
     
     @Test
     void getConfigList() {
-        assertThrows(NacosApiException.class, () -> configNoopHandler.getConfigList(1, 1, "dataId", "group", "", null),
-                "Current functionMode is `naming`, config module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> configNoopHandler.getConfigList(1, 1, "dataId", "group", "", null),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void getConfigDetail() {
-        assertThrows(NacosApiException.class, () -> configNoopHandler.getConfigDetail("dataId", "group", ""),
-                "Current functionMode is `naming`, config module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> configNoopHandler.getConfigDetail("dataId", "group", ""),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void publishConfig() {
         assertThrows(NacosApiException.class, () -> configNoopHandler.publishConfig(null, null),
-                "Current functionMode is `naming`, config module is disabled.");
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void deleteConfig() {
-        assertThrows(NacosApiException.class, () -> configNoopHandler.deleteConfig("", "", "", "", "", ""),
-                "Current functionMode is `naming`, config module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> configNoopHandler.deleteConfig("", "", "", "", "", ""),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void batchDeleteConfigs() {
-        assertThrows(NacosApiException.class, () -> configNoopHandler.batchDeleteConfigs(null, "", ""),
-                "Current functionMode is `naming`, config module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> configNoopHandler.batchDeleteConfigs(null, "", ""),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void getConfigListByContent() {
         assertThrows(NacosApiException.class,
-                () -> configNoopHandler.getConfigListByContent("", 1, 1, "", "", "", null),
-                "Current functionMode is `naming`, config module is disabled.");
+            () -> configNoopHandler.getConfigListByContent("", 1, 1, "", "", "", null),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void getListeners() {
-        assertThrows(NacosApiException.class, () -> configNoopHandler.getListeners("", "", "", true),
-                "Current functionMode is `naming`, config module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> configNoopHandler.getListeners("", "", "", true),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void getAllSubClientConfigByIp() {
-        assertThrows(NacosApiException.class, () -> configNoopHandler.getAllSubClientConfigByIp("", true, "", true),
-                "Current functionMode is `naming`, config module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> configNoopHandler.getAllSubClientConfigByIp("", true, "", true),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void exportConfig() {
-        assertThrows(NacosApiException.class, () -> configNoopHandler.exportConfig("", "", "", "", null),
-                "Current functionMode is `naming`, config module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> configNoopHandler.exportConfig("", "", "", "", null),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void importAndPublishConfig() {
         assertThrows(NacosApiException.class,
-                () -> configNoopHandler.importAndPublishConfig(null, "", null, null, null, ""),
-                "Current functionMode is `naming`, config module is disabled.");
+            () -> configNoopHandler.importAndPublishConfig(null, "", null, null, null, ""),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void cloneConfig() {
-        assertThrows(NacosApiException.class, () -> configNoopHandler.cloneConfig(null, "", null, null, "", ""),
-                "Current functionMode is `naming`, config module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> configNoopHandler.cloneConfig(null, "", null, null, "", ""),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void removeBetaConfig() {
-        assertThrows(NacosApiException.class, () -> configNoopHandler.removeBetaConfig(null, "", "", "", "", ""),
-                "Current functionMode is `naming`, config module is disabled.");
+        assertThrows(NacosApiException.class,
+            () -> configNoopHandler.removeBetaConfig(null, "", "", "", "", ""),
+            "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void queryBetaConfig() {
         assertThrows(NacosApiException.class, () -> configNoopHandler.queryBetaConfig(null, "", ""),
-                "Current functionMode is `naming`, config module is disabled.");
+            "Current functionMode is `naming`, config module is disabled.");
     }
 }

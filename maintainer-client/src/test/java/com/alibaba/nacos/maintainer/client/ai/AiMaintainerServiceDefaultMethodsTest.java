@@ -57,12 +57,12 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class AiMaintainerServiceDefaultMethodsTest {
-
+    
     @Mock
     private ClientHttpProxy clientHttpProxy;
-
+    
     private AiMaintainerService aiMaintainerService;
-
+    
     @BeforeEach
     void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties properties = new Properties();
@@ -70,29 +70,33 @@ class AiMaintainerServiceDefaultMethodsTest {
         aiMaintainerService = AiMaintainerFactory.createAiMaintainerService(properties);
         
         // Inject mock into mcp service
-        Field mcpServiceField = NacosAiMaintainerServiceImpl.class.getDeclaredField("mcpMaintainerService");
+        Field mcpServiceField =
+            NacosAiMaintainerServiceImpl.class.getDeclaredField("mcpMaintainerService");
         mcpServiceField.setAccessible(true);
         Object mcpService = mcpServiceField.get(aiMaintainerService);
         injectMockClientHttpProxy(mcpService);
         
         // Inject mock into a2a service
-        Field a2aServiceField = NacosAiMaintainerServiceImpl.class.getDeclaredField("a2aMaintainerService");
+        Field a2aServiceField =
+            NacosAiMaintainerServiceImpl.class.getDeclaredField("a2aMaintainerService");
         a2aServiceField.setAccessible(true);
         Object a2aService = a2aServiceField.get(aiMaintainerService);
         injectMockClientHttpProxy(a2aService);
     }
-
-    private void injectMockClientHttpProxy(Object service) throws NoSuchFieldException, IllegalAccessException {
+    
+    private void injectMockClientHttpProxy(Object service)
+        throws NoSuchFieldException, IllegalAccessException {
         Field contextField = AbstractAiDelegateMaintainerService.class.getDeclaredField("context");
         contextField.setAccessible(true);
         Object context = contextField.get(service);
-        Field clientHttpProxyField = AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
+        Field clientHttpProxyField =
+            AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
         clientHttpProxyField.setAccessible(true);
         clientHttpProxyField.set(context, clientHttpProxy);
     }
-
+    
     // ========== AiMaintainerService -> mcp() delegation tests ==========
-
+    
     @Test
     @DisplayName("AiMaintainerService.listMcpServer should delegate to mcp()")
     void testListMcpServerDelegation() throws NacosException {
@@ -103,12 +107,13 @@ class AiMaintainerServiceDefaultMethodsTest {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(page)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        Page<McpServerBasicInfo> result = aiMaintainerService.listMcpServer("public", "test", 1, 10);
+        
+        Page<McpServerBasicInfo> result =
+            aiMaintainerService.listMcpServer("public", "test", 1, 10);
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.searchMcpServer should delegate to mcp()")
     void testSearchMcpServerDelegation() throws NacosException {
@@ -119,12 +124,13 @@ class AiMaintainerServiceDefaultMethodsTest {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(page)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        Page<McpServerBasicInfo> result = aiMaintainerService.searchMcpServer("public", "test", 1, 10);
+        
+        Page<McpServerBasicInfo> result =
+            aiMaintainerService.searchMcpServer("public", "test", 1, 10);
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.getMcpServerDetail should delegate to mcp()")
     void testGetMcpServerDetailDelegation() throws NacosException {
@@ -134,47 +140,50 @@ class AiMaintainerServiceDefaultMethodsTest {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(detail)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        McpServerDetailInfo result = aiMaintainerService.getMcpServerDetail("public", "testMcp", "id", "1.0");
+        
+        McpServerDetailInfo result =
+            aiMaintainerService.getMcpServerDetail("public", "testMcp", "id", "1.0");
         assertNotNull(result);
         assertEquals("testMcp", result.getName());
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.createMcpServer should delegate to mcp()")
     void testCreateMcpServerDelegation() throws NacosException {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success("mcp-id-123")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        String result = aiMaintainerService.createMcpServer("public", "testMcp", new McpServerBasicInfo(), null, null);
+        
+        String result = aiMaintainerService.createMcpServer("public", "testMcp",
+            new McpServerBasicInfo(), null, null);
         assertEquals("mcp-id-123", result);
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.updateMcpServer should delegate to mcp()")
     void testUpdateMcpServerDelegation() throws NacosException {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        boolean result = aiMaintainerService.updateMcpServer("public", "testMcp", true, new McpServerBasicInfo(), null, null, false);
+        
+        boolean result = aiMaintainerService.updateMcpServer("public", "testMcp", true,
+            new McpServerBasicInfo(), null, null, false);
         assertTrue(result);
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.deleteMcpServer should delegate to mcp()")
     void testDeleteMcpServerDelegation() throws NacosException {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
+        
         boolean result = aiMaintainerService.deleteMcpServer("public", "testMcp", "id", "1.0");
         assertTrue(result);
     }
-
+    
     // ========== AiMaintainerService -> a2a() delegation tests ==========
-
+    
     @Test
     @DisplayName("AiMaintainerService.registerAgent should delegate to a2a()")
     void testRegisterAgentDelegation() throws NacosException {
@@ -184,11 +193,11 @@ class AiMaintainerServiceDefaultMethodsTest {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
+        
         boolean result = aiMaintainerService.registerAgent(card, "public", "url");
         assertTrue(result);
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.getAgentCard should delegate to a2a()")
     void testGetAgentCardDelegation() throws NacosException {
@@ -198,12 +207,13 @@ class AiMaintainerServiceDefaultMethodsTest {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(detail)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        AgentCardDetailInfo result = aiMaintainerService.getAgentCard("testAgent", "public", "url", "1.0");
+        
+        AgentCardDetailInfo result =
+            aiMaintainerService.getAgentCard("testAgent", "public", "url", "1.0");
         assertNotNull(result);
         assertEquals("testAgent", result.getName());
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.updateAgentCard should delegate to a2a()")
     void testUpdateAgentCardDelegation() throws NacosException {
@@ -213,22 +223,22 @@ class AiMaintainerServiceDefaultMethodsTest {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
+        
         boolean result = aiMaintainerService.updateAgentCard(card, "public", true, "url");
         assertTrue(result);
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.deleteAgent should delegate to a2a()")
     void testDeleteAgentDelegation() throws NacosException {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
+        
         boolean result = aiMaintainerService.deleteAgent("testAgent", "public", "1.0");
         assertTrue(result);
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.listAllVersionOfAgent should delegate to a2a()")
     void testListAllVersionOfAgentDelegation() throws NacosException {
@@ -238,12 +248,13 @@ class AiMaintainerServiceDefaultMethodsTest {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(Collections.singletonList(version))));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        List<AgentVersionDetail> result = aiMaintainerService.listAllVersionOfAgent("testAgent", "public");
+        
+        List<AgentVersionDetail> result =
+            aiMaintainerService.listAllVersionOfAgent("testAgent", "public");
         assertNotNull(result);
         assertEquals(1, result.size());
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.searchAgentCardsByName should delegate to a2a()")
     void testSearchAgentCardsByNameDelegation() throws NacosException {
@@ -253,12 +264,13 @@ class AiMaintainerServiceDefaultMethodsTest {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(page)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        Page<AgentCardVersionInfo> result = aiMaintainerService.searchAgentCardsByName("public", "test", 1, 10);
+        
+        Page<AgentCardVersionInfo> result =
+            aiMaintainerService.searchAgentCardsByName("public", "test", 1, 10);
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
     }
-
+    
     @Test
     @DisplayName("AiMaintainerService.listAgentCards should delegate to a2a()")
     void testListAgentCardsDelegation() throws NacosException {
@@ -268,8 +280,9 @@ class AiMaintainerServiceDefaultMethodsTest {
         HttpRestResult<String> mockResult = new HttpRestResult<>();
         mockResult.setData(JacksonUtils.toJson(Result.success(page)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
-
-        Page<AgentCardVersionInfo> result = aiMaintainerService.listAgentCards("public", "testAgent", 1, 10);
+        
+        Page<AgentCardVersionInfo> result =
+            aiMaintainerService.listAgentCards("public", "testAgent", 1, 10);
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
     }

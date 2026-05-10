@@ -59,72 +59,72 @@ import static org.mockito.Mockito.mockStatic;
  */
 @ExtendWith(MockitoExtension.class)
 class ProtocolManagerTest {
-
+    
     @Mock
     private ServerMemberManager memberManager;
-
+    
     private ProtocolManager protocolManager;
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
         protocolManager = new ProtocolManager(memberManager);
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     void testToApMembersInfo() {
         Member m1 = Member.builder().ip("192.168.1.1").port(8848).build();
         Member m2 = Member.builder().ip("192.168.1.2").port(8848).build();
         Collection<Member> members = Arrays.asList(m1, m2);
-
+        
         Set<String> result = ProtocolManager.toAPMembersInfo(members);
-
+        
         assertEquals(2, result.size());
         assertTrue(result.contains("192.168.1.1:8848"));
         assertTrue(result.contains("192.168.1.2:8848"));
     }
-
+    
     @Test
     void testToApMembersInfoEmpty() {
         Set<String> result = ProtocolManager.toAPMembersInfo(Collections.emptyList());
         assertTrue(result.isEmpty());
     }
-
+    
     @Test
     void testToCpMembersInfo() {
         Member m1 = Member.builder().ip("192.168.1.1").port(8848).build();
         Member m2 = Member.builder().ip("192.168.1.2").port(8849).build();
         Collection<Member> members = Arrays.asList(m1, m2);
-
+        
         Set<String> result = ProtocolManager.toCPMembersInfo(members);
-
+        
         assertEquals(2, result.size());
         assertTrue(result.contains("192.168.1.1:7848"));
         assertTrue(result.contains("192.168.1.2:7849"));
     }
-
+    
     @Test
     void testToCpMembersInfoEmpty() {
         Set<String> result = ProtocolManager.toCPMembersInfo(Collections.emptyList());
         assertTrue(result.isEmpty());
     }
-
+    
     @Test
     void testIsCpInitAndIsApInitBeforeInit() {
         assertFalse(protocolManager.isCpInit());
         assertFalse(protocolManager.isApInit());
     }
-
+    
     @Test
     void testDestroyWithNullProtocols() {
         protocolManager.destroy();
     }
-
+    
     @Test
     void testDestroyWithProtocols() {
         CPProtocol cp = org.mockito.Mockito.mock(CPProtocol.class);
@@ -137,7 +137,7 @@ class ProtocolManagerTest {
         verify(cp).shutdown();
         verify(ap).shutdown();
     }
-
+    
     @Test
     void testOnEventWithProtocols() throws InterruptedException {
         CPProtocol cp = org.mockito.Mockito.mock(CPProtocol.class);
@@ -145,13 +145,14 @@ class ProtocolManagerTest {
         ReflectionTestUtils.setField(protocolManager, "cpProtocol", cp);
         ReflectionTestUtils.setField(protocolManager, "apProtocol", ap);
         Member m = Member.builder().ip("127.0.0.1").port(8848).build();
-        MembersChangeEvent event = MembersChangeEvent.builder().members(Collections.singletonList(m)).build();
+        MembersChangeEvent event =
+            MembersChangeEvent.builder().members(Collections.singletonList(m)).build();
         protocolManager.onEvent(event);
         Thread.sleep(300);
         verify(ap).memberChange(org.mockito.ArgumentMatchers.anySet());
         verify(cp).memberChange(org.mockito.ArgumentMatchers.anySet());
     }
-
+    
     @Test
     void testGetApProtocolWithMockContext() {
         ApplicationContext originalContext = ApplicationUtils.getApplicationContext();
@@ -166,7 +167,8 @@ class ProtocolManagerTest {
         try {
             ApplicationUtils.injectContext(mockContext);
             try (MockedStatic<ClassUtils> classUtilsMock = mockStatic(ClassUtils.class)) {
-                classUtilsMock.when(() -> ClassUtils.resolveGenericType(any(Class.class))).thenReturn((Class) Config.class);
+                classUtilsMock.when(() -> ClassUtils.resolveGenericType(any(Class.class)))
+                    .thenReturn((Class) Config.class);
                 APProtocol result = protocolManager.getApProtocol();
                 assertNotNull(result);
                 assertSame(mockAp, result);
@@ -174,10 +176,11 @@ class ProtocolManagerTest {
                 assertTrue(protocolManager.isApInit());
             }
         } finally {
-            ApplicationUtils.injectContext(originalContext != null ? (ConfigurableApplicationContext) originalContext : null);
+            ApplicationUtils.injectContext(
+                originalContext != null ? (ConfigurableApplicationContext) originalContext : null);
         }
     }
-
+    
     @Test
     void testGetCpProtocolWithMockContext() {
         ApplicationContext originalContext = ApplicationUtils.getApplicationContext();
@@ -185,8 +188,8 @@ class ProtocolManagerTest {
         CPProtocol mockCp = mock(CPProtocol.class);
         Config mockConfig = mock(Config.class);
         Member self = Member.builder().ip("127.0.0.1").port(8848)
-                .extendInfo(Collections.singletonMap(MemberMetaDataConstants.RAFT_PORT, "7848"))
-                .build();
+            .extendInfo(Collections.singletonMap(MemberMetaDataConstants.RAFT_PORT, "7848"))
+            .build();
         when(memberManager.getSelf()).thenReturn(self);
         when(memberManager.allMembers()).thenReturn(Collections.singletonList(self));
         when(mockContext.getBean(CPProtocol.class)).thenReturn(mockCp);
@@ -194,7 +197,8 @@ class ProtocolManagerTest {
         try {
             ApplicationUtils.injectContext(mockContext);
             try (MockedStatic<ClassUtils> classUtilsMock = mockStatic(ClassUtils.class)) {
-                classUtilsMock.when(() -> ClassUtils.resolveGenericType(any(Class.class))).thenReturn((Class) Config.class);
+                classUtilsMock.when(() -> ClassUtils.resolveGenericType(any(Class.class)))
+                    .thenReturn((Class) Config.class);
                 CPProtocol result = protocolManager.getCpProtocol();
                 assertNotNull(result);
                 assertSame(mockCp, result);
@@ -202,7 +206,8 @@ class ProtocolManagerTest {
                 assertTrue(protocolManager.isCpInit());
             }
         } finally {
-            ApplicationUtils.injectContext(originalContext != null ? (ConfigurableApplicationContext) originalContext : null);
+            ApplicationUtils.injectContext(
+                originalContext != null ? (ConfigurableApplicationContext) originalContext : null);
         }
     }
 }

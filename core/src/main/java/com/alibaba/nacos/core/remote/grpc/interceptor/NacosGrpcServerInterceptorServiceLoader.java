@@ -37,7 +37,8 @@ public class NacosGrpcServerInterceptorServiceLoader {
      */
     public static List<NacosGrpcServerInterceptor> loadServerInterceptors(String type) {
         List<NacosGrpcServerInterceptor> result = new LinkedList<>();
-        for (NacosGrpcServerInterceptor each : NacosServiceLoader.load(NacosGrpcServerInterceptor.class)) {
+        for (NacosGrpcServerInterceptor each : NacosServiceLoader
+            .load(NacosGrpcServerInterceptor.class)) {
             if (StringUtils.equals(type, each.type())) {
                 result.add(each);
             }

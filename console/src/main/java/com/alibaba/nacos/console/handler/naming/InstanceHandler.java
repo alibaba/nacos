@@ -41,8 +41,9 @@ public interface InstanceHandler {
      * @return the page object of {@link Instance}
      * @throws NacosException if the list operation fails
      */
-    Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, String clusterName,
-            int page, int pageSize) throws NacosException;
+    Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup,
+        String groupName, String clusterName,
+        int page, int pageSize) throws NacosException;
     
     /**
      * Update an instance.
@@ -62,4 +63,3 @@ public interface InstanceHandler {
      */
     void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException;
 }
-

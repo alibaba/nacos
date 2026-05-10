@@ -27,53 +27,57 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author nacos
  */
 public class SkillsFileQueryForm implements NacosForm {
-
+    
     private String namespaceId;
-
+    
     private String skillName;
-
+    
     private String filePath;
-
+    
     @Override
     public void validate() throws NacosApiException {
         if (StringUtils.isBlank(namespaceId)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "namespaceId is required");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "namespaceId is required");
         }
         if (StringUtils.isBlank(skillName)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "skillName is required");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "skillName is required");
         }
         if (StringUtils.isBlank(filePath)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "filePath is required");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "filePath is required");
         }
         if (filePath.startsWith("/") || filePath.startsWith("\\") || filePath.contains("..")) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "filePath is invalid");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "filePath is invalid");
         }
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getSkillName() {
         return skillName;
     }
-
+    
     public void setSkillName(String skillName) {
         this.skillName = skillName;
     }
-
+    
     public String getFilePath() {
         return filePath;
     }
-
+    
     public void setFilePath(String filePath) {
         this.filePath = filePath;
     }

@@ -37,8 +37,9 @@ class ConnectionTest {
     
     @BeforeEach
     void setUp() {
-        connectionMeta = new ConnectionMeta("1739168690942_127.0.0.1_18080", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "test", Collections.singletonMap(Constants.APPNAME, "test"));
+        connectionMeta = new ConnectionMeta("1739168690942_127.0.0.1_18080", "127.0.0.1",
+            "127.0.0.1", 8080, 18080,
+            "grpc", "3.0.0", "test", Collections.singletonMap(Constants.APPNAME, "test"));
         connectionMeta.setNamespaceId("public");
         connection = new GrpcConnection(connectionMeta, null, null);
         connection.setAbilityTable(Collections.emptyMap());
@@ -60,8 +61,10 @@ class ConnectionTest {
         assertTrue(json.contains("\"localPort\":18080"));
         assertTrue(json.contains("\"version\":\"3.0.0\""));
         assertTrue(json.contains("\"connectionId\":\"1739168690942_127.0.0.1_18080\""));
-        assertTrue(json.contains("\"createTime\":" + connection.getMetaInfo().getCreateTime().getTime()));
-        assertTrue(json.contains("\"lastActiveTime\":" + connection.getMetaInfo().getLastActiveTime()));
+        assertTrue(
+            json.contains("\"createTime\":" + connection.getMetaInfo().getCreateTime().getTime()));
+        assertTrue(
+            json.contains("\"lastActiveTime\":" + connection.getMetaInfo().getLastActiveTime()));
         assertTrue(json.contains("\"appName\":\"test\""));
         assertTrue(json.contains("\"labels\":{"));
         assertTrue(json.contains("\"AppName\":\"test\""));
@@ -78,18 +81,29 @@ class ConnectionTest {
         ConnectionInfo connectionInfo = JacksonUtils.toObj(json, ConnectionInfo.class);
         assertEquals(connection.isTraced(), connectionInfo.isTraced());
         assertEquals(connection.getAbilityTable(), connectionInfo.getAbilityTable());
-        assertEquals(connection.getMetaInfo().getConnectType(), connectionInfo.getMetaInfo().getConnectType());
-        assertEquals(connection.getMetaInfo().getClientIp(), connectionInfo.getMetaInfo().getClientIp());
-        assertEquals(connection.getMetaInfo().getRemoteIp(), connectionInfo.getMetaInfo().getRemoteIp());
-        assertEquals(connection.getMetaInfo().getRemotePort(), connectionInfo.getMetaInfo().getRemotePort());
-        assertEquals(connection.getMetaInfo().getLocalPort(), connectionInfo.getMetaInfo().getLocalPort());
-        assertEquals(connection.getMetaInfo().getVersion(), connectionInfo.getMetaInfo().getVersion());
-        assertEquals(connection.getMetaInfo().getConnectionId(), connectionInfo.getMetaInfo().getConnectionId());
+        assertEquals(connection.getMetaInfo().getConnectType(),
+            connectionInfo.getMetaInfo().getConnectType());
+        assertEquals(connection.getMetaInfo().getClientIp(),
+            connectionInfo.getMetaInfo().getClientIp());
+        assertEquals(connection.getMetaInfo().getRemoteIp(),
+            connectionInfo.getMetaInfo().getRemoteIp());
+        assertEquals(connection.getMetaInfo().getRemotePort(),
+            connectionInfo.getMetaInfo().getRemotePort());
+        assertEquals(connection.getMetaInfo().getLocalPort(),
+            connectionInfo.getMetaInfo().getLocalPort());
+        assertEquals(connection.getMetaInfo().getVersion(),
+            connectionInfo.getMetaInfo().getVersion());
+        assertEquals(connection.getMetaInfo().getConnectionId(),
+            connectionInfo.getMetaInfo().getConnectionId());
         assertEquals(connection.getMetaInfo().getCreateTime().getTime(),
-                connectionInfo.getMetaInfo().getCreateTime().getTime());
-        assertEquals(connection.getMetaInfo().getLastActiveTime(), connectionInfo.getMetaInfo().getLastActiveTime());
-        assertEquals(connection.getMetaInfo().getAppName(), connectionInfo.getMetaInfo().getAppName());
-        assertEquals(connection.getMetaInfo().getLabels(), connectionInfo.getMetaInfo().getLabels());
-        assertEquals(connection.getMetaInfo().getNamespaceId(), connectionInfo.getMetaInfo().getNamespaceId());
+            connectionInfo.getMetaInfo().getCreateTime().getTime());
+        assertEquals(connection.getMetaInfo().getLastActiveTime(),
+            connectionInfo.getMetaInfo().getLastActiveTime());
+        assertEquals(connection.getMetaInfo().getAppName(),
+            connectionInfo.getMetaInfo().getAppName());
+        assertEquals(connection.getMetaInfo().getLabels(),
+            connectionInfo.getMetaInfo().getLabels());
+        assertEquals(connection.getMetaInfo().getNamespaceId(),
+            connectionInfo.getMetaInfo().getNamespaceId());
     }
 }

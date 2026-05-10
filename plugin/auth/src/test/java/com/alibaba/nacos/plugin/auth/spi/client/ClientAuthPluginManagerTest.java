@@ -65,7 +65,8 @@ class ClientAuthPluginManagerTest {
         clientAuthPluginManager.shutdown();
     }
     
-    private Map<Class<?>, Collection<Class<?>>> getServiceLoaderMap() throws NoSuchFieldException, IllegalAccessException {
+    private Map<Class<?>, Collection<Class<?>>> getServiceLoaderMap()
+        throws NoSuchFieldException, IllegalAccessException {
         Field servicesField = NacosServiceLoader.class.getDeclaredField("SERVICES");
         servicesField.setAccessible(true);
         return (Map<Class<?>, Collection<Class<?>>>) servicesField.get(null);
@@ -74,15 +75,18 @@ class ClientAuthPluginManagerTest {
     @Test
     void testGetAuthServiceSpiImplSet() {
         clientAuthPluginManager.init(serverlist, nacosRestTemplate);
-        Set<ClientAuthService> clientAuthServiceSet = clientAuthPluginManager.getAuthServiceSpiImplSet();
+        Set<ClientAuthService> clientAuthServiceSet =
+            clientAuthPluginManager.getAuthServiceSpiImplSet();
         assertFalse(clientAuthServiceSet.isEmpty());
     }
     
     @Test
-    void testGetAuthServiceSpiImplSetForEmpty() throws NoSuchFieldException, IllegalAccessException {
+    void testGetAuthServiceSpiImplSetForEmpty()
+        throws NoSuchFieldException, IllegalAccessException {
         getServiceLoaderMap().put(AbstractClientAuthService.class, Collections.emptyList());
         clientAuthPluginManager.init(serverlist, nacosRestTemplate);
-        Set<ClientAuthService> clientAuthServiceSet = clientAuthPluginManager.getAuthServiceSpiImplSet();
+        Set<ClientAuthService> clientAuthServiceSet =
+            clientAuthPluginManager.getAuthServiceSpiImplSet();
         assertTrue(clientAuthServiceSet.isEmpty());
     }
     

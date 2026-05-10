@@ -99,9 +99,11 @@ class InetUtilsTest {
         try {
             ReflectionTestUtils.setField(InetUtils.class, "useOnlySiteLocalInterface", true);
             InetAddress inetAddress = mock(InetAddress.class);
-            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class,
+                "isPreferredAddress", inetAddress));
             when(inetAddress.isSiteLocalAddress()).thenReturn(true);
-            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class,
+                "isPreferredAddress", inetAddress));
         } finally {
             ReflectionTestUtils.setField(InetUtils.class, "useOnlySiteLocalInterface", false);
         }
@@ -109,18 +111,22 @@ class InetUtilsTest {
     
     @Test
     void testIsPreferredAddressForPreferredNetwork() {
-        List<String> preferredNetworks = (List<String>) ReflectionTestUtils.getField(InetUtils.class,
+        List<String> preferredNetworks =
+            (List<String>) ReflectionTestUtils.getField(InetUtils.class,
                 "PREFERRED_NETWORKS");
         try {
             InetAddress inetAddress = mock(InetAddress.class);
             preferredNetworks.add("192.168.1.*");
             preferredNetworks.add("192.168.2");
             when(inetAddress.getHostAddress()).thenReturn("192.168.1.1");
-            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class,
+                "isPreferredAddress", inetAddress));
             when(inetAddress.getHostAddress()).thenReturn("192.168.2.1");
-            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class,
+                "isPreferredAddress", inetAddress));
             when(inetAddress.getHostAddress()).thenReturn("10.10.10.10");
-            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class,
+                "isPreferredAddress", inetAddress));
         } finally {
             preferredNetworks.clear();
         }
@@ -129,16 +135,18 @@ class InetUtilsTest {
     @Test
     void testIgnoreInterface() {
         List<String> ignoreInterfaces = (List<String>) ReflectionTestUtils.getField(InetUtils.class,
-                "IGNORED_INTERFACES");
+            "IGNORED_INTERFACES");
         try {
             ignoreInterfaces.add("eth.*");
-            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "ignoreInterface", "eth1"));
-            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "ignoreInterface", "lo0"));
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class,
+                "ignoreInterface", "eth1"));
+            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class,
+                "ignoreInterface", "lo0"));
         } finally {
             ignoreInterfaces.clear();
         }
     }
-
+    
     @Test
     void testGetGrpcListenIp() {
         // 保存原始属性值
@@ -147,17 +155,17 @@ class InetUtilsTest {
             // 测试1: 未设置属性时应返回null
             System.clearProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP);
             assertNull(InetUtils.getGrpcListenIp());
-
+            
             // 测试2: 设置无效IP应抛异常
             String invalidIp = "12345";
             System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, invalidIp);
             assertThrows(RuntimeException.class, InetUtils::getGrpcListenIp);
-
+            
             // 测试3: 设置有效IP应正确返回
             String validIp = "192.168.1.1";
             System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, validIp);
             assertEquals(validIp, InetUtils.getGrpcListenIp());
-
+            
             // 测试4: 设置空值应返回null (根据实际需求)
             System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, "");
             assertEquals("", InetUtils.getGrpcListenIp());
@@ -207,5 +215,5 @@ class InetUtilsTest {
         String expected = "IPChangeEvent{oldIP='192.168.1.1', newIP='192.168.1.2'}";
         assertEquals(expected, event.toString());
     }
-
+    
 }

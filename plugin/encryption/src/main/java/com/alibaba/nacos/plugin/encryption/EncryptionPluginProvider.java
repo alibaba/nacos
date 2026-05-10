@@ -29,12 +29,12 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class EncryptionPluginProvider implements PluginProvider<EncryptionPluginService> {
-
+    
     @Override
     public PluginType getPluginType() {
         return PluginType.ENCRYPTION;
     }
-
+    
     @Override
     public Map<String, EncryptionPluginService> getAllPlugins() {
         return EncryptionPluginManager.instance().getAllPlugins();

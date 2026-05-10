@@ -59,7 +59,7 @@ public abstract class AbstractCachedUserService implements NacosUserService {
             Loggers.AUTH.warn("[LOAD-USERS] load failed", e);
         }
     }
-
+    
     /**
      * Reject reserved system usernames from being created or deleted.
      *
@@ -68,7 +68,7 @@ public abstract class AbstractCachedUserService implements NacosUserService {
     protected void rejectReservedUsername(String username) {
         if (AuthConstants.ANONYMOUS_USER.equals(username)) {
             throw new IllegalArgumentException(
-                    "username '" + AuthConstants.ANONYMOUS_USER + "' is reserved by the system");
+                "username '" + AuthConstants.ANONYMOUS_USER + "' is reserved by the system");
         }
     }
     

@@ -37,30 +37,30 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class NacosWebServerListenerTest {
-
+    
     @Mock
     private ServerMemberManager serverMemberManager;
-
+    
     @Mock
     private ServletContext servletContext;
-
+    
     @Mock
     private WebServerInitializedEvent event;
-
+    
     @Mock
     private WebServerApplicationContext applicationContext;
-
+    
     @Mock
     private org.springframework.boot.web.server.WebServer webServer;
-
+    
     private NacosWebServerListener listener;
-
+    
     @BeforeEach
     void setUp() {
         when(servletContext.getContextPath()).thenReturn("/nacos");
         listener = new NacosWebServerListener(serverMemberManager, servletContext);
     }
-
+    
     @Test
     void constructorSetsContextPath() {
         ServletContext ctx = org.mockito.Mockito.mock(ServletContext.class);
@@ -68,26 +68,26 @@ class NacosWebServerListenerTest {
         new NacosWebServerListener(serverMemberManager, ctx);
         verify(ctx).getContextPath();
     }
-
+    
     @Test
     void onApplicationEventIgnoresManagementNamespace() {
         when(event.getApplicationContext()).thenReturn(applicationContext);
         when(applicationContext.getServerNamespace()).thenReturn("management");
-
+        
         listener.onApplicationEvent(event);
-
+        
         verify(serverMemberManager, never()).setSelfReady(anyInt());
     }
-
+    
     @Test
     void onApplicationEventCallsSetSelfReadyWithPort() {
         when(event.getApplicationContext()).thenReturn(applicationContext);
         when(applicationContext.getServerNamespace()).thenReturn("");
         when(event.getWebServer()).thenReturn(webServer);
         when(webServer.getPort()).thenReturn(8848);
-
+        
         listener.onApplicationEvent(event);
-
+        
         verify(serverMemberManager).setSelfReady(8848);
     }
 }

@@ -168,6 +168,7 @@ public class StreamEventProcessor {
      * @param <T> response type
      */
     public interface ResponseBuilder<T> {
+        
         /**
          * Create a response object with the given type and content.
          *
@@ -188,10 +189,11 @@ public class StreamEventProcessor {
      * @return Subscriber instance
      */
     public static <T> Subscriber<io.agentscope.core.agent.Event> createSubscriber(
-            ResponseBuilder<T> responseBuilder,
-            StreamResponseCallback<T> callback) {
+        ResponseBuilder<T> responseBuilder,
+        StreamResponseCallback<T> callback) {
         
         return new Subscriber<io.agentscope.core.agent.Event>() {
+            
             @Override
             public void onSubscribe(Subscription s) {
                 s.request(Long.MAX_VALUE);
@@ -202,7 +204,8 @@ public class StreamEventProcessor {
                 try {
                     EventProcessResult result = processEvent(event);
                     if (result != null) {
-                        T response = responseBuilder.build(result.getType(), result.getContent(), false);
+                        T response =
+                            responseBuilder.build(result.getType(), result.getContent(), false);
                         // Skip if response is null (e.g., filtered out by builder)
                         if (response != null) {
                             callback.onNext(response);
@@ -233,6 +236,7 @@ public class StreamEventProcessor {
      * Result of processing an event.
      */
     public static class EventProcessResult {
+        
         private final StreamResponseType type;
         private final String content;
         

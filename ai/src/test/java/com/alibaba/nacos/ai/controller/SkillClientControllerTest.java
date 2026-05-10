@@ -86,7 +86,7 @@ class SkillClientControllerTest {
     void testGetSkillWithoutName() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH);
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
-                "Skill name is required");
+            "Skill name is required");
     }
 
     @Test
@@ -96,9 +96,9 @@ class SkillClientControllerTest {
         skill.setDescription("desc");
         skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
         when(skillOperationService.querySkill(eq("public"), eq("test-skill"), isNull(), isNull()))
-                .thenReturn(skill);
+            .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
-                .param("name", "test-skill");
+            .param("name", "test-skill");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         // Response is a ZIP file
@@ -110,10 +110,11 @@ class SkillClientControllerTest {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
-        when(skillOperationService.querySkill(eq("public"), eq("test-skill"), isNull(), eq("stable")))
-                .thenReturn(skill);
+        when(skillOperationService.querySkill(eq("public"), eq("test-skill"), isNull(),
+            eq("stable")))
+            .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
-                .param("name", "test-skill").param("label", "stable");
+            .param("name", "test-skill").param("label", "stable");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
@@ -124,9 +125,9 @@ class SkillClientControllerTest {
         skill.setName("test-skill");
         skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
         when(skillOperationService.querySkill(eq("public"), eq("test-skill"), eq("v2"), isNull()))
-                .thenReturn(skill);
+            .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
-                .param("name", "test-skill").param("version", "v2");
+            .param("name", "test-skill").param("version", "v2");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
@@ -136,16 +137,18 @@ class SkillClientControllerTest {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
-        when(skillOperationService.querySkill(eq("custom-ns"), eq("test-skill"), isNull(), isNull()))
-                .thenReturn(skill);
+        when(
+            skillOperationService.querySkill(eq("custom-ns"), eq("test-skill"), isNull(), isNull()))
+            .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
-                .param("name", "test-skill").param("namespaceId", "custom-ns");
+            .param("name", "test-skill").param("namespaceId", "custom-ns");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
 
-    private void assertServletException(Class<? extends Exception> expectedException, Executable executable,
-            String expectedMessage) throws Throwable {
+    private void assertServletException(Class<? extends Exception> expectedException,
+        Executable executable,
+        String expectedMessage) throws Throwable {
         try {
             executable.execute();
         } catch (ServletException e) {
@@ -153,7 +156,8 @@ class SkillClientControllerTest {
             if (expectedMessage != null) {
                 assertNotNull(e.getCause().getMessage());
                 assertTrue(e.getCause().getMessage().contains(expectedMessage),
-                        "Expected message containing '" + expectedMessage + "', got: " + e.getCause().getMessage());
+                    "Expected message containing '" + expectedMessage + "', got: "
+                        + e.getCause().getMessage());
             }
         }
     }

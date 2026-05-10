@@ -83,7 +83,8 @@ public class WebUtils {
      * @param defaultValue default value
      * @return value
      */
-    public static String optional(final HttpServletRequest req, final String key, final String defaultValue) {
+    public static String optional(final HttpServletRequest req, final String key,
+        final String defaultValue) {
         String value = req.getParameter(key);
         if (StringUtils.isBlank(value)) {
             return defaultValue;
@@ -117,7 +118,8 @@ public class WebUtils {
      * @return accept encode
      */
     public static String getAcceptEncoding(HttpServletRequest req) {
-        String encode = StringUtils.defaultIfEmpty(req.getHeader(ACCEPT_ENCODING), StandardCharsets.UTF_8.name());
+        String encode = StringUtils.defaultIfEmpty(req.getHeader(ACCEPT_ENCODING),
+            StandardCharsets.UTF_8.name());
         encode = encode.contains(COMMA) ? encode.substring(0, encode.indexOf(COMMA)) : encode;
         return encode.contains(SEMI) ? encode.substring(0, encode.indexOf(SEMI)) : encode;
     }
@@ -133,7 +135,8 @@ public class WebUtils {
         String userAgent = request.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
         if (StringUtils.isEmpty(userAgent)) {
             userAgent = StringUtils
-                    .defaultIfEmpty(request.getHeader(HttpHeaderConsts.CLIENT_VERSION_HEADER), StringUtils.EMPTY);
+                .defaultIfEmpty(request.getHeader(HttpHeaderConsts.CLIENT_VERSION_HEADER),
+                    StringUtils.EMPTY);
         }
         return userAgent;
     }
@@ -146,7 +149,8 @@ public class WebUtils {
      * @param code     http code
      * @throws IOException IOException
      */
-    public static void response(HttpServletResponse response, String body, int code) throws IOException {
+    public static void response(HttpServletResponse response, String body, int code)
+        throws IOException {
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(APPLICATION_JSON);
         response.getWriter().write(body);
@@ -161,7 +165,7 @@ public class WebUtils {
      * @param response      {@link DeferredResult}
      */
     public static void onFileUpload(MultipartFile multipartFile, Consumer<File> consumer,
-            DeferredResult<RestResult<String>> response) {
+        DeferredResult<RestResult<String>> response) {
         
         if (Objects.isNull(multipartFile) || multipartFile.isEmpty()) {
             response.setResult(RestResultUtils.failed("File is empty"));
@@ -190,7 +194,7 @@ public class WebUtils {
      * @param <T>            target type
      */
     public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future,
-            Function<Throwable, T> errorHandler) {
+        Function<Throwable, T> errorHandler) {
         
         deferredResult.onTimeout(future::join);
         
@@ -212,8 +216,9 @@ public class WebUtils {
      * @param errorHandler   {@link Function}
      * @param <T>            target type
      */
-    public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future, Runnable success,
-            Function<Throwable, T> errorHandler) {
+    public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future,
+        Runnable success,
+        Function<Throwable, T> errorHandler) {
         
         deferredResult.onTimeout(future::join);
         

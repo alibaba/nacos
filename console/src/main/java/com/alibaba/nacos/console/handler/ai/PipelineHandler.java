@@ -50,5 +50,5 @@ public interface PipelineHandler {
      * @throws NacosException if query fails
      */
     Page<PipelineExecution> listPipelines(String resourceType, String resourceName,
-            String namespaceId, String version, int pageNo, int pageSize) throws NacosException;
+        String namespaceId, String version, int pageNo, int pageSize) throws NacosException;
 }

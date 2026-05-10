@@ -34,12 +34,13 @@ public class AddressServerSecurityConfiguration {
     
     @Bean
     @Order(99)
-    public SecurityFilterChain addressServerSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain addressServerSecurityFilterChain(HttpSecurity http)
+        throws Exception {
         http.authorizeHttpRequests(
-                requestMatcherRegistry -> requestMatcherRegistry
-                        .requestMatchers("/nacos/v1/as/**").authenticated())
-                .csrf(AbstractHttpConfigurer::disable)
-                .httpBasic(Customizer.withDefaults());
+            requestMatcherRegistry -> requestMatcherRegistry
+                .requestMatchers("/nacos/v1/as/**").authenticated())
+            .csrf(AbstractHttpConfigurer::disable)
+            .httpBasic(Customizer.withDefaults());
         return http.build();
     }
 }

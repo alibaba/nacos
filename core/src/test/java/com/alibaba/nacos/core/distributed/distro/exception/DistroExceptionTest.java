@@ -23,14 +23,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 class DistroExceptionTest {
-
+    
     @Test
     void testMessageConstructor() {
         DistroException ex = new DistroException("distro sync failed");
         assertEquals("[DISTRO-EXCEPTION]distro sync failed", ex.getMessage());
         assertNull(ex.getCause());
     }
-
+    
     @Test
     void testMessageAndCauseConstructor() {
         Throwable cause = new IllegalStateException("underlying");

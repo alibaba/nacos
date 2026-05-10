@@ -70,7 +70,7 @@ public class NacosConsoleStartUp extends AbstractNacosStartUp {
     @Override
     public String[] makeWorkDir() {
         isConsoleDeploymentType = Constants.NACOS_DEPLOYMENT_TYPE_CONSOLE.equals(
-                System.getProperty(Constants.NACOS_DEPLOYMENT_TYPE));
+            System.getProperty(Constants.NACOS_DEPLOYMENT_TYPE));
         if (isConsoleDeploymentType) {
             try {
                 Path path = Paths.get(EnvUtil.getNacosHome(), "logs");
@@ -96,7 +96,7 @@ public class NacosConsoleStartUp extends AbstractNacosStartUp {
             try {
                 SOURCES.putAll(EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource()));
                 environment.getPropertySources()
-                        .addLast(new OriginTrackedMapPropertySource(NACOS_APPLICATION_CONF, SOURCES));
+                    .addLast(new OriginTrackedMapPropertySource(NACOS_APPLICATION_CONF, SOURCES));
             } catch (Exception e) {
                 throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
             }
@@ -115,7 +115,8 @@ public class NacosConsoleStartUp extends AbstractNacosStartUp {
             } else if (EnvUtil.FUNCTION_MODE_NAMING.equals(EnvUtil.getFunctionMode())) {
                 System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, EnvUtil.FUNCTION_MODE_NAMING);
             } else if (EnvUtil.FUNCTION_MODE_MICROSERVICE.equals(EnvUtil.getFunctionMode())) {
-                System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, EnvUtil.FUNCTION_MODE_MICROSERVICE);
+                System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE,
+                    EnvUtil.FUNCTION_MODE_MICROSERVICE);
             } else if (EnvUtil.FUNCTION_MODE_AI.equals(EnvUtil.getFunctionMode())) {
                 System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, EnvUtil.FUNCTION_MODE_AI);
             }

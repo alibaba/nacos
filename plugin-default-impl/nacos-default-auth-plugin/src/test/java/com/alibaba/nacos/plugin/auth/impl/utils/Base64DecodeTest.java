@@ -38,9 +38,11 @@ class Base64DecodeTest {
     
     @Test
     void testNotStandardDecode() {
-        String notStandardOrigin = "SecretKey012345678901234567890123456789012345678901234567890123456789";
+        String notStandardOrigin =
+            "SecretKey012345678901234567890123456789012345678901234567890123456789";
         byte[] decodeNotStandardOrigin = Base64Decode.decode(notStandardOrigin);
-        String truncationOrigin = "SecretKey01234567890123456789012345678901234567890123456789012345678";
+        String truncationOrigin =
+            "SecretKey01234567890123456789012345678901234567890123456789012345678";
         byte[] decodeTruncationOrigin = Base64Decode.decode(truncationOrigin);
         assertArrayEquals(decodeNotStandardOrigin, decodeTruncationOrigin);
     }

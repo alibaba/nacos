@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 3.2.0
  */
 class PipelineExecutionStatusConsistencyTest {
-
+    
     private static PipelineNodeResult passedNode(String id) {
         PipelineNodeResult result = new PipelineNodeResult();
         result.setNodeId(id);
@@ -44,7 +44,7 @@ class PipelineExecutionStatusConsistencyTest {
         result.setDurationMs(10L);
         return result;
     }
-
+    
     private static PipelineNodeResult failedNode(String id) {
         PipelineNodeResult result = new PipelineNodeResult();
         result.setNodeId(id);
@@ -54,7 +54,7 @@ class PipelineExecutionStatusConsistencyTest {
         result.setDurationMs(5L);
         return result;
     }
-
+    
     private static PipelineExecution buildApproved(List<PipelineNodeResult> nodes) {
         PipelineExecution execution = new PipelineExecution();
         execution.setExecutionId("exec-approved-1");
@@ -68,7 +68,7 @@ class PipelineExecutionStatusConsistencyTest {
         execution.setUpdateTime(1_700_000_000_001L);
         return execution;
     }
-
+    
     private static PipelineExecution buildRejected(List<PipelineNodeResult> nodes) {
         PipelineExecution execution = new PipelineExecution();
         execution.setExecutionId("exec-rejected-1");
@@ -82,7 +82,7 @@ class PipelineExecutionStatusConsistencyTest {
         execution.setUpdateTime(1_700_000_100_001L);
         return execution;
     }
-
+    
     private static List<PipelineExecution> sampleExecutions() {
         List<PipelineExecution> list = new ArrayList<>();
         list.add(buildApproved(Arrays.asList(passedNode("n1"))));
@@ -91,7 +91,7 @@ class PipelineExecutionStatusConsistencyTest {
         list.add(buildRejected(new ArrayList<>(Arrays.asList(passedNode("p1"), failedNode("p2")))));
         return list;
     }
-
+    
     /**
      * Status consistency — APPROVED if and only if all nodes passed.
      *
@@ -100,21 +100,24 @@ class PipelineExecutionStatusConsistencyTest {
     @Test
     void statusApprovedIfAndOnlyIfAllNodesPassed() {
         for (PipelineExecution execution : sampleExecutions()) {
-            boolean allNodesPassed = execution.getPipeline().stream().allMatch(PipelineNodeResult::isPassed);
-
+            boolean allNodesPassed =
+                execution.getPipeline().stream().allMatch(PipelineNodeResult::isPassed);
+            
             if (execution.getStatus() == PipelineExecutionStatus.APPROVED) {
                 assertTrue(allNodesPassed,
-                        "APPROVED execution must have all nodes passed, but found a failed node");
+                    "APPROVED execution must have all nodes passed, but found a failed node");
             }
-
+            
             if (allNodesPassed) {
                 assertEquals(PipelineExecutionStatus.APPROVED, execution.getStatus(),
-                        "Execution with all nodes passed must be APPROVED, but was " + execution.getStatus());
+                    "Execution with all nodes passed must be APPROVED, but was "
+                        + execution.getStatus());
             }
-
+            
             if (!allNodesPassed) {
                 assertEquals(PipelineExecutionStatus.REJECTED, execution.getStatus(),
-                        "Execution with a failed node must be REJECTED, but was " + execution.getStatus());
+                    "Execution with a failed node must be REJECTED, but was "
+                        + execution.getStatus());
             }
         }
     }

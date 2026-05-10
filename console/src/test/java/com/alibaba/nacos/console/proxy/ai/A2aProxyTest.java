@@ -88,12 +88,13 @@ public class A2aProxyTest {
         AgentCard agentCard = new AgentCard();
         agentCard.setName(AGENT_NAME);
         AgentCardForm agentCardForm = new AgentCardForm();
-        NacosException expectedException = new NacosException(NacosException.INVALID_PARAM, "Invalid agent card");
+        NacosException expectedException =
+            new NacosException(NacosException.INVALID_PARAM, "Invalid agent card");
         
         doThrow(expectedException).when(a2aHandler).registerAgent(agentCard, agentCardForm);
         
         NacosException actualException = assertThrows(NacosException.class,
-                () -> a2aProxy.registerAgent(agentCard, agentCardForm));
+            () -> a2aProxy.registerAgent(agentCard, agentCardForm));
         
         assertEquals(expectedException.getErrCode(), actualException.getErrCode());
         assertEquals(expectedException.getMessage(), actualException.getMessage());
@@ -183,7 +184,8 @@ public class A2aProxyTest {
         
         when(a2aHandler.listAgentVersions(NAMESPACE_ID, AGENT_NAME)).thenReturn(expectedVersions);
         
-        List<AgentVersionDetail> actualVersions = a2aProxy.listAgentVersions(NAMESPACE_ID, AGENT_NAME);
+        List<AgentVersionDetail> actualVersions =
+            a2aProxy.listAgentVersions(NAMESPACE_ID, AGENT_NAME);
         
         assertNotNull(actualVersions);
         assertEquals(expectedVersions, actualVersions);

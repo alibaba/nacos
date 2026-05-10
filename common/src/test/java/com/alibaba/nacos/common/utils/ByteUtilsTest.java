@@ -78,4 +78,3 @@ class ByteUtilsTest {
         assertFalse(ByteUtils.isNotEmpty(bytes2));
     }
 }
-

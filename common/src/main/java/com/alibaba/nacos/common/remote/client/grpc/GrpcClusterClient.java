@@ -50,7 +50,7 @@ public class GrpcClusterClient extends GrpcClient {
     public GrpcClusterClient(GrpcClientConfig config) {
         super(config);
     }
-
+    
     /**
      * Constructor.
      *
@@ -60,12 +60,12 @@ public class GrpcClusterClient extends GrpcClient {
      * @param labels             .
      */
     public GrpcClusterClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
-            Map<String, String> labels) {
+        Map<String, String> labels) {
         this(name, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
     
     public GrpcClusterClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
-            Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+        Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
         super(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
     }
     
@@ -82,7 +82,7 @@ public class GrpcClusterClient extends GrpcClient {
     @Override
     public int rpcPortOffset() {
         return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
-                String.valueOf(Constants.CLUSTER_GRPC_PORT_DEFAULT_OFFSET)));
+            String.valueOf(Constants.CLUSTER_GRPC_PORT_DEFAULT_OFFSET)));
     }
     
 }

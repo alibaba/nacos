@@ -78,13 +78,15 @@ public class NacosAiMaintainerServiceImplTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         aiMaintainerService = AiMaintainerFactory.createAiMaintainerService(properties);
-        Field mcpServiceField = NacosAiMaintainerServiceImpl.class.getDeclaredField("mcpMaintainerService");
+        Field mcpServiceField =
+            NacosAiMaintainerServiceImpl.class.getDeclaredField("mcpMaintainerService");
         mcpServiceField.setAccessible(true);
         Object mcpService = mcpServiceField.get(aiMaintainerService);
         Field contextField = AbstractAiDelegateMaintainerService.class.getDeclaredField("context");
         contextField.setAccessible(true);
         Object context = contextField.get(mcpService);
-        Field clientHttpProxyField = AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
+        Field clientHttpProxyField =
+            AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
         clientHttpProxyField.setAccessible(true);
         clientHttpProxyField.set(context, clientHttpProxy);
     }
@@ -98,7 +100,8 @@ public class NacosAiMaintainerServiceImplTest {
         page.setPageNumber(1);
         page.setPageItems(Collections.singletonList(new McpServerBasicInfo()));
         mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         Page<McpServerBasicInfo> actual = aiMaintainerService.mcp().listMcpServer();
         assertEquals(page.getPageNumber(), actual.getPageNumber());
         assertEquals(page.getTotalCount(), actual.getTotalCount());
@@ -115,7 +118,8 @@ public class NacosAiMaintainerServiceImplTest {
         page.setPageNumber(1);
         page.setPageItems(Collections.singletonList(new McpServerBasicInfo()));
         mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         Page<McpServerBasicInfo> actual = aiMaintainerService.mcp().searchMcpServer("");
         assertEquals(page.getPageNumber(), actual.getPageNumber());
         assertEquals(page.getTotalCount(), actual.getTotalCount());
@@ -129,7 +133,8 @@ public class NacosAiMaintainerServiceImplTest {
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
         mcpServerDetailInfo.setName("test");
         mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpServerDetailInfo)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         McpServerDetailInfo actual = aiMaintainerService.mcp().getMcpServerDetail("test");
         assertEquals(mcpServerDetailInfo.getName(), actual.getName());
     }
@@ -139,15 +144,17 @@ public class NacosAiMaintainerServiceImplTest {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         String mcpId = UUID.randomUUID().toString();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpId)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         assertEquals(aiMaintainerService.mcp().createLocalMcpServer("test", "1.0.0"), mcpId);
     }
     
     @Test
     void createLocalMcpServerWithNullSpec() {
         assertThrows(NacosException.class,
-                () -> aiMaintainerService.mcp().createLocalMcpServer("test", (McpServerBasicInfo) null, null),
-                "Mcp server specification cannot be null.");
+            () -> aiMaintainerService.mcp().createLocalMcpServer("test", (McpServerBasicInfo) null,
+                null),
+            "Mcp server specification cannot be null.");
     }
     
     @Test
@@ -156,8 +163,9 @@ public class NacosAiMaintainerServiceImplTest {
         serverSpec.setName("test");
         serverSpec.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_SSE);
         assertThrows(NacosException.class,
-                () -> aiMaintainerService.mcp().createLocalMcpServer("test", serverSpec, null),
-                String.format("Mcp server type must be `local`, input is `%s`", AiConstants.Mcp.MCP_PROTOCOL_SSE));
+            () -> aiMaintainerService.mcp().createLocalMcpServer("test", serverSpec, null),
+            String.format("Mcp server type must be `local`, input is `%s`",
+                AiConstants.Mcp.MCP_PROTOCOL_SSE));
     }
     
     @Test
@@ -175,8 +183,10 @@ public class NacosAiMaintainerServiceImplTest {
         toolSpec.setToolsMeta(Collections.singletonMap("testTool", new McpToolMeta()));
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpId)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-        assertEquals(aiMaintainerService.mcp().createLocalMcpServer("test", serverSpec, toolSpec), mcpId);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        assertEquals(aiMaintainerService.mcp().createLocalMcpServer("test", serverSpec, toolSpec),
+            mcpId);
     }
     
     @Test
@@ -184,12 +194,14 @@ public class NacosAiMaintainerServiceImplTest {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         String mcpId = UUID.randomUUID().toString();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpId)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         McpEndpointSpec endpointSpec = new McpEndpointSpec();
         endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         endpointSpec.setData(Collections.singletonMap("address", "127.0.0.1"));
         assertEquals(aiMaintainerService.mcp()
-                .createRemoteMcpServer("test", "1.0.0", AiConstants.Mcp.MCP_PROTOCOL_SSE, endpointSpec), mcpId);
+            .createRemoteMcpServer("test", "1.0.0", AiConstants.Mcp.MCP_PROTOCOL_SSE, endpointSpec),
+            mcpId);
     }
     
     @Test
@@ -197,7 +209,8 @@ public class NacosAiMaintainerServiceImplTest {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         String mcpId = UUID.randomUUID().toString();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpId)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setId(mcpId);
         serverSpec.setName("test");
@@ -205,16 +218,20 @@ public class NacosAiMaintainerServiceImplTest {
         McpEndpointSpec endpointSpec = new McpEndpointSpec();
         endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         endpointSpec.setData(Collections.singletonMap("address", "127.0.0.1"));
-        assertEquals(aiMaintainerService.mcp().createRemoteMcpServer("test", serverSpec, endpointSpec), mcpId);
+        assertEquals(
+            aiMaintainerService.mcp().createRemoteMcpServer("test", serverSpec, endpointSpec),
+            mcpId);
     }
     
     @Test
     void createRemoteMcpServerWithNullSpec() {
-        assertThrows(NacosException.class, () -> aiMaintainerService.mcp().createRemoteMcpServer("test", null, null),
-                "Mcp server specification cannot be null.");
         assertThrows(NacosException.class,
-                () -> aiMaintainerService.mcp().createRemoteMcpServer("test", new McpServerBasicInfo(), null),
-                "Mcp server endpoint specification cannot be null.");
+            () -> aiMaintainerService.mcp().createRemoteMcpServer("test", null, null),
+            "Mcp server specification cannot be null.");
+        assertThrows(NacosException.class,
+            () -> aiMaintainerService.mcp().createRemoteMcpServer("test", new McpServerBasicInfo(),
+                null),
+            "Mcp server endpoint specification cannot be null.");
     }
     
     @Test
@@ -226,8 +243,8 @@ public class NacosAiMaintainerServiceImplTest {
         endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         endpointSpec.setData(Collections.singletonMap("address", "127.0.0.1"));
         assertThrows(NacosException.class,
-                () -> aiMaintainerService.mcp().createRemoteMcpServer("test", serverSpec, endpointSpec),
-                "Mcp server protocol cannot be `stdio` or empty.");
+            () -> aiMaintainerService.mcp().createRemoteMcpServer("test", serverSpec, endpointSpec),
+            "Mcp server protocol cannot be `stdio` or empty.");
     }
     
     @Test
@@ -243,7 +260,8 @@ public class NacosAiMaintainerServiceImplTest {
         toolSpec.setToolsMeta(Collections.singletonMap("testTool", new McpToolMeta()));
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         assertTrue(aiMaintainerService.mcp().updateMcpServer("test", serverSpec, toolSpec, null));
     }
     
@@ -260,15 +278,18 @@ public class NacosAiMaintainerServiceImplTest {
         toolSpec.setToolsMeta(Collections.singletonMap("testTool", new McpToolMeta()));
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-        assertTrue(aiMaintainerService.mcp().updateMcpServer("public", "test", true, serverSpec, toolSpec, null, true));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        assertTrue(aiMaintainerService.mcp().updateMcpServer("public", "test", true, serverSpec,
+            toolSpec, null, true));
     }
     
     @Test
     void deleteMcpServer() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         assertTrue(aiMaintainerService.mcp().deleteMcpServer("test"));
     }
     
@@ -280,7 +301,8 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         assertTrue(aiMaintainerService.a2a().registerAgent(agentCard, "public", "url"));
     }
@@ -295,9 +317,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(expected)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        AgentCardDetailInfo actual = aiMaintainerService.a2a().getAgentCard("testAgent", "public", "url", "");
+        AgentCardDetailInfo actual =
+            aiMaintainerService.a2a().getAgentCard("testAgent", "public", "url", "");
         assertNotNull(actual);
         assertEquals("testAgent", actual.getName());
         assertEquals("1.0.0", actual.getVersion());
@@ -313,7 +337,8 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         assertTrue(aiMaintainerService.a2a().updateAgentCard(agentCard, "public", true, "url"));
     }
@@ -322,7 +347,8 @@ public class NacosAiMaintainerServiceImplTest {
     void deleteAgent() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         assertTrue(aiMaintainerService.a2a().deleteAgent("testAgent", "public", "1.0.0"));
     }
@@ -339,10 +365,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(expectedVersions)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         List<AgentVersionDetail> actualVersions = aiMaintainerService.a2a()
-                .listAllVersionOfAgent("testAgent", "public");
+            .listAllVersionOfAgent("testAgent", "public");
         assertNotNull(actualVersions);
         assertEquals(1, actualVersions.size());
         assertEquals("1.0.0", actualVersions.get(0).getVersion());
@@ -364,9 +391,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        Page<AgentCardVersionInfo> actual = aiMaintainerService.a2a().searchAgentCardsByName("public", "test", 1, 10);
+        Page<AgentCardVersionInfo> actual =
+            aiMaintainerService.a2a().searchAgentCardsByName("public", "test", 1, 10);
         assertNotNull(actual);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageItems().size());
@@ -387,9 +416,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        Page<AgentCardVersionInfo> actual = aiMaintainerService.a2a().listAgentCards("public", "testAgent", 1, 10);
+        Page<AgentCardVersionInfo> actual =
+            aiMaintainerService.a2a().listAgentCards("public", "testAgent", 1, 10);
         assertNotNull(actual);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageItems().size());
@@ -405,7 +436,8 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(skill)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         SkillMeta actual = aiMaintainerService.skill().getSkillMeta("public", "testSkill");
         assertNotNull(actual);
@@ -419,9 +451,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(skill)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        Skill actual = aiMaintainerService.skill().getSkillVersionDetail("public", "testSkill", "v1");
+        Skill actual =
+            aiMaintainerService.skill().getSkillVersionDetail("public", "testSkill", "v1");
         assertNotNull(actual);
         assertEquals("testSkill", actual.getName());
     }
@@ -430,7 +464,8 @@ public class NacosAiMaintainerServiceImplTest {
     void deleteSkill() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         boolean result = aiMaintainerService.skill().deleteSkill("public", "testSkill");
         assertTrue(result);
@@ -449,9 +484,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        Page<SkillSummary> actual = aiMaintainerService.skill().listSkills("public", "test", "blur", 1, 10);
+        Page<SkillSummary> actual =
+            aiMaintainerService.skill().listSkills("public", "test", "blur", 1, 10);
         assertNotNull(actual);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageItems().size());
@@ -462,7 +499,8 @@ public class NacosAiMaintainerServiceImplTest {
     void updateScope() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         assertTrue(aiMaintainerService.skill().updateScope("public", "testSkill", "PUBLIC"));
     }
@@ -471,27 +509,33 @@ public class NacosAiMaintainerServiceImplTest {
     void updateSkillBizTags() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        assertTrue(aiMaintainerService.skill().updateBizTags("public", "testSkill", "[\"retail\"]"));
+        assertTrue(
+            aiMaintainerService.skill().updateBizTags("public", "testSkill", "[\"retail\"]"));
     }
     
     @Test
     void updateAgentSpecScopeUsesGroupedAccessorUpdateScope() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        assertTrue(aiMaintainerService.agentSpec().updateScope("public", "testAgentSpec", "PUBLIC"));
+        assertTrue(
+            aiMaintainerService.agentSpec().updateScope("public", "testAgentSpec", "PUBLIC"));
     }
     
     @Test
     void updateAgentSpecBizTagsUsesGroupedAccessorUpdateBizTags() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        assertTrue(aiMaintainerService.agentSpec().updateBizTags("public", "testAgentSpec", "[\"finance\"]"));
+        assertTrue(aiMaintainerService.agentSpec().updateBizTags("public", "testAgentSpec",
+            "[\"finance\"]"));
     }
     
     @Test
@@ -500,9 +544,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("uploadedSkill")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        String skillName = aiMaintainerService.skill().uploadSkillFromZip("public", zipBytes, false);
+        String skillName =
+            aiMaintainerService.skill().uploadSkillFromZip("public", zipBytes, false);
         assertEquals("uploadedSkill", skillName);
     }
     
@@ -510,7 +556,8 @@ public class NacosAiMaintainerServiceImplTest {
     void forcePublishSkill() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         assertTrue(aiMaintainerService.skill().forcePublish("public", "testSkill", "v1", true));
     }
@@ -519,9 +566,11 @@ public class NacosAiMaintainerServiceImplTest {
     void forcePublishAgentSpec() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        assertTrue(aiMaintainerService.agentSpec().forcePublish("public", "testAgentSpec", "v1", true));
+        assertTrue(
+            aiMaintainerService.agentSpec().forcePublish("public", "testAgentSpec", "v1", true));
     }
     
     @Test
@@ -531,9 +580,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(agentSpec)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        AgentSpec actual = aiMaintainerService.agentSpec().getAgentSpecVersionDetail("public", "testAgentSpec", "v1");
+        AgentSpec actual = aiMaintainerService.agentSpec().getAgentSpecVersionDetail("public",
+            "testAgentSpec", "v1");
         assertNotNull(actual);
         assertEquals("testAgentSpec", actual.getName());
     }
@@ -545,9 +596,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(agentSpec)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        AgentSpec actual = aiMaintainerService.agentSpec().getAgentSpecVersionMeta("public", "testAgentSpec", "v1");
+        AgentSpec actual = aiMaintainerService.agentSpec().getAgentSpecVersionMeta("public",
+            "testAgentSpec", "v1");
         assertNotNull(actual);
         assertEquals("testAgentSpec", actual.getName());
     }
@@ -563,10 +616,12 @@ public class NacosAiMaintainerServiceImplTest {
         metadataRestResult.setData(JacksonUtils.toJson(Result.success(meta)));
         final HttpRestResult<String> versionRestResult = new HttpRestResult<>();
         versionRestResult.setData(JacksonUtils.toJson(Result.success(agentSpec)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(metadataRestResult,
-                versionRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(
+            metadataRestResult,
+            versionRestResult);
         
-        AgentSpec actual = aiMaintainerService.agentSpec().getAgentSpecDetail("public", "testAgentSpec");
+        AgentSpec actual =
+            aiMaintainerService.agentSpec().getAgentSpecDetail("public", "testAgentSpec");
         assertNotNull(actual);
         assertEquals("testAgentSpec", actual.getName());
     }
@@ -577,9 +632,11 @@ public class NacosAiMaintainerServiceImplTest {
         detail.setBizTags("[\"finance\"]");
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(detail)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
-        AgentSpecMeta actual = aiMaintainerService.agentSpec().getAgentSpecAdminDetail("public", "testAgentSpec");
+        AgentSpecMeta actual =
+            aiMaintainerService.agentSpec().getAgentSpecAdminDetail("public", "testAgentSpec");
         assertNotNull(actual);
         assertEquals("[\"finance\"]", actual.getBizTags());
     }
@@ -596,10 +653,11 @@ public class NacosAiMaintainerServiceImplTest {
         page.setPageItems(Collections.singletonList(item));
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         Page<AgentSpecSummary> actual = aiMaintainerService.agentSpec()
-                .listAgentSpecAdminItems("public", "test", "blur", 1, 10);
+            .listAgentSpecAdminItems("public", "test", "blur", 1, 10);
         assertNotNull(actual);
         assertEquals("[\"finance\"]", actual.getPageItems().get(0).getBizTags());
     }
@@ -617,10 +675,11 @@ public class NacosAiMaintainerServiceImplTest {
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         Page<SkillSummary> actual = aiMaintainerService.skill()
-                .listSkills("public", "test", "blur", "download_count", "alice", "PUBLIC", 1, 10);
+            .listSkills("public", "test", "blur", "download_count", "alice", "PUBLIC", 1, 10);
         assertNotNull(actual);
         assertEquals(1, actual.getTotalCount());
         assertEquals("testSkill", actual.getPageItems().get(0).getName());
@@ -638,10 +697,12 @@ public class NacosAiMaintainerServiceImplTest {
         page.setPageItems(Collections.singletonList(item));
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
         
         Page<AgentSpecSummary> actual = aiMaintainerService.agentSpec()
-                .listAgentSpecAdminItems("public", "test", "blur", "download_count", "alice", "PUBLIC", 1, 10);
+            .listAgentSpecAdminItems("public", "test", "blur", "download_count", "alice", "PUBLIC",
+                1, 10);
         assertNotNull(actual);
         assertEquals(1, actual.getTotalCount());
         assertEquals("[\"finance\"]", actual.getPageItems().get(0).getBizTags());

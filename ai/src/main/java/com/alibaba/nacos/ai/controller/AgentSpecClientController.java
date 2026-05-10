@@ -60,10 +60,12 @@ public class AgentSpecClientController {
      */
     @GetMapping("/search")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public Result<Page<AgentSpecBasicInfo>> search(AgentSpecSearchForm form, PageForm pageForm) throws NacosException {
+    public Result<Page<AgentSpecBasicInfo>> search(AgentSpecSearchForm form, PageForm pageForm)
+        throws NacosException {
         form.validate();
         pageForm.validate();
-        return Result.success(agentSpecOperationService.searchAgentSpecs(form.getNamespaceId(), form.getKeyword(),
+        return Result.success(
+            agentSpecOperationService.searchAgentSpecs(form.getNamespaceId(), form.getKeyword(),
                 pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
@@ -71,11 +73,13 @@ public class AgentSpecClientController {
      * Get an online agentspec version by label/version/latest.
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API, tags = {ALLOW_ANONYMOUS})
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
     public Result<AgentSpec> get(AgentSpecQueryForm form) throws NacosException {
         form.validate();
         return Result.success(
-                agentSpecOperationService.queryAgentSpec(form.getNamespaceId(), form.getName(), form.getVersion(),
-                        form.getLabel()));
+            agentSpecOperationService.queryAgentSpec(form.getNamespaceId(), form.getName(),
+                form.getVersion(),
+                form.getLabel()));
     }
 }

@@ -23,6 +23,6 @@ package com.alibaba.nacos.lock.constant;
  * @date 2023/7/10 15:54
  */
 public class Constants {
-
+    
     public static final String LOCK_ACQUIRE_SERVICE_GROUP_V2 = "lock_acquire_service_v2";
 }

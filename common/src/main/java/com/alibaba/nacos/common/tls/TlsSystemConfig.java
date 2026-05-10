@@ -57,17 +57,20 @@ public final class TlsSystemConfig {
     /**
      * To determine whether use test mode when initialize TLS context.
      */
-    public static boolean tlsTestModeEnable = Boolean.parseBoolean(System.getProperty(TLS_TEST_MODE_ENABLE, "false"));
+    public static boolean tlsTestModeEnable =
+        Boolean.parseBoolean(System.getProperty(TLS_TEST_MODE_ENABLE, "false"));
     
     /**
      * To determine whether verify the server endpoint's certificate strictly.
      */
-    public static boolean tlsClientAuthServer = Boolean.parseBoolean(System.getProperty(CLIENT_AUTH, "false"));
+    public static boolean tlsClientAuthServer =
+        Boolean.parseBoolean(System.getProperty(CLIENT_AUTH, "false"));
     
     /**
      * To determine whether verify the client endpoint's certificate strictly.
      */
-    public static boolean tlsServerAuthClient = Boolean.parseBoolean(System.getProperty(SERVER_AUTH, "false"));
+    public static boolean tlsServerAuthClient =
+        Boolean.parseBoolean(System.getProperty(SERVER_AUTH, "false"));
     
     /**
      * The store path of client-side private key.
@@ -112,6 +115,7 @@ public final class TlsSystemConfig {
     /**
      * tls file check interval , default is 10 min.
      */
-    public static int tlsFileCheckInterval = Integer.parseInt(System.getProperty(CHECK_INTERVAL, "10"));
+    public static int tlsFileCheckInterval =
+        Integer.parseInt(System.getProperty(CHECK_INTERVAL, "10"));
     
 }

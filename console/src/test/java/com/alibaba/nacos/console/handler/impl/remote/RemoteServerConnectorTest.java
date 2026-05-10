@@ -76,17 +76,21 @@ class RemoteServerConnectorTest {
         EnvUtil.setEnvironment(environment);
         remoteServerConnector = new RemoteServerConnector(memberManager, clusterHandler);
         cachedConsoleAuthConfig = NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
-        Map<String, NacosAuthConfig> nacosAuthConfigMap = (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
+            .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
+        Map<String, NacosAuthConfig> nacosAuthConfigMap =
+            (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
                 NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
-        nacosAuthConfigMap.put(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE, mockNacosAuthConfig);
+        nacosAuthConfigMap.put(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE,
+            mockNacosAuthConfig);
     }
     
     @AfterEach
     void tearDown() {
-        Map<String, NacosAuthConfig> nacosAuthConfigMap = (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
+        Map<String, NacosAuthConfig> nacosAuthConfigMap =
+            (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
                 NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
-        nacosAuthConfigMap.put(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE, cachedConsoleAuthConfig);
+        nacosAuthConfigMap.put(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE,
+            cachedConsoleAuthConfig);
         EnvUtil.setEnvironment(cachedEnvironment);
     }
     
@@ -154,7 +158,8 @@ class RemoteServerConnectorTest {
         nacosMember.setAddress("127.0.0.1:8080");
         nacosMember.setState(NodeState.DOWN);
         doReturn(Collections.singletonList(nacosMember)).when(clusterHandler).getNodeList("");
-        assertThrows(NacosRuntimeException.class, () -> remoteServerConnector.randomOneHealthyMember());
+        assertThrows(NacosRuntimeException.class,
+            () -> remoteServerConnector.randomOneHealthyMember());
     }
     
     @Test
@@ -162,7 +167,8 @@ class RemoteServerConnectorTest {
         Collection<Member> allMembers = new ArrayList<>();
         when(memberManager.allMembers()).thenReturn(allMembers);
         doReturn(Collections.emptyList()).when(clusterHandler).getNodeList("");
-        assertThrows(NacosRuntimeException.class, () -> remoteServerConnector.randomOneHealthyMember());
+        assertThrows(NacosRuntimeException.class,
+            () -> remoteServerConnector.randomOneHealthyMember());
     }
     
     @Test
@@ -185,7 +191,8 @@ class RemoteServerConnectorTest {
         NacosMember nacosMemberDown = new NacosMember();
         nacosMemberDown.setAddress("127.0.0.2:8080");
         nacosMemberDown.setState(NodeState.DOWN);
-        doReturn(java.util.List.of(nacosMemberUp, nacosMemberDown)).when(clusterHandler).getNodeList("");
+        doReturn(java.util.List.of(nacosMemberUp, nacosMemberDown)).when(clusterHandler)
+            .getNodeList("");
         Member result = remoteServerConnector.randomOneHealthyMember();
         assertNotNull(result);
         assertEquals("127.0.0.1:8080", result.getAddress());

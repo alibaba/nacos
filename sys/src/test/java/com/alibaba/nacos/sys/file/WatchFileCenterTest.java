@@ -62,7 +62,8 @@ import static org.mockito.Mockito.when;
 
 class WatchFileCenterTest {
     
-    private static final String PATH = Paths.get(System.getProperty("user.home"), "/watch_file_change_test").toString();
+    private static final String PATH =
+        Paths.get(System.getProperty("user.home"), "/watch_file_change_test").toString();
     
     private static final Executor EXECUTOR = Executors.newFixedThreadPool(32);
     
@@ -111,6 +112,7 @@ class WatchFileCenterTest {
         AtomicInteger count = new AtomicInteger(0);
         
         WatchFileCenter.registerWatcher(PATH, new FileWatcher() {
+            
             @Override
             public void onChange(FileChangeEvent event) {
                 try {
@@ -169,25 +171,28 @@ class WatchFileCenterTest {
     void testRegisterNewPathWithException() {
         URL url = getClass().getClassLoader().getResource("application.properties");
         String path = url.getPath();
-        assertThrows(IllegalArgumentException.class, () -> WatchFileCenter.registerWatcher(path, new FileWatcher() {
-            @Override
-            public void onChange(FileChangeEvent event) {
-            
-            }
-            
-            @Override
-            public boolean interest(String context) {
-                return false;
-            }
-        }));
+        assertThrows(IllegalArgumentException.class,
+            () -> WatchFileCenter.registerWatcher(path, new FileWatcher() {
+                
+                @Override
+                public void onChange(FileChangeEvent event) {
+                    
+                }
+                
+                @Override
+                public boolean interest(String context) {
+                    return false;
+                }
+            }));
     }
     
     @Test
     void testDeregisterWatcher() throws NacosException {
         FileWatcher watcher = new FileWatcher() {
+            
             @Override
             public void onChange(FileChangeEvent event) {
-            
+                
             }
             
             @Override
@@ -206,9 +211,11 @@ class WatchFileCenterTest {
             FileWatcher fileWatcher = mock(FileWatcher.class);
             assertDoesNotThrow(() -> WatchFileCenter.registerWatcher(PATH, fileWatcher));
             WatchFileCenter.shutdown();
-            assertThrows(IllegalStateException.class, () -> WatchFileCenter.registerWatcher(PATH, fileWatcher));
+            assertThrows(IllegalStateException.class,
+                () -> WatchFileCenter.registerWatcher(PATH, fileWatcher));
         } finally {
-            ((AtomicBoolean) ReflectionTestUtils.getField(WatchFileCenter.class, "CLOSED")).set(false);
+            ((AtomicBoolean) ReflectionTestUtils.getField(WatchFileCenter.class, "CLOSED"))
+                .set(false);
         }
     }
     
@@ -216,7 +223,8 @@ class WatchFileCenterTest {
     void testCallBackWatcherWithException() throws NacosException {
         FileWatcher fileWatcher = mock(FileWatcher.class);
         when(fileWatcher.interest(anyString())).thenReturn(true);
-        doThrow(new RuntimeException("test")).when(fileWatcher).onChange(any(FileChangeEvent.class));
+        doThrow(new RuntimeException("test")).when(fileWatcher)
+            .onChange(any(FileChangeEvent.class));
         WatchFileCenter.registerWatcher(PATH, fileWatcher);
         FileWatcher fileWatcher2 = mock(FileWatcher.class);
         when(fileWatcher2.interest(anyString())).thenReturn(true);
@@ -247,11 +255,14 @@ class WatchFileCenterTest {
     
     @Test
     void testOverFlowEvent()
-            throws NoSuchMethodException, URISyntaxException, NacosException, InvocationTargetException, IllegalAccessException {
-        File file = new File(getClass().getClassLoader().getResource("test-file-watcher-overflow/test.properties").toURI());
+        throws NoSuchMethodException, URISyntaxException, NacosException, InvocationTargetException,
+        IllegalAccessException {
+        File file = new File(getClass().getClassLoader()
+            .getResource("test-file-watcher-overflow/test.properties").toURI());
         final String path = file.getParentFile().getAbsolutePath();
         AtomicBoolean containAssert = new AtomicBoolean(false);
         WatchFileCenter.registerWatcher(path, new FileWatcher() {
+            
             @Override
             public void onChange(FileChangeEvent event) {
                 try {
@@ -268,7 +279,8 @@ class WatchFileCenterTest {
                 return true;
             }
         });
-        Map<String, WatchFileCenter.WatchDirJob> map = (Map<String, WatchFileCenter.WatchDirJob>) ReflectionTestUtils.getField(
+        Map<String, WatchFileCenter.WatchDirJob> map =
+            (Map<String, WatchFileCenter.WatchDirJob>) ReflectionTestUtils.getField(
                 WatchFileCenter.class, "MANAGER");
         WatchFileCenter.WatchDirJob job = map.get(path);
         Method method = WatchFileCenter.WatchDirJob.class.getDeclaredMethod("eventOverflow");
@@ -277,10 +289,12 @@ class WatchFileCenterTest {
         assertFalse(containAssert.get());
     }
     
-    private void func(final String fileName, final File file, final Consumer<String> consumer) throws Exception {
+    private void func(final String fileName, final File file, final Consumer<String> consumer)
+        throws Exception {
         CountDownLatch latch = new CountDownLatch(100);
         DiskUtils.touch(file);
         WatchFileCenter.registerWatcher(PATH, new FileWatcher() {
+            
             @Override
             public void onChange(FileChangeEvent event) {
                 final File file = Paths.get(PATH, fileName).toFile();

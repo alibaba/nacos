@@ -48,16 +48,17 @@ public class ClientAuthPluginManager implements Closeable {
     public void init(List<String> serverList, NacosRestTemplate nacosRestTemplate) {
         
         Collection<AbstractClientAuthService> clientAuthServices = NacosServiceLoader
-                .load(AbstractClientAuthService.class);
+            .load(AbstractClientAuthService.class);
         for (ClientAuthService clientAuthService : clientAuthServices) {
             clientAuthService.setServerList(serverList);
             clientAuthService.setNacosRestTemplate(nacosRestTemplate);
             clientAuthServiceHashSet.add(clientAuthService);
             LOGGER.info("[ClientAuthPluginManager] Load ClientAuthService {} success.",
-                    clientAuthService.getClass().getCanonicalName());
+                clientAuthService.getClass().getCanonicalName());
         }
         if (clientAuthServiceHashSet.isEmpty()) {
-            LOGGER.warn("[ClientAuthPluginManager] Load ClientAuthService fail, No ClientAuthService implements");
+            LOGGER.warn(
+                "[ClientAuthPluginManager] Load ClientAuthService fail, No ClientAuthService implements");
         }
     }
     

@@ -46,7 +46,8 @@ public class FuzzyGroupKeyPatternTest {
         String group = "exampleGroup";
         String namespace = "exampleNamespace";
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, group, namespace);
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern(dataIdPattern, group, namespace);
         
         assertEquals("exampleNamespace>>exampleGroup>>examplePattern*", groupKeyPattern);
     }
@@ -78,7 +79,7 @@ public class FuzzyGroupKeyPatternTest {
     @DisplayName("filterMatchedPatterns with empty patterns should return empty set")
     void testFilterMatchedPatternsEmptyPatternsShouldReturnEmptySet() {
         Set<String> result = FuzzyGroupKeyPattern.filterMatchedPatterns(
-                Collections.emptySet(), "resource", "group", "namespace");
+            Collections.emptySet(), "resource", "group", "namespace");
         assertTrue(result.isEmpty());
     }
     
@@ -90,7 +91,7 @@ public class FuzzyGroupKeyPatternTest {
         patterns.add("namespace>>group>>other*");
         
         Set<String> result = FuzzyGroupKeyPattern.filterMatchedPatterns(
-                patterns, "patternTest", "group", "namespace");
+            patterns, "patternTest", "group", "namespace");
         
         assertEquals(1, result.size());
         assertTrue(result.contains("namespace>>group>>pattern*"));
@@ -100,7 +101,8 @@ public class FuzzyGroupKeyPatternTest {
     @DisplayName("matchPattern with accurate match should return true")
     void testMatchPatternWithAccurateMatchShouldReturnTrue() {
         String pattern = "namespace>>group>>exactPattern";
-        assertTrue(FuzzyGroupKeyPattern.matchPattern(pattern, "exactPattern", "group", "namespace"));
+        assertTrue(
+            FuzzyGroupKeyPattern.matchPattern(pattern, "exactPattern", "group", "namespace"));
     }
     
     @Test
@@ -130,7 +132,8 @@ public class FuzzyGroupKeyPatternTest {
     @DisplayName("matchPattern with contains pattern should return true")
     void testMatchPatternWithContainsPatternShouldReturnTrue() {
         String pattern = "namespace>>group>>*middle*";
-        assertTrue(FuzzyGroupKeyPattern.matchPattern(pattern, "testmiddlevalue", "group", "namespace"));
+        assertTrue(
+            FuzzyGroupKeyPattern.matchPattern(pattern, "testmiddlevalue", "group", "namespace"));
         assertFalse(FuzzyGroupKeyPattern.matchPattern(pattern, "testvalue", "group", "namespace"));
     }
     
@@ -152,7 +155,7 @@ public class FuzzyGroupKeyPatternTest {
     @DisplayName("diffGroupKeys with empty sets should return empty list")
     void testDiffGroupKeysEmptySetsShouldReturnEmptyList() {
         List<GroupKeyState> result = FuzzyGroupKeyPattern.diffGroupKeys(
-                Collections.emptySet(), Collections.emptySet());
+            Collections.emptySet(), Collections.emptySet());
         assertTrue(result.isEmpty());
     }
     

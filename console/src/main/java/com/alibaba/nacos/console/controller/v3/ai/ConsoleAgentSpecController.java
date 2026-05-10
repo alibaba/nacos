@@ -128,11 +128,12 @@ public class ConsoleAgentSpecController {
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm,
-            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
+        AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         agentSpecListForm.validate();
         filterableForm.validate();
         pageForm.validate();
-        return Result.success(agentSpecProxy.listAgentSpecs(agentSpecListForm, filterableForm, pageForm));
+        return Result
+            .success(agentSpecProxy.listAgentSpecs(agentSpecListForm, filterableForm, pageForm));
     }
     
     /**
@@ -148,12 +149,14 @@ public class ConsoleAgentSpecController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<String> uploadAgentSpec(HttpServletRequest request,
-            @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
-            @RequestParam("file") MultipartFile file) throws NacosException {
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "overwrite", required = false,
+            defaultValue = "false") boolean overwrite,
+        @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = AgentSpecRequestUtil.validateAndExtractZipBytes(file);
-        String agentSpecName = agentSpecProxy.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
+        String agentSpecName =
+            agentSpecProxy.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
         return Result.success(agentSpecName);
     }
     
@@ -237,7 +240,8 @@ public class ConsoleAgentSpecController {
      */
     @PostMapping("/force-publish")
     @Secured(resource = CONSOLE_RESOURCE_NAME_PREFIX
-            + "agentspecs", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+        + "agentspecs", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        apiType = ApiType.CONSOLE_API)
     public Result<String> forcePublish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
         agentSpecProxy.forcePublish(form);

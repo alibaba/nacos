@@ -64,19 +64,22 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
         this.jt = dataSourceService.getJdbcTemplate();
         this.tjt = dataSourceService.getTransactionTemplate();
         Boolean isDataSourceLogEnable = EnvUtil
-                .getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
+            .getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
     @Override
-    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResource, final long time) {
+    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName,
+        String tenantDesc,
+        String createResource, final long time) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
-                    .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.insert(Arrays
-                    .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
-                            "gmt_modified")), kp, tenantId, tenantName, tenantDesc, createResource, time, time);
+                .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source",
+                    "gmt_create",
+                    "gmt_modified")),
+                kp, tenantId, tenantName, tenantDesc, createResource, time, time);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
@@ -87,7 +90,7 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     public void removeTenantInfoAtomic(final String kp, final String tenantId) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
-                    .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp, tenantId);
         } catch (CannotGetJdbcConnectionException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
@@ -96,13 +99,16 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     }
     
     @Override
-    public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
+    public void updateTenantNameAtomic(String kp, String tenantId, String tenantName,
+        String tenantDesc) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
-                    .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
-            jt.update(tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"),
-                    Arrays.asList("kp", "tenant_id")), tenantName, tenantDesc, System.currentTimeMillis(), kp,
-                    tenantId);
+                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+            jt.update(
+                tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"),
+                    Arrays.asList("kp", "tenant_id")),
+                tenantName, tenantDesc, System.currentTimeMillis(), kp,
+                tenantId);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
@@ -112,9 +118,10 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     @Override
     public List<TenantInfo> findTenantByKp(String kp) {
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+            .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
-                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Collections.singletonList("kp"));
+            .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                Collections.singletonList("kp"));
         try {
             return this.jt.query(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
@@ -131,9 +138,10 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     @Override
     public TenantInfo findTenantByKp(String kp, String tenantId) {
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+            .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
-                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Arrays.asList("kp", "tenant_id"));
+            .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                Arrays.asList("kp", "tenant_id"));
         try {
             return jt.queryForObject(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
@@ -179,7 +187,7 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
             throw new IllegalArgumentException("tenantId can not be null");
         }
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+            .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper.count(Collections.singletonList("tenant_id"));
         Integer result = this.jt.queryForObject(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {

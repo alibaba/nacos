@@ -49,10 +49,11 @@ public final class NacosMeterRegistryCenter {
     
     // control plugin registers.
     public static final String CONTROL_DENIED_REGISTRY = "CONTROL_DENIED_REGISTRY";
-
+    
     public static final String LOCK_STABLE_REGISTRY = "LOCK_STABLE_REGISTRY";
-
-    private static final ConcurrentHashMap<String, CompositeMeterRegistry> METER_REGISTRIES = new ConcurrentHashMap<>();
+    
+    private static final ConcurrentHashMap<String, CompositeMeterRegistry> METER_REGISTRIES =
+        new ConcurrentHashMap<>();
     
     private static CompositeMeterRegistry METER_REGISTRY = null;
     
@@ -62,8 +63,9 @@ public final class NacosMeterRegistryCenter {
         } catch (Throwable t) {
             Loggers.CORE.warn("Metrics init failed :", t);
         }
-        registry(CORE_STABLE_REGISTRY, CONFIG_STABLE_REGISTRY, NAMING_STABLE_REGISTRY, TOPN_CONFIG_CHANGE_REGISTRY,
-                TOPN_SERVICE_CHANGE_REGISTRY, CONTROL_DENIED_REGISTRY, LOCK_STABLE_REGISTRY);
+        registry(CORE_STABLE_REGISTRY, CONFIG_STABLE_REGISTRY, NAMING_STABLE_REGISTRY,
+            TOPN_CONFIG_CHANGE_REGISTRY,
+            TOPN_SERVICE_CHANGE_REGISTRY, CONTROL_DENIED_REGISTRY, LOCK_STABLE_REGISTRY);
         
     }
     
@@ -93,7 +95,8 @@ public final class NacosMeterRegistryCenter {
         return null;
     }
     
-    public static <T extends Number> T gauge(String registry, String name, Iterable<Tag> tags, T number) {
+    public static <T extends Number> T gauge(String registry, String name, Iterable<Tag> tags,
+        T number) {
         CompositeMeterRegistry compositeMeterRegistry = METER_REGISTRIES.get(registry);
         if (compositeMeterRegistry != null) {
             return METER_REGISTRIES.get(registry).gauge(name, tags, number);

@@ -26,7 +26,8 @@ import java.util.List;
 
 public class MapperResult {
     
-    public MapperResult() { }
+    public MapperResult() {
+    }
     
     public MapperResult(String sql, List<Object> paramList) {
         this.sql = sql;

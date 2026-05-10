@@ -225,7 +225,8 @@ class CollectionUtilsTest {
         // collection
         assertEquals(0, CollectionUtils.size(Collections.emptyList()));
         assertEquals(1, CollectionUtils.size(Collections.singletonList("")));
-        assertEquals(10, CollectionUtils.size(IntStream.range(0, 10).boxed().collect(Collectors.toList())));
+        assertEquals(10,
+            CollectionUtils.size(IntStream.range(0, 10).boxed().collect(Collectors.toList())));
         
         // map
         Map<String, String> map = new HashMap<>();
@@ -298,7 +299,8 @@ class CollectionUtilsTest {
         
         // enumeration
         assertTrue(CollectionUtils.sizeIsEmpty(asEnumeration(Collections.emptyIterator())));
-        assertFalse(CollectionUtils.sizeIsEmpty(asEnumeration(Collections.singleton("").iterator())));
+        assertFalse(
+            CollectionUtils.sizeIsEmpty(asEnumeration(Collections.singleton("").iterator())));
     }
     
     @Test
@@ -337,8 +339,10 @@ class CollectionUtilsTest {
     
     @Test
     void testGetOrDefault() {
-        assertEquals("default", CollectionUtils.getOrDefault(Collections.emptyList(), 1, "default"));
-        assertEquals("element", CollectionUtils.getOrDefault(Collections.singletonList("element"), 0, "default"));
+        assertEquals("default",
+            CollectionUtils.getOrDefault(Collections.emptyList(), 1, "default"));
+        assertEquals("element",
+            CollectionUtils.getOrDefault(Collections.singletonList("element"), 0, "default"));
     }
     
     @Test
@@ -360,6 +364,7 @@ class CollectionUtilsTest {
             throw new IllegalArgumentException("iterator cannot be null ");
         }
         return new Enumeration<T>() {
+            
             public boolean hasMoreElements() {
                 return iterator.hasNext();
             }
@@ -375,7 +380,8 @@ class CollectionUtilsTest {
         Set<Object> set = new HashSet<>();
         set.add(null);
         assertEquals(set, CollectionUtils.set(null, null, null));
-        assertEquals(new LinkedHashSet(Arrays.asList("", "a", "b")), CollectionUtils.set("", "a", "b"));
+        assertEquals(new LinkedHashSet(Arrays.asList("", "a", "b")),
+            CollectionUtils.set("", "a", "b"));
         assertEquals(new HashSet(), CollectionUtils.set());
     }
     
@@ -483,6 +489,7 @@ class CollectionUtilsTest {
     @Test
     @DisplayName("isEqualCollection with empty collections should return true")
     void testIsEqualCollectionEmptyCollections() {
-        assertTrue(CollectionUtils.isEqualCollection(Collections.emptyList(), Collections.emptyList()));
+        assertTrue(
+            CollectionUtils.isEqualCollection(Collections.emptyList(), Collections.emptyList()));
     }
 }

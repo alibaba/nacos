@@ -26,14 +26,14 @@ import java.util.Map;
  * @since 3.2.0
  */
 public interface PluginStatePersistenceService {
-
+    
     /**
      * Load all plugin states.
      *
      * @return map of plugin ID to enabled state
      */
     Map<String, Boolean> loadAllStates();
-
+    
     /**
      * Save plugin state.
      *
@@ -41,21 +41,21 @@ public interface PluginStatePersistenceService {
      * @param enabled whether the plugin is enabled
      */
     void saveState(String pluginId, boolean enabled);
-
+    
     /**
      * Delete plugin state.
      *
      * @param pluginId plugin ID
      */
     void deleteState(String pluginId);
-
+    
     /**
      * Load all plugin configurations.
      *
      * @return map of plugin ID to configuration
      */
     Map<String, Map<String, String>> loadAllConfigs();
-
+    
     /**
      * Save plugin configuration.
      *
@@ -63,7 +63,7 @@ public interface PluginStatePersistenceService {
      * @param config configuration key-value pairs
      */
     void saveConfig(String pluginId, Map<String, String> config);
-
+    
     /**
      * Delete plugin configuration.
      *

@@ -29,7 +29,7 @@ public class McpUpdateForm extends McpDetailForm {
     private static final long serialVersionUID = 4144251088520249913L;
     
     private boolean latest = true;
-
+    
     private boolean overrideExisting = false;
     
     public Boolean getLatest() {
@@ -39,11 +39,11 @@ public class McpUpdateForm extends McpDetailForm {
     public void setLatest(Boolean publish) {
         this.latest = publish;
     }
-
+    
     public boolean isOverrideExisting() {
         return overrideExisting;
     }
-
+    
     public void setOverrideExisting(boolean overrideExisting) {
         this.overrideExisting = overrideExisting;
     }

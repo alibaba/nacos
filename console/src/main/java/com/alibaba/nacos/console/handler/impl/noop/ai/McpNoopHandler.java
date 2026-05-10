@@ -41,52 +41,67 @@ import org.springframework.stereotype.Service;
 @ConditionalOnMissingBean(value = McpHandler.class, ignored = McpNoopHandler.class)
 public class McpNoopHandler implements McpHandler {
     
-    private static final String MCP_NOT_ENABLED_MESSAGE = "Nacos AI MCP module and API required both `naming` and `config` module.";
+    private static final String MCP_NOT_ENABLED_MESSAGE =
+        "Nacos AI MCP module and API required both `naming` and `config` module.";
     
     @Override
-    public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
-            int pageSize) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName,
+        String search, int pageNo,
+        int pageSize) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId, String version)
-            throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId,
+        String version)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+        McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public void updateMcpServer(String namespaceId, boolean isPublish,
+        McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification,
+        boolean overrideExisting) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version)
-            throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public McpServerImportValidationResult validateImport(String namespaceId,
+        McpServerImportRequest request) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
 }

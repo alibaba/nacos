@@ -44,7 +44,7 @@ public class NacosCoreWebConfiguration {
     public void init() {
         methodsCache.initClassMethod("com.alibaba.nacos.core.controller");
     }
-
+    
     /**
      * auth admin filter registration.
      *
@@ -53,7 +53,8 @@ public class NacosCoreWebConfiguration {
      * @see com.alibaba.nacos.core.auth.AbstractWebAuthFilter
      */
     @Bean
-    public FilterRegistrationBean<FormSizeFilter> formSizeFilterRegistration(FormSizeFilter formSizeFilter) {
+    public FilterRegistrationBean<FormSizeFilter> formSizeFilterRegistration(
+        FormSizeFilter formSizeFilter) {
         FilterRegistrationBean<FormSizeFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(formSizeFilter);
         registration.addUrlPatterns("/*");
@@ -62,7 +63,7 @@ public class NacosCoreWebConfiguration {
         registration.setOrder(5);
         return registration;
     }
-
+    
     /**
      * form size filter.
      *
@@ -70,7 +71,8 @@ public class NacosCoreWebConfiguration {
      * @return filter
      */
     @Bean
-    public FormSizeFilter formSizeFilter(@Value("${server.tomcat.max-http-form-post-size:2MB}") DataSize maxFormSize) {
+    public FormSizeFilter formSizeFilter(
+        @Value("${server.tomcat.max-http-form-post-size:2MB}") DataSize maxFormSize) {
         return new FormSizeFilter(maxFormSize.toBytes());
     }
 }

@@ -37,72 +37,76 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RaftPluginStateSynchronizerTest {
-
+    
     @Mock
     private ProtocolManager protocolManager;
-
+    
     @Mock
     private CPProtocol cpProtocol;
-
+    
     private RaftPluginStateSynchronizer synchronizer;
-
+    
     @BeforeEach
     void setUp() {
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         synchronizer = new RaftPluginStateSynchronizer(protocolManager);
     }
-
+    
     @Test
     void syncStateChangeSuccess() throws Exception {
         Response success = Response.newBuilder().setSuccess(true).build();
         when(cpProtocol.write(any(WriteRequest.class))).thenReturn(success);
-
+        
         synchronizer.syncStateChange("auth:nacos", true);
-
+        
         verify(cpProtocol).write(any(WriteRequest.class));
     }
-
+    
     @Test
     void syncStateChangeFailure() throws Exception {
         Response failure = Response.newBuilder().setSuccess(false).setErrMsg("raft error").build();
         when(cpProtocol.write(any(WriteRequest.class))).thenReturn(failure);
-
-        assertThrows(NacosApiException.class, () -> synchronizer.syncStateChange("auth:nacos", false));
+        
+        assertThrows(NacosApiException.class,
+            () -> synchronizer.syncStateChange("auth:nacos", false));
     }
-
+    
     @Test
     void syncStateChangeException() throws Exception {
-        when(cpProtocol.write(any(WriteRequest.class))).thenThrow(new RuntimeException("network error"));
-
-        assertThrows(NacosApiException.class, () -> synchronizer.syncStateChange("trace:test", true));
+        when(cpProtocol.write(any(WriteRequest.class)))
+            .thenThrow(new RuntimeException("network error"));
+        
+        assertThrows(NacosApiException.class,
+            () -> synchronizer.syncStateChange("trace:test", true));
     }
-
+    
     @Test
     void syncConfigChangeSuccess() throws Exception {
         Response success = Response.newBuilder().setSuccess(true).build();
         when(cpProtocol.write(any(WriteRequest.class))).thenReturn(success);
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-
+        
         synchronizer.syncConfigChange("trace:otel", config);
-
+        
         verify(cpProtocol).write(any(WriteRequest.class));
     }
-
+    
     @Test
     void syncConfigChangeFailure() throws Exception {
-        Response failure = Response.newBuilder().setSuccess(false).setErrMsg("write failed").build();
+        Response failure =
+            Response.newBuilder().setSuccess(false).setErrMsg("write failed").build();
         when(cpProtocol.write(any(WriteRequest.class))).thenReturn(failure);
-
+        
         assertThrows(NacosApiException.class,
-                () -> synchronizer.syncConfigChange("trace:otel", Collections.singletonMap("k", "v")));
+            () -> synchronizer.syncConfigChange("trace:otel", Collections.singletonMap("k", "v")));
     }
-
+    
     @Test
     void syncConfigChangeException() throws Exception {
         when(cpProtocol.write(any(WriteRequest.class))).thenThrow(new RuntimeException("io error"));
-
+        
         assertThrows(NacosApiException.class,
-                () -> synchronizer.syncConfigChange("auth:nacos", Collections.emptyMap()));
+            () -> synchronizer.syncConfigChange("auth:nacos", Collections.emptyMap()));
     }
 }

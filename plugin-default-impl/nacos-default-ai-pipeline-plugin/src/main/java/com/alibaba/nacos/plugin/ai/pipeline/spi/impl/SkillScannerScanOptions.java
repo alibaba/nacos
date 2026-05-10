@@ -34,43 +34,44 @@ import java.util.Properties;
  * @author qiacheng.cxy
  */
 final class SkillScannerScanOptions {
-
+    
     static final String PROP_USE_LLM = "useLlm";
-
+    
     static final String PROP_LLM_API_KEY = "llmApiKey";
-
+    
     static final String PROP_LLM_MODEL = "llmModel";
-
+    
     static final String PROP_LLM_PROVIDER = "llmProvider";
-
+    
     static final String PROP_ENABLE_META = "enableMeta";
-
+    
     private static final String ENV_LLM_API_KEY = "SKILL_SCANNER_LLM_API_KEY";
-
+    
     private static final String ENV_LLM_MODEL = "SKILL_SCANNER_LLM_MODEL";
-
+    
     private final boolean useLlm;
-
+    
     private final String llmApiKey;
-
+    
     private final String llmModel;
-
+    
     private final String llmProvider;
-
+    
     private final boolean enableMeta;
-
-    private SkillScannerScanOptions(boolean useLlm, String llmApiKey, String llmModel, String llmProvider, boolean enableMeta) {
+    
+    private SkillScannerScanOptions(boolean useLlm, String llmApiKey, String llmModel,
+        String llmProvider, boolean enableMeta) {
         this.useLlm = useLlm;
         this.llmApiKey = llmApiKey;
         this.llmModel = llmModel;
         this.llmProvider = llmProvider;
         this.enableMeta = enableMeta;
     }
-
+    
     static SkillScannerScanOptions none() {
         return new SkillScannerScanOptions(false, null, null, null, false);
     }
-
+    
     static SkillScannerScanOptions fromProperties(Properties properties) {
         if (properties == null || properties.isEmpty()) {
             return none();
@@ -79,10 +80,11 @@ final class SkillScannerScanOptions {
         String llmApiKey = trimToNull(properties.getProperty(PROP_LLM_API_KEY));
         String llmModel = trimToNull(properties.getProperty(PROP_LLM_MODEL));
         String llmProvider = trimToNull(properties.getProperty(PROP_LLM_PROVIDER));
-        boolean enableMeta = Boolean.parseBoolean(properties.getProperty(PROP_ENABLE_META, "false"));
+        boolean enableMeta =
+            Boolean.parseBoolean(properties.getProperty(PROP_ENABLE_META, "false"));
         return new SkillScannerScanOptions(useLlm, llmApiKey, llmModel, llmProvider, enableMeta);
     }
-
+    
     private static String trimToNull(String s) {
         if (s == null) {
             return null;
@@ -90,19 +92,19 @@ final class SkillScannerScanOptions {
         String t = s.trim();
         return t.isEmpty() ? null : t;
     }
-
+    
     boolean isUseLlm() {
         return useLlm;
     }
-
+    
     boolean isEnableMeta() {
         return enableMeta;
     }
-
+    
     String getLlmProvider() {
         return llmProvider;
     }
-
+    
     /**
      * Applies LLM-related variables to the subprocess environment when configured.
      * Keys match skill-scanner CLI expectations ({@value #ENV_LLM_API_KEY}, {@value #ENV_LLM_MODEL}).

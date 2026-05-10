@@ -25,26 +25,26 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConditionOnStandaloneModeTest {
-
+    
     private ConditionOnStandaloneMode condition;
-
+    
     @BeforeEach
     void setUp() {
         condition = new ConditionOnStandaloneMode();
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     void testMatchesWhenStandalone() {
         EnvUtil.setIsStandalone(true);
         boolean result = condition.matches(null, null);
         assertTrue(result);
     }
-
+    
     @Test
     void testMatchesWhenCluster() {
         EnvUtil.setIsStandalone(false);

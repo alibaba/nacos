@@ -68,19 +68,19 @@ class ExternalNamespacePersistServiceTest {
     
     @Mock
     private JdbcTemplate jt;
-
+    
     @Mock
     private MapperManager mapperManager;
-
+    
     @Mock
     private TenantInfoMapper tenantInfoMapper;
-
+    
     private ExternalNamespacePersistServiceImpl externalNamespacePersistService;
     
     private MockEnvironment environment;
-
+    
     private MockedStatic<MapperManager> mapperManagerMockedStatic;
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setIsStandalone(false);
@@ -89,23 +89,24 @@ class ExternalNamespacePersistServiceTest {
         EnvUtil.setEnvironment(environment);
         DynamicDataSource instance = DynamicDataSource.getInstance();
         ReflectionTestUtils.setField(instance, "basicDataSourceService", dataSourceService);
-
+        
         // Mock MapperManager static method to avoid SPI loading
         mapperManagerMockedStatic = Mockito.mockStatic(MapperManager.class);
-        mapperManagerMockedStatic.when(() -> MapperManager.instance(anyBoolean())).thenReturn(mapperManager);
-
+        mapperManagerMockedStatic.when(() -> MapperManager.instance(anyBoolean()))
+            .thenReturn(mapperManager);
+        
         externalNamespacePersistService = new ExternalNamespacePersistServiceImpl();
         
         ReflectionTestUtils.setField(externalNamespacePersistService, "jt", jt);
     }
-
+    
     @AfterEach
     void tearDown() {
         if (mapperManagerMockedStatic != null) {
             mapperManagerMockedStatic.close();
         }
     }
-
+    
     @Test
     void insertTenantInfoAtomicTest() {
         String kp = "1";
@@ -115,17 +116,20 @@ class ExternalNamespacePersistServiceTest {
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.insert(any())).thenReturn("INSERT INTO tenant_info ...");
-
-        externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos",
-                System.currentTimeMillis());
-
-        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(),
-                anyLong())).thenThrow(
-                        new NJdbcException("test"));
+        
+        externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName,
+            namespaceDesc, "nacos",
+            System.currentTimeMillis());
+        
+        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(),
+            anyLong(),
+            anyLong())).thenThrow(
+                new NJdbcException("test"));
         assertThrows(DataAccessException.class,
-                () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName,
-                        namespaceDesc, "nacos",
-                        System.currentTimeMillis()));
+            () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId,
+                namespaceName,
+                namespaceDesc, "nacos",
+                System.currentTimeMillis()));
         
     }
     
@@ -136,12 +140,13 @@ class ExternalNamespacePersistServiceTest {
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.delete(any())).thenReturn("DELETE FROM tenant_info ...");
-
+        
         externalNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId);
-
-        when(jt.update(anyString(), anyString(), anyString())).thenThrow(new CannotGetJdbcConnectionException("test"));
+        
+        when(jt.update(anyString(), anyString(), anyString()))
+            .thenThrow(new CannotGetJdbcConnectionException("test"));
         assertThrows(CannotGetJdbcConnectionException.class,
-                () -> externalNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId));
+            () -> externalNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId));
     }
     
     @Test
@@ -153,14 +158,16 @@ class ExternalNamespacePersistServiceTest {
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.update(any(), any())).thenReturn("UPDATE tenant_info ...");
-
-        externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc);
-
+        
+        externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName,
+            namespaceDesc);
+        
         when(jt.update(anyString(), anyString(), anyString(), anyLong(), anyString(), anyString()))
-                .thenThrow(new NJdbcException("test"));
+            .thenThrow(new NJdbcException("test"));
         assertThrows(DataAccessException.class,
-                () -> externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName,
-                        namespaceDesc));
+            () -> externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId,
+                namespaceName,
+                namespaceDesc));
     }
     
     @Test
@@ -169,25 +176,30 @@ class ExternalNamespacePersistServiceTest {
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.select(any(), any())).thenReturn("SELECT ...");
-
+        
         List<TenantInfo> tenantInfoList = new ArrayList<>(1);
         tenantInfoList.add(new TenantInfo());
         
-        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenReturn(tenantInfoList);
+        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER)))
+            .thenReturn(tenantInfoList);
         
         List<TenantInfo> tenantByKp = externalNamespacePersistService.findTenantByKp(kp);
         assertEquals(tenantInfoList.get(0), tenantByKp.get(0));
         
         when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
-                new CannotGetJdbcConnectionException("test"));
-        assertThrows(CannotGetJdbcConnectionException.class, () -> externalNamespacePersistService.findTenantByKp(kp));
+            new CannotGetJdbcConnectionException("test"));
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalNamespacePersistService.findTenantByKp(kp));
         
-        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1));
+        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1));
         List<TenantInfo> tenantByKp1 = externalNamespacePersistService.findTenantByKp(kp);
         assertEquals(Collections.emptyList(), tenantByKp1);
         
-        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(new RuntimeException("test"));
-        assertThrows(RuntimeException.class, () -> externalNamespacePersistService.findTenantByKp(kp));
+        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER)))
+            .thenThrow(new RuntimeException("test"));
+        assertThrows(RuntimeException.class,
+            () -> externalNamespacePersistService.findTenantByKp(kp));
         
     }
     
@@ -198,27 +210,33 @@ class ExternalNamespacePersistServiceTest {
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.select(any(), any())).thenReturn("SELECT ...");
-
+        
         TenantInfo tenantInfo = new TenantInfo();
         tenantInfo.setTenantId(namespaceId);
         
-        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}), eq(TENANT_INFO_ROW_MAPPER))).thenReturn(tenantInfo);
+        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}),
+            eq(TENANT_INFO_ROW_MAPPER))).thenReturn(tenantInfo);
         
         TenantInfo tenantByKp = externalNamespacePersistService.findTenantByKp(kp, namespaceId);
         assertEquals(tenantInfo.getTenantId(), tenantByKp.getTenantId());
         
-        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
+        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}),
+            eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("test"));
-        assertThrows(CannotGetJdbcConnectionException.class, () -> externalNamespacePersistService.findTenantByKp(kp, namespaceId));
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalNamespacePersistService.findTenantByKp(kp, namespaceId));
         
-        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
+        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}),
+            eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
                 new EmptyResultDataAccessException(1));
         TenantInfo tenantByKp1 = externalNamespacePersistService.findTenantByKp(kp, namespaceId);
         assertNull(tenantByKp1);
         
-        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
+        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}),
+            eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
                 new RuntimeException("test"));
-        assertThrows(RuntimeException.class, () -> externalNamespacePersistService.findTenantByKp(kp, namespaceId));
+        assertThrows(RuntimeException.class,
+            () -> externalNamespacePersistService.findTenantByKp(kp, namespaceId));
         
     }
     
@@ -233,15 +251,16 @@ class ExternalNamespacePersistServiceTest {
         
         assertEquals("test%", testB);
     }
-
+    
     @Test
     void generateLikeArgumentWithUnderscoreTest() {
         // underscore is escaped for SQL LIKE (e.g. _ matches single char)
         String withUnderscore = externalNamespacePersistService.generateLikeArgument("ns_name");
         assertEquals("ns\\_name", withUnderscore);
-
+        
         // underscore escaped and star replaced by percent
-        String withUnderscoreAndStar = externalNamespacePersistService.generateLikeArgument("ns_name*");
+        String withUnderscoreAndStar =
+            externalNamespacePersistService.generateLikeArgument("ns_name*");
         assertEquals("ns\\_name%", withUnderscoreAndStar);
     }
     
@@ -266,15 +285,17 @@ class ExternalNamespacePersistServiceTest {
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.count(any())).thenReturn("SELECT COUNT(*) ...");
-
+        
         assertThrows(IllegalArgumentException.class,
-                () -> externalNamespacePersistService.tenantInfoCountByTenantId(null));
-
-        when(jt.queryForObject(anyString(), eq(new String[] { tenantId }), eq(Integer.class))).thenReturn(null);
+            () -> externalNamespacePersistService.tenantInfoCountByTenantId(null));
+        
+        when(jt.queryForObject(anyString(), eq(new String[] {tenantId}), eq(Integer.class)))
+            .thenReturn(null);
         int i = externalNamespacePersistService.tenantInfoCountByTenantId(tenantId);
         assertEquals(0, i);
         
-        when(jt.queryForObject(anyString(), eq(new String[] {tenantId}), eq(Integer.class))).thenReturn(1);
+        when(jt.queryForObject(anyString(), eq(new String[] {tenantId}), eq(Integer.class)))
+            .thenReturn(1);
         int j = externalNamespacePersistService.tenantInfoCountByTenantId(tenantId);
         assertEquals(1, j);
     }

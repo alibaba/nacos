@@ -48,7 +48,7 @@ public class McpForm implements NacosForm {
         fillDefaultValue();
         if (StringUtils.isEmpty(mcpId) && StringUtils.isEmpty(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'mcpId' or 'mcpName' type String at lease one is not present");
+                "Required parameter 'mcpId' or 'mcpName' type String at lease one is not present");
         }
     }
     
@@ -65,27 +65,27 @@ public class McpForm implements NacosForm {
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public String getMcpId() {
         return mcpId;
     }
-
+    
     public void setMcpId(String id) {
         this.mcpId = id;
     }
-
+    
     public String getMcpName() {
         return mcpName;
     }
-
+    
     public void setMcpName(String name) {
         this.mcpName = name;
     }

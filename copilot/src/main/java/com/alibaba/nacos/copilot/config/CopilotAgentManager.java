@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @Component
 public class CopilotAgentManager {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(CopilotAgentManager.class);
     
     private final CopilotConfigStorage configStorage;
@@ -48,13 +48,13 @@ public class CopilotAgentManager {
     
     @Autowired
     public CopilotAgentManager(CopilotConfigStorage configStorage,
-                               CopilotProperties defaultProperties,
-                               Environment environment) {
+        CopilotProperties defaultProperties,
+        Environment environment) {
         this.configStorage = configStorage;
         this.defaultProperties = defaultProperties;
         this.environment = environment;
     }
-
+    
     /**
      * Initialize AgentScope Studio if studioUrl is configured.
      * This method should be called without holding any locks.
@@ -76,13 +76,14 @@ public class CopilotAgentManager {
             if (StringUtils.isBlank(studioProject)) {
                 studioProject = "NacosCopilot";
             }
-            LOGGER.info("Initializing AgentScope Studio with URL: {}, Project: {}", studioUrl, studioProject);
+            LOGGER.info("Initializing AgentScope Studio with URL: {}, Project: {}", studioUrl,
+                studioProject);
             StudioManager.init()
-                    .studioUrl(studioUrl)
-                    .project(studioProject)
-                    .runName("nacos_copilot_" + System.currentTimeMillis())
-                    .initialize()
-                    .block();
+                .studioUrl(studioUrl)
+                .project(studioProject)
+                .runName("nacos_copilot_" + System.currentTimeMillis())
+                .initialize()
+                .block();
             LOGGER.info("AgentScope Studio initialized successfully");
         } catch (Exception e) {
             LOGGER.warn("Failed to initialize AgentScope Studio: {}", e.getMessage(), e);
@@ -147,16 +148,16 @@ public class CopilotAgentManager {
         
         // Create model
         DashScopeChatModel model = DashScopeChatModel.builder()
-                .apiKey(apiKey)
-                .modelName(config.getModel())
-                .stream(true)
-                .enableThinking(true)
-                .build();
+            .apiKey(apiKey)
+            .modelName(config.getModel())
+            .stream(true)
+            .enableThinking(true)
+            .build();
         
         // Create agent
         ReActAgent.Builder agentBuilder = ReActAgent.builder()
-                .name("CopilotAgent")
-                .model(model);
+            .name("CopilotAgent")
+            .model(model);
         
         if (StringUtils.isNotBlank(systemPrompt)) {
             agentBuilder.sysPrompt(systemPrompt);

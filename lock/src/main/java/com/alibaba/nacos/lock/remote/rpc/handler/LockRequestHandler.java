@@ -37,7 +37,8 @@ import org.springframework.stereotype.Component;
  * @date 2023/6/29 14:00
  */
 @Component
-public class LockRequestHandler extends RequestHandler<LockOperationRequest, LockOperationResponse> {
+public class LockRequestHandler
+    extends RequestHandler<LockOperationRequest, LockOperationResponse> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(LockRequestHandler.class);
     
@@ -51,9 +52,11 @@ public class LockRequestHandler extends RequestHandler<LockOperationRequest, Loc
      * TODO Support auth.
      */
     @Override
-    public LockOperationResponse handle(LockOperationRequest request, RequestMeta meta) throws NacosException {
+    public LockOperationResponse handle(LockOperationRequest request, RequestMeta meta)
+        throws NacosException {
         Boolean lock = null;
-        LOGGER.info("request: {}, instance: {}", request.getLockOperationEnum(), request.getLockInstance());
+        LOGGER.info("request: {}, instance: {}", request.getLockOperationEnum(),
+            request.getLockInstance());
         try {
             if (request.getLockOperationEnum() == LockOperationEnum.ACQUIRE) {
                 LockInstance lockInstance = request.getLockInstance();

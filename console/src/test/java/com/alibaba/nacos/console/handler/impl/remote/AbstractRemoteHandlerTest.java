@@ -44,16 +44,16 @@ public abstract class AbstractRemoteHandlerTest {
     
     @Mock
     protected AiMaintainerService aiMaintainerService;
-
+    
     @Mock
     protected McpMaintainerService mcpMaintainerService;
-
+    
     @Mock
     protected A2aMaintainerService a2aMaintainerService;
-
+    
     @Mock
     protected PromptMaintainerService promptMaintainerService;
-
+    
     @Mock
     protected PipelineMaintainerService pipelineMaintainerService;
     

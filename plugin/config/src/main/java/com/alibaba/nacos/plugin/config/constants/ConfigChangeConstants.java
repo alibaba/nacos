@@ -33,4 +33,3 @@ public class ConfigChangeConstants {
     public static final String ORIGINAL_ARGS = "originalArgs";
     
 }
-

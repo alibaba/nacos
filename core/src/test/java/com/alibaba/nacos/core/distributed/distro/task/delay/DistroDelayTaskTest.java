@@ -28,14 +28,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * {@link DistroDelayTask} unit test.
  */
 class DistroDelayTaskTest {
-
+    
     private DistroKey distroKey;
-
+    
     @BeforeEach
     void setUp() {
         distroKey = new DistroKey("resourceKey", "resourceType", "targetServer");
     }
-
+    
     @Test
     void testConstructorWithKeyAndDelay() {
         DistroDelayTask task = new DistroDelayTask(distroKey, 1000L);
@@ -44,7 +44,7 @@ class DistroDelayTaskTest {
         assertEquals(1000L, task.getTaskInterval());
         assertNotNull(task.getCreateTime());
     }
-
+    
     @Test
     void testConstructorWithKeyActionAndDelay() {
         DistroDelayTask task = new DistroDelayTask(distroKey, DataOperation.DELETE, 2000L);
@@ -52,12 +52,13 @@ class DistroDelayTaskTest {
         assertEquals(DataOperation.DELETE, task.getAction());
         assertEquals(2000L, task.getTaskInterval());
     }
-
+    
     @Test
     void testMergeWithNonDistroDelayTask() {
         DistroDelayTask task = new DistroDelayTask(distroKey, DataOperation.CHANGE, 1000L);
         long createTime = task.getCreateTime();
         task.merge(new com.alibaba.nacos.common.task.AbstractDelayTask() {
+            
             @Override
             public void merge(com.alibaba.nacos.common.task.AbstractDelayTask task) {
             }
@@ -65,7 +66,7 @@ class DistroDelayTaskTest {
         assertEquals(DataOperation.CHANGE, task.getAction());
         assertEquals(createTime, task.getCreateTime());
     }
-
+    
     @Test
     void testMergeWithDistroDelayTaskSameAction() {
         DistroDelayTask task = new DistroDelayTask(distroKey, DataOperation.CHANGE, 1000L);
@@ -74,7 +75,7 @@ class DistroDelayTaskTest {
         task.merge(other);
         assertEquals(DataOperation.CHANGE, task.getAction());
     }
-
+    
     @Test
     void testMergeWithDistroDelayTaskDifferentActionOlderCreateTime() {
         DistroDelayTask task = new DistroDelayTask(distroKey, DataOperation.DELETE, 1000L);

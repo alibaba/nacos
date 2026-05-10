@@ -26,15 +26,15 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author nacos
  */
 public class SkillQueryForm {
-
+    
     private String namespaceId;
-
+    
     private String name;
-
+    
     private String version;
-
+    
     private String label;
-
+    
     /**
      * Validate and normalize query parameters.
      *
@@ -45,41 +45,41 @@ public class SkillQueryForm {
             namespaceId = "public";
         }
         if (StringUtils.isBlank(name)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill name is required");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Skill name is required");
         }
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public String getLabel() {
         return label;
     }
-
+    
     public void setLabel(String label) {
         this.label = label;
     }
 }
-

@@ -61,7 +61,8 @@ public class McpProxyTest {
     @Test
     public void getMcpServer() throws NacosException {
         McpServerDetailInfo expectedInfo = new McpServerDetailInfo();
-        when(mcpHandler.getMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version")).thenReturn(expectedInfo);
+        when(mcpHandler.getMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version"))
+            .thenReturn(expectedInfo);
         
         McpServerDetailInfo result = mcpProxy.getMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version");
         
@@ -86,12 +87,15 @@ public class McpProxyTest {
         expectedPage.setPagesAvailable(1);
         expectedPage.setTotalCount(serverList.size());
         
-        when(mcpHandler.listMcpServers(NAMESPACE_ID, MCP_NAME, search, pageNo, pageSize)).thenReturn(expectedPage);
+        when(mcpHandler.listMcpServers(NAMESPACE_ID, MCP_NAME, search, pageNo, pageSize))
+            .thenReturn(expectedPage);
         
-        Page<McpServerBasicInfo> result = mcpProxy.listMcpServers(NAMESPACE_ID, MCP_NAME, search, pageNo, pageSize);
+        Page<McpServerBasicInfo> result =
+            mcpProxy.listMcpServers(NAMESPACE_ID, MCP_NAME, search, pageNo, pageSize);
         
         assertEquals(expectedPage, result);
-        verify(mcpHandler, times(1)).listMcpServers(NAMESPACE_ID, MCP_NAME, search, pageNo, pageSize);
+        verify(mcpHandler, times(1)).listMcpServers(NAMESPACE_ID, MCP_NAME, search, pageNo,
+            pageSize);
     }
     
     @Test
@@ -102,15 +106,17 @@ public class McpProxyTest {
         McpToolSpecification toolSpecification = new McpToolSpecification();
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
         
-        when(mcpHandler.createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification, endpointSpecification)).thenReturn(mcpId);
+        when(mcpHandler.createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification,
+            endpointSpecification)).thenReturn(mcpId);
         
         assertDoesNotThrow(() -> {
             mcpProxy.createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification,
-                    endpointSpecification);
+                endpointSpecification);
         });
         
-        verify(mcpHandler, times(1)).createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification,
-                endpointSpecification);
+        verify(mcpHandler, times(1)).createMcpServer(NAMESPACE_ID, serverSpecification,
+            toolSpecification,
+            endpointSpecification);
     }
     
     @Test
@@ -120,21 +126,25 @@ public class McpProxyTest {
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
         
         doNothing().when(mcpHandler)
-                .updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification, false);
+            .updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification,
+                endpointSpecification, false);
         
-        mcpProxy.updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification, false);
+        mcpProxy.updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification,
+            endpointSpecification, false);
     }
-
+    
     @Test
     public void updateMcpServerWithOverrideExisting() throws NacosException {
         McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
         McpToolSpecification toolSpecification = new McpToolSpecification();
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
-
+        
         doNothing().when(mcpHandler)
-                .updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification, true);
-
-        mcpProxy.updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification, true);
+            .updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification,
+                endpointSpecification, true);
+        
+        mcpProxy.updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification,
+            endpointSpecification, true);
     }
     
     @Test

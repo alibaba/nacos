@@ -52,7 +52,7 @@ public class ServerListController {
     private final ServiceStorage serviceStorage;
     
     public ServerListController(AddressServerGeneratorManager addressServerBuilderManager,
-            NamingMetadataManager metadataManager, ServiceStorage serviceStorage) {
+        NamingMetadataManager metadataManager, ServiceStorage serviceStorage) {
         this.addressServerBuilderManager = addressServerBuilderManager;
         this.metadataManager = metadataManager;
         this.serviceStorage = serviceStorage;
@@ -66,26 +66,29 @@ public class ServerListController {
      * @return result of get
      */
     @RequestMapping(value = "/{product}/{cluster}", method = RequestMethod.GET)
-    public ResponseEntity<String> getCluster(@PathVariable String product, @PathVariable String cluster) {
+    public ResponseEntity<String> getCluster(@PathVariable String product,
+        @PathVariable String cluster) {
         
         String productName = addressServerBuilderManager.generateProductName(product);
         String serviceName = addressServerBuilderManager.generateNacosServiceName(productName);
         String serviceWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
         Optional<Service> service = ServiceManager.getInstance()
-                .getSingletonIfExist(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceWithoutGroup);
+            .getSingletonIfExist(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceWithoutGroup);
         if (!service.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("product=" + product + " not found.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("product=" + product + " not found.");
         }
-        ClusterMetadata metadata = metadataManager.getServiceMetadata(service.get()).orElse(new ServiceMetadata())
+        ClusterMetadata metadata =
+            metadataManager.getServiceMetadata(service.get()).orElse(new ServiceMetadata())
                 .getClusters().get(cluster);
         if (null == metadata) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("product=" + product + ",cluster=" + cluster + " not found.");
+                .body("product=" + product + ",cluster=" + cluster + " not found.");
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service.get());
         serviceInfo = ServiceUtil.selectInstances(serviceInfo, cluster, false);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(addressServerBuilderManager.generateResponseIps(serviceInfo.getHosts()));
+            .body(addressServerBuilderManager.generateResponseIps(serviceInfo.getHosts()));
     }
 }

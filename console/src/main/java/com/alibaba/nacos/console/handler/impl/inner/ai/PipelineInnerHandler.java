@@ -49,8 +49,8 @@ public class PipelineInnerHandler implements PipelineHandler {
     
     @Override
     public Page<PipelineExecution> listPipelines(String resourceType, String resourceName,
-            String namespaceId, String version, int pageNo, int pageSize) throws NacosException {
+        String namespaceId, String version, int pageNo, int pageSize) throws NacosException {
         return pipelineQueryService.listPipelines(resourceType, resourceName,
-                namespaceId, version, pageNo, pageSize);
+            namespaceId, version, pageNo, pageSize);
     }
 }

@@ -58,7 +58,8 @@ public class NacosAuthPluginWebConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         String ignoreUrls = null;
         String authSystemType = NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE).getNacosAuthSystemType();
+            .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE)
+            .getNacosAuthSystemType();
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authSystemType)) {
             ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
         } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authSystemType)) {
@@ -72,7 +73,7 @@ public class NacosAuthPluginWebConfig {
         }
         final String finalIgnoreUrls = ignoreUrls;
         http.authorizeHttpRequests((authorizeHttpRequests) -> authorizeHttpRequests.requestMatchers(
-                finalIgnoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)).permitAll());
+            finalIgnoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)).permitAll());
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
@@ -88,7 +89,7 @@ public class NacosAuthPluginWebConfig {
     @Deprecated()
     public AuthenticationManager authenticationManagerBean() throws Exception {
         AuthenticationConfiguration authenticationConfiguration = ApplicationUtils.getBean(
-                AuthenticationConfiguration.class);
+            AuthenticationConfiguration.class);
         return authenticationConfiguration.getAuthenticationManager();
     }
 }

@@ -71,14 +71,16 @@ public class ConsoleServerStateControllerTest {
         
         when(serverStateProxy.getServerState()).thenReturn(state);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/server/state")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/server/state")
                 .contentType(MediaType.APPLICATION_JSON);
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Map<String, String> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
-        });
+        Map<String, String> result =
+            new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+            });
         
         assertEquals("OK", result.get("state"));
     }
@@ -87,7 +89,8 @@ public class ConsoleServerStateControllerTest {
     void testGetAnnouncement() throws Exception {
         when(serverStateProxy.getAnnouncement(anyString())).thenReturn("Test Announcement");
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/server/announcement")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/server/announcement")
                 .param("language", "zh-CN");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -101,7 +104,8 @@ public class ConsoleServerStateControllerTest {
     
     @Test
     void testGetAnnouncementWithUnsupportedLanguage() throws Exception {
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/server/announcement")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/server/announcement")
                 .param("language", "zh-TW");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -117,7 +121,8 @@ public class ConsoleServerStateControllerTest {
     void testGetConsoleUiGuide() throws Exception {
         when(serverStateProxy.getConsoleUiGuide()).thenReturn("Test Guide");
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/server/guide");
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/server/guide");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -128,4 +133,3 @@ public class ConsoleServerStateControllerTest {
         assertEquals("Test Guide", result.getData());
     }
 }
-

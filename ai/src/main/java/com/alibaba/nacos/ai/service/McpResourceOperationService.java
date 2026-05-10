@@ -39,17 +39,17 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class McpResourceOperationService {
-
+    
     private final ConfigQueryChainService configQueryChainService;
-
+    
     private final ConfigOperationService configOperationService;
-
+    
     public McpResourceOperationService(ConfigQueryChainService configQueryChainService,
-            ConfigOperationService configOperationService) {
+        ConfigOperationService configOperationService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
     }
-
+    
     /**
      * Create or update mcp server resources. If mcp server resources already exist, will fully replace it.
      *
@@ -59,33 +59,41 @@ public class McpResourceOperationService {
      * @throws NacosException any exception during handling
      */
     public void refreshMcpResource(String namespaceId, McpServerBasicInfo serverBasicInfo,
-            McpResourceSpecification resourceSpecification) throws NacosException {
+        McpResourceSpecification resourceSpecification) throws NacosException {
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        ConfigFormV3 resourceConfigForm = buildMcpResourceConfigForm(namespaceId, serverBasicInfo, resourceSpecification);
+        ConfigFormV3 resourceConfigForm =
+            buildMcpResourceConfigForm(namespaceId, serverBasicInfo, resourceSpecification);
         configOperationService.publishConfig(resourceConfigForm, configRequestInfo, null);
     }
-
-    public McpResourceSpecification getMcpResource(String namespaceId, String resourceDescriptionRef) {
-        ConfigQueryChainRequest request = buildQueryMcpResourceRequest(namespaceId, resourceDescriptionRef);
+    
+    public McpResourceSpecification getMcpResource(String namespaceId,
+        String resourceDescriptionRef) {
+        ConfigQueryChainRequest request =
+            buildQueryMcpResourceRequest(namespaceId, resourceDescriptionRef);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == response.getStatus()) {
             return null;
         }
         return transferToMcpServerResource(response);
     }
-
-    public void deleteMcpResource(String namespaceId, String mcpServerId, String version) throws NacosException {
-        configOperationService.deleteConfig(McpConfigUtils.formatServerResourceSpecDataId(mcpServerId, version),
-                Constants.MCP_SERVER_RESOURCE_GROUP, namespaceId, null, null, "nacos", null);
+    
+    /** Delete MCP resource specification. */
+    public void deleteMcpResource(String namespaceId, String mcpServerId, String version)
+        throws NacosException {
+        configOperationService.deleteConfig(
+            McpConfigUtils.formatServerResourceSpecDataId(mcpServerId, version),
+            Constants.MCP_SERVER_RESOURCE_GROUP, namespaceId, null, null, "nacos", null);
     }
-
-    private ConfigFormV3 buildMcpResourceConfigForm(String namespaceId, McpServerBasicInfo mcpServerBasicInfo,
-            McpResourceSpecification resourceSpecification) {
+    
+    private ConfigFormV3 buildMcpResourceConfigForm(String namespaceId,
+        McpServerBasicInfo mcpServerBasicInfo,
+        McpResourceSpecification resourceSpecification) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
         configFormV3.setGroupName(Constants.MCP_SERVER_RESOURCE_GROUP);
         configFormV3.setGroup(Constants.MCP_SERVER_RESOURCE_GROUP);
         configFormV3.setNamespaceId(namespaceId);
-        String resourceSpecDataId = McpConfigUtils.formatServerResourceSpecDataId(mcpServerBasicInfo.getId(),
+        String resourceSpecDataId =
+            McpConfigUtils.formatServerResourceSpecDataId(mcpServerBasicInfo.getId(),
                 mcpServerBasicInfo.getVersionDetail().getVersion());
         configFormV3.setDataId(resourceSpecDataId);
         configFormV3.setContent(JacksonUtils.toJson(resourceSpecification));
@@ -95,16 +103,18 @@ public class McpResourceOperationService {
         configFormV3.setConfigTags(Constants.MCP_SERVER_CONFIG_MARK);
         return configFormV3;
     }
-
-    private ConfigQueryChainRequest buildQueryMcpResourceRequest(String namespaceId, String resourceDescriptionRef) {
+    
+    private ConfigQueryChainRequest buildQueryMcpResourceRequest(String namespaceId,
+        String resourceDescriptionRef) {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setDataId(resourceDescriptionRef);
         request.setGroup(Constants.MCP_SERVER_RESOURCE_GROUP);
         request.setTenant(namespaceId);
         return request;
     }
-
-    private McpResourceSpecification transferToMcpServerResource(ConfigQueryChainResponse response) {
+    
+    private McpResourceSpecification transferToMcpServerResource(
+        ConfigQueryChainResponse response) {
         return JacksonUtils.toObj(response.getContent(), new TypeReference<>() {
         });
     }

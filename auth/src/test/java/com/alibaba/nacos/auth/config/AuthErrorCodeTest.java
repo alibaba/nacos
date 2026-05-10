@@ -25,29 +25,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class AuthErrorCodeTest {
-
+    
     @Test
     void testInvalidTypeCode() {
         assertEquals(50001, AuthErrorCode.INVALID_TYPE.getCode());
     }
-
+    
     @Test
     void testInvalidTypeMsg() {
         assertTrue(AuthErrorCode.INVALID_TYPE.getMsg().contains("Invalid auth type"));
         assertTrue(AuthErrorCode.INVALID_TYPE.getMsg().contains("nacos.core.auth.system.type"));
     }
-
+    
     @Test
     void testEmptyIdentityCode() {
         assertEquals(50002, AuthErrorCode.EMPTY_IDENTITY.getCode());
     }
-
+    
     @Test
     void testEmptyIdentityMsg() {
         assertTrue(AuthErrorCode.EMPTY_IDENTITY.getMsg().contains("Empty identity"));
-        assertTrue(AuthErrorCode.EMPTY_IDENTITY.getMsg().contains("nacos.core.auth.server.identity.key"));
+        assertTrue(
+            AuthErrorCode.EMPTY_IDENTITY.getMsg().contains("nacos.core.auth.server.identity.key"));
     }
-
+    
     @Test
     void testValues() {
         assertEquals(2, AuthErrorCode.values().length);

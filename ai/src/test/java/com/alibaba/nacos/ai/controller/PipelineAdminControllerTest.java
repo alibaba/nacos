@@ -60,7 +60,8 @@ class PipelineAdminControllerTest {
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        mockMvc = MockMvcBuilders.standaloneSetup(new PipelineAdminController(pipelineQueryService)).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(new PipelineAdminController(pipelineQueryService))
+            .build();
     }
     
     @AfterEach
@@ -70,13 +71,16 @@ class PipelineAdminControllerTest {
     @Test
     void listPipelinesAtListSubpath() throws Exception {
         Page<PipelineExecution> page = new Page<>();
-        when(pipelineQueryService.listPipelines(anyString(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
-                .thenReturn(page);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(ADMIN_BASE + Constants.Pipeline.LIST_SUBPATH)
+        when(pipelineQueryService.listPipelines(anyString(), isNull(), isNull(), isNull(), anyInt(),
+            anyInt()))
+            .thenReturn(page);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(ADMIN_BASE + Constants.Pipeline.LIST_SUBPATH)
                 .param("resourceType", "SKILL").param("pageNo", "1").param("pageSize", "10");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        Result<Page<PipelineExecution>> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
-        });
+        Result<Page<PipelineExecution>> result =
+            JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+            });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
     }
     
@@ -86,10 +90,12 @@ class PipelineAdminControllerTest {
         execution.setExecutionId("exec-1");
         when(pipelineQueryService.getPipeline("exec-1")).thenReturn(execution);
         MockHttpServletRequestBuilder builder =
-                MockMvcRequestBuilders.get(ADMIN_BASE + Constants.Pipeline.DETAIL_SUBPATH).param("pipelineId", "exec-1");
+            MockMvcRequestBuilders.get(ADMIN_BASE + Constants.Pipeline.DETAIL_SUBPATH)
+                .param("pipelineId", "exec-1");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        Result<PipelineExecution> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
-        });
+        Result<PipelineExecution> result =
+            JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+            });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("exec-1", result.getData().getExecutionId());
     }
@@ -97,13 +103,16 @@ class PipelineAdminControllerTest {
     @Test
     void listPipelinesLegacyBasePathStillWorks() throws Exception {
         Page<PipelineExecution> page = new Page<>();
-        when(pipelineQueryService.listPipelines(anyString(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
-                .thenReturn(page);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(ADMIN_BASE).param("resourceType", "SKILL")
+        when(pipelineQueryService.listPipelines(anyString(), isNull(), isNull(), isNull(), anyInt(),
+            anyInt()))
+            .thenReturn(page);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(ADMIN_BASE).param("resourceType", "SKILL")
                 .param("pageNo", "1").param("pageSize", "10");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        Result<Page<PipelineExecution>> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
-        });
+        Result<Page<PipelineExecution>> result =
+            JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+            });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
     }
     
@@ -112,10 +121,12 @@ class PipelineAdminControllerTest {
         PipelineExecution execution = new PipelineExecution();
         execution.setExecutionId("legacy-id");
         when(pipelineQueryService.getPipeline("legacy-id")).thenReturn(execution);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(ADMIN_BASE + "/legacy-id");
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(ADMIN_BASE + "/legacy-id");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        Result<PipelineExecution> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
-        });
+        Result<PipelineExecution> result =
+            JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+            });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("legacy-id", result.getData().getExecutionId());
     }

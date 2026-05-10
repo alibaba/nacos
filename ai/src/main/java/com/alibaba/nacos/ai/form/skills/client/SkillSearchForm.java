@@ -24,11 +24,11 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author nacos
  */
 public class SkillSearchForm {
-
+    
     private String namespaceId;
-
+    
     private String keyword;
-
+    
     /**
      * Validate and normalize query parameters.
      */
@@ -38,21 +38,20 @@ public class SkillSearchForm {
             namespaceId = "public";
         }
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getKeyword() {
         return keyword;
     }
-
+    
     public void setKeyword(String keyword) {
         this.keyword = keyword;
     }
 }
-

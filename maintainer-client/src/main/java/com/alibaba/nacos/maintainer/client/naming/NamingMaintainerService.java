@@ -33,7 +33,8 @@ import java.util.Map;
  * @author Nacos
  */
 public interface NamingMaintainerService
-        extends CoreMaintainerService, ServiceMaintainerService, InstanceMaintainerService, NamingClientMaintainerService, Closeable {
+    extends CoreMaintainerService, ServiceMaintainerService, InstanceMaintainerService,
+    NamingClientMaintainerService, Closeable {
     
     /**
      * Get system metrics.

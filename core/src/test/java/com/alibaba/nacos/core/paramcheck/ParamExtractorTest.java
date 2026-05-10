@@ -36,21 +36,23 @@ class ParamExtractorTest {
     
     @Test
     void testCheckAnnotation() {
-        ExtractorManager.Extractor extractor = Controller.class.getAnnotation(ExtractorManager.Extractor.class);
+        ExtractorManager.Extractor extractor =
+            Controller.class.getAnnotation(ExtractorManager.Extractor.class);
         AbstractRpcParamExtractor paramExtractor = ExtractorManager.getRpcExtractor(extractor);
-        assertEquals(paramExtractor.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
+        assertEquals(paramExtractor.getClass().getSimpleName(),
+            ConfigRequestParamExtractor.class.getSimpleName());
     }
     
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     public static class Controller {
         
         public void testCheckNull() {
-        
+            
         }
         
         @ExtractorManager.Extractor(httpExtractor = TestHttpChecker.class)
         public void testCheck() {
-        
+            
         }
     }
     

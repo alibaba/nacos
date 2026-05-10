@@ -32,6 +32,7 @@ import {
   CheckCircle2,
   Tag,
   GitBranch,
+  Download,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,7 @@ import { PipelineStatusDisplay } from '@/pages/skillManagement/components/Pipeli
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
+import { CliCommandCard } from '@/components/ai/CliCommandCard';
 
 function extractVariables(template: string): string[] {
   if (!template) return [];
@@ -252,6 +254,35 @@ export default function PromptDetailPage() {
     setSelectedVersion(version);
     loadVersion(version);
   };
+
+  // Download the currently selected version as a Markdown file
+  const [downloadingMd, setDownloadingMd] = useState(false);
+  const handleDownloadMarkdown = useCallback(async () => {
+    if (!selectedVersion || !promptKey) {
+      return;
+    }
+    setDownloadingMd(true);
+    try {
+      const blob = await promptApi.downloadVersion({
+        promptKey,
+        version: selectedVersion,
+        namespaceId,
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${promptKey}_${selectedVersion}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(t('prompt.downloadMarkdownSuccess'));
+    } catch {
+      toast.error(t('prompt.downloadMarkdownFailed'));
+    } finally {
+      setDownloadingMd(false);
+    }
+  }, [promptKey, selectedVersion, namespaceId, t]);
 
   // Rendered prompt with variable values
   const renderedPrompt = useMemo(() => {
@@ -944,6 +975,14 @@ export default function PromptDetailPage() {
           )}
         </div>
         <div className="space-y-4 lg:w-[320px]">
+          {/* Download & CLI Card */}
+          <CliCommandCard
+            commands={[]}
+            onDownload={handleDownloadMarkdown}
+            downloadFileName={selectedVersion ? `${promptKey}-${selectedVersion}.md` : undefined}
+            downloadDisabled={!selectedVersion || downloadingMd}
+          />
+
           {/* Basic Info Card */}
           <Card className="overflow-hidden py-0 gap-0">
             <div className="px-4 py-3 border-b bg-muted/30">
@@ -961,6 +1000,10 @@ export default function PromptDetailPage() {
                   icon={<Tag className="h-3.5 w-3.5" />}
                 />
                 <InfoCell compact label={t('prompt.publisher')} value={versionInfo?.srcUser || '-'} icon={<User className="h-3.5 w-3.5" />} />
+                <InfoCell compact label={t('prompt.downloads')} value={String(meta.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
+                {currentVersionSummary && (
+                  <InfoCell compact label={t('prompt.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
+                )}
                 <InfoCell compact label={t('prompt.commitMsg')} value={
                   isEditingDraft ? (
                     <Input

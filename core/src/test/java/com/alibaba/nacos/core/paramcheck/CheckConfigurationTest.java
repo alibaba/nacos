@@ -45,7 +45,8 @@ class CheckConfigurationTest {
     void testCheckerFilterRegistration() {
         ParamCheckerFilter checkerFilter = Mockito.mock(ParamCheckerFilter.class);
         CheckConfiguration configuration = new CheckConfiguration();
-        FilterRegistrationBean<ParamCheckerFilter> registration = configuration.checkerFilterRegistration(checkerFilter);
+        FilterRegistrationBean<ParamCheckerFilter> registration =
+            configuration.checkerFilterRegistration(checkerFilter);
         String name = (String) ReflectionTestUtils.getField(registration, "name");
         assertEquals("checkerFilter", name);
         assertEquals(8, registration.getOrder());

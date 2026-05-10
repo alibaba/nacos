@@ -55,7 +55,8 @@ class MetricsMonitorTest {
         ApplicationUtils.injectContext(context);
         when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(null);
         // add simple meterRegistry.
-        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY).add(new SimpleMeterRegistry());
+        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
+            .add(new SimpleMeterRegistry());
     }
     
     @Test
@@ -86,14 +87,17 @@ class MetricsMonitorTest {
         MetricsMonitor.getClusterServerExecutorMetric().getInQueueTaskCount().set(1);
         MetricsMonitor.getClusterServerExecutorMetric().getTaskCount().set(1);
         MetricsMonitor.getClusterServerExecutorMetric().getCompletedTaskCount().set(1);
-        assertEquals("grpcClusterServer", MetricsMonitor.getClusterServerExecutorMetric().getType());
+        assertEquals("grpcClusterServer",
+            MetricsMonitor.getClusterServerExecutorMetric().getType());
         assertEquals(1, MetricsMonitor.getClusterServerExecutorMetric().getPoolSize().get());
         assertEquals(1, MetricsMonitor.getClusterServerExecutorMetric().getMaximumPoolSize().get());
         assertEquals(1, MetricsMonitor.getClusterServerExecutorMetric().getCorePoolSize().get());
         assertEquals(1, MetricsMonitor.getClusterServerExecutorMetric().getActiveCount().get());
-        assertEquals(1, MetricsMonitor.getClusterServerExecutorMetric().getInQueueTaskCount().get());
+        assertEquals(1,
+            MetricsMonitor.getClusterServerExecutorMetric().getInQueueTaskCount().get());
         assertEquals(1, MetricsMonitor.getClusterServerExecutorMetric().getTaskCount().get());
-        assertEquals(1, MetricsMonitor.getClusterServerExecutorMetric().getCompletedTaskCount().get());
+        assertEquals(1,
+            MetricsMonitor.getClusterServerExecutorMetric().getCompletedTaskCount().get());
     }
     
     @Test
@@ -137,10 +141,11 @@ class MetricsMonitorTest {
     
     @Test
     void testRecordGrpcRequestEvent() {
-        MetricsMonitor.recordGrpcRequestEvent("TestRequest", true, 0, "java.lang.RuntimeException", "naming", 100_000L);
+        MetricsMonitor.recordGrpcRequestEvent("TestRequest", true, 0, "java.lang.RuntimeException",
+            "naming", 100_000L);
         MetricsMonitor.recordGrpcRequestEvent("TestRequest2", false, 500, null, null, 200_000L);
     }
-
+    
     @Test
     void testRefreshModuleConnectionCount() {
         // refresh

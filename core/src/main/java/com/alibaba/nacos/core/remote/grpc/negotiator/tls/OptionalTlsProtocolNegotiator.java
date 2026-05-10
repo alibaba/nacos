@@ -66,14 +66,16 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
     
     @Override
     public ChannelHandler newHandler(GrpcHttp2ConnectionHandler grpcHttp2ConnectionHandler) {
-        ChannelHandler plaintext = InternalProtocolNegotiators.serverPlaintext().newHandler(grpcHttp2ConnectionHandler);
-        ChannelHandler ssl = InternalProtocolNegotiators.serverTls(sslContext).newHandler(grpcHttp2ConnectionHandler);
+        ChannelHandler plaintext =
+            InternalProtocolNegotiators.serverPlaintext().newHandler(grpcHttp2ConnectionHandler);
+        ChannelHandler ssl = InternalProtocolNegotiators.serverTls(sslContext)
+            .newHandler(grpcHttp2ConnectionHandler);
         return new PortUnificationServerHandler(ssl, plaintext);
     }
     
     @Override
     public void close() {
-    
+        
     }
     
     @Override
@@ -113,11 +115,13 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
         }
         
         @Override
-        protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out)
+            throws Exception {
             if (in.readableBytes() < MAGIC_VALUE) {
                 return;
             }
-            Attribute<Boolean> tlsProtected = ctx.channel().attr(AttributeKey.valueOf("TLS_PROTECTED"));
+            Attribute<Boolean> tlsProtected =
+                ctx.channel().attr(AttributeKey.valueOf("TLS_PROTECTED"));
             if (isSsl(in) || !supportPlainText) {
                 tlsProtected.set(true);
                 ctx.pipeline().addAfter(ctx.name(), null, this.ssl);

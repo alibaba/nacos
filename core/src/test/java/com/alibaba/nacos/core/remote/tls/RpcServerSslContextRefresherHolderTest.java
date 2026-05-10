@@ -57,19 +57,23 @@ public class RpcServerSslContextRefresherHolderTest {
         
         // Mock the static method RpcServerTlsConfigFactory.getInstance()
         rpcServerTlsConfigFactoryMockedStatic.when(RpcServerTlsConfigFactory::getInstance)
-                .thenReturn(Mockito.mock(RpcServerTlsConfigFactory.class));
+            .thenReturn(Mockito.mock(RpcServerTlsConfigFactory.class));
         
         // Mock createSdkConfig method to return the mock sdkServerTlsConfig
-        when(RpcServerTlsConfigFactory.getInstance().createSdkConfig(any(Properties.class))).thenReturn(
+        when(RpcServerTlsConfigFactory.getInstance().createSdkConfig(any(Properties.class)))
+            .thenReturn(
                 sdkServerTlsConfig);
         
         // Mock createClusterConfig method to return the mock clusterServerTlsConfig
-        when(RpcServerTlsConfigFactory.getInstance().createClusterConfig(any(Properties.class))).thenReturn(
+        when(RpcServerTlsConfigFactory.getInstance().createClusterConfig(any(Properties.class)))
+            .thenReturn(
                 clusterServerTlsConfig);
         
         // Mock getSslContextRefresher to return specific names
-        when(sdkServerTlsConfig.getSslContextRefresher()).thenReturn(RpcSdkServerSslContextRefresherTest.NAME);
-        when(clusterServerTlsConfig.getSslContextRefresher()).thenReturn(RpcClusterServerSslContextRefresherTest.NAME);
+        when(sdkServerTlsConfig.getSslContextRefresher())
+            .thenReturn(RpcSdkServerSslContextRefresherTest.NAME);
+        when(clusterServerTlsConfig.getSslContextRefresher())
+            .thenReturn(RpcClusterServerSslContextRefresherTest.NAME);
     }
     
     /**
@@ -89,8 +93,10 @@ public class RpcServerSslContextRefresherHolderTest {
     public void testInitAndGet() throws Exception {
         // Call init method.
         callInit();
-        RpcServerSslContextRefresher sdkInstance = RpcServerSslContextRefresherHolder.getSdkInstance();
-        RpcServerSslContextRefresher clusterInstance = RpcServerSslContextRefresherHolder.getClusterInstance();
+        RpcServerSslContextRefresher sdkInstance =
+            RpcServerSslContextRefresherHolder.getSdkInstance();
+        RpcServerSslContextRefresher clusterInstance =
+            RpcServerSslContextRefresherHolder.getClusterInstance();
         
         assertEquals(RpcSdkServerSslContextRefresherTest.NAME, sdkInstance.getName());
         assertEquals(RpcClusterServerSslContextRefresherTest.NAME, clusterInstance.getName());

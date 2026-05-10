@@ -70,7 +70,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         
         try {
             Page<RoleInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
-                    new ArrayList<String>().toArray(), pageNo, pageSize, ROLE_INFO_ROW_MAPPER);
+                new ArrayList<String>().toArray(), pageNo, pageSize, ROLE_INFO_ROW_MAPPER);
             if (pageInfo == null) {
                 pageInfo = new Page<>();
                 pageInfo.setTotalCount(0);
@@ -84,7 +84,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     }
     
     @Override
-    public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
+    public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo,
+        int pageSize) {
         
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
@@ -104,8 +105,9 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         }
         
         try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                    ROLE_INFO_ROW_MAPPER);
+            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+                pageNo, pageSize,
+                ROLE_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
@@ -167,7 +169,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     @Override
     public List<String> findRolesLikeRoleName(String role) {
         String sql = "SELECT role FROM roles WHERE role LIKE ?";
-        List<String> users = this.jt.queryForList(sql, new String[] {String.format("%%%s%%", role)}, String.class);
+        List<String> users =
+            this.jt.queryForList(sql, new String[] {String.format("%%%s%%", role)}, String.class);
         return users;
     }
     
@@ -187,7 +190,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     }
     
     @Override
-    public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
+    public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo,
+        int pageSize) {
         String sqlCountRows = "SELECT count(*) FROM roles";
         String sqlFetchRows = "SELECT role, username FROM roles";
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
@@ -204,8 +208,9 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                    ROLE_INFO_ROW_MAPPER);
+            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+                pageNo, pageSize,
+                ROLE_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LOGGER.error("[db-error] " + e.toString(), e);
             throw e;

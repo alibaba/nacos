@@ -44,7 +44,7 @@ public class NacosLdapContextSource extends LdapContextSource {
     private static final String LDAPS = "ldaps";
     
     public NacosLdapContextSource(String ldapUrl, String ldapBaseDc, String userDn, String password,
-            String ldapTimeOut) {
+        String ldapTimeOut) {
         this.setUrl(ldapUrl);
         this.setBase(ldapBaseDc);
         this.setUserDn(userDn);
@@ -109,7 +109,7 @@ public class NacosLdapContextSource extends LdapContextSource {
         
         @Override
         public Socket createSocket(String s, int i, InetAddress inetAddress, int i1)
-                throws IOException {
+            throws IOException {
             return socketFactory.createSocket(s, i, inetAddress, i1);
         }
         
@@ -120,10 +120,9 @@ public class NacosLdapContextSource extends LdapContextSource {
         
         @Override
         public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1)
-                throws IOException {
+            throws IOException {
             return socketFactory.createSocket(inetAddress, i, inetAddress1, i1);
         }
     }
-    
     
 }

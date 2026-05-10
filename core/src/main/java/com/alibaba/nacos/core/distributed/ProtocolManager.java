@@ -84,7 +84,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     }
     
     public CPProtocol getCpProtocol() {
-        if (!cpInit){
+        if (!cpInit) {
             synchronized (cpLock) {
                 if (!cpInit) {
                     initCPProtocol();
@@ -149,7 +149,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     private void injectMembers4CP(Config config) {
         final Member selfMember = memberManager.getSelf();
         final String self = selfMember.getIp() + ":" + Integer
-                .parseInt(String.valueOf(selfMember.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
+            .parseInt(String.valueOf(selfMember.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
         Set<String> others = toCPMembersInfo(memberManager.allMembers());
         config.setMembers(self, others);
     }
@@ -171,10 +171,12 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
         // to avoid multiple tasks simultaneously carrying out the consistency layer of
         // node changes operation
         if (Objects.nonNull(apProtocol)) {
-            ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(event.getMembers())));
+            ProtocolExecutor
+                .apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(event.getMembers())));
         }
         if (Objects.nonNull(cpProtocol)) {
-            ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(event.getMembers())));
+            ProtocolExecutor
+                .cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(event.getMembers())));
         }
     }
 }

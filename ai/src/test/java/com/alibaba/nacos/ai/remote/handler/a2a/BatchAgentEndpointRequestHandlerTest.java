@@ -66,7 +66,8 @@ class BatchAgentEndpointRequestHandlerTest {
     
     @BeforeEach
     void setUp() {
-        requestHandler = new BatchAgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder);
+        requestHandler =
+            new BatchAgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder);
         capturedInstances = null;
     }
     
@@ -79,7 +80,7 @@ class BatchAgentEndpointRequestHandlerTest {
         BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
         AgentEndpointResponse response = requestHandler.handle(request, meta);
         assertErrorResponse(response, NacosException.INVALID_PARAM,
-                "Required parameter `agentName` can't be empty or null");
+            "Required parameter `agentName` can't be empty or null");
     }
     
     @Test
@@ -88,7 +89,7 @@ class BatchAgentEndpointRequestHandlerTest {
         request.setAgentName("test");
         AgentEndpointResponse response = requestHandler.handle(request, meta);
         assertErrorResponse(response, NacosException.INVALID_PARAM,
-                "Required parameter `endpoints` can't be empty or null, if want to deregister, please use deregister API.");
+            "Required parameter `endpoints` can't be empty or null, if want to deregister, please use deregister API.");
     }
     
     @Test
@@ -98,7 +99,7 @@ class BatchAgentEndpointRequestHandlerTest {
         request.setEndpoints(Arrays.asList());
         AgentEndpointResponse response = requestHandler.handle(request, meta);
         assertErrorResponse(response, NacosException.INVALID_PARAM,
-                "Required parameter `endpoints` can't be empty or null, if want to deregister, please use deregister API.");
+            "Required parameter `endpoints` can't be empty or null, if want to deregister, please use deregister API.");
     }
     
     @Test
@@ -111,7 +112,7 @@ class BatchAgentEndpointRequestHandlerTest {
         request.setEndpoints(Arrays.asList(endpoint));
         AgentEndpointResponse response = requestHandler.handle(request, meta);
         assertErrorResponse(response, NacosException.INVALID_PARAM,
-                "Required parameter `endpoint.version` can't be empty or null.");
+            "Required parameter `endpoint.version` can't be empty or null.");
     }
     
     @Test
@@ -134,7 +135,8 @@ class BatchAgentEndpointRequestHandlerTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
         assertTrue(response.getMessage()
-                .startsWith("Required parameter `endpoint.version` can't be different, current includes:"));
+            .startsWith(
+                "Required parameter `endpoint.version` can't be different, current includes:"));
         assertTrue(response.getMessage().contains("1.0.0"));
         assertTrue(response.getMessage().contains("2.0.0"));
     }
@@ -179,14 +181,14 @@ class BatchAgentEndpointRequestHandlerTest {
             }
             return null;
         }).when(clientOperationService)
-                .batchRegisterInstance(any(Service.class), any(List.class), eq("TEST_CONNECTION_ID"));
+            .batchRegisterInstance(any(Service.class), any(List.class), eq("TEST_CONNECTION_ID"));
         
         AgentEndpointResponse response = requestHandler.handle(request, meta);
         
         assertEquals(AiRemoteConstants.BATCH_REGISTER_ENDPOINT, response.getType());
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         verify(clientOperationService).batchRegisterInstance(any(Service.class), any(List.class),
-                eq("TEST_CONNECTION_ID"));
+            eq("TEST_CONNECTION_ID"));
         
         // Verify captured instances
         assertEquals(2, capturedInstances.size());

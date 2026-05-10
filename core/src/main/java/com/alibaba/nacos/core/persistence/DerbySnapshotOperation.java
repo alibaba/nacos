@@ -56,9 +56,11 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DerbySnapshotOperation.class);
     
-    private static final String DERBY_SNAPSHOT_SAVE = DerbySnapshotOperation.class.getSimpleName() + ".SAVE";
+    private static final String DERBY_SNAPSHOT_SAVE =
+        DerbySnapshotOperation.class.getSimpleName() + ".SAVE";
     
-    private static final String DERBY_SNAPSHOT_LOAD = DerbySnapshotOperation.class.getSimpleName() + ".LOAD";
+    private static final String DERBY_SNAPSHOT_LOAD =
+        DerbySnapshotOperation.class.getSimpleName() + ".LOAD";
     
     private final String backupSql = "CALL SYSCS_UTIL.SYSCS_BACKUP_DATABASE(?)";
     
@@ -66,7 +68,8 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     
     private final String snapshotArchive = "derby_data.zip";
     
-    private final String derbyBaseDir = Paths.get(EnvUtil.getNacosHome(), "data", PersistenceConstant.DERBY_BASE_DIR)
+    private final String derbyBaseDir =
+        Paths.get(EnvUtil.getNacosHome(), "data", PersistenceConstant.DERBY_BASE_DIR)
             .toString();
     
     private final String restoreDB = "jdbc:derby:" + derbyBaseDir;
@@ -104,8 +107,9 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 
                 callFinally.accept(writer.addFile(snapshotArchive, meta), null);
             } catch (Throwable t) {
-                LOGGER.error("Fail to compress snapshot, path={}, file list={}, {}.", writer.getPath(),
-                        writer.listFiles(), t);
+                LOGGER.error("Fail to compress snapshot, path={}, file list={}, {}.",
+                    writer.getPath(),
+                    writer.listFiles(), t);
                 callFinally.accept(false, t);
             } finally {
                 lock.unlock();
@@ -128,12 +132,14 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             LocalFileMeta fileMeta = reader.getFileMeta(snapshotArchive);
             
             if (fileMeta.getFileMeta().containsKey(checkSumKey)) {
-                if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(checkSumKey))) {
+                if (!Objects.equals(Long.toHexString(checksum.getValue()),
+                    fileMeta.get(checkSumKey))) {
                     throw new IllegalArgumentException("Snapshot checksum failed");
                 }
             }
             
-            final String loadPath = Paths.get(readerPath, snapshotDir, PersistenceConstant.DERBY_BASE_DIR).toString();
+            final String loadPath =
+                Paths.get(readerPath, snapshotDir, PersistenceConstant.DERBY_BASE_DIR).toString();
             LOGGER.info("snapshot load from : {}, and copy to : {}", loadPath, derbyBaseDir);
             
             doDerbyRestoreFromBackup(() -> {
@@ -148,7 +154,8 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             NotifyCenter.publishEvent(DerbyLoadEvent.INSTANCE);
             return true;
         } catch (final Throwable t) {
-            LOGGER.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath, reader.listFiles(), t);
+            LOGGER.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
+                reader.listFiles(), t);
             return false;
         } finally {
             lock.unlock();
@@ -160,7 +167,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
         DataSourceService sourceService = DynamicDataSource.getInstance().getDataSource();
         DataSource dataSource = sourceService.getJdbcTemplate().getDataSource();
         try (Connection holder = Objects.requireNonNull(dataSource, "dataSource").getConnection();
-             CallableStatement cs = holder.prepareCall(backupSql)) {
+            CallableStatement cs = holder.prepareCall(backupSql)) {
             cs.setString(1, backupDirectory);
             cs.execute();
         }
@@ -168,7 +175,8 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     
     private void doDerbyRestoreFromBackup(Callable<Void> callable) throws Exception {
         DataSourceService sourceService = DynamicDataSource.getInstance().getDataSource();
-        LocalDataSourceServiceImpl localDataSourceService = (LocalDataSourceServiceImpl) sourceService;
+        LocalDataSourceServiceImpl localDataSourceService =
+            (LocalDataSourceServiceImpl) sourceService;
         localDataSourceService.restoreDerby(restoreDB, callable);
     }
     

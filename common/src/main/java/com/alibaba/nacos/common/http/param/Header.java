@@ -112,7 +112,7 @@ public class Header {
         if ((list.size() & 1) != 0) {
             throw new IllegalArgumentException("list size must be a multiple of 2");
         }
-        for (int i = 0; i < list.size(); ) {
+        for (int i = 0; i < list.size();) {
             String key = list.get(i++);
             if (StringUtils.isNotEmpty(key)) {
                 header.put(key, list.get(i++));
@@ -164,7 +164,8 @@ public class Header {
         String acceptCharset = getValue(HttpHeaderConsts.ACCEPT_CHARSET);
         if (acceptCharset == null) {
             String contentType = getValue(HttpHeaderConsts.CONTENT_TYPE);
-            acceptCharset = StringUtils.isNotBlank(contentType) ? analysisCharset(contentType) : Constants.ENCODE;
+            acceptCharset = StringUtils.isNotBlank(contentType) ? analysisCharset(contentType)
+                : Constants.ENCODE;
         }
         return acceptCharset;
     }
@@ -193,4 +194,3 @@ public class Header {
         return "Header{" + "headerToMap=" + header + '}';
     }
 }
-

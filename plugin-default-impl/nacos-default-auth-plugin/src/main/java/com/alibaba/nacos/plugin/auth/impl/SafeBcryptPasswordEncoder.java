@@ -39,7 +39,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
  * @author linwumignshi
  */
 public class SafeBcryptPasswordEncoder extends BCryptPasswordEncoder {
-
+    
     @Override
     public boolean matchesNonNull(@NonNull String rawPassword, @NonNull String encodedPassword) {
         // Reject excessively long passwords immediately

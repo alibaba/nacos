@@ -29,7 +29,8 @@ class JRaftOpsTest {
     @Test
     void testSourceOfReturnsCorrectEnumForEachCommand() {
         assertEquals(JRaftOps.TRANSFER_LEADER, JRaftOps.sourceOf(JRaftConstants.TRANSFER_LEADER));
-        assertEquals(JRaftOps.RESET_RAFT_CLUSTER, JRaftOps.sourceOf(JRaftConstants.RESET_RAFT_CLUSTER));
+        assertEquals(JRaftOps.RESET_RAFT_CLUSTER,
+            JRaftOps.sourceOf(JRaftConstants.RESET_RAFT_CLUSTER));
         assertEquals(JRaftOps.DO_SNAPSHOT, JRaftOps.sourceOf(JRaftConstants.DO_SNAPSHOT));
         assertEquals(JRaftOps.REMOVE_PEER, JRaftOps.sourceOf(JRaftConstants.REMOVE_PEER));
         assertEquals(JRaftOps.REMOVE_PEERS, JRaftOps.sourceOf(JRaftConstants.REMOVE_PEERS));

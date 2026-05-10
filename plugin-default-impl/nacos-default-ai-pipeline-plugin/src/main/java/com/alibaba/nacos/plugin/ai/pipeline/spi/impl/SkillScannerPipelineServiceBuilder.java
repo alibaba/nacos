@@ -48,46 +48,50 @@ import java.util.Set;
  * @author qiacheng.cxy
  */
 public class SkillScannerPipelineServiceBuilder implements PublishPipelineServiceBuilder {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SkillScannerPipelineServiceBuilder.class);
-
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(SkillScannerPipelineServiceBuilder.class);
+    
     /**
      * Property key to override the scanner executable path or command.
      */
     private static final String PROPERTY_COMMAND = "command";
-
+    
     /**
      * Legacy alias for scanner executable path.
      */
     private static final String PROPERTY_EXECUTABLE = "executable";
-
+    
     /**
      * Legacy alias for scanner executable path.
      */
     private static final String PROPERTY_PATH = "path";
-
+    
     @Override
     public String pipelineId() {
         return "skill-scanner";
     }
-
+    
     @Override
     public PublishPipelineService build(Properties properties) {
         SkillScannerScanOptions scanOptions = SkillScannerScanOptions.fromProperties(properties);
         String resolvedCommand = resolveSkillScannerCommand(properties);
         if (StringUtils.isBlank(resolvedCommand)) {
-            LOGGER.warn("[SkillScannerPipeline] skill-scanner 未安装，插件将拒绝发布。{}", SkillScannerPipelineService.INSTALLATION_HINT);
+            LOGGER.warn("[SkillScannerPipeline] skill-scanner 未安装，插件将拒绝发布。{}",
+                SkillScannerPipelineService.INSTALLATION_HINT);
         } else {
             if (scanOptions.isUseLlm()) {
-                LOGGER.info("[SkillScannerPipeline] skill-scanner 已就绪，已启用 LLM 语义分析（--use-llm），command={}",
-                        resolvedCommand);
+                LOGGER.info(
+                    "[SkillScannerPipeline] skill-scanner 已就绪，已启用 LLM 语义分析（--use-llm），command={}",
+                    resolvedCommand);
             } else {
-                LOGGER.info("[SkillScannerPipeline] skill-scanner 已就绪，插件已加载（静态扫描），command={}", resolvedCommand);
+                LOGGER.info("[SkillScannerPipeline] skill-scanner 已就绪，插件已加载（静态扫描），command={}",
+                    resolvedCommand);
             }
         }
         return new SkillScannerPipelineService(resolvedCommand, scanOptions);
     }
-
+    
     /**
      * Resolve skill-scanner executable path from properties or PATH.
      *
@@ -101,10 +105,10 @@ public class SkillScannerPipelineServiceBuilder implements PublishPipelineServic
                 return resolved;
             }
         }
-
+        
         return resolveCandidate(SkillScannerPipelineService.DEFAULT_SKILL_SCANNER_CMD);
     }
-
+    
     private List<String> getConfiguredCandidates(Properties properties) {
         Set<String> result = new LinkedHashSet<>();
         addConfiguredCandidate(result, properties.getProperty(PROPERTY_COMMAND));
@@ -112,18 +116,18 @@ public class SkillScannerPipelineServiceBuilder implements PublishPipelineServic
         addConfiguredCandidate(result, properties.getProperty(PROPERTY_PATH));
         return new ArrayList<>(result);
     }
-
+    
     private void addConfiguredCandidate(Set<String> candidates, String value) {
         if (StringUtils.isNotBlank(value)) {
             candidates.add(value.trim());
         }
     }
-
+    
     private String resolveCandidate(String candidate) {
         if (StringUtils.isBlank(candidate)) {
             return null;
         }
-
+        
         String expanded = expandHome(candidate.trim());
         if (containsPathSeparator(expanded)) {
             Path path = Paths.get(expanded).toAbsolutePath().normalize();
@@ -133,22 +137,22 @@ public class SkillScannerPipelineServiceBuilder implements PublishPipelineServic
             LOGGER.debug("[SkillScannerPipeline] skill-scanner 路径不存在或不可执行: {}", path);
             return null;
         }
-
+        
         String pathResolved = findExecutableInPath(expanded);
         if (StringUtils.isNotBlank(pathResolved)) {
             return pathResolved;
         }
-
+        
         LOGGER.debug("[SkillScannerPipeline] 在 PATH 中未找到命令: {}", expanded);
         return null;
     }
-
+    
     private String findExecutableInPath(String command) {
         String pathEnv = System.getenv("PATH");
         if (StringUtils.isBlank(pathEnv)) {
             return null;
         }
-
+        
         String userHome = System.getProperty("user.home", "");
         Set<String> directories = new LinkedHashSet<>();
         for (String each : pathEnv.split(File.pathSeparator)) {
@@ -159,7 +163,7 @@ public class SkillScannerPipelineServiceBuilder implements PublishPipelineServic
         if (StringUtils.isNotBlank(userHome)) {
             directories.add(Paths.get(userHome, ".local", "bin").toString());
         }
-
+        
         for (String each : directories) {
             Path candidate = Paths.get(expandHome(each), command).toAbsolutePath().normalize();
             if (Files.isRegularFile(candidate) && Files.isExecutable(candidate)) {
@@ -168,11 +172,12 @@ public class SkillScannerPipelineServiceBuilder implements PublishPipelineServic
         }
         return null;
     }
-
+    
     private boolean containsPathSeparator(String candidate) {
-        return candidate.contains(File.separator) || candidate.contains("/") || candidate.contains("\\");
+        return candidate.contains(File.separator) || candidate.contains("/")
+            || candidate.contains("\\");
     }
-
+    
     private String expandHome(String candidate) {
         if (candidate.startsWith("~/")) {
             String userHome = System.getProperty("user.home", "");

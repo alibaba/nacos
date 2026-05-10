@@ -51,7 +51,7 @@ class NamingGrpcResourceParserTest {
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
         assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties()
-                .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+            .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -65,7 +65,7 @@ class NamingGrpcResourceParserTest {
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
         assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties()
-                .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+            .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -79,7 +79,7 @@ class NamingGrpcResourceParserTest {
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
         assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties()
-                .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+            .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -93,7 +93,7 @@ class NamingGrpcResourceParserTest {
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
         assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties()
-                .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+            .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -107,7 +107,7 @@ class NamingGrpcResourceParserTest {
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
         assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties()
-                .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+            .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -121,7 +121,7 @@ class NamingGrpcResourceParserTest {
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
         assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties()
-                .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+            .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -135,7 +135,7 @@ class NamingGrpcResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
         assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties()
-                .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+            .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -149,7 +149,7 @@ class NamingGrpcResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
         assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties()
-                .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+            .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     private AbstractNamingRequest mockNamingRequest(String testNs, String testG, String testS) {
@@ -177,6 +177,6 @@ class NamingGrpcResourceParserTest {
     }
     
     private class MockNamingRequest extends AbstractNamingRequest {
-    
+        
     }
 }

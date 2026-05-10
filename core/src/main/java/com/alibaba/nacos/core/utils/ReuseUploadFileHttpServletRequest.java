@@ -33,7 +33,8 @@ import java.util.Objects;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ReuseUploadFileHttpServletRequest extends StandardMultipartHttpServletRequest implements ReuseHttpRequest {
+public class ReuseUploadFileHttpServletRequest extends StandardMultipartHttpServletRequest
+    implements ReuseHttpRequest {
     
     private static final String DEFAULT_FILE_NAME = "file";
     
@@ -75,7 +76,8 @@ public class ReuseUploadFileHttpServletRequest extends StandardMultipartHttpServ
             return parts;
         } else {
             // The content-type for the configuration publication might be "multipart/form-data"
-            return HttpUtils.encodingParams(HttpUtils.translateParameterMap(stringMap), StandardCharsets.UTF_8.name());
+            return HttpUtils.encodingParams(HttpUtils.translateParameterMap(stringMap),
+                StandardCharsets.UTF_8.name());
         }
     }
 }

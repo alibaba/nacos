@@ -26,10 +26,10 @@ class NameThreadFactoryTest {
     void test() {
         NameThreadFactory threadFactory = new NameThreadFactory("test");
         Thread t1 = threadFactory.newThread(() -> {
-        
+            
         });
         Thread t2 = threadFactory.newThread(() -> {
-        
+            
         });
         
         assertEquals("test.0", t1.getName());

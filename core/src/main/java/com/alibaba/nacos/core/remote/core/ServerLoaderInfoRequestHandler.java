@@ -42,20 +42,23 @@ import java.util.Map;
  */
 @Component
 @InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
-public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderInfoRequest, ServerLoaderInfoResponse> {
+public class ServerLoaderInfoRequestHandler
+    extends RequestHandler<ServerLoaderInfoRequest, ServerLoaderInfoResponse> {
     
     @Autowired
     private ConnectionManager connectionManager;
     
     @Override
     @Secured(resource = "serverLoader", signType = SignType.SPECIFIED, apiType = ApiType.INNER_API)
-    public ServerLoaderInfoResponse handle(ServerLoaderInfoRequest request, RequestMeta meta) throws NacosException {
+    public ServerLoaderInfoResponse handle(ServerLoaderInfoRequest request, RequestMeta meta)
+        throws NacosException {
         ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
-        serverLoaderInfoResponse.putMetricsValue("conCount", String.valueOf(connectionManager.currentClientsCount()));
+        serverLoaderInfoResponse.putMetricsValue("conCount",
+            String.valueOf(connectionManager.currentClientsCount()));
         Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         serverLoaderInfoResponse.putMetricsValue("sdkConCount",
-                String.valueOf(connectionManager.currentClientsCount(filter)));
+            String.valueOf(connectionManager.currentClientsCount(filter)));
         serverLoaderInfoResponse.putMetricsValue("load", String.valueOf(EnvUtil.getLoad()));
         serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(EnvUtil.getCpu()));
         

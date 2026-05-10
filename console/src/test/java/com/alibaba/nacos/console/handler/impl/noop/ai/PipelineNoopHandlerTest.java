@@ -47,7 +47,7 @@ class PipelineNoopHandlerTest {
     @Test
     void getPipelineShouldThrow501() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> handler.getPipeline("any-id"));
+            () -> handler.getPipeline("any-id"));
         assertEquals(501, ex.getErrCode());
         assertEquals(ErrorCode.API_FUNCTION_DISABLED.getCode(), ex.getDetailErrCode());
     }
@@ -55,7 +55,7 @@ class PipelineNoopHandlerTest {
     @Test
     void listPipelinesShouldThrow501() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> handler.listPipelines("type", "name", "ns", "v1", 1, 10));
+            () -> handler.listPipelines("type", "name", "ns", "v1", 1, 10));
         assertEquals(501, ex.getErrCode());
         assertEquals(ErrorCode.API_FUNCTION_DISABLED.getCode(), ex.getDetailErrCode());
     }

@@ -47,34 +47,38 @@ public class NacosTracePluginManager {
     
     private NacosTracePluginManager() {
         this.traceSubscribers = new ConcurrentHashMap<>();
-        Collection<NacosTraceSubscriber> plugins = NacosServiceLoader.load(NacosTraceSubscriber.class);
+        Collection<NacosTraceSubscriber> plugins =
+            NacosServiceLoader.load(NacosTraceSubscriber.class);
         for (NacosTraceSubscriber each : plugins) {
             this.traceSubscribers.put(each.getName(), each);
-            LOGGER.info("[TracePluginManager] Load NacosTraceSubscriber({}) name({}) successfully.", each.getClass(),
-                    each.getName());
+            LOGGER.info("[TracePluginManager] Load NacosTraceSubscriber({}) name({}) successfully.",
+                each.getClass(),
+                each.getName());
         }
     }
     
     public static NacosTracePluginManager getInstance() {
         return INSTANCE;
     }
-
+    
     public Collection<NacosTraceSubscriber> getAllTraceSubscribers() {
         Optional<PluginStateChecker> checker = PluginStateCheckerHolder.getInstance();
         if (checker.isPresent()) {
             return traceSubscribers.values().stream()
-                    .filter(subscriber -> {
-                        boolean enabled = checker.get().isPluginEnabled(PluginType.TRACE.getType(), subscriber.getName());
-                        if (!enabled) {
-                            LOGGER.debug("[TracePluginManager] Plugin TRACE:{} is disabled", subscriber.getName());
-                        }
-                        return enabled;
-                    })
-                    .collect(Collectors.toSet());
+                .filter(subscriber -> {
+                    boolean enabled = checker.get().isPluginEnabled(PluginType.TRACE.getType(),
+                        subscriber.getName());
+                    if (!enabled) {
+                        LOGGER.debug("[TracePluginManager] Plugin TRACE:{} is disabled",
+                            subscriber.getName());
+                    }
+                    return enabled;
+                })
+                .collect(Collectors.toSet());
         }
         return new HashSet<>(traceSubscribers.values());
     }
-
+    
     /**
      * Get all trace subscribers without filtering.
      *

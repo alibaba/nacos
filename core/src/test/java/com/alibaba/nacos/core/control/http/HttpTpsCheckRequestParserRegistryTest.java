@@ -44,6 +44,7 @@ class HttpTpsCheckRequestParserRegistryTest {
     @Test
     void testRegisterAndGetParser() {
         HttpTpsCheckRequestParser parser = new HttpTpsCheckRequestParser() {
+            
             @Override
             public TpsCheckRequest parse(HttpServletRequest httpServletRequest) {
                 return new TpsCheckRequest();
@@ -73,6 +74,7 @@ class HttpTpsCheckRequestParserRegistryTest {
     @Test
     void testRegisterReplacesPrevious() {
         HttpTpsCheckRequestParser first = new HttpTpsCheckRequestParser() {
+            
             @Override
             public TpsCheckRequest parse(HttpServletRequest httpServletRequest) {
                 return new TpsCheckRequest();
@@ -89,6 +91,7 @@ class HttpTpsCheckRequestParserRegistryTest {
             }
         };
         HttpTpsCheckRequestParser second = new HttpTpsCheckRequestParser() {
+            
             @Override
             public TpsCheckRequest parse(HttpServletRequest httpServletRequest) {
                 return new TpsCheckRequest();

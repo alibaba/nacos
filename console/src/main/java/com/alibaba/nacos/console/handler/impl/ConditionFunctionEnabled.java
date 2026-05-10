@@ -51,12 +51,12 @@ public class ConditionFunctionEnabled implements Condition {
         // microservice mode enables both config and naming
         if (EnvUtil.FUNCTION_MODE_MICROSERVICE.equalsIgnoreCase(functionMode)) {
             return EnvUtil.FUNCTION_MODE_CONFIG.equalsIgnoreCase(targetFunctionMode)
-                    || EnvUtil.FUNCTION_MODE_NAMING.equalsIgnoreCase(targetFunctionMode);
+                || EnvUtil.FUNCTION_MODE_NAMING.equalsIgnoreCase(targetFunctionMode);
         }
         // ai mode depends on both config and naming
         if (EnvUtil.FUNCTION_MODE_AI.equalsIgnoreCase(functionMode)) {
             return EnvUtil.FUNCTION_MODE_CONFIG.equalsIgnoreCase(targetFunctionMode)
-                    || EnvUtil.FUNCTION_MODE_NAMING.equalsIgnoreCase(targetFunctionMode);
+                || EnvUtil.FUNCTION_MODE_NAMING.equalsIgnoreCase(targetFunctionMode);
         }
         return false;
     }

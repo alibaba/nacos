@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
 import com.alibaba.nacos.ai.form.prompt.PromptSubmitForm;
 import com.alibaba.nacos.ai.form.prompt.PromptVersionPublishForm;
 import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
+import com.alibaba.nacos.ai.utils.PromptMarkdownBuilder;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
@@ -49,6 +50,7 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -86,7 +88,8 @@ public class ConsolePromptController {
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Boolean> deletePrompt(PromptForm form, HttpServletRequest request) throws NacosException {
+    public Result<Boolean> deletePrompt(PromptForm form, HttpServletRequest request)
+        throws NacosException {
         form.validate();
         String srcUser = request.getRemoteUser();
         String srcIp = request.getRemoteAddr();
@@ -110,7 +113,8 @@ public class ConsolePromptController {
      */
     @GetMapping("/versions")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Page<PromptVersionSummary>> listPromptVersions(PromptHistoryForm form) throws NacosException {
+    public Result<Page<PromptVersionSummary>> listPromptVersions(PromptHistoryForm form)
+        throws NacosException {
         form.validate();
         Page<PromptVersionSummary> result = promptProxy.listPromptVersions(form);
         return Result.success(result);
@@ -125,7 +129,8 @@ public class ConsolePromptController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<PromptMetaInfo> getPromptGovernanceDetail(PromptForm form) throws NacosException {
         form.validate();
-        return Result.success(promptProxy.getPromptGovernanceDetail(form.getNamespaceId(), form.getPromptKey()));
+        return Result.success(
+            promptProxy.getPromptGovernanceDetail(form.getNamespaceId(), form.getPromptKey()));
     }
     
     /**
@@ -136,7 +141,26 @@ public class ConsolePromptController {
     public Result<PromptVersionInfo> getVersionDetail(PromptQueryForm form) throws NacosException {
         form.validate();
         return Result.success(
-                promptProxy.getVersionDetail(form.getNamespaceId(), form.getPromptKey(), form.getVersion()));
+            promptProxy.getVersionDetail(form.getNamespaceId(), form.getPromptKey(),
+                form.getVersion()));
+    }
+    
+    /**
+     * Download a specific prompt version as a Markdown document.
+     *
+     * @param form the prompt query form containing promptKey and version
+     * @return Markdown file as ResponseEntity
+     * @throws NacosException if the prompt or version is not found
+     */
+    @GetMapping("/version/download")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public ResponseEntity<byte[]> downloadPromptVersion(PromptQueryForm form)
+        throws NacosException {
+        form.validate();
+        PromptVersionInfo info =
+            promptProxy.downloadPromptVersion(form.getNamespaceId(), form.getPromptKey(),
+                form.getVersion());
+        return PromptMarkdownBuilder.buildMarkdownResponse(info);
     }
     
     /**
@@ -146,9 +170,11 @@ public class ConsolePromptController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> createDraft(PromptDraftCreateForm form) throws NacosException {
         form.validate();
-        String version = promptProxy.createDraft(form.getNamespaceId(), form.getPromptKey(), form.getBasedOnVersion(),
-                form.getTargetVersion(), form.getTemplate(), parseVariables(form.getVariables()), form.getCommitMsg(),
-                form.getDescription(), form.getBizTags());
+        String version = promptProxy.createDraft(form.getNamespaceId(), form.getPromptKey(),
+            form.getBasedOnVersion(),
+            form.getTargetVersion(), form.getTemplate(), parseVariables(form.getVariables()),
+            form.getCommitMsg(),
+            form.getDescription(), form.getBizTags());
         return Result.success(version);
     }
     
@@ -160,7 +186,7 @@ public class ConsolePromptController {
     public Result<String> updateDraft(PromptDraftUpdateForm form) throws NacosException {
         form.validate();
         promptProxy.updateDraft(form.getNamespaceId(), form.getPromptKey(), form.getTemplate(),
-                parseVariables(form.getVariables()), form.getCommitMsg());
+            parseVariables(form.getVariables()), form.getCommitMsg());
         return Result.success("ok");
     }
     
@@ -182,7 +208,8 @@ public class ConsolePromptController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> submit(PromptSubmitForm form) throws NacosException {
         form.validate();
-        String result = promptProxy.submit(form.getNamespaceId(), form.getPromptKey(), form.getVersion());
+        String result =
+            promptProxy.submit(form.getNamespaceId(), form.getPromptKey(), form.getVersion());
         return Result.success(result);
     }
     
@@ -194,7 +221,8 @@ public class ConsolePromptController {
     public Result<String> publish(PromptVersionPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        promptProxy.publish(form.getNamespaceId(), form.getPromptKey(), form.getVersion(), updateLatest);
+        promptProxy.publish(form.getNamespaceId(), form.getPromptKey(), form.getVersion(),
+            updateLatest);
         return Result.success("ok");
     }
     
@@ -203,11 +231,13 @@ public class ConsolePromptController {
      */
     @PostMapping("/force-publish")
     @Secured(resource = Constants.Prompt.CONSOLE_PATH
-            + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        apiType = ApiType.CONSOLE_API)
     public Result<String> forcePublish(PromptVersionPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        promptProxy.forcePublish(form.getNamespaceId(), form.getPromptKey(), form.getVersion(), updateLatest);
+        promptProxy.forcePublish(form.getNamespaceId(), form.getPromptKey(), form.getVersion(),
+            updateLatest);
         return Result.success("ok");
     }
     
@@ -218,7 +248,8 @@ public class ConsolePromptController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> online(PromptOnlineForm form) throws NacosException {
         form.validate();
-        promptProxy.changeOnlineStatus(form.getNamespaceId(), form.getPromptKey(), form.getVersion(), true);
+        promptProxy.changeOnlineStatus(form.getNamespaceId(), form.getPromptKey(),
+            form.getVersion(), true);
         return Result.success("ok");
     }
     
@@ -229,7 +260,8 @@ public class ConsolePromptController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> offline(PromptOnlineForm form) throws NacosException {
         form.validate();
-        promptProxy.changeOnlineStatus(form.getNamespaceId(), form.getPromptKey(), form.getVersion(), false);
+        promptProxy.changeOnlineStatus(form.getNamespaceId(), form.getPromptKey(),
+            form.getVersion(), false);
         return Result.success("ok");
     }
     
@@ -250,9 +282,11 @@ public class ConsolePromptController {
      */
     @PutMapping("/description")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<String> updateDescription(PromptDescriptionUpdateForm form) throws NacosException {
+    public Result<String> updateDescription(PromptDescriptionUpdateForm form)
+        throws NacosException {
         form.validate();
-        promptProxy.updateDescription(form.getNamespaceId(), form.getPromptKey(), form.getDescription());
+        promptProxy.updateDescription(form.getNamespaceId(), form.getPromptKey(),
+            form.getDescription());
         return Result.success("ok");
     }
     

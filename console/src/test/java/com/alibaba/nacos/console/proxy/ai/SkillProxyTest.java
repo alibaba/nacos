@@ -86,10 +86,11 @@ public class SkillProxyTest {
         form.setVersion("v1");
         
         NacosApiException expectedException = new NacosApiException(NacosException.NOT_FOUND,
-                com.alibaba.nacos.api.model.v2.ErrorCode.RESOURCE_NOT_FOUND, "version not found");
+            com.alibaba.nacos.api.model.v2.ErrorCode.RESOURCE_NOT_FOUND, "version not found");
         doThrow(expectedException).when(skillHandler).forcePublish(any(SkillPublishForm.class));
         
-        NacosApiException ex = assertThrows(NacosApiException.class, () -> skillProxy.forcePublish(form));
+        NacosApiException ex =
+            assertThrows(NacosApiException.class, () -> skillProxy.forcePublish(form));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
     }
     
@@ -109,7 +110,7 @@ public class SkillProxyTest {
         item.setName(SKILL_NAME);
         page.setPageItems(java.util.List.of(item));
         when(skillHandler.listSkills(any(SkillListForm.class), any(AiResourceFilterableForm.class),
-                any(PageForm.class))).thenReturn(page);
+            any(PageForm.class))).thenReturn(page);
         
         Page<SkillSummary> result = skillProxy.listSkills(listForm, filterableForm, pageForm);
         

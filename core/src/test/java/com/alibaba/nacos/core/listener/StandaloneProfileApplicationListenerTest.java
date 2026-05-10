@@ -38,7 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 0.2.2
  */
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = StandaloneProfileApplicationListenerTest.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(classes = StandaloneProfileApplicationListenerTest.class,
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class StandaloneProfileApplicationListenerTest {
     
     @Autowired

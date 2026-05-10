@@ -31,38 +31,38 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class OptionalTlsProtocolNegotiatorTest {
-
+    
     @Mock
     private SslContext sslContext;
-
+    
     @Mock
     private RpcServerTlsConfig config;
-
+    
     private OptionalTlsProtocolNegotiator negotiator;
-
+    
     @BeforeEach
     void setUp() {
         when(config.getCompatibility()).thenReturn(true);
         negotiator = new OptionalTlsProtocolNegotiator(sslContext, config);
     }
-
+    
     @Test
     void testScheme() {
         AsciiString scheme = negotiator.scheme();
         assertNotNull(scheme);
         assertEquals("https", scheme.toString());
     }
-
+    
     @Test
     void testClose() {
         negotiator.close();
     }
-
+    
     @Test
     void testSetSslContext() {
         negotiator.setSslContext(sslContext);
     }
-
+    
     @Test
     void testReloadNegotiatorWhenTlsDisabled() {
         when(config.getEnableTls()).thenReturn(false);

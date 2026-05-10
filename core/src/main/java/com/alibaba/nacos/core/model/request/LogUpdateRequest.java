@@ -51,12 +51,14 @@ public class LogUpdateRequest implements NacosForm {
     @Override
     public void validate() throws NacosApiException {
         if (StringUtils.isBlank(logName)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Log name is required.");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Log name is required.");
         }
         if (StringUtils.isBlank(logLevel)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Log level is required.");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Log level is required.");
         }
     }
 }

@@ -34,8 +34,9 @@ import java.util.concurrent.TimeUnit;
 public class CmdbExecutor {
     
     private static final ScheduledExecutorService GLOBAL_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(CmdbApp.class), EnvUtil.getAvailableProcessors(),
-                    new NameThreadFactory("com.alibaba.nacos.cmdb.global.executor"));
+        .newScheduledExecutorService(ClassUtils.getCanonicalName(CmdbApp.class),
+            EnvUtil.getAvailableProcessors(),
+            new NameThreadFactory("com.alibaba.nacos.cmdb.global.executor"));
     
     public static void scheduleCmdbTask(Runnable runnable, long delay, TimeUnit unit) {
         GLOBAL_EXECUTOR.schedule(runnable, delay, unit);

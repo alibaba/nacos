@@ -63,7 +63,8 @@ class CachedJwtTokenManagerTest {
         cachedJwtTokenManager = new CachedJwtTokenManager(jwtTokenManager);
         when(jwtTokenManager.getTokenValidityInSeconds()).thenReturn(100L);
         when(jwtTokenManager.getTokenTtlInSeconds(anyString())).thenReturn(100L);
-        when(jwtTokenManager.getExpiredTimeInSeconds(anyString())).thenReturn(System.currentTimeMillis());
+        when(jwtTokenManager.getExpiredTimeInSeconds(anyString()))
+            .thenReturn(System.currentTimeMillis());
         when(jwtTokenManager.getAuthentication(anyString())).thenReturn(authentication);
         when(jwtTokenManager.parseToken(anyString())).thenReturn(user);
         when(jwtTokenManager.createToken(anyString())).thenReturn("token");
@@ -104,7 +105,7 @@ class CachedJwtTokenManagerTest {
     void testGetTokenValidityInSeconds() {
         assertTrue(cachedJwtTokenManager.getTokenValidityInSeconds() > 0);
     }
-
+    
     @Test
     void testCreateTokenReturnsCachedWhenNotExpired() throws Exception {
         cachedJwtTokenManager.createToken("nacos");
@@ -112,45 +113,45 @@ class CachedJwtTokenManagerTest {
         String secondToken = cachedJwtTokenManager.createToken("nacos");
         assertEquals("token", secondToken);
     }
-
+    
     @Test
     void testGetAuthenticationFallsBackWhenNotCached() throws AccessException {
         Authentication result = cachedJwtTokenManager.getAuthentication("uncached-token");
         assertNotNull(result);
     }
-
+    
     @Test
     void testGetAuthenticationReturnsCachedEntry() throws Exception {
         cachedJwtTokenManager.createToken("nacos");
         Authentication result = cachedJwtTokenManager.getAuthentication("token");
         assertNotNull(result);
     }
-
+    
     @Test
     void testParseTokenFallsBackWhenNotCached() throws AccessException {
         NacosUser result = cachedJwtTokenManager.parseToken("uncached-token");
         assertNotNull(result);
     }
-
+    
     @Test
     void testGetTokenTtlFallsBackWhenNotCached() throws AccessException {
         long ttl = cachedJwtTokenManager.getTokenTtlInSeconds("uncached-token");
         assertTrue(ttl > 0);
     }
-
+    
     @Test
     void testGetTokenTtlReturnsCachedValue() throws Exception {
         cachedJwtTokenManager.createToken("nacos");
         long ttl = cachedJwtTokenManager.getTokenTtlInSeconds("token");
         assertTrue(ttl > 0);
     }
-
+    
     @Test
     void testValidateTokenSkipsWhenCached() throws Exception {
         cachedJwtTokenManager.createToken("nacos");
         assertDoesNotThrow(() -> cachedJwtTokenManager.validateToken("token"));
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void testValidateTokenSafeWhenCacheEvictedConcurrently() throws Exception {
@@ -161,7 +162,7 @@ class CachedJwtTokenManagerTest {
         tokenMap.clear();
         assertDoesNotThrow(() -> cachedJwtTokenManager.validateToken("token"));
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void testCreateTokenSafeWhenCacheEvictedConcurrently() throws Exception {
@@ -172,7 +173,7 @@ class CachedJwtTokenManagerTest {
         userMap.clear();
         assertDoesNotThrow(() -> cachedJwtTokenManager.createToken("nacos"));
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void testGetAuthenticationSafeWhenCacheEvictedConcurrently() throws Exception {
@@ -183,7 +184,7 @@ class CachedJwtTokenManagerTest {
         tokenMap.clear();
         assertDoesNotThrow(() -> cachedJwtTokenManager.getAuthentication("token"));
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void testParseTokenSafeWhenCacheEvictedConcurrently() throws Exception {
@@ -194,7 +195,7 @@ class CachedJwtTokenManagerTest {
         tokenMap.clear();
         assertDoesNotThrow(() -> cachedJwtTokenManager.parseToken("token"));
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void testGetTokenTtlSafeWhenCacheEvictedConcurrently() throws Exception {
@@ -205,5 +206,5 @@ class CachedJwtTokenManagerTest {
         tokenMap.clear();
         assertDoesNotThrow(() -> cachedJwtTokenManager.getTokenTtlInSeconds("token"));
     }
-
+    
 }

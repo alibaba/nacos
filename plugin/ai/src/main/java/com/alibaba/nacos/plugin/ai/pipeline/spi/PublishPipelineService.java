@@ -36,14 +36,14 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
  * @since 3.2.0
  */
 public interface PublishPipelineService {
-
+    
     /**
      * Unique identifier for this pipeline plugin, e.g. "ai-review", "manual-confirm".
      *
      * @return pipeline plugin id
      */
     String pipelineId();
-
+    
     /**
      * Execute the review/interception logic.
      *
@@ -51,7 +51,7 @@ public interface PublishPipelineService {
      * @return review result with passed status and comments
      */
     PublishPipelineResult execute(PublishPipelineContext context);
-
+    
     /**
      * Execution order. Lower values execute first.
      * Inspired by {@code ConfigChangePluginService.getOrder()}.
@@ -59,7 +59,7 @@ public interface PublishPipelineService {
      * @return order value
      */
     int getPreferOrder();
-
+    
     /**
      * Declare the resource types this plugin supports for review.
      * Inspired by {@code ConfigChangePluginService.pointcutMethodNames()},
@@ -69,4 +69,3 @@ public interface PublishPipelineService {
      */
     PublishPipelineResourceType[] pipelineResourceTypes();
 }
-

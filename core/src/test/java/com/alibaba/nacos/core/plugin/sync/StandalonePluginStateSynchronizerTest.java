@@ -38,51 +38,54 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class StandalonePluginStateSynchronizerTest {
-
+    
     @Mock
     private PluginStatePersistenceService persistence;
-
+    
     @Mock
     private PluginStateApplier applier;
-
+    
     private StandalonePluginStateSynchronizer synchronizer;
-
+    
     @BeforeEach
     void setUp() {
         synchronizer = new StandalonePluginStateSynchronizer(persistence, applier);
     }
-
+    
     @Test
     void syncStateChangeSuccess() throws NacosApiException {
         synchronizer.syncStateChange("auth:nacos", true);
-
+        
         verify(applier).applyStateChange("auth:nacos", true);
         verify(persistence).saveState(eq("auth:nacos"), eq(true));
     }
-
+    
     @Test
     void syncStateChangePersistenceThrows() {
-        doThrow(new PluginPersistenceException("save failed")).when(persistence).saveState(any(), anyBoolean());
-
-        assertThrows(NacosApiException.class, () -> synchronizer.syncStateChange("auth:nacos", false));
+        doThrow(new PluginPersistenceException("save failed")).when(persistence).saveState(any(),
+            anyBoolean());
+        
+        assertThrows(NacosApiException.class,
+            () -> synchronizer.syncStateChange("auth:nacos", false));
     }
-
+    
     @Test
     void syncConfigChangeSuccess() throws NacosApiException {
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-
+        
         synchronizer.syncConfigChange("trace:otel", config);
-
+        
         verify(applier).applyConfigChange("trace:otel", config);
         verify(persistence).saveConfig(eq("trace:otel"), eq(config));
     }
-
+    
     @Test
     void syncConfigChangePersistenceThrows() {
-        doThrow(new PluginPersistenceException("save config failed")).when(persistence).saveConfig(any(), anyMap());
-
+        doThrow(new PluginPersistenceException("save config failed")).when(persistence)
+            .saveConfig(any(), anyMap());
+        
         assertThrows(NacosApiException.class,
-                () -> synchronizer.syncConfigChange("trace:otel", Collections.singletonMap("k", "v")));
+            () -> synchronizer.syncConfigChange("trace:otel", Collections.singletonMap("k", "v")));
     }
 }

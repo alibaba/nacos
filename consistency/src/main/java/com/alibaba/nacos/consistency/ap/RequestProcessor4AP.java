@@ -25,5 +25,5 @@ import com.alibaba.nacos.consistency.RequestProcessor;
  */
 @SuppressWarnings("all")
 public abstract class RequestProcessor4AP extends RequestProcessor {
-
+    
 }

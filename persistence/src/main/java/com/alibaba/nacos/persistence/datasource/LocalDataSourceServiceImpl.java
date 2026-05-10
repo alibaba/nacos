@@ -59,7 +59,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     private final String password = "nacos";
     
-    private final String derbyBaseDir = "data" + File.separator + PersistenceConstant.DERBY_BASE_DIR;
+    private final String derbyBaseDir =
+        "data" + File.separator + PersistenceConstant.DERBY_BASE_DIR;
     
     private final String derbyShutdownErrMsg = "Derby system shutdown.";
     
@@ -82,7 +83,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         }
         if (!initialize) {
             LOGGER.info("use local db service for init");
-            final String jdbcUrl = "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir) + ";create=true";
+            final String jdbcUrl =
+                "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir) + ";create=true";
             initialize(jdbcUrl);
             initialize = true;
         }
@@ -100,7 +102,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             if (LOGGER.isErrorEnabled()) {
                 LOGGER.error(e.getMessage(), e);
             }
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "load derby-schema.sql error.", e);
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                "load derby-schema.sql error.", e);
         }
     }
     
@@ -116,7 +119,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     public void cleanAndReopenDerby() throws Exception {
         doDerbyClean();
         final String jdbcUrl =
-                "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString() + ";create=true";
+            "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
+                + ";create=true";
         initialize(jdbcUrl);
     }
     
@@ -147,7 +151,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     private synchronized void initialize(String jdbcUrl) {
-        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(EnvUtil.getEnvironment());
+        DataSourcePoolProperties poolProperties =
+            DataSourcePoolProperties.build(EnvUtil.getEnvironment());
         poolProperties.setDriverClassName(jdbcDriverName);
         poolProperties.setJdbcUrl(jdbcUrl);
         poolProperties.setUsername(userName);
@@ -187,7 +192,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     @Override
     public String getCurrentDbUrl() {
-        return "jdbc:derby:" + EnvUtil.getNacosHome() + File.separator + derbyBaseDir + ";create=true";
+        return "jdbc:derby:" + EnvUtil.getNacosHome() + File.separator + derbyBaseDir
+            + ";create=true";
     }
     
     @Override
@@ -216,7 +222,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         InputStream sqlFileIn = null;
         try {
             File file = new File(
-                    EnvUtil.getNacosHome() + File.separator + "conf" + File.separator + "derby-schema.sql");
+                EnvUtil.getNacosHome() + File.separator + "conf" + File.separator
+                    + "derby-schema.sql");
             if (StringUtils.isBlank(EnvUtil.getNacosHome()) || !file.exists()) {
                 ClassLoader classLoader = getClass().getClassLoader();
                 URL url = classLoader.getResource(sqlFile);

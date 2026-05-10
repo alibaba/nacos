@@ -75,8 +75,11 @@ class NamespaceInnerHandlerTest {
     
     @Test
     void createNamespace() throws NacosException {
-        when(namespaceOperationService.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC)).thenReturn(true);
-        assertTrue(namespaceInnerHandler.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC));
+        when(
+            namespaceOperationService.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC))
+            .thenReturn(true);
+        assertTrue(
+            namespaceInnerHandler.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC));
     }
     
     @Test
@@ -85,7 +88,8 @@ class NamespaceInnerHandlerTest {
         namespaceForm.setNamespaceId(NAMESPACE_ID);
         namespaceForm.setNamespaceName(NAMESPACE_NAME);
         namespaceForm.setNamespaceDesc(NAMESPACE_DESC);
-        when(namespaceOperationService.editNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC)).thenReturn(true);
+        when(namespaceOperationService.editNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC))
+            .thenReturn(true);
         assertTrue(namespaceInnerHandler.updateNamespace(namespaceForm));
     }
     

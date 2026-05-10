@@ -54,7 +54,8 @@ public class A2aProxy {
      * @param agentCardForm agent card form
      * @throws NacosException exception when register agent card
      */
-    public void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm) throws NacosException {
+    public void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm)
+        throws NacosException {
         a2aHandler.registerAgent(agentCard, agentCardForm);
     }
     
@@ -66,15 +67,18 @@ public class A2aProxy {
         a2aHandler.deleteAgent(form);
     }
     
-    public void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form) throws NacosException {
+    public void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form)
+        throws NacosException {
         a2aHandler.updateAgentCard(agentCard, form);
     }
     
-    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
+    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm)
+        throws NacosException {
         return a2aHandler.listAgents(agentListForm, pageForm);
     }
     
-    public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException {
+    public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name)
+        throws NacosException {
         return a2aHandler.listAgentVersions(namespaceId, name);
     }
 }

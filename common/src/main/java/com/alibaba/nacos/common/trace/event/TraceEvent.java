@@ -57,7 +57,8 @@ public class TraceEvent extends Event {
         return name;
     }
     
-    public TraceEvent(String eventType, long eventTime, String namespace, String group, String name) {
+    public TraceEvent(String eventType, long eventTime, String namespace, String group,
+        String name) {
         this.type = eventType;
         this.eventTime = eventTime;
         this.namespace = namespace;

@@ -63,15 +63,17 @@ public class SkillInnerHandler implements SkillHandler {
     public SkillMeta getSkill(SkillForm form) throws NacosException {
         return skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName());
     }
-
+    
     @Override
     public Skill getSkillVersion(SkillForm form) throws NacosException {
-        return skillOperationService.getSkillVersionDetail(form.getNamespaceId(), form.getSkillName(), form.getVersion());
+        return skillOperationService.getSkillVersionDetail(form.getNamespaceId(),
+            form.getSkillName(), form.getVersion());
     }
-
+    
     @Override
     public Skill downloadSkillVersion(SkillForm form) throws NacosException {
-        return skillOperationService.downloadSkillVersion(form.getNamespaceId(), form.getSkillName(), form.getVersion());
+        return skillOperationService.downloadSkillVersion(form.getNamespaceId(),
+            form.getSkillName(), form.getVersion());
     }
     
     @Override
@@ -80,73 +82,84 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public Page<SkillSummary> listSkills(SkillListForm skillListForm, AiResourceFilterableForm filterableForm,
-            PageForm pageForm) throws NacosException {
-        return skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
-                skillListForm.getSearch(), skillListForm.getOrderBy(),
-                filterableForm.getOwner(), filterableForm.getScope(), filterableForm.getBizTag(),
-                pageForm.getPageNo(), pageForm.getPageSize());
+    public Page<SkillSummary> listSkills(SkillListForm skillListForm,
+        AiResourceFilterableForm filterableForm,
+        PageForm pageForm) throws NacosException {
+        return skillOperationService.listSkills(skillListForm.getNamespaceId(),
+            skillListForm.getSkillName(),
+            skillListForm.getSearch(), skillListForm.getOrderBy(),
+            filterableForm.getOwner(), filterableForm.getScope(), filterableForm.getBizTag(),
+            pageForm.getPageNo(), pageForm.getPageSize());
     }
     
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite, String targetVersion)
-            throws NacosException {
-        return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion)
+        throws NacosException {
+        return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, overwrite,
+            targetVersion);
     }
-
+    
     @Override
     public String createDraft(SkillDraftCreateForm form) throws NacosException {
-        return skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(), form.getBasedOnVersion(),
-                form.getTargetVersion(), form.getResolvedInitialSkillOrNull(), form.getCommitMsg());
+        return skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(),
+            form.getBasedOnVersion(),
+            form.getTargetVersion(), form.getResolvedInitialSkillOrNull(), form.getCommitMsg());
     }
-
+    
     @Override
     public void updateDraft(SkillUpdateForm form) throws NacosException {
         Skill skill = SkillRequestUtil.parseSkill(form);
         skillOperationService.updateDraft(form.getNamespaceId(), skill, form.getCommitMsg());
     }
-
+    
     @Override
     public void deleteDraft(SkillForm form) throws NacosException {
         skillOperationService.deleteDraft(form.getNamespaceId(), form.getSkillName());
     }
-
+    
     @Override
     public String submit(SkillSubmitForm form) throws NacosException {
-        return skillOperationService.submit(form.getNamespaceId(), form.getSkillName(), form.getVersion());
+        return skillOperationService.submit(form.getNamespaceId(), form.getSkillName(),
+            form.getVersion());
     }
-
+    
     @Override
     public void publish(SkillPublishForm form) throws NacosException {
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        skillOperationService.publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(), updateLatest);
+        skillOperationService.publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(),
+            updateLatest);
     }
-
+    
     @Override
     public void forcePublish(SkillPublishForm form) throws NacosException {
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        skillOperationService.forcePublish(form.getNamespaceId(), form.getSkillName(), form.getVersion(), updateLatest);
+        skillOperationService.forcePublish(form.getNamespaceId(), form.getSkillName(),
+            form.getVersion(), updateLatest);
     }
-
+    
     @Override
     public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
         skillOperationService.updateLabels(form.getNamespaceId(), form.getSkillName(), labels);
     }
-
+    
     @Override
     public void updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
-        skillOperationService.updateBizTags(form.getNamespaceId(), form.getSkillName(), form.getBizTags());
+        skillOperationService.updateBizTags(form.getNamespaceId(), form.getSkillName(),
+            form.getBizTags());
     }
-
+    
     @Override
     public void changeOnlineStatus(SkillOnlineForm form, boolean online) throws NacosException {
-        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(),
-                form.getVersion(), online);
+        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(),
+            form.getScope(),
+            form.getVersion(), online);
     }
     
     @Override
     public void updateScope(SkillScopeForm form) throws NacosException {
-        skillOperationService.updateScope(form.getNamespaceId(), form.getSkillName(), form.getScope());
+        skillOperationService.updateScope(form.getNamespaceId(), form.getSkillName(),
+            form.getScope());
     }
 }

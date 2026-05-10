@@ -34,9 +34,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link IdGeneratorManager} unit test.
  */
 class IdGeneratorManagerTest {
-
+    
     private IdGeneratorManager idGeneratorManager;
-
+    
     @BeforeEach
     void setUp() {
         MockEnvironment env = new MockEnvironment();
@@ -44,56 +44,58 @@ class IdGeneratorManagerTest {
         EnvUtil.setEnvironment(env);
         idGeneratorManager = new IdGeneratorManager();
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     void testRegisterSingleResource() {
         String resource = "testResource";
         idGeneratorManager.register(resource);
-
-        Map<String, com.alibaba.nacos.consistency.IdGenerator> map = idGeneratorManager.getGeneratorMap();
+        
+        Map<String, com.alibaba.nacos.consistency.IdGenerator> map =
+            idGeneratorManager.getGeneratorMap();
         assertTrue(map.containsKey(resource));
         assertNotNull(map.get(resource));
     }
-
+    
     @Test
     void testRegisterMultipleResources() {
         idGeneratorManager.register("res1", "res2", "res3");
-
+        
         assertTrue(idGeneratorManager.getGeneratorMap().containsKey("res1"));
         assertTrue(idGeneratorManager.getGeneratorMap().containsKey("res2"));
         assertTrue(idGeneratorManager.getGeneratorMap().containsKey("res3"));
     }
-
+    
     @Test
     void testNextIdAfterRegister() {
         String resource = "nextIdResource";
         idGeneratorManager.register(resource);
-
+        
         long id1 = idGeneratorManager.nextId(resource);
         long id2 = idGeneratorManager.nextId(resource);
-
+        
         assertTrue(id1 > 0);
         assertTrue(id2 > 0);
     }
-
+    
     @Test
     void testNextIdWithoutRegisterThrows() {
         assertThrows(NoSuchElementException.class, () -> idGeneratorManager.nextId("unregistered"));
     }
-
+    
     @Test
     void testGetGeneratorMapReturnsCopyBehavior() {
         idGeneratorManager.register("r1");
-        Map<String, com.alibaba.nacos.consistency.IdGenerator> map = idGeneratorManager.getGeneratorMap();
+        Map<String, com.alibaba.nacos.consistency.IdGenerator> map =
+            idGeneratorManager.getGeneratorMap();
         assertEquals(1, map.size());
         assertNotNull(map.get("r1"));
     }
-
+    
     @Test
     void testRegisterSameResourceTwiceUsesSameGenerator() {
         String resource = "same";
@@ -104,7 +106,7 @@ class IdGeneratorManagerTest {
         assertEquals(1, idGeneratorManager.getGeneratorMap().size());
         assertTrue(id2 > id1);
     }
-
+    
     @Test
     void testSpiLoadedGeneratorUsedWhenAvailable() {
         idGeneratorManager.register("spiRes");

@@ -32,16 +32,17 @@ class AbstractMapperTest {
     @BeforeEach
     void setUp() throws Exception {
         abstractMapper = new AbstractMapper() {
+            
             @Override
             public String getTableName() {
                 return TableConstant.TENANT_INFO;
             }
-
+            
             @Override
             public String getDataSource() {
                 return DataSourceConstant.MYSQL;
             }
-
+            
             @Override
             public String getFunction(String functionName) {
                 // Return NOW(3) for MySQL-style function mapping in tests
@@ -52,13 +53,13 @@ class AbstractMapperTest {
             }
         };
     }
-
+    
     @Test
     void testSelectSingleField() {
         String sql = abstractMapper.select(Arrays.asList("id"), Arrays.asList("id"));
         assertEquals("SELECT id FROM tenant_info WHERE id = ?", sql);
     }
-
+    
     @Test
     public void testSelectMultiField() {
         String sql = abstractMapper.select(Arrays.asList("id", "name"), Arrays.asList("id"));
@@ -70,7 +71,7 @@ class AbstractMapperTest {
         String sql = abstractMapper.insert(Arrays.asList("id", "name"));
         assertEquals("INSERT INTO tenant_info(id, name) VALUES(?,?)", sql);
     }
-
+    
     @Test
     void testInsertContainsAt() {
         String sql = abstractMapper.insert(Arrays.asList("created_at@NOW()", "name"));
@@ -82,19 +83,22 @@ class AbstractMapperTest {
         String sql = abstractMapper.update(Arrays.asList("id", "name"), Arrays.asList("id"));
         assertEquals("UPDATE tenant_info SET id = ?,name = ? WHERE id = ?", sql);
     }
-
+    
     @Test
     void testUpdateContainsAt() {
-        String sql = abstractMapper.update(Arrays.asList("create_at@NOW()", "update_at@NOW()"), Arrays.asList("id", "name"));
-        assertEquals("UPDATE tenant_info SET create_at = NOW(3),update_at = NOW(3) WHERE id = ? AND name = ?", sql);
+        String sql = abstractMapper.update(Arrays.asList("create_at@NOW()", "update_at@NOW()"),
+            Arrays.asList("id", "name"));
+        assertEquals(
+            "UPDATE tenant_info SET create_at = NOW(3),update_at = NOW(3) WHERE id = ? AND name = ?",
+            sql);
     }
-
+    
     @Test
     public void testDeleteSingleField() {
         String sql = abstractMapper.delete(Arrays.asList("id"));
         assertEquals("DELETE FROM tenant_info WHERE id = ?", sql);
     }
-
+    
     @Test
     public void testDeleteMultiField() {
         String sql = abstractMapper.delete(Arrays.asList("id", "name"));

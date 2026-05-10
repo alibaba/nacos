@@ -48,22 +48,22 @@ import static com.alibaba.nacos.ai.model.skills.SkillIndexManifest.LABEL_LATEST;
  */
 @Service
 public class SkillIndexManifestService {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillIndexManifestService.class);
-
+    
     private final ConfigQueryChainService configQueryChainService;
-
+    
     private final ConfigOperationService configOperationService;
-
+    
     private final SyncEffectService syncEffectService;
-
+    
     public SkillIndexManifestService(ConfigQueryChainService configQueryChainService,
-            ConfigOperationService configOperationService, SyncEffectService syncEffectService) {
+        ConfigOperationService configOperationService, SyncEffectService syncEffectService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.syncEffectService = syncEffectService;
     }
-
+    
     /**
      * Query manifest from server-side config cache.
      *
@@ -72,19 +72,20 @@ public class SkillIndexManifestService {
     public SkillIndexManifest query(String namespaceId, String skillName) {
         try {
             ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-                    SkillUtils.SKILL_INDEX_DATA_ID, SkillUtils.buildSkillGroup(skillName), namespaceId);
+                SkillUtils.SKILL_INDEX_DATA_ID, SkillUtils.buildSkillGroup(skillName), namespaceId);
             ConfigQueryChainResponse response = configQueryChainService.handle(request);
             if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND
-                    || response.getContent() == null) {
+                || response.getContent() == null) {
                 return null;
             }
             return JacksonUtils.toObj(response.getContent(), SkillIndexManifest.class);
         } catch (Exception e) {
-            LOGGER.warn("Failed to query skill index manifest for {}: {}", skillName, e.getMessage());
+            LOGGER.warn("Failed to query skill index manifest for {}: {}", skillName,
+                e.getMessage());
             return null;
         }
     }
-
+    
     /**
      * Get existing manifest or create a new empty one with initialized maps.
      */
@@ -101,11 +102,12 @@ public class SkillIndexManifestService {
         }
         return manifest;
     }
-
+    
     /**
      * Write manifest to Nacos Config. Creates if not exists, updates if already exists.
      */
-    public void write(String namespaceId, String skillName, SkillIndexManifest manifest) throws NacosException {
+    public void write(String namespaceId, String skillName, SkillIndexManifest manifest)
+        throws NacosException {
         long startTimeStamp = System.currentTimeMillis();
         ConfigForm form = new ConfigForm();
         form.setDataId(SkillUtils.SKILL_INDEX_DATA_ID);
@@ -125,15 +127,15 @@ public class SkillIndexManifestService {
             syncEffectService.toSync(form, startTimeStamp);
         }
     }
-
+    
     /**
      * Delete manifest from Nacos Config.
      */
     public void delete(String namespaceId, String skillName) throws NacosException {
         configOperationService.deleteConfig(SkillUtils.SKILL_INDEX_DATA_ID,
-                SkillUtils.buildSkillGroup(skillName), namespaceId, null, null, "nacos", null);
+            SkillUtils.buildSkillGroup(skillName), namespaceId, null, null, "nacos", null);
     }
-
+    
     /**
      * Resolve version from manifest: explicit version > label lookup > latest label.
      *
@@ -143,7 +145,8 @@ public class SkillIndexManifestService {
      * @return resolved version string, or null if not found
      */
     public static String resolveVersion(SkillIndexManifest manifest, String version, String label) {
-        if (manifest == null || manifest.getVersions() == null || manifest.getVersions().isEmpty()) {
+        if (manifest == null || manifest.getVersions() == null
+            || manifest.getVersions().isEmpty()) {
             return null;
         }
         if (StringUtils.isNotBlank(version)) {

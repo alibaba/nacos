@@ -64,63 +64,63 @@ class HttpRequestTest {
     }
     
     // ========== File Upload Tests ==========
-
+    
     @Test
     @DisplayName("isFileUpload with fileBytes should return true")
     void testIsFileUploadWithFileBytes() {
         byte[] fileBytes = "test file content".getBytes();
         HttpRequest httpRequest = new HttpRequest.Builder()
-                .setHttpMethod("POST")
-                .setPath("/upload")
-                .setFileUpload(fileBytes, "test.zip", "file")
-                .build();
+            .setHttpMethod("POST")
+            .setPath("/upload")
+            .setFileUpload(fileBytes, "test.zip", "file")
+            .build();
         assertTrue(httpRequest.isFileUpload());
     }
-
+    
     @Test
     @DisplayName("isFileUpload with empty fileBytes should return false")
     void testIsFileUploadWithEmptyFileBytes() {
         HttpRequest httpRequest = new HttpRequest.Builder()
-                .setHttpMethod("POST")
-                .setPath("/upload")
-                .setFileUpload(new byte[0], "test.zip", "file")
-                .build();
+            .setHttpMethod("POST")
+            .setPath("/upload")
+            .setFileUpload(new byte[0], "test.zip", "file")
+            .build();
         assertFalse(httpRequest.isFileUpload());
     }
-
+    
     @Test
     @DisplayName("isFileUpload with null fileBytes should return false")
     void testIsFileUploadWithNullFileBytes() {
         HttpRequest httpRequest = new HttpRequest.Builder()
-                .setHttpMethod("POST")
-                .setPath("/upload")
-                .setFileUpload(null, "test.zip", "file")
-                .build();
+            .setHttpMethod("POST")
+            .setPath("/upload")
+            .setFileUpload(null, "test.zip", "file")
+            .build();
         assertFalse(httpRequest.isFileUpload());
     }
-
+    
     @Test
     @DisplayName("Builder setFileUpload should set all fields")
     void testBuilderSetFileUpload() {
         byte[] fileBytes = "test file content".getBytes();
         HttpRequest httpRequest = new HttpRequest.Builder()
-                .setHttpMethod("POST")
-                .setPath("/upload")
-                .setFileUpload(fileBytes, "test.zip", "file")
-                .build();
+            .setHttpMethod("POST")
+            .setPath("/upload")
+            .setFileUpload(fileBytes, "test.zip", "file")
+            .build();
         
         assertNotNull(httpRequest);
         assertArrayEquals(fileBytes, httpRequest.getFileBytes());
         assertEquals("test.zip", httpRequest.getFileName());
         assertEquals("file", httpRequest.getFileFieldName());
     }
-
+    
     @Test
     @DisplayName("getFileBytes should return byte array")
     void testGetFileBytes() {
         byte[] fileBytes = "test content".getBytes();
-        HttpRequest httpRequest = new HttpRequest("POST", "/upload", null, null, null, 
-                new RequestResource(), fileBytes, "test.zip", "file");
+        HttpRequest httpRequest = new HttpRequest("POST", "/upload", null, null, null,
+            new RequestResource(), fileBytes, "test.zip", "file");
         assertArrayEquals(fileBytes, httpRequest.getFileBytes());
     }
 }

@@ -48,8 +48,10 @@ class HistoryRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void getConfigHistoryInfo() throws NacosException {
         ConfigHistoryDetailInfo mock = new ConfigHistoryDetailInfo();
-        when(configMaintainerService.getConfigHistoryInfo("dataId", "group", "namespaceId", 1L)).thenReturn(mock);
-        ConfigHistoryDetailInfo result = historyRemoteHandler.getConfigHistoryInfo("dataId", "group", "namespaceId",
+        when(configMaintainerService.getConfigHistoryInfo("dataId", "group", "namespaceId", 1L))
+            .thenReturn(mock);
+        ConfigHistoryDetailInfo result =
+            historyRemoteHandler.getConfigHistoryInfo("dataId", "group", "namespaceId",
                 1L);
         assertEquals(mock, result);
     }
@@ -57,8 +59,10 @@ class HistoryRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void listConfigHistory() throws NacosException {
         Page<ConfigHistoryBasicInfo> mockPage = new Page<>();
-        when(configMaintainerService.listConfigHistory("dataId", "group", "namespaceId", 1, 10)).thenReturn(mockPage);
-        Page<ConfigHistoryBasicInfo> result = historyRemoteHandler.listConfigHistory("dataId", "group", "namespaceId",
+        when(configMaintainerService.listConfigHistory("dataId", "group", "namespaceId", 1, 10))
+            .thenReturn(mockPage);
+        Page<ConfigHistoryBasicInfo> result =
+            historyRemoteHandler.listConfigHistory("dataId", "group", "namespaceId",
                 1, 10);
         assertEquals(mockPage, result);
     }
@@ -66,9 +70,11 @@ class HistoryRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void getPreviousConfigHistoryInfo() throws NacosException {
         ConfigHistoryDetailInfo mock = new ConfigHistoryDetailInfo();
-        when(configMaintainerService.getPreviousConfigHistoryInfo("dataId", "group", "namespaceId", 1L)).thenReturn(
+        when(configMaintainerService.getPreviousConfigHistoryInfo("dataId", "group", "namespaceId",
+            1L)).thenReturn(
                 mock);
-        ConfigHistoryDetailInfo result = historyRemoteHandler.getPreviousConfigHistoryInfo("dataId", "group",
+        ConfigHistoryDetailInfo result =
+            historyRemoteHandler.getPreviousConfigHistoryInfo("dataId", "group",
                 "namespaceId", 1L);
         assertEquals(mock, result);
     }

@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GenericTypeTest {
-
+    
     @Test
     void getTypeReturnsResolvedParameterizedType() {
         GenericType<List<String>> genericType = new GenericType<List<String>>() {
@@ -35,12 +35,12 @@ class GenericTypeTest {
         assertEquals(List.class, ((java.lang.reflect.ParameterizedType) type).getRawType());
         assertTrue(type.getTypeName().contains("java.util.List"));
     }
-
+    
     @Test
     void constructorThrowsWhenRuntimeTypeIsTypeVariable() {
         assertThrows(IllegalArgumentException.class, GenericTypeTest::createWithTypeVariable);
     }
-
+    
     private static <T> void createWithTypeVariable() {
         new GenericType<T>() {
         };

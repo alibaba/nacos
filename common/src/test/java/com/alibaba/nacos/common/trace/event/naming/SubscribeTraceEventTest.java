@@ -24,7 +24,8 @@ class SubscribeTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testRegisterInstanceTraceEvent() {
-        SubscribeServiceTraceEvent subscribeServiceTraceEvent = new SubscribeServiceTraceEvent(TIME, CLIENT_IP, NAMESPACE_ID,
+        SubscribeServiceTraceEvent subscribeServiceTraceEvent =
+            new SubscribeServiceTraceEvent(TIME, CLIENT_IP, NAMESPACE_ID,
                 GROUP_NAME, SERVICE_NAME);
         assertBasicInfo(subscribeServiceTraceEvent);
         assertEquals("SUBSCRIBE_SERVICE_TRACE_EVENT", subscribeServiceTraceEvent.getType());
@@ -33,7 +34,8 @@ class SubscribeTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testDeregisterInstanceTraceEvent() {
-        UnsubscribeServiceTraceEvent unsubscribeServiceTraceEvent = new UnsubscribeServiceTraceEvent(TIME, CLIENT_IP,
+        UnsubscribeServiceTraceEvent unsubscribeServiceTraceEvent =
+            new UnsubscribeServiceTraceEvent(TIME, CLIENT_IP,
                 NAMESPACE_ID, GROUP_NAME, SERVICE_NAME);
         assertBasicInfo(unsubscribeServiceTraceEvent);
         assertEquals("UNSUBSCRIBE_SERVICE_TRACE_EVENT", unsubscribeServiceTraceEvent.getType());
@@ -42,7 +44,8 @@ class SubscribeTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testPushServiceTraceEvent() {
-        PushServiceTraceEvent pushServiceTraceEvent = new PushServiceTraceEvent(TIME, 10, 510, 510, CLIENT_IP, NAMESPACE_ID,
+        PushServiceTraceEvent pushServiceTraceEvent =
+            new PushServiceTraceEvent(TIME, 10, 510, 510, CLIENT_IP, NAMESPACE_ID,
                 GROUP_NAME, SERVICE_NAME, 100);
         assertBasicInfo(pushServiceTraceEvent);
         assertEquals("PUSH_SERVICE_TRACE_EVENT", pushServiceTraceEvent.getType());

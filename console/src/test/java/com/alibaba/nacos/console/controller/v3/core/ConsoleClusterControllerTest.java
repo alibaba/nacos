@@ -85,14 +85,16 @@ public class ConsoleClusterControllerTest {
         
         when(clusterProxy.getNodeList(anyString())).thenReturn(members);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/core/cluster/nodes")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/core/cluster/nodes")
                 .param("keyword", "127.0.0.1");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<Collection<NacosMember>> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
-        });
+        Result<Collection<NacosMember>> result =
+            new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+            });
         
         assertEquals(1, result.getData().size());
         assertEquals("127.0.0.1", result.getData().iterator().next().getIp());

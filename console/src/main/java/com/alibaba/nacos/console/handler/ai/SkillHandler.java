@@ -85,8 +85,9 @@ public interface SkillHandler {
      * @return skill list
      * @throws NacosException nacos exception
      */
-    Page<SkillSummary> listSkills(SkillListForm skillListForm, AiResourceFilterableForm filterableForm,
-            PageForm pageForm) throws NacosException;
+    Page<SkillSummary> listSkills(SkillListForm skillListForm,
+        AiResourceFilterableForm filterableForm,
+        PageForm pageForm) throws NacosException;
     
     /**
      * Upload skill from zip file.
@@ -109,7 +110,8 @@ public interface SkillHandler {
      * @return skill name
      * @throws NacosException if upload failed
      */
-    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+        throws NacosException {
         return uploadSkillFromZip(namespaceId, zipBytes, overwrite, null);
     }
     
@@ -123,8 +125,9 @@ public interface SkillHandler {
      * @return skill name
      * @throws NacosException if upload failed
      */
-    String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite, String targetVersion)
-            throws NacosException;
+    String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion)
+        throws NacosException;
     
     /**
      * Create draft version based on latest or a specified version.

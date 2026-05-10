@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginDetailVOTest {
-
+    
     @Test
     void gettersSettersAndToString() {
         PluginDetailVO vo = new PluginDetailVO();
@@ -43,7 +43,7 @@ class PluginDetailVOTest {
         ConfigItemDefinition def = new ConfigItemDefinition();
         def.setKey("endpoint");
         vo.setConfigDefinitions(Collections.singletonList(def));
-
+        
         assertEquals("trace:otel", vo.getPluginId());
         assertEquals("trace", vo.getPluginType());
         assertEquals("otel", vo.getPluginName());
@@ -53,7 +53,7 @@ class PluginDetailVOTest {
         assertEquals("http://localhost", vo.getConfig().get("endpoint"));
         assertNotNull(vo.getConfigDefinitions());
         assertEquals(1, vo.getConfigDefinitions().size());
-
+        
         String s = vo.toString();
         assertNotNull(s);
         assertTrue(s.contains("trace:otel"));

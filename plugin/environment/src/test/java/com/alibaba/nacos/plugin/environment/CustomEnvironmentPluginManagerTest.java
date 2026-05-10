@@ -43,6 +43,7 @@ class CustomEnvironmentPluginManagerTest {
     @Test
     void testJoin() {
         CustomEnvironmentPluginManager.join(new CustomEnvironmentPluginService() {
+            
             @Override
             public Map<String, Object> customValue(Map<String, Object> property) {
                 String pwd = (String) property.get("db.password.0");
@@ -75,7 +76,8 @@ class CustomEnvironmentPluginManagerTest {
         assertNotNull(CustomEnvironmentPluginManager.getInstance().getPropertyKeys());
         Map<String, Object> sourcePropertyMap = new HashMap<>();
         sourcePropertyMap.put("db.password.0", "nacos");
-        Map<String, Object> customValues = CustomEnvironmentPluginManager.getInstance().getCustomValues(sourcePropertyMap);
+        Map<String, Object> customValues =
+            CustomEnvironmentPluginManager.getInstance().getCustomValues(sourcePropertyMap);
         assertNotNull(customValues);
         // [issue 13367] check property remove
         assertFalse(customValues.containsKey("db.password.1"));

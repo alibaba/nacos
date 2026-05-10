@@ -48,28 +48,29 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class SkillIndexManifestServiceTest {
-
+    
     private static final String NAMESPACE_ID = "public";
-
+    
     private static final String SKILL_NAME = "test-skill";
-
+    
     @Mock
     private ConfigQueryChainService configQueryChainService;
-
+    
     @Mock
     private ConfigOperationService configOperationService;
-
+    
     @Mock
     private SyncEffectService syncEffectService;
-
+    
     private SkillIndexManifestService manifestService;
-
+    
     @BeforeEach
     void setUp() {
-        manifestService = new SkillIndexManifestService(configQueryChainService, configOperationService,
+        manifestService =
+            new SkillIndexManifestService(configQueryChainService, configOperationService,
                 syncEffectService);
     }
-
+    
     @Test
     void testQueryReturnsManifest() throws NacosException {
         SkillIndexManifest manifest = new SkillIndexManifest();
@@ -79,120 +80,125 @@ class SkillIndexManifestServiceTest {
         Map<String, List<String>> versions = new HashMap<>();
         versions.put("v2", List.of("SKILL.md"));
         manifest.setVersions(versions);
-
+        
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         response.setContent(JacksonUtils.toJson(manifest));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
-
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
         SkillIndexManifest result = manifestService.query(NAMESPACE_ID, SKILL_NAME);
-
+        
         assertNotNull(result);
         assertEquals("v2", result.getLabels().get("latest"));
         assertEquals(1, result.getVersions().size());
     }
-
+    
     @Test
     void testQueryReturnsNullWhenNotFound() throws NacosException {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
-
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
         SkillIndexManifest result = manifestService.query(NAMESPACE_ID, SKILL_NAME);
-
+        
         assertNull(result);
     }
-
+    
     @Test
     void testQueryReturnsNullOnException() throws NacosException {
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenThrow(new RuntimeException("test error"));
-
+            .thenThrow(new RuntimeException("test error"));
+        
         SkillIndexManifest result = manifestService.query(NAMESPACE_ID, SKILL_NAME);
-
+        
         assertNull(result);
     }
-
+    
     @Test
     void testLoadForUpdateReturnsNewManifestWhenNull() throws NacosException {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
-
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
         SkillIndexManifest result = manifestService.loadForUpdate(NAMESPACE_ID, SKILL_NAME);
-
+        
         assertNotNull(result);
         assertNotNull(result.getLabels());
         assertNotNull(result.getVersions());
     }
-
+    
     @Test
     void testLoadForUpdateInitializesNullMaps() throws NacosException {
         SkillIndexManifest manifest = new SkillIndexManifest();
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         response.setContent(JacksonUtils.toJson(manifest));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
-
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
         SkillIndexManifest result = manifestService.loadForUpdate(NAMESPACE_ID, SKILL_NAME);
-
+        
         assertNotNull(result.getLabels());
         assertNotNull(result.getVersions());
     }
-
+    
     @Test
     void testWrite() throws NacosException {
         SkillIndexManifest manifest = new SkillIndexManifest();
         manifest.setLabels(new HashMap<>());
         manifest.setVersions(new HashMap<>());
-
+        
         manifestService.write(NAMESPACE_ID, SKILL_NAME, manifest);
-
+        
         verify(configOperationService).publishConfig(any(), any(), any());
     }
-
+    
     @Test
     void testDelete() throws NacosException {
         manifestService.delete(NAMESPACE_ID, SKILL_NAME);
-
-        verify(configOperationService).deleteConfig(any(), any(), any(), any(), any(), any(), any());
+        
+        verify(configOperationService).deleteConfig(any(), any(), any(), any(), any(), any(),
+            any());
     }
-
+    
     // ========== resolveVersion static method tests ==========
-
+    
     @Test
     void testResolveVersionWithNullManifest() {
         assertNull(SkillIndexManifestService.resolveVersion(null, null, null));
     }
-
+    
     @Test
     void testResolveVersionWithEmptyVersions() {
         SkillIndexManifest manifest = new SkillIndexManifest();
         manifest.setVersions(new HashMap<>());
         assertNull(SkillIndexManifestService.resolveVersion(manifest, null, null));
     }
-
+    
     @Test
     void testResolveVersionWithExplicitVersion() {
         SkillIndexManifest manifest = new SkillIndexManifest();
         Map<String, List<String>> versions = new HashMap<>();
         versions.put("v1", List.of("SKILL.md"));
         manifest.setVersions(versions);
-
+        
         String result = SkillIndexManifestService.resolveVersion(manifest, "v1", null);
         assertEquals("v1", result);
     }
-
+    
     @Test
     void testResolveVersionWithExplicitVersionNotFound() {
         SkillIndexManifest manifest = new SkillIndexManifest();
         Map<String, List<String>> versions = new HashMap<>();
         versions.put("v1", List.of("SKILL.md"));
         manifest.setVersions(versions);
-
+        
         assertNull(SkillIndexManifestService.resolveVersion(manifest, "v99", null));
     }
-
+    
     @Test
     void testResolveVersionByLabel() {
         SkillIndexManifest manifest = new SkillIndexManifest();
@@ -202,11 +208,11 @@ class SkillIndexManifestServiceTest {
         Map<String, List<String>> versions = new HashMap<>();
         versions.put("v2", List.of("SKILL.md"));
         manifest.setVersions(versions);
-
+        
         String result = SkillIndexManifestService.resolveVersion(manifest, null, "stable");
         assertEquals("v2", result);
     }
-
+    
     @Test
     void testResolveVersionByLatestLabelDefault() {
         SkillIndexManifest manifest = new SkillIndexManifest();
@@ -216,11 +222,11 @@ class SkillIndexManifestServiceTest {
         Map<String, List<String>> versions = new HashMap<>();
         versions.put("v3", List.of("SKILL.md"));
         manifest.setVersions(versions);
-
+        
         String result = SkillIndexManifestService.resolveVersion(manifest, null, null);
         assertEquals("v3", result);
     }
-
+    
     @Test
     void testResolveVersionByLabelNotFound() {
         SkillIndexManifest manifest = new SkillIndexManifest();
@@ -230,7 +236,7 @@ class SkillIndexManifestServiceTest {
         Map<String, List<String>> versions = new HashMap<>();
         versions.put("v1", List.of("SKILL.md"));
         manifest.setVersions(versions);
-
+        
         assertNull(SkillIndexManifestService.resolveVersion(manifest, null, null));
     }
 }

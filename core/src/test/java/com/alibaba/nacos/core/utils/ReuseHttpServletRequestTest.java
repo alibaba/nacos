@@ -115,14 +115,15 @@ class ReuseHttpServletRequestTest {
         assertFalse(inputStream.isFinished());
         assertFalse(inputStream.isReady());
         inputStream.setReadListener(new ReadListener() {
+            
             @Override
             public void onDataAvailable() {
             }
-
+            
             @Override
             public void onAllDataRead() {
             }
-
+            
             @Override
             public void onError(Throwable t) {
             }
@@ -132,12 +133,12 @@ class ReuseHttpServletRequestTest {
             read = inputStream.read();
         }
     }
-
+    
     @Test
     void testGetParameterWhenKeyNotPresent() {
         assertNull(reuseHttpServletRequest.getParameter("absent"));
     }
-
+    
     @Test
     void testGetBodyWithBlankBodyUsesParamMap() throws Exception {
         MockHttpServletRequest emptyRequest = new MockHttpServletRequest();
@@ -149,7 +150,7 @@ class ReuseHttpServletRequestTest {
         assertNotNull(body);
         assertTrue(body.toString().contains("a=1"));
     }
-
+    
     @Test
     void testGetBodyWithNonBlankBodyReturnsBodyString() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -161,7 +162,7 @@ class ReuseHttpServletRequestTest {
         assertNotNull(body);
         assertEquals(json, body);
     }
-
+    
     @Test
     void testToBytesReadsMultipleChunks() throws IOException {
         byte[] largeBody = new byte[2048];

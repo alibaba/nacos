@@ -33,7 +33,7 @@ import java.io.IOException;
 public class LocalDiskRuleStorage implements RuleStorage {
     
     LocalDiskRuleStorage() {
-    
+        
     }
     
     private static final Logger LOGGER = Loggers.CONTROL;
@@ -57,7 +57,8 @@ public class LocalDiskRuleStorage implements RuleStorage {
     }
     
     private File getConnectionRuleFile() {
-        File baseDir = new File(localRuleBaseDir, "data" + File.separator + "connection" + File.separator);
+        File baseDir =
+            new File(localRuleBaseDir, "data" + File.separator + "connection" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdirs();
         }
@@ -99,7 +100,8 @@ public class LocalDiskRuleStorage implements RuleStorage {
             DiskUtils.deleteQuietly(tpsFile);
         } else {
             DiskUtils.writeFile(tpsFile, ruleContent.getBytes(Constants.ENCODE), false);
-            LOGGER.info("Save tps rule to local,pointName={}, ruleContent ={} ", pointName, ruleContent);
+            LOGGER.info("Save tps rule to local,pointName={}, ruleContent ={} ", pointName,
+                ruleContent);
             
         }
         

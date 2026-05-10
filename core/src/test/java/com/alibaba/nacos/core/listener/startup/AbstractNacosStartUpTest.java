@@ -39,15 +39,15 @@ import static org.mockito.Mockito.verify;
  */
 @ExtendWith(MockitoExtension.class)
 class AbstractNacosStartUpTest {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractNacosStartUpTest.class);
-
+    
     @Test
     void startUpPhaseFromConstructor() {
         AbstractNacosStartUp startUp = new NacosWebStartUp();
         assertEquals(NacosStartUp.WEB_START_UP_PHASE, startUp.startUpPhase());
     }
-
+    
     @Test
     void startingSetsTimestampAndScheduler() {
         AbstractNacosStartUp startUp = new NacosWebStartUp();
@@ -56,7 +56,7 @@ class AbstractNacosStartUpTest {
         assertNotNull(ReflectionTestUtils.getField(startUp, "startLoggingScheduledExecutor"));
         assertTrue((Boolean) ReflectionTestUtils.getField(startUp, "starting"));
     }
-
+    
     @Test
     void logStartingInfoSchedulesTask() {
         AbstractNacosStartUp startUp = new NacosWebStartUp();
@@ -65,7 +65,7 @@ class AbstractNacosStartUpTest {
         assertNotNull(ReflectionTestUtils.getField(startUp, "startLoggingScheduledExecutor"));
         startUp.started();
     }
-
+    
     @Test
     void startedClearsStartingAndClosesExecutor() {
         AbstractNacosStartUp startUp = new NacosWebStartUp();
@@ -73,17 +73,18 @@ class AbstractNacosStartUpTest {
         startUp.started();
         assertFalse((Boolean) ReflectionTestUtils.getField(startUp, "starting"));
     }
-
+    
     @Test
     void failedClosesContextAndClearsStarting() {
         AbstractNacosStartUp startUp = new NacosWebStartUp();
         startUp.starting();
-        ConfigurableApplicationContext context = org.mockito.Mockito.mock(ConfigurableApplicationContext.class);
+        ConfigurableApplicationContext context =
+            org.mockito.Mockito.mock(ConfigurableApplicationContext.class);
         startUp.failed(new RuntimeException("fail"), context);
         assertFalse((Boolean) ReflectionTestUtils.getField(startUp, "starting"));
         org.mockito.Mockito.verify(context).close();
     }
-
+    
     @Test
     void getStartTimestampReturnsAfterStarting() {
         AbstractNacosStartUp startUp = new NacosWebStartUp();
@@ -91,7 +92,7 @@ class AbstractNacosStartUpTest {
         long ts = (Long) ReflectionTestUtils.getField(startUp, "startTimestamp");
         assertTrue(ts > 0);
     }
-
+    
     @Test
     void logStartingInfoScheduledTaskLogsWhenStarting() throws InterruptedException {
         AbstractNacosStartUp startUp = new NacosWebStartUp();
@@ -102,7 +103,7 @@ class AbstractNacosStartUpTest {
         verify(mockLogger, atLeastOnce()).info(org.mockito.ArgumentMatchers.anyString());
         startUp.started();
     }
-
+    
     @Test
     void logStartingInfoScheduledTaskDoesNotLogWhenStartingFalse() throws InterruptedException {
         AbstractNacosStartUp startUp = new NacosWebStartUp();

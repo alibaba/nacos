@@ -63,7 +63,8 @@ class HttpRequestContextFilterTest {
         filter = new HttpRequestContextFilter();
         RequestContextHolder.getContext();
         when(servletRequest.getHeader(HttpHeaders.HOST)).thenReturn("localhost");
-        when(servletRequest.getHeader(HttpHeaders.USER_AGENT)).thenReturn("Nacos-Java-Client:v1.4.7");
+        when(servletRequest.getHeader(HttpHeaders.USER_AGENT))
+            .thenReturn("Nacos-Java-Client:v1.4.7");
         when(servletRequest.getHeader(HttpHeaderConsts.APP_FILED)).thenReturn("testApp");
         when(servletRequest.getMethod()).thenReturn("GET");
         when(servletRequest.getRequestURI()).thenReturn("/test/path");
@@ -126,8 +127,9 @@ class HttpRequestContextFilterTest {
         }
         
         @Override
-        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
-                throws IOException, ServletException {
+        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+            FilterChain filterChain)
+            throws IOException, ServletException {
             try {
                 RequestContext requestContext = RequestContextHolder.getContext();
                 BasicContext basicContext = requestContext.getBasicContext();

@@ -51,105 +51,107 @@ class SkillNoopHandlerTest {
     
     @Test
     void testGetSkillThrowsNotImplemented() {
-        NacosApiException ex = assertThrows(NacosApiException.class, () -> skillNoopHandler.getSkill(new SkillForm()));
+        NacosApiException ex =
+            assertThrows(NacosApiException.class, () -> skillNoopHandler.getSkill(new SkillForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testGetSkillVersionThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.getSkillVersion(new SkillForm()));
+            () -> skillNoopHandler.getSkillVersion(new SkillForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testDownloadSkillVersionThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.downloadSkillVersion(new SkillForm()));
+            () -> skillNoopHandler.downloadSkillVersion(new SkillForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testDeleteSkillThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.deleteSkill(new SkillForm()));
+            () -> skillNoopHandler.deleteSkill(new SkillForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testListSkillsThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.listSkills(new SkillListForm(), new AiResourceFilterableForm(), new PageForm()));
+            () -> skillNoopHandler.listSkills(new SkillListForm(), new AiResourceFilterableForm(),
+                new PageForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testUploadSkillFromZipThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.uploadSkillFromZip("public", new byte[0]));
+            () -> skillNoopHandler.uploadSkillFromZip("public", new byte[0]));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testCreateDraftThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.createDraft(new SkillDraftCreateForm()));
+            () -> skillNoopHandler.createDraft(new SkillDraftCreateForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testUpdateDraftThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.updateDraft(new SkillUpdateForm()));
+            () -> skillNoopHandler.updateDraft(new SkillUpdateForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testDeleteDraftThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.deleteDraft(new SkillForm()));
+            () -> skillNoopHandler.deleteDraft(new SkillForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testSubmitThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.submit(new SkillSubmitForm()));
+            () -> skillNoopHandler.submit(new SkillSubmitForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testPublishThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.publish(new SkillPublishForm()));
+            () -> skillNoopHandler.publish(new SkillPublishForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testUpdateLabelsThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.updateLabels(new SkillLabelsUpdateForm()));
+            () -> skillNoopHandler.updateLabels(new SkillLabelsUpdateForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testChangeOnlineStatusThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.changeOnlineStatus(new SkillOnlineForm(), true));
+            () -> skillNoopHandler.changeOnlineStatus(new SkillOnlineForm(), true));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testUpdateScopeThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.updateScope(new SkillScopeForm()));
+            () -> skillNoopHandler.updateScope(new SkillScopeForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
     @Test
     void testForcePublishThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.forcePublish(new SkillPublishForm()));
+            () -> skillNoopHandler.forcePublish(new SkillPublishForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
 }

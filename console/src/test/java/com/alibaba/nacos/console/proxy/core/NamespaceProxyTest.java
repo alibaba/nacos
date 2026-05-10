@@ -66,12 +66,14 @@ public class NamespaceProxyTest {
         Namespace actualNamespace = namespaceProxy.getNamespaceDetail(namespaceId);
         
         assertEquals(expectedNamespace.getNamespace(), actualNamespace.getNamespace());
-        assertEquals(expectedNamespace.getNamespaceShowName(), actualNamespace.getNamespaceShowName());
+        assertEquals(expectedNamespace.getNamespaceShowName(),
+            actualNamespace.getNamespaceShowName());
     }
     
     @Test
     public void getNamespaceList() throws NacosException {
-        List<Namespace> expectedNamespaces = Arrays.asList(new Namespace("namespace1", "Namespace 1"),
+        List<Namespace> expectedNamespaces =
+            Arrays.asList(new Namespace("namespace1", "Namespace 1"),
                 new Namespace("namespace2", "Namespace 2"));
         when(namespaceHandler.getNamespaceList()).thenReturn(expectedNamespaces);
         
@@ -82,17 +84,21 @@ public class NamespaceProxyTest {
     
     @Test
     public void createNamespace() throws NacosException {
-        when(namespaceHandler.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC)).thenReturn(true);
+        when(namespaceHandler.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC))
+            .thenReturn(true);
         
-        Boolean result = namespaceProxy.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC);
+        Boolean result =
+            namespaceProxy.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC);
         
         assertTrue(result);
-        verify(namespaceHandler, times(1)).createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC);
+        verify(namespaceHandler, times(1)).createNamespace(NAMESPACE_ID, NAMESPACE_NAME,
+            NAMESPACE_DESC);
     }
     
     @Test
     public void updateNamespace() throws NacosException {
-        NamespaceForm namespaceForm = new NamespaceForm("namespaceId", "namespaceName", "namespaceDesc");
+        NamespaceForm namespaceForm =
+            new NamespaceForm("namespaceId", "namespaceName", "namespaceDesc");
         when(namespaceHandler.updateNamespace(namespaceForm)).thenReturn(true);
         
         Boolean result = namespaceProxy.updateNamespace(namespaceForm);

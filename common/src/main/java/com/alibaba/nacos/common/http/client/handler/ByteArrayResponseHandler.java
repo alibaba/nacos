@@ -33,7 +33,8 @@ import java.lang.reflect.Type;
 public class ByteArrayResponseHandler extends AbstractResponseHandler<byte[]> {
     
     @Override
-    public HttpRestResult<byte[]> convertResult(HttpClientResponse response, Type responseType) throws Exception {
+    public HttpRestResult<byte[]> convertResult(HttpClientResponse response, Type responseType)
+        throws Exception {
         final Header headers = response.getHeaders();
         InputStream body = response.getBody();
         ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -52,7 +52,8 @@ class AuthPluginManagerTest {
         Class<AuthPluginManager> authPluginManagerClass = AuthPluginManager.class;
         Field authPlugins = authPluginManagerClass.getDeclaredField("authServiceMap");
         authPlugins.setAccessible(true);
-        Map<String, AuthPluginService> authServiceMap = (Map<String, AuthPluginService>) authPlugins.get(authPluginManager);
+        Map<String, AuthPluginService> authServiceMap =
+            (Map<String, AuthPluginService>) authPlugins.get(authPluginManager);
         authServiceMap.put(TYPE, authPluginService);
     }
     
@@ -65,7 +66,8 @@ class AuthPluginManagerTest {
     
     @Test
     void testFindAuthServiceSpiImpl() {
-        Optional<AuthPluginService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
+        Optional<AuthPluginService> authServiceImpl =
+            authPluginManager.findAuthServiceSpiImpl(TYPE);
         assertTrue(authServiceImpl.isPresent());
     }
     

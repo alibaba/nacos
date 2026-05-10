@@ -177,8 +177,9 @@ public class AiResourceTraceService {
      * @param operator     the operator identity (user id or username)
      * @param clientIp     the client IP address
      */
-    public static void logSuccess(String resourceType, String resourceId, String version, String operation,
-            String operator, String clientIp) {
+    public static void logSuccess(String resourceType, String resourceId, String version,
+        String operation,
+        String operator, String clientIp) {
         log(resourceType, resourceId, version, operation, STATUS_SUCCESS, operator, clientIp, null);
     }
     
@@ -193,8 +194,9 @@ public class AiResourceTraceService {
      * @param clientIp     the client IP address
      * @param ext          extra information (nullable)
      */
-    public static void logSuccess(String resourceType, String resourceId, String version, String operation,
-            String operator, String clientIp, String ext) {
+    public static void logSuccess(String resourceType, String resourceId, String version,
+        String operation,
+        String operator, String clientIp, String ext) {
         log(resourceType, resourceId, version, operation, STATUS_SUCCESS, operator, clientIp, ext);
     }
     
@@ -209,9 +211,11 @@ public class AiResourceTraceService {
      * @param clientIp     the client IP address
      * @param errorMsg     the error message
      */
-    public static void logFailure(String resourceType, String resourceId, String version, String operation,
-            String operator, String clientIp, String errorMsg) {
-        log(resourceType, resourceId, version, operation, STATUS_FAILURE, operator, clientIp, errorMsg);
+    public static void logFailure(String resourceType, String resourceId, String version,
+        String operation,
+        String operator, String clientIp, String errorMsg) {
+        log(resourceType, resourceId, version, operation, STATUS_FAILURE, operator, clientIp,
+            errorMsg);
     }
     
     /**
@@ -226,8 +230,9 @@ public class AiResourceTraceService {
      * @param clientIp     the client IP address
      * @param ext          extra information or error message (nullable)
      */
-    public static void log(String resourceType, String resourceId, String version, String operation, String status,
-            String operator, String clientIp, String ext) {
+    public static void log(String resourceType, String resourceId, String version, String operation,
+        String status,
+        String operator, String clientIp, String ext) {
         if (!AiLogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }

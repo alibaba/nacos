@@ -34,38 +34,38 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  */
 @ExtendWith(MockitoExtension.class)
 class DistroTaskEngineHolderTest {
-
+    
     @Mock
     private DistroComponentHolder distroComponentHolder;
-
+    
     private DistroTaskEngineHolder holder;
-
+    
     @BeforeEach
     void setUp() {
         holder = new DistroTaskEngineHolder(distroComponentHolder);
     }
-
+    
     @Test
     void testGetDelayTaskExecuteEngine() {
         DistroDelayTaskExecuteEngine engine = holder.getDelayTaskExecuteEngine();
         assertNotNull(engine);
         assertSame(engine, holder.getDelayTaskExecuteEngine());
     }
-
+    
     @Test
     void testGetExecuteWorkersManager() {
         DistroExecuteTaskExecuteEngine manager = holder.getExecuteWorkersManager();
         assertNotNull(manager);
         assertSame(manager, holder.getExecuteWorkersManager());
     }
-
+    
     @Test
     void testRegisterNacosTaskProcessor() {
         NacosTaskProcessor processor = task -> true;
         holder.registerNacosTaskProcessor("testKey", processor);
         assertNotNull(holder.getDelayTaskExecuteEngine().getProcessor("testKey"));
     }
-
+    
     @Test
     void testDestroy() throws Exception {
         holder.destroy();

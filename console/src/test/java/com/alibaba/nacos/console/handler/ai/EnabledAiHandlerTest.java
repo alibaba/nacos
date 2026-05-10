@@ -39,10 +39,13 @@ class EnabledAiHandlerTest {
     @Test
     void shouldContainAiFunctionAndPropertyConditions() {
         Conditional conditional = EnabledAiHandler.class.getAnnotation(Conditional.class);
-        assertArrayEquals(new Class[] {ConditionFunctionEnabled.ConditionAiEnabled.class}, conditional.value());
+        assertArrayEquals(new Class[] {ConditionFunctionEnabled.ConditionAiEnabled.class},
+            conditional.value());
         
-        ConditionalOnProperty conditionalOnProperty = EnabledAiHandler.class.getAnnotation(ConditionalOnProperty.class);
-        assertArrayEquals(new String[] {AiEnabledFilter.AI_ENABLED_KEY}, conditionalOnProperty.value());
+        ConditionalOnProperty conditionalOnProperty =
+            EnabledAiHandler.class.getAnnotation(ConditionalOnProperty.class);
+        assertArrayEquals(new String[] {AiEnabledFilter.AI_ENABLED_KEY},
+            conditionalOnProperty.value());
         assertEquals("true", conditionalOnProperty.havingValue());
         assertTrue(conditionalOnProperty.matchIfMissing());
     }

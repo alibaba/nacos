@@ -46,7 +46,7 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
         Map<AbilityMode, Map<AbilityKey, Boolean>> res = new HashMap<>(2);
         res.put(AbilityMode.CLUSTER_CLIENT, initClusterClientAbilities());
         res.put(AbilityMode.SDK_CLIENT, initSdkClientAbilities());
-
+        
         // init server abilities
         // static abilities
         Map<AbilityKey, Boolean> staticAbilities = ServerAbilities.getStaticAbilities();
@@ -71,12 +71,13 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
             }
         });
         // load from ServerAbilities
-        unIncludedInConfig.forEach(abilityKey -> abilityTable.put(abilityKey, staticAbilities.get(abilityKey)));
-
+        unIncludedInConfig
+            .forEach(abilityKey -> abilityTable.put(abilityKey, staticAbilities.get(abilityKey)));
+        
         res.put(AbilityMode.SERVER, abilityTable);
         return res;
     }
-
+    
     /**
      * init cluster client abilities.
      */
@@ -84,7 +85,7 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
         // static abilities
         return ClusterClientAbilities.getStaticAbilities();
     }
-
+    
     /**
      * init sdk client abilities.
      */
@@ -92,10 +93,10 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
         // static abilities
         return SdkClientAbilities.getStaticAbilities();
     }
-
+    
     @Override
     public int getPriority() {
         return 1;
     }
-
+    
 }

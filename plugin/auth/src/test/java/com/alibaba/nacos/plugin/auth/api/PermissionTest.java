@@ -35,8 +35,9 @@ class PermissionTest {
     
     @Test
     void testToString() {
-        assertEquals("Permission{resource='Resource{namespaceId='', group='', name='', type='', properties=null}', action='w'}",
-                permission.toString());
+        assertEquals(
+            "Permission{resource='Resource{namespaceId='', group='', name='', type='', properties=null}', action='w'}",
+            permission.toString());
     }
     
     @Test

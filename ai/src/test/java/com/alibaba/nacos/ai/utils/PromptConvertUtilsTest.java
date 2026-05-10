@@ -39,7 +39,7 @@ class PromptConvertUtilsTest {
         versionInfo.setTemplate("Hello {{name}}");
         versionInfo.setMd5("abc123");
         List<PromptVariable> variables = Collections.singletonList(
-                new PromptVariable("name", "world", "user name"));
+            new PromptVariable("name", "world", "user name"));
         versionInfo.setVariables(variables);
         
         Prompt prompt = PromptConvertUtils.toClientPrompt(versionInfo);

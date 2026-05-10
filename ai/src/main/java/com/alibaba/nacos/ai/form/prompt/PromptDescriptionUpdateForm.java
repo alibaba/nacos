@@ -40,7 +40,7 @@ public class PromptDescriptionUpdateForm extends PromptForm {
         super.validate();
         if (StringUtils.isBlank(description)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'description' type String is not present");
+                "Required parameter 'description' type String is not present");
         }
     }
     

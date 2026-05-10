@@ -44,7 +44,7 @@ public class MapperProxy implements InvocationHandler {
     private Mapper mapper;
     
     private static final Map<String, Mapper> SINGLE_MAPPER_PROXY_MAP = new ConcurrentHashMap<>(16);
-
+    
     /**
      * Creates a proxy instance for the sub-interfaces of Mapper.class implemented by the given object.
      */
@@ -54,19 +54,20 @@ public class MapperProxy implements InvocationHandler {
         Set<Class<?>> interfacesSet = new HashSet<>();
         while (!clazz.equals(Object.class)) {
             interfacesSet.addAll(Arrays.stream(clazz.getInterfaces())
-                    .filter(Mapper.class::isAssignableFrom)
-                    .collect(Collectors.toSet()));
+                .filter(Mapper.class::isAssignableFrom)
+                .collect(Collectors.toSet()));
             clazz = clazz.getSuperclass();
         }
-        return (R) Proxy.newProxyInstance(MapperProxy.class.getClassLoader(), interfacesSet.toArray(new Class<?>[interfacesSet.size()]), this);
+        return (R) Proxy.newProxyInstance(MapperProxy.class.getClassLoader(),
+            interfacesSet.toArray(new Class<?>[interfacesSet.size()]), this);
     }
     
     /**
      * create proxy-mapper single instead of using method createProxy.
      */
     public static <R> R createSingleProxy(Mapper mapper) {
-        return (R) SINGLE_MAPPER_PROXY_MAP.computeIfAbsent(mapper.getClass().getSimpleName(), key ->
-                new MapperProxy().createProxy(mapper));
+        return (R) SINGLE_MAPPER_PROXY_MAP.computeIfAbsent(mapper.getClass().getSimpleName(),
+            key -> new MapperProxy().createProxy(mapper));
     }
     
     @Override
@@ -81,7 +82,8 @@ public class MapperProxy implements InvocationHandler {
         } else {
             sql = invoke.toString();
         }
-        LOGGER.info("[{}] METHOD : {}, SQL : {}, ARGS : {}", className, methodName, sql, JacksonUtils.toJson(args));
+        LOGGER.info("[{}] METHOD : {}, SQL : {}, ARGS : {}", className, methodName, sql,
+            JacksonUtils.toJson(args));
         return invoke;
     }
 }

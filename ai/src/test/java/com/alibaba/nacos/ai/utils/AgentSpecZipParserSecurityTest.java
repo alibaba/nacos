@@ -41,14 +41,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author nacos
  */
 class AgentSpecZipParserSecurityTest {
-
+    
     private static final String NAMESPACE_ID = "test-ns";
-
+    
     private static final String VALID_MANIFEST = "{\"version\":\"1.0\",\"description\":\"test\","
-            + "\"worker\":{\"suggested_name\":\"test-worker\"}}";
-
+        + "\"worker\":{\"suggested_name\":\"test-worker\"}}";
+    
     // ---- Test 1: path-traversal attack (Zip Slip) ----
-
+    
     @Test
     void testPathTraversalAttackShouldBeRejected() throws IOException {
         // Build a malicious zip containing a path-traversal entry.
@@ -60,17 +60,19 @@ class AgentSpecZipParserSecurityTest {
             addZipEntry(zos, "../../etc/passwd", "root:x:0:0".getBytes(StandardCharsets.UTF_8));
         }
         byte[] zipBytes = baos.toByteArray();
-
+        
         // Expectation: parsing should fail and reject the traversal entry.
         try {
             AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID);
-            fail("Expected the path-traversal zip to be rejected, but parsing succeeded (security hole!)");
+            fail(
+                "Expected the path-traversal zip to be rejected, but parsing succeeded (security hole!)");
         } catch (SecurityException | NacosApiException e) {
             // Expected: traversal rejected.
-            System.out.println("[PASS] Path-traversal attack correctly rejected: " + e.getMessage());
+            System.out
+                .println("[PASS] Path-traversal attack correctly rejected: " + e.getMessage());
         }
     }
-
+    
     @Test
     void testAbsolutePathEntryShouldBeRejected() throws IOException {
         // Build a malicious zip containing an absolute-path entry.
@@ -81,17 +83,18 @@ class AgentSpecZipParserSecurityTest {
             addZipEntry(zos, "/etc/shadow", "malicious".getBytes(StandardCharsets.UTF_8));
         }
         byte[] zipBytes = baos.toByteArray();
-
+        
         try {
             AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID);
-            fail("Expected the absolute-path zip to be rejected, but parsing succeeded (security hole!)");
+            fail(
+                "Expected the absolute-path zip to be rejected, but parsing succeeded (security hole!)");
         } catch (SecurityException | NacosApiException e) {
             System.out.println("[PASS] Absolute-path attack correctly rejected: " + e.getMessage());
         }
     }
-
+    
     // ---- Test 2: zip bomb (decompressed-size attack) ----
-
+    
     @Test
     void testZipBombShouldBeRejected() throws IOException {
         // Build a zip whose decompressed size is huge: 110 entries x 1 MB = 110 MB,
@@ -106,27 +109,28 @@ class AgentSpecZipParserSecurityTest {
             }
         }
         byte[] zipBytes = baos.toByteArray();
-
+        
         try {
             AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID);
             fail("Expected the zip bomb to be rejected, but parsing succeeded (security hole!)");
         } catch (NacosApiException e) {
             // Verify the rejection reason is the decompressed-size limit.
             boolean isDecompressSizeError = e.getMessage().contains("decompressed size")
-                    || e.getMessage().contains("exceeds limit");
+                || e.getMessage().contains("exceeds limit");
             boolean isZipSizeError = e.getMessage().contains("must not exceed");
             assertTrue(isDecompressSizeError || isZipSizeError,
-                    "Expected rejection due to the decompressed-size limit, actual error: " + e.getMessage());
+                "Expected rejection due to the decompressed-size limit, actual error: "
+                    + e.getMessage());
             System.out.println("[PASS] Zip-bomb attack correctly rejected: " + e.getMessage());
         } catch (Exception e) {
             // OutOfMemoryError or any other exception means the guard is missing.
             fail("Zip bomb was not properly guarded, unexpected exception: "
-                    + e.getClass().getName() + ": " + e.getMessage());
+                + e.getClass().getName() + ": " + e.getMessage());
         }
     }
-
+    
     // ---- Test 3: entry-count attack ----
-
+    
     @Test
     void testTooManyEntriesShouldBeRejected() throws IOException {
         // Build a zip with more than 500 entries (the MAX_ZIP_ENTRIES cap).
@@ -139,22 +143,24 @@ class AgentSpecZipParserSecurityTest {
             }
         }
         byte[] zipBytes = baos.toByteArray();
-
+        
         try {
             AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID);
-            fail("Expected the too-many-entries zip to be rejected, but parsing succeeded (security hole!)");
+            fail(
+                "Expected the too-many-entries zip to be rejected, but parsing succeeded (security hole!)");
         } catch (NacosApiException e) {
             boolean isEntryCountError = e.getMessage().contains("too many entries")
-                    || e.getMessage().contains("max");
+                || e.getMessage().contains("max");
             assertTrue(isEntryCountError,
-                    "Expected rejection due to the entry-count limit, actual error: " + e.getMessage());
+                "Expected rejection due to the entry-count limit, actual error: " + e.getMessage());
             System.out.println("[PASS] Entry-count attack correctly rejected: " + e.getMessage());
         }
     }
-
+    
     // ---- Helpers ----
-
-    private static void addZipEntry(ZipOutputStream zos, String name, byte[] data) throws IOException {
+    
+    private static void addZipEntry(ZipOutputStream zos, String name, byte[] data)
+        throws IOException {
         ZipEntry entry = new ZipEntry(name);
         zos.putNextEntry(entry);
         zos.write(data);

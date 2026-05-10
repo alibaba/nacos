@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.utils.StringUtils;
  * @author xinluo
  */
 public enum ExternalDataTypeEnum {
-
+    
     /**
      * MCP Server json text, the json text should follow the
      * MCP Server json format as defined in
@@ -33,7 +33,7 @@ public enum ExternalDataTypeEnum {
      * reference/server-json/server.schema.json">MCP Server</a>.
      */
     JSON("json"),
-
+    
     /**
      * MCP registry url, the url should be a valid MCP registry url
      * and the api should follow the MCP registry api as defined in
@@ -41,27 +41,27 @@ public enum ExternalDataTypeEnum {
      * reference/api/openapi.yaml">openapi.yaml</a>.
      */
     URL("url"),
-
+    
     /**
      * MCP registry seed file
      * <a href="https://github.com/modelcontextprotocol/registry/blob/main/data
      * /seed.json">seed.json</a>.
      */
     FILE("file");
-
+    
     /**
      * The name of the external data type.
      */
     private final String name;
-
+    
     ExternalDataTypeEnum(String name) {
         this.name = name;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     /**
      * Parse the external data type from the given value.
      * @param value the value to parse.
@@ -71,7 +71,7 @@ public enum ExternalDataTypeEnum {
         if (StringUtils.isBlank(value)) {
             return null;
         }
-
+        
         for (ExternalDataTypeEnum type : ExternalDataTypeEnum.values()) {
             if (type.getName().equals(value)) {
                 return type;

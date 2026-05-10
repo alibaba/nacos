@@ -32,19 +32,20 @@ public class RpcSdkServerSslContextRefresherTest implements RpcServerSslContextR
     @Override
     public SslContextChangeAware refresh(BaseRpcServer baseRpcServer) {
         return new SslContextChangeAware() {
+            
             @Override
             public void init(BaseRpcServer baseRpcServer) {
-            
+                
             }
             
             @Override
             public void onSslContextChange() {
-            
+                
             }
             
             @Override
             public void shutdown() {
-            
+                
             }
         };
     }

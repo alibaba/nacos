@@ -31,7 +31,8 @@ public class EnvModuleStateBuilder extends AbstractServerModuleStateBuilder {
     public ModuleState build() {
         ModuleState state = new ModuleState(Constants.SYS_MODULE);
         state.newState(Constants.STARTUP_MODE_STATE,
-                EnvUtil.getStandaloneMode() ? EnvUtil.STANDALONE_MODE_ALONE : EnvUtil.STANDALONE_MODE_CLUSTER);
+            EnvUtil.getStandaloneMode() ? EnvUtil.STANDALONE_MODE_ALONE
+                : EnvUtil.STANDALONE_MODE_CLUSTER);
         state.newState(Constants.FUNCTION_MODE_STATE, EnvUtil.getFunctionMode());
         state.newState(Constants.NACOS_VERSION, VersionUtils.version);
         

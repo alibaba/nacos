@@ -26,30 +26,30 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ExtendWith(MockitoExtension.class)
 class RuntimeConnectionEjectorTest {
-
+    
     @Mock
     private ConnectionManager connectionManager;
-
+    
     @Test
     void testKeepAliveTimeConstant() {
         assertEquals(20000L, RuntimeConnectionEjector.KEEP_ALIVE_TIME);
     }
-
+    
     @Test
     void testGetterAndSetterViaConcreteSubclass() {
         NacosRuntimeConnectionEjector ejector = new NacosRuntimeConnectionEjector();
         assertNull(ejector.getConnectionManager());
         ejector.setConnectionManager(connectionManager);
         assertEquals(connectionManager, ejector.getConnectionManager());
-
+        
         assertEquals(-1, ejector.getLoadClient());
         ejector.setLoadClient(100);
         assertEquals(100, ejector.getLoadClient());
-
+        
         assertNull(ejector.getRedirectAddress());
         ejector.setRedirectAddress("127.0.0.1:8848");
         assertEquals("127.0.0.1:8848", ejector.getRedirectAddress());
-
+        
         assertEquals("nacos", ejector.getName());
     }
 }

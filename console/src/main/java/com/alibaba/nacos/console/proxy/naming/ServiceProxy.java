@@ -56,7 +56,8 @@ public class ServiceProxy {
      * @param serviceForm the service form containing the service details
      * @throws Exception if an error occurs during service creation
      */
-    public void createService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
+    public void createService(ServiceForm serviceForm, ServiceMetadata serviceMetadata)
+        throws Exception {
         serviceHandler.createService(serviceForm, serviceMetadata);
     }
     
@@ -68,7 +69,8 @@ public class ServiceProxy {
      * @param groupName   the group name
      * @throws Exception if an error occurs during service deletion
      */
-    public void deleteService(String namespaceId, String serviceName, String groupName) throws Exception {
+    public void deleteService(String namespaceId, String serviceName, String groupName)
+        throws Exception {
         serviceHandler.deleteService(namespaceId, serviceName, groupName);
     }
     
@@ -79,7 +81,8 @@ public class ServiceProxy {
      * @param serviceMetadata the service metadata created from serviceForm
      * @throws Exception if an error occurs during service update
      */
-    public void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
+    public void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata)
+        throws Exception {
         serviceHandler.updateService(serviceForm, serviceMetadata);
     }
     
@@ -104,9 +107,11 @@ public class ServiceProxy {
      * @return a JSON node containing the list of subscribers
      * @throws Exception if an error occurs during fetching subscribers
      */
-    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
-            String groupName, boolean aggregation) throws Exception {
-        return serviceHandler.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation);
+    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId,
+        String serviceName,
+        String groupName, boolean aggregation) throws Exception {
+        return serviceHandler.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName,
+            aggregation);
     }
     
     /**
@@ -122,10 +127,12 @@ public class ServiceProxy {
      * @return if withInstances is {@code true}, return List of {@link ServiceDetailInfo}, otherwise return List of {@link ServiceView}
      * @throws NacosException if an error occurs during fetching service details
      */
-    public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
-            String serviceName, String groupName, boolean hasIpCount) throws NacosException {
-        return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
-                hasIpCount);
+    public Object getServiceList(boolean withInstances, String namespaceId, int pageNo,
+        int pageSize,
+        String serviceName, String groupName, boolean hasIpCount) throws NacosException {
+        return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize,
+            serviceName, groupName,
+            hasIpCount);
     }
     
     /**
@@ -137,8 +144,9 @@ public class ServiceProxy {
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
-    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName)
-            throws NacosException {
+    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName,
+        String groupName)
+        throws NacosException {
         return serviceHandler.getServiceDetail(namespaceId, serviceName, groupName);
     }
     
@@ -153,9 +161,10 @@ public class ServiceProxy {
      * @throws Exception                if the update operation fails
      * @throws IllegalArgumentException if the deployment type is invalid
      */
-    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
-            ClusterMetadata clusterMetadata) throws Exception {
-        serviceHandler.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName, clusterMetadata);
+    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName,
+        String clusterName,
+        ClusterMetadata clusterMetadata) throws Exception {
+        serviceHandler.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName,
+            clusterMetadata);
     }
 }
-

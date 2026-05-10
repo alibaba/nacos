@@ -68,9 +68,11 @@ public class ConsolePluginController {
      */
     @GetMapping("/list")
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
-            + "plugins", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+        + "plugins", action = ActionTypes.READ, signType = SignType.CONSOLE,
+        apiType = ApiType.CONSOLE_API)
     public Result<List<PluginInfoVO>> getPluginList(
-            @RequestParam(value = "pluginType", required = false) String pluginType) throws NacosException {
+        @RequestParam(value = "pluginType", required = false) String pluginType)
+        throws NacosException {
         return Result.success(pluginProxy.listPlugins(pluginType));
     }
     
@@ -83,9 +85,10 @@ public class ConsolePluginController {
      */
     @GetMapping
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
-            + "plugins", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+        + "plugins", action = ActionTypes.READ, signType = SignType.CONSOLE,
+        apiType = ApiType.CONSOLE_API)
     public Result<PluginDetailVO> getPluginDetail(@RequestParam("pluginType") String pluginType,
-            @RequestParam("pluginName") String pluginName) throws NacosException {
+        @RequestParam("pluginName") String pluginName) throws NacosException {
         return Result.success(pluginProxy.getPluginDetail(pluginType, pluginName));
     }
     
@@ -99,10 +102,12 @@ public class ConsolePluginController {
      */
     @PutMapping("/status")
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
-            + "plugins", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+        + "plugins", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        apiType = ApiType.CONSOLE_API)
     public Result<String> updatePluginStatus(@RequestParam("pluginType") String pluginType,
-            @RequestParam("pluginName") String pluginName, @RequestParam("enabled") boolean enabled,
-            @RequestParam(value = "localOnly", defaultValue = "false") boolean localOnly) throws NacosException {
+        @RequestParam("pluginName") String pluginName, @RequestParam("enabled") boolean enabled,
+        @RequestParam(value = "localOnly", defaultValue = "false") boolean localOnly)
+        throws NacosException {
         pluginProxy.updatePluginStatus(pluginType, pluginName, enabled, localOnly);
         return Result.success("Plugin status updated successfully");
     }
@@ -115,18 +120,22 @@ public class ConsolePluginController {
      */
     @PutMapping("/config")
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
-            + "plugins", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+        + "plugins", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        apiType = ApiType.CONSOLE_API)
     public Result<String> updatePluginConfig(PluginConfigForm form) throws NacosException {
-        if (StringUtils.isBlank(form.getPluginType()) || StringUtils.isBlank(form.getPluginName())) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Plugin type and name are required");
+        if (StringUtils.isBlank(form.getPluginType())
+            || StringUtils.isBlank(form.getPluginName())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Plugin type and name are required");
         }
         if (form.getConfig() == null) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Plugin configuration is required");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Plugin configuration is required");
         }
         pluginProxy.updatePluginConfig(form.getPluginType(), form.getPluginName(), form.getConfig(),
-                form.isLocalOnly());
+            form.isLocalOnly());
         return Result.success("Plugin configuration updated successfully");
     }
     
@@ -139,9 +148,11 @@ public class ConsolePluginController {
      */
     @GetMapping("/availability")
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
-            + "plugins", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
-    public Result<Map<String, Boolean>> getPluginAvailability(@RequestParam("pluginType") String pluginType,
-            @RequestParam("pluginName") String pluginName) throws NacosException {
+        + "plugins", action = ActionTypes.READ, signType = SignType.CONSOLE,
+        apiType = ApiType.CONSOLE_API)
+    public Result<Map<String, Boolean>> getPluginAvailability(
+        @RequestParam("pluginType") String pluginType,
+        @RequestParam("pluginName") String pluginName) throws NacosException {
         return Result.success(pluginProxy.getPluginAvailability(pluginType, pluginName));
     }
 }

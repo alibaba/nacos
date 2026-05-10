@@ -52,7 +52,8 @@ class NacosConsoleAuthConfigTest {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED, "true");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "identityKey");
-        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "identityValue");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE,
+            "identityValue");
         NacosConsoleAuthConfig config = new NacosConsoleAuthConfig();
         assertTrue(config.isAuthEnabled());
         assertEquals("nacos", config.getNacosAuthSystemType());

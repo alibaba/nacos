@@ -36,7 +36,7 @@ public interface AiResourceMapper extends Mapper {
     String QUERY_CONDITION_OR_GROUP = "query_condition_or_group";
     
     String QUERY_CONDITION_ALWAYS_EMPTY = "query_condition_always_empty";
-
+    
     /**
      * Query count rows for ai_resource list.
      *
@@ -45,17 +45,17 @@ public interface AiResourceMapper extends Mapper {
     default MapperResult findAiResourceCountRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder("SELECT count(*) FROM ai_resource");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
-
+        
         appendExtraQueryCondition(where, context);
-
+        
         return where.build();
     }
-
+    
     /**
      * Query fetch rows for ai_resource list.
      */
     MapperResult findAiResourceFetchRows(MapperContext context);
-
+    
     /**
      * Resolve the ORDER BY clause based on the orderBy parameter in the context. Only whitelisted values are accepted to
      * prevent SQL injection.
@@ -65,7 +65,8 @@ public interface AiResourceMapper extends Mapper {
      */
     default String resolveOrderByClause(MapperContext context) {
         Object orderBy = context.getWhereParameter(FieldConstant.ORDER_BY);
-        if (orderBy != null && FieldConstant.ORDER_BY_DOWNLOAD_COUNT.equals(String.valueOf(orderBy))) {
+        if (orderBy != null
+            && FieldConstant.ORDER_BY_DOWNLOAD_COUNT.equals(String.valueOf(orderBy))) {
             return " ORDER BY download_count DESC";
         }
         return " ORDER BY gmt_modified DESC";
@@ -99,17 +100,23 @@ public interface AiResourceMapper extends Mapper {
      * Append standard AND conditions from mapper context.
      */
     default void appendAndConditions(WhereBuilder where, MapperContext context) {
-        appendSingleAndCondition(where, "name", context.getWhereParameter(FieldConstant.NAME), true);
-        appendSingleAndCondition(where, "biz_tags", context.getWhereParameter(FieldConstant.BIZ_TAGS), true);
-        appendSingleAndCondition(where, "type", context.getWhereParameter(FieldConstant.TYPE), false);
-        appendSingleAndCondition(where, "scope", context.getWhereParameter(FieldConstant.SCOPE), false);
-        appendSingleAndCondition(where, "owner", context.getWhereParameter(FieldConstant.OWNER), false);
+        appendSingleAndCondition(where, "name", context.getWhereParameter(FieldConstant.NAME),
+            true);
+        appendSingleAndCondition(where, "biz_tags",
+            context.getWhereParameter(FieldConstant.BIZ_TAGS), true);
+        appendSingleAndCondition(where, "type", context.getWhereParameter(FieldConstant.TYPE),
+            false);
+        appendSingleAndCondition(where, "scope", context.getWhereParameter(FieldConstant.SCOPE),
+            false);
+        appendSingleAndCondition(where, "owner", context.getWhereParameter(FieldConstant.OWNER),
+            false);
     }
     
     /**
      * Append one AND condition. List value is treated as IN.
      */
-    default void appendSingleAndCondition(WhereBuilder where, String field, Object value, boolean likeMatch) {
+    default void appendSingleAndCondition(WhereBuilder where, String field, Object value,
+        boolean likeMatch) {
         if (StringUtils.isBlank(field) || value == null) {
             return;
         }
@@ -169,14 +176,14 @@ public interface AiResourceMapper extends Mapper {
         Map<Object, Object> raw = (Map<Object, Object>) value;
         Map<String, Object> result = new java.util.LinkedHashMap<>();
         for (Map.Entry<Object, Object> each : raw.entrySet()) {
-            result.put(each.getKey() == null ? null : String.valueOf(each.getKey()), each.getValue());
+            result.put(each.getKey() == null ? null : String.valueOf(each.getKey()),
+                each.getValue());
         }
         return result;
     }
-
+    
     @Override
     default String getTableName() {
         return TableConstant.AI_RESOURCE;
     }
 }
-

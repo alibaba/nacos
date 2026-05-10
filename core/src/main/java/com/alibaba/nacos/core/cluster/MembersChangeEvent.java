@@ -67,7 +67,8 @@ public class MembersChangeEvent extends Event {
     
     @Override
     public String toString() {
-        return "MembersChangeEvent{" + "members=" + members + ", triggers=" + triggers + ", no=" + sequence() + '}';
+        return "MembersChangeEvent{" + "members=" + members + ", triggers=" + triggers + ", no="
+            + sequence() + '}';
     }
     
     public static final class MemberChangeEventBuilder {
@@ -75,7 +76,7 @@ public class MembersChangeEvent extends Event {
         private Collection<Member> allMembers;
         
         private Collection<Member> triggers;
-    
+        
         private MemberChangeEventBuilder() {
         }
         
@@ -93,7 +94,7 @@ public class MembersChangeEvent extends Event {
             this.triggers = Collections.singleton(trigger);
             return this;
         }
-    
+        
         /**
          * build MemberChangeEvent.
          *
