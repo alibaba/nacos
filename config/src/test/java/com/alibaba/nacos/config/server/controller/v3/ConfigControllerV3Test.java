@@ -406,12 +406,13 @@ class ConfigControllerV3Test {
             when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
             Map<String, Object> map = new HashMap<>();
             map.put("test", "test");
-            when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
-                    any())).thenReturn(map);
+            when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(),
+                any(),
+                any())).thenReturn(map);
             
             MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(
-                            Constants.CONFIG_ADMIN_V3_PATH + "/import").file(file).param("src_user", "test")
-                    .param("namespace", "public").param("policy", "ABORT");
+                Constants.CONFIG_ADMIN_V3_PATH + "/import").file(file).param("src_user", "test")
+                .param("namespace", "public").param("policy", "ABORT");
             
             String actualValue =
                 mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
