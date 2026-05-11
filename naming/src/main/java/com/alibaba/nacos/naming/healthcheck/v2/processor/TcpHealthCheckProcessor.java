@@ -188,6 +188,10 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                     beat.finishCheck(true, false,
                         System.currentTimeMillis() - beat.getTask().getStartTime(),
                         "tcp:ok+");
+                    // Cancel the selection key and close the SocketChannel so the SelectionKey
+                    // cache doesn't accumulate stale entries and FDs don't leak on long-running clusters.
+                    key.cancel();
+                    key.channel().close();
                 }
                 
                 if (key.isValid() && key.isReadable()) {

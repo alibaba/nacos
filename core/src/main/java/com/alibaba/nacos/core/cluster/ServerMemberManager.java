@@ -36,7 +36,6 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.ability.ServerAbilityInitializer;
 import com.alibaba.nacos.core.ability.ServerAbilityInitializerHolder;
@@ -293,9 +292,9 @@ public class ServerMemberManager implements NacosMemberManager {
             return true;
         }
         
-        // If only IP information is passed in, a fuzzy match is required
+        // If only IP information is passed in, match by exact IP (port-stripped) to avoid prefix collisions like 192.168.1.10 matching 192.168.1.100
         for (Map.Entry<String, Member> entry : serverList.entrySet()) {
-            if (StringUtils.contains(entry.getKey(), address)) {
+            if (entry.getKey().split(":")[0].equals(address)) {
                 result = true;
                 break;
             }
