@@ -18,6 +18,8 @@
 
 Current specs:
 
+- [Nacos Design Spec](design/nacos-design-spec.md)
+- [Resource Model Spec](design/resource-model-spec.md)
 - [HTTP API Spec](http-api/api-spec.md)
 - [gRPC API Spec](grpc-api/api-spec.md)
 - [SDK Spec](sdk/sdk-spec.md)

@@ -111,6 +111,8 @@ standards when generating controller code.
 Authoritative API and SDK specs live under [`specs/`](./specs/README.md).
 English:
 
+- [Nacos Design Spec](./specs/en/design/nacos-design-spec.md)
+- [Resource Model Spec](./specs/en/design/resource-model-spec.md)
 - [HTTP API Spec](./specs/en/http-api/api-spec.md)
 - [Authorization Spec](./specs/en/http-api/authorization-spec.md)
 - [Response And Error Spec](./specs/en/http-api/response-error-spec.md)
@@ -121,6 +123,8 @@ English:
 
 Simplified Chinese:
 
+- [Nacos 设计规范](./specs/zh-cn/design/nacos-design-spec.md)
+- [资源模型规范](./specs/zh-cn/design/resource-model-spec.md)
 - [HTTP API 规范](./specs/zh-cn/http-api/api-spec.md)
 - [鉴权规范](./specs/zh-cn/http-api/authorization-spec.md)
 - [响应与错误规范](./specs/zh-cn/http-api/response-error-spec.md)

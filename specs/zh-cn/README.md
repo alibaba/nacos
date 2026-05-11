@@ -18,6 +18,8 @@
 
 当前规范：
 
+- [Nacos 设计规范](design/nacos-design-spec.md)
+- [资源模型规范](design/resource-model-spec.md)
 - [HTTP API 规范](http-api/api-spec.md)
 - [gRPC API 规范](grpc-api/api-spec.md)
 - [SDK 规范](sdk/sdk-spec.md)
