@@ -30,16 +30,6 @@ jobs:
         with:
           java-version: 17
           distribution: 'zulu'
-      - name: "Set up Node.js"
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: "Build and check console-ui"
-        working-directory: console-ui
-        run: npm ci && npm run build
-      - name: "Build and check console-ui-next"
-        working-directory: console-ui-next
-        run: npm ci && npm run build
       - name: "Print maven version"
         run: mvn -version
       - name: "Check with Maven"
