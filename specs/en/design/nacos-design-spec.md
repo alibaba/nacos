@@ -107,6 +107,19 @@ not an optional add-on:
 
 ## 4. Domain Responsibilities
 
+Nacos domains should be organized around the unified resource hierarchy:
+
+```text
+NamespaceId -> Group/resourceType -> resourceName
+```
+
+`NamespaceId` is the isolation boundary. `Group/resourceType` is the
+second-level classifier: microservice resources use `Group`, while AI Registry
+resources use `resourceType`. `resourceName` is the concrete domain resource
+name. Domain specs may further define governance attributes such as version,
+label, status, and visibility, but they should not break this top-level
+hierarchy.
+
 ### 4.1 Configuration Domain
 
 The configuration domain manages dynamic configuration resources identified by
@@ -124,9 +137,11 @@ service-change push.
 ### 4.3 AI Registry Domain
 
 The AI registry domain manages AI resources such as MCP Server, A2A AgentCard,
-Prompt, Skill, and AgentSpec. It owns AI resource metadata, versions, labels,
-visibility, endpoints, tool or skill descriptors, publish pipeline state,
-download/distribution, and audit-oriented trace information.
+Prompt, Skill, and AgentSpec. AI resources use
+`NamespaceId -> resourceType -> resourceName` as their top-level identity. The
+domain owns AI resource metadata, versions, labels, visibility, endpoints, tool
+or skill descriptors, publish pipeline state, download/distribution, and
+audit-oriented trace information.
 
 AI Registry is not a separate product model inside Nacos. It is a first-class
 Nacos domain that uses the same namespace, API, SDK, auth, plugin, and resource

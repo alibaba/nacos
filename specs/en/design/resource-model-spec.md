@@ -20,30 +20,41 @@ This document defines the shared resource model for Nacos. It is the semantic
 source for HTTP APIs, gRPC APIs, SDKs, console workflows, persistence models, and
 documentation.
 
-## 1. Resource Envelope
+## 1. Top-level Resource Hierarchy
 
-Every Nacos resource should be described by a common envelope:
+Nacos top-level resource identity has three layers:
 
-| Field | Requirement | Meaning |
+```text
+NamespaceId -> Group/resourceType -> resourceName
+```
+
+The layers mean:
+
+| Layer | Meaning | Scope |
 | --- | --- | --- |
-| `namespaceId` | Required for tenant-scoped resources | Isolation boundary for tenants, teams, and environments. |
-| `resourceType` | Required when multiple resource kinds share a store or API surface | Domain type such as config, service, mcp, a2a, prompt, skill, or agentspec. |
-| `resourceName` | Required | Stable name that identifies the resource within its scope and type. |
-| `group` | Optional, domain-specific | Secondary grouping used by configuration and naming resources. |
-| `version` | Optional, versioned resources only | Immutable or lifecycle-managed version identifier. |
-| `labels` | Optional, versioned resources only | Named route aliases such as `latest`, `stable`, or custom labels. |
-| `status` | Optional, domain-specific | Resource or version lifecycle state. |
-| `metadata` | Optional | User or system metadata that does not change identity. |
-| `visibility` | Optional, visibility-aware resources | Access scope and owner information. |
+| `NamespaceId` | Isolation boundary for tenants, teams, environments, or management domains. | All tenant-scoped resources. |
+| `Group/resourceType` | The second-level classifier. Microservice resources use `group`; AI resources use `resourceType`. | Domain-specific. |
+| `resourceName` | Stable name that identifies a concrete resource within the parent scope. | All named resources. |
 
-The historical Nacos data model is a tuple of namespace, group, and resource
-name. This tuple remains valid for configuration and naming resources. AI
-resources extend the same idea with `resourceType`, `version`, `labels`, and
-visibility governance.
+`group` and `resourceType` must not be treated as the same field:
 
-## 2. Namespace
+- `group` is a business grouping for microservice resources, mainly used by
+  configuration and naming resources.
+- `resourceType` is a type classifier for resources that share a governance
+  model, mainly used by AI Registry resources.
 
-Namespace is the primary isolation boundary. It separates tenants, teams,
+Therefore, Nacos has two primary resource-model branches:
+
+- **Microservice resource model**: `NamespaceId -> Group -> resourceName`.
+- **AI resource model**: `NamespaceId -> resourceType -> resourceName`.
+
+Version, labels, status, visibility, owner, and metadata are governance
+attributes of a resource. They are not part of the top-level three-layer
+identity unless a domain spec explicitly says so.
+
+## 2. NamespaceId
+
+NamespaceId is the primary isolation boundary. It separates tenants, teams,
 environments, or other administrative scopes.
 
 | Concept | Canonical name | Compatibility names |
@@ -59,41 +70,70 @@ existing compatibility contract requires another name.
 Cross-namespace operations are administrative operations and must use Admin API,
 Console API, or Maintainer SDK surfaces.
 
-## 3. Group
+## 3. Second Layer: Group Or resourceType
 
-Group is a domain-specific secondary scope. It is required for configuration and
-naming identity and defaults to `DEFAULT_GROUP` when omitted by supported
-interfaces.
+The second layer further classifies resources inside a namespace, but the
+semantics are domain-specific.
 
-Group is not a universal Nacos resource field. AI resources should not invent a
-group field unless a domain spec explicitly defines its semantics.
+### 3.1 Group
 
-## 4. Resource Identity Rules
+Group is the business grouping for microservice resources. It is part of
+configuration and naming identity and defaults to `DEFAULT_GROUP` when omitted
+by supported interfaces.
 
-| Resource | Canonical identity | Notes |
-| --- | --- | --- |
-| Namespace | `namespaceId` | Root isolation resource. |
-| Config | `namespaceId + group + dataId` | `tenant` is the historical storage/API name for namespace. |
-| Naming service | `namespaceId + group + serviceName` | Internal grouped names may use `group@@serviceName`. |
-| Naming cluster | `namespaceId + group + serviceName + clusterName` | Cluster is subordinate to a service. |
-| Naming instance | `namespaceId + group + serviceName + clusterName + ip + port` | `instanceId` may be generated or provided as a runtime identifier. |
-| Naming client | `clientId` or connection id | Runtime view, not a user-created domain resource. |
-| AI resource | `namespaceId + resourceType + name` | Shared model for Prompt, Skill, AgentSpec, and similar governed resources. |
-| AI resource version | `namespaceId + resourceType + name + version` | Version state is managed separately from resource metadata. |
-| MCP Server | `namespaceId + name` plus optional `id` | `id` may represent registry/import identity; `name` remains the user-facing resource name. |
-| A2A AgentCard | `namespaceId + registrationType + name + version` | Registration type participates in lookup semantics. |
-| Prompt | `namespaceId + promptKey + version` | Legacy Prompt data may be mirrored as config data. |
-| Skill | `namespaceId + name + version` | Labels map route names to versions. |
-| AgentSpec | `namespaceId + name + version` | AgentSpec may reference other AI resources. |
-| Plugin | `pluginType + pluginName` | Plugin state is server-control-plane metadata. |
+Group is suitable for business isolation inside the same resource family, such
+as application, business line, environment-local grouping, or user-defined
+grouping. Group does not express resource type, so a config and a service may
+exist under the same group.
 
-Resource identity fields must not be treated as mutable metadata. Updating a
-resource identity is a delete-and-create or clone operation unless a domain spec
-defines a migration operation.
+### 3.2 resourceType
 
-## 5. Config Resource
+resourceType is a type classifier. It is suitable for shared governance models
+that contain multiple resource types, such as AI Registry resource types:
+`mcp`, `a2a`, `prompt`, `skill`, and `agentspec`.
 
-A config resource is identified by `namespaceId + group + dataId`.
+resourceType is not a business grouping. AI resources should not introduce a
+group identity field unless a domain spec explicitly defines additional
+semantics.
+
+## 4. Third Layer: resourceName
+
+resourceName is the stable name of a resource under
+`NamespaceId + Group/resourceType`.
+
+Different domains expose domain-specific names:
+
+| Domain | Concrete resourceName |
+| --- | --- |
+| Config | `dataId` |
+| Naming service | `serviceName` |
+| MCP Server | `name` or `mcpName` |
+| A2A AgentCard | `name` or `agentName` |
+| Prompt | `promptKey` |
+| Skill | `name` |
+| AgentSpec | `name` |
+
+resourceName is an identity field and should not be modified as ordinary
+metadata. Updating a resourceName is a delete-and-create or clone operation
+unless a domain spec defines a migration operation.
+
+## 5. Microservice Resource Model
+
+The microservice resource model uses:
+
+```text
+NamespaceId -> Group -> resourceName
+```
+
+It covers the traditional Nacos configuration and naming capabilities.
+
+### 5.1 Config Resource
+
+Config resource identity is:
+
+```text
+namespaceId -> group -> dataId
+```
 
 Config owns:
 
@@ -105,115 +145,176 @@ Config owns:
 - gray/beta publication state;
 - history, rollback, dump, and failover data.
 
-`dataId` is the resource name for configuration. Config metadata such as
-`appName`, `type`, `desc`, and `configTags` does not change identity.
+`dataId` is the resourceName for Config. Config metadata such as `appName`,
+`type`, `desc`, and `configTags` does not change identity.
 
 Prompt has a legacy compatibility mapping to config storage with fixed group
-`nacos-ai-prompt` and dataId `{promptKey}.json`; this mapping must not make
-Prompt a normal config resource in new specs.
+`nacos-ai-prompt` and dataId `{promptKey}.json`. This mapping is a compatibility
+storage shape and must not make Prompt a normal Config resource in new specs.
 
-## 6. Naming Resource
+### 5.2 Naming Service Resource
 
-A naming service is identified by `namespaceId + group + serviceName`.
+Naming service resource identity is:
 
-Naming owns:
+```text
+namespaceId -> group -> serviceName
+```
+
+Naming service owns:
 
 - service metadata and selector information;
 - ephemeral or persistent service semantics;
 - clusters and health-check configuration;
-- instances with `ip`, `port`, `clusterName`, `weight`, `healthy`, `enabled`,
-  `ephemeral`, `metadata`, and optional `instanceId`;
 - subscribers, publishers, and client connection views;
 - service and instance change events.
 
-An instance is subordinate to a service. An instance must not be interpreted
-without its service scope.
+Internal grouped names may use `group@@serviceName`, but public APIs and specs
+should prefer separate `group` and `serviceName` fields.
+
+### 5.3 Cluster And Instance
+
+Cluster and Instance are subordinate resources of a service. They do not change
+the top-level three-layer model.
+
+```text
+namespaceId -> group -> serviceName -> clusterName -> instance
+```
+
+Instance identity is usually determined by service scope, `clusterName`, `ip`,
+and `port`; `instanceId` may be generated or provided as a runtime identifier.
+
+Instance contains `ip`, `port`, `clusterName`, `weight`, `healthy`, `enabled`,
+`ephemeral`, `metadata`, and optional `instanceId`. An instance must not be
+interpreted without its service scope.
 
 Ephemeral and persistent semantics affect lifecycle and consistency behavior.
 They must be preserved across HTTP, gRPC, SDK, and storage models.
 
-## 7. AI Resource
+## 6. AI Resource Model
 
-AI resources use a shared governance model:
+The AI resource model uses:
 
-- resource metadata row: `namespaceId + type + name`;
-- version row: `namespaceId + type + name + version`;
-- labels: name-to-version mappings, including `latest`;
-- meta status: enable or disable;
-- version status: draft, reviewing, reviewed, online, or offline;
-- optional owner and visibility scope: `PUBLIC` or `PRIVATE`;
-- optional publish pipeline state: in progress, approved, or rejected;
-- optional business tags, extension metadata, source, and download count.
+```text
+NamespaceId -> resourceType -> resourceName
+```
+
+It covers AI Registry resources such as MCP Server, A2A AgentCard, Prompt,
+Skill, and AgentSpec.
+
+AI resources share governance attributes:
+
+| Attribute | Meaning |
+| --- | --- |
+| `version` | Resource version, forming `NamespaceId + resourceType + resourceName + version`. |
+| `labels` | Label-to-version mappings such as `latest` or `stable`. |
+| `status` | Resource or version lifecycle state. |
+| `visibility` | Visibility scope, such as `PUBLIC` or `PRIVATE`. |
+| `owner` | Owner identity. |
+| `bizTags` / `metadata` / `ext` | Business or extension metadata that does not participate in identity. |
+| `pipeline` | Publish review or automation state. |
+
+AI resource metadata identity is `namespaceId + resourceType + resourceName`.
+AI resource version identity is
+`namespaceId + resourceType + resourceName + version`.
 
 Published AI versions should be treated as immutable unless a domain spec
 explicitly defines a safe mutation. Changes should create a new draft version,
 pass review if required, and then publish or relabel.
 
-### 7.1 MCP Server
+### 6.1 MCP Server
 
-MCP Server resources describe MCP-capable services. They may be created from
-new MCP servers, imported external MCP servers, or existing HTTP/RPC services
+MCP Server canonical resource identity is:
+
+```text
+namespaceId -> mcp -> mcpName
+```
+
+MCP Server resources describe MCP-capable services. They may be created from new
+MCP servers, imported external MCP servers, or existing HTTP/RPC services
 adapted into MCP services.
 
-MCP Server identity is based on `namespaceId + name`, with optional registry
-`id`. MCP-specific metadata includes protocol, front protocol, repository,
-packages, icons, website URL, local or remote server config, endpoint spec, tool
-spec, status, and discovered capabilities.
+MCP Server may carry a registry `id`, but `mcpName` remains the user-facing
+resourceName. MCP-specific metadata includes protocol, front protocol,
+repository, packages, icons, website URL, local or remote server config,
+endpoint spec, tool spec, status, and discovered capabilities.
 
-Supported protocol values include stdio, SSE-style MCP, streamable HTTP, HTTP,
-and Dubbo-compatible forms as defined by the AI domain.
+### 6.2 A2A AgentCard
 
-### 7.2 A2A AgentCard
+A2A AgentCard canonical resource identity is:
 
-A2A AgentCard resources describe agent capabilities, skills, supported
-interfaces, provider information, security schemes, signatures, and endpoint
-metadata.
+```text
+namespaceId -> a2a -> agentName
+```
 
-AgentCard lookup is scoped by namespace, registration type, agent name, and
-version. Endpoint registration is subordinate to the owning agent card and may
-be client-owned at runtime.
+AgentCard resources describe agent capabilities, skills, supported interfaces,
+provider information, security schemes, signatures, and endpoint metadata.
 
-### 7.3 Prompt
+`registrationType` participates in AgentCard lookup and compatibility
+semantics, but it is not the top-level second-layer field. Its relation with
+resourceName, version, and endpoint should be defined by a specific A2A domain
+spec.
 
-Prompt resources are identified by prompt key and version within a namespace.
+### 6.3 Prompt
+
+Prompt canonical resource identity is:
+
+```text
+namespaceId -> prompt -> promptKey
+```
+
+Prompt version identity is:
+
+```text
+namespaceId -> prompt -> promptKey -> version
+```
+
 A Prompt contains template content, variables, md5, and version metadata.
-
 Runtime Prompt lookup should resolve by explicit version, then label, then
 `latest` according to the relevant API or SDK contract.
 
-### 7.4 Skill
+### 6.4 Skill
 
-Skill resources represent reusable AI Agent capabilities. A Skill contains
-metadata, instruction content, optional resources, versions, labels, visibility,
-and publish pipeline metadata.
+Skill canonical resource identity is:
 
-A Skill version moves through draft/review/publish/offline states. Only online
-versions should be returned to runtime clients unless a management API
-explicitly requests other states.
+```text
+namespaceId -> skill -> skillName
+```
 
-### 7.5 AgentSpec
+Skill represents reusable AI Agent capability. A Skill contains metadata,
+instruction content, optional resources, versions, labels, visibility, and
+publish pipeline metadata.
 
-AgentSpec resources assemble agent configuration by referencing prompts, skills,
-MCP servers, A2A agents, or other required resources. AgentSpec identity follows
-`namespaceId + name + version` and should use labels for runtime routing.
+A Skill version moves through draft, reviewing, reviewed, online, and offline
+states. Only online versions should be returned to runtime clients unless a
+management API explicitly requests other states.
 
-AgentSpec should reference other resources by stable identity and version or
-label, not by storage implementation details.
+### 6.5 AgentSpec
 
-## 8. Visibility And Ownership
+AgentSpec canonical resource identity is:
+
+```text
+namespaceId -> agentspec -> agentSpecName
+```
+
+AgentSpec assembles agent configuration by referencing prompts, skills, MCP
+servers, A2A agents, or other required resources. AgentSpec should reference
+other resources by stable identity and version or label, not by storage
+implementation details.
+
+## 7. Visibility And Ownership
 
 Resources that support visibility must expose:
 
 - `namespaceId`;
-- stable resource name;
-- resource type;
+- `resourceType`;
+- stable resourceName;
 - scope, currently `PUBLIC` or `PRIVATE`;
 - owner identity.
 
 Visibility affects discovery, detail viewing, download, and write operations.
 It complements authorization and must not replace permission checks.
 
-## 9. Status And Lifecycle
+## 8. Status And Lifecycle
 
 Status values are domain-specific but must be explicit and documented.
 
@@ -228,7 +329,7 @@ Runtime APIs should return only states intended for runtime consumers.
 Management APIs may return draft, review, offline, internal, or operational
 states when authorized.
 
-## 10. API Representation Rules
+## 9. API Representation Rules
 
 All API families must preserve the same resource identity:
 
@@ -243,13 +344,14 @@ All API families must preserve the same resource identity:
 If a historical API uses a compatibility name, the implementation should map it
 to the canonical resource term internally and document the alias.
 
-## 11. New Resource Checklist
+## 10. New Resource Checklist
 
 Every new resource type must define:
 
 - owning domain and module;
 - canonical identity fields;
-- namespace and group behavior;
+- whether the second layer is `Group` or `resourceType`;
+- concrete business name for resourceName;
 - version, label, status, and visibility behavior;
 - runtime API, management API, and SDK exposure;
 - authorization and audit requirements;

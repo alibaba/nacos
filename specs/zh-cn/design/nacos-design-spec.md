@@ -85,6 +85,17 @@ Nacos 管理敏感的运行时资产和 AI 资产。安全是设计的一部分�
 
 ## 4. 领域职责
 
+Nacos 领域应围绕统一资源层次组织：
+
+```text
+NamespaceId -> Group/resourceType -> resourceName
+```
+
+其中 `NamespaceId` 是隔离边界；`Group/resourceType` 是第二层分类，微服务应用资源
+使用 `Group`，AI Registry 资源使用 `resourceType`；`resourceName` 是领域内具体
+资源名称。领域规范可以继续定义 version、label、status、visibility 等治理属性，
+但不应打破这个顶层层次。
+
 ### 4.1 配置领域
 
 配置领域管理由 namespace、group 和 dataId 标识的动态配置资源。它负责配置内容、
@@ -100,8 +111,9 @@ failover 相关行为。
 ### 4.3 AI Registry 领域
 
 AI Registry 领域管理 MCP Server、A2A AgentCard、Prompt、Skill 和 AgentSpec 等
-AI 资源。它负责 AI 资源元数据、版本、标签、可见性、端点、工具或 Skill 描述、
-发布流水线状态、下载分发和面向审计的追踪信息。
+AI 资源。AI 资源使用 `NamespaceId -> resourceType -> resourceName` 作为顶层身份。
+它负责 AI 资源元数据、版本、标签、可见性、端点、工具或 Skill 描述、发布流水线
+状态、下载分发和面向审计的追踪信息。
 
 AI Registry 不是 Nacos 内部的独立产品模型，而是 Nacos 的一等领域，使用同一套
 namespace、API、SDK、鉴权、插件和资源治理原则。

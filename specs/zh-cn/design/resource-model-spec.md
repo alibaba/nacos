@@ -19,29 +19,39 @@
 本文档定义 Nacos 共享资源模型，是 HTTP API、gRPC API、SDK、控制台流程、持久化
 模型和用户文档的语义来源。
 
-## 1. 资源信封
+## 1. 顶层资源层次
 
-每个 Nacos 资源都应能用一组通用信封字段描述：
+Nacos 顶层资源身份由三层组成：
 
-| 字段 | 要求 | 含义 |
+```text
+NamespaceId -> Group/resourceType -> resourceName
+```
+
+三层含义如下：
+
+| 层级 | 含义 | 适用范围 |
 | --- | --- | --- |
-| `namespaceId` | 租户域资源必需 | 租户、团队和环境的隔离边界。 |
-| `resourceType` | 多类资源共用存储或 API 面时必需 | 资源类型，例如 config、service、mcp、a2a、prompt、skill、agentspec。 |
-| `resourceName` | 必需 | 在所属 scope 和 type 内稳定标识资源的名称。 |
-| `group` | 可选，领域特定 | 配置和注册中心使用的二级分组。 |
-| `version` | 可选，仅版本化资源 | 不可变或受生命周期管理的版本标识。 |
-| `labels` | 可选，仅版本化资源 | `latest`、`stable` 或自定义标签等命名路由别名。 |
-| `status` | 可选，领域特定 | 资源或版本生命周期状态。 |
-| `metadata` | 可选 | 不改变资源身份的用户或系统元数据。 |
-| `visibility` | 可选，支持可见性的资源 | 访问范围和 owner 信息。 |
+| `NamespaceId` | 租户、团队、环境或管理域隔离边界。 | 所有租户域资源。 |
+| `Group/resourceType` | 第二层分类。微服务应用资源使用 `group`；AI 资源使用 `resourceType`。 | 由领域决定。 |
+| `resourceName` | 在上层 scope 内标识具体资源的稳定名称。 | 所有可命名资源。 |
 
-历史 Nacos 数据模型是 namespace、group 和 resource name 三元组。该三元组仍然
-适用于配置和注册中心资源。AI 资源在同一思路上扩展了 `resourceType`、`version`、
-`labels` 和可见性治理。
+`group` 和 `resourceType` 不应被混为同一个字段：
 
-## 2. Namespace
+- `group` 是微服务应用资源的业务分组，主要用于配置和注册中心资源。
+- `resourceType` 是资源类型分组，主要用于 AI Registry 等多类型资源共享同一套
+  治理模型的场景。
 
-Namespace 是最主要的隔离边界，用于隔离租户、团队、环境或其他管理范围。
+因此，Nacos 的资源模型可以按领域分为两类主干：
+
+- **微服务资源模型**：`NamespaceId -> Group -> resourceName`。
+- **AI 资源模型**：`NamespaceId -> resourceType -> resourceName`。
+
+版本、标签、状态、可见性、owner、元数据等字段属于资源的治理属性，除非领域规范
+明确说明，否则不参与顶层三层身份。
+
+## 2. NamespaceId
+
+NamespaceId 是最主要的隔离边界，用于隔离租户、团队、环境或其他管理范围。
 
 | 概念 | 标准名称 | 兼容名称 |
 | --- | --- | --- |
@@ -55,39 +65,63 @@ API 和规范应使用 `namespaceId`，除非已有兼容契约要求继续使�
 跨 namespace 操作属于管理操作，必须通过 Admin API、Console API 或 Maintainer SDK
 能力面暴露。
 
-## 3. Group
+## 3. 第二层：Group 或 resourceType
 
-Group 是领域特定的二级 scope。它是配置和注册中心资源身份的一部分，在支持省略的
-接口中默认值为 `DEFAULT_GROUP`。
+第二层用于在 namespace 内继续划分资源，但不同领域使用不同语义。
 
-Group 不是所有 Nacos 资源的通用字段。AI 资源不应引入 group 字段，除非对应领域
-规范明确给出语义。
+### 3.1 Group
 
-## 4. 资源身份规则
+Group 是微服务应用资源的业务分组。它是配置和注册中心资源身份的一部分，在支持
+省略的接口中默认值为 `DEFAULT_GROUP`。
 
-| 资源 | 标准身份 | 说明 |
-| --- | --- | --- |
-| Namespace | `namespaceId` | 根隔离资源。 |
-| Config | `namespaceId + group + dataId` | `tenant` 是 namespace 的历史存储/API 名称。 |
-| Naming service | `namespaceId + group + serviceName` | 内部 grouped name 可以使用 `group@@serviceName`。 |
-| Naming cluster | `namespaceId + group + serviceName + clusterName` | Cluster 从属于 service。 |
-| Naming instance | `namespaceId + group + serviceName + clusterName + ip + port` | `instanceId` 可以生成或由用户提供，作为运行时标识。 |
-| Naming client | `clientId` 或 connection id | 运行时视图，不是用户创建的领域资源。 |
-| AI resource | `namespaceId + resourceType + name` | Prompt、Skill、AgentSpec 等治理资源的共享模型。 |
-| AI resource version | `namespaceId + resourceType + name + version` | 版本状态独立于资源元数据管理。 |
-| MCP Server | `namespaceId + name`，可附带 `id` | `id` 可表示 registry/import 身份；`name` 是面向用户的资源名。 |
-| A2A AgentCard | `namespaceId + registrationType + name + version` | registration type 参与查询语义。 |
-| Prompt | `namespaceId + promptKey + version` | 旧 Prompt 数据可以镜像为 config 数据。 |
-| Skill | `namespaceId + name + version` | labels 映射路由名到版本。 |
-| AgentSpec | `namespaceId + name + version` | AgentSpec 可以引用其他 AI 资源。 |
-| Plugin | `pluginType + pluginName` | 插件状态是服务端控制面元数据。 |
+Group 适合表达同一类微服务资源的业务隔离，例如应用、业务线、环境内分组或用户
+自定义分组。Group 不表达资源类型，因此同一 group 下可以存在配置和服务等不同
+领域资源。
 
-资源身份字段不应被当作可变元数据。除非领域规范定义迁移操作，否则修改资源身份
-应视为删除并创建，或 clone 操作。
+### 3.2 resourceType
 
-## 5. Config 资源
+resourceType 是资源类型分组。它适合表达一类共享治理模型中的不同资源类型，例如
+AI Registry 中的 `mcp`、`a2a`、`prompt`、`skill`、`agentspec`。
 
-Config 资源由 `namespaceId + group + dataId` 标识。
+resourceType 不表达业务分组。AI 资源不应再引入 group 作为身份字段，除非对应领域
+规范明确给出额外语义。
+
+## 4. 第三层：resourceName
+
+resourceName 是在 `NamespaceId + Group/resourceType` 下稳定标识资源的名称。
+
+不同领域会使用更贴近业务的名称：
+
+| 领域 | resourceName 的具体名称 |
+| --- | --- |
+| Config | `dataId` |
+| Naming service | `serviceName` |
+| MCP Server | `name` 或 `mcpName` |
+| A2A AgentCard | `name` 或 `agentName` |
+| Prompt | `promptKey` |
+| Skill | `name` |
+| AgentSpec | `name` |
+
+resourceName 是身份字段，不应被当作普通元数据修改。除非领域规范定义迁移操作，
+否则修改 resourceName 应视为删除并创建，或 clone 操作。
+
+## 5. 微服务资源模型
+
+微服务资源模型使用：
+
+```text
+NamespaceId -> Group -> resourceName
+```
+
+它覆盖 Nacos 传统配置中心和注册中心能力。
+
+### 5.1 Config 资源
+
+Config 资源身份为：
+
+```text
+namespaceId -> group -> dataId
+```
 
 Config 负责：
 
@@ -99,104 +133,164 @@ Config 负责：
 - gray/beta 发布状态；
 - history、rollback、dump 和 failover 数据。
 
-`dataId` 是配置资源名。`appName`、`type`、`desc` 和 `configTags` 等元数据不改变
-资源身份。
+`dataId` 是 Config 的 resourceName。`appName`、`type`、`desc` 和 `configTags` 等
+元数据不改变资源身份。
 
 Prompt 存在旧兼容映射：固定 group 为 `nacos-ai-prompt`，dataId 为
-`{promptKey}.json`。该映射不应让 Prompt 在新规范中被视为普通 Config 资源。
+`{promptKey}.json`。该映射是兼容存储形态，不应让 Prompt 在新规范中被视为普通
+Config 资源。
 
-## 6. Naming 资源
+### 5.2 Naming service 资源
 
-Naming service 由 `namespaceId + group + serviceName` 标识。
+Naming service 资源身份为：
 
-Naming 负责：
+```text
+namespaceId -> group -> serviceName
+```
+
+Naming service 负责：
 
 - 服务元数据和 selector 信息；
 - 临时或持久化服务语义；
 - cluster 和健康检查配置；
-- instance，包含 `ip`、`port`、`clusterName`、`weight`、`healthy`、`enabled`、
-  `ephemeral`、`metadata` 和可选 `instanceId`；
 - subscriber、publisher 和 client connection 视图；
 - service 和 instance 变更事件。
 
-Instance 从属于 service。脱离 service scope 的 instance 不应被单独解释。
+内部 grouped name 可以使用 `group@@serviceName` 表达，但公开 API 和规范应优先
+使用独立的 `group` 与 `serviceName` 字段。
+
+### 5.3 Cluster 和 Instance
+
+Cluster 和 Instance 是 service 的下级资源，不改变顶层三层模型。
+
+```text
+namespaceId -> group -> serviceName -> clusterName -> instance
+```
+
+Instance 身份通常由 service scope、`clusterName`、`ip` 和 `port` 共同确定；
+`instanceId` 可以生成或由用户提供，作为运行时标识。
+
+Instance 包含 `ip`、`port`、`clusterName`、`weight`、`healthy`、`enabled`、
+`ephemeral`、`metadata` 和可选 `instanceId`。脱离 service scope 的 instance 不应
+被单独解释。
 
 临时和持久化语义会影响生命周期和一致性行为。HTTP、gRPC、SDK 和存储模型都必须
 保留该语义。
 
-## 7. AI 资源
+## 6. AI 资源模型
 
-AI 资源使用共享治理模型：
+AI 资源模型使用：
 
-- 资源元数据行：`namespaceId + type + name`；
-- 版本行：`namespaceId + type + name + version`；
-- 标签：名称到版本的映射，包括 `latest`；
-- 元数据状态：enable 或 disable；
-- 版本状态：draft、reviewing、reviewed、online 或 offline；
-- 可选 owner 和可见性范围：`PUBLIC` 或 `PRIVATE`；
-- 可选发布流水线状态：in progress、approved 或 rejected；
-- 可选业务标签、扩展元数据、来源和下载次数。
+```text
+NamespaceId -> resourceType -> resourceName
+```
+
+它覆盖 MCP Server、A2A AgentCard、Prompt、Skill、AgentSpec 等 AI Registry 资源。
+
+AI 资源共享一套治理属性：
+
+| 属性 | 含义 |
+| --- | --- |
+| `version` | 资源版本，形成 `NamespaceId + resourceType + resourceName + version`。 |
+| `labels` | 标签到版本的映射，例如 `latest`、`stable`。 |
+| `status` | 资源或版本状态。 |
+| `visibility` | 资源可见性，例如 `PUBLIC` 或 `PRIVATE`。 |
+| `owner` | 资源所有者 identity。 |
+| `bizTags` / `metadata` / `ext` | 不参与身份的业务或扩展元数据。 |
+| `pipeline` | 发布审核或自动化处理状态。 |
+
+AI 资源元数据身份为 `namespaceId + resourceType + resourceName`。AI 资源版本身份为
+`namespaceId + resourceType + resourceName + version`。
 
 已发布 AI 版本应视为不可变，除非领域规范显式定义安全修改方式。变更应创建新的
 draft 版本，在需要时通过审核，然后发布或调整 label。
 
-### 7.1 MCP Server
+### 6.1 MCP Server
+
+MCP Server 的标准资源身份为：
+
+```text
+namespaceId -> mcp -> mcpName
+```
 
 MCP Server 资源描述具备 MCP 能力的服务。它可以来自新构建的 MCP Server、导入的
 外部 MCP Server，也可以来自通过适配声明转换而来的存量 HTTP/RPC 服务。
 
-MCP Server 身份基于 `namespaceId + name`，并可带有 registry `id`。MCP 特有元数据
-包括 protocol、front protocol、repository、packages、icons、website URL、本地或
-远程 server config、endpoint spec、tool spec、status 和自动发现的 capabilities。
+MCP Server 可带有 registry `id`，但 `mcpName` 仍是面向用户的 resourceName。
+MCP 特有元数据包括 protocol、front protocol、repository、packages、icons、
+website URL、本地或远程 server config、endpoint spec、tool spec、status 和自动
+发现的 capabilities。
 
-支持的协议值包括 stdio、SSE 风格 MCP、streamable HTTP、HTTP 和 Dubbo 兼容形态，
-具体由 AI 领域定义。
+### 6.2 A2A AgentCard
 
-### 7.2 A2A AgentCard
+A2A AgentCard 的标准资源身份为：
 
-A2A AgentCard 资源描述 Agent 的能力、skills、supported interfaces、provider 信息、
+```text
+namespaceId -> a2a -> agentName
+```
+
+AgentCard 资源描述 Agent 的能力、skills、supported interfaces、provider 信息、
 security schemes、signatures 和 endpoint 元数据。
 
-AgentCard 查询按 namespace、registration type、agent name 和 version 确定范围。
-Endpoint registration 从属于对应 AgentCard，并且在运行时可能由客户端拥有。
+`registrationType` 参与 AgentCard 查询和兼容语义，但它不是顶层第二层字段。需要
+在具体 A2A 领域规范中定义它与 resourceName、version 和 endpoint 的关系。
 
-### 7.3 Prompt
+### 6.3 Prompt
 
-Prompt 资源在 namespace 内由 prompt key 和 version 标识。Prompt 包含 template
-内容、variables、md5 和版本元数据。
+Prompt 的标准资源身份为：
 
-运行时 Prompt 查询应按照对应 API 或 SDK 契约，通过显式 version、label、`latest`
-的顺序进行解析。
+```text
+namespaceId -> prompt -> promptKey
+```
 
-### 7.4 Skill
+Prompt version 形成：
 
-Skill 资源表示 AI Agent 的可复用能力。Skill 包含元数据、指令内容、可选资源、
-版本、标签、可见性和发布流水线元数据。
+```text
+namespaceId -> prompt -> promptKey -> version
+```
 
-Skill version 会经历 draft、review、publish、offline 等状态。除非管理 API 显式
-请求其他状态，否则运行时客户端只应获得 online version。
+Prompt 包含 template 内容、variables、md5 和版本元数据。运行时查询应按照对应
+API 或 SDK 契约，通过显式 version、label、`latest` 的顺序进行解析。
 
-### 7.5 AgentSpec
+### 6.4 Skill
 
-AgentSpec 资源通过引用 Prompt、Skill、MCP Server、A2A Agent 或其他必要资源来组装
-Agent 配置。AgentSpec 身份遵循 `namespaceId + name + version`，运行时路由应使用
-labels。
+Skill 的标准资源身份为：
 
-AgentSpec 应通过稳定身份和 version 或 label 引用其他资源，不应引用存储实现细节。
+```text
+namespaceId -> skill -> skillName
+```
 
-## 8. 可见性和 Owner
+Skill 表示 AI Agent 的可复用能力，包含元数据、指令内容、可选资源、版本、标签、
+可见性和发布流水线元数据。
+
+Skill version 会经历 draft、reviewing、reviewed、online、offline 等状态。除非
+管理 API 显式请求其他状态，否则运行时客户端只应获得 online version。
+
+### 6.5 AgentSpec
+
+AgentSpec 的标准资源身份为：
+
+```text
+namespaceId -> agentspec -> agentSpecName
+```
+
+AgentSpec 通过引用 Prompt、Skill、MCP Server、A2A Agent 或其他必要资源来组装
+Agent 配置。AgentSpec 应通过稳定身份和 version 或 label 引用其他资源，不应引用
+存储实现细节。
+
+## 7. 可见性和 Owner
 
 支持可见性的资源必须暴露：
 
 - `namespaceId`；
-- 稳定资源名；
-- 资源类型；
+- `resourceType`；
+- 稳定 resourceName；
 - scope，目前为 `PUBLIC` 或 `PRIVATE`；
 - owner identity。
 
 可见性影响发现、详情查看、下载和写入操作。它补充授权逻辑，但不能替代权限校验。
 
-## 9. 状态和生命周期
+## 8. 状态和生命周期
 
 状态值是领域特定的，但必须显式定义并记录：
 
@@ -209,7 +303,7 @@ AgentSpec 应通过稳定身份和 version 或 label 引用其他资源，不应
 运行时 API 应只返回运行时消费者需要的状态。管理 API 在授权后可以返回 draft、
 review、offline、internal 或 operational 状态。
 
-## 10. API 表达规则
+## 9. API 表达规则
 
 所有 API 家族必须保持相同的资源身份：
 
@@ -221,13 +315,14 @@ review、offline、internal 或 operational 状态。
 
 如果历史 API 使用兼容名称，实现应在内部映射到标准资源术语，并记录该别名。
 
-## 11. 新资源检查项
+## 10. 新资源检查项
 
 每个新的资源类型都必须定义：
 
 - 所属领域和模块；
 - 标准身份字段；
-- namespace 和 group 行为；
+- 使用 `Group` 还是 `resourceType` 作为第二层；
+- resourceName 的具体业务名称；
 - version、label、status 和 visibility 行为；
 - runtime API、management API 和 SDK 暴露方式；
 - 授权和审计要求；
