@@ -30,12 +30,17 @@ jobs:
         with:
           java-version: 17
           distribution: 'zulu'
-      - name: "Print maven version"
-        run: mvn -version
+      - name: Set up Maven Daemon
+        uses: gauthamchandra/mvnd-action@22dcb7d03ed0401ddadc760783dd9629432dff77 # v0.2.1
+        with:
+          # https://downloads.apache.org/maven/mvnd/
+          version: '1.0.5'
+      - name: "Print Maven Daemon version"
+        run: mvnd -version
       - name: "Check with Maven"
-        run: mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        run: mvnd -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Build and Test with Maven"
-        run: mvn -B '-Prelease-nacos,!dev' clean install -Drat.skip=true -Dspotbugs.skip=true -DtrimStackTrace=false -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        run: mvnd -B '-Prelease-nacos,!dev' clean install -Drat.skip=true -Dspotbugs.skip=true -DtrimStackTrace=false -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v5
         with:
