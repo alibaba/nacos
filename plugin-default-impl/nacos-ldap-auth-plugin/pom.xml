@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 1999-2023 Alibaba Group Holding Ltd.
+  ~ Copyright 1999-2026 Alibaba Group Holding Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -24,24 +24,17 @@
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    
-    <artifactId>default-auth-plugin</artifactId>
-    <name>nacos-default-auth-plugin ${project.version}</name>
-    
+
+    <artifactId>nacos-ldap-auth-plugin</artifactId>
+    <name>nacos-ldap-auth-plugin ${project.version}</name>
+    <description>LDAP Authentication Plugin for Nacos</description>
+
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-auth-plugin</artifactId>
+            <artifactId>default-auth-plugin</artifactId>
+            <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-visibility-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-common</artifactId>
-        </dependency>
-        
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-sys</artifactId>
@@ -52,10 +45,24 @@
             <artifactId>nacos-core</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+        <dependency>
+            <groupId>org.springframework.ldap</groupId>
+            <artifactId>spring-ldap-core</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
