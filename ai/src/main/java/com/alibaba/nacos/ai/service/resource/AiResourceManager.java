@@ -1149,6 +1149,68 @@ public class AiResourceManager {
     }
     
     /**
+     * Unified delete-draft logic for all resource types.
+     *
+     * <p>Resolves the target version from editingVersion (primary) or reviewingVersion (fallback
+     * for reviewed/draft status), clears the corresponding meta pointer, deletes the version row,
+     * and invokes the storage deleter callback.</p>
+     *
+     * @param namespaceId    namespace
+     * @param name           resource name
+     * @param type           resource type
+     * @param storageDeleter callback to delete resource-specific storage files
+     */
+    public void doDeleteDraft(String namespaceId, String name, String type,
+        VersionStorageDeleter storageDeleter) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name, type);
+        VisibilityHelper.checkWritableResource(meta);
+        ResourceVersionInfo info = requireVersionInfo(meta);
+        String editing = info.getEditingVersion();
+        
+        if (StringUtils.isBlank(editing)) {
+            // Fallback: try reviewingVersion (reviewed/draft status can be deleted)
+            String reviewing = info.getReviewingVersion();
+            if (StringUtils.isBlank(reviewing)) {
+                return;
+            }
+            AiResourceVersion rv =
+                aiResourceVersionPersistService.find(namespaceId, name, type, reviewing);
+            if (rv == null || (!AiResourceConstants.VERSION_STATUS_REVIEWED
+                .equalsIgnoreCase(rv.getStatus())
+                && !AiResourceConstants.VERSION_STATUS_DRAFT
+                .equalsIgnoreCase(rv.getStatus()))) {
+                return;
+            }
+            info.setReviewingVersion(null);
+            updateVersionInfoCas(namespaceId, meta, info);
+            storageDeleter.deleteStorage(rv);
+            deleteVersion(namespaceId, name, type, reviewing);
+            AiResourceTraceService.logSuccess(type, name, reviewing,
+                AiResourceTraceService.OP_DELETE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
+            return;
+        }
+        
+        AiResourceVersion v =
+            aiResourceVersionPersistService.find(namespaceId, name, type, editing);
+        
+        // Clear meta pointer first
+        info.setEditingVersion(null);
+        updateVersionInfoCas(namespaceId, meta, info);
+        
+        // Delete version row and storage only if status is draft
+        if (v != null && AiResourceConstants.VERSION_STATUS_DRAFT
+            .equalsIgnoreCase(v.getStatus())) {
+            storageDeleter.deleteStorage(v);
+            deleteVersion(namespaceId, name, type, editing);
+        }
+        AiResourceTraceService.logSuccess(type, name, editing,
+            AiResourceTraceService.OP_DELETE_DRAFT,
+            VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+    }
+    
+    /**
      * Handle pipeline completion: persist pipeline info and transition version status.
      *
      * <p>When reviewed-status switch is enabled, both approved and rejected results transition

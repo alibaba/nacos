@@ -279,51 +279,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     @Override
     public void deleteDraft(String namespaceId, String promptKey) throws NacosException {
-        AiResource meta = requireMeta(namespaceId, promptKey);
-        VisibilityHelper.checkWritableResource(meta);
-        PromptVersionInfoPojo info = requireVersionInfo(meta);
-        String editing = info.getEditingVersion();
-        
-        // When no editingVersion, try reviewingVersion (reviewed status can be deleted)
-        if (StringUtils.isBlank(editing)) {
-            String reviewing = info.getReviewingVersion();
-            if (StringUtils.isBlank(reviewing)) {
-                return;
-            }
-            AiResourceVersion rv =
-                resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
-                    reviewing);
-            if (rv == null || (!VERSION_STATUS_REVIEWED.equalsIgnoreCase(rv.getStatus())
-                && !VERSION_STATUS_DRAFT.equalsIgnoreCase(rv.getStatus()))) {
-                return;
-            }
-            info.setReviewingVersion(null);
-            updateMetaVersionInfoCas(namespaceId, meta, info);
-            resourceManager.deleteVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, reviewing);
-            deletePromptStorageForVersion(namespaceId, promptKey, reviewing);
-            AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, reviewing,
-                AiResourceTraceService.OP_DELETE_DRAFT,
-                VisibilityHelper.resolveCurrentIdentity(),
-                VisibilityHelper.resolveClientIp());
-            return;
-        }
-        
-        AiResourceVersion v =
-            resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
-                editing);
-        
-        // 1) meta: clear editingVersion reference first
-        info.setEditingVersion(null);
-        updateMetaVersionInfoCas(namespaceId, meta, info);
-        
-        // 2) version row, then storage files
-        if (v != null && VERSION_STATUS_DRAFT.equalsIgnoreCase(v.getStatus())) {
-            resourceManager.deleteVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, editing);
-            deletePromptStorageForVersion(namespaceId, promptKey, editing);
-        }
-        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, editing,
-            AiResourceTraceService.OP_DELETE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
-            VisibilityHelper.resolveClientIp());
+        resourceManager.doDeleteDraft(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+            v -> deletePromptStorageForVersion(namespaceId, promptKey, v.getVersion()));
     }
     
     @Override

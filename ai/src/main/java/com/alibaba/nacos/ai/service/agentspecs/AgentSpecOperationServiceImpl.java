@@ -820,51 +820,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      */
     @Override
     public void deleteDraft(String namespaceId, String name) throws NacosException {
-        AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
-        VisibilityHelper.checkWritableResource(meta);
-        ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
-        String editing = info.getEditingVersion();
-        
-        // When no editingVersion, try reviewingVersion (reviewed status can be deleted)
-        if (StringUtils.isBlank(editing)) {
-            String reviewing = info.getReviewingVersion();
-            if (StringUtils.isBlank(reviewing)) {
-                return;
-            }
-            AiResourceVersion rv =
-                resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
-                    reviewing);
-            if (rv == null || (!AiResourceConstants.VERSION_STATUS_REVIEWED
-                .equalsIgnoreCase(rv.getStatus())
-                && !AiResourceConstants.VERSION_STATUS_DRAFT
-                .equalsIgnoreCase(rv.getStatus()))) {
-                return;
-            }
-            deleteAgentSpecStorageForVersion(namespaceId, name, reviewing);
-            resourceManager.deleteVersion(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, reviewing);
-            info.setReviewingVersion(null);
-            resourceManager.updateVersionInfoCas(namespaceId, meta, info);
-            AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, reviewing,
-                AiResourceTraceService.OP_DELETE_DRAFT,
-                VisibilityHelper.resolveCurrentIdentity(),
-                VisibilityHelper.resolveClientIp());
-            return;
-        }
-        
-        // Step 1: Delete storage files and version row (only clean up when version status is draft)
-        AiResourceVersion v =
-            resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
-                editing);
-        if (v != null && AiResourceConstants.VERSION_STATUS_DRAFT.equalsIgnoreCase(v.getStatus())) {
-            deleteAgentSpecStorageForVersion(namespaceId, name, editing);
-            resourceManager.deleteVersion(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, editing);
-        }
-        // Step 2: Clear meta's editingVersion pointer
-        info.setEditingVersion(null);
-        resourceManager.updateVersionInfoCas(namespaceId, meta, info);
-        AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, editing,
-            AiResourceTraceService.OP_DELETE_DRAFT,
-            VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        resourceManager.doDeleteDraft(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
+            v -> deleteAgentSpecStorageForVersion(namespaceId, name, v.getVersion()));
     }
     
     /**
