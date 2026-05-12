@@ -41,6 +41,12 @@
             <version>${revision}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-ldap-auth-plugin</artifactId>
+            <version>${revision}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
