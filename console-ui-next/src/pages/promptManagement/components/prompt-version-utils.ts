@@ -50,6 +50,7 @@ export function getValidActionsWithContext(
   hasEditingOrReviewing: boolean,
   pipelineStatus?: PipelineExecutionStatus | null,
   isGlobalAdmin?: boolean,
+  pipelineStale?: boolean | null,
 ): ActionItem[] {
   const base = getValidActions(status);
   const items: ActionItem[] = base.map((action) => {
@@ -59,9 +60,14 @@ export function getValidActionsWithContext(
     return { action };
   });
 
-  // Admin force-publish: show when pipeline REJECTED on reviewing or reviewed version
-  if (isGlobalAdmin && pipelineStatus === 'REJECTED' && (status === 'reviewing' || status === 'reviewed')) {
-    items.push({ action: 'forcePublish' });
+  // Admin force-publish: show when pipeline REJECTED on reviewing/reviewed,
+  // or on draft when pipeline is not stale (legacy backward compat)
+  if (isGlobalAdmin && pipelineStatus === 'REJECTED') {
+    if (status === 'reviewing' || status === 'reviewed') {
+      items.push({ action: 'forcePublish' });
+    } else if (status === 'draft' && !pipelineStale) {
+      items.push({ action: 'forcePublish' });
+    }
   }
 
   if (status === 'online' || status === 'offline') {

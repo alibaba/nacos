@@ -943,7 +943,7 @@ export default function SkillDetailPage() {
                             <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                           )}
                           {/* Admin-only force-publish when pipeline rejected */}
-                          {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
+                          {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && !currentPipelineInfo.stale && (
                             <Button
                               variant="outline"
                               size="sm"
