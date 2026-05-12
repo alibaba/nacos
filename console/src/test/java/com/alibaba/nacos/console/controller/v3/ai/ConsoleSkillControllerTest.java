@@ -85,6 +85,24 @@ public class ConsoleSkillControllerTest {
     }
     
     @Test
+    void testReeditSuccess() throws Exception {
+        doNothing().when(skillProxy).reedit(any(SkillPublishForm.class));
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
+            Constants.Skills.CONSOLE_PATH + "/reedit").param("namespaceId", "test-ns")
+            .param("skillName", "test-skill").param("version", "v1");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        String content = response.getContentAsString();
+        Result<String> result = JacksonUtils.toObj(content, new TypeReference<>() {
+        });
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+        verify(skillProxy).reedit(any(SkillPublishForm.class));
+    }
+    
+    @Test
     void testListSkillsSuccess() throws Exception {
         Page<SkillSummary> page = new Page<>();
         page.setTotalCount(1);

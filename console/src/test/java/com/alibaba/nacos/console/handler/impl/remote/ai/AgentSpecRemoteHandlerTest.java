@@ -184,4 +184,18 @@ class AgentSpecRemoteHandlerTest {
         
         verify(agentSpecMaintainerService).forcePublish(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", true);
     }
+    
+    @Test
+    void testReedit() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setVersion("v1");
+        when(agentSpecMaintainerService.reedit(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("v1")))
+            .thenReturn(true);
+        
+        agentSpecRemoteHandler.reedit(form);
+        
+        verify(agentSpecMaintainerService).reedit(NAMESPACE_ID, AGENT_SPEC_NAME, "v1");
+    }
 }

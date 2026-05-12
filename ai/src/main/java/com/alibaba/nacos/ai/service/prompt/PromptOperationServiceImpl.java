@@ -94,6 +94,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private static final String VERSION_STATUS_REVIEWING = "reviewing";
     
+    private static final String VERSION_STATUS_REVIEWED = "reviewed";
+    
     private static final String VERSION_STATUS_OFFLINE = "offline";
     
     private static final String DEFAULT_AUTHOR = "-";
@@ -281,7 +283,28 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         VisibilityHelper.checkWritableResource(meta);
         PromptVersionInfoPojo info = requireVersionInfo(meta);
         String editing = info.getEditingVersion();
+        
+        // When no editingVersion, try reviewingVersion (reviewed status can be deleted)
         if (StringUtils.isBlank(editing)) {
+            String reviewing = info.getReviewingVersion();
+            if (StringUtils.isBlank(reviewing)) {
+                return;
+            }
+            AiResourceVersion rv =
+                resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+                    reviewing);
+            if (rv == null || (!VERSION_STATUS_REVIEWED.equalsIgnoreCase(rv.getStatus())
+                && !VERSION_STATUS_DRAFT.equalsIgnoreCase(rv.getStatus()))) {
+                return;
+            }
+            info.setReviewingVersion(null);
+            updateMetaVersionInfoCas(namespaceId, meta, info);
+            resourceManager.deleteVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, reviewing);
+            deletePromptStorageForVersion(namespaceId, promptKey, reviewing);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, reviewing,
+                AiResourceTraceService.OP_DELETE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
             return;
         }
         
@@ -505,6 +528,12 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
             }
         }
+    }
+    
+    @Override
+    public void reedit(String namespaceId, String promptKey, String version)
+        throws NacosException {
+        resourceManager.doReEdit(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version);
     }
     
     @Override

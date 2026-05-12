@@ -1272,14 +1272,14 @@ class SkillOperationServiceImplTest {
         meta.setNamespaceId(namespaceId);
         meta.setStatus("enable");
         meta.setMetaVersion(1L);
-        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":1}");
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
             .thenReturn(meta);
         
         com.alibaba.nacos.ai.model.AiResourceVersion v =
             new com.alibaba.nacos.ai.model.AiResourceVersion();
         v.setVersion(version);
-        v.setStatus("draft");
+        v.setStatus("reviewed");
         v.setStorage(
             "{\"provider\":\"nacos_config\",\"scope\":\"test-ns:my-skill:v1\",\"files\":[\"SKILL.md\"]}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),

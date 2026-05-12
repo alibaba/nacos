@@ -53,4 +53,11 @@ class AgentSpecNoopHandlerTest {
             () -> agentSpecNoopHandler.forcePublish(new AgentSpecPublishForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
+    
+    @Test
+    void testReeditThrowsNotImplemented() {
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> agentSpecNoopHandler.reedit(new AgentSpecPublishForm()));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
+    }
 }

@@ -85,6 +85,24 @@ public class ConsoleAgentSpecControllerTest {
     }
     
     @Test
+    void testReeditSuccess() throws Exception {
+        doNothing().when(agentSpecProxy).reedit(any(AgentSpecPublishForm.class));
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
+            Constants.AgentSpecs.CONSOLE_PATH + "/reedit").param("namespaceId", "test-ns")
+            .param("agentSpecName", "test-agentspec").param("version", "v1");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        String content = response.getContentAsString();
+        Result<String> result = JacksonUtils.toObj(content, new TypeReference<>() {
+        });
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+        verify(agentSpecProxy).reedit(any(AgentSpecPublishForm.class));
+    }
+    
+    @Test
     void testListAgentSpecsSuccess() throws Exception {
         Page<AgentSpecSummary> page = new Page<>();
         page.setTotalCount(1);

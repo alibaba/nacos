@@ -154,6 +154,12 @@ public class PromptRemoteHandler implements PromptHandler {
     }
     
     @Override
+    public void reedit(String namespaceId, String promptKey, String version)
+        throws NacosException {
+        clientHolder.getAiMaintainerService().prompt().reedit(namespaceId, promptKey, version);
+    }
+    
+    @Override
     public void changeOnlineStatus(String namespaceId, String promptKey, String version,
         boolean online)
         throws NacosException {

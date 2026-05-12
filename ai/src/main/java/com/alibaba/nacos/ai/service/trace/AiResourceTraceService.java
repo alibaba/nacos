@@ -84,6 +84,11 @@ public class AiResourceTraceService {
     public static final String OP_REVIEW_FORCE_SKIP = "REVIEW_FORCE_SKIP";
     
     /**
+     * Re-edit a reviewed version (transition back to draft).
+     */
+    public static final String OP_RE_EDIT = "RE_EDIT";
+    
+    /**
      * Publish a version to online.
      */
     public static final String OP_PUBLISH = "PUBLISH";

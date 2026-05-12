@@ -154,4 +154,11 @@ class SkillNoopHandlerTest {
             () -> skillNoopHandler.forcePublish(new SkillPublishForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
+    
+    @Test
+    void testReeditThrowsNotImplemented() {
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> skillNoopHandler.reedit(new SkillPublishForm()));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
+    }
 }

@@ -780,9 +780,32 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         String editing = info.getEditingVersion();
+        
+        // When no editingVersion, try reviewingVersion (reviewed status can be deleted)
         if (StringUtils.isBlank(editing)) {
+            String reviewing = info.getReviewingVersion();
+            if (StringUtils.isBlank(reviewing)) {
+                return;
+            }
+            AiResourceVersion rv =
+                resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_SKILL, reviewing);
+            if (rv == null || (!AiResourceConstants.VERSION_STATUS_REVIEWED
+                .equalsIgnoreCase(rv.getStatus())
+                && !AiResourceConstants.VERSION_STATUS_DRAFT
+                .equalsIgnoreCase(rv.getStatus()))) {
+                return;
+            }
+            info.setReviewingVersion(null);
+            resourceManager.updateVersionInfoCas(namespaceId, meta, info);
+            resourceManager.deleteVersion(namespaceId, name, RESOURCE_TYPE_SKILL, reviewing);
+            deleteSkillStorageForVersion(namespaceId, name, reviewing, rv.getStorage());
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, reviewing,
+                AiResourceTraceService.OP_DELETE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
             return;
         }
+        
         // Read version row upfront (need status check and storage info before modifying)
         AiResourceVersion v =
             resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
@@ -925,6 +948,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         }
         manifestService.write(namespaceId, name, manifest);
+    }
+    
+    @Override
+    public void reedit(String namespaceId, String name, String version) throws NacosException {
+        resourceManager.doReEdit(namespaceId, name, RESOURCE_TYPE_SKILL, version);
     }
     
     /**

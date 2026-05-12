@@ -97,6 +97,20 @@ public class AgentSpecProxyTest {
     }
     
     @Test
+    public void testReedit() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setVersion("v1");
+        
+        doNothing().when(agentSpecHandler).reedit(form);
+        
+        agentSpecProxy.reedit(form);
+        
+        verify(agentSpecHandler, times(1)).reedit(form);
+    }
+    
+    @Test
     public void testListAgentSpecs() throws NacosException {
         AgentSpecListForm listForm = new AgentSpecListForm();
         listForm.setNamespaceId(NAMESPACE_ID);

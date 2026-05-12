@@ -95,6 +95,20 @@ public class SkillProxyTest {
     }
     
     @Test
+    public void testReedit() throws NacosException {
+        SkillPublishForm form = new SkillPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
+        
+        doNothing().when(skillHandler).reedit(form);
+        
+        skillProxy.reedit(form);
+        
+        verify(skillHandler, times(1)).reedit(form);
+    }
+    
+    @Test
     public void testListSkills() throws NacosException {
         SkillListForm listForm = new SkillListForm();
         listForm.setNamespaceId(NAMESPACE_ID);

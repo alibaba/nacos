@@ -824,9 +824,33 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         String editing = info.getEditingVersion();
+        
+        // When no editingVersion, try reviewingVersion (reviewed status can be deleted)
         if (StringUtils.isBlank(editing)) {
+            String reviewing = info.getReviewingVersion();
+            if (StringUtils.isBlank(reviewing)) {
+                return;
+            }
+            AiResourceVersion rv =
+                resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
+                    reviewing);
+            if (rv == null || (!AiResourceConstants.VERSION_STATUS_REVIEWED
+                .equalsIgnoreCase(rv.getStatus())
+                && !AiResourceConstants.VERSION_STATUS_DRAFT
+                .equalsIgnoreCase(rv.getStatus()))) {
+                return;
+            }
+            deleteAgentSpecStorageForVersion(namespaceId, name, reviewing);
+            resourceManager.deleteVersion(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, reviewing);
+            info.setReviewingVersion(null);
+            resourceManager.updateVersionInfoCas(namespaceId, meta, info);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, reviewing,
+                AiResourceTraceService.OP_DELETE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
             return;
         }
+        
         // Step 1: Delete storage files and version row (only clean up when version status is draft)
         AiResourceVersion v =
             resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
@@ -923,6 +947,11 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         throws NacosException {
         resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version,
             updateLatestLabel);
+    }
+    
+    @Override
+    public void reedit(String namespaceId, String name, String version) throws NacosException {
+        resourceManager.doReEdit(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version);
     }
     
     /**

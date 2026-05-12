@@ -114,4 +114,18 @@ class AgentSpecInnerHandlerTest {
         
         verify(agentSpecOperationService).forcePublish(NAMESPACE_ID, AGENTSPEC_NAME, "v1", true);
     }
+    
+    @Test
+    void testReedit() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENTSPEC_NAME);
+        form.setVersion("v1");
+        doNothing().when(agentSpecOperationService).reedit(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME),
+            eq("v1"));
+        
+        agentSpecInnerHandler.reedit(form);
+        
+        verify(agentSpecOperationService).reedit(NAMESPACE_ID, AGENTSPEC_NAME, "v1");
+    }
 }

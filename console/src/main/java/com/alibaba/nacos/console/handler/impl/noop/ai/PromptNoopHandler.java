@@ -135,6 +135,12 @@ public class PromptNoopHandler implements PromptHandler {
     }
     
     @Override
+    public void reedit(String namespaceId, String promptKey, String version)
+        throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
     public void changeOnlineStatus(String namespaceId, String promptKey, String version,
         boolean online)
         throws NacosException {

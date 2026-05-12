@@ -276,6 +276,16 @@ public interface AgentSpecOperationService {
         throws NacosException;
     
     /**
+     * Re-edit a reviewed version, transitioning it back to draft.
+     *
+     * @param namespaceId namespace ID
+     * @param name        agentspec name
+     * @param version     version to re-edit
+     * @throws NacosException if version not found or not in reviewed status
+     */
+    void reedit(String namespaceId, String name, String version) throws NacosException;
+    
+    /**
      * Update labels mapping (label -> version) without changing any version status.
      *
      * @param namespaceId namespace ID

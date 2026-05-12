@@ -139,6 +139,12 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
+    public void reedit(SkillPublishForm form) throws NacosException {
+        skillOperationService.reedit(form.getNamespaceId(), form.getSkillName(),
+            form.getVersion());
+    }
+    
+    @Override
     public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
         skillOperationService.updateLabels(form.getNamespaceId(), form.getSkillName(), labels);

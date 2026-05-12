@@ -181,6 +181,14 @@ public interface SkillHandler {
     void forcePublish(SkillPublishForm form) throws NacosException;
     
     /**
+     * Re-edit a reviewed version, transitioning it back to draft status.
+     *
+     * @param form publish form (contains namespace, skill name, version)
+     * @throws NacosException if operation failed
+     */
+    void reedit(SkillPublishForm form) throws NacosException;
+    
+    /**
      * Update runtime route labels without changing version status.
      *
      * @param form labels update form

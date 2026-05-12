@@ -218,6 +218,17 @@ public interface PromptMaintainerService {
         throws NacosException;
     
     /**
+     * Re-edit a reviewed prompt version, transitioning it back to draft status.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param version     version to re-edit
+     * @return true if reedit success
+     * @throws NacosException if fail to reedit
+     */
+    boolean reedit(String namespaceId, String promptKey, String version) throws NacosException;
+    
+    /**
      * Online or offline a version.
      *
      * @param namespaceId namespace ID

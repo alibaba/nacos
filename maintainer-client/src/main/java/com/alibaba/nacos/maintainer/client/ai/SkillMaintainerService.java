@@ -362,6 +362,17 @@ public interface SkillMaintainerService {
         throws NacosException;
     
     /**
+     * Re-edit a reviewed skill version, transitioning it back to draft status.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name
+     * @param version     version to re-edit
+     * @return true if reedit success
+     * @throws NacosException if fail to reedit
+     */
+    boolean reedit(String namespaceId, String skillName, String version) throws NacosException;
+    
+    /**
      * Update runtime labels mapping JSON.
      *
      * @param namespaceId namespace ID

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.resource;
 
+import com.alibaba.nacos.ai.config.ReviewedStatusConfig;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
@@ -833,10 +834,13 @@ public class AiResourceManager {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 type + " version not found: " + name + "@" + version);
         }
-        if (AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
+        if (!AiResourceConstants.VERSION_STATUS_REVIEWED.equalsIgnoreCase(v.getStatus())
+            && !AiResourceConstants.VERSION_STATUS_REVIEWING.equalsIgnoreCase(
+            v.getStatus())) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
-                "Version is already online, force-publish is not needed: " + version);
+                "Force-publish is only allowed for versions in 'reviewing' or "
+                    + "'reviewed' status, current: " + v.getStatus());
         }
         
         LOGGER.warn("[FORCE-PUBLISH] Bypassing pipeline validation for {} {}@{} by user {}",
@@ -1103,7 +1107,52 @@ public class AiResourceManager {
     }
     
     /**
-     * Handle pipeline completion: persist pipeline info and rollback to draft on rejection.
+     * Transition a reviewed version back to draft for re-editing.
+     *
+     * <p>Only versions in {@code reviewed} status can be re-edited. The version number and content
+     * are preserved; only the status changes to {@code draft} and meta pointers are updated.</p>
+     *
+     * @param namespaceId namespace
+     * @param name        resource name
+     * @param type        resource type (skill, prompt, agentspec)
+     * @param version     version to re-edit
+     */
+    public void doReEdit(String namespaceId, String name, String type, String version)
+        throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name, type);
+        VisibilityHelper.checkWritableResource(meta);
+        ResourceVersionInfo info = requireVersionInfo(meta);
+        
+        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, type, version);
+        if (v == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                type + " version not found: " + name + "@" + version);
+        }
+        if (!AiResourceConstants.VERSION_STATUS_REVIEWED.equalsIgnoreCase(v.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Only reviewed version can be re-edited: " + version);
+        }
+        
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+            AiResourceConstants.VERSION_STATUS_DRAFT);
+        
+        if (StringUtils.equals(info.getReviewingVersion(), version)) {
+            info.setReviewingVersion(null);
+            info.setEditingVersion(version);
+            updateVersionInfoCas(namespaceId, meta, info);
+        }
+        
+        AiResourceTraceService.logSuccess(type, name, version,
+            AiResourceTraceService.OP_RE_EDIT,
+            VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+    }
+    
+    /**
+     * Handle pipeline completion: persist pipeline info and transition version status.
+     *
+     * <p>When reviewed-status switch is enabled, both approved and rejected results transition
+     * to {@code reviewed}. When disabled, rejected rolls back to {@code draft} (legacy behavior).</p>
      */
     public void onPipelineComplete(String namespaceId, String name, String type, String version,
         PipelineExecutionResult result) {
@@ -1116,33 +1165,45 @@ public class AiResourceManager {
                 version,
                 JacksonUtils.toJson(info));
             
-            if (result == null || result.getStatus() != PipelineExecutionStatus.APPROVED) {
-                // Reject back to draft and move reviewing -> editing (best effort).
-                aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
-                    AiResourceConstants.VERSION_STATUS_DRAFT);
-                AiResource meta = aiResourcePersistService.find(namespaceId, name, type);
-                if (meta != null) {
-                    ResourceVersionInfo vInfo = requireVersionInfo(meta);
-                    if (StringUtils.equals(vInfo.getReviewingVersion(), version)) {
-                        vInfo.setReviewingVersion(null);
-                        vInfo.setEditingVersion(version);
-                        try {
-                            updateVersionInfoCas(namespaceId, meta, vInfo);
-                        } catch (Exception ex) {
-                            LOGGER.warn("Failed to rollback meta working pointers for {}@{}", name,
-                                version, ex);
-                        }
-                    }
-                }
-                AiResourceTraceService.logSuccess(type, name, version,
-                    AiResourceTraceService.OP_REVIEW_REJECTED,
-                    "system", "", result == null ? null : result.getExecutionId());
-            } else {
+            boolean approved = result != null && result.getStatus() == PipelineExecutionStatus.APPROVED;
+            
+            if (ReviewedStatusConfig.getInstance().isEnabled()) {
+                // New behavior: always transition to reviewed regardless of pipeline result.
                 aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
                     AiResourceConstants.VERSION_STATUS_REVIEWED);
                 AiResourceTraceService.logSuccess(type, name, version,
-                    AiResourceTraceService.OP_REVIEW_APPROVED,
-                    "system", "", result.getExecutionId());
+                    approved ? AiResourceTraceService.OP_REVIEW_APPROVED
+                        : AiResourceTraceService.OP_REVIEW_REJECTED,
+                    "system", "", result == null ? null : result.getExecutionId());
+            } else {
+                // Legacy behavior: rejected rolls back to draft, approved transitions to reviewed.
+                if (!approved) {
+                    aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+                        AiResourceConstants.VERSION_STATUS_DRAFT);
+                    AiResource meta = aiResourcePersistService.find(namespaceId, name, type);
+                    if (meta != null) {
+                        ResourceVersionInfo vInfo = requireVersionInfo(meta);
+                        if (StringUtils.equals(vInfo.getReviewingVersion(), version)) {
+                            vInfo.setReviewingVersion(null);
+                            vInfo.setEditingVersion(version);
+                            try {
+                                updateVersionInfoCas(namespaceId, meta, vInfo);
+                            } catch (Exception ex) {
+                                LOGGER.warn("Failed to rollback meta working pointers for {}@{}",
+                                    name, version, ex);
+                            }
+                        }
+                    }
+                    AiResourceTraceService.logSuccess(type, name, version,
+                        AiResourceTraceService.OP_REVIEW_REJECTED,
+                        "system", "", result == null ? null : result.getExecutionId());
+                } else {
+                    aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+                        AiResourceConstants.VERSION_STATUS_REVIEWED);
+                    AiResourceTraceService.logSuccess(type, name, version,
+                        AiResourceTraceService.OP_REVIEW_APPROVED,
+                        "system", "", result.getExecutionId());
+                }
             }
         } catch (Throwable ex) {
             LOGGER.error("Pipeline callback failed for {}@{}", name, version, ex);
