@@ -9,7 +9,9 @@ on:
   pull_request:
     branches: [ develop, v2.x-develop ]
 
-permissions: read-all
+permissions:
+  contents: read
+  actions: write
 
 jobs:
   ci:
