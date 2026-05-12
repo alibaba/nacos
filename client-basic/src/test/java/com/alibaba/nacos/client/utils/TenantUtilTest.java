@@ -47,4 +47,14 @@ class TenantUtilTest {
         assertEquals(expect, actual);
     }
     
+    @Test
+    void testGetUserTenantForAcmWhenAbsent() {
+        System.clearProperty("acm.namespace");
+        assertEquals("", TenantUtil.getUserTenantForAcm());
+    }
+    
+    @Test
+    void testConstructor() {
+        new TenantUtil();
+    }
 }

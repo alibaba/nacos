@@ -41,7 +41,7 @@ public class ClientIpWhiteList {
     private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<>(
         new ArrayList<>());
     
-    private static Boolean isOpen = false;
+    private static volatile boolean isOpen = false;
     
     /**
      * Judge whether specified client ip includes in the whitelist.
@@ -85,7 +85,7 @@ public class ClientIpWhiteList {
         DEFAULT_LOG.warn("[clientIpWhiteList] {}", content);
         try {
             AclInfo acl = JacksonUtils.toObj(content, AclInfo.class);
-            isOpen = acl.getIsOpen();
+            isOpen = Boolean.TRUE.equals(acl.getIsOpen());
             CLIENT_IP_WHITELIST.set(acl.getIps());
         } catch (Exception ioe) {
             DEFAULT_LOG.error("failed to load clientIpWhiteList, " + ioe.toString(), ioe);

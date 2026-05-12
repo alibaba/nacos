@@ -19,11 +19,22 @@ package com.alibaba.nacos.client.auth.oidc;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -116,5 +127,111 @@ class OidcClientAuthServiceImplTest {
         LoginIdentityContext ctx = oidcClientAuthService.getLoginIdentityContext(
             RequestResource.configBuilder().build());
         assertNotNull(ctx);
+    }
+    
+    private HttpServer httpServer;
+    
+    @AfterEach
+    void afterEach() {
+        if (httpServer != null) {
+            httpServer.stop(0);
+            httpServer = null;
+        }
+    }
+    
+    private static void writeJson(HttpExchange exchange, int status, String body)
+        throws IOException {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(status, bytes.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
+    }
+    
+    private void startServer(String path, HttpHandler handler) throws IOException {
+        httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        httpServer.createContext(path, handler);
+        httpServer.start();
+    }
+    
+    private String baseUri() {
+        return "http://127.0.0.1:" + httpServer.getAddress().getPort();
+    }
+    
+    @Test
+    void testLoginFullFlowSuccess() throws Exception {
+        startServer("/", exchange -> {
+            String path = exchange.getRequestURI().getPath();
+            if (path.endsWith("/.well-known/openid-configuration")) {
+                writeJson(exchange, 200, "{\"token_endpoint\":\"" + baseUri() + "/token\"}");
+            } else if (path.endsWith("/token")) {
+                writeJson(exchange, 200, "{\"access_token\":\"abc\",\"expires_in\":3600}");
+            } else {
+                writeJson(exchange, 404, "");
+            }
+        });
+        Properties properties = new Properties();
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, baseUri());
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
+        
+        assertTrue(oidcClientAuthService.login(properties));
+        
+        LoginIdentityContext ctx = oidcClientAuthService.getLoginIdentityContext(
+            RequestResource.configBuilder().build());
+        assertEquals("abc", ctx.getParameter(OidcProtocolConstants.ACCESS_TOKEN_PARAM));
+        assertEquals(OidcProtocolConstants.BEARER_PREFIX + "abc",
+            ctx.getParameter(OidcProtocolConstants.AUTHORIZATION_HEADER));
+        
+        // second call: token still fresh, no refresh needed → still success
+        assertTrue(oidcClientAuthService.login(properties));
+    }
+    
+    @Test
+    void testLoginDiscoveryFails() throws Exception {
+        startServer("/.well-known/openid-configuration",
+            exchange -> writeJson(exchange, 500, ""));
+        Properties properties = new Properties();
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, baseUri());
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
+        
+        assertFalse(oidcClientAuthService.login(properties));
+    }
+    
+    @Test
+    void testLoginTokenFetchFails() throws Exception {
+        startServer("/", exchange -> {
+            String path = exchange.getRequestURI().getPath();
+            if (path.endsWith("/.well-known/openid-configuration")) {
+                writeJson(exchange, 200, "{\"token_endpoint\":\"" + baseUri() + "/token\"}");
+            } else {
+                writeJson(exchange, 500, "");
+            }
+        });
+        Properties properties = new Properties();
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, baseUri());
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
+        
+        assertFalse(oidcClientAuthService.login(properties));
+    }
+    
+    @Test
+    void testLoginCatchesUnexpectedException() {
+        // Pass a Properties impl that throws on getProperty to trigger the catch (Throwable) block
+        Properties properties = new Properties() {
+            
+            @Override
+            public String getProperty(String key) {
+                throw new RuntimeException("boom");
+            }
+        };
+        assertFalse(oidcClientAuthService.login(properties));
+    }
+    
+    @Test
+    void testShutdownDoesNotThrow() {
+        Assertions.assertDoesNotThrow(oidcClientAuthService::shutdown);
     }
 }

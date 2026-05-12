@@ -29,7 +29,7 @@ Key modules and their roles:
 - **core**: Core server infrastructure (cluster, distributed consensus)
 - **consistency**: JRaft-based CP protocol + custom Distro AP protocol
 - **auth**: Authentication and authorization
-- **plugin / plugin-default-impl**: Extensible plugin system (Java SPI). Types: auth, encryption, datasource, control, trace, config, environment
+- **plugin / plugin-default-impl**: Extensible plugin system (Java SPI). Types: auth, visibility, datasource dialect, config change, encryption, trace, environment, control, AI pipeline, AI storage
 - **console / console-ui**: Web UI backend (Spring Boot) and frontend (React)
 - **ai / copilot / ai-registry-adaptor**: AI Agent support, Copilot integration, and AI registry adaptor
 - **sys**: System environment utilities and JVM parameter management
@@ -105,7 +105,46 @@ Every new source file **must** include the Apache License 2.0 header. CI enforce
 
 ## API Standards
 
-Nacos v3 APIs follow strict conventions. AI agents **must** comply with these standards when generating controller code.
+Nacos v3 APIs follow strict conventions. AI agents **must** comply with these
+standards when generating controller code.
+
+Authoritative API and SDK specs live under [`specs/`](./specs/README.md).
+English:
+
+- [Nacos Design Spec](./specs/en/design/nacos-design-spec.md)
+- [Resource Model Spec](./specs/en/design/resource-model-spec.md)
+- [Plugin Spec](./specs/en/plugin/plugin-spec.md)
+- [Auth And Permission Spec](./specs/en/auth/auth-permission-spec.md)
+- [Auth Plugin Spec](./specs/en/auth/auth-plugin-spec.md)
+- [Visibility Plugin Spec](./specs/en/auth/visibility-plugin-spec.md)
+- [Default Auth Plugin Implementation Spec](./specs/en/auth/default-auth-plugin-spec.md)
+- [HTTP API Spec](./specs/en/http-api/api-spec.md)
+- [Authorization Spec](./specs/en/http-api/authorization-spec.md)
+- [Response And Error Spec](./specs/en/http-api/response-error-spec.md)
+- [V3 API Surface](./specs/en/http-api/v3-api-surface.md)
+- [gRPC API Spec](./specs/en/grpc-api/api-spec.md)
+- [SDK Spec](./specs/en/sdk/sdk-spec.md)
+- [Java SDK Implementation Spec](./specs/en/sdk/sdk-java-impl-spec.md)
+
+Simplified Chinese:
+
+- [Nacos 设计规范](./specs/zh-cn/design/nacos-design-spec.md)
+- [资源模型规范](./specs/zh-cn/design/resource-model-spec.md)
+- [插件化规范](./specs/zh-cn/plugin/plugin-spec.md)
+- [鉴权与权限规范](./specs/zh-cn/auth/auth-permission-spec.md)
+- [鉴权插件规范](./specs/zh-cn/auth/auth-plugin-spec.md)
+- [可见性插件规范](./specs/zh-cn/auth/visibility-plugin-spec.md)
+- [默认鉴权插件实现规范](./specs/zh-cn/auth/default-auth-plugin-spec.md)
+- [HTTP API 规范](./specs/zh-cn/http-api/api-spec.md)
+- [鉴权规范](./specs/zh-cn/http-api/authorization-spec.md)
+- [响应与错误规范](./specs/zh-cn/http-api/response-error-spec.md)
+- [V3 API 范围](./specs/zh-cn/http-api/v3-api-surface.md)
+- [gRPC API 规范](./specs/zh-cn/grpc-api/api-spec.md)
+- [SDK 规范](./specs/zh-cn/sdk/sdk-spec.md)
+- [Java SDK 实现规范](./specs/zh-cn/sdk/sdk-java-impl-spec.md)
+
+This section is a quick implementation checklist for agents. If it conflicts
+with the specs, follow the specs and update this checklist.
 
 ### URL Path Patterns
 
@@ -114,6 +153,7 @@ Nacos v3 APIs follow strict conventions. AI agents **must** comply with these st
 | **Open API** | `/v3/client/{module}/...` | Client-facing operations | `/v3/client/ns/instance` |
 | **Admin API** | `/v3/admin/{module}/...` | Administrative operations | `/v3/admin/ns/service` |
 | **Console API** | `/v3/console/{module}/...` | Web console operations | `/v3/console/cs/config` |
+| **Auth API** | `/v3/auth/{resource}/...` | Plugin-provided auth operations | `/v3/auth/user` |
 
 ### Module Names
 

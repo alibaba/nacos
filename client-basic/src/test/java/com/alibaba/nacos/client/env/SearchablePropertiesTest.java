@@ -98,4 +98,32 @@ class SearchablePropertiesTest {
         assertEquals(properties.getProperty("testFromSource"),
             properties.getPropertyFrom(SourceType.UNKNOWN, "testFromSource"));
     }
+    
+    @Test
+    void testGetPropertiesByJvmSource() {
+        NacosClientProperties properties = SearchableProperties.INSTANCE.derive();
+        java.util.Properties jvm = properties.getProperties(SourceType.JVM);
+        org.junit.jupiter.api.Assertions.assertNotNull(jvm);
+    }
+    
+    @Test
+    void testGetPropertiesByPropertiesSource() {
+        NacosClientProperties properties = SearchableProperties.INSTANCE.derive();
+        properties.setProperty("propsKey", "propsVal");
+        java.util.Properties props = properties.getProperties(SourceType.PROPERTIES);
+        org.junit.jupiter.api.Assertions.assertNotNull(props);
+        assertEquals("propsVal", props.getProperty("propsKey"));
+    }
+    
+    @Test
+    void testGetPropertiesByUnknownSource() {
+        NacosClientProperties properties = SearchableProperties.INSTANCE.derive();
+        assertNull(properties.getProperties(SourceType.UNKNOWN));
+    }
+    
+    @Test
+    void testGetPropertiesByNullSource() {
+        NacosClientProperties properties = SearchableProperties.INSTANCE.derive();
+        assertNull(properties.getProperties(null));
+    }
 }
