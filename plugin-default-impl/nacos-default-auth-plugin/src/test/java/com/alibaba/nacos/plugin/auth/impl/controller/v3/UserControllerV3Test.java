@@ -267,7 +267,8 @@ class UserControllerV3Test {
         assertEquals(true, map.get(GLOBAL_ADMIN));
         assertEquals(user.getUserName(), map.get(USERNAME));
         
-        assertEquals(AuthConstants.TOKEN_PREFIX + user.getToken(), response.getHeader(AuthConstants.AUTHORIZATION_HEADER));
+        assertEquals(AuthConstants.TOKEN_PREFIX + user.getToken(),
+            response.getHeader(AuthConstants.AUTHORIZATION_HEADER));
     }
     
     @Test

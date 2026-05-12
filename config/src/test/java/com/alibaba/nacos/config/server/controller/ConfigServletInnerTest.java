@@ -89,7 +89,8 @@ class ConfigServletInnerTest {
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        configServletInner = new ConfigServletInner(longPollingService, new ConfigQueryChainService());
+        configServletInner =
+            new ConfigServletInner(longPollingService, new ConfigQueryChainService());
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);

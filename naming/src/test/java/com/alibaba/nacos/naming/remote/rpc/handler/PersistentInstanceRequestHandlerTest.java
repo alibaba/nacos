@@ -53,7 +53,7 @@ class PersistentInstanceRequestHandlerTest {
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
-
+    
     @Test
     void testHandle() throws NacosException {
         PersistentInstanceRequest instanceRequest = new PersistentInstanceRequest();

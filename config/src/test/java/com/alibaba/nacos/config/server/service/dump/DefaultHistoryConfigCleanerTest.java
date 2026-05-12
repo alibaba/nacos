@@ -40,7 +40,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 @ExtendWith(SpringExtension.class)
 public class DefaultHistoryConfigCleanerTest {
     
-    private DefaultHistoryConfigCleaner defaultHistoryConfigCleaner = new DefaultHistoryConfigCleaner();
+    private DefaultHistoryConfigCleaner defaultHistoryConfigCleaner =
+        new DefaultHistoryConfigCleaner();
     
     @MockitoBean
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;

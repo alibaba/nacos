@@ -48,7 +48,8 @@ public class OperatorMetricsV1Controller {
      * Get metrics (only status). Kept for old clients; full metrics available at v3 API.
      */
     @GetMapping("/metrics")
-    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
+    @Compatibility(apiType = ApiType.OPEN_API,
+        alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
     public Map<String, String> metrics() {
         Map<String, String> result = new HashMap<>();
         result.put("status", ServerStatus.UP.name());

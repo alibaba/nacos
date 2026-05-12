@@ -114,7 +114,8 @@ class ConfigControllerV3Test {
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        configControllerV3 = new ConfigControllerV3(configOperationService, configInfoPersistService,
+        configControllerV3 =
+            new ConfigControllerV3(configOperationService, configInfoPersistService,
                 configDetailService, configInfoGrayPersistService, configInfoBetaPersistService,
                 namespacePersistService, configListenerStateDelegate, configMigrateService);
         mockmvc = MockMvcBuilders.standaloneSetup(configControllerV3).build();

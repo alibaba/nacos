@@ -139,10 +139,12 @@ class ConfigOpsControllerV3Test {
             .thenReturn(true);
         
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
-                .thenReturn(Mockito.mock(DatabaseOperate.class));
-        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
-        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
-                .file(file);
+            .thenReturn(Mockito.mock(DatabaseOperate.class));
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders
+            .multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
+            .file(file);
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
     }
