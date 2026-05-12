@@ -36,24 +36,24 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  */
 @ExtendWith(MockitoExtension.class)
 class ConditionOnLdapAuthTest {
-
+    
     @Mock
     private static ConfigurableEnvironment environment;
-
+    
     private ConditionOnLdapAuth conditionOnLdapAuth;
-
+    
     @Mock
     private ConditionContext conditionContext;
-
+    
     @Mock
     private AnnotatedTypeMetadata annotatedTypeMetadata;
-
+    
     @BeforeEach
     void setup() {
         conditionOnLdapAuth = new ConditionOnLdapAuth();
         EnvUtil.setEnvironment(environment);
     }
-
+    
     @Test
     void matches() {
         boolean matches = conditionOnLdapAuth.matches(conditionContext, annotatedTypeMetadata);

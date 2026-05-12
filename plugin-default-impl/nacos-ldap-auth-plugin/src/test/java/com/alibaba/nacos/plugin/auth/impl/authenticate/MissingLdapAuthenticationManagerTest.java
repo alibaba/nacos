@@ -25,32 +25,32 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MissingLdapAuthenticationManagerTest {
-
+    
     private final MissingLdapAuthenticationManager manager =
-            new MissingLdapAuthenticationManager("missing dependency");
-
+        new MissingLdapAuthenticationManager("missing dependency");
+    
     @Test
     void testAuthenticateWithUsernamePassword() {
         assertThrows(AccessException.class, () -> manager.authenticate("nacos", "nacos"));
     }
-
+    
     @Test
     void testAuthenticateWithToken() {
         assertThrows(AccessException.class, () -> manager.authenticate("token"));
     }
-
+    
     @Test
     void testAuthenticateWithRequest() {
         assertThrows(AccessException.class,
-                () -> manager.authenticate((jakarta.servlet.http.HttpServletRequest) null));
+            () -> manager.authenticate((jakarta.servlet.http.HttpServletRequest) null));
     }
-
+    
     @Test
     void testAuthorize() {
         assertThrows(AccessException.class,
-                () -> manager.authorize((Permission) null, new NacosUser("nacos")));
+            () -> manager.authorize((Permission) null, new NacosUser("nacos")));
     }
-
+    
     @Test
     void testHasGlobalAdminRole() {
         assertFalse(manager.hasGlobalAdminRole());

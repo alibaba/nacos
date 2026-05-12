@@ -25,22 +25,22 @@ import org.springframework.util.ClassUtils;
  * @author xiweng.yy
  */
 public final class LdapPluginDependencyChecker {
-
+    
     public static final String LDAP_AUTHENTICATION_MANAGER_BEAN_NAME = "ldapAuthenticatoinManager";
-
+    
     static final String LDAP_TEMPLATE_CLASS_NAME = "org.springframework.ldap.core.LdapTemplate";
-
+    
     private LdapPluginDependencyChecker() {
     }
-
+    
     public static boolean hasRequiredDependency() {
         return hasRequiredDependency(LDAP_TEMPLATE_CLASS_NAME);
     }
-
+    
     static boolean hasRequiredDependency(String className) {
         return ClassUtils.isPresent(className, resolveClassLoader());
     }
-
+    
     /**
      * Build missing LDAP runtime dependency message.
      *
@@ -48,12 +48,12 @@ public final class LdapPluginDependencyChecker {
      */
     public static String buildMissingDependencyMessage() {
         return "LDAP auth plugin requires org.springframework.ldap:spring-ldap-core in "
-                + "plugins/classpath "
-                + "when nacos.core.auth.system.type=ldap. Please add spring-ldap-core jar into "
-                + "the plugins "
-                + "directory.";
+            + "plugins/classpath "
+            + "when nacos.core.auth.system.type=ldap. Please add spring-ldap-core jar into "
+            + "the plugins "
+            + "directory.";
     }
-
+    
     private static ClassLoader resolveClassLoader() {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         if (null != classLoader) {

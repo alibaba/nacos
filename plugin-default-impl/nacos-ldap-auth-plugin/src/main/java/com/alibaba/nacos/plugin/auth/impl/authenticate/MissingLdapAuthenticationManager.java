@@ -27,43 +27,43 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author xiweng.yy
  */
 public class MissingLdapAuthenticationManager implements IAuthenticationManager {
-
+    
     private final String message;
-
+    
     public MissingLdapAuthenticationManager(String message) {
         this.message = message;
     }
-
+    
     @Override
     public NacosUser authenticate(String username, String rawPassword) throws AccessException {
         throw new AccessException(message);
     }
-
+    
     @Override
     public NacosUser authenticate(String jwtToken) throws AccessException {
         throw new AccessException(message);
     }
-
+    
     @Override
     public NacosUser authenticate(HttpServletRequest httpServletRequest) throws AccessException {
         throw new AccessException(message);
     }
-
+    
     @Override
     public void authorize(Permission permission, NacosUser nacosUser) throws AccessException {
         throw new AccessException(message);
     }
-
+    
     @Override
     public boolean hasGlobalAdminRole(String username) {
         return false;
     }
-
+    
     @Override
     public boolean hasGlobalAdminRole() {
         return false;
     }
-
+    
     @Override
     public boolean hasGlobalAdminRole(NacosUser nacosUser) {
         return false;

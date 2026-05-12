@@ -22,12 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LdapPluginDependencyCheckerTest {
-
+    
     @Test
     void testHasRequiredDependencyWithKnownPresentClass() {
         assertTrue(LdapPluginDependencyChecker.hasRequiredDependency("java.lang.String"));
     }
-
+    
     @Test
     void testHasRequiredDependencyWithMissingClass() {
         String missingClassName = "com.alibaba.nacos.test.MissingClass";

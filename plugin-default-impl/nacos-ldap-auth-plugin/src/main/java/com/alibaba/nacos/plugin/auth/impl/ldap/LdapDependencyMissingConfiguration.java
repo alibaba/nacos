@@ -30,10 +30,10 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration(proxyBeanMethods = false)
 public class LdapDependencyMissingConfiguration {
-
+    
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(LdapDependencyMissingConfiguration.class);
-
+        LoggerFactory.getLogger(LdapDependencyMissingConfiguration.class);
+    
     @Bean(name = LdapPluginDependencyChecker.LDAP_AUTHENTICATION_MANAGER_BEAN_NAME)
     public IAuthenticationManager ldapAuthenticatoinManager() {
         String message = LdapPluginDependencyChecker.buildMissingDependencyMessage();
