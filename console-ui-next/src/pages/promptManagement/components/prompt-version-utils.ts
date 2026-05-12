@@ -6,6 +6,7 @@
  *   reviewing → (pipeline approved) → reviewed
  *   reviewing → (pipeline rejected) → draft
  *   reviewed  → publish  → online
+ *   reviewed  → reedit   → draft
  *   reviewing → publish  → online  (backward compat: historical data without reviewed status)
  *   online    → offline  → offline
  *   offline   → online   → online
@@ -19,7 +20,7 @@ import type { PipelineExecutionStatus } from '@/types/skill';
 const STATE_ACTIONS: Record<string, string[]> = {
   draft: ['submit', 'deleteDraft'],
   reviewing: ['publish'],
-  reviewed: ['publish'],
+  reviewed: ['publish', 'reedit', 'deleteDraft'],
   online: ['offline'],
   offline: ['online'],
 };
@@ -58,8 +59,8 @@ export function getValidActionsWithContext(
     return { action };
   });
 
-  // Admin force-publish: show when pipeline REJECTED on draft or reviewing version
-  if (isGlobalAdmin && pipelineStatus === 'REJECTED' && (status === 'draft' || status === 'reviewing' || status === 'reviewed')) {
+  // Admin force-publish: show when pipeline REJECTED on reviewing or reviewed version
+  if (isGlobalAdmin && pipelineStatus === 'REJECTED' && (status === 'reviewing' || status === 'reviewed')) {
     items.push({ action: 'forcePublish' });
   }
 

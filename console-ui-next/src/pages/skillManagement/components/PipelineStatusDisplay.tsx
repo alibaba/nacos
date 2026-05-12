@@ -350,8 +350,8 @@ export function PipelineStatusDisplay({
   // Compact badge mode (for Timeline inline)
   if (compact) {
     return (
-      <Badge className={cn('text-[10px] px-1.5 py-0 h-4 font-medium border-0 gap-1', config.badgeClass)}>
-        <StatusIcon className={cn('h-2.5 w-2.5', config.iconClass)} />
+      <Badge className={cn('text-xs px-2.5 h-7 font-medium border-0 gap-1.5 rounded-md inline-flex items-center', config.badgeClass)}>
+        <StatusIcon className={cn('h-3.5 w-3.5', config.iconClass)} />
         {t(`${translationPrefix}.${config.labelSuffix}`)}
       </Badge>
     );

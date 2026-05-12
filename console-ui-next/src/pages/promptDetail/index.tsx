@@ -318,6 +318,14 @@ export default function PromptDetailPage() {
     if (ok) { toast.success(t('prompt.forcePublishSuccess')); await refreshAfterAction(version); }
   };
 
+  const handleReedit = async (version: string) => {
+    try {
+      await promptApi.reedit({ promptKey, version, namespaceId });
+      toast.success(t('prompt.reeditSuccess'));
+      await refreshAfterAction(version);
+    } catch { /* handled by interceptor */ }
+  };
+
   const handleOnline = async (version: string) => {
     const ok = await onlineVersion({ promptKey, version, namespaceId });
     if (ok) { toast.success(t('prompt.onlineSuccess')); await refreshAfterAction(version); }
@@ -649,7 +657,10 @@ export default function PromptDetailPage() {
                     <SelectValue placeholder={t('prompt.selectVersion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {meta.versionDetails.map((v) => (
+                    {meta.versionDetails.map((v) => {
+                      const vPipeline = parsePipelineInfo(v.publishPipelineInfo);
+                      const isVersionRejected = v.status === 'reviewed' && vPipeline?.status === 'REJECTED';
+                      return (
                       <SelectItem key={v.version} value={v.version}>
                         <span className="flex items-center gap-2">
                           <span>{v.version}</span>
@@ -669,13 +680,17 @@ export default function PromptDetailPage() {
                             </Badge>
                           )}
                           {v.status === 'reviewed' && (
-                            <Badge className="bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0">
-                              {t('prompt.versionStatus.pendingPublish')}
+                            <Badge className={isVersionRejected
+                              ? 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 text-[10px] px-1 py-0 border-0'
+                              : 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
+                            }>
+                              {t(isVersionRejected ? 'prompt.versionStatus.rejected' : 'prompt.versionStatus.pendingPublish')}
                             </Badge>
                           )}
                         </span>
                       </SelectItem>
-                    ))}
+                    );
+                    })}
                   </SelectContent>
                 </Select>
               )}
@@ -794,6 +809,17 @@ export default function PromptDetailPage() {
                             ? t('prompt.pipelineInProgress')
                             : t('prompt.publish')}
                         </Button>
+                        {currentVersionStatus === 'reviewed' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            onClick={() => handleReedit(selectedVersion)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            {t('prompt.reedit')}
+                          </Button>
+                        )}
                         {currentPipelineInfo && (
                           <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                         )}

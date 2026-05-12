@@ -315,6 +315,19 @@ export default function AgentSpecDetailPage() {
     }
   };
 
+  const handleReedit = async (version: string) => {
+    setActionLoading(true);
+    try {
+      await agentSpecApi.reedit({ namespaceId, agentSpecName, version });
+      toast.success(t('agentSpec.reeditSuccess'));
+      await loadDetail();
+    } catch {
+      await loadDetail();
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleOnline = async (version: string) => {
     setActionLoading(true);
     try {
@@ -823,7 +836,8 @@ export default function AgentSpecDetailPage() {
                   <SelectContent>
                     {versionOptions.map((version) => {
                       const vPipeline = parsePipelineInfo(version.publishPipelineInfo);
-                      const isVersionPendingPublish = version.status === 'reviewed' || (version.status === 'reviewing' && vPipeline?.status === 'APPROVED');
+                      const isVersionPendingPublish = (version.status === 'reviewed' && vPipeline?.status !== 'REJECTED') || (version.status === 'reviewing' && vPipeline?.status === 'APPROVED');
+                      const isVersionRejected = version.status === 'reviewed' && vPipeline?.status === 'REJECTED';
                       return (
                       <SelectItem key={version.version} value={version.version}>
                         <span className="flex items-center gap-2">
@@ -838,7 +852,12 @@ export default function AgentSpecDetailPage() {
                               {t('agentSpec.versionStatus.draft')}
                             </Badge>
                           )}
-                          {(version.status === 'reviewing' || version.status === 'reviewed') && (
+                          {isVersionRejected && (
+                            <Badge className="bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 text-[10px] px-1 py-0 border-0">
+                              {t('agentSpec.versionStatus.rejected')}
+                            </Badge>
+                          )}
+                          {!isVersionRejected && (version.status === 'reviewing' || version.status === 'reviewed') && (
                             <Badge className={isVersionPendingPublish
                               ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
                               : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0'
@@ -1044,6 +1063,18 @@ export default function AgentSpecDetailPage() {
                           ? t('agentSpec.pipelineInProgress')
                           : t('agentSpec.publish')}
                       </Button>
+                      {currentVersionStatus === 'reviewed' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1.5"
+                          disabled={actionLoading}
+                          onClick={() => handleReedit(selectedVersion)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                          {t('agentSpec.reedit')}
+                        </Button>
+                      )}
                       {currentPipelineInfo && currentPipelineInfo.status === 'APPROVED' && (
                         <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact translationPrefix="agentSpec" />
                       )}
