@@ -271,4 +271,10 @@ class NacosClientAuthServiceImplTest {
         long tokenRefreshWindow = nacosClientAuthService.generateTokenRefreshWindow(tokenTtl);
         assertTrue(tokenRefreshWindow <= tokenTtl / 10);
     }
+    
+    @Test
+    void testShutdownDoesNotThrow() {
+        NacosClientAuthServiceImpl service = new NacosClientAuthServiceImpl();
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(service::shutdown);
+    }
 }

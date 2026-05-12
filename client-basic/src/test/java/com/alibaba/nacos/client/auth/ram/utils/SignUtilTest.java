@@ -45,4 +45,9 @@ class SignUtilTest {
                 "b".getBytes(StandardCharsets.UTF_8), null);
         });
     }
+    
+    @Test
+    void testConstructor() {
+        new SignUtil();
+    }
 }

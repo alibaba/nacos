@@ -183,4 +183,19 @@ class ClientBasicParamUtilTest {
         assertEquals("1.1.1.1-2.2.2.2_8848",
             ClientBasicParamUtil.getNameSuffixByServerIps("http://1.1.1.1", "2.2.2.2:8848"));
     }
+    
+    @Test
+    void testParseNamespaceCloudParsingDefaultsWhenAllBlank() {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING, "true");
+        NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        // No tenant, no ALIBABA_ALIWARE_NAMESPACE, no NAMESPACE → returns DEFAULT_NAMESPACE_ID
+        assertEquals(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID,
+            ClientBasicParamUtil.parseNamespace(clientProperties));
+    }
+    
+    @Test
+    void testConstructor() {
+        new ClientBasicParamUtil();
+    }
 }

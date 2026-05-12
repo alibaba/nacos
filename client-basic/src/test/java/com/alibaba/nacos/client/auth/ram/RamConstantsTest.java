@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.utils;
+package com.alibaba.nacos.client.auth.ram;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-/**
- * ContextPathUtil test.
- *
- * @author Wei.Wang
- * @date 2020/11/26 3:13 PM
- */
-class ContextPathUtilTest {
-    
-    @Test
-    void testNormalizeContextPath() {
-        assertEquals("/nacos", ContextPathUtil.normalizeContextPath("/nacos"));
-        assertEquals("/nacos", ContextPathUtil.normalizeContextPath("nacos"));
-        assertEquals("", ContextPathUtil.normalizeContextPath("/"));
-        assertEquals("", ContextPathUtil.normalizeContextPath(""));
-    }
+class RamConstantsTest {
     
     @Test
     void testConstructor() {
-        new ContextPathUtil();
+        assertNotNull(new RamConstants());
+    }
+    
+    @Test
+    void testFields() {
+        assertEquals("signatureVersion", RamConstants.SIGNATURE_VERSION);
+        assertEquals("v4", RamConstants.V4);
+        assertEquals("HmacSHA256", RamConstants.SIGNATURE_V4_METHOD);
+        assertEquals("mse-nacos", RamConstants.SIGNATURE_V4_PRODUCE);
     }
 }

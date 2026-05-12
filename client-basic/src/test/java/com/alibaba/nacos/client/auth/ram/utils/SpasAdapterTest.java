@@ -89,4 +89,9 @@ class SpasAdapterTest {
             SpasAdapter.signWithHmacSha1Encrypt(null, "123");
         });
     }
+    
+    @Test
+    void testConstructor() {
+        new SpasAdapter();
+    }
 }
