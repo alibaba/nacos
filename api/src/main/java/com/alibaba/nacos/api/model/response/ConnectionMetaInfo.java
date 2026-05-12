@@ -86,11 +86,11 @@ public class ConnectionMetaInfo {
     public String getConnectionId() {
         return connectionId;
     }
-
+    
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }
-
+    
     public Date getCreateTime() {
         return createTime;
     }
@@ -98,11 +98,11 @@ public class ConnectionMetaInfo {
     public void setCreateTime(Date createTime) {
         this.createTime = createTime;
     }
-
+    
     public long getLastActiveTime() {
         return lastActiveTime;
     }
-
+    
     public void setLastActiveTime(long lastActiveTime) {
         this.lastActiveTime = lastActiveTime;
     }
@@ -110,23 +110,23 @@ public class ConnectionMetaInfo {
     public String getConnectType() {
         return connectType;
     }
-
+    
     public void setConnectType(String connectType) {
         this.connectType = connectType;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public int getLocalPort() {
         return localPort;
     }
-
+    
     public void setLocalPort(int localPort) {
         this.localPort = localPort;
     }

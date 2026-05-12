@@ -81,7 +81,7 @@ class PipelineQueryServiceTest {
         long t = 1_700_000_000_000L;
         for (String resType : new String[] {"SKILL", "PROMPT", "CONFIG"}) {
             for (PipelineExecutionStatus status : new PipelineExecutionStatus[] {
-                    PipelineExecutionStatus.APPROVED, PipelineExecutionStatus.REJECTED}) {
+                PipelineExecutionStatus.APPROVED, PipelineExecutionStatus.REJECTED}) {
                 PipelineExecution execution = new PipelineExecution();
                 execution.setExecutionId(UUID.randomUUID().toString());
                 execution.setResourceType(resType);
@@ -100,9 +100,9 @@ class PipelineQueryServiceTest {
     
     private static String[] randomIds() {
         return new String[] {
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(),
-                "00000000-0000-0000-0000-000000000001"
+            UUID.randomUUID().toString(),
+            UUID.randomUUID().toString(),
+            "00000000-0000-0000-0000-000000000001"
         };
     }
     

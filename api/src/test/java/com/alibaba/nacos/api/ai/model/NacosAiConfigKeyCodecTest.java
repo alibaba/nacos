@@ -26,13 +26,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests for {@link NacosAiConfigKeyCodec}.
  */
 class NacosAiConfigKeyCodecTest {
-
+    
     @Test
     void identityWhenAlreadyValid() {
         assertEquals("my-skill_v1.0", NacosAiConfigKeyCodec.encodeSegment("my-skill_v1.0"));
         assertEquals("my-skill_v1.0", NacosAiConfigKeyCodec.decodeSegment("my-skill_v1.0"));
     }
-
+    
     @Test
     void roundTripWithSpacesAndUnicode() {
         String raw = "my worker 测试";
@@ -41,7 +41,7 @@ class NacosAiConfigKeyCodecTest {
         assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(enc));
         assertEquals(raw, NacosAiConfigKeyCodec.decodeSegment(enc));
     }
-
+    
     @Test
     void roundTripAtSign() {
         String raw = "skill@corp/name";
@@ -49,7 +49,7 @@ class NacosAiConfigKeyCodecTest {
         assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(enc));
         assertEquals(raw, NacosAiConfigKeyCodec.decodeSegment(enc));
     }
-
+    
     @Test
     void nullAndEmpty() {
         assertEquals(null, NacosAiConfigKeyCodec.encodeSegment(null));
@@ -57,19 +57,19 @@ class NacosAiConfigKeyCodecTest {
         assertEquals("", NacosAiConfigKeyCodec.encodeSegment(""));
         assertEquals("", NacosAiConfigKeyCodec.decodeSegment(""));
     }
-
+    
     @Test
     void decodeBadHexThrows() {
         assertThrows(IllegalArgumentException.class,
-                () -> NacosAiConfigKeyCodec.decodeSegment(NacosAiConfigKeyCodec.ENCODED_PREFIX + "zz"));
+            () -> NacosAiConfigKeyCodec.decodeSegment(NacosAiConfigKeyCodec.ENCODED_PREFIX + "zz"));
     }
-
+    
     @Test
     void versionedGroupSegmentAlwaysEncodedAndRoundTrips() {
         String enc = NacosAiConfigKeyCodec.encodeVersionedGroupSegment("v1");
         assertTrue(enc.startsWith(NacosAiConfigKeyCodec.ENCODED_PREFIX));
         assertEquals("v1", NacosAiConfigKeyCodec.decodeSegment(enc));
         assertEquals("_", NacosAiConfigKeyCodec.decodeSegment(
-                NacosAiConfigKeyCodec.encodeVersionedGroupSegment("_")));
+            NacosAiConfigKeyCodec.encodeVersionedGroupSegment("_")));
     }
 }

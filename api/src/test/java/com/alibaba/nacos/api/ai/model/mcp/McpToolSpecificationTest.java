@@ -32,14 +32,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class McpToolSpecificationTest extends BasicRequestTest {
     
     private static final String MCP_TOOL_SPEC =
-            "{\"tools\":[{\"name\":\"testTool\",\"description\":\"test tool description\",\"inputSchema\":{\"type\":\"object\","
-                    + "\"properties\":{\"a\":{\"description\":\"aaa\",\"type\":\"string\"}}}}],\"toolsMeta\":{\"testTool\":"
-                    + "{\"invokeContext\":{\"path\":\"/xxx\",\"method\":\"GET\"},\"enabled\":true,\"templates\":"
-                    + "{\"json-go-tamplate\":{\"templateType\":\"string\",\"responseTemplate\":{\"body\":\"string\"},"
-                    + "\"requestTemplate\":{\"headers\":[],\"method\":\"GET\",\"argsToFormBody\":true,\"argsToJsonBody\":false,"
-                    + "\"body\":\"string\",\"url\":\"\",\"argsToUrlParam\":true}}}}},\"securitySchemes\":[{\"id\":\"1\","
-                    + "\"type\":\"apiKey\",\"scheme\":\"\",\"in\":\"header\",\"name\":\"testSecurity\","
-                    + "\"defaultCredential\":\"publicKey\"}]}";
+        "{\"tools\":[{\"name\":\"testTool\",\"description\":\"test tool description\",\"inputSchema\":{\"type\":\"object\","
+            + "\"properties\":{\"a\":{\"description\":\"aaa\",\"type\":\"string\"}}}}],\"toolsMeta\":{\"testTool\":"
+            + "{\"invokeContext\":{\"path\":\"/xxx\",\"method\":\"GET\"},\"enabled\":true,\"templates\":"
+            + "{\"json-go-tamplate\":{\"templateType\":\"string\",\"responseTemplate\":{\"body\":\"string\"},"
+            + "\"requestTemplate\":{\"headers\":[],\"method\":\"GET\",\"argsToFormBody\":true,\"argsToJsonBody\":false,"
+            + "\"body\":\"string\",\"url\":\"\",\"argsToUrlParam\":true}}}}},\"securitySchemes\":[{\"id\":\"1\","
+            + "\"type\":\"apiKey\",\"scheme\":\"\",\"in\":\"header\",\"name\":\"testSecurity\","
+            + "\"defaultCredential\":\"publicKey\"}]}";
     
     @Test
     void testSerialize() throws JsonProcessingException {
@@ -69,7 +69,7 @@ class McpToolSpecificationTest extends BasicRequestTest {
         aSchema.put("type", "string");
         aSchema.put("description", "aaa");
         mcpTool.setInputSchema(inputSchema);
-
+        
         Map<String, Object> outputSchema = new HashMap<>();
         outputSchema.put("type", "object");
         Map<String, Object> outProperties = new HashMap<>();
@@ -136,7 +136,8 @@ class McpToolSpecificationTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"specificationType\":\"encrypted\",\"encryptData\":{\"data\":\"encryptedData\","
+        String json =
+            "{\"specificationType\":\"encrypted\",\"encryptData\":{\"data\":\"encryptedData\","
                 + "\"encryptInfo\":{\"alg\":\"AES\",\"iv\":\"initialVector\"}},"
                 + "\"tools\":[{\"name\":\"testTool\",\"description\":\"test tool description\","
                 + "\"inputSchema\":{\"type\":\"object\","

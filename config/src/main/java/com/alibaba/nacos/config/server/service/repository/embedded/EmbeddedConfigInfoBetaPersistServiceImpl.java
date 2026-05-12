@@ -138,7 +138,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                     "encrypted_data_key"));
             final Object[] args =
                 new Object[] {configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
-                        configInfo.getContent(), md5, betaIps, srcIp, srcUser, encryptedDataKey};
+                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, encryptedDataKey};
             
             Timestamp time = new Timestamp(System.currentTimeMillis());
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
@@ -228,7 +228,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             
             final Object[] args =
                 new Object[] {configInfo.getContent(), md5, betaIps, srcIp, srcUser, appNameTmp,
-                        encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
+                    encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
             
             Timestamp time = new Timestamp(System.currentTimeMillis());
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);

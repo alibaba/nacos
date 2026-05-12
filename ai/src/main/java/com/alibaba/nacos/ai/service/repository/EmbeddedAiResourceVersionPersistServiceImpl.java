@@ -76,10 +76,10 @@ public class EmbeddedAiResourceVersionPersistServiceImpl
                 "storage", "publish_pipeline_info", "gmt_create@NOW()", "gmt_modified@NOW()"));
         
         Object[] args = new Object[] {version.getType(), version.getAuthor(), version.getName(),
-                version.getDesc(),
-                version.getStatus(), version.getVersion(),
-                normalizeNamespaceId(version.getNamespaceId()),
-                version.getStorage(), version.getPublishPipelineInfo()};
+            version.getDesc(),
+            version.getStatus(), version.getVersion(),
+            normalizeNamespaceId(version.getNamespaceId()),
+            version.getStorage(), version.getPublishPipelineInfo()};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         Boolean success = databaseOperate.blockUpdate();
@@ -256,7 +256,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl
         
         EmbeddedStorageContextHolder.addSqlContext(sql,
             new Object[] {publishPipelineInfo, normalizeNamespaceId(namespaceId), name, type,
-                    version});
+                version});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
     }

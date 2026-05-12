@@ -59,7 +59,7 @@ class IconTest extends BasicRequestTest {
     @Test
     void testDeserializeIcon() throws JsonProcessingException {
         String json = "{\"src\":\"https://example.com/icon.png\",\"mimeType\":\"image/png\","
-                + "\"sizes\":[\"16x16\",\"32x32\"],\"theme\":\"light\"}";
+            + "\"sizes\":[\"16x16\",\"32x32\"],\"theme\":\"light\"}";
         Icon icon = mapper.readValue(json, Icon.class);
         
         assertNotNull(icon);
@@ -89,7 +89,7 @@ class IconTest extends BasicRequestTest {
     void testMimeTypeFromValue() {
         assertEquals(Icon.MimeType.IMAGE_PNG, Icon.MimeType.fromValue("image/png"));
         assertEquals(Icon.MimeType.IMAGE_SVG_XML,
-                Icon.MimeType.fromValue("image/svg+xml"));
+            Icon.MimeType.fromValue("image/svg+xml"));
         assertEquals(Icon.MimeType.IMAGE_WEBP, Icon.MimeType.fromValue("image/webp"));
     }
     

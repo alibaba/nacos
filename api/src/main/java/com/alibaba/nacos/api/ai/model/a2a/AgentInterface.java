@@ -109,9 +109,11 @@ public class AgentInterface {
             return false;
         }
         AgentInterface that = (AgentInterface) o;
-        return Objects.equals(url, that.url) && Objects.equals(transport, that.transport) && Objects.equals(
-                protocolBinding, that.protocolBinding) && Objects.equals(protocolVersion, that.protocolVersion)
-                && Objects.equals(tenant, that.tenant);
+        return Objects.equals(url, that.url) && Objects.equals(transport, that.transport)
+            && Objects.equals(
+                protocolBinding, that.protocolBinding)
+            && Objects.equals(protocolVersion, that.protocolVersion)
+            && Objects.equals(tenant, that.tenant);
     }
     
     @Override

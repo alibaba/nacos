@@ -86,8 +86,9 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @param contexts        The set of contexts containing information about the configurations
      */
-    private ConfigFuzzyWatchSyncRequest(String syncType, String groupKeyPattern, Set<Context> contexts, int totalBatch,
-            int currentBatch) {
+    private ConfigFuzzyWatchSyncRequest(String syncType, String groupKeyPattern,
+        Set<Context> contexts, int totalBatch,
+        int currentBatch) {
         this.groupKeyPattern = groupKeyPattern;
         this.contexts = contexts;
         this.syncType = syncType;
@@ -103,9 +104,11 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @return An initial FuzzyListenNotifyDiffRequest
      */
-    public static ConfigFuzzyWatchSyncRequest buildSyncRequest(String syncType, Set<Context> contexts,
-            String groupKeyPattern, int totalBatch, int currentBatch) {
-        return new ConfigFuzzyWatchSyncRequest(syncType, groupKeyPattern, contexts, totalBatch, currentBatch);
+    public static ConfigFuzzyWatchSyncRequest buildSyncRequest(String syncType,
+        Set<Context> contexts,
+        String groupKeyPattern, int totalBatch, int currentBatch) {
+        return new ConfigFuzzyWatchSyncRequest(syncType, groupKeyPattern, contexts, totalBatch,
+            currentBatch);
     }
     
     /**
@@ -115,7 +118,8 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @return A final FuzzyListenNotifyDiffRequest
      */
     public static ConfigFuzzyWatchSyncRequest buildInitFinishRequest(String groupKeyPattern) {
-        return new ConfigFuzzyWatchSyncRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern, null, 0, 0);
+        return new ConfigFuzzyWatchSyncRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY,
+            groupKeyPattern, null, 0, 0);
     }
     
     public String getGroupKeyPattern() {

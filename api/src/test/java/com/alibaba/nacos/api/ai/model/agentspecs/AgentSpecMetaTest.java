@@ -30,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentSpecMetaTest extends BasicRequestTest {
-
+    
     @Test
     @DisplayName("test default constructor")
     void testDefaultConstructor() {
         AgentSpecMeta meta = new AgentSpecMeta();
         assertNull(meta.getVersions());
     }
-
+    
     @Test
     @DisplayName("test inherited fields from AgentSpecSummary")
     void testInheritedFieldsFromAgentSpecSummary() {
@@ -45,18 +45,19 @@ class AgentSpecMetaTest extends BasicRequestTest {
         meta.setNamespaceId("public");
         meta.setName("testAgentSpec");
         meta.setEnable(true);
-
+        
         assertEquals("public", meta.getNamespaceId());
         assertEquals("testAgentSpec", meta.getName());
         assertTrue(meta.isEnable());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for versions")
     void testGetterAndSetterForVersions() {
         AgentSpecMeta meta = new AgentSpecMeta();
         List<AgentSpecMeta.AgentSpecVersionSummary> versions = new ArrayList<>();
-        AgentSpecMeta.AgentSpecVersionSummary version1 = new AgentSpecMeta.AgentSpecVersionSummary();
+        AgentSpecMeta.AgentSpecVersionSummary version1 =
+            new AgentSpecMeta.AgentSpecVersionSummary();
         version1.setVersion("v1.0.0");
         version1.setStatus("online");
         versions.add(version1);
@@ -65,7 +66,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         assertEquals(1, meta.getVersions().size());
         assertEquals("v1.0.0", meta.getVersions().get(0).getVersion());
     }
-
+    
     @Test
     @DisplayName("test serialize to json")
     void testSerializeToJson() throws JsonProcessingException {
@@ -73,20 +74,20 @@ class AgentSpecMetaTest extends BasicRequestTest {
         meta.setNamespaceId("public");
         meta.setName("testAgentSpec");
         meta.setEnable(true);
-
+        
         String json = mapper.writeValueAsString(meta);
         assertNotNull(json);
         assertTrue(json.contains("\"namespaceId\":\"public\""));
         assertTrue(json.contains("\"name\":\"testAgentSpec\""));
         assertTrue(json.contains("\"enable\":true"));
     }
-
+    
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"namespaceId\":\"public\",\"name\":\"testAgentSpec\",\"enable\":true,"
-                + "\"versions\":[{\"version\":\"v1.0.0\",\"status\":\"online\"}]}";
-
+            + "\"versions\":[{\"version\":\"v1.0.0\",\"status\":\"online\"}]}";
+        
         AgentSpecMeta meta = mapper.readValue(json, AgentSpecMeta.class);
         assertNotNull(meta);
         assertEquals("public", meta.getNamespaceId());
@@ -97,9 +98,9 @@ class AgentSpecMetaTest extends BasicRequestTest {
         assertEquals("v1.0.0", meta.getVersions().get(0).getVersion());
         assertEquals("online", meta.getVersions().get(0).getStatus());
     }
-
+    
     // ========== AgentSpecVersionSummary Tests ==========
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary default constructor")
     void testAgentSpecVersionSummaryDefaultConstructor() {
@@ -113,7 +114,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         assertNull(summary.getPublishPipelineInfo());
         assertNull(summary.getDownloadCount());
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary getter and setter for version")
     void testAgentSpecVersionSummaryGetterAndSetterForVersion() {
@@ -121,7 +122,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         summary.setVersion("v1.0.0");
         assertEquals("v1.0.0", summary.getVersion());
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary getter and setter for status")
     void testAgentSpecVersionSummaryGetterAndSetterForStatus() {
@@ -129,7 +130,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         summary.setStatus("online");
         assertEquals("online", summary.getStatus());
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary getter and setter for author")
     void testAgentSpecVersionSummaryGetterAndSetterForAuthor() {
@@ -137,7 +138,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         summary.setAuthor("developer");
         assertEquals("developer", summary.getAuthor());
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary getter and setter for description")
     void testAgentSpecVersionSummaryGetterAndSetterForDescription() {
@@ -145,7 +146,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         summary.setDescription("Version description");
         assertEquals("Version description", summary.getDescription());
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary getter and setter for createTime")
     void testAgentSpecVersionSummaryGetterAndSetterForCreateTime() {
@@ -153,7 +154,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         summary.setCreateTime(1234567890L);
         assertEquals(1234567890L, summary.getCreateTime());
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary getter and setter for updateTime")
     void testAgentSpecVersionSummaryGetterAndSetterForUpdateTime() {
@@ -161,7 +162,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         summary.setUpdateTime(1234567900L);
         assertEquals(1234567900L, summary.getUpdateTime());
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary getter and setter for publishPipelineInfo")
     void testAgentSpecVersionSummaryGetterAndSetterForPublishPipelineInfo() {
@@ -169,7 +170,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         summary.setPublishPipelineInfo("pipeline-info");
         assertEquals("pipeline-info", summary.getPublishPipelineInfo());
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary getter and setter for downloadCount")
     void testAgentSpecVersionSummaryGetterAndSetterForDownloadCount() {
@@ -177,7 +178,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         summary.setDownloadCount(100L);
         assertEquals(100L, summary.getDownloadCount());
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary serialize to json")
     void testAgentSpecVersionSummarySerializeToJson() throws JsonProcessingException {
@@ -186,7 +187,7 @@ class AgentSpecMetaTest extends BasicRequestTest {
         summary.setStatus("online");
         summary.setAuthor("admin");
         summary.setDownloadCount(50L);
-
+        
         String json = mapper.writeValueAsString(summary);
         assertNotNull(json);
         assertTrue(json.contains("\"version\":\"v1.0.0\""));
@@ -194,15 +195,16 @@ class AgentSpecMetaTest extends BasicRequestTest {
         assertTrue(json.contains("\"author\":\"admin\""));
         assertTrue(json.contains("\"downloadCount\":50"));
     }
-
+    
     @Test
     @DisplayName("test AgentSpecVersionSummary deserialize from json")
     void testAgentSpecVersionSummaryDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"version\":\"v1.0.0\",\"status\":\"online\",\"author\":\"admin\","
-                + "\"description\":\"Test version\",\"createTime\":1234567890,\"updateTime\":1234567900,"
-                + "\"downloadCount\":100}";
-
-        AgentSpecMeta.AgentSpecVersionSummary summary = mapper.readValue(json, AgentSpecMeta.AgentSpecVersionSummary.class);
+            + "\"description\":\"Test version\",\"createTime\":1234567890,\"updateTime\":1234567900,"
+            + "\"downloadCount\":100}";
+        
+        AgentSpecMeta.AgentSpecVersionSummary summary =
+            mapper.readValue(json, AgentSpecMeta.AgentSpecVersionSummary.class);
         assertNotNull(summary);
         assertEquals("v1.0.0", summary.getVersion());
         assertEquals("online", summary.getStatus());

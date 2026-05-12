@@ -32,7 +32,8 @@ import static com.alibaba.nacos.api.common.Constants.Naming.CMDB_CONTEXT_TYPE;
  * @author chenglu
  * @date 2021-07-09 21:29
  */
-public abstract class AbstractCmdbSelector<T extends Instance> implements Selector<List<T>, CmdbContext<T>, String> {
+public abstract class AbstractCmdbSelector<T extends Instance>
+    implements Selector<List<T>, CmdbContext<T>, String> {
     
     private static final long serialVersionUID = 56587385358330901L;
     
@@ -50,7 +51,8 @@ public abstract class AbstractCmdbSelector<T extends Instance> implements Select
     }
     
     @Override
-    public Selector<List<T>, CmdbContext<T>, String> parse(String expression) throws NacosException {
+    public Selector<List<T>, CmdbContext<T>, String> parse(String expression)
+        throws NacosException {
         this.expression = expression;
         doParse(expression);
         return this;

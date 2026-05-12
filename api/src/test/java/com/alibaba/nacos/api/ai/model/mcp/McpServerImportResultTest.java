@@ -85,7 +85,8 @@ class McpServerImportResultTest extends BasicRequestTest {
     
     @Test
     void testDeserializeSuccessResult() throws JsonProcessingException {
-        String json = "{\"serverName\":\"test-server\",\"serverId\":\"server-123\",\"status\":\"success\"}";
+        String json =
+            "{\"serverName\":\"test-server\",\"serverId\":\"server-123\",\"status\":\"success\"}";
         
         McpServerImportResult result = mapper.readValue(json, McpServerImportResult.class);
         assertNotNull(result);
@@ -98,7 +99,8 @@ class McpServerImportResultTest extends BasicRequestTest {
     
     @Test
     void testDeserializeFailedResult() throws JsonProcessingException {
-        String json = "{\"serverName\":\"failed-server\",\"status\":\"failed\",\"errorMessage\":\"Connection timeout\"}";
+        String json =
+            "{\"serverName\":\"failed-server\",\"status\":\"failed\",\"errorMessage\":\"Connection timeout\"}";
         
         McpServerImportResult result = mapper.readValue(json, McpServerImportResult.class);
         assertNotNull(result);
@@ -111,7 +113,8 @@ class McpServerImportResultTest extends BasicRequestTest {
     
     @Test
     void testDeserializeSkippedResult() throws JsonProcessingException {
-        String json = "{\"serverName\":\"existing-server\",\"status\":\"skipped\",\"conflictType\":\"duplicate_name\"}";
+        String json =
+            "{\"serverName\":\"existing-server\",\"status\":\"skipped\",\"conflictType\":\"duplicate_name\"}";
         
         McpServerImportResult result = mapper.readValue(json, McpServerImportResult.class);
         assertNotNull(result);
@@ -124,7 +127,8 @@ class McpServerImportResultTest extends BasicRequestTest {
     
     @Test
     void testDeserializeCompleteResult() throws JsonProcessingException {
-        String json = "{\"serverName\":\"complete-server\",\"serverId\":\"server-456\",\"status\":\"success\","
+        String json =
+            "{\"serverName\":\"complete-server\",\"serverId\":\"server-456\",\"status\":\"success\","
                 + "\"errorMessage\":\"Warning: deprecated config\",\"conflictType\":\"version_conflict\"}";
         
         McpServerImportResult result = mapper.readValue(json, McpServerImportResult.class);

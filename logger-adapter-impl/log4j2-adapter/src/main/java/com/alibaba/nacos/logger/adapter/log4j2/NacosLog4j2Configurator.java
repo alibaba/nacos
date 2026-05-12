@@ -78,8 +78,8 @@ public class NacosLog4j2Configurator {
         
         // Add only Nacos-specific loggers to avoid interfering with user configuration
         nacosConfig.getLoggers().entrySet().stream()
-                .filter(entry -> entry.getKey().startsWith(NACOS_LOGGER_PREFIX))
-                .forEach(entry -> currentConfig.addLogger(entry.getKey(), entry.getValue()));
+            .filter(entry -> entry.getKey().startsWith(NACOS_LOGGER_PREFIX))
+            .forEach(entry -> currentConfig.addLogger(entry.getKey(), entry.getValue()));
         
         // Apply the merged configuration
         loggerContext.updateLoggers();
@@ -100,7 +100,8 @@ public class NacosLog4j2Configurator {
      * @return Parsed Configuration object
      * @throws IOException if configuration cannot be loaded
      */
-    private Configuration loadConfiguration(LoggerContext ctx, URI configLocation) throws IOException {
+    private Configuration loadConfiguration(LoggerContext ctx, URI configLocation)
+        throws IOException {
         try (InputStream stream = configLocation.toURL().openStream()) {
             ConfigurationSource source = new ConfigurationSource(stream, configLocation.toURL());
             return ConfigurationFactory.getInstance().getConfiguration(ctx, source);

@@ -34,7 +34,8 @@ import java.util.List;
  *
  * @author Long Yu
  **/
-public abstract class BaseConfigTagsRelationMapper extends AbstractMapper implements ConfigTagsRelationMapper {
+public abstract class BaseConfigTagsRelationMapper extends AbstractMapper
+    implements ConfigTagsRelationMapper {
     
     private DatabaseDialect databaseDialect;
     
@@ -62,8 +63,8 @@ public abstract class BaseConfigTagsRelationMapper extends AbstractMapper implem
         List<Object> paramList = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE ");
         final String sql =
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id";
+            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
+                + "config_tags_relation b ON a.id=b.id";
         
         where.append(" a.tenant_id=? ");
         paramList.add(tenant);
@@ -109,7 +110,8 @@ public abstract class BaseConfigTagsRelationMapper extends AbstractMapper implem
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
         List<Object> paramList = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE ");
-        final String sqlFetchRows = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content "
+        final String sqlFetchRows =
+            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content "
                 + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id ";
         
         where.append(" a.tenant_id LIKE ? ");
@@ -144,7 +146,7 @@ public abstract class BaseConfigTagsRelationMapper extends AbstractMapper implem
         String sql = getLimitPageSqlWithOffset(sqlFetchRows + where, startRow, pageSize);
         return new MapperResult(sql, paramList);
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return databaseDialect.getFunction(functionName);

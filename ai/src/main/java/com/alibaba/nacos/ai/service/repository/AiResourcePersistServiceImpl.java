@@ -156,9 +156,9 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
                 + " WHERE namespace_id=? AND name=? AND type=? AND meta_version=?";
         
         Object[] args = new Object[] {newValue.getStatus(), newValue.getDesc(),
-                newValue.getBizTags(), newValue.getExt(),
-                newValue.getVersionInfo(), normalizeNamespaceId(namespaceId), name, type,
-                expectedMetaVersion};
+            newValue.getBizTags(), newValue.getExt(),
+            newValue.getVersionInfo(), normalizeNamespaceId(namespaceId), name, type,
+            expectedMetaVersion};
         int rows = jt.update(sql, args);
         return rows == 1;
     }

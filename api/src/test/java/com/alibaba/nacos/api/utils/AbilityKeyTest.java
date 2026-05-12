@@ -76,7 +76,8 @@ class AbilityKeyTest {
     
     @Test
     void testMapEnumForEmpty() {
-        Map<AbilityKey, Boolean> actual = AbilityKey.mapEnum(AbilityMode.SERVER, Collections.emptyMap());
+        Map<AbilityKey, Boolean> actual =
+            AbilityKey.mapEnum(AbilityMode.SERVER, Collections.emptyMap());
         assertTrue(actual.isEmpty());
     }
     
@@ -137,6 +138,6 @@ class AbilityKeyTest {
     @Test
     void testGetDescription() {
         assertEquals("Server whether support fuzzy watch service or config",
-                AbilityKey.SERVER_FUZZY_WATCH.getDescription());
+            AbilityKey.SERVER_FUZZY_WATCH.getDescription());
     }
 }

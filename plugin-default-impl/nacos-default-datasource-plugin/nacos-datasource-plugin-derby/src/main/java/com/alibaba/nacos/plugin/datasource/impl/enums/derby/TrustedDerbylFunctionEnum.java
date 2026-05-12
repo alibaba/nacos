@@ -27,29 +27,29 @@ import java.util.Map;
  * @author blake.qiu
  */
 public enum TrustedDerbylFunctionEnum {
-
+    
     /**
      * NOW().
      */
     NOW("NOW()", "CURRENT_TIMESTAMP");
-
+    
     private static final Map<String, TrustedDerbylFunctionEnum> LOOKUP_MAP = new HashMap<>();
-
+    
     static {
         for (TrustedDerbylFunctionEnum entry : TrustedDerbylFunctionEnum.values()) {
             LOOKUP_MAP.put(entry.functionName, entry);
         }
     }
-
+    
     private final String functionName;
-
+    
     private final String function;
-
+    
     TrustedDerbylFunctionEnum(String functionName, String function) {
         this.functionName = functionName;
         this.function = function;
     }
-
+    
     /**
      * Get the function name.
      *
@@ -61,6 +61,7 @@ public enum TrustedDerbylFunctionEnum {
         if (entry != null) {
             return entry.function;
         }
-        throw new IllegalArgumentException(String.format("Invalid function name: %s", functionName));
+        throw new IllegalArgumentException(
+            String.format("Invalid function name: %s", functionName));
     }
 }

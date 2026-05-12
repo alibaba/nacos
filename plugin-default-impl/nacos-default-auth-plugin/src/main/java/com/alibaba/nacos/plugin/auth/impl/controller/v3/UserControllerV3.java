@@ -182,8 +182,8 @@ public class UserControllerV3 {
     @PutMapping
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE,
         tags = {
-                com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY,
-                AuthConstants.UPDATE_PASSWORD_ENTRY_POINT})
+            com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY,
+            AuthConstants.UPDATE_PASSWORD_ENTRY_POINT})
     public Result<String> updateUser(@RequestParam String username,
         @RequestParam String newPassword,
         HttpServletResponse response, HttpServletRequest request) throws IOException {

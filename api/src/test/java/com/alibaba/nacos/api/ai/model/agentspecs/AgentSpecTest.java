@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentSpecTest extends BasicRequestTest {
-
+    
     @Test
     @DisplayName("test default constructor")
     void testDefaultConstructor() {
@@ -42,7 +42,7 @@ class AgentSpecTest extends BasicRequestTest {
         assertNull(agentSpec.getContent());
         assertNull(agentSpec.getResource());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for namespaceId")
     void testGetterAndSetterForNamespaceId() {
@@ -50,7 +50,7 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setNamespaceId("public");
         assertEquals("public", agentSpec.getNamespaceId());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for name")
     void testGetterAndSetterForName() {
@@ -58,7 +58,7 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setName("testAgent");
         assertEquals("testAgent", agentSpec.getName());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for description")
     void testGetterAndSetterForDescription() {
@@ -66,7 +66,7 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setDescription("Test agent description");
         assertEquals("Test agent description", agentSpec.getDescription());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for bizTags")
     void testGetterAndSetterForBizTags() {
@@ -74,7 +74,7 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setBizTags("[\"tag1\",\"tag2\"]");
         assertEquals("[\"tag1\",\"tag2\"]", agentSpec.getBizTags());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for content")
     void testGetterAndSetterForContent() {
@@ -82,7 +82,7 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setContent("{\"manifest\": \"content\"}");
         assertEquals("{\"manifest\": \"content\"}", agentSpec.getContent());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for resource")
     void testGetterAndSetterForResource() {
@@ -98,7 +98,7 @@ class AgentSpecTest extends BasicRequestTest {
         assertTrue(agentSpec.getResource().containsKey("config.yaml"));
         assertEquals("config.yaml", agentSpec.getResource().get("config.yaml").getName());
     }
-
+    
     @Test
     @DisplayName("test all fields set together")
     void testAllFieldsSetTogether() {
@@ -113,7 +113,7 @@ class AgentSpecTest extends BasicRequestTest {
         resource.setName("skill.json");
         resourceMap.put("skill.json", resource);
         agentSpec.setResource(resourceMap);
-
+        
         assertEquals("public", agentSpec.getNamespaceId());
         assertEquals("testAgent", agentSpec.getName());
         assertEquals("Test", agentSpec.getDescription());
@@ -122,7 +122,7 @@ class AgentSpecTest extends BasicRequestTest {
         assertNotNull(agentSpec.getResource());
         assertEquals(1, agentSpec.getResource().size());
     }
-
+    
     @Test
     @DisplayName("test serialize to json")
     void testSerializeToJson() throws JsonProcessingException {
@@ -132,7 +132,7 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setDescription("Test");
         agentSpec.setBizTags("[\"ai\"]");
         agentSpec.setContent("{\"version\":\"1.0\"}");
-
+        
         String json = mapper.writeValueAsString(agentSpec);
         assertNotNull(json);
         assertTrue(json.contains("\"namespaceId\":\"public\""));
@@ -141,14 +141,14 @@ class AgentSpecTest extends BasicRequestTest {
         assertTrue(json.contains("\"bizTags\":\"[\\\"ai\\\"]\""));
         assertTrue(json.contains("\"content\":\"{\\\"version\\\":\\\"1.0\\\"}\""));
     }
-
+    
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"namespaceId\":\"public\",\"name\":\"testAgent\",\"description\":\"Test\","
-                + "\"bizTags\":\"[\\\"ai\\\"]\",\"content\":\"{\\\"version\\\":\\\"1.0\\\"}\","
-                + "\"resource\":{\"config.yaml\":{\"name\":\"config.yaml\",\"type\":\"config\"}}}";
-
+            + "\"bizTags\":\"[\\\"ai\\\"]\",\"content\":\"{\\\"version\\\":\\\"1.0\\\"}\","
+            + "\"resource\":{\"config.yaml\":{\"name\":\"config.yaml\",\"type\":\"config\"}}}";
+        
         AgentSpec agentSpec = mapper.readValue(json, AgentSpec.class);
         assertNotNull(agentSpec);
         assertEquals("public", agentSpec.getNamespaceId());

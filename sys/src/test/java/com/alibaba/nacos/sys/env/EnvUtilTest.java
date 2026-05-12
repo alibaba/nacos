@@ -432,4 +432,26 @@ class EnvUtilTest {
         environment.setProperty(Constants.AVAILABLE_PROCESSORS_BASIC, "4");
         assertEquals(2, EnvUtil.getAvailableProcessors(0.5d));
     }
+    
+    @Test
+    void testConstructor() {
+        new EnvUtil();
+    }
+    
+    @Test
+    void testResolveRequiredPlaceholdersSuccess() {
+        environment.setProperty("nacos.custom.environment.enabled", "true");
+        assertEquals("true",
+            EnvUtil.resolveRequiredPlaceholders("${nacos.custom.environment.enabled}"));
+    }
+    
+    @Test
+    void testSystemExit() {
+        Runtime runtimeMock = mock(Runtime.class);
+        try (MockedStatic<Runtime> runtimeMocked = Mockito.mockStatic(Runtime.class)) {
+            runtimeMocked.when(Runtime::getRuntime).thenReturn(runtimeMock);
+            EnvUtil.systemExit();
+            verify(runtimeMock).exit(0);
+        }
+    }
 }

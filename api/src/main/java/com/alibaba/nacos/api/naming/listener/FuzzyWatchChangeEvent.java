@@ -36,8 +36,9 @@ public class FuzzyWatchChangeEvent implements Event {
     public FuzzyWatchChangeEvent() {
     }
     
-    public FuzzyWatchChangeEvent(String serviceName, String groupName, String namespace, String changeType,
-            String syncType) {
+    public FuzzyWatchChangeEvent(String serviceName, String groupName, String namespace,
+        String changeType,
+        String syncType) {
         this.changeType = changeType;
         this.serviceName = serviceName;
         this.groupName = groupName;
@@ -76,8 +77,10 @@ public class FuzzyWatchChangeEvent implements Event {
     
     @Override
     public String toString() {
-        return "FuzzyWatchChangeEvent{" + "serviceName='" + serviceName + '\'' + ", groupName='" + groupName + '\''
-                + ", namespace='" + namespace + '\'' + ", changeType='" + changeType + '\'' + ", syncType='" + syncType
-                + '\'' + '}';
+        return "FuzzyWatchChangeEvent{" + "serviceName='" + serviceName + '\'' + ", groupName='"
+            + groupName + '\''
+            + ", namespace='" + namespace + '\'' + ", changeType='" + changeType + '\''
+            + ", syncType='" + syncType
+            + '\'' + '}';
     }
 }

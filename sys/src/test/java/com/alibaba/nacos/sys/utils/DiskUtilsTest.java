@@ -20,19 +20,29 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.Adler32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -40,7 +50,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class DiskUtilsTest {
     
@@ -522,5 +536,109 @@ class DiskUtilsTest {
         assertEquals(first, DiskUtils.readFile(f));
         Files.write(f.toPath(), second.getBytes(StandardCharsets.UTF_8));
         assertEquals(second, DiskUtils.readFile(f));
+    }
+    
+    @Test
+    void testConstructor() {
+        new DiskUtils();
+    }
+    
+    @Test
+    void testWriteFileWithNoSpaceCnTriggersExit() throws Exception {
+        verifyDiskFullExit("设备上没有空间");
+    }
+    
+    @Test
+    void testWriteFileWithNoSpaceEnTriggersExit() throws Exception {
+        verifyDiskFullExit("No space left on device");
+    }
+    
+    @Test
+    void testWriteFileWithDiskQuotaCnTriggersExit() throws Exception {
+        verifyDiskFullExit("xx超出磁盘限额xx");
+    }
+    
+    @Test
+    void testWriteFileWithDiskQuotaEnTriggersExit() throws Exception {
+        verifyDiskFullExit("xx Disk quota exceeded xx");
+    }
+    
+    @Test
+    void testWriteFileWithIoExceptionWithoutMessage() throws Exception {
+        File targetFile = DiskUtils.createTmpFile(UUID.randomUUID().toString(), ".ut");
+        targetFile.deleteOnExit();
+        try (MockedConstruction<FileOutputStream> ignored =
+            Mockito.mockConstruction(FileOutputStream.class, (mock, ctx) -> {
+                FileChannel channel = mock(FileChannel.class);
+                when(mock.getChannel()).thenReturn(channel);
+                when(channel.write(any(ByteBuffer.class))).thenThrow(new IOException());
+            })) {
+            assertFalse(DiskUtils.writeFile(targetFile, new byte[] {1}, false));
+        }
+    }
+    
+    private void verifyDiskFullExit(String ioMessage) throws Exception {
+        File targetFile = DiskUtils.createTmpFile(UUID.randomUUID().toString(), ".ut");
+        targetFile.deleteOnExit();
+        Runtime runtimeMock = mock(Runtime.class);
+        try (MockedConstruction<FileOutputStream> ignored =
+            Mockito.mockConstruction(FileOutputStream.class, (mock, ctx) -> {
+                FileChannel channel = mock(FileChannel.class);
+                when(mock.getChannel()).thenReturn(channel);
+                when(channel.write(any(ByteBuffer.class)))
+                    .thenThrow(new IOException(ioMessage));
+            });
+            MockedStatic<Runtime> runtimeMocked = Mockito.mockStatic(Runtime.class)) {
+            runtimeMocked.when(Runtime::getRuntime).thenReturn(runtimeMock);
+            assertFalse(DiskUtils.writeFile(targetFile, new byte[] {1}, false));
+            verify(runtimeMock).exit(0);
+        }
+    }
+    
+    @Test
+    void testOpenFileRethrowsIoExceptionAsRuntimeException() {
+        try (MockedConstruction<File> ignored =
+            Mockito.mockConstruction(File.class, (mock, ctx) -> {
+                when(mock.exists()).thenReturn(false);
+                when(mock.mkdirs()).thenReturn(true);
+                when(mock.createNewFile()).thenThrow(new IOException("forced"));
+            })) {
+            assertThrows(RuntimeException.class,
+                () -> DiskUtils.openFile("nacos-tmp", "openFile-ioexception"));
+        }
+    }
+    
+    @Test
+    void testDecompressSkipsIllegalEntryName() throws IOException {
+        File zipFile = Files.createTempFile("nacos-sys-illegal-zip", ".zip").toFile();
+        zipFile.deleteOnExit();
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            ZipEntry illegal = new ZipEntry("../illegal.txt");
+            zos.putNextEntry(illegal);
+            zos.write("evil".getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+            ZipEntry safe = new ZipEntry("safe.txt");
+            zos.putNextEntry(safe);
+            zos.write("ok".getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+        }
+        File outDir = Files.createTempDirectory("nacos-sys-illegal-out").toFile();
+        outDir.deleteOnExit();
+        DiskUtils.decompress(zipFile.getAbsolutePath(), outDir.getAbsolutePath(), new Adler32());
+        assertFalse(new File(outDir.getParentFile(), "illegal.txt").exists());
+        assertTrue(new File(outDir, "safe.txt").exists());
+    }
+    
+    @Test
+    void testLineIteratorRemoveDelegatesToTarget() throws Exception {
+        org.apache.commons.io.LineIterator targetMock =
+            mock(org.apache.commons.io.LineIterator.class);
+        doNothing().when(targetMock).remove();
+        Constructor<DiskUtils.LineIterator> ctor = DiskUtils.LineIterator.class
+            .getDeclaredConstructor(org.apache.commons.io.LineIterator.class);
+        ctor.setAccessible(true);
+        DiskUtils.LineIterator iterator = ctor.newInstance(targetMock);
+        iterator.remove();
+        verify(targetMock).remove();
     }
 }

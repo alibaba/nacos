@@ -116,7 +116,7 @@ class PublishPipelineManagerTest {
             new ServiceDescriptor("a", 1,
                 new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL}),
             new ServiceDescriptor("b", 2, new PublishPipelineResourceType[] {
-                    PublishPipelineResourceType.SKILL, PublishPipelineResourceType.AGENTSPEC}));
+                PublishPipelineResourceType.SKILL, PublishPipelineResourceType.AGENTSPEC}));
         list.add(
             new FilterTestInput(svc1, PublishPipelineResourceType.SKILL, Arrays.asList("a", "b")));
         list.add(new FilterTestInput(svc1, PublishPipelineResourceType.SKILL,

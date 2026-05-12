@@ -47,7 +47,8 @@ class ServerLoaderInfoResponseTest {
     
     @Test
     void testDeserialization() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"loaderMetrics\":{\"test\":\"testValue\"},\"success\":true}";
+        String json =
+            "{\"resultCode\":200,\"errorCode\":0,\"loaderMetrics\":{\"test\":\"testValue\"},\"success\":true}";
         ServerLoaderInfoResponse response = mapper.readValue(json, ServerLoaderInfoResponse.class);
         assertEquals(1, response.getLoaderMetrics().size());
         assertEquals("testValue", response.getMetricsValue("test"));

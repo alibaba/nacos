@@ -83,7 +83,7 @@ class PackageTransportTest extends BasicRequestTest {
     @Test
     void testDeserializePackageWithStdioTransport() throws JsonProcessingException {
         String json = "{\"identifier\":\"test-package\",\"version\":\"1.0.0\","
-                + "\"transport\":{\"type\":\"stdio\"}}";
+            + "\"transport\":{\"type\":\"stdio\"}}";
         
         Package pkg = mapper.readValue(json, Package.class);
         
@@ -96,8 +96,8 @@ class PackageTransportTest extends BasicRequestTest {
     @Test
     void testDeserializePackageWithStreamableHttpTransport() throws JsonProcessingException {
         String json = "{\"identifier\":\"test-package\",\"version\":\"1.0.0\","
-                + "\"transport\":{\"type\":\"streamable-http\",\"url\":\"http://localhost:8080/api\","
-                + "\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer token\"}]}}";
+            + "\"transport\":{\"type\":\"streamable-http\",\"url\":\"http://localhost:8080/api\","
+            + "\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer token\"}]}}";
         
         Package pkg = mapper.readValue(json, Package.class);
         
@@ -109,7 +109,7 @@ class PackageTransportTest extends BasicRequestTest {
     @Test
     void testDeserializePackageWithSseTransport() throws JsonProcessingException {
         String json = "{\"identifier\":\"test-package\",\"version\":\"1.0.0\","
-                + "\"transport\":{\"type\":\"sse\",\"url\":\"https://example.com/sse\"}}";
+            + "\"transport\":{\"type\":\"sse\",\"url\":\"https://example.com/sse\"}}";
         
         Package pkg = mapper.readValue(json, Package.class);
         

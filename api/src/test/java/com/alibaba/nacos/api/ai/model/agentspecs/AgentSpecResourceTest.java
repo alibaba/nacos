@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentSpecResourceTest extends BasicRequestTest {
-
+    
     @Test
     @DisplayName("test default constructor")
     void testDefaultConstructor() {
@@ -40,7 +40,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         assertNull(resource.getContent());
         assertNull(resource.getMetadata());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for name")
     void testGetterAndSetterForName() {
@@ -48,7 +48,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         resource.setName("config/SOUL.md");
         assertEquals("config/SOUL.md", resource.getName());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for type")
     void testGetterAndSetterForType() {
@@ -56,7 +56,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         resource.setType("config");
         assertEquals("config", resource.getType());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for content")
     void testGetterAndSetterForContent() {
@@ -64,7 +64,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         resource.setContent("file content here");
         assertEquals("file content here", resource.getContent());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for metadata")
     void testGetterAndSetterForMetadata() {
@@ -78,7 +78,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         assertEquals("value1", resource.getMetadata().get("key1"));
         assertEquals(123, resource.getMetadata().get("key2"));
     }
-
+    
     @Test
     @DisplayName("test getResourceIdentifier with type")
     void testGetResourceIdentifierWithType() {
@@ -87,7 +87,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         resource.setType("config");
         assertEquals("config::config.yaml", resource.getResourceIdentifier());
     }
-
+    
     @Test
     @DisplayName("test getResourceIdentifier without type")
     void testGetResourceIdentifierWithoutType() {
@@ -96,7 +96,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         resource.setType(null);
         assertEquals("README.md", resource.getResourceIdentifier());
     }
-
+    
     @Test
     @DisplayName("test getResourceIdentifier with empty type")
     void testGetResourceIdentifierWithEmptyType() {
@@ -105,7 +105,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         resource.setType("");
         assertEquals("test.txt", resource.getResourceIdentifier());
     }
-
+    
     @Test
     @DisplayName("test getResourceIdentifier with whitespace type")
     void testGetResourceIdentifierWithWhitespaceType() {
@@ -114,7 +114,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         resource.setType("   ");
         assertEquals("test.txt", resource.getResourceIdentifier());
     }
-
+    
     @Test
     @DisplayName("test getResourceIdentifier with skill type")
     void testGetResourceIdentifierWithSkillType() {
@@ -123,7 +123,7 @@ class AgentSpecResourceTest extends BasicRequestTest {
         resource.setType("skill");
         assertEquals("skill::skills/search.json", resource.getResourceIdentifier());
     }
-
+    
     @Test
     @DisplayName("test serialize to json")
     void testSerializeToJson() throws JsonProcessingException {
@@ -131,20 +131,20 @@ class AgentSpecResourceTest extends BasicRequestTest {
         resource.setName("config.yaml");
         resource.setType("config");
         resource.setContent("content here");
-
+        
         String json = mapper.writeValueAsString(resource);
         assertNotNull(json);
         assertTrue(json.contains("\"name\":\"config.yaml\""));
         assertTrue(json.contains("\"type\":\"config\""));
         assertTrue(json.contains("\"content\":\"content here\""));
     }
-
+    
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"name\":\"config.yaml\",\"type\":\"config\",\"content\":\"test content\","
-                + "\"metadata\":{\"key\":\"value\"}}";
-
+            + "\"metadata\":{\"key\":\"value\"}}";
+        
         AgentSpecResource resource = mapper.readValue(json, AgentSpecResource.class);
         assertNotNull(resource);
         assertEquals("config.yaml", resource.getName());

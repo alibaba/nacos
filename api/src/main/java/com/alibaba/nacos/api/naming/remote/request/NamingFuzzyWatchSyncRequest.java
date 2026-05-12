@@ -42,7 +42,7 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
     private int currentBatch;
     
     public NamingFuzzyWatchSyncRequest() {
-    
+        
     }
     
     public NamingFuzzyWatchSyncRequest(String pattern, String syncType, Set<Context> contexts) {
@@ -77,9 +77,11 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @param currentBatch currentBatch
      * @return A new NamingFuzzyWatchSyncRequest instance
      */
-    public static NamingFuzzyWatchSyncRequest buildSyncNotifyRequest(String pattern, String syncType,
-            Set<Context> contexts, int totalBatch, int currentBatch) {
-        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequest = new NamingFuzzyWatchSyncRequest(pattern, syncType,
+    public static NamingFuzzyWatchSyncRequest buildSyncNotifyRequest(String pattern,
+        String syncType,
+        Set<Context> contexts, int totalBatch, int currentBatch) {
+        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequest =
+            new NamingFuzzyWatchSyncRequest(pattern, syncType,
                 contexts);
         namingFuzzyWatchSyncRequest.currentBatch = currentBatch;
         namingFuzzyWatchSyncRequest.totalBatch = totalBatch;
@@ -135,7 +137,8 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
          * @param changedType The type of the configuration change event.
          * @return A new context object initialized with the provided parameters.
          */
-        public static NamingFuzzyWatchSyncRequest.Context build(String serviceKey, String changedType) {
+        public static NamingFuzzyWatchSyncRequest.Context build(String serviceKey,
+            String changedType) {
             NamingFuzzyWatchSyncRequest.Context context = new NamingFuzzyWatchSyncRequest.Context();
             context.setServiceKey(serviceKey);
             context.setChangedType(changedType);

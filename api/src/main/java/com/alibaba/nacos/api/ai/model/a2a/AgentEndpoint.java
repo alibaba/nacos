@@ -180,24 +180,32 @@ public class AgentEndpoint {
             return false;
         }
         AgentEndpoint endpoint = (AgentEndpoint) o;
-        return port == endpoint.port && supportTls == endpoint.supportTls && Objects.equals(transport,
-                endpoint.transport) && Objects.equals(address, endpoint.address) && Objects.equals(path, endpoint.path)
-                && Objects.equals(version, endpoint.version) && Objects.equals(protocol, endpoint.protocol)
-                && Objects.equals(query, endpoint.query) && Objects.equals(protocolVersion, endpoint.protocolVersion)
-                && Objects.equals(tenant, endpoint.tenant);
+        return port == endpoint.port && supportTls == endpoint.supportTls
+            && Objects.equals(transport,
+                endpoint.transport)
+            && Objects.equals(address, endpoint.address) && Objects.equals(path, endpoint.path)
+            && Objects.equals(version, endpoint.version)
+            && Objects.equals(protocol, endpoint.protocol)
+            && Objects.equals(query, endpoint.query)
+            && Objects.equals(protocolVersion, endpoint.protocolVersion)
+            && Objects.equals(tenant, endpoint.tenant);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(transport, address, port, path, supportTls, version, protocolVersion, tenant, protocol,
-                query);
+        return Objects.hash(transport, address, port, path, supportTls, version, protocolVersion,
+            tenant, protocol,
+            query);
     }
     
     @Override
     public String toString() {
-        return "AgentEndpoint{" + "transport='" + transport + '\'' + ", address='" + address + '\'' + ", port=" + port
-                + ", path='" + path + '\'' + ", supportTls=" + supportTls + ", version='" + version + '\''
-                + ", protocolVersion='" + protocolVersion + '\'' + ", tenant='" + tenant + '\'' + ", protocol='"
-                + protocol + '\'' + ", query='" + query + '\'' + '}';
+        return "AgentEndpoint{" + "transport='" + transport + '\'' + ", address='" + address + '\''
+            + ", port=" + port
+            + ", path='" + path + '\'' + ", supportTls=" + supportTls + ", version='" + version
+            + '\''
+            + ", protocolVersion='" + protocolVersion + '\'' + ", tenant='" + tenant + '\''
+            + ", protocol='"
+            + protocol + '\'' + ", query='" + query + '\'' + '}';
     }
 }

@@ -25,27 +25,27 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.postgresql.TrustedPostgres
  * @author xiweng.yy
  */
 public class PostgresqlDatabaseDialect extends AbstractDatabaseDialect {
-
+    
     @Override
     public String getType() {
         return DatabaseTypeConstant.POSTGRESQL;
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedPostgresqlFunctionEnum.getFunctionByName(functionName);
     }
-
+    
     @Override
     public String getLimitPageSqlWithMark(String sql) {
         return sql + " OFFSET ? LIMIT ? ";
     }
-
+    
     @Override
     public String getLimitPageSql(String sql, int pageNo, int pageSize) {
         return sql + "  OFFSET " + getPagePrevNum(pageNo, pageSize) + " LIMIT " + pageSize;
     }
-
+    
     @Override
     public String getLimitPageSqlWithOffset(String sql, int startOffset, int pageSize) {
         return sql + "  OFFSET " + startOffset + " LIMIT " + pageSize;

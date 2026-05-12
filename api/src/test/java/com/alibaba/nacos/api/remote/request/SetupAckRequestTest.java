@@ -30,7 +30,7 @@ class SetupAckRequestTest extends BasicRequestTest {
     @Test
     void testSerialize() throws Exception {
         SetupAckRequest request = new SetupAckRequest(
-                Collections.singletonMap(AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE));
+            Collections.singletonMap(AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE));
         request.setRequestId("1");
         String json = mapper.writeValueAsString(request);
         assertNotNull(json);
@@ -42,7 +42,7 @@ class SetupAckRequestTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws Exception {
         String json =
-                "{\"headers\":{},\"requestId\":\"1\",\"abilityTable\":{\"fuzzyWatch\":true},\"module\":\"internal\"}";
+            "{\"headers\":{},\"requestId\":\"1\",\"abilityTable\":{\"fuzzyWatch\":true},\"module\":\"internal\"}";
         SetupAckRequest result = mapper.readValue(json, SetupAckRequest.class);
         assertNotNull(result);
         assertTrue(result.getAbilityTable().get(AbilityKey.SDK_CLIENT_FUZZY_WATCH.getName()));

@@ -47,7 +47,8 @@ class NamingFuzzyWatchSyncResponseTest {
     
     @Test
     void testSerializeFailResponse() throws JsonProcessingException {
-        NamingFuzzyWatchSyncResponse response = NamingFuzzyWatchSyncResponse.buildFailResponse("test");
+        NamingFuzzyWatchSyncResponse response =
+            NamingFuzzyWatchSyncResponse.buildFailResponse("test");
         String json = mapper.writeValueAsString(response);
         assertTrue(json.contains("\"resultCode\":500"));
         assertTrue(json.contains("\"errorCode\":500"));
@@ -58,7 +59,8 @@ class NamingFuzzyWatchSyncResponseTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"resultCode\":200,\"errorCode\":0,\"success\":true}";
-        NamingFuzzyWatchSyncResponse response = mapper.readValue(json, NamingFuzzyWatchSyncResponse.class);
+        NamingFuzzyWatchSyncResponse response =
+            mapper.readValue(json, NamingFuzzyWatchSyncResponse.class);
         assertTrue(response.isSuccess());
     }
 }

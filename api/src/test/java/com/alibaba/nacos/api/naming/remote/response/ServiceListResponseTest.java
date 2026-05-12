@@ -41,7 +41,8 @@ class ServiceListResponseTest {
     
     @Test
     void testSerializeSuccessResponse() throws JsonProcessingException {
-        ServiceListResponse response = ServiceListResponse.buildSuccessResponse(10, Collections.singletonList("a"));
+        ServiceListResponse response =
+            ServiceListResponse.buildSuccessResponse(10, Collections.singletonList("a"));
         String json = mapper.writeValueAsString(response);
         assertTrue(json.contains("\"count\":10"));
         assertTrue(json.contains("\"serviceNames\":[\"a\"]"));
@@ -62,7 +63,8 @@ class ServiceListResponseTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"count\":10,\"serviceNames\":[\"a\"],\"success\":true}";
+        String json =
+            "{\"resultCode\":200,\"errorCode\":0,\"count\":10,\"serviceNames\":[\"a\"],\"success\":true}";
         ServiceListResponse response = mapper.readValue(json, ServiceListResponse.class);
         assertEquals(10, response.getCount());
         assertEquals(1, response.getServiceNames().size());

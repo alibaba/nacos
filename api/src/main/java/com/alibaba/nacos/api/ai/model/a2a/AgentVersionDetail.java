@@ -72,8 +72,10 @@ public class AgentVersionDetail {
             return false;
         }
         AgentVersionDetail that = (AgentVersionDetail) o;
-        return Objects.equals(version, that.version) && Objects.equals(createdAt, that.createdAt) && Objects.equals(
-                updatedAt, that.updatedAt) && Objects.equals(isLatest, that.isLatest);
+        return Objects.equals(version, that.version) && Objects.equals(createdAt, that.createdAt)
+            && Objects.equals(
+                updatedAt, that.updatedAt)
+            && Objects.equals(isLatest, that.isLatest);
     }
     
     @Override

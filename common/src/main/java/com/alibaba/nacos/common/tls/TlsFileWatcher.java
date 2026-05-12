@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,7 +51,7 @@ public final class TlsFileWatcher {
     
     private final int checkInterval = TlsSystemConfig.tlsFileCheckInterval;
     
-    private Map<String, String> fileMd5Map = new HashMap<>();
+    private Map<String, String> fileMd5Map = new ConcurrentHashMap<>();
     
     private ConcurrentHashMap<String, FileChangeListener> watchFilesMap = new ConcurrentHashMap<>();
     

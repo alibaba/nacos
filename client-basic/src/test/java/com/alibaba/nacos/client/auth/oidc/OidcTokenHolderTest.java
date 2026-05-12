@@ -69,7 +69,7 @@ class OidcTokenHolderTest {
         // TTL = 300s => startNumber = 300/15 = 20, endNumber = 300/10 = 30
         long window = tokenHolder.generateTokenRefreshWindow(300);
         assertTrue(window >= 20 && window < 30,
-                "Window should be in range [20, 30), got: " + window);
+            "Window should be in range [20, 30), got: " + window);
     }
     
     @Test
@@ -77,7 +77,7 @@ class OidcTokenHolderTest {
         // TTL = 10s => startNumber = 0, endNumber = 1
         long window = tokenHolder.generateTokenRefreshWindow(10);
         assertTrue(window >= 0 && window <= 1,
-                "Window should be 0 or 1 for TTL 10, got: " + window);
+            "Window should be 0 or 1 for TTL 10, got: " + window);
     }
     
     @Test

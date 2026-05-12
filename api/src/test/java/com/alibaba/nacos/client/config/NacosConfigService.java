@@ -48,34 +48,39 @@ public class NacosConfigService implements ConfigService {
     }
     
     @Override
-    public String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener)
-            throws NacosException {
+    public String getConfigAndSignListener(String dataId, String group, long timeoutMs,
+        Listener listener)
+        throws NacosException {
         return "";
     }
     
     @Override
     public void addListener(String dataId, String group, Listener listener) throws NacosException {
-    
+        
     }
     
     @Override
-    public boolean publishConfig(String dataId, String group, String content) throws NacosException {
+    public boolean publishConfig(String dataId, String group, String content)
+        throws NacosException {
         return false;
     }
     
     @Override
-    public boolean publishConfig(String dataId, String group, String content, String type) throws NacosException {
+    public boolean publishConfig(String dataId, String group, String content, String type)
+        throws NacosException {
         return false;
     }
     
     @Override
-    public boolean publishConfigCas(String dataId, String group, String content, String casMd5) throws NacosException {
+    public boolean publishConfigCas(String dataId, String group, String content, String casMd5)
+        throws NacosException {
         return false;
     }
     
     @Override
-    public boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type)
-            throws NacosException {
+    public boolean publishConfigCas(String dataId, String group, String content, String casMd5,
+        String type)
+        throws NacosException {
         return false;
     }
     
@@ -86,7 +91,7 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void removeListener(String dataId, String group, Listener listener) {
-    
+        
     }
     
     @Override
@@ -96,45 +101,51 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void addConfigFilter(IConfigFilter configFilter) {
-    
-    }
-    
-    @Override
-    public void shutDown() throws NacosException {
-    
-    }
-    
-    @Override
-    public void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher) throws NacosException {
-    
-    }
-    
-    @Override
-    public void fuzzyWatch(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
-            throws NacosException {
         
     }
     
     @Override
-    public Future<Set<String>> fuzzyWatchWithGroupKeys(String groupNamePattern, FuzzyWatchEventWatcher watcher)
-            throws NacosException {
+    public void shutDown() throws NacosException {
+        
+    }
+    
+    @Override
+    public void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher)
+        throws NacosException {
+        
+    }
+    
+    @Override
+    public void fuzzyWatch(String dataIdPattern, String groupNamePattern,
+        FuzzyWatchEventWatcher watcher)
+        throws NacosException {
+        
+    }
+    
+    @Override
+    public Future<Set<String>> fuzzyWatchWithGroupKeys(String groupNamePattern,
+        FuzzyWatchEventWatcher watcher)
+        throws NacosException {
         return null;
     }
     
     @Override
-    public Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern, String groupNamePattern,
-            FuzzyWatchEventWatcher watcher) throws NacosException {
+    public Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern,
+        String groupNamePattern,
+        FuzzyWatchEventWatcher watcher) throws NacosException {
         return null;
     }
     
     @Override
-    public void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher) throws NacosException {
-    
+    public void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher)
+        throws NacosException {
+        
     }
     
     @Override
-    public void cancelFuzzyWatch(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
-            throws NacosException {
+    public void cancelFuzzyWatch(String dataIdPattern, String groupNamePattern,
+        FuzzyWatchEventWatcher watcher)
+        throws NacosException {
         
     }
 }

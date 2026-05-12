@@ -34,12 +34,14 @@ class McpServerEndpointResponseTest extends BasicRequestTest {
         String json = mapper.writeValueAsString(response);
         assertNotNull(json);
         assertTrue(json.contains("\"requestId\":\"1\""));
-        assertTrue(json.contains(String.format("\"type\":\"%s\"", AiRemoteConstants.REGISTER_ENDPOINT)));
+        assertTrue(
+            json.contains(String.format("\"type\":\"%s\"", AiRemoteConstants.REGISTER_ENDPOINT)));
     }
     
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"type\":\"registerEndpoint\",\"success\":true}";
+        String json =
+            "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"type\":\"registerEndpoint\",\"success\":true}";
         McpServerEndpointResponse result = mapper.readValue(json, McpServerEndpointResponse.class);
         assertNotNull(result);
         assertEquals("1", result.getRequestId());

@@ -53,7 +53,8 @@ class MysqlTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String testChecker = "{\"type\":\"MYSQL\",\"user\":\"user\",\"pwd\":\"pwd\",\"cmd\":\"cmd\"}";
+        String testChecker =
+            "{\"type\":\"MYSQL\",\"user\":\"user\",\"pwd\":\"pwd\",\"cmd\":\"cmd\"}";
         Mysql actual = objectMapper.readValue(testChecker, Mysql.class);
         assertEquals("cmd", actual.getCmd());
         assertEquals("pwd", actual.getPwd());

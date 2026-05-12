@@ -48,7 +48,8 @@ public class RequestMeta {
         if (abilityTable == null || !abilityTable.containsKey(abilityKey.getName())) {
             return AbilityStatus.UNKNOWN;
         }
-        return abilityTable.get(abilityKey.getName()) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
+        return abilityTable.get(abilityKey.getName()) ? AbilityStatus.SUPPORTED
+            : AbilityStatus.NOT_SUPPORTED;
     }
     
     /**
@@ -99,18 +100,22 @@ public class RequestMeta {
     
     private void extractAppLabels() {
         HashMap<String, String> applabelsMap = new HashMap<String, String>(8) {
+            
             {
                 put(Constants.APPNAME, labels.get(Constants.APPNAME));
                 put(Constants.CLIENT_VERSION_KEY, clientVersion);
                 put(Constants.CLIENT_IP, clientIp);
             }
         };
-        labels.entrySet().stream().filter(Objects::nonNull).filter(e -> e.getKey().startsWith(Constants.APP_CONN_PREFIX)
-                        && e.getKey().length() > Constants.APP_CONN_PREFIX.length() && !e.getValue().trim().isEmpty())
-                .forEach(entry -> {
-                    applabelsMap.putIfAbsent(entry.getKey().substring(Constants.APP_CONN_PREFIX.length()),
-                            entry.getValue());
-                });
+        labels.entrySet().stream().filter(Objects::nonNull)
+            .filter(e -> e.getKey().startsWith(Constants.APP_CONN_PREFIX)
+                && e.getKey().length() > Constants.APP_CONN_PREFIX.length()
+                && !e.getValue().trim().isEmpty())
+            .forEach(entry -> {
+                applabelsMap.putIfAbsent(
+                    entry.getKey().substring(Constants.APP_CONN_PREFIX.length()),
+                    entry.getValue());
+            });
         this.appLabels = applabelsMap;
     }
     
@@ -163,7 +168,8 @@ public class RequestMeta {
     
     @Override
     public String toString() {
-        return "RequestMeta{" + "connectionId='" + connectionId + '\'' + ", clientIp='" + clientIp + '\''
-                + ", clientVersion='" + clientVersion + '\'' + ", labels=" + labels + '}';
+        return "RequestMeta{" + "connectionId='" + connectionId + '\'' + ", clientIp='" + clientIp
+            + '\''
+            + ", clientVersion='" + clientVersion + '\'' + ", labels=" + labels + '}';
     }
 }

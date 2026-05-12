@@ -44,7 +44,8 @@ class NacosExceptionTest {
     
     @Test
     void testConstructorWithCause() {
-        NacosException exception = new NacosException(NacosException.SERVER_ERROR, new RuntimeException("cause test"));
+        NacosException exception =
+            new NacosException(NacosException.SERVER_ERROR, new RuntimeException("cause test"));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals("cause test", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:cause test", exception.toString());
@@ -53,7 +54,7 @@ class NacosExceptionTest {
     @Test
     void testConstructorWithMultiCauses() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR,
-                new RuntimeException("cause test", new RuntimeException("multi")));
+            new RuntimeException("cause test", new RuntimeException("multi")));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals("multi", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:multi", exception.toString());
@@ -62,7 +63,7 @@ class NacosExceptionTest {
     @Test
     void testConstructorWithFull() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR, "test",
-                new RuntimeException("cause test"));
+            new RuntimeException("cause test"));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals("test", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:test", exception.toString());

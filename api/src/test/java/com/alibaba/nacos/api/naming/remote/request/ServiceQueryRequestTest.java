@@ -38,7 +38,8 @@ class ServiceQueryRequestTest extends BasedNamingRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
+        String json =
+            "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
                 + "\"cluster\":\"DEFAULT\",\"healthyOnly\":true,\"udpPort\":0,\"module\":\"naming\"}";
         ServiceQueryRequest actual = mapper.readValue(json, ServiceQueryRequest.class);
         checkNamingRequestBasedInfo(actual);

@@ -196,8 +196,8 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         Timestamp time = new Timestamp(System.currentTimeMillis());
         final Object[] args =
             new Object[] {configGrayId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                    grayNameTmp, grayRuleTmp, appNameTmp, configInfo.getContent(), md5, srcIp,
-                    srcUser, time, time};
+                grayNameTmp, grayRuleTmp, appNameTmp, configInfo.getContent(), md5, srcIp,
+                srcUser, time, time};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
     
@@ -303,8 +303,8 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 Arrays.asList("data_id", "group_id", "tenant_id", "gray_name"));
             final Object[] args =
                 new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
-                        grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                        grayNameTmp};
+                    grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                    grayNameTmp};
             if (!GRAY_MIGRATE_FLAG.get()) {
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(
                     oldConfigAllInfo4Gray.getId(),

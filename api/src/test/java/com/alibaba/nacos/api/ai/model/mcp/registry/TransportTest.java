@@ -72,7 +72,7 @@ class TransportTest extends BasicRequestTest {
     @Test
     void testStreamableHttpTransportDeserialize() throws JsonProcessingException {
         String json = "{\"type\":\"streamable-http\",\"url\":\"http://localhost:8080/api\","
-                + "\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer token123\"}]}";
+            + "\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer token123\"}]}";
         StreamableHttpTransport transport = mapper.readValue(json, StreamableHttpTransport.class);
         
         assertNotNull(transport);

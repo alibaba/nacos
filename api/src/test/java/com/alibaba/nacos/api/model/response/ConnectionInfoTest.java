@@ -74,8 +74,10 @@ class ConnectionInfoTest {
         assertTrue(json.contains("\"localPort\":18080"));
         assertTrue(json.contains("\"version\":\"3.0.0\""));
         assertTrue(json.contains("\"connectionId\":\"1739168690942_127.0.0.1_18080\""));
-        assertTrue(json.contains("\"createTime\":" + connectionInfo.getMetaInfo().getCreateTime().getTime()));
-        assertTrue(json.contains("\"lastActiveTime\":" + connectionInfo.getMetaInfo().getLastActiveTime()));
+        assertTrue(json
+            .contains("\"createTime\":" + connectionInfo.getMetaInfo().getCreateTime().getTime()));
+        assertTrue(json
+            .contains("\"lastActiveTime\":" + connectionInfo.getMetaInfo().getLastActiveTime()));
         assertTrue(json.contains("\"appName\":\"test\""));
         assertTrue(json.contains("\"labels\":{"));
         assertTrue(json.contains("\"AppName\":\"test\""));
@@ -86,7 +88,8 @@ class ConnectionInfoTest {
     @Test
     void testDeserialize() throws Exception {
         // full connection information from server.
-        String json = "{\"traced\":false,\"abilityTable\":{},\"metaInfo\":{\"namespaceId\":\"public\",\"connectType\":\"grpc\","
+        String json =
+            "{\"traced\":false,\"abilityTable\":{},\"metaInfo\":{\"namespaceId\":\"public\",\"connectType\":\"grpc\","
                 + "\"clientIp\":\"127.0.0.1\",\"remoteIp\":\"127.0.0.1\",\"remotePort\":8080,"
                 + "\"localPort\":18080,\"version\":\"3.0.0\",\"connectionId\":\"1739168690942_127.0.0.1_18080\","
                 + "\"createTime\":1739170615198,\"lastActiveTime\":1739170615198,\"appName\":\"test\","
@@ -97,19 +100,26 @@ class ConnectionInfoTest {
         assertEquals(connectionInfo.isTraced(), actualConnectionInfo.isTraced());
         assertEquals(connectionInfo.getAbilityTable(), actualConnectionInfo.getAbilityTable());
         assertEquals(connectionInfo.getMetaInfo().getConnectType(),
-                actualConnectionInfo.getMetaInfo().getConnectType());
-        assertEquals(connectionInfo.getMetaInfo().getClientIp(), actualConnectionInfo.getMetaInfo().getClientIp());
-        assertEquals(connectionInfo.getMetaInfo().getRemoteIp(), actualConnectionInfo.getMetaInfo().getRemoteIp());
-        assertEquals(connectionInfo.getMetaInfo().getRemotePort(), actualConnectionInfo.getMetaInfo().getRemotePort());
-        assertEquals(connectionInfo.getMetaInfo().getLocalPort(), actualConnectionInfo.getMetaInfo().getLocalPort());
-        assertEquals(connectionInfo.getMetaInfo().getVersion(), actualConnectionInfo.getMetaInfo().getVersion());
+            actualConnectionInfo.getMetaInfo().getConnectType());
+        assertEquals(connectionInfo.getMetaInfo().getClientIp(),
+            actualConnectionInfo.getMetaInfo().getClientIp());
+        assertEquals(connectionInfo.getMetaInfo().getRemoteIp(),
+            actualConnectionInfo.getMetaInfo().getRemoteIp());
+        assertEquals(connectionInfo.getMetaInfo().getRemotePort(),
+            actualConnectionInfo.getMetaInfo().getRemotePort());
+        assertEquals(connectionInfo.getMetaInfo().getLocalPort(),
+            actualConnectionInfo.getMetaInfo().getLocalPort());
+        assertEquals(connectionInfo.getMetaInfo().getVersion(),
+            actualConnectionInfo.getMetaInfo().getVersion());
         assertEquals(connectionInfo.getMetaInfo().getConnectionId(),
-                actualConnectionInfo.getMetaInfo().getConnectionId());
+            actualConnectionInfo.getMetaInfo().getConnectionId());
         assertEquals(1739170615198L, actualConnectionInfo.getMetaInfo().getCreateTime().getTime());
         assertEquals(1739170615198L, actualConnectionInfo.getMetaInfo().getLastActiveTime());
-        assertEquals(connectionInfo.getMetaInfo().getAppName(), actualConnectionInfo.getMetaInfo().getAppName());
-        assertEquals(connectionInfo.getMetaInfo().getLabels(), actualConnectionInfo.getMetaInfo().getLabels());
+        assertEquals(connectionInfo.getMetaInfo().getAppName(),
+            actualConnectionInfo.getMetaInfo().getAppName());
+        assertEquals(connectionInfo.getMetaInfo().getLabels(),
+            actualConnectionInfo.getMetaInfo().getLabels());
         assertEquals(connectionInfo.getMetaInfo().getNamespaceId(),
-                actualConnectionInfo.getMetaInfo().getNamespaceId());
+            actualConnectionInfo.getMetaInfo().getNamespaceId());
     }
 }

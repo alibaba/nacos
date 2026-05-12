@@ -101,7 +101,8 @@ class AbstractCmdbSelectorTest {
                 each.getEntity().setLabels(Collections.singletonMap("afterSelect", "true"));
             }
             context.getConsumer().getInstance().getMetadata().put("afterSelect", "true");
-            context.getConsumer().getEntity().setLabels(Collections.singletonMap("afterSelect", "true"));
+            context.getConsumer().getEntity()
+                .setLabels(Collections.singletonMap("afterSelect", "true"));
             return Collections.singletonList(new Instance());
         }
         

@@ -46,8 +46,8 @@ public class FrontEndpointConfig {
     private Object endpointData;
     
     private String path;
-
-    private List<KeyValueInput> headers; 
+    
+    private List<KeyValueInput> headers;
     
     public String getType() {
         return type;
@@ -88,11 +88,11 @@ public class FrontEndpointConfig {
     public void setPath(String path) {
         this.path = path;
     }
-
+    
     public List<KeyValueInput> getHeaders() {
         return headers;
     }
-
+    
     public void setHeaders(List<KeyValueInput> headers) {
         this.headers = headers;
     }

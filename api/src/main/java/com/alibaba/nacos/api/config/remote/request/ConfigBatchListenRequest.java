@@ -98,13 +98,14 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
         String tenant;
         
         public ConfigListenContext() {
-        
+            
         }
         
         @Override
         public String toString() {
-            return "ConfigListenContext{" + "group='" + group + '\'' + ", md5='" + md5 + '\'' + ", dataId='" + dataId
-                    + '\'' + ", tenant='" + tenant + '\'' + '}';
+            return "ConfigListenContext{" + "group='" + group + '\'' + ", md5='" + md5 + '\''
+                + ", dataId='" + dataId
+                + '\'' + ", tenant='" + tenant + '\'' + '}';
         }
         
         /**

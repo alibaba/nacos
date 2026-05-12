@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentSpecBaseTest extends BasicRequestTest {
-
+    
     @Test
     @DisplayName("test default constructor")
     void testDefaultConstructor() {
@@ -36,7 +36,7 @@ class AgentSpecBaseTest extends BasicRequestTest {
         assertNull(base.getName());
         assertNull(base.getDescription());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for namespaceId")
     void testGetterAndSetterForNamespaceId() {
@@ -44,7 +44,7 @@ class AgentSpecBaseTest extends BasicRequestTest {
         base.setNamespaceId("public");
         assertEquals("public", base.getNamespaceId());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for name")
     void testGetterAndSetterForName() {
@@ -52,7 +52,7 @@ class AgentSpecBaseTest extends BasicRequestTest {
         base.setName("testAgentSpec");
         assertEquals("testAgentSpec", base.getName());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for description")
     void testGetterAndSetterForDescription() {
@@ -60,7 +60,7 @@ class AgentSpecBaseTest extends BasicRequestTest {
         base.setDescription("Test description");
         assertEquals("Test description", base.getDescription());
     }
-
+    
     @Test
     @DisplayName("test all fields set together")
     void testAllFieldsSetTogether() {
@@ -68,12 +68,12 @@ class AgentSpecBaseTest extends BasicRequestTest {
         base.setNamespaceId("public");
         base.setName("testAgentSpec");
         base.setDescription("Test agent spec");
-
+        
         assertEquals("public", base.getNamespaceId());
         assertEquals("testAgentSpec", base.getName());
         assertEquals("Test agent spec", base.getDescription());
     }
-
+    
     @Test
     @DisplayName("test serialize to json")
     void testSerializeToJson() throws JsonProcessingException {
@@ -81,19 +81,20 @@ class AgentSpecBaseTest extends BasicRequestTest {
         base.setNamespaceId("public");
         base.setName("testAgentSpec");
         base.setDescription("Test description");
-
+        
         String json = mapper.writeValueAsString(base);
         assertNotNull(json);
         assertTrue(json.contains("\"namespaceId\":\"public\""));
         assertTrue(json.contains("\"name\":\"testAgentSpec\""));
         assertTrue(json.contains("\"description\":\"Test description\""));
     }
-
+    
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
-        String json = "{\"namespaceId\":\"public\",\"name\":\"testAgentSpec\",\"description\":\"Test\"}";
-
+        String json =
+            "{\"namespaceId\":\"public\",\"name\":\"testAgentSpec\",\"description\":\"Test\"}";
+        
         AgentSpecBase base = mapper.readValue(json, AgentSpecBase.class);
         assertNotNull(base);
         assertEquals("public", base.getNamespaceId());

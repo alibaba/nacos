@@ -73,7 +73,7 @@ class PublishPipelineManagerRoutingTest {
         // Plugin C: supports both SKILL and AGENTSPEC
         builders.add(createBuilder(PLUGIN_C_ID, 3,
             new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL,
-                    PublishPipelineResourceType.AGENTSPEC}));
+                PublishPipelineResourceType.AGENTSPEC}));
         
         PipelineConfig config = new PipelineConfig();
         config.setEnabled(true);

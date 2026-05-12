@@ -29,17 +29,17 @@ package com.alibaba.nacos.api.ai.model.mcp;
  * @author xiweng.yy
  */
 public class McpToolAnnotations {
-
+    
     /**
      * A human-readable title for the tool.
      */
     private String title;
-
+    
     /**
      * If true, the tool does not modify its environment. Default: false
      */
     private Boolean readOnlyHint;
-
+    
     /**
      * If true, the tool may perform destructive updates to its environment.
      * If false, the tool performs only additive updates.
@@ -47,7 +47,7 @@ public class McpToolAnnotations {
      * Default: true
      */
     private Boolean destructiveHint;
-
+    
     /**
      * If true, calling the tool repeatedly with the same arguments
      * will have no additional effect on its environment.
@@ -55,50 +55,50 @@ public class McpToolAnnotations {
      * Default: false
      */
     private Boolean idempotentHint;
-
+    
     /**
      * If true, this tool may interact with an "open world" of external entities.
      * If false, the tool's domain of interaction is closed.
      * Default: true
      */
     private Boolean openWorldHint;
-
+    
     public String getTitle() {
         return title;
     }
-
+    
     public void setTitle(String title) {
         this.title = title;
     }
-
+    
     public Boolean getReadOnlyHint() {
         return readOnlyHint;
     }
-
+    
     public void setReadOnlyHint(Boolean readOnlyHint) {
         this.readOnlyHint = readOnlyHint;
     }
-
+    
     public Boolean getDestructiveHint() {
         return destructiveHint;
     }
-
+    
     public void setDestructiveHint(Boolean destructiveHint) {
         this.destructiveHint = destructiveHint;
     }
-
+    
     public Boolean getIdempotentHint() {
         return idempotentHint;
     }
-
+    
     public void setIdempotentHint(Boolean idempotentHint) {
         this.idempotentHint = idempotentHint;
     }
-
+    
     public Boolean getOpenWorldHint() {
         return openWorldHint;
     }
-
+    
     public void setOpenWorldHint(Boolean openWorldHint) {
         this.openWorldHint = openWorldHint;
     }

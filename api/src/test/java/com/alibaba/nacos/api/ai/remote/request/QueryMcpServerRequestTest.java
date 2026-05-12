@@ -49,8 +49,8 @@ class QueryMcpServerRequestTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws Exception {
         String json =
-                "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"mcpId\":\"2aaebf2d-4b7b-4ab9-9ad2-1e60355ae041\","
-                        + "\"mcpName\":\"testMcpName\",\"version\":\"1.0.0\",\"module\":\"ai\"}";
+            "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"mcpId\":\"2aaebf2d-4b7b-4ab9-9ad2-1e60355ae041\","
+                + "\"mcpName\":\"testMcpName\",\"version\":\"1.0.0\",\"module\":\"ai\"}";
         QueryMcpServerRequest result = mapper.readValue(json, QueryMcpServerRequest.class);
         assertNotNull(result);
         assertEquals("1", result.getRequestId());

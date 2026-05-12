@@ -66,12 +66,15 @@ public class AgentCardVersionInfo extends AgentCardBasicInfo {
             return false;
         }
         AgentCardVersionInfo that = (AgentCardVersionInfo) o;
-        return Objects.equals(latestPublishedVersion, that.latestPublishedVersion) && Objects.equals(versionDetails,
-                that.versionDetails) && Objects.equals(registrationType, that.registrationType);
+        return Objects.equals(latestPublishedVersion, that.latestPublishedVersion)
+            && Objects.equals(versionDetails,
+                that.versionDetails)
+            && Objects.equals(registrationType, that.registrationType);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), latestPublishedVersion, versionDetails, registrationType);
+        return Objects.hash(super.hashCode(), latestPublishedVersion, versionDetails,
+            registrationType);
     }
 }

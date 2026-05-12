@@ -55,23 +55,26 @@ class ConfigInfoTagsRelationMapperByDerbyTest {
     
     @Test
     void testFindConfigInfo4PageCountRows() {
-        MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageCountRows(context);
+        MapperResult mapperResult =
+            configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageCountRows(context);
         // Verify LIKE ESCAPE is used for tenant_id and tag_name
         assertEquals("SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b "
-                        + "ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\'  AND "
-                        + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
-                        + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  ) ",
-                mapperResult.getSql());
+            + "ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\'  AND "
+            + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
+            + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  ) ",
+            mapperResult.getSql());
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
         assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
-
+    
     @Test
     void testFindConfigInfo4PageFetchRows() {
-        MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfo4PageFetchRows(context);
+        MapperResult mapperResult =
+            configInfoTagsRelationMapperByDerby.findConfigInfo4PageFetchRows(context);
         // 验证增强后的 SQL，包含新字段但不包含 configTags（Derby 不支持 GROUP_CONCAT）
-        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc"
+        String expectedSql =
+            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc"
                 + " FROM config_info  a LEFT JOIN "
                 + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?)  "
                 + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
@@ -79,11 +82,12 @@ class ConfigInfoTagsRelationMapperByDerbyTest {
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
         assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
-
+        
         // Test with content to verify LIKE ESCAPE
         context.putWhereParameter(FieldConstant.CONTENT, "test_content");
         mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfo4PageFetchRows(context);
-        expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,"
+        expectedSql =
+            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,"
                 + "a.encrypted_data_key,a.c_desc" + " FROM config_info  a LEFT JOIN "
                 + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND a.content LIKE ? ESCAPE '\\' "
                 + " AND b.tag_name IN (?, ?, ?, ?, ?)  " + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
@@ -95,23 +99,26 @@ class ConfigInfoTagsRelationMapperByDerbyTest {
     
     @Test
     void testFindConfigInfoLike4PageCountRows() {
-        MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageCountRows(context);
+        MapperResult mapperResult =
+            configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageCountRows(context);
         // Verify LIKE ESCAPE is used for all LIKE conditions
         assertEquals("SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b "
-                        + "ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\'  AND "
-                        + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
-                        + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  ) ",
-                mapperResult.getSql());
+            + "ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\'  AND "
+            + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
+            + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  ) ",
+            mapperResult.getSql());
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
         assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
-
+    
     @Test
     void tsetFindConfigInfoLike4PageFetchRows() {
-        MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageFetchRows(context);
+        MapperResult mapperResult =
+            configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageFetchRows(context);
         // 验证增强后的 SQL，包含新字段但不包含 configTags（Derby 不支持 GROUP_CONCAT），并验证 LIKE ESCAPE
-        String expectedSql = "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
+        String expectedSql =
+            "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
                 + "a.encrypted_data_key,a.type,a.c_desc FROM config_info a "
                 + "LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\'  AND "
                 + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
@@ -121,19 +128,20 @@ class ConfigInfoTagsRelationMapperByDerbyTest {
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
         assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
-
+        
         // Test with dataId, group, and content to verify LIKE ESCAPE
         context.putWhereParameter(FieldConstant.DATA_ID, "test_data");
         context.putWhereParameter(FieldConstant.GROUP_ID, "test_group");
         context.putWhereParameter(FieldConstant.CONTENT, "test_content");
-        mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageFetchRows(context);
+        mapperResult =
+            configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageFetchRows(context);
         expectedSql = "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
-                + "a.encrypted_data_key,a.type,a.c_desc FROM config_info a "
-                + "LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\' "
-                + " AND a.data_id LIKE ? ESCAPE '\\'  AND a.group_id LIKE ? ESCAPE '\\'  AND a.content LIKE ? ESCAPE '\\'  AND "
-                + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
-                + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  )"
-                + "  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
+            + "a.encrypted_data_key,a.type,a.c_desc FROM config_info a "
+            + "LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\' "
+            + " AND a.data_id LIKE ? ESCAPE '\\'  AND a.group_id LIKE ? ESCAPE '\\'  AND a.content LIKE ? ESCAPE '\\'  AND "
+            + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
+            + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  )"
+            + "  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
         assertEquals(expectedSql, mapperResult.getSql());
         list = CollectionUtils.list(tenantId, "test_data", "test_group", "test_content");
         list.addAll(Arrays.asList(tagArr));

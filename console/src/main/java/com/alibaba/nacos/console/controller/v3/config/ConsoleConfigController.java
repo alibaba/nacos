@@ -379,7 +379,7 @@ public class ConsoleConfigController {
     @PostMapping("/clone")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API,
         tags = {
-                com.alibaba.nacos.plugin.auth.constant.Constants.Tag.SECURED_SPECIAL_TAGS})
+            com.alibaba.nacos.plugin.auth.constant.Constants.Tag.SECURED_SPECIAL_TAGS})
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
         @RequestParam(required = false) String srcUser,
         @RequestParam(value = "targetNamespaceId") String namespaceId,

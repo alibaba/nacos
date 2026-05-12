@@ -107,20 +107,25 @@ class ConfigInfoBetaMapperByMySqlTest {
         
         String sql = mapperResult.getSql();
         assertEquals(sql,
-                "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,"
-                        + "src_ip = ?,src_user = ?,gmt_modified = NOW(3),app_name = ? "
-                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? OR md5 is null OR md5 = '')");
-        assertArrayEquals(new Object[]{newContent, newMD5, betaIps, srcIp, srcUser, appNameTmp, dataId, group, tenantId, md5},
-                mapperResult.getParamList().toArray());
+            "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,"
+                + "src_ip = ?,src_user = ?,gmt_modified = NOW(3),app_name = ? "
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? OR md5 is null OR md5 = '')");
+        assertArrayEquals(
+            new Object[] {newContent, newMD5, betaIps, srcIp, srcUser, appNameTmp, dataId, group,
+                tenantId, md5},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindAllConfigInfoBetaForDumpAllFetchRows() {
-        MapperResult result = configInfoBetaMapperByMySql.findAllConfigInfoBetaForDumpAllFetchRows(context);
+        MapperResult result =
+            configInfoBetaMapperByMySql.findAllConfigInfoBetaForDumpAllFetchRows(context);
         String sql = result.getSql();
         List<Object> paramList = result.getParamList();
-        assertEquals(sql, " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key "
-                + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT " + startRow + "," + pageSize + " )"
+        assertEquals(sql,
+            " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key "
+                + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT " + startRow + ","
+                + pageSize + " )"
                 + "  g, config_info_beta t WHERE g.id = t.id ");
         assertEquals(paramList, Arrays.asList(startRow, pageSize));
     }

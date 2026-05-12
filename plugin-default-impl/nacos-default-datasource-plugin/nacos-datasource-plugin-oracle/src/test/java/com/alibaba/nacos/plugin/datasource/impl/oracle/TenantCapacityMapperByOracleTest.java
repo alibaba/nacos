@@ -68,41 +68,51 @@ class TenantCapacityMapperByOracleTest {
     
     @Test
     void testIncrementUsageWithDefaultQuotaLimit() {
-        MapperResult mapperResult = tenantCapacityMapperByOracle.incrementUsageWithDefaultQuotaLimit(context);
+        MapperResult mapperResult =
+            tenantCapacityMapperByOracle.incrementUsageWithDefaultQuotaLimit(context);
         assertEquals(mapperResult.getSql(),
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <" + " ? AND quota = 0");
-        assertArrayEquals(new Object[] {modified, tenantId, usage}, mapperResult.getParamList().toArray());
+            "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <"
+                + " ? AND quota = 0");
+        assertArrayEquals(new Object[] {modified, tenantId, usage},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testIncrementUsageWithQuotaLimit() {
-        MapperResult mapperResult = tenantCapacityMapperByOracle.incrementUsageWithQuotaLimit(context);
+        MapperResult mapperResult =
+            tenantCapacityMapperByOracle.incrementUsageWithQuotaLimit(context);
         assertEquals(mapperResult.getSql(),
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < " + "quota AND quota != 0");
+            "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < "
+                + "quota AND quota != 0");
         assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testIncrementUsage() {
         MapperResult mapperResult = tenantCapacityMapperByOracle.incrementUsage(context);
-        assertEquals("UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?", mapperResult.getSql());
+        assertEquals(
+            "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?",
+            mapperResult.getSql());
         assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testDecrementUsage() {
         MapperResult mapperResult = tenantCapacityMapperByOracle.decrementUsage(context);
-        assertEquals("UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0",
-                mapperResult.getSql());
+        assertEquals(
+            "UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0",
+            mapperResult.getSql());
         assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testCorrectUsage() {
         MapperResult mapperResult = tenantCapacityMapperByOracle.correctUsage(context);
-        assertEquals(mapperResult.getSql(), "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
+        assertEquals(mapperResult.getSql(),
+            "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
                 + "gmt_modified = ? WHERE tenant_id = ?");
-        assertArrayEquals(new Object[] {tenantId, modified, tenantId}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {tenantId, modified, tenantId},
+            mapperResult.getParamList().toArray());
         
     }
     
@@ -112,8 +122,10 @@ class TenantCapacityMapperByOracleTest {
         Object limit = 10;
         context.putWhereParameter(FieldConstant.ID, id);
         context.putWhereParameter(FieldConstant.LIMIT_SIZE, limit);
-        MapperResult mapperResult = tenantCapacityMapperByOracle.getCapacityList4CorrectUsage(context);
-        assertEquals("SELECT id, tenant_id FROM tenant_capacity WHERE id>? FETCH FIRST ? ROWS ONLY", mapperResult.getSql());
+        MapperResult mapperResult =
+            tenantCapacityMapperByOracle.getCapacityList4CorrectUsage(context);
+        assertEquals("SELECT id, tenant_id FROM tenant_capacity WHERE id>? FETCH FIRST ? ROWS ONLY",
+            mapperResult.getSql());
         assertArrayEquals(new Object[] {id, limit}, mapperResult.getParamList().toArray());
     }
     
@@ -140,9 +152,11 @@ class TenantCapacityMapperByOracleTest {
         
         MapperResult mapperResult = tenantCapacityMapperByOracle.insertTenantCapacity(context);
         assertEquals(mapperResult.getSql(),
-                "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
-                        + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?");
-        assertArrayEquals(new Object[] {tenantId, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, tenantId},
-                mapperResult.getParamList().toArray());
+            "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
+                + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?");
+        assertArrayEquals(
+            new Object[] {tenantId, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified,
+                tenantId},
+            mapperResult.getParamList().toArray());
     }
 }

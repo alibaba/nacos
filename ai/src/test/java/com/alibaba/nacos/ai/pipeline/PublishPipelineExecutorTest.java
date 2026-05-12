@@ -445,7 +445,7 @@ class PublishPipelineExecutorTest {
         List<CallbackTestInput> list = new ArrayList<>();
         List<String> ids = Arrays.asList("x", "y", "z");
         for (PublishPipelineResourceType rt : new PublishPipelineResourceType[] {
-                PublishPipelineResourceType.SKILL, PublishPipelineResourceType.PROMPT}) {
+            PublishPipelineResourceType.SKILL, PublishPipelineResourceType.PROMPT}) {
             for (int failAt : new int[] {-1, 0, 1}) {
                 list.add(new CallbackTestInput(ids, rt, failAt));
             }

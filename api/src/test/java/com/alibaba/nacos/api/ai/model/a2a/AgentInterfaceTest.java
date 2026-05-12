@@ -47,7 +47,8 @@ class AgentInterfaceTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"url\":\"http://test.com/api\",\"transport\":\"JSONRPC\",\"protocolBinding\":\"JSONRPC\","
+        String json =
+            "{\"url\":\"http://test.com/api\",\"transport\":\"JSONRPC\",\"protocolBinding\":\"JSONRPC\","
                 + "\"protocolVersion\":\"1.0\",\"tenant\":\"public\"}";
         
         AgentInterface agentInterface = mapper.readValue(json, AgentInterface.class);

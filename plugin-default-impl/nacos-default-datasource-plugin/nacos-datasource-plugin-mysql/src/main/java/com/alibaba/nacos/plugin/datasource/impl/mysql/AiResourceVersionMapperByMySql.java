@@ -32,16 +32,17 @@ import java.util.List;
  *
  * @author nacos
  */
-public class AiResourceVersionMapperByMySql extends AbstractMapperByMysql implements AiResourceVersionMapper {
-
+public class AiResourceVersionMapperByMySql extends AbstractMapperByMysql
+    implements AiResourceVersionMapper {
+    
     @Override
     public MapperResult findAiResourceVersionFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,gmt_create,gmt_modified,type,author,name,c_desc,status,version,namespace_id,storage,publish_pipeline_info,download_count "
-                        + "FROM ai_resource_version");
+            "SELECT id,gmt_create,gmt_modified,type,author,name,c_desc,status,version,namespace_id,storage,publish_pipeline_info,download_count "
+                + "FROM ai_resource_version");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
         where.and().eq("name", context.getWhereParameter(FieldConstant.NAME));
-
+        
         Object type = context.getWhereParameter(FieldConstant.TYPE);
         if (type != null && StringUtils.isNotBlank(String.valueOf(type))) {
             where.and().eq("type", type);
@@ -54,7 +55,7 @@ public class AiResourceVersionMapperByMySql extends AbstractMapperByMysql implem
         if (version != null && StringUtils.isNotBlank(String.valueOf(version))) {
             where.and().eq("version", version);
         }
-
+        
         MapperResult built = where.build();
         String sql = built.getSql() + " ORDER BY gmt_modified DESC LIMIT ?,?";
         List<Object> params = new ArrayList<>(built.getParamList());
@@ -62,10 +63,9 @@ public class AiResourceVersionMapperByMySql extends AbstractMapperByMysql implem
         params.add(context.getPageSize());
         return new MapperResult(sql, params);
     }
-
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
     }
 }
-

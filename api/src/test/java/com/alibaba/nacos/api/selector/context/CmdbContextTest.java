@@ -32,7 +32,7 @@ class CmdbContextTest {
         cmdbContext.setConsumer(new CmdbContext.CmdbInstance<>());
         System.out.println(cmdbContext.toString());
         assertEquals(
-                "CmdbContext{consumer=CmdbInstance{entity=null, instance=null}, providers=[CmdbInstance{entity=null, instance=null}]}",
-                cmdbContext.toString());
+            "CmdbContext{consumer=CmdbInstance{entity=null, instance=null}, providers=[CmdbInstance{entity=null, instance=null}]}",
+            cmdbContext.toString());
     }
 }

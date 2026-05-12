@@ -1009,8 +1009,8 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock total count
         when(jdbcTemplate.queryForObject(anyString(),
             eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"),
-                    appName,
-                    content}),
+                appName,
+                content}),
             eq(Integer.class))).thenReturn(new Integer(9));
         //mock page list
         List<ConfigInfo> result = new ArrayList<>();
@@ -1019,8 +1019,8 @@ class ExternalConfigInfoPersistServiceImplTest {
         result.add(createMockConfigInfo(2));
         when(jdbcTemplate.query(anyString(),
             eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"),
-                    appName,
-                    content}),
+                appName,
+                content}),
             eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
         
         Page<ConfigInfo> configInfo4Page =
@@ -1046,8 +1046,8 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock total count
         when(jdbcTemplate.queryForObject(anyString(),
             eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"),
-                    appName, content,
-                    "tags", "tag2"}),
+                appName, content,
+                "tags", "tag2"}),
             eq(Integer.class))).thenReturn(new Integer(9));
         //mock page list
         List<ConfigInfo> result = new ArrayList<>();
@@ -1056,8 +1056,8 @@ class ExternalConfigInfoPersistServiceImplTest {
         result.add(createMockConfigInfo(2));
         when(jdbcTemplate.query(anyString(),
             eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"),
-                    appName, content,
-                    "tags", "tag2"}),
+                appName, content,
+                "tags", "tag2"}),
             eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
         
         Page<ConfigInfo> configInfo4Page =

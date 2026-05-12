@@ -31,7 +31,7 @@ public class ConfigInfoMapperByPostgresql extends BaseConfigInfoMapper {
     public String getDataSource() {
         return DatabaseTypeConstant.POSTGRESQL;
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedPostgresqlFunctionEnum.getFunctionByName(functionName);

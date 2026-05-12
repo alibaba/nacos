@@ -71,19 +71,19 @@ class PackageTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{"
-                + "\"registryType\":\"maven\","
-                + "\"registryBaseUrl\":\"https://repo.maven.apache.org/maven2/\","
-                + "\"identifier\":\"com.alibaba.nacos:test-package\","
-                + "\"version\":\"1.0.0\","
-                + "\"fileSha256\":\"abc123\","
-                + "\"runtimeHint\":\"java11\","
-                + "\"runtimeArguments\":[{\"type\":\"named\",\"name\":\"arg1\",\"value\":\"value1\"}],"
-                + "\"packageArguments\":["
-                + "  {\"type\":\"named\",\"name\":\"arg1\",\"value\":\"value1\"},"
-                + "  {\"type\":\"positional\",\"valueHint\":\"posValue\"}"
-                + "],"
-                + "\"environmentVariables\":[{\"name\":\"ENV_VAR\",\"value\":\"env_value\"}]"
-                + "}";
+            + "\"registryType\":\"maven\","
+            + "\"registryBaseUrl\":\"https://repo.maven.apache.org/maven2/\","
+            + "\"identifier\":\"com.alibaba.nacos:test-package\","
+            + "\"version\":\"1.0.0\","
+            + "\"fileSha256\":\"abc123\","
+            + "\"runtimeHint\":\"java11\","
+            + "\"runtimeArguments\":[{\"type\":\"named\",\"name\":\"arg1\",\"value\":\"value1\"}],"
+            + "\"packageArguments\":["
+            + "  {\"type\":\"named\",\"name\":\"arg1\",\"value\":\"value1\"},"
+            + "  {\"type\":\"positional\",\"valueHint\":\"posValue\"}"
+            + "],"
+            + "\"environmentVariables\":[{\"name\":\"ENV_VAR\",\"value\":\"env_value\"}]"
+            + "}";
         
         Package pkg = mapper.readValue(json, Package.class);
         assertNotNull(pkg);
@@ -97,7 +97,8 @@ class PackageTest extends BasicRequestTest {
         assertEquals("named", ((NamedArgument) pkg.getRuntimeArguments().get(0)).getType());
         assertEquals(2, pkg.getPackageArguments().size());
         assertEquals("named", ((NamedArgument) pkg.getPackageArguments().get(0)).getType());
-        assertEquals("positional", ((PositionalArgument) pkg.getPackageArguments().get(1)).getType());
+        assertEquals("positional",
+            ((PositionalArgument) pkg.getPackageArguments().get(1)).getType());
         assertEquals(1, pkg.getEnvironmentVariables().size());
         assertEquals("ENV_VAR", pkg.getEnvironmentVariables().get(0).getName());
     }

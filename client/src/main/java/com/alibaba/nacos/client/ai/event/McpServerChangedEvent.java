@@ -43,7 +43,7 @@ public class McpServerChangedEvent extends Event {
     
     private String buildVersion(McpServerDetailInfo mcpServer) {
         return mcpServer.getVersionDetail().getIs_latest() ? CacheKeyUtils.LATEST_VERSION
-                : mcpServer.getVersionDetail().getVersion();
+            : mcpServer.getVersionDetail().getVersion();
     }
     
     public String getMcpName() {

@@ -90,7 +90,7 @@ class AiHttpClientProxyTest {
         when(serverListManager.getContextPath()).thenReturn("/nacos");
         when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
         doReturn(httpResult).when(nacosRestTemplate)
-                .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
+            .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
         
         Prompt actual = httpClientProxy.queryPrompt("test-key", "1.0.0", null, null);
         
@@ -110,10 +110,10 @@ class AiHttpClientProxyTest {
         when(serverListManager.getContextPath()).thenReturn("/nacos");
         when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
         doReturn(httpResult).when(nacosRestTemplate)
-                .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
+            .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
         
         NacosException exception = assertThrows(NacosException.class,
-                () -> httpClientProxy.queryPrompt("test-key", null, null, "md5-value"));
+            () -> httpClientProxy.queryPrompt("test-key", null, null, "md5-value"));
         assertEquals(NacosException.NOT_MODIFIED, exception.getErrCode());
     }
     
@@ -122,7 +122,7 @@ class AiHttpClientProxyTest {
         when(serverListManager.getServerList()).thenReturn(Collections.emptyList());
         
         NacosException exception = assertThrows(NacosException.class,
-                () -> httpClientProxy.queryPrompt("test-key", null, null, null));
+            () -> httpClientProxy.queryPrompt("test-key", null, null, null));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
     }
     
@@ -136,10 +136,10 @@ class AiHttpClientProxyTest {
         when(serverListManager.getContextPath()).thenReturn("/nacos");
         when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
         doReturn(httpResult).when(nacosRestTemplate)
-                .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
+            .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
         
         NacosException exception = assertThrows(NacosException.class,
-                () -> httpClientProxy.queryPrompt("test-key", null, null, null));
+            () -> httpClientProxy.queryPrompt("test-key", null, null, null));
         assertEquals(500, exception.getErrCode());
     }
     
@@ -157,7 +157,7 @@ class AiHttpClientProxyTest {
         when(serverListManager.getContextPath()).thenReturn("/nacos");
         when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
         doReturn(httpResult).when(nacosRestTemplate)
-                .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
+            .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
         
         Prompt actual = httpClientProxy.queryPrompt("test-key", null, "prod", null);
         

@@ -36,6 +36,7 @@ class InstanceIdGeneratorInfoTest {
         assertEquals(1L, vo.getInfo().getWorkerId().longValue());
         assertEquals(2L, vo.getInfo().getCurrentId().longValue());
         
-        assertEquals("IdGeneratorVO{resource='test', info=IdInfo{currentId=2, workerId=1}}", vo.toString());
+        assertEquals("IdGeneratorVO{resource='test', info=IdInfo{currentId=2, workerId=1}}",
+            vo.toString());
     }
 }

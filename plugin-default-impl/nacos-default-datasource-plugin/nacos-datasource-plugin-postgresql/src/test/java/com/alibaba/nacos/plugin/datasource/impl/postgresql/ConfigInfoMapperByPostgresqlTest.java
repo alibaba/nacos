@@ -72,46 +72,61 @@ class ConfigInfoMapperByPostgresqlTest {
         //with content
         context.putContextParameter(ContextConstant.NEED_CONTENT, "true");
         
-        MapperResult needContentMapperResult = configInfoMapperByPostgresql.findAllConfigInfoFragment(context);
-        assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                        + "FROM config_info WHERE id > ? ORDER BY id ASC   OFFSET " + startRow + " LIMIT " + pageSize,
-                needContentMapperResult.getSql());
+        MapperResult needContentMapperResult =
+            configInfoMapperByPostgresql.findAllConfigInfoFragment(context);
+        assertEquals(
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
+                + "FROM config_info WHERE id > ? ORDER BY id ASC   OFFSET " + startRow + " LIMIT "
+                + pageSize,
+            needContentMapperResult.getSql());
         assertArrayEquals(new Object[] {id}, needContentMapperResult.getParamList().toArray());
         
         //without content
         context.putContextParameter(ContextConstant.NEED_CONTENT, "false");
-        MapperResult withoutContentMapperResult = configInfoMapperByPostgresql.findAllConfigInfoFragment(context);
-        assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type,encrypted_data_key "
-                        + "FROM config_info WHERE id > ? ORDER BY id ASC   OFFSET " + startRow + " LIMIT " + pageSize,
-                withoutContentMapperResult.getSql());
+        MapperResult withoutContentMapperResult =
+            configInfoMapperByPostgresql.findAllConfigInfoFragment(context);
+        assertEquals(
+            "SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type,encrypted_data_key "
+                + "FROM config_info WHERE id > ? ORDER BY id ASC   OFFSET " + startRow + " LIMIT "
+                + pageSize,
+            withoutContentMapperResult.getSql());
         assertArrayEquals(new Object[] {id}, withoutContentMapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfo4PageFetchRows() {
-        MapperResult mapperResult = configInfoMapperByPostgresql.findConfigInfo4PageFetchRows(context);
-
-        assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc "
+        MapperResult mapperResult =
+            configInfoMapperByPostgresql.findConfigInfo4PageFetchRows(context);
+        
+        assertEquals(
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc "
                 + "FROM config_info WHERE  tenant_id=?  AND data_id=?  AND group_id=?  AND app_name=?   "
-                + "OFFSET " + startRow + " LIMIT " + pageSize, mapperResult.getSql());
-        assertArrayEquals(new Object[] {tenantId, dataId, groupId, appName}, mapperResult.getParamList().toArray());
+                + "OFFSET " + startRow + " LIMIT " + pageSize,
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {tenantId, dataId, groupId, appName},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
-        MapperResult mapperResult = configInfoMapperByPostgresql.findConfigInfoLike4PageFetchRows(context);
-        assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc "
+        MapperResult mapperResult =
+            configInfoMapperByPostgresql.findConfigInfoLike4PageFetchRows(context);
+        assertEquals(
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc "
                 + "FROM config_info WHERE  tenant_id LIKE ?  AND data_id LIKE ?  AND group_id LIKE ?  AND app_name = ?   "
-                + "OFFSET " + startRow + " LIMIT " + pageSize, mapperResult.getSql());
-        assertArrayEquals(new Object[] {tenantId, dataId, groupId, appName}, mapperResult.getParamList().toArray());
+                + "OFFSET " + startRow + " LIMIT " + pageSize,
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {tenantId, dataId, groupId, appName},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoBaseLikeFetchRows() {
-        MapperResult mapperResult = configInfoMapperByPostgresql.findConfigInfoBaseLikeFetchRows(context);
+        MapperResult mapperResult =
+            configInfoMapperByPostgresql.findConfigInfoBaseLikeFetchRows(context);
         assertEquals("SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE "
-                + " 1=1 AND tenant_id=''  AND data_id LIKE ?  AND group_id LIKE ?   "
-                + "OFFSET " + startRow + " LIMIT " + pageSize, mapperResult.getSql());
+            + " 1=1 AND tenant_id=''  AND data_id LIKE ?  AND group_id LIKE ?   "
+            + "OFFSET " + startRow + " LIMIT " + pageSize, mapperResult.getSql());
         assertArrayEquals(new Object[] {dataId, groupId}, mapperResult.getParamList().toArray());
     }
     

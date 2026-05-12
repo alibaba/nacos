@@ -40,7 +40,8 @@ class BatchAgentEndpointRequestTest extends BasicRequestTest {
         request.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
         request.setAgentName("testAgent");
         
-        Collection<AgentEndpoint> endpoints = Arrays.asList(createTestEndpoint1(), createTestEndpoint2());
+        Collection<AgentEndpoint> endpoints =
+            Arrays.asList(createTestEndpoint1(), createTestEndpoint2());
         request.setEndpoints(endpoints);
         
         String json = mapper.writeValueAsString(request);
@@ -57,7 +58,8 @@ class BatchAgentEndpointRequestTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"agentName\":\"testAgent\","
+        String json =
+            "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"agentName\":\"testAgent\","
                 + "\"endpoints\":[{\"transport\":\"JSONRPC\",\"address\":\"127.0.0.1\",\"port\":8848,\"path\":\"\","
                 + "\"supportTls\":false,\"version\":\"1.0.0\"},{\"transport\":\"GRPC\",\"address\":\"192.168.1.100\","
                 + "\"port\":9090,\"path\":\"\",\"supportTls\":true,\"version\":\"2.0.0\"}],"

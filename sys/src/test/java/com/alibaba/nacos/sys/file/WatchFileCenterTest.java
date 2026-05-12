@@ -29,16 +29,25 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,9 +63,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -287,6 +298,253 @@ class WatchFileCenterTest {
         method.setAccessible(true);
         method.invoke(job);
         assertFalse(containAssert.get());
+    }
+    
+    @Test
+    void testConstructor() {
+        new WatchFileCenter();
+    }
+    
+    @Test
+    void testShutdownIsIdempotent() {
+        try {
+            assertDoesNotThrow(WatchFileCenter::shutdown);
+            assertDoesNotThrow(WatchFileCenter::shutdown);
+        } finally {
+            ((AtomicBoolean) ReflectionTestUtils.getField(WatchFileCenter.class, "CLOSED"))
+                .set(false);
+        }
+    }
+    
+    @Test
+    void testRegisterReturnsFalseWhenAtMaxLimit() throws NacosException {
+        Integer originalCnt =
+            (Integer) ReflectionTestUtils.getField(WatchFileCenter.class, "NOW_WATCH_JOB_CNT");
+        Integer max = (Integer) ReflectionTestUtils.getField(WatchFileCenter.class,
+            "MAX_WATCH_FILE_JOB");
+        try {
+            ReflectionTestUtils.setField(WatchFileCenter.class, "NOW_WATCH_JOB_CNT", max);
+            FileWatcher watcher = mock(FileWatcher.class);
+            assertFalse(WatchFileCenter.registerWatcher(PATH, watcher));
+        } finally {
+            ReflectionTestUtils.setField(WatchFileCenter.class, "NOW_WATCH_JOB_CNT", originalCnt);
+        }
+    }
+    
+    @Test
+    void testShutdownContinuesWhenJobShutdownThrows() throws Exception {
+        Map<String, WatchFileCenter.WatchDirJob> manager =
+            (Map<String, WatchFileCenter.WatchDirJob>) ReflectionTestUtils.getField(
+                WatchFileCenter.class, "MANAGER");
+        WatchFileCenter.WatchDirJob faulty = mock(WatchFileCenter.WatchDirJob.class);
+        doThrow(new RuntimeException("forced")).when(faulty).shutdown();
+        manager.put("__forced__", faulty);
+        try {
+            assertDoesNotThrow(WatchFileCenter::shutdown);
+            verify(faulty).shutdown();
+        } finally {
+            ((AtomicBoolean) ReflectionTestUtils.getField(WatchFileCenter.class, "CLOSED"))
+                .set(false);
+            manager.clear();
+            ReflectionTestUtils.setField(WatchFileCenter.class, "NOW_WATCH_JOB_CNT", 0);
+        }
+    }
+    
+    @Test
+    void testRunCatchesUnexpectedThrowable() throws Exception {
+        WatchFileCenter.WatchDirJob job = newDetachedJob();
+        try {
+            WatchService mockWs = mock(WatchService.class);
+            when(mockWs.take()).thenAnswer(inv -> {
+                ReflectionTestUtils.setField(job, "watch", false);
+                throw new RuntimeException("forced");
+            });
+            ReflectionTestUtils.setField(job, "watchService", mockWs);
+            job.run();
+            verify(mockWs, atLeastOnce()).take();
+        } finally {
+            shutdownDetachedJob(job);
+        }
+    }
+    
+    @Test
+    void testRunSkipsEmptyEvents() throws Exception {
+        WatchFileCenter.WatchDirJob job = newDetachedJob();
+        try {
+            WatchService mockWs = mock(WatchService.class);
+            WatchKey emptyKey = mock(WatchKey.class);
+            when(emptyKey.pollEvents()).thenReturn(Collections.emptyList());
+            when(mockWs.take()).thenAnswer(inv -> {
+                ReflectionTestUtils.setField(job, "watch", false);
+                return emptyKey;
+            });
+            ReflectionTestUtils.setField(job, "watchService", mockWs);
+            job.run();
+            verify(emptyKey).pollEvents();
+            verify(emptyKey).reset();
+        } finally {
+            shutdownDetachedJob(job);
+        }
+    }
+    
+    @Test
+    void testRunReturnsWhenExecutorAlreadyShutdown() throws Exception {
+        WatchFileCenter.WatchDirJob job = newDetachedJob();
+        try {
+            WatchService mockWs = mock(WatchService.class);
+            ExecutorService mockExec = mock(ExecutorService.class);
+            when(mockExec.isShutdown()).thenReturn(true);
+            WatchKey withEvents = mock(WatchKey.class);
+            WatchEvent<?> event = mock(WatchEvent.class);
+            when(withEvents.pollEvents()).thenAnswer(inv -> Collections.singletonList(event));
+            when(mockWs.take()).thenReturn(withEvents);
+            ReflectionTestUtils.setField(job, "watchService", mockWs);
+            ReflectionTestUtils.setField(job, "callBackExecutor", mockExec);
+            job.run();
+            verify(mockExec).isShutdown();
+            verify(mockExec, never()).execute(any(Runnable.class));
+        } finally {
+            shutdownDetachedJob(job);
+        }
+    }
+    
+    @Test
+    void testRunDispatchesEventOverflowToExecutor() throws Exception {
+        WatchFileCenter.WatchDirJob job = newDetachedJob();
+        try {
+            WatchService mockWs = mock(WatchService.class);
+            ExecutorService inlineExec = mock(ExecutorService.class);
+            when(inlineExec.isShutdown()).thenReturn(false);
+            doAnswer(inv -> {
+                ((Runnable) inv.getArgument(0)).run();
+                return null;
+            }).when(inlineExec).execute(any(Runnable.class));
+            WatchEvent<?> overflowEvent = mock(WatchEvent.class);
+            when(overflowEvent.kind()).thenAnswer(inv -> StandardWatchEventKinds.OVERFLOW);
+            WatchKey overflowKey = mock(WatchKey.class);
+            when(overflowKey.pollEvents())
+                .thenAnswer(inv -> Collections.singletonList(overflowEvent));
+            when(mockWs.take()).thenAnswer(inv -> {
+                ReflectionTestUtils.setField(job, "watch", false);
+                return overflowKey;
+            });
+            ReflectionTestUtils.setField(job, "watchService", mockWs);
+            ReflectionTestUtils.setField(job, "callBackExecutor", inlineExec);
+            // ensure listFiles() inside eventOverflow returns empty (no NPE) by pointing paths at
+            // an empty real dir
+            String overflowDir = createEmptyTempDir("watch_file_overflow_run_");
+            ReflectionTestUtils.setField(job, "paths", overflowDir);
+            try {
+                job.run();
+                verify(inlineExec).execute(any(Runnable.class));
+            } finally {
+                DiskUtils.deleteDirectory(overflowDir);
+            }
+        } finally {
+            shutdownDetachedJob(job);
+        }
+    }
+    
+    @Test
+    void testRunSwallowsClosedWatchServiceException() throws Exception {
+        WatchFileCenter.WatchDirJob job = newDetachedJob();
+        try {
+            WatchService mockWs = mock(WatchService.class);
+            when(mockWs.take()).thenAnswer(inv -> {
+                ReflectionTestUtils.setField(job, "watch", false);
+                throw new ClosedWatchServiceException();
+            });
+            ReflectionTestUtils.setField(job, "watchService", mockWs);
+            assertDoesNotThrow(job::run);
+        } finally {
+            shutdownDetachedJob(job);
+        }
+    }
+    
+    @Test
+    void testJobShutdownIgnoresIoExceptionOnWatchServiceClose() throws Exception {
+        WatchFileCenter.WatchDirJob job = newDetachedJob();
+        try {
+            WatchService mockWs = mock(WatchService.class);
+            doThrow(new IOException("forced")).when(mockWs).close();
+            ReflectionTestUtils.setField(job, "watchService", mockWs);
+            assertDoesNotThrow(job::shutdown);
+        } finally {
+            shutdownDetachedJob(job);
+        }
+    }
+    
+    @Test
+    void testEventOverflowSkipsSubdirectory() throws Exception {
+        String dirPath = Paths.get(System.getProperty("user.home"),
+            "watch_file_overflow_subdir_" + System.nanoTime()).toString();
+        DiskUtils.deleteDirThenMkdir(dirPath);
+        File subDir = Paths.get(dirPath, "sub").toFile();
+        assertTrue(subDir.mkdir());
+        File regularFile = Paths.get(dirPath, "child.properties").toFile();
+        DiskUtils.touch(regularFile);
+        AtomicReference<String> seen = new AtomicReference<>(null);
+        try {
+            WatchFileCenter.registerWatcher(dirPath, new FileWatcher() {
+                
+                @Override
+                public void onChange(FileChangeEvent event) {
+                    seen.set(String.valueOf(event.getContext()));
+                }
+                
+                @Override
+                public boolean interest(String context) {
+                    return true;
+                }
+            });
+            Map<String, WatchFileCenter.WatchDirJob> map =
+                (Map<String, WatchFileCenter.WatchDirJob>) ReflectionTestUtils.getField(
+                    WatchFileCenter.class, "MANAGER");
+            WatchFileCenter.WatchDirJob job = map.get(dirPath);
+            Method method = WatchFileCenter.WatchDirJob.class.getDeclaredMethod("eventOverflow");
+            method.setAccessible(true);
+            method.invoke(job);
+            ThreadUtils.sleep(500L);
+            assertEquals("child.properties", seen.get());
+        } finally {
+            WatchFileCenter.deregisterAllWatcher(dirPath);
+            DiskUtils.deleteDirectory(dirPath);
+        }
+    }
+    
+    private static WatchFileCenter.WatchDirJob newDetachedJob() throws Exception {
+        String dirPath = createEmptyTempDir("watch_file_detached_");
+        Constructor<WatchFileCenter.WatchDirJob> ctor =
+            WatchFileCenter.WatchDirJob.class.getDeclaredConstructor(String.class);
+        ctor.setAccessible(true);
+        return ctor.newInstance(dirPath);
+    }
+    
+    private static void shutdownDetachedJob(WatchFileCenter.WatchDirJob job) {
+        try {
+            ExecutorService exec = (ExecutorService) ReflectionTestUtils.getField(job,
+                "callBackExecutor");
+            if (exec != null && !exec.isShutdown()) {
+                exec.shutdownNow();
+            }
+        } catch (Throwable ignore) {
+            // best-effort cleanup
+        }
+        Object pathField = ReflectionTestUtils.getField(job, "paths");
+        if (pathField instanceof String) {
+            try {
+                DiskUtils.deleteDirectory((String) pathField);
+            } catch (IOException ignore) {
+                // best-effort cleanup
+            }
+        }
+    }
+    
+    private static String createEmptyTempDir(String prefix) throws Exception {
+        String dirPath = Paths.get(System.getProperty("java.io.tmpdir"),
+            prefix + System.nanoTime()).toString();
+        DiskUtils.deleteDirThenMkdir(dirPath);
+        return dirPath;
     }
     
     private void func(final String fileName, final File file, final Consumer<String> consumer)

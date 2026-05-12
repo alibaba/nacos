@@ -1,0 +1,27 @@
+name: "Frontend Continuous Integration"
+
+on:
+  push:
+    branches: [ develop, v2.x-develop ]
+  pull_request:
+    branches: [ develop, v2.x-develop ]
+
+permissions: read-all
+
+jobs:
+  frontend-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: "Build and check console-ui"
+        working-directory: console-ui
+        run: npm ci && npm run build
+      - name: "Build and check console-ui-next"
+        working-directory: console-ui-next
+        run: npm ci && npm run build

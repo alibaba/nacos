@@ -63,9 +63,9 @@ class NacosMemberTest {
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json =
-                "{\"ip\":\"127.0.0.1\",\"port\":8080,\"state\":\"UP\",\"extendInfo\":{\"testK\":\"testV\"},\"address\":\"127.0.0.1:8080\","
-                        + "\"abilities\":{\"remoteAbility\":{\"supportRemoteConnection\":false,\"grpcReportEnabled\":true},"
-                        + "\"configAbility\":{\"supportRemoteMetrics\":false},\"namingAbility\":{\"supportJraft\":false}}}";
+            "{\"ip\":\"127.0.0.1\",\"port\":8080,\"state\":\"UP\",\"extendInfo\":{\"testK\":\"testV\"},\"address\":\"127.0.0.1:8080\","
+                + "\"abilities\":{\"remoteAbility\":{\"supportRemoteConnection\":false,\"grpcReportEnabled\":true},"
+                + "\"configAbility\":{\"supportRemoteMetrics\":false},\"namingAbility\":{\"supportJraft\":false}}}";
         NacosMember actualMember = mapper.readValue(json, NacosMember.class);
         assertEquals(member, actualMember);
         assertEquals(member.getExtendInfo(), actualMember.getExtendInfo());

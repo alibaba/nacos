@@ -49,10 +49,8 @@ class ProtoMessageUtilTest {
     
     @Test
     void testParseWithCorruptRequestTypeField() {
-        // @formatter:off
-        byte[] corruptBytes = new byte[]{(byte) ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG,
-                (byte) ProtoMessageUtil.REQUEST_TYPE_READ, (byte) 0x80};
-        // @formatter:on
+        byte[] corruptBytes = new byte[] {(byte) ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG,
+            (byte) ProtoMessageUtil.REQUEST_TYPE_READ, (byte) 0x80};
         try {
             ProtoMessageUtil.parse(corruptBytes);
         } catch (Exception ignored) {

@@ -81,7 +81,7 @@ class PipelineConsistencyTest {
         long t = 1_700_000_000_000L;
         for (String resType : new String[] {"SKILL", "PROMPT", "CONFIG"}) {
             for (PipelineExecutionStatus status : new PipelineExecutionStatus[] {
-                    PipelineExecutionStatus.APPROVED, PipelineExecutionStatus.REJECTED}) {
+                PipelineExecutionStatus.APPROVED, PipelineExecutionStatus.REJECTED}) {
                 PipelineExecution execution = new PipelineExecution();
                 execution.setExecutionId(UUID.randomUUID().toString());
                 execution.setResourceType(resType);

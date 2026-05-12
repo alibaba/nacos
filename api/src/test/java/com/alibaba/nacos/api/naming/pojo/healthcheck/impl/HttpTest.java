@@ -69,7 +69,8 @@ class HttpTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String testChecker = "{\"type\":\"HTTP\",\"path\":\"/x\",\"headers\":\"x:a|y:\",\"expectedResponseCode\":200}";
+        String testChecker =
+            "{\"type\":\"HTTP\",\"path\":\"/x\",\"headers\":\"x:a|y:\",\"expectedResponseCode\":200}";
         Http actual = objectMapper.readValue(testChecker, Http.class);
         assertEquals("x:a|y:", actual.getHeaders());
         assertEquals("/x", actual.getPath());

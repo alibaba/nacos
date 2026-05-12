@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PromptVariableTest extends BasicRequestTest {
-
+    
     @Test
     @DisplayName("test default constructor")
     void testDefaultConstructor() {
@@ -36,7 +36,7 @@ class PromptVariableTest extends BasicRequestTest {
         assertNull(variable.getDefaultValue());
         assertNull(variable.getDescription());
     }
-
+    
     @Test
     @DisplayName("test constructor with all args")
     void testConstructorWithAllArgs() {
@@ -45,7 +45,7 @@ class PromptVariableTest extends BasicRequestTest {
         assertEquals("defaultAnswer", variable.getDefaultValue());
         assertEquals("User question", variable.getDescription());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for name")
     void testGetterAndSetterForName() {
@@ -53,7 +53,7 @@ class PromptVariableTest extends BasicRequestTest {
         variable.setName("testName");
         assertEquals("testName", variable.getName());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for defaultValue")
     void testGetterAndSetterForDefaultValue() {
@@ -61,7 +61,7 @@ class PromptVariableTest extends BasicRequestTest {
         variable.setDefaultValue("defaultValue");
         assertEquals("defaultValue", variable.getDefaultValue());
     }
-
+    
     @Test
     @DisplayName("test getter and setter for description")
     void testGetterAndSetterForDescription() {
@@ -69,7 +69,7 @@ class PromptVariableTest extends BasicRequestTest {
         variable.setDescription("test description");
         assertEquals("test description", variable.getDescription());
     }
-
+    
     @Test
     @DisplayName("test toString method")
     void testToStringMethod() {
@@ -80,7 +80,7 @@ class PromptVariableTest extends BasicRequestTest {
         assertTrue(str.contains("desc"));
         assertTrue(str.contains("PromptVariable"));
     }
-
+    
     @Test
     @DisplayName("test serialize to json")
     void testSerializeToJson() throws JsonProcessingException {
@@ -91,18 +91,19 @@ class PromptVariableTest extends BasicRequestTest {
         assertTrue(json.contains("\"defaultValue\":\"defaultAnswer\""));
         assertTrue(json.contains("\"description\":\"User question\""));
     }
-
+    
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
-        String json = "{\"name\":\"question\",\"defaultValue\":\"defaultAnswer\",\"description\":\"User question\"}";
+        String json =
+            "{\"name\":\"question\",\"defaultValue\":\"defaultAnswer\",\"description\":\"User question\"}";
         PromptVariable variable = mapper.readValue(json, PromptVariable.class);
         assertNotNull(variable);
         assertEquals("question", variable.getName());
         assertEquals("defaultAnswer", variable.getDefaultValue());
         assertEquals("User question", variable.getDescription());
     }
-
+    
     @Test
     @DisplayName("test deserialize with null defaultValue")
     void testDeserializeWithNullDefaultValue() throws JsonProcessingException {

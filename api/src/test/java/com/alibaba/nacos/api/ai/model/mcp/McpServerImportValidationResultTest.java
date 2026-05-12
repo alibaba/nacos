@@ -110,7 +110,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         assertTrue(json.contains("\"serverName\":\"invalid-server\""));
         assertTrue(json.contains("\"status\":\"invalid\""));
         assertTrue(json.contains("\"errors\":[\"Missing protocol\",\"Invalid port\"]"));
-        assertTrue(json.contains("\"errors\":[\"Invalid JSON format\",\"Missing required fields\"]"));
+        assertTrue(
+            json.contains("\"errors\":[\"Invalid JSON format\",\"Missing required fields\"]"));
         assertTrue(json.contains("\"nextCursor\":\"next_cursor_456\""));
         assertTrue(json.contains("\"hasMore\":false"));
     }
@@ -147,12 +148,14 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
     
     @Test
     void testDeserializeValidResult() throws JsonProcessingException {
-        String json = "{\"valid\":true,\"totalCount\":3,\"validCount\":3,\"invalidCount\":0,\"duplicateCount\":0,"
+        String json =
+            "{\"valid\":true,\"totalCount\":3,\"validCount\":3,\"invalidCount\":0,\"duplicateCount\":0,"
                 + "\"servers\":[{\"serverName\":\"server1\",\"serverId\":\"id1\",\"status\":\"valid\",\"selected\":true,\"exists\":false},"
                 + "{\"serverName\":\"server2\",\"serverId\":\"id2\",\"status\":\"valid\",\"selected\":false,\"exists\":false}],"
                 + "\"errors\":[],\"nextCursor\":\"next_cursor_123\",\"hasMore\":true}";
         
-        McpServerImportValidationResult result = mapper.readValue(json, McpServerImportValidationResult.class);
+        McpServerImportValidationResult result =
+            mapper.readValue(json, McpServerImportValidationResult.class);
         assertNotNull(result);
         assertTrue(result.isValid());
         assertEquals(3, result.getTotalCount());
@@ -185,13 +188,15 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
     
     @Test
     void testDeserializeInvalidResult() throws JsonProcessingException {
-        String json = "{\"valid\":false,\"totalCount\":2,\"validCount\":1,\"invalidCount\":1,\"duplicateCount\":0,"
+        String json =
+            "{\"valid\":false,\"totalCount\":2,\"validCount\":1,\"invalidCount\":1,\"duplicateCount\":0,"
                 + "\"servers\":[{\"serverName\":\"valid-server\",\"status\":\"valid\",\"exists\":false},"
                 + "{\"serverName\":\"invalid-server\",\"status\":\"invalid\",\"errors\":[\"Missing protocol\",\"Invalid port\"]}],"
                 + "\"errors\":[\"Invalid JSON format\",\"Missing required fields\"],"
                 + "\"nextCursor\":\"next_cursor_456\",\"hasMore\":false}";
         
-        McpServerImportValidationResult result = mapper.readValue(json, McpServerImportValidationResult.class);
+        McpServerImportValidationResult result =
+            mapper.readValue(json, McpServerImportValidationResult.class);
         assertNotNull(result);
         assertFalse(result.isValid());
         assertEquals(2, result.getTotalCount());
@@ -225,11 +230,13 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
     
     @Test
     void testDeserializeDuplicateResult() throws JsonProcessingException {
-        String json = "{\"valid\":true,\"totalCount\":2,\"validCount\":1,\"invalidCount\":0,\"duplicateCount\":1,"
+        String json =
+            "{\"valid\":true,\"totalCount\":2,\"validCount\":1,\"invalidCount\":0,\"duplicateCount\":1,"
                 + "\"servers\":[{\"serverName\":\"existing-server\",\"serverId\":\"existing-id\",\"status\":\"duplicate\",\"exists\":true}],"
                 + "\"errors\":[],\"nextCursor\":\"next_cursor_789\",\"hasMore\":true}";
         
-        McpServerImportValidationResult result = mapper.readValue(json, McpServerImportValidationResult.class);
+        McpServerImportValidationResult result =
+            mapper.readValue(json, McpServerImportValidationResult.class);
         assertNotNull(result);
         assertTrue(result.isValid());
         assertEquals(2, result.getTotalCount());
@@ -254,9 +261,11 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
     
     @Test
     void testDeserializeMinimalResult() throws JsonProcessingException {
-        String json = "{\"valid\":false,\"totalCount\":0,\"validCount\":0,\"invalidCount\":0,\"duplicateCount\":0}";
+        String json =
+            "{\"valid\":false,\"totalCount\":0,\"validCount\":0,\"invalidCount\":0,\"duplicateCount\":0}";
         
-        McpServerImportValidationResult result = mapper.readValue(json, McpServerImportValidationResult.class);
+        McpServerImportValidationResult result =
+            mapper.readValue(json, McpServerImportValidationResult.class);
         assertNotNull(result);
         assertFalse(result.isValid());
         assertEquals(0, result.getTotalCount());

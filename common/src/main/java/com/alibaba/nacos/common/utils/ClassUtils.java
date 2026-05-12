@@ -126,10 +126,9 @@ public final class ClassUtils {
             Collection.class,
             List.class, Set.class, Map.class, Map.Entry.class, Optional.class);
         
-        // @formatter:off
-        Class<?>[] javaLanguageInterfaceArray = {Serializable.class, Externalizable.class, Closeable.class,
+        Class<?>[] javaLanguageInterfaceArray =
+            {Serializable.class, Externalizable.class, Closeable.class,
                 AutoCloseable.class, Cloneable.class, Comparable.class};
-        // @formatter:on
         registerCommonClasses(javaLanguageInterfaceArray);
     }
     

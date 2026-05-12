@@ -310,9 +310,9 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
         
         final Object[] args =
             new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, appNameTmp, desc, use,
-                    effect, type, schema, encryptedDataKey, configInfo.getDataId(),
-                    configInfo.getGroup(), tenantTmp,
-                    new Timestamp(lastModified), targetMd5};
+                effect, type, schema, encryptedDataKey, configInfo.getDataId(),
+                configInfo.getGroup(), tenantTmp,
+                new Timestamp(lastModified), targetMd5};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
@@ -414,8 +414,8 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
                     "md5"));
             final Object[] args =
                 new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
-                        grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                        grayNameTmp, new Timestamp(lastModified), targetMd5};
+                    grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                    grayNameTmp, new Timestamp(lastModified), targetMd5};
             EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp,
                 srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);

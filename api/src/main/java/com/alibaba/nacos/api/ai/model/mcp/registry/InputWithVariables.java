@@ -27,13 +27,13 @@ import java.util.Map;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InputWithVariables extends Input {
-
+    
     private Map<String, Input> variables;
-
+    
     public Map<String, Input> getVariables() {
         return variables;
     }
-
+    
     public void setVariables(Map<String, Input> variables) {
         this.variables = variables;
     }

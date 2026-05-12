@@ -44,13 +44,14 @@ class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest {
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.SUCCESS.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));
         assertTrue(json.contains(
-                "\"changedConfigs\":[{\"dataId\":\"test_data\",\"group\":\"group\",\"tenant\":\"test_tenant\"}]"));
+            "\"changedConfigs\":[{\"dataId\":\"test_data\",\"group\":\"group\",\"tenant\":\"test_tenant\"}]"));
     }
     
     @Override
     @Test
     public void testSerializeFailResponse() throws JsonProcessingException {
-        ConfigChangeBatchListenResponse configChangeBatchListenResponse = ConfigChangeBatchListenResponse.buildFailResponse(
+        ConfigChangeBatchListenResponse configChangeBatchListenResponse =
+            ConfigChangeBatchListenResponse.buildFailResponse(
                 "Fail");
         String json = mapper.writeValueAsString(configChangeBatchListenResponse);
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.FAIL.getCode()));
@@ -62,9 +63,11 @@ class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest {
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"061e36b0-c7bd-4fd0-950c-73b13ca1cb2f\","
+        String json =
+            "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"061e36b0-c7bd-4fd0-950c-73b13ca1cb2f\","
                 + "\"changedConfigs\":[{\"group\":\"group\",\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}],\"success\":true}";
-        ConfigChangeBatchListenResponse actual = mapper.readValue(json, ConfigChangeBatchListenResponse.class);
+        ConfigChangeBatchListenResponse actual =
+            mapper.readValue(json, ConfigChangeBatchListenResponse.class);
         assertTrue(actual.isSuccess());
         assertEquals(ResponseCode.SUCCESS.getCode(), actual.getResultCode());
         assertEquals("061e36b0-c7bd-4fd0-950c-73b13ca1cb2f", actual.getRequestId());
@@ -72,6 +75,6 @@ class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest {
         assertEquals(GROUP, actual.getChangedConfigs().get(0).getGroup());
         assertEquals(DATA_ID, actual.getChangedConfigs().get(0).getDataId());
         assertEquals("ConfigContext{group='group', dataId='test_data', tenant='test_tenant'}",
-                actual.getChangedConfigs().get(0).toString());
+            actual.getChangedConfigs().get(0).toString());
     }
 }

@@ -26,6 +26,7 @@ class AbstractListenerTest {
     void testGetExecutor() {
         // Default listener executor is null.
         assertNull(new AbstractListener() {
+            
             @Override
             public void receiveConfigInfo(String configInfo) {
             }

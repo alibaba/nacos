@@ -49,7 +49,7 @@ class NamedArgumentTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"type\":\"named\",\"name\":\"testArg\",\"value\":\"testValue\","
-                + "\"description\":\"test description\",\"isRequired\":true,\"isRepeated\":false}";
+            + "\"description\":\"test description\",\"isRequired\":true,\"isRepeated\":false}";
         
         NamedArgument namedArgument = mapper.readValue(json, NamedArgument.class);
         assertNotNull(namedArgument);

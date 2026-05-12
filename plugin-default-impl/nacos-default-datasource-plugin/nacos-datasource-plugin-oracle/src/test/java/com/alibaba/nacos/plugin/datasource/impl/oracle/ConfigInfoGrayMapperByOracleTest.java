@@ -56,19 +56,22 @@ class ConfigInfoGrayMapperByOracleTest {
     void testFindChangeConfig() {
         MapperResult mapperResult = configInfoGrayMapperByOracle.findChangeConfig(context);
         assertEquals(
-                "SELECT id, data_id, group_id, tenant_id, app_name,content,gray_name,gray_rule,md5, gmt_modified, encrypted_data_key "
-                        + "FROM config_info_gray WHERE gmt_modified >= ? and id > ? order by id fetch first ? rows only",
-                mapperResult.getSql());
-        assertArrayEquals(new Object[] {startTime, lastMaxId, pageSize}, mapperResult.getParamList().toArray());
+            "SELECT id, data_id, group_id, tenant_id, app_name,content,gray_name,gray_rule,md5, gmt_modified, encrypted_data_key "
+                + "FROM config_info_gray WHERE gmt_modified >= ? and id > ? order by id fetch first ? rows only",
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {startTime, lastMaxId, pageSize},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindAllConfigInfoGrayForDumpAllFetchRows() {
-        MapperResult mapperResult = configInfoGrayMapperByOracle.findAllConfigInfoGrayForDumpAllFetchRows(context);
+        MapperResult mapperResult =
+            configInfoGrayMapperByOracle.findAllConfigInfoGrayForDumpAllFetchRows(context);
         assertEquals(
-                " SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,md5,gmt_modified "
-                        + " FROM  config_info_gray  ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY",
-                mapperResult.getSql());
+            " SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,md5,gmt_modified "
+                + " FROM  config_info_gray  ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT "
+                + pageSize + " ROWS ONLY",
+            mapperResult.getSql());
         assertEquals(0, mapperResult.getParamList().size());
     }
     

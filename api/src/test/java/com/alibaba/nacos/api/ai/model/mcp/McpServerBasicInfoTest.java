@@ -82,10 +82,10 @@ class McpServerBasicInfoTest extends BasicRequestTest {
     @Test
     void testDeserializeForStdio() throws JsonProcessingException {
         String json = "{\"id\":\"3a2c535c-d0a8-44a4-8913-0cef98904ebd\",\"name\":\"stdioServer\","
-                + "\"protocol\":\"stdio\",\"frontProtocol\":\"stdio\",\"description\":\"test stdio server\","
-                + "\"repository\":{},\"versionDetail\":{\"version\":\"1.0.0\",\"is_latest\":true},"
-                + "\"localServerConfig\":{},\"enabled\":true,\"capabilities\":[\"TOOL\"],\"status\":\"active\","
-                + "\"packages\":[{\"identifier\":\"test-package\",\"version\":\"1.0.0\"}]}";
+            + "\"protocol\":\"stdio\",\"frontProtocol\":\"stdio\",\"description\":\"test stdio server\","
+            + "\"repository\":{},\"versionDetail\":{\"version\":\"1.0.0\",\"is_latest\":true},"
+            + "\"localServerConfig\":{},\"enabled\":true,\"capabilities\":[\"TOOL\"],\"status\":\"active\","
+            + "\"packages\":[{\"identifier\":\"test-package\",\"version\":\"1.0.0\"}]}";
         
         McpServerBasicInfo result = mapper.readValue(json, McpServerBasicInfo.class);
         assertNotNull(result);
@@ -158,11 +158,11 @@ class McpServerBasicInfoTest extends BasicRequestTest {
     @Test
     void testDeserializeForSse() throws JsonProcessingException {
         String json = "{\"id\":\"c769b89b-edb5-4912-8e39-71bf5dc31eab\",\"name\":\"sseServer\","
-                + "\"protocol\":\"mcp-sse\",\"frontProtocol\":\"mcp-sse\",\"description\":\"test sse server\","
-                + "\"repository\":{},\"versionDetail\":{\"version\":\"1.0.0\",\"is_latest\":false},"
-                + "\"remoteServerConfig\":{\"exportPath\":\"/test\"},\"enabled\":false,"
-                + "\"capabilities\":[\"RESOURCE\"],\"status\":\"deprecated\","
-                + "\"packages\":[{\"identifier\":\"test-package\",\"version\":\"1.0.0\"}]}";
+            + "\"protocol\":\"mcp-sse\",\"frontProtocol\":\"mcp-sse\",\"description\":\"test sse server\","
+            + "\"repository\":{},\"versionDetail\":{\"version\":\"1.0.0\",\"is_latest\":false},"
+            + "\"remoteServerConfig\":{\"exportPath\":\"/test\"},\"enabled\":false,"
+            + "\"capabilities\":[\"RESOURCE\"],\"status\":\"deprecated\","
+            + "\"packages\":[{\"identifier\":\"test-package\",\"version\":\"1.0.0\"}]}";
         
         McpServerBasicInfo result = mapper.readValue(json, McpServerBasicInfo.class);
         assertNotNull(result);

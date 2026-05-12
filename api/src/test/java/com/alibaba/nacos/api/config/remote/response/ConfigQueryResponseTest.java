@@ -56,7 +56,8 @@ class ConfigQueryResponseTest extends BasedConfigResponseTest {
     @Override
     @Test
     public void testSerializeFailResponse() throws JsonProcessingException {
-        ConfigQueryResponse configQueryResponse = ConfigQueryResponse.buildFailResponse(500, "Fail");
+        ConfigQueryResponse configQueryResponse =
+            ConfigQueryResponse.buildFailResponse(500, "Fail");
         String json = mapper.writeValueAsString(configQueryResponse);
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.FAIL.getCode()));
         assertTrue(json.contains("\"errorCode\":500"));
@@ -67,7 +68,8 @@ class ConfigQueryResponseTest extends BasedConfigResponseTest {
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"2239753e-e682-441c-83cf-fb8129ca68a4\","
+        String json =
+            "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"2239753e-e682-441c-83cf-fb8129ca68a4\","
                 + "\"content\":\"success\",\"encryptedDataKey\":\"encryptedKey\",\"contentType\":\"text\",\"md5\":\"test_MD5\","
                 + "\"lastModified\":1111111,\"tag\":\"tag\",\"beta\":false,\"success\":true}\n";
         ConfigQueryResponse actual = mapper.readValue(json, ConfigQueryResponse.class);

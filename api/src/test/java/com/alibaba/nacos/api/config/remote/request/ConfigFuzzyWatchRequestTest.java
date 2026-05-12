@@ -62,8 +62,8 @@ class ConfigFuzzyWatchRequestTest extends BasedConfigRequestTest {
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{\"header1\":\"test_header1\"},\"groupKeyPattern\":\"test.*\","
-                + "\"watchType\":\"FUZZY\",\"initializing\":true,"
-                + "\"receivedGroupKeys\":[\"test-group-key-1\",\"test-group-key-2\"],\"module\":\"config\"}";
+            + "\"watchType\":\"FUZZY\",\"initializing\":true,"
+            + "\"receivedGroupKeys\":[\"test-group-key-1\",\"test-group-key-2\"],\"module\":\"config\"}";
         ConfigFuzzyWatchRequest actual = mapper.readValue(json, ConfigFuzzyWatchRequest.class);
         assertEquals(GROUP_KEY_PATTERN, actual.getGroupKeyPattern());
         assertEquals(WATCH_TYPE, actual.getWatchType());

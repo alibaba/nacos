@@ -27,7 +27,8 @@ class SubscribeServiceRequestTest extends BasedNamingRequestTest {
     
     @Test
     void testSerialize() throws JsonProcessingException {
-        SubscribeServiceRequest request = new SubscribeServiceRequest(NAMESPACE, GROUP, SERVICE, "", true);
+        SubscribeServiceRequest request =
+            new SubscribeServiceRequest(NAMESPACE, GROUP, SERVICE, "", true);
         String json = mapper.writeValueAsString(request);
         checkSerializeBasedInfo(json);
         assertTrue(json.contains("\"clusters\":\"\""));
@@ -36,7 +37,8 @@ class SubscribeServiceRequestTest extends BasedNamingRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
+        String json =
+            "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
                 + "\"subscribe\":false,\"clusters\":\"aa,bb\",\"module\":\"naming\"}";
         SubscribeServiceRequest actual = mapper.readValue(json, SubscribeServiceRequest.class);
         checkNamingRequestBasedInfo(actual);

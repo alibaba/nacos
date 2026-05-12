@@ -50,12 +50,14 @@ class InputWithVariablesTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"description\":\"test description\",\"variables\":{\"var1\":{\"description\":\"variable description\"}}}";
+        String json =
+            "{\"description\":\"test description\",\"variables\":{\"var1\":{\"description\":\"variable description\"}}}";
         
         InputWithVariables inputWithVariables = mapper.readValue(json, InputWithVariables.class);
         assertNotNull(inputWithVariables);
         assertEquals("test description", inputWithVariables.getDescription());
         assertEquals(1, inputWithVariables.getVariables().size());
-        assertEquals("variable description", inputWithVariables.getVariables().get("var1").getDescription());
+        assertEquals("variable description",
+            inputWithVariables.getVariables().get("var1").getDescription());
     }
 }

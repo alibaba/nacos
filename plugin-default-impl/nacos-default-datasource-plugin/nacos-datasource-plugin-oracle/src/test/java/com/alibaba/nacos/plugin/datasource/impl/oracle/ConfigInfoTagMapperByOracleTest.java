@@ -54,9 +54,12 @@ class ConfigInfoTagMapperByOracleTest {
     
     @Test
     void testFindAllConfigInfoTagForDumpAllFetchRows() {
-        MapperResult mapperResult = configInfoTagMapperByOracle.findAllConfigInfoTagForDumpAllFetchRows(context);
-        assertEquals(mapperResult.getSql(), " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
-                + " FROM (  SELECT id FROM config_info_tag  ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT "
+        MapperResult mapperResult =
+            configInfoTagMapperByOracle.findAllConfigInfoTagForDumpAllFetchRows(context);
+        assertEquals(mapperResult.getSql(),
+            " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
+                + " FROM (  SELECT id FROM config_info_tag  ORDER BY id OFFSET " + startRow
+                + " ROWS FETCH NEXT "
                 + pageSize + " ROWS ONLY) g, config_info_tag t  WHERE g.id = t.id  ");
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }

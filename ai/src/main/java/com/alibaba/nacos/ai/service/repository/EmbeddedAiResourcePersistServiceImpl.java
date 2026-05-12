@@ -76,15 +76,15 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
                 "gmt_modified@NOW()"));
         
         Object[] args = new Object[] {resource.getName(), resource.getType(), resource.getDesc(),
-                resource.getStatus(),
-                normalizeNamespaceId(resource.getNamespaceId()), resource.getBizTags(),
-                resource.getExt(),
-                resource.getFrom() == null ? "local" : resource.getFrom(),
-                resource.getVersionInfo(),
-                resource.getMetaVersion() == null ? 1L : resource.getMetaVersion(),
-                resource.getScope() == null ? VisibilityConstants.SCOPE_PRIVATE
-                    : resource.getScope(),
-                resource.getOwner() == null ? "" : resource.getOwner()};
+            resource.getStatus(),
+            normalizeNamespaceId(resource.getNamespaceId()), resource.getBizTags(),
+            resource.getExt(),
+            resource.getFrom() == null ? "local" : resource.getFrom(),
+            resource.getVersionInfo(),
+            resource.getMetaVersion() == null ? 1L : resource.getMetaVersion(),
+            resource.getScope() == null ? VisibilityConstants.SCOPE_PRIVATE
+                : resource.getScope(),
+            resource.getOwner() == null ? "" : resource.getOwner()};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         Boolean success = databaseOperate.blockUpdate();
@@ -146,9 +146,9 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
                 + " WHERE namespace_id=? AND name=? AND type=? AND meta_version=?";
         
         Object[] args = new Object[] {newValue.getStatus(), newValue.getDesc(),
-                newValue.getBizTags(), newValue.getExt(),
-                newValue.getVersionInfo(), normalizeNamespaceId(namespaceId), name, type,
-                expectedMetaVersion};
+            newValue.getBizTags(), newValue.getExt(),
+            newValue.getVersionInfo(), normalizeNamespaceId(namespaceId), name, type,
+            expectedMetaVersion};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         Boolean success = databaseOperate.blockUpdate();

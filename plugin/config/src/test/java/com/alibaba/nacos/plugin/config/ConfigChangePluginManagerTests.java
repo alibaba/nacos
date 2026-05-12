@@ -74,7 +74,7 @@ class ConfigChangePluginManagerTests {
             @Override
             public ConfigChangePointCutTypes[] pointcutMethodNames() {
                 return new ConfigChangePointCutTypes[] {ConfigChangePointCutTypes.PUBLISH_BY_HTTP,
-                        ConfigChangePointCutTypes.PUBLISH_BY_RPC};
+                    ConfigChangePointCutTypes.PUBLISH_BY_RPC};
             }
         });
         ConfigChangePluginManager.join(new ConfigChangePluginService() {
@@ -103,7 +103,7 @@ class ConfigChangePluginManagerTests {
             @Override
             public ConfigChangePointCutTypes[] pointcutMethodNames() {
                 return new ConfigChangePointCutTypes[] {ConfigChangePointCutTypes.IMPORT_BY_HTTP,
-                        ConfigChangePointCutTypes.PUBLISH_BY_RPC};
+                    ConfigChangePointCutTypes.PUBLISH_BY_RPC};
             }
         });
         ConfigChangePluginManager.join(new ConfigChangePluginService() {
@@ -132,10 +132,10 @@ class ConfigChangePluginManagerTests {
             @Override
             public ConfigChangePointCutTypes[] pointcutMethodNames() {
                 return new ConfigChangePointCutTypes[] {ConfigChangePointCutTypes.IMPORT_BY_HTTP,
-                        ConfigChangePointCutTypes.PUBLISH_BY_RPC,
-                        ConfigChangePointCutTypes.REMOVE_BATCH_HTTP,
-                        ConfigChangePointCutTypes.REMOVE_BY_RPC,
-                        ConfigChangePointCutTypes.REMOVE_BY_HTTP};
+                    ConfigChangePointCutTypes.PUBLISH_BY_RPC,
+                    ConfigChangePointCutTypes.REMOVE_BATCH_HTTP,
+                    ConfigChangePointCutTypes.REMOVE_BY_RPC,
+                    ConfigChangePointCutTypes.REMOVE_BY_HTTP};
             }
         });
         
@@ -165,9 +165,9 @@ class ConfigChangePluginManagerTests {
             @Override
             public ConfigChangePointCutTypes[] pointcutMethodNames() {
                 return new ConfigChangePointCutTypes[] {ConfigChangePointCutTypes.PUBLISH_BY_HTTP,
-                        ConfigChangePointCutTypes.REMOVE_BATCH_HTTP,
-                        ConfigChangePointCutTypes.REMOVE_BY_RPC,
-                        ConfigChangePointCutTypes.REMOVE_BY_HTTP};
+                    ConfigChangePointCutTypes.REMOVE_BATCH_HTTP,
+                    ConfigChangePointCutTypes.REMOVE_BY_RPC,
+                    ConfigChangePointCutTypes.REMOVE_BY_HTTP};
             }
         });
         
