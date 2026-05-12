@@ -810,15 +810,26 @@ export default function PromptDetailPage() {
                             : t('prompt.publish')}
                         </Button>
                         {currentVersionStatus === 'reviewed' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs gap-1.5"
-                            onClick={() => handleReedit(selectedVersion)}
-                          >
-                            <Pencil className="h-3 w-3" />
-                            {t('prompt.reedit')}
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1.5"
+                              onClick={() => handleReedit(selectedVersion)}
+                            >
+                              <Pencil className="h-3 w-3" />
+                              {t('prompt.reedit')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteDraft(selectedVersion)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              {t('prompt.deleteDraft')}
+                            </Button>
+                          </>
                         )}
                         {currentPipelineInfo && (
                           <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />

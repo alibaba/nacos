@@ -1064,16 +1064,28 @@ export default function AgentSpecDetailPage() {
                           : t('agentSpec.publish')}
                       </Button>
                       {currentVersionStatus === 'reviewed' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs gap-1.5"
-                          disabled={actionLoading}
-                          onClick={() => handleReedit(selectedVersion)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                          {t('agentSpec.reedit')}
-                        </Button>
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            disabled={actionLoading}
+                            onClick={() => handleReedit(selectedVersion)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            {t('agentSpec.reedit')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            disabled={actionLoading}
+                            onClick={handleDeleteDraft}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            {t('agentSpec.deleteDraft')}
+                          </Button>
+                        </>
                       )}
                       {currentPipelineInfo && currentPipelineInfo.status === 'APPROVED' && (
                         <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact translationPrefix="agentSpec" />
