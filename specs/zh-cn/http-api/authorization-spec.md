@@ -16,6 +16,11 @@
 
 # HTTP API 鉴权规范
 
+本文档定义 Nacos 鉴权模型如何应用到 v3 HTTP API。共享鉴权领域模型由
+[鉴权与权限规范](../auth/auth-permission-spec.md) 定义，插件契约由
+[鉴权插件规范](../auth/auth-plugin-spec.md) 和
+[可见性插件规范](../auth/visibility-plugin-spec.md) 定义。
+
 ## 1. 鉴权元组
 
 V3 HTTP API 的有效鉴权元组为：

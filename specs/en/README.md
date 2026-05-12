@@ -20,6 +20,11 @@ Current specs:
 
 - [Nacos Design Spec](design/nacos-design-spec.md)
 - [Resource Model Spec](design/resource-model-spec.md)
+- [Plugin Spec](plugin/plugin-spec.md)
+- [Auth And Permission Spec](auth/auth-permission-spec.md)
+- [Auth Plugin Spec](auth/auth-plugin-spec.md)
+- [Visibility Plugin Spec](auth/visibility-plugin-spec.md)
+- [Default Auth Plugin Implementation Spec](auth/default-auth-plugin-spec.md)
 - [HTTP API Spec](http-api/api-spec.md)
 - [gRPC API Spec](grpc-api/api-spec.md)
 - [SDK Spec](sdk/sdk-spec.md)

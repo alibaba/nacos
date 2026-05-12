@@ -26,6 +26,7 @@ Spec hierarchy:
 ```text
 Nacos design
   -> Resource model
+  -> Plugin model
   -> Domain specs
   -> HTTP / gRPC / SDK interface specs
 ```
@@ -35,6 +36,7 @@ Nacos design
 ```text
 Nacos 顶层设计
   -> 资源模型
+  -> 插件化模型
   -> 领域规范
   -> HTTP / gRPC / SDK 接口规范
 ```

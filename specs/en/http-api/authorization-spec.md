@@ -16,6 +16,12 @@
 
 # HTTP API Authorization Spec
 
+This document defines how the Nacos auth model is applied to v3 HTTP APIs. The
+shared auth domain model is defined by
+[Auth And Permission Spec](../auth/auth-permission-spec.md), and plugin
+contracts are defined by [Auth Plugin Spec](../auth/auth-plugin-spec.md) and
+[Visibility Plugin Spec](../auth/visibility-plugin-spec.md).
+
 ## 1. Authorization Tuple
 
 The effective authorization tuple for v3 HTTP APIs is:
