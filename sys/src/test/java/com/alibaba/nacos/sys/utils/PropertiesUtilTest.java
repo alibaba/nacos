@@ -70,14 +70,14 @@ class PropertiesUtilTest {
         Map properties = PropertiesUtil.handleSpringBinder(environment, "nacos.prefix", Map.class);
         assertEquals(3, properties.size());
     }
-
+    
     @Test
     void testHandleSpringBinderWithDotEndingPrefix() {
         Map properties =
             PropertiesUtil.handleSpringBinder(environment, "nacos.prefix.", Map.class);
         assertEquals(3, properties.size());
     }
-
+    
     @Test
     void testConstructor() {
         new PropertiesUtil();

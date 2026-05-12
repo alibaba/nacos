@@ -20,12 +20,12 @@ import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
 public class IgnoreMockModuleStateBuilder implements ModuleStateBuilder {
-
+    
     @Override
     public ModuleState build() {
         return new ModuleState("ignored-mock");
     }
-
+    
     @Override
     public boolean isIgnore() {
         return true;

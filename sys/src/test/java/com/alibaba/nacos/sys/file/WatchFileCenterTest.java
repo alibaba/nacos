@@ -273,7 +273,7 @@ class WatchFileCenterTest {
         final String path = file.getParentFile().getAbsolutePath();
         AtomicBoolean containAssert = new AtomicBoolean(false);
         WatchFileCenter.registerWatcher(path, new FileWatcher() {
-
+            
             @Override
             public void onChange(FileChangeEvent event) {
                 try {
@@ -284,7 +284,7 @@ class WatchFileCenterTest {
                     containAssert.set(true);
                 }
             }
-
+            
             @Override
             public boolean interest(String context) {
                 return true;
@@ -299,12 +299,12 @@ class WatchFileCenterTest {
         method.invoke(job);
         assertFalse(containAssert.get());
     }
-
+    
     @Test
     void testConstructor() {
         new WatchFileCenter();
     }
-
+    
     @Test
     void testShutdownIsIdempotent() {
         try {
@@ -315,7 +315,7 @@ class WatchFileCenterTest {
                 .set(false);
         }
     }
-
+    
     @Test
     void testRegisterReturnsFalseWhenAtMaxLimit() throws NacosException {
         Integer originalCnt =
@@ -330,7 +330,7 @@ class WatchFileCenterTest {
             ReflectionTestUtils.setField(WatchFileCenter.class, "NOW_WATCH_JOB_CNT", originalCnt);
         }
     }
-
+    
     @Test
     void testShutdownContinuesWhenJobShutdownThrows() throws Exception {
         Map<String, WatchFileCenter.WatchDirJob> manager =
@@ -349,7 +349,7 @@ class WatchFileCenterTest {
             ReflectionTestUtils.setField(WatchFileCenter.class, "NOW_WATCH_JOB_CNT", 0);
         }
     }
-
+    
     @Test
     void testRunCatchesUnexpectedThrowable() throws Exception {
         WatchFileCenter.WatchDirJob job = newDetachedJob();
@@ -366,7 +366,7 @@ class WatchFileCenterTest {
             shutdownDetachedJob(job);
         }
     }
-
+    
     @Test
     void testRunSkipsEmptyEvents() throws Exception {
         WatchFileCenter.WatchDirJob job = newDetachedJob();
@@ -386,7 +386,7 @@ class WatchFileCenterTest {
             shutdownDetachedJob(job);
         }
     }
-
+    
     @Test
     void testRunReturnsWhenExecutorAlreadyShutdown() throws Exception {
         WatchFileCenter.WatchDirJob job = newDetachedJob();
@@ -407,7 +407,7 @@ class WatchFileCenterTest {
             shutdownDetachedJob(job);
         }
     }
-
+    
     @Test
     void testRunDispatchesEventOverflowToExecutor() throws Exception {
         WatchFileCenter.WatchDirJob job = newDetachedJob();
@@ -444,7 +444,7 @@ class WatchFileCenterTest {
             shutdownDetachedJob(job);
         }
     }
-
+    
     @Test
     void testRunSwallowsClosedWatchServiceException() throws Exception {
         WatchFileCenter.WatchDirJob job = newDetachedJob();
@@ -460,7 +460,7 @@ class WatchFileCenterTest {
             shutdownDetachedJob(job);
         }
     }
-
+    
     @Test
     void testJobShutdownIgnoresIoExceptionOnWatchServiceClose() throws Exception {
         WatchFileCenter.WatchDirJob job = newDetachedJob();
@@ -473,7 +473,7 @@ class WatchFileCenterTest {
             shutdownDetachedJob(job);
         }
     }
-
+    
     @Test
     void testEventOverflowSkipsSubdirectory() throws Exception {
         String dirPath = Paths.get(System.getProperty("user.home"),
@@ -486,12 +486,12 @@ class WatchFileCenterTest {
         AtomicReference<String> seen = new AtomicReference<>(null);
         try {
             WatchFileCenter.registerWatcher(dirPath, new FileWatcher() {
-
+                
                 @Override
                 public void onChange(FileChangeEvent event) {
                     seen.set(String.valueOf(event.getContext()));
                 }
-
+                
                 @Override
                 public boolean interest(String context) {
                     return true;
@@ -519,7 +519,7 @@ class WatchFileCenterTest {
         ctor.setAccessible(true);
         return ctor.newInstance(dirPath);
     }
-
+    
     private static void shutdownDetachedJob(WatchFileCenter.WatchDirJob job) {
         try {
             ExecutorService exec = (ExecutorService) ReflectionTestUtils.getField(job,
@@ -539,14 +539,14 @@ class WatchFileCenterTest {
             }
         }
     }
-
+    
     private static String createEmptyTempDir(String prefix) throws Exception {
         String dirPath = Paths.get(System.getProperty("java.io.tmpdir"),
             prefix + System.nanoTime()).toString();
         DiskUtils.deleteDirThenMkdir(dirPath);
         return dirPath;
     }
-
+    
     private void func(final String fileName, final File file, final Consumer<String> consumer)
         throws Exception {
         CountDownLatch latch = new CountDownLatch(100);

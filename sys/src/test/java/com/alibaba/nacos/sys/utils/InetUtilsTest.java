@@ -219,21 +219,21 @@ class InetUtilsTest {
         InetUtils.IPChangeEvent event = new InetUtils.IPChangeEvent();
         event.setOldIP("192.168.1.1");
         event.setNewIP("192.168.1.2");
-
+        
         // 测试 getter 方法 (lines 292, 300)
         assertEquals("192.168.1.1", event.getOldIP());
         assertEquals("192.168.1.2", event.getNewIP());
-
+        
         // 测试 toString 方法 (line 309)
         String expected = "IPChangeEvent{oldIP='192.168.1.1', newIP='192.168.1.2'}";
         assertEquals(expected, event.toString());
     }
-
+    
     @Test
     void testConstructor() {
         new InetUtils();
     }
-
+    
     @Test
     void testRefreshIpWithSystemPreferHostnameOverIp() throws Exception {
         System.clearProperty(NACOS_SERVER_IP);
@@ -247,7 +247,7 @@ class InetUtilsTest {
             ReflectionTestUtils.setField(InetUtils.class, "preferHostnameOverIP", false);
         }
     }
-
+    
     @Test
     void testRefreshIpWithEnvPreferHostnameOverIp() throws Exception {
         System.clearProperty(NACOS_SERVER_IP);
@@ -263,7 +263,7 @@ class InetUtilsTest {
             ReflectionTestUtils.setField(InetUtils.class, "preferHostnameOverIP", false);
         }
     }
-
+    
     @Test
     void testGetPreferHostnameOverIpWhenHostnameDiffersFromCanonical() throws Exception {
         System.setProperty(SYSTEM_PREFER_HOSTNAME_OVER_IP, "true");
@@ -279,7 +279,7 @@ class InetUtilsTest {
             ReflectionTestUtils.setField(InetUtils.class, "preferHostnameOverIP", false);
         }
     }
-
+    
     @Test
     void testGetPreferHostnameOverIpWhenHostnameEqualsCanonical() throws Exception {
         System.setProperty(SYSTEM_PREFER_HOSTNAME_OVER_IP, "true");
@@ -295,7 +295,7 @@ class InetUtilsTest {
             ReflectionTestUtils.setField(InetUtils.class, "preferHostnameOverIP", false);
         }
     }
-
+    
     @Test
     void testGetPreferHostnameOverIpWhenLookupFails() throws Exception {
         System.setProperty(SYSTEM_PREFER_HOSTNAME_OVER_IP, "true");
@@ -308,7 +308,7 @@ class InetUtilsTest {
             ReflectionTestUtils.setField(InetUtils.class, "preferHostnameOverIP", false);
         }
     }
-
+    
     @Test
     void testFindFirstNonLoopbackAddressFallbackToLocalHost() throws Exception {
         InetAddress local = mock(InetAddress.class);
@@ -322,7 +322,7 @@ class InetUtilsTest {
             assertEquals(local, result);
         }
     }
-
+    
     @Test
     void testFindFirstNonLoopbackAddressReturnsNullWhenLocalHostFails() {
         try (MockedStatic<NetworkInterface> nicMocked = Mockito.mockStatic(NetworkInterface.class);
@@ -334,19 +334,19 @@ class InetUtilsTest {
             assertNull(InetUtils.findFirstNonLoopbackAddress());
         }
     }
-
+    
     private static void invokeRefreshIp() throws Exception {
         Method refreshIp = InetUtils.class.getDeclaredMethod("refreshIp");
         refreshIp.setAccessible(true);
         refreshIp.invoke(null);
     }
-
+    
     private static String invokeGetPreferHostnameOverIp() throws Exception {
         Method method = InetUtils.class.getDeclaredMethod("getPreferHostnameOverIP");
         method.setAccessible(true);
         return (String) method.invoke(null);
     }
-
+    
     @Test
     void testRefreshIpWithIpv6Bracketed() throws Exception {
         boolean original = setPreferIpv6(true);
@@ -363,7 +363,7 @@ class InetUtilsTest {
             invokeRefreshIp();
         }
     }
-
+    
     @Test
     void testRefreshIpWithIpv6PercentScopeStripped() throws Exception {
         boolean original = setPreferIpv6(true);
@@ -380,26 +380,26 @@ class InetUtilsTest {
             invokeRefreshIp();
         }
     }
-
+    
     @Test
     void testFindFirstNonLoopbackAddressSkipsHigherIndexInterface() throws Exception {
         Inet4Address inet4 = mock(Inet4Address.class);
         when(inet4.isLoopbackAddress()).thenReturn(false);
         when(inet4.getHostAddress()).thenReturn("10.0.0.1");
-
+        
         NetworkInterface lowIfc = mock(NetworkInterface.class);
         when(lowIfc.getIndex()).thenReturn(1);
         when(lowIfc.isUp()).thenReturn(true);
         when(lowIfc.getDisplayName()).thenReturn("eth0");
         when(lowIfc.getInetAddresses())
             .thenReturn(Collections.enumeration(Collections.singletonList(inet4)));
-
+        
         NetworkInterface highIfc = mock(NetworkInterface.class);
         when(highIfc.getIndex()).thenReturn(99);
         when(highIfc.isUp()).thenReturn(true);
         when(highIfc.getDisplayName()).thenReturn("eth99");
         // not iterated because isHigher && result != null
-
+        
         Enumeration<NetworkInterface> enumeration =
             Collections.enumeration(java.util.Arrays.asList(lowIfc, highIfc));
         try (MockedStatic<NetworkInterface> nicMocked =
@@ -410,7 +410,7 @@ class InetUtilsTest {
             verify(highIfc, Mockito.never()).getInetAddresses();
         }
     }
-
+    
     @Test
     void testFindFirstNonLoopbackAddressReturnsIpv6WhenPreferred() throws Exception {
         boolean original = setPreferIpv6(true);
@@ -418,14 +418,14 @@ class InetUtilsTest {
             Inet6Address inet6 = mock(Inet6Address.class);
             when(inet6.isLoopbackAddress()).thenReturn(false);
             when(inet6.getHostAddress()).thenReturn("fe80::1");
-
+            
             NetworkInterface ifc = mock(NetworkInterface.class);
             when(ifc.getIndex()).thenReturn(1);
             when(ifc.isUp()).thenReturn(true);
             when(ifc.getDisplayName()).thenReturn("eth0");
             when(ifc.getInetAddresses())
                 .thenReturn(Collections.enumeration(Collections.singletonList(inet6)));
-
+            
             try (MockedStatic<NetworkInterface> nicMocked =
                 Mockito.mockStatic(NetworkInterface.class)) {
                 nicMocked.when(NetworkInterface::getNetworkInterfaces)
@@ -437,7 +437,7 @@ class InetUtilsTest {
             setPreferIpv6(original);
         }
     }
-
+    
     private static boolean setPreferIpv6(boolean value) throws Exception {
         Field theUnsafeField = Class.forName("sun.misc.Unsafe").getDeclaredField("theUnsafe");
         theUnsafeField.setAccessible(true);

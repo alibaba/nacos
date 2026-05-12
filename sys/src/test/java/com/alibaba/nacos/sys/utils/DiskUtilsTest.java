@@ -537,32 +537,32 @@ class DiskUtilsTest {
         Files.write(f.toPath(), second.getBytes(StandardCharsets.UTF_8));
         assertEquals(second, DiskUtils.readFile(f));
     }
-
+    
     @Test
     void testConstructor() {
         new DiskUtils();
     }
-
+    
     @Test
     void testWriteFileWithNoSpaceCnTriggersExit() throws Exception {
         verifyDiskFullExit("设备上没有空间");
     }
-
+    
     @Test
     void testWriteFileWithNoSpaceEnTriggersExit() throws Exception {
         verifyDiskFullExit("No space left on device");
     }
-
+    
     @Test
     void testWriteFileWithDiskQuotaCnTriggersExit() throws Exception {
         verifyDiskFullExit("xx超出磁盘限额xx");
     }
-
+    
     @Test
     void testWriteFileWithDiskQuotaEnTriggersExit() throws Exception {
         verifyDiskFullExit("xx Disk quota exceeded xx");
     }
-
+    
     @Test
     void testWriteFileWithIoExceptionWithoutMessage() throws Exception {
         File targetFile = DiskUtils.createTmpFile(UUID.randomUUID().toString(), ".ut");
@@ -573,10 +573,10 @@ class DiskUtilsTest {
                 when(mock.getChannel()).thenReturn(channel);
                 when(channel.write(any(ByteBuffer.class))).thenThrow(new IOException());
             })) {
-            assertFalse(DiskUtils.writeFile(targetFile, new byte[]{1}, false));
+            assertFalse(DiskUtils.writeFile(targetFile, new byte[] {1}, false));
         }
     }
-
+    
     private void verifyDiskFullExit(String ioMessage) throws Exception {
         File targetFile = DiskUtils.createTmpFile(UUID.randomUUID().toString(), ".ut");
         targetFile.deleteOnExit();
@@ -590,11 +590,11 @@ class DiskUtilsTest {
             });
             MockedStatic<Runtime> runtimeMocked = Mockito.mockStatic(Runtime.class)) {
             runtimeMocked.when(Runtime::getRuntime).thenReturn(runtimeMock);
-            assertFalse(DiskUtils.writeFile(targetFile, new byte[]{1}, false));
+            assertFalse(DiskUtils.writeFile(targetFile, new byte[] {1}, false));
             verify(runtimeMock).exit(0);
         }
     }
-
+    
     @Test
     void testOpenFileRethrowsIoExceptionAsRuntimeException() {
         try (MockedConstruction<File> ignored =
@@ -607,7 +607,7 @@ class DiskUtilsTest {
                 () -> DiskUtils.openFile("nacos-tmp", "openFile-ioexception"));
         }
     }
-
+    
     @Test
     void testDecompressSkipsIllegalEntryName() throws IOException {
         File zipFile = Files.createTempFile("nacos-sys-illegal-zip", ".zip").toFile();
@@ -628,7 +628,7 @@ class DiskUtilsTest {
         assertFalse(new File(outDir.getParentFile(), "illegal.txt").exists());
         assertTrue(new File(outDir, "safe.txt").exists());
     }
-
+    
     @Test
     void testLineIteratorRemoveDelegatesToTarget() throws Exception {
         org.apache.commons.io.LineIterator targetMock =

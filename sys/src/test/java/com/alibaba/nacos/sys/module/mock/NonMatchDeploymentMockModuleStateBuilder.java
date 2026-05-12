@@ -21,12 +21,12 @@ import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
 public class NonMatchDeploymentMockModuleStateBuilder implements ModuleStateBuilder {
-
+    
     @Override
     public ModuleState build() {
         return new ModuleState("non-match-deployment-mock");
     }
-
+    
     @Override
     public boolean isMatchDeployment(DeploymentType type) {
         return false;

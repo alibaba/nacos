@@ -126,7 +126,7 @@ class TimerContextTest {
         verify(consumer).accept(o);
         verify(logger).debug(anyString(), any(Object[].class));
     }
-
+    
     @Test
     void testConstructor() {
         new TimerContext();
