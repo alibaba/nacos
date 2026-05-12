@@ -33,16 +33,39 @@ jobs:
           java-version: 17
           distribution: 'zulu'
       - name: Set up Maven Daemon
+        shell: bash
         env:
           MVND_VERSION: '1.0.5'
+          MVND_BASE_URL: 'https://downloads.apache.org/maven/mvnd'
         run: |
-          MVND_BASE_URL="https://downloads.apache.org/maven/mvnd/${MVND_VERSION}"
-          MVND_ARCHIVE="maven-mvnd-${MVND_VERSION}-linux-amd64.zip"
-          curl -fsSL "${MVND_BASE_URL}/${MVND_ARCHIVE}" -o "$RUNNER_TEMP/mvnd.zip"
-          curl -fsSL "${MVND_BASE_URL}/${MVND_ARCHIVE}.sha512" -o "$RUNNER_TEMP/mvnd.zip.sha512"
-          echo "$(tr -d '\n' < "$RUNNER_TEMP/mvnd.zip.sha512")  $RUNNER_TEMP/mvnd.zip" | sha512sum -c -
+          case "${{ runner.os }}" in
+            Linux)   MVND_OS=linux ;;
+            macOS)   MVND_OS=darwin ;;
+            Windows) MVND_OS=windows ;;
+            *)       echo "Unsupported OS: ${{ runner.os }}"; exit 1 ;;
+          esac
+          case "${{ runner.arch }}" in
+            X64)   MVND_ARCH=amd64 ;;
+            ARM64) MVND_ARCH=aarch64 ;;
+            *)     echo "Unsupported arch: ${{ runner.arch }}"; exit 1 ;;
+          esac
+          MVND_DIR="maven-mvnd-${MVND_VERSION}-${MVND_OS}-${MVND_ARCH}"
+          MVND_URL="${MVND_BASE_URL}/${MVND_VERSION}/${MVND_DIR}.zip"
+          echo "Downloading mvnd ${MVND_VERSION} for ${MVND_OS}/${MVND_ARCH}..."
+          echo "Download URL: $MVND_URL"
+          curl -fsSL "$MVND_URL" -o "$RUNNER_TEMP/mvnd.zip"
+          echo "Checksum URL: ${MVND_URL}.sha256"
+          curl -fsSL "${MVND_URL}.sha256" -o "$RUNNER_TEMP/mvnd.zip.sha256"
+          echo "Verifying download..."
+          EXPECTED=$(cut -d' ' -f1 "$RUNNER_TEMP/mvnd.zip.sha256")
+          ACTUAL=$(sha256sum "$RUNNER_TEMP/mvnd.zip" | cut -d' ' -f1 | tr -d '\')
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "Checksum mismatch! Expected: $EXPECTED, got: $ACTUAL"
+            exit 1
+          fi
+          echo "Checksum verified."
           unzip -q "$RUNNER_TEMP/mvnd.zip" -d "$RUNNER_TEMP/mvnd-cache"
-          echo "$RUNNER_TEMP/mvnd-cache/maven-mvnd-${MVND_VERSION}-linux-amd64/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/mvnd-cache/${MVND_DIR}/bin" >> "$GITHUB_PATH"
       - name: "Print Maven Daemon version"
         run: mvnd -version
       - name: "Check with Maven Daemon"
