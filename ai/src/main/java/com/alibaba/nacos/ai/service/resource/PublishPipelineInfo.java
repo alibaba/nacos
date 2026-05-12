@@ -38,6 +38,13 @@ public class PublishPipelineInfo {
     
     private List<PipelineNodeResult> pipeline;
     
+    /**
+     * Indicates this pipeline info is from a previous review cycle (e.g. after reedit).
+     * When {@code true}, the pipeline result should not be used for force-publish eligibility
+     * on draft versions. Null or false means the pipeline info is current.
+     */
+    private Boolean stale;
+    
     public String getExecutionId() {
         return executionId;
     }
@@ -60,5 +67,13 @@ public class PublishPipelineInfo {
     
     public void setPipeline(List<PipelineNodeResult> pipeline) {
         this.pipeline = pipeline;
+    }
+    
+    public Boolean getStale() {
+        return stale;
+    }
+    
+    public void setStale(Boolean stale) {
+        this.stale = stale;
     }
 }
