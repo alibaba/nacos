@@ -9,7 +9,8 @@ on:
   pull_request:
     branches: [ develop, v2.x-develop ]
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   ci:
@@ -30,12 +31,57 @@ jobs:
         with:
           java-version: 17
           distribution: 'zulu'
-      - name: "Print maven version"
-        run: mvn -version
-      - name: "Check with Maven"
-        run: mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-      - name: "Build and Test with Maven"
-        run: mvn -B '-Prelease-nacos,!dev' clean install -Drat.skip=true -Dspotbugs.skip=true -DtrimStackTrace=false -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: Set up Maven Daemon
+        shell: bash
+        env:
+          MVND_VERSION: '1.0.5'
+          # MVND_BASE_URL: 'https://downloads.apache.org/maven/mvnd'
+          # MVND_BASE_URL: 'https://archive.apache.org/dist/maven/mvnd'
+          # GitHub releases do not have a .sha256 file.
+          MVND_BASE_URL: 'https://github.com/apache/maven-mvnd/releases/download'
+        run: |
+          case "${{ runner.os }}" in
+            Linux)   MVND_OS=linux ;;
+            macOS)   MVND_OS=darwin ;;
+            Windows) MVND_OS=windows ;;
+            *)       echo "Unsupported OS: ${{ runner.os }}"; exit 1 ;;
+          esac
+          case "${{ runner.arch }}" in
+            X64)   MVND_ARCH=amd64 ;;
+            ARM64) MVND_ARCH=aarch64 ;;
+            *)     echo "Unsupported arch: ${{ runner.arch }}"; exit 1 ;;
+          esac
+          MVND_DIR="maven-mvnd-${MVND_VERSION}-${MVND_OS}-${MVND_ARCH}"
+          MVND_URL="${MVND_BASE_URL}/${MVND_VERSION}/${MVND_DIR}.zip"
+          echo "Downloading mvnd ${MVND_VERSION} for ${MVND_OS}/${MVND_ARCH}..."
+          echo "Download URL: $MVND_URL"
+          curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "$MVND_URL" -o "$RUNNER_TEMP/mvnd.zip"
+          # echo "Checksum URL: ${MVND_URL}.sha256"
+          # curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "${MVND_URL}.sha256" -o "$RUNNER_TEMP/mvnd.zip.sha256"
+          case "${MVND_OS}-${MVND_ARCH}" in
+            linux-amd64)     EXPECTED='4a8d83bbf7757a1132c4116cfeea69aaa93b341b8253344ff42b33001f281830' ;;
+            linux-aarch64)   EXPECTED='5f68558d8950d4020eecd19e10fae40a4fcb4db00ebd359dad39b4bb52b9efa0' ;;
+            darwin-amd64)    EXPECTED='95e12908f24fd018ee41e5d31fe43a86340877e9b937651732e310b250411de3' ;;
+            darwin-aarch64)  EXPECTED='bd98f847478de20158242f6cce6d9bc6cb6e3e9ba7b932237f0122f52a8de5a3' ;;
+            windows-amd64)   EXPECTED='15cd4716bbb0ff96d2b66607262f6145a772dcfd10b24ab18c8338d1e1f4da8e' ;;
+            *)               echo "Unsupported combination: ${MVND_OS}-${MVND_ARCH}"; exit 1 ;;
+          esac
+          echo "Verifying download..."
+          # EXPECTED=$(cut -d' ' -f1 "$RUNNER_TEMP/mvnd.zip.sha256")
+          ACTUAL=$(sha256sum "$RUNNER_TEMP/mvnd.zip" | cut -d' ' -f1 | tr -d '\\')
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "Checksum mismatch! Expected: $EXPECTED, got: $ACTUAL"
+            exit 1
+          fi
+          echo "Checksum verified."
+          unzip -q "$RUNNER_TEMP/mvnd.zip" -d "$RUNNER_TEMP/mvnd-cache"
+          echo "$RUNNER_TEMP/mvnd-cache/${MVND_DIR}/bin" >> "$GITHUB_PATH"
+      - name: "Print Maven Daemon version"
+        run: mvnd -version
+      - name: "Check with Maven Daemon"
+        run: mvnd -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: "Build and Test with Maven Daemon"
+        run: mvnd -B '-Prelease-nacos,!dev' clean install -Drat.skip=true -Dspotbugs.skip=true -DtrimStackTrace=false -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v5
         with:
