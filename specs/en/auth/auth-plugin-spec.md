@@ -27,7 +27,10 @@ IdentityContext + Resource + Action -> allowed or rejected
 ```
 
 The auth plugin does not own Nacos resource modeling. It consumes resources
-created by Nacos controllers, protocol filters, and resource parsers.
+created by Nacos controllers, protocol filters, and resource parsers. The
+shared permission model is defined by the
+[Auth And Permission Spec](auth-permission-spec.md), and common plugin lifecycle
+rules are defined by the [Nacos Plugin Spec](../plugin/plugin-spec.md).
 
 ## Server SPI
 
@@ -105,8 +108,10 @@ If an auth plugin exposes HTTP APIs, those APIs must:
 - Add `@Secured` to protected management endpoints.
 - Document any intentionally public endpoint, such as login or bootstrap.
 
-The default Nacos auth plugin is the reference implementation for the current
-`/v3/auth/user`, `/v3/auth/role`, and `/v3/auth/permission` surface.
+The [default Nacos auth plugin](default-auth-plugin-spec.md) is the reference
+implementation for the current `/v3/auth/user`, `/v3/auth/role`, and
+`/v3/auth/permission` surface. HTTP authorization rules for these endpoints are
+defined by the [HTTP Authorization Spec](../http-api/authorization-spec.md).
 
 ## Relationship With Visibility
 
@@ -114,9 +119,9 @@ Auth answers who the caller is and whether the caller has permission for a
 resource/action pair. Visibility answers which resources should be visible in a
 single-resource operation or range query.
 
-Visibility plugins may delegate explicit permission checks back to the selected
-auth plugin. Auth plugins must therefore keep permission evaluation stable for
-explicit resources as well as domain resources.
+[Visibility plugins](visibility-plugin-spec.md) may delegate explicit permission
+checks back to the selected auth plugin. Auth plugins must therefore keep
+permission evaluation stable for explicit resources as well as domain resources.
 
 ## Safety Requirements
 
@@ -124,4 +129,3 @@ The built-in Nacos auth plugin is designed for trusted internal networks and is
 not a complete strong-auth solution for hostile public networks. Deployments
 that require stronger authentication should provide or select an auth plugin
 that matches their security requirements.
-

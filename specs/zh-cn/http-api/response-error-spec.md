@@ -16,6 +16,10 @@
 
 # HTTP API 响应与错误规范
 
+本文档细化 [HTTP API 规范](api-spec.md)中的响应契约。鉴权相关失败由
+[HTTP 鉴权规范](authorization-spec.md)定义，当前端点覆盖范围记录在
+[V3 API 范围](v3-api-surface.md)中。
+
 ## 1. JSON 响应包装
 
 V3 JSON 响应默认使用 `com.alibaba.nacos.api.model.v2.Result<T>`：
@@ -62,8 +66,9 @@ Nacos 自有的 v3 HTTP API 应收敛到 `@NacosApi` 和
 `NacosApiExceptionHandler`，以获得统一异常处理。早于 v3 API 模型存在的
 模块级 ExceptionHandler，不应为 v3 API 定义不同的响应形态。
 
-插件性质的模块如果有意维护独立 API 面，可以保留自己的 ExceptionHandler。
-`PrometheusApiExceptionHandler` 是这类插件式 ExceptionHandler 的例子。
+插件性质的模块如果有意维护独立 API 面，可以保留自己的 ExceptionHandler。通用扩展边界由
+[Nacos 插件化规范](../plugin/plugin-spec.md)定义。`PrometheusApiExceptionHandler` 是
+这类插件式 ExceptionHandler 的例子。
 
 已知待处理项：
 

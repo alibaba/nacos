@@ -26,12 +26,16 @@
 可见性对于 AI 注册中心资源尤其重要，因为用户可能创建仅 owner 可见、读者公开可见，或通过
 显式授权可见的资源。
 
+可见性补充[鉴权与权限规范](auth-permission-spec.md)，并遵守
+[Nacos 插件化规范](../plugin/plugin-spec.md)中的通用生命周期规则。它可以与
+[鉴权插件](auth-plugin-spec.md)协作，但不能替代鉴权插件。
+
 可见性必须在数据查询阶段生效。列表和搜索 API 不得先对原始候选集合分页，再只在内存中过滤
 当前页，因为这会产生错误的 `totalCount`、空页和不可控延迟。
 
 ## 资源模型
 
-具备可见性语义的资源必须提供：
+具备可见性语义的资源必须遵守 [Nacos 资源模型](../design/resource-model-spec.md)，并提供：
 
 | 字段 | 含义 |
 |------|------|
@@ -129,6 +133,7 @@ nacos.plugin.visibility.{serviceName}.*
 ```
 
 这保留了职责分离：可见性决定候选资源，鉴权仍然是权限判断来源。
+[默认鉴权插件实现](default-auth-plugin-spec.md)提供当前内置的可见性实现。
 
 ## API 要求
 

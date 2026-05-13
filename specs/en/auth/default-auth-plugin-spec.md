@@ -21,7 +21,10 @@
 The default auth implementation package provides the `nacos` and `ldap` auth
 plugins. The `nacos` plugin provides username/password login, token
 authentication, RBAC permission management, and the default visibility
-integration used by AI resources.
+integration used by AI resources. It implements the
+[Auth Plugin Spec](auth-plugin-spec.md), the shared
+[Auth And Permission Spec](auth-permission-spec.md), and the
+[Visibility Plugin Spec](visibility-plugin-spec.md).
 
 The default implementation is intended to reduce accidental misuse in trusted
 internal networks. It is not a full strong-auth solution for hostile public
@@ -137,7 +140,9 @@ such as `console/users`, `console/roles`, `console/permissions`, and
 
 Login is intentionally public. Administrator bootstrap is intentionally exposed
 only for the no-admin initialization state and must be rejected after a global
-administrator exists.
+administrator exists. These APIs are part of the
+[V3 API Surface](../http-api/v3-api-surface.md) and must follow the
+[HTTP Authorization Spec](../http-api/authorization-spec.md).
 
 ## Default Visibility Implementation
 

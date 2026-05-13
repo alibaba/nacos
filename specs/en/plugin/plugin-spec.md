@@ -42,21 +42,25 @@ synchronization, persisted plugin state, and user-facing diagnostics.
 
 The current plugin type registry is defined by `PluginType`.
 
-| Type | Purpose |
-|------|---------|
-| `auth` | Authentication and authorization implementation. |
-| `visibility` | Resource visibility and query visibility advisory. |
-| `datasource-dialect` | Database dialect and persistence adaptation. |
-| `config-change` | Configuration change extension. |
-| `encryption` | Encryption and decryption extension. |
-| `trace` | Trace and observability extension. |
-| `environment` | Environment adaptation extension. |
-| `control` | Traffic and control extension. |
-| `ai-pipeline` | AI registry pipeline extension. |
-| `ai-storage` | AI registry storage extension. |
+| Type | Purpose | Contract |
+|------|---------|----------|
+| `auth` | Authentication and authorization implementation. | [Auth Plugin Spec](../auth/auth-plugin-spec.md) |
+| `visibility` | Resource visibility and query visibility advisory. | [Visibility Plugin Spec](../auth/visibility-plugin-spec.md) |
+| `datasource-dialect` | Database dialect and persistence adaptation. | [Data Source Dialect Plugin Spec](datasource-dialect-plugin-spec.md) |
+| `config-change` | Configuration change extension. | [Config Change Plugin Spec](config-change-plugin-spec.md) |
+| `encryption` | Encryption and decryption extension. | [Config Encryption Plugin Spec](config-encryption-plugin-spec.md) |
+| `trace` | Trace and observability extension. | [Trace Plugin Spec](trace-plugin-spec.md) |
+| `environment` | Environment adaptation extension. | [Environment Plugin Spec](environment-plugin-spec.md) |
+| `control` | Traffic and control extension. | [Control Plugin Spec](control-plugin-spec.md) |
+| `ai-pipeline` | AI registry pipeline extension. | [AI Publish Pipeline Plugin Spec](ai-pipeline-plugin-spec.md) |
+| `ai-storage` | AI registry storage extension. | [AI Storage Plugin Spec](ai-storage-plugin-spec.md) |
 
 Domain-specific plugin contracts are defined by their own specs. This document
 defines the common runtime contract shared by all plugin categories.
+
+[Addressing extension](addressing-plugin-spec.md) is documented with plugin
+specs for continuity with the public plugin documentation, but current server
+code handles it through `MemberLookup` and does not register it in `PluginType`.
 
 ## Execution Modes
 
@@ -149,17 +153,20 @@ The core plugin admin API is:
 | `PUT` | `/v3/admin/core/plugin/status` | Enable or disable a plugin. |
 | `PUT` | `/v3/admin/core/plugin/config` | Update plugin configuration. |
 
-These endpoints are Admin APIs and require console-scoped authorization. Plugin
-management must use the standard v3 response and error model.
+These endpoints are Admin APIs and require console-scoped authorization as
+defined by the [HTTP Authorization Spec](../http-api/authorization-spec.md).
+Plugin management must use the standard v3
+[response and error model](../http-api/response-error-spec.md).
 
 ## Design Requirements
 
 Plugin implementations must follow these rules:
 
-- Use existing Nacos resource identifiers and domain models instead of inventing
-  an incompatible model for the same resource.
-- Preserve v3 API response, error, and authorization conventions for any
-  plugin-provided HTTP APIs.
+- Use existing Nacos [resource identifiers](../design/resource-model-spec.md)
+  and domain models instead of inventing an incompatible model for the same
+  resource.
+- Preserve v3 [HTTP API](../http-api/api-spec.md) response, error, and
+  authorization conventions for any plugin-provided HTTP APIs.
 - Expose only plugin-owned configuration through `PluginConfigSpec`.
 - Keep cluster-wide state changes synchronized unless the caller explicitly
   requests a local-only operation for diagnosis or emergency handling.

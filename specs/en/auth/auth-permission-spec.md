@@ -20,7 +20,10 @@
 
 This document defines the Nacos authentication and permission model shared by
 HTTP APIs, gRPC APIs, plugin APIs, and server-internal calls. Transport-specific
-details are defined by the HTTP and gRPC API specs.
+details are defined by the [HTTP Authorization Spec](../http-api/authorization-spec.md)
+and the [gRPC API Spec](../grpc-api/api-spec.md). Plugin contracts are defined
+by the [Auth Plugin Spec](auth-plugin-spec.md) and
+[Visibility Plugin Spec](visibility-plugin-spec.md).
 
 Nacos authorization is modeled as:
 
@@ -38,8 +41,8 @@ Nacos separates request-level authorization from data-level visibility.
 
 | Layer | Main question | Typical SPI | Scope |
 |-------|---------------|-------------|-------|
-| Auth plugin | Can this caller invoke this API for the parsed resource/action? | `AuthPluginService` | Request admission and permission decision. |
-| Visibility plugin | Can this caller see or modify this concrete resource, or which resources should a range query return? | `VisibilityService` | Resource instance visibility and query planning. |
+| [Auth plugin](auth-plugin-spec.md) | Can this caller invoke this API for the parsed resource/action? | `AuthPluginService` | Request admission and permission decision. |
+| [Visibility plugin](visibility-plugin-spec.md) | Can this caller see or modify this concrete resource, or which resources should a range query return? | `VisibilityService` | Resource instance visibility and query planning. |
 
 The two layers are orthogonal:
 
@@ -151,8 +154,8 @@ value before normal request handling continues.
 
 ## Resource Permission Names
 
-Nacos permissions are evaluated against resources derived from the resource
-model:
+Nacos permissions are evaluated against resources derived from the
+[resource model](../design/resource-model-spec.md):
 
 ```text
 NamespaceId -> Group or resourceType -> resourceName
@@ -186,10 +189,11 @@ The selected auth plugin is named by `nacos.core.auth.system.type`.
 
 ## Plugin APIs
 
-Auth-related HTTP APIs under `/v3/auth/*` are plugin-provided APIs. The default
-Nacos auth plugin provides user, role, permission, and login endpoints. These
-endpoints are not Open, Admin, or Console APIs by path, but they must still
-follow the Nacos v3 API response, error, and authorization conventions.
+Auth-related HTTP APIs under `/v3/auth/*` are plugin-provided APIs. The
+[default Nacos auth plugin](default-auth-plugin-spec.md) provides user, role,
+permission, and login endpoints. These endpoints are not Open, Admin, or Console
+APIs by path, but they must still follow the Nacos v3 API response, error, and
+authorization conventions.
 
 ## Public Endpoints
 

@@ -19,7 +19,9 @@
 ## 范围
 
 本文档定义 Nacos HTTP API、gRPC API、插件 API 和服务端内部调用共享的认证与权限模型。
-传输协议相关细节由 HTTP API 和 gRPC API 规范定义。
+传输协议相关细节由 [HTTP 鉴权规范](../http-api/authorization-spec.md) 和
+[gRPC API 规范](../grpc-api/api-spec.md) 定义。插件契约由
+[鉴权插件规范](auth-plugin-spec.md) 和 [可见性插件规范](visibility-plugin-spec.md) 定义。
 
 Nacos 授权模型可以表示为：
 
@@ -36,8 +38,8 @@ Nacos 将请求级授权和数据级可见性分开处理。
 
 | 层次 | 主要问题 | 典型 SPI | 范围 |
 |------|----------|----------|------|
-| 鉴权插件 | 该调用方是否可以针对解析出的资源/动作调用这个 API？ | `AuthPluginService` | 请求准入与权限判断。 |
-| 可见性插件 | 该调用方是否可以看见或修改这个具体资源，或范围查询应该返回哪些资源？ | `VisibilityService` | 资源实例可见性与查询计划。 |
+| [鉴权插件](auth-plugin-spec.md) | 该调用方是否可以针对解析出的资源/动作调用这个 API？ | `AuthPluginService` | 请求准入与权限判断。 |
+| [可见性插件](visibility-plugin-spec.md) | 该调用方是否可以看见或修改这个具体资源，或范围查询应该返回哪些资源？ | `VisibilityService` | 资源实例可见性与查询计划。 |
 
 这两层是正交关系：
 
@@ -135,7 +137,7 @@ Nacos 将请求级授权和数据级可见性分开处理。
 
 ## 资源权限名
 
-Nacos 权限基于资源模型派生的资源进行评估：
+Nacos 权限基于[资源模型](../design/resource-model-spec.md)派生的资源进行评估：
 
 ```text
 NamespaceId -> Group 或 resourceType -> resourceName
@@ -168,9 +170,9 @@ NamespaceId -> Group 或 resourceType -> resourceName
 
 ## 插件 API
 
-`/v3/auth/*` 下的鉴权相关 HTTP API 属于插件提供的 API。默认 Nacos 鉴权插件提供用户、
-角色、权限和登录端点。这些端点按路径不归属于 Open、Admin 或 Console API，但仍必须遵守
-Nacos v3 API 的响应、错误和鉴权约定。
+`/v3/auth/*` 下的鉴权相关 HTTP API 属于插件提供的 API。[默认 Nacos 鉴权插件](default-auth-plugin-spec.md)
+提供用户、角色、权限和登录端点。这些端点按路径不归属于 Open、Admin 或 Console API，
+但仍必须遵守 Nacos v3 API 的响应、错误和鉴权约定。
 
 ## 公开端点
 

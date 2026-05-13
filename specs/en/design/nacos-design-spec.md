@@ -16,9 +16,11 @@
 
 # Nacos Design Spec
 
-This document defines the top-level design intent for Nacos. Lower-level specs
-for APIs, SDKs, resources, modules, plugins, and compatibility should follow
-this design intent.
+This document defines the top-level design intent for Nacos. The
+[Resource Model Spec](./resource-model-spec.md) refines resource identity, while
+the [HTTP API Spec](../http-api/api-spec.md),
+[gRPC API Spec](../grpc-api/api-spec.md), and [SDK Spec](../sdk/sdk-spec.md)
+refine external interface rules.
 
 ## 1. Positioning
 
@@ -229,10 +231,3 @@ Every new Nacos feature should define:
 
 If a feature cannot answer these questions, it is not ready to become a stable
 Nacos contract.
-
-## 9. Related Specs
-
-- [Resource Model Spec](./resource-model-spec.md)
-- [HTTP API Spec](../http-api/api-spec.md)
-- [gRPC API Spec](../grpc-api/api-spec.md)
-- [SDK Spec](../sdk/sdk-spec.md)

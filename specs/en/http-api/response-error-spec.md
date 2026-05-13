@@ -16,6 +16,11 @@
 
 # HTTP API Response And Error Spec
 
+This document refines the response contract from the
+[HTTP API Spec](api-spec.md). Authorization-related failures are defined with
+the [HTTP Authorization Spec](authorization-spec.md), and current endpoint
+coverage is recorded in the [V3 API Surface](v3-api-surface.md).
+
 ## 1. JSON Response Envelope
 
 The default v3 JSON response envelope is
@@ -66,8 +71,9 @@ handlers that predate the v3 API model should not define a different response
 shape for v3 APIs.
 
 Plugin-style modules may keep their own exception handler when they intentionally
-own a separate API surface. `PrometheusApiExceptionHandler` is an example of this
-kind of plugin-style exception handler.
+own a separate API surface. The common extension boundary is defined by the
+[Nacos Plugin Spec](../plugin/plugin-spec.md). `PrometheusApiExceptionHandler`
+is an example of this kind of plugin-style exception handler.
 
 Known convergence items:
 

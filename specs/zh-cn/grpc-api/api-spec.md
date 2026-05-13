@@ -18,7 +18,9 @@
 
 本文档定义 Nacos gRPC API 模型，用于 Java SDK、Nacos Server 节点和各模块
 远程处理器。与 HTTP API 不同，Nacos gRPC 只有很小的固定 proto 传输面，
-业务 API 由 Java payload 类型表达。
+业务 API 由 Java payload 类型表达。Payload 身份必须与
+[资源模型规范](../design/resource-model-spec.md)对齐，公开客户端行为必须与
+[SDK 规范](../sdk/sdk-spec.md)对齐。
 
 ## 1. 设计模型
 
@@ -124,7 +126,8 @@ Java 客户端可通过 `nacos.server.grpc.port.offset` 覆盖端口偏移。服
 
 ## 6. 鉴权
 
-gRPC 鉴权由 `RemoteRequestAuthFilter` 执行。
+gRPC 鉴权由 `RemoteRequestAuthFilter` 执行。共享身份、资源和动作语义由
+[鉴权与权限规范](../auth/auth-permission-spec.md)定义。
 
 需要身份、权限或服务端身份校验的处理器，应在 `handle(...)` 上添加
 `@Secured`。该 filter 会：
@@ -216,4 +219,5 @@ Skill ZIP 下载和 AgentSpec 组装属于 Java SDK interface 能力，但当前
 4. 面向 SDK 或受保护的 inner 操作应添加 `@Secured`。
 5. cluster-only payload 应添加 `@InvokeSource`。
 6. 请求字段保持显式且 JSON 兼容。
-7. 当操作暴露为公开 SDK interface 时，同步更新本规范和 SDK interface 规范。
+7. 当操作暴露为公开 SDK interface 时，同步更新本规范和
+   [SDK interface 规范](../sdk/sdk-spec.md)。

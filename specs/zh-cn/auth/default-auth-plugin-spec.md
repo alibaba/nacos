@@ -19,7 +19,9 @@
 ## 范围
 
 默认鉴权实现包提供 `nacos` 和 `ldap` 两个鉴权插件。`nacos` 插件提供用户名/密码登录、
-token 认证、RBAC 权限管理，以及 AI 资源使用的默认可见性集成。
+token 认证、RBAC 权限管理，以及 AI 资源使用的默认可见性集成。它实现
+[鉴权插件规范](auth-plugin-spec.md)、共享的[鉴权与权限规范](auth-permission-spec.md)
+和[可见性插件规范](visibility-plugin-spec.md)。
 
 默认实现用于在可信内网环境中降低误用风险。它不是面向恶意公网环境的完整强鉴权方案。
 如果需要暴露到公网，应使用外部安全边界，或选择更强的鉴权插件。
@@ -125,7 +127,8 @@ token 密钥和服务端身份值必须由部署环境独立配置。使用默�
 `console/roles`、`console/permissions` 和 `console/user/password`。
 
 登录端点是有意公开的。管理员初始化端点只在无管理员初始化状态下有意暴露；一旦全局管理员
-已经存在，必须拒绝该端点。
+已经存在，必须拒绝该端点。这些 API 属于 [V3 API 范围](../http-api/v3-api-surface.md)，
+并必须遵守 [HTTP 鉴权规范](../http-api/authorization-spec.md)。
 
 ## 默认可见性实现
 

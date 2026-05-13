@@ -29,13 +29,19 @@ Visibility is especially important for AI registry resources, where users may
 create resources that are private to an owner, public to readers, or visible
 through explicit authorization.
 
+Visibility complements the [Auth And Permission Spec](auth-permission-spec.md)
+and follows the common lifecycle rules in the
+[Nacos Plugin Spec](../plugin/plugin-spec.md). It can cooperate with, but does
+not replace, an [auth plugin](auth-plugin-spec.md).
+
 Visibility must be applied at data-query time. List and search APIs must not
 page over the raw candidate set and then filter the page in memory, because that
 produces incorrect `totalCount`, empty pages, and unpredictable latency.
 
 ## Resource Model
 
-A visibility-aware resource must provide:
+A visibility-aware resource must follow the
+[Nacos resource model](../design/resource-model-spec.md) and provide:
 
 | Field | Meaning |
 |-------|---------|
@@ -139,7 +145,9 @@ string and `SignType.SPECIFIED`; the default implementation uses:
 ```
 
 This preserves the separation of concerns: visibility decides candidate
-resources, while auth remains the source of permission decisions.
+resources, while auth remains the source of permission decisions. The
+[default auth plugin implementation](default-auth-plugin-spec.md) provides the
+current built-in visibility implementation.
 
 ## API Requirements
 

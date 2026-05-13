@@ -26,7 +26,8 @@ IdentityContext + Resource + Action -> 允许或拒绝
 ```
 
 鉴权插件不拥有 Nacos 资源模型。它消费由 Nacos Controller、协议过滤器和资源解析器创建的
-资源。
+资源。共享权限模型由 [鉴权与权限规范](auth-permission-spec.md) 定义，通用插件生命周期
+规则由 [Nacos 插件化规范](../plugin/plugin-spec.md) 定义。
 
 ## 服务端 SPI
 
@@ -96,19 +97,19 @@ nacos.core.auth.system.type=nacos
 - 为受保护的管理端点添加 `@Secured`。
 - 记录登录、初始化等有意公开的端点。
 
-默认 Nacos 鉴权插件是当前 `/v3/auth/user`、`/v3/auth/role` 和
-`/v3/auth/permission` API 的参考实现。
+[默认 Nacos 鉴权插件](default-auth-plugin-spec.md)是当前 `/v3/auth/user`、
+`/v3/auth/role` 和 `/v3/auth/permission` API 的参考实现。这些端点的 HTTP 鉴权规则由
+[HTTP 鉴权规范](../http-api/authorization-spec.md) 定义。
 
 ## 与可见性的关系
 
 鉴权回答调用方是谁，以及调用方是否拥有某个资源/动作的权限。可见性回答单资源操作或范围
 查询中哪些资源应对调用方可见。
 
-可见性插件可以将显式权限检查委托回当前选中的鉴权插件。因此鉴权插件必须让显式资源和领域
-资源的权限判断都保持稳定。
+[可见性插件](visibility-plugin-spec.md)可以将显式权限检查委托回当前选中的鉴权插件。
+因此鉴权插件必须让显式资源和领域资源的权限判断都保持稳定。
 
 ## 安全要求
 
 内置 Nacos 鉴权插件面向可信内网环境设计，并不是针对恶意公网环境的完整强鉴权方案。需要
 更强认证能力的部署，应提供或选择符合自身安全要求的鉴权插件。
-
