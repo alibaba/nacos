@@ -37,7 +37,7 @@ public class ReviewedStatusConfig extends AbstractDynamicConfig {
     
     private static final String KEY_ENABLED = "nacos.plugin.ai-pipeline.reviewed-status.enabled";
     
-    private static final boolean DEFAULT_ENABLED = false;
+    private static final boolean DEFAULT_ENABLED = true;
     
     private static final ReviewedStatusConfig INSTANCE = new ReviewedStatusConfig();
     
