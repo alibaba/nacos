@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -255,6 +256,78 @@ class SkillZipParserTest {
         assertEquals("", skill.getResource().get(licenseKey).getType() == null ? ""
             : skill.getResource().get(licenseKey).getType());
         assertTrue(skill.getResource().get(licenseKey).getContent().contains("MIT License"));
+    }
+    
+    @Test
+    void testParseMultipleSkillsFromZipWithSingleSkill() throws Exception {
+        // Given: zip with single SKILL.md (should delegate to single-skill parsing)
+        byte[] zipBytes = createValidSkillZip();
+        
+        // When
+        List<Skill> skills = SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
+        // Then
+        assertNotNull(skills);
+        assertEquals(1, skills.size());
+        assertEquals("test-skill", skills.get(0).getName());
+    }
+    
+    @Test
+    void testParseMultipleSkillsFromZipWithMultipleSkills() throws Exception {
+        // Given: zip with two skill subdirectories
+        byte[] zipBytes = createMultiSkillZip();
+        
+        // When
+        List<Skill> skills = SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
+        // Then
+        assertNotNull(skills);
+        assertEquals(2, skills.size());
+        assertTrue(skills.stream().anyMatch(s -> "skill-alpha".equals(s.getName())));
+        assertTrue(skills.stream().anyMatch(s -> "skill-beta".equals(s.getName())));
+        // Verify namespaceId is set
+        skills.forEach(s -> assertEquals("test-namespace", s.getNamespaceId()));
+    }
+    
+    @Test
+    void testParseMultipleSkillsFromZipWithResources() throws Exception {
+        // Given: multi-skill zip where each skill has its own resources
+        byte[] zipBytes = createMultiSkillZipWithResources();
+        
+        // When
+        List<Skill> skills = SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
+        // Then
+        assertNotNull(skills);
+        assertEquals(2, skills.size());
+        Skill alpha = skills.stream().filter(s -> "skill-alpha".equals(s.getName())).findFirst().orElse(null);
+        Skill beta = skills.stream().filter(s -> "skill-beta".equals(s.getName())).findFirst().orElse(null);
+        assertNotNull(alpha);
+        assertNotNull(beta);
+        // alpha has a script resource
+        assertNotNull(alpha.getResource());
+        assertTrue(alpha.getResource().size() > 0);
+        // beta has a config resource
+        assertNotNull(beta.getResource());
+        assertTrue(beta.getResource().size() > 0);
+    }
+    
+    @Test
+    void testParseMultipleSkillsFromZipWithNoSkillMd() throws IOException {
+        // Given: zip with no SKILL.md at all
+        byte[] zipBytes = createZipWithoutSkillMd();
+        
+        // When & Then
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace"));
+        assertTrue(exception.getMessage().contains("SKILL.md file not found"));
+    }
+    
+    @Test
+    void testParseMultipleSkillsFromZipWithEmptyBytes() {
+        // When & Then
+        assertThrows(NacosApiException.class,
+                () -> SkillZipParser.parseMultipleSkillsFromZip(new byte[0], "test-namespace"));
     }
     
     /**
@@ -585,6 +658,66 @@ class SkillZipParserTest {
             System.arraycopy(bom, 0, withBom, 0, bom.length);
             System.arraycopy(content, 0, withBom, bom.length, content.length);
             zos.write(withBom);
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+    
+    /**
+     * Create a multi-skill zip with two skill subdirectories, each having its own SKILL.md.
+     */
+    private byte[] createMultiSkillZip() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            // Skill alpha
+            ZipEntry entry = new ZipEntry("skill-alpha/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMdAlpha = "---\n" + "name: skill-alpha\n" + "description: Alpha skill\n" + "---\n\n"
+                    + "Alpha instructions";
+            zos.write(skillMdAlpha.getBytes());
+            zos.closeEntry();
+            
+            // Skill beta
+            entry = new ZipEntry("skill-beta/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMdBeta = "---\n" + "name: skill-beta\n" + "description: Beta skill\n" + "---\n\n"
+                    + "Beta instructions";
+            zos.write(skillMdBeta.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+    
+    /**
+     * Create a multi-skill zip where each skill has its own resource files.
+     */
+    private byte[] createMultiSkillZipWithResources() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            // Skill alpha with script resource
+            ZipEntry entry = new ZipEntry("skill-alpha/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMdAlpha = "---\n" + "name: skill-alpha\n" + "description: Alpha skill\n" + "---\n\n"
+                    + "Alpha instructions";
+            zos.write(skillMdAlpha.getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("skill-alpha/scripts/run.sh");
+            zos.putNextEntry(entry);
+            zos.write("#!/bin/bash\necho 'alpha'".getBytes());
+            zos.closeEntry();
+            
+            // Skill beta with config resource
+            entry = new ZipEntry("skill-beta/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMdBeta = "---\n" + "name: skill-beta\n" + "description: Beta skill\n" + "---\n\n"
+                    + "Beta instructions";
+            zos.write(skillMdBeta.getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("skill-beta/configs/settings.yaml");
+            zos.putNextEntry(entry);
+            zos.write("key: value".getBytes());
             zos.closeEntry();
         }
         return baos.toByteArray();

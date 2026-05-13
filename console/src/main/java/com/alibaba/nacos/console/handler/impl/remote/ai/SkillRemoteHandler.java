@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -117,6 +118,12 @@ public class SkillRemoteHandler implements SkillHandler {
             zipBytes, overwrite);
     }
     
+    @Override
+    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
+        return clientHolder.getAiMaintainerService().skill().batchUploadSkillsFromZip(namespaceId, zipBytes, overwrite);
+    }
+
     @Override
     public String createDraft(SkillDraftCreateForm form) throws NacosException {
         return clientHolder.getAiMaintainerService().skill().createDraft(form.getNamespaceId(),

@@ -237,6 +237,131 @@ public class SkillZipParser {
     }
     
     /**
+     * Parse multiple skills from a single zip archive. Supports zip files containing multiple skill subdirectories,
+     * each with its own SKILL.md. If only one SKILL.md is found, returns a list with a single element.
+     *
+     * <p>Expected zip structure for multi-skill:
+     * <pre>
+     * skills.zip
+     * ├── skill-a/
+     * │   ├── SKILL.md
+     * │   └── resource.txt
+     * ├── skill-b/
+     * │   ├── SKILL.md
+     * │   └── template/prompt.md
+     * </pre>
+     *
+     * @param zipBytes zip file bytes
+     * @param namespaceId namespace ID
+     * @return list of parsed skills (at least one element)
+     * @throws NacosApiException if parsing failed, zip exceeds size limit, or no SKILL.md found
+     */
+    public static List<Skill> parseMultipleSkillsFromZip(byte[] zipBytes, String namespaceId) throws NacosApiException {
+        if (zipBytes == null || zipBytes.length == 0) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Skill zip file is empty");
+        }
+        if (zipBytes.length > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Skill zip size must not exceed " + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024) + "MB, current: "
+                            + (zipBytes.length / 1024 / 1024) + "MB");
+        }
+        try {
+            List<ZipEntryData> entries = unzipToEntries(zipBytes);
+
+            // Find all SKILL.md entries and group by their parent directory
+            List<ZipEntryData> skillMdEntries = new ArrayList<>();
+            for (ZipEntryData entry : entries) {
+                String name = entry.name;
+                if (isMacOsMetadataFile(name)) {
+                    continue;
+                }
+                boolean isSkillMdFile = SKILL_MD_FILE.equals(name);
+                boolean isSkillMdInSubdir = name.endsWith(SLASH + SKILL_MD_FILE);
+                if (isSkillMdFile || isSkillMdInSubdir) {
+                    skillMdEntries.add(entry);
+                }
+            }
+
+            if (skillMdEntries.isEmpty()) {
+                throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "SKILL.md file not found in zip");
+            }
+
+            // If only one SKILL.md, delegate to single-skill parsing (preserves existing behavior)
+            if (skillMdEntries.size() == 1) {
+                List<Skill> result = new ArrayList<>(1);
+                result.add(parseSkillFromZip(zipBytes, namespaceId));
+                return result;
+            }
+
+            // Multiple SKILL.md files: parse each skill with its scoped entries
+            List<Skill> skills = new ArrayList<>(skillMdEntries.size());
+            for (ZipEntryData skillMdEntry : skillMdEntries) {
+                String skillMdPath = skillMdEntry.name;
+                String prefix = getSkillPrefix(skillMdPath);
+
+                String skillMdContent = stripBom(new String(skillMdEntry.data, StandardCharsets.UTF_8));
+                if (StringUtils.isBlank(skillMdContent)) {
+                    continue;
+                }
+
+                Skill skill = parseSkillMarkdown(skillMdContent, namespaceId);
+
+                // Filter entries belonging to this skill's directory
+                List<ZipEntryData> scopedEntries = filterEntriesByPrefix(entries, prefix);
+                Map<String, SkillResource> resources = parseResources(scopedEntries, skill.getName());
+                skill.setResource(resources);
+                skills.add(skill);
+            }
+
+            if (skills.isEmpty()) {
+                throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "No valid skills found in zip");
+            }
+            return skills;
+        } catch (NacosApiException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse multi-skill zip file", e);
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARSING_DATA_FAILED,
+                    "Failed to parse zip file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get the directory prefix for a SKILL.md path. For "skill-a/SKILL.md" returns "skill-a/".
+     * For root-level "SKILL.md" returns empty string.
+     */
+    private static String getSkillPrefix(String skillMdPath) {
+        int lastSlash = skillMdPath.lastIndexOf('/');
+        if (lastSlash < 0) {
+            return "";
+        }
+        return skillMdPath.substring(0, lastSlash + 1);
+    }
+
+    /**
+     * Filter entries by directory prefix and strip the prefix from entry names.
+     */
+    private static List<ZipEntryData> filterEntriesByPrefix(List<ZipEntryData> entries, String prefix) {
+        if (prefix.isEmpty()) {
+            return entries;
+        }
+        List<ZipEntryData> result = new ArrayList<>();
+        for (ZipEntryData entry : entries) {
+            if (entry.name.startsWith(prefix)) {
+                // Strip prefix so parseResources sees paths relative to the skill directory
+                String relativeName = entry.name.substring(prefix.length());
+                if (!relativeName.isEmpty()) {
+                    result.add(new ZipEntryData(relativeName, entry.data));
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * Unzip to list of (name, raw bytes). Does not decode as text so binary files are preserved.
      * Uses Apache Commons Compress to support zip files with STORED entries that have data descriptor
      * (e.g. created on macOS or by some tools), which JDK ZipInputStream rejects.

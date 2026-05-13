@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -208,6 +209,29 @@ public interface SkillMaintainerService {
      */
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
         throws NacosException;
+    
+    /**
+     * Batch upload skills from a multi-skill zip archive with default namespace.
+     *
+     * @param zipBytes zip file bytes containing multiple skill directories
+     * @return batch upload result with succeeded and failed lists
+     * @throws NacosException if fail to upload
+     */
+    default BatchUploadResult batchUploadSkillsFromZip(byte[] zipBytes) throws NacosException {
+        return batchUploadSkillsFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, false);
+    }
+    
+    /**
+     * Batch upload skills from a multi-skill zip archive.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes    zip file bytes containing multiple skill directories
+     * @param overwrite   whether to overwrite existing drafts
+     * @return batch upload result with succeeded and failed lists
+     * @throws NacosException if fail to upload
+     */
+    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException;
     
     /**
      * Create a brand-new skill draft.

@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
@@ -205,6 +206,49 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return name;
     }
     
+    /**
+     * Batch upload multiple skills from a single zip archive using best-effort strategy.
+     */
+    @Override
+    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
+        List<Skill> skills = SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
+        BatchUploadResult result = new BatchUploadResult();
+
+        for (Skill skill : skills) {
+            String skillName = skill.getName();
+            try {
+                if (StringUtils.isBlank(skillName)) {
+                    result.addFailed("unknown", "Skill name is required in YAML front matter");
+                    continue;
+                }
+                validateSkillNameByParamChecker(skillName);
+                String uploadVersion = resolveUploadVersion(skill.getSkillMd(), null);
+
+                AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+                if (overwrite) {
+                    overwriteUploadedSkill(namespaceId, skill, uploadVersion, meta);
+                } else if (meta == null) {
+                    createDraftWithSkill(namespaceId, skill, uploadVersion, null, true);
+                } else {
+                    VisibilityHelper.checkWritableResource(meta);
+                    ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
+                    AiResourceManager.ensureNoWorkingVersion(info, "upload");
+                    String newVersion = resolveFinalUploadVersion(namespaceId, skillName, uploadVersion);
+                    createDraftWithSkill(namespaceId, skill, newVersion, meta, false);
+                }
+                AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, skillName, uploadVersion,
+                        AiResourceTraceService.OP_UPLOAD, VisibilityHelper.resolveCurrentIdentity(),
+                        VisibilityHelper.resolveClientIp());
+                result.addSucceeded(skillName);
+            } catch (Exception e) {
+                LOGGER.warn("Batch upload failed for skill [{}]: {}", skillName, e.getMessage());
+                result.addFailed(skillName != null ? skillName : "unknown", e.getMessage());
+            }
+        }
+        return result;
+    }
+
     /**
      * Bootstrap a built-in skill from a ZIP archive (delegates to the overload with null source).
      */
