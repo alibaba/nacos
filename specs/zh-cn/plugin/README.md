@@ -48,4 +48,6 @@
 ## 安全扩展
 
 - [鉴权插件规范](../auth/auth-plugin-spec.md)
+- [RAM 鉴权插件规范](../auth/ram-auth-plugin-spec.md)
+- [OIDC 鉴权插件规范](../auth/oidc-auth-plugin-spec.md)
 - [可见性插件规范](../auth/visibility-plugin-spec.md)

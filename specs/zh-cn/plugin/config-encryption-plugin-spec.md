@@ -53,6 +53,26 @@ history、listener 和发布语义，并遵守[资源模型](../design/resource-
 
 该插件以 `encryption` 类型暴露给核心插件管理器。
 
+## Java 客户端集成
+
+Java 客户端通过配置 filter chain 集成加解密。它使用 Java `ServiceLoader` 加载
+`IConfigFilter` 实现；内置 `ConfigEncryptionFilter` 注册在 client artifact 中，并委托
+`EncryptionHandler` 执行。
+
+`ConfigEncryptionFilter` 行为：
+
+| 方向 | 行为 |
+|------|------|
+| 发布请求 | 当 `dataId` 以 `cipher-{algorithm}-` 开头时，在传输前加密 content，并设置 `encryptedDataKey`。 |
+| 查询响应 | 当 `dataId` 以 `cipher-{algorithm}-` 开头时，在收到 ciphertext 和 `encryptedDataKey` 后解密 content。 |
+
+客户端和服务端使用同一个 `EncryptionPluginService` algorithm name。若期望客户端侧加密，
+客户端 classpath 必须包含匹配的加密插件实现。若只期望服务端侧加解密，服务端可以通过自身
+插件路径处理，但客户端仍必须在请求和响应模型中保留 `encryptedDataKey`。
+
+客户端配置 filter 属于 Java Client SDK 扩展，不由服务端插件 Admin API 列出或启停，
+执行顺序由 `IConfigFilter#getOrder()` 控制。
+
 ## 数据模型
 
 加密配置必须存储密文内容和受保护的数据密钥。配置持久化表使用 `encrypted_data_key` 保存
@@ -72,7 +92,7 @@ cipher-aes-application-dev.yml
 
 ## 执行规则
 
-- 当存在匹配的客户端过滤器时，客户端发布的加密配置应在传输前完成加密。
+- 当存在匹配的客户端过滤器和算法插件时，客户端发布的加密配置应在传输前完成加密。
 - 控制台发布的加密配置由服务端处理。
 - 读取时只有在对应算法插件可用且已启用时才可以解密。
 - 加密插件缺失或被禁用时，必须显式失败，不得把密文当作明文返回。

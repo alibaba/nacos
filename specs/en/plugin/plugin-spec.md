@@ -18,10 +18,11 @@
 
 ## Purpose
 
-Nacos uses plugins to keep cross-cutting infrastructure and replaceable domain
-capabilities outside the fixed server core. A plugin may provide authentication,
-resource visibility, data source dialects, encryption, tracing, flow control,
-environment adaptation, AI pipeline behavior, or AI storage behavior.
+Nacos uses plugins and SPI extensions to keep cross-cutting infrastructure and
+replaceable domain capabilities outside the fixed core. A plugin may provide
+authentication, resource visibility, data source dialects, encryption, tracing,
+flow control, environment adaptation, AI pipeline behavior, AI storage behavior,
+or Java client-side request adaptation.
 
 The plugin mechanism must let Nacos keep a stable core model while allowing
 deployments to choose an implementation that matches their identity system,
@@ -61,6 +62,21 @@ defines the common runtime contract shared by all plugin categories.
 [Addressing extension](addressing-plugin-spec.md) is documented with plugin
 specs for continuity with the public plugin documentation, but current server
 code handles it through `MemberLookup` and does not register it in `PluginType`.
+
+## Runtime Location
+
+Nacos has two plugin-like extension surfaces:
+
+| Runtime | Loading model | State owner | Examples |
+|---------|---------------|-------------|----------|
+| Server plugin | Domain SPI plus `PluginProvider`, listed and managed by server plugin APIs where supported. | Nacos server process and, for managed plugins, server plugin state. | `auth`, `visibility`, `datasource-dialect`, `control`, `trace`. |
+| Java client extension | Java SPI or SDK API loaded inside the client process. | Client classpath, client properties, and SDK instance lifecycle. | `ServerListProvider`, `ClientAuthService`, `IConfigFilter`, client-side config encryption. |
+
+Client extensions are not managed by `/v3/admin/core/plugin/*` and do not have a
+server-side `PluginStateCheckerHolder` decision unless their corresponding
+server plugin also participates in request handling. They must still follow
+Nacos resource identity, authorization, and payload semantics because they shape
+requests sent by the SDK.
 
 ## Execution Modes
 

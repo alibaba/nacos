@@ -18,9 +18,9 @@
 
 ## 目的
 
-Nacos 使用插件机制，将横切基础能力和可替换的领域能力从固定的服务端核心中拆出。
+Nacos 使用插件机制和 SPI 扩展，将横切基础能力和可替换的领域能力从固定核心中拆出。
 插件可以提供鉴权、资源可见性、数据源方言、加解密、链路追踪、流量控制、环境适配、
-AI pipeline 或 AI 存储等能力。
+AI pipeline、AI 存储或 Java 客户端侧请求适配等能力。
 
 插件机制的目标，是在保持 Nacos 核心模型稳定的同时，让不同部署环境可以选择符合自身
 身份系统、数据库、观测体系或扩展场景的实现。
@@ -57,6 +57,19 @@ AI pipeline 或 AI 存储等能力。
 [寻址扩展](addressing-plugin-spec.md)为了和公开插件文档保持连续性，也放在插件
 规范中记录；但当前服务端代码通过 `MemberLookup` 处理寻址，并未将其注册到
 `PluginType`。
+
+## 运行位置
+
+Nacos 有两类插件式扩展面：
+
+| 运行位置 | 加载模型 | 状态归属 | 示例 |
+|----------|----------|----------|------|
+| 服务端插件 | 领域 SPI 加 `PluginProvider`，在支持时可由服务端插件 API 列出和管理。 | Nacos 服务端进程；对可管理插件，还包括服务端插件状态。 | `auth`、`visibility`、`datasource-dialect`、`control`、`trace`。 |
+| Java 客户端扩展 | 在客户端进程内通过 Java SPI 或 SDK API 加载。 | 客户端 classpath、客户端配置和 SDK 实例生命周期。 | `ServerListProvider`、`ClientAuthService`、`IConfigFilter`、客户端侧配置加密。 |
+
+客户端扩展不由 `/v3/admin/core/plugin/*` 管理，也不具备服务端
+`PluginStateCheckerHolder` 决策，除非对应服务端插件同时参与请求处理。它们仍必须遵守
+Nacos 资源身份、鉴权和 payload 语义，因为它们会影响 SDK 发出的请求。
 
 ## 执行形态
 

@@ -55,6 +55,30 @@ Plugins implement `EncryptionPluginService`.
 
 The plugin is exposed to the core plugin manager as type `encryption`.
 
+## Java Client Integration
+
+The Java client integrates encryption through the config filter chain. It loads
+`IConfigFilter` implementations with Java `ServiceLoader`; the built-in
+`ConfigEncryptionFilter` is registered in the client artifact and delegates to
+`EncryptionHandler`.
+
+`ConfigEncryptionFilter` behavior:
+
+| Direction | Behavior |
+|-----------|----------|
+| Publish request | When `dataId` starts with `cipher-{algorithm}-`, encrypt content before transport and set `encryptedDataKey`. |
+| Query response | When `dataId` starts with `cipher-{algorithm}-`, decrypt content after receiving ciphertext and `encryptedDataKey`. |
+
+The same `EncryptionPluginService` algorithm name is used on client and server.
+If client-side encryption is expected, the client classpath must contain the
+matching encryption plugin implementation. If only server-side encryption is
+expected, the server may encrypt or decrypt through its own plugin path, but the
+client must still preserve `encryptedDataKey` in request and response models.
+
+Client config filters are Java Client SDK extensions. They are not listed or
+enabled by the server plugin Admin API, and their order is controlled by
+`IConfigFilter#getOrder()`.
+
 ## Data Model
 
 Encrypted configs must store the encrypted content and the protected data key.
@@ -76,7 +100,7 @@ cipher-aes-application-dev.yml
 ## Execution Rules
 
 - Client-published encrypted config should be encrypted before transport when a
-  matching client-side filter is available.
+  matching client-side filter and algorithm plugin are available.
 - Console-published encrypted config is processed on the server side.
 - Reads must decrypt only when the selected algorithm plugin is available and
   enabled.

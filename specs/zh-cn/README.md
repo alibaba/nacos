@@ -38,6 +38,8 @@
 
 - [鉴权与权限规范](auth/auth-permission-spec.md)
 - [鉴权插件规范](auth/auth-plugin-spec.md)
+- [RAM 鉴权插件规范](auth/ram-auth-plugin-spec.md)
+- [OIDC 鉴权插件规范](auth/oidc-auth-plugin-spec.md)
 - [可见性插件规范](auth/visibility-plugin-spec.md)
 - [默认鉴权插件实现规范](auth/default-auth-plugin-spec.md)
 

@@ -18,10 +18,14 @@
 
 ## Scope
 
-Addressing determines how a Nacos server discovers the other members in its
-cluster. The public documentation describes an addressing plugin SPI. Current
-server code primarily uses built-in `MemberLookup` implementations and does not
-register addressing in the unified `PluginType` registry.
+Addressing determines how Nacos runtime components discover Nacos server
+addresses. It has both a server-side cluster membership surface and a Java
+client-side server list surface.
+
+The public documentation describes addressing extension points. Current server
+code primarily uses built-in `MemberLookup` implementations and does not
+register addressing in the unified `PluginType` registry. Current Java client
+code uses `ServerListProvider` implementations loaded by SPI.
 
 This spec records the current member lookup behavior and the compatibility
 expectations for addressing-style extensions.
@@ -38,9 +42,53 @@ the [Nacos Design Spec](../design/nacos-design-spec.md).
 | Concept | Meaning |
 |---------|---------|
 | Member | One Nacos server node in a cluster. |
-| Member lookup | Service that discovers and refreshes the member list. |
+| Member lookup | Server-side service that discovers and refreshes the cluster member list. |
+| Server list provider | Java client-side SPI that returns the Nacos server list for SDK requests. |
 | Address server | External HTTP endpoint that returns the current server list. |
-| Lookup mode | Selected member discovery strategy. |
+| Lookup mode | Selected server-side member discovery strategy. |
+| Address source | Diagnostic value that explains where the Java client server list came from. |
+
+## Java Client Addressing
+
+The Java Client SDK loads `ServerListProvider` implementations through SPI in
+`AbstractServerListManager`. Config and Naming clients use the selected provider
+through `ConfigServerListManager` and `NamingServerListManager`; gRPC clients
+then consume the same server list through `ServerListFactory`.
+
+The selected provider is the highest-order implementation whose `match(...)`
+returns true for the client properties.
+
+Built-in providers:
+
+| Provider | Trigger | Behavior |
+|----------|---------|----------|
+| `PropertiesListProvider` | `serverAddr` is configured. | Uses a fixed server address list from client properties. |
+| `EndpointServerListProvider` | `endpoint` is configured. | Pulls server addresses from an address endpoint, refreshes periodically, and publishes `ServerListChangeEvent` when the list changes. |
+
+Client addressing properties include:
+
+| Property | Purpose |
+|----------|---------|
+| `serverAddr` | Fixed server address list. |
+| `endpoint` | Dynamic server address endpoint host. |
+| `endpointPort` | Endpoint port, defaulting to `8080` in the Java client implementation. |
+| `endpointContextPath` | Context path used when building the endpoint URL. |
+| `endpointClusterName` | Server list name used by the endpoint path. |
+| `endpointQueryParams` | Extra query string appended to the endpoint URL. |
+| `endpointRefreshIntervalSeconds` | Refresh interval for endpoint mode. |
+| `isUseEndpointParsingRule` | Whether the client applies endpoint parsing rules. |
+
+Client addressing extensions must:
+
+- return server addresses parseable by Nacos HTTP and gRPC clients;
+- keep server list refresh independent from request payload semantics;
+- publish `ServerListChangeEvent` when a dynamic list changes;
+- release background refresh resources from `shutdown()`;
+- preserve namespace, context path, and module-name semantics passed through
+  `NacosClientProperties`.
+
+Client addressing extensions are Java Client SDK extensions, not server plugin
+manager entries. They are not listed or enabled by the server Admin plugin API.
 
 ## Current Server Lookup Modes
 

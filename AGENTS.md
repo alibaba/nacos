@@ -127,6 +127,8 @@ English:
 - Security model:
   [Auth And Permission Spec](./specs/en/auth/auth-permission-spec.md),
   [Auth Plugin Spec](./specs/en/auth/auth-plugin-spec.md),
+  [RAM Auth Plugin Spec](./specs/en/auth/ram-auth-plugin-spec.md),
+  [OIDC Auth Plugin Spec](./specs/en/auth/oidc-auth-plugin-spec.md),
   [Visibility Plugin Spec](./specs/en/auth/visibility-plugin-spec.md),
   [Default Auth Plugin Implementation Spec](./specs/en/auth/default-auth-plugin-spec.md)
 
@@ -148,6 +150,8 @@ Simplified Chinese:
 - 安全模型：
   [鉴权与权限规范](./specs/zh-cn/auth/auth-permission-spec.md)，
   [鉴权插件规范](./specs/zh-cn/auth/auth-plugin-spec.md)，
+  [RAM 鉴权插件规范](./specs/zh-cn/auth/ram-auth-plugin-spec.md)，
+  [OIDC 鉴权插件规范](./specs/zh-cn/auth/oidc-auth-plugin-spec.md)，
   [可见性插件规范](./specs/zh-cn/auth/visibility-plugin-spec.md)，
   [默认鉴权插件实现规范](./specs/zh-cn/auth/default-auth-plugin-spec.md)
 

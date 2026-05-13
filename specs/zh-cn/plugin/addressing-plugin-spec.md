@@ -18,8 +18,12 @@
 
 ## 范围
 
-寻址决定 Nacos 服务端如何发现集群中的其他成员。公开文档描述过寻址插件 SPI。当前服务端
-代码主要使用内置 `MemberLookup` 实现，并未将寻址注册到统一的 `PluginType` 注册表。
+寻址决定 Nacos 运行时组件如何发现 Nacos Server 地址。它同时包含服务端集群成员发现面和
+Java 客户端 server list 发现面。
+
+公开文档描述过寻址扩展点。当前服务端代码主要使用内置 `MemberLookup` 实现，并未将寻址
+注册到统一的 `PluginType` 注册表。当前 Java 客户端代码通过 SPI 加载
+`ServerListProvider` 实现。
 
 本文档记录当前成员发现行为，以及寻址类扩展应遵守的兼容性预期。
 
@@ -33,9 +37,51 @@
 | 概念 | 含义 |
 |------|------|
 | Member | 集群中的一个 Nacos 服务端节点。 |
-| Member lookup | 发现并刷新 member list 的服务。 |
+| Member lookup | 服务端发现并刷新集群 member list 的服务。 |
+| Server list provider | Java 客户端侧返回 SDK 请求 server list 的 SPI。 |
 | Address server | 返回当前 server list 的外部 HTTP 端点。 |
-| Lookup mode | 被选中的成员发现策略。 |
+| Lookup mode | 被选中的服务端成员发现策略。 |
+| Address source | 诊断客户端 server list 来源的值。 |
+
+## Java 客户端寻址
+
+Java Client SDK 在 `AbstractServerListManager` 中通过 SPI 加载 `ServerListProvider`
+实现。Config 和 Naming 客户端分别通过 `ConfigServerListManager` 和
+`NamingServerListManager` 使用选中的 provider；gRPC client 再通过 `ServerListFactory`
+消费同一份 server list。
+
+被选中的 provider 是满足 `match(...)` 且 `getOrder()` 最高的实现。
+
+内置 provider：
+
+| Provider | 触发条件 | 行为 |
+|----------|----------|------|
+| `PropertiesListProvider` | 配置了 `serverAddr`。 | 使用客户端配置中的固定 server address list。 |
+| `EndpointServerListProvider` | 配置了 `endpoint`。 | 从 address endpoint 拉取 server 地址，周期刷新，并在列表变化时发布 `ServerListChangeEvent`。 |
+
+客户端寻址配置包括：
+
+| 配置项 | 目的 |
+|--------|------|
+| `serverAddr` | 固定 server address list。 |
+| `endpoint` | 动态 server address endpoint host。 |
+| `endpointPort` | endpoint 端口，Java 客户端实现默认 `8080`。 |
+| `endpointContextPath` | 构造 endpoint URL 时使用的 context path。 |
+| `endpointClusterName` | endpoint path 使用的 server list 名称。 |
+| `endpointQueryParams` | 追加到 endpoint URL 的 query string。 |
+| `endpointRefreshIntervalSeconds` | endpoint 模式刷新周期。 |
+| `isUseEndpointParsingRule` | 客户端是否应用 endpoint 解析规则。 |
+
+客户端寻址扩展必须：
+
+- 返回 Nacos HTTP 和 gRPC client 可解析的 server 地址；
+- 保持 server list 刷新与请求 payload 语义解耦；
+- 动态列表变化时发布 `ServerListChangeEvent`；
+- 在 `shutdown()` 中释放后台刷新资源；
+- 保留 `NacosClientProperties` 传入的 namespace、context path 和 module name 语义。
+
+客户端寻址扩展属于 Java Client SDK 扩展，不是服务端插件管理器条目，不由服务端 Admin
+插件 API 列出或启停。
 
 ## 当前服务端 Lookup 模式
 

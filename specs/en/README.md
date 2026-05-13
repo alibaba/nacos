@@ -39,6 +39,8 @@ extension mechanisms, and cross-cutting security rules.
 
 - [Auth And Permission Spec](auth/auth-permission-spec.md)
 - [Auth Plugin Spec](auth/auth-plugin-spec.md)
+- [RAM Auth Plugin Spec](auth/ram-auth-plugin-spec.md)
+- [OIDC Auth Plugin Spec](auth/oidc-auth-plugin-spec.md)
 - [Visibility Plugin Spec](auth/visibility-plugin-spec.md)
 - [Default Auth Plugin Implementation Spec](auth/default-auth-plugin-spec.md)
 

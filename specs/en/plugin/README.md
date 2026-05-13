@@ -49,4 +49,6 @@ follow [HTTP API](../http-api/api-spec.md) rules when exposing HTTP endpoints.
 ## Security Extensions
 
 - [Auth Plugin Spec](../auth/auth-plugin-spec.md)
+- [RAM Auth Plugin Spec](../auth/ram-auth-plugin-spec.md)
+- [OIDC Auth Plugin Spec](../auth/oidc-auth-plugin-spec.md)
 - [Visibility Plugin Spec](../auth/visibility-plugin-spec.md)

@@ -18,10 +18,15 @@
 
 ## 范围
 
-默认鉴权实现包提供 `nacos` 和 `ldap` 两个鉴权插件。`nacos` 插件提供用户名/密码登录、
+默认鉴权实现包当前提供 `nacos` 和 `ldap` 两个鉴权插件。`nacos` 插件提供用户名/密码登录、
 token 认证、RBAC 权限管理，以及 AI 资源使用的默认可见性集成。它实现
 [鉴权插件规范](auth-plugin-spec.md)、共享的[鉴权与权限规范](auth-permission-spec.md)
 和[可见性插件规范](visibility-plugin-spec.md)。
+
+Java 客户端为默认插件暴露的用户名/密码和 token 流程提供
+`NacosClientAuthServiceImpl`。RAM、OIDC 等其他内置客户端鉴权服务属于 Java Client SDK
+鉴权扩展，由 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)和
+[鉴权插件规范](auth-plugin-spec.md)定义，不属于本文描述的服务端默认插件实现。
 
 默认实现用于在可信内网环境中降低误用风险。它不是面向恶意公网环境的完整强鉴权方案。
 如果需要暴露到公网，应使用外部安全边界，或选择更强的鉴权插件。
@@ -68,6 +73,19 @@ token 密钥和服务端身份值必须由部署环境独立配置。使用默�
 - 默认插件将请求接受为内置匿名身份。
 
 当匿名 AI 访问启用时，实现会初始化保留的匿名用户和角色，并授予 `public:*:ai/*` 读权限。
+
+## 默认 Java 客户端鉴权集成
+
+默认插件对应的 Java 客户端侧集成为 `NacosClientAuthServiceImpl`。它通过客户端鉴权 SPI
+加载，并在配置了 `username` 和 `password` 时调用默认 `/v3/auth/user/login` API。
+
+| 客户端实现 | 身份材料 | 契约 |
+|------------|----------|------|
+| `NacosClientAuthServiceImpl` | `username`、`password` 和 `accessToken`。 | 通过默认鉴权 API 登录，附加返回的 `accessToken`，并在 token 过期前刷新。 |
+
+该集成不得修改请求 payload，只提供当前服务端鉴权插件消费的身份材料。
+[RAM](ram-auth-plugin-spec.md)、[OIDC](oidc-auth-plugin-spec.md) 等其他客户端鉴权实现作为
+Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)中描述。
 
 ## RBAC 存储模型
 
@@ -161,3 +179,10 @@ API 和存储集成在补齐后必须使用该结构。
 
 旧端点或兼容端点可以为已有客户端保留，但新的文档和新的开发应以 v3 鉴权 API 以及本文档
 定义的插件契约为准。
+
+## 待处理问题
+
+- `ldap` 插件当前通过继承 `NacosAuthPluginService` 耦合在默认鉴权实现包中。从概念上看，
+  LDAP 是由外部身份提供方支撑的独立鉴权插件，不属于默认 Nacos 用户名/密码和 token
+  实现。后续应将它拆分为独立鉴权插件包和规范，同时保持已有
+  `nacos.core.auth.system.type=ldap` 部署兼容。

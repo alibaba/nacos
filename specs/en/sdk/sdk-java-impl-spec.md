@@ -80,9 +80,55 @@ Common properties include:
 Deprecated historical properties should remain compatible, but new behavior
 should not depend on them.
 
-## 4. Java Client SDK Interfaces
+## 4. Java Client SDK Extension Points
 
-### 4.1 ConfigService
+Java Client SDK extension points run inside the application process. They are
+loaded from the client classpath or registered through SDK APIs, and they are
+closed with the owning SDK instance. They are not controlled by the server-side
+plugin Admin API.
+
+| Extension point | SPI or API | Contract |
+| --- | --- | --- |
+| Addressing | `ServerListProvider` | Select and refresh the server list used by HTTP and gRPC clients. Built-ins support fixed `serverAddr` and dynamic `endpoint` modes. |
+| Authentication | `AbstractClientAuthService` / `ClientAuthService` | Produce request identity material such as access tokens, RAM signatures, or OIDC bearer tokens for a `RequestResource`. |
+| Config filter | `IConfigFilter` and `ConfigService#addConfigFilter` | Intercept config publish requests and query responses in a stable order. |
+| Config encryption | `ConfigEncryptionFilter` plus `EncryptionPluginService` | Encrypt `cipher-{algorithm}-` config before publish and decrypt matching config after query when the algorithm plugin is present. |
+
+Client extensions must not redefine Nacos resource identity or broaden the
+Client SDK capability surface. If an extension needs management access, it
+should use the Maintainer SDK or Admin API rather than adding high-privilege
+operations to the runtime client.
+
+Addressing extensions must return addresses parseable by the Java HTTP and
+gRPC clients and publish server-list change events when dynamic discovery
+changes. Auth extensions must use `RequestResource` rather than parsing
+transport payloads for resource-aware signing. Config filters must preserve
+request and response field semantics and should fail explicitly when a required
+cryptographic plugin is missing.
+
+### 4.1 Built-in Client Auth Services
+
+The Java client currently registers these `AbstractClientAuthService`
+implementations through SPI:
+
+| Implementation | Identity material | Contract |
+| --- | --- | --- |
+| `NacosClientAuthServiceImpl` | `username`, `password`, and `accessToken`. | Integrate with the default Nacos auth plugin login API and refresh the returned token before expiration. |
+| `RamClientAuthServiceImpl` | `accessKey`, `secretKey`, `ramRoleName`, `signatureRegionId`. | Produce resource-aware RAM-style signatures as defined by the [RAM Auth Plugin Spec](../auth/ram-auth-plugin-spec.md). |
+| `OidcClientAuthServiceImpl` | OIDC client credentials and bearer token. | Use the OAuth2 client credentials flow as defined by the [OIDC Auth Plugin Spec](../auth/oidc-auth-plugin-spec.md). |
+
+The Java client combines identity output from all loaded client auth services.
+An implementation that is not configured should return an empty identity
+context instead of mutating request payloads or failing unrelated SDK calls. The
+default Nacos auth plugin only owns the Nacos username/password and token flow;
+[RAM](../auth/ram-auth-plugin-spec.md) and
+[OIDC](../auth/oidc-auth-plugin-spec.md) are client-side auth extensions and
+become effective only when the selected server-side auth plugin or
+deployment-side identity verifier accepts their identity material.
+
+## 5. Java Client SDK Interfaces
+
+### 5.1 ConfigService
 
 | Capability | Methods | Contract |
 | --- | --- | --- |
@@ -99,7 +145,7 @@ Config identity follows the user-facing constraints for `dataId`, `group`, and
 content size. New broad config management APIs should be added to the Maintainer
 SDK instead of `ConfigService`.
 
-### 4.2 NamingService
+### 5.2 NamingService
 
 | Capability | Methods | Contract |
 | --- | --- | --- |
@@ -114,7 +160,7 @@ SDK instead of `ConfigService`.
 The selector overload of `getServicesOfServer` is deprecated and remains only as
 a compatibility surface.
 
-### 4.3 AiService and A2aService
+### 5.3 AiService and A2aService
 
 `AiService` extends `A2aService`.
 
@@ -136,7 +182,7 @@ The Java implementation may mix gRPC, HTTP, and config assembly behind the
 interface. The public interface contract should stay independent from transport
 details.
 
-### 4.4 LockService
+### 5.4 LockService
 
 | Capability | Methods | Contract |
 | --- | --- | --- |
@@ -146,7 +192,7 @@ details.
 | Remote unlock | `remoteReleaseLock` | Send a gRPC unlock operation request. |
 | Lifecycle | `shutdown` | Release client resources. |
 
-## 5. Java Maintainer SDK Factories and Lifecycle
+## 6. Java Maintainer SDK Factories and Lifecycle
 
 | Interface | Factory | Shutdown method |
 | --- | --- | --- |
@@ -157,9 +203,9 @@ details.
 Maintainer services inherit `CoreMaintainerService` where applicable. They are
 higher-privilege clients and should be configured with management credentials.
 
-## 6. Java Maintainer SDK Interfaces
+## 7. Java Maintainer SDK Interfaces
 
-### 6.1 CoreMaintainerService
+### 7.1 CoreMaintainerService
 
 `CoreMaintainerService` exposes server and cluster maintenance capabilities:
 
@@ -173,7 +219,7 @@ higher-privilege clients and should be configured with management credentials.
 These APIs are administrative by definition and must not be copied into the
 Client SDK.
 
-### 6.2 ConfigMaintainerService
+### 7.2 ConfigMaintainerService
 
 `ConfigMaintainerService` includes:
 
@@ -191,7 +237,7 @@ Client SDK.
 Management writes and broad queries should be added here instead of expanding
 `ConfigService`.
 
-### 6.3 NamingMaintainerService
+### 7.3 NamingMaintainerService
 
 `NamingMaintainerService` includes:
 
@@ -206,7 +252,7 @@ Runtime instance registration remains available in `NamingService`, but service
 administration, broad listing, subscriber inspection, and health-check
 maintenance belong to the Maintainer SDK.
 
-### 6.4 AiMaintainerService
+### 7.4 AiMaintainerService
 
 `AiMaintainerService` exposes typed delegates:
 
@@ -221,7 +267,7 @@ maintenance belong to the Maintainer SDK.
 Runtime AI registration and subscription can remain in `AiService`; broad AI
 resource management belongs to `AiMaintainerService`.
 
-## 7. Java Compatibility Rules
+## 8. Java Compatibility Rules
 
 - `api`, `client`, and `plugin` modules remain Java 8 compatible unless the
   module policy changes.
@@ -231,7 +277,7 @@ resource management belongs to `AiMaintainerService`.
 - Public model changes should preserve source and binary compatibility where
   practical, especially for objects shared with HTTP and gRPC APIs.
 
-## 8. Documentation References
+## 9. Documentation References
 
 - Java Client SDK user docs:
   `src/content/docs/next/zh-cn/manual/user/java-sdk` in the Nacos docs project.
