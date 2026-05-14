@@ -223,7 +223,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     continue;
                 }
                 validateSkillNameByParamChecker(skillName);
-                String uploadVersion = resolveUploadVersion(skill.getSkillMd(), null);
+                String uploadVersion = resolveUploadVersion(skill.getSkillMd(), null, null);
 
                 AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
                 if (overwrite) {
