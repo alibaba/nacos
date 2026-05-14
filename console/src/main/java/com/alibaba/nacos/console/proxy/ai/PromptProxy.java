@@ -118,9 +118,9 @@ public class PromptProxy {
         promptHandler.forcePublish(namespaceId, promptKey, version, updateLatestLabel);
     }
     
-    public void reedit(String namespaceId, String promptKey, String version)
+    public void redraft(String namespaceId, String promptKey, String version)
         throws NacosException {
-        promptHandler.reedit(namespaceId, promptKey, version);
+        promptHandler.redraft(namespaceId, promptKey, version);
     }
     
     public void changeOnlineStatus(String namespaceId, String promptKey, String version,

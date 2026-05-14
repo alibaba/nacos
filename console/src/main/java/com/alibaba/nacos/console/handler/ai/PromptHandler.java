@@ -121,7 +121,7 @@ public interface PromptHandler {
      * @param version     version to re-edit
      * @throws NacosException if operation failed
      */
-    void reedit(String namespaceId, String promptKey, String version) throws NacosException;
+    void redraft(String namespaceId, String promptKey, String version) throws NacosException;
     
     /**
      * Online or offline a version.

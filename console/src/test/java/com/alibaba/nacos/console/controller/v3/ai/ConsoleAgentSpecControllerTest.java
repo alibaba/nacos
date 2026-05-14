@@ -86,10 +86,10 @@ public class ConsoleAgentSpecControllerTest {
     
     @Test
     void testReeditSuccess() throws Exception {
-        doNothing().when(agentSpecProxy).reedit(any(AgentSpecPublishForm.class));
+        doNothing().when(agentSpecProxy).redraft(any(AgentSpecPublishForm.class));
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
-            Constants.AgentSpecs.CONSOLE_PATH + "/reedit").param("namespaceId", "test-ns")
+            Constants.AgentSpecs.CONSOLE_PATH + "/redraft").param("namespaceId", "test-ns")
             .param("agentSpecName", "test-agentspec").param("version", "v1");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -99,7 +99,7 @@ public class ConsoleAgentSpecControllerTest {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
-        verify(agentSpecProxy).reedit(any(AgentSpecPublishForm.class));
+        verify(agentSpecProxy).redraft(any(AgentSpecPublishForm.class));
     }
     
     @Test

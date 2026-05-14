@@ -335,10 +335,10 @@ public interface AgentSpecMaintainerService {
      * @param namespaceId   namespace ID
      * @param agentSpecName agent spec name
      * @param version       version to re-edit
-     * @return true if reedit success
-     * @throws NacosException if fail to reedit
+     * @return true if redraft success
+     * @throws NacosException if fail to redraft
      */
-    boolean reedit(String namespaceId, String agentSpecName, String version) throws NacosException;
+    boolean redraft(String namespaceId, String agentSpecName, String version) throws NacosException;
     
     /**
      * Update runtime labels mapping JSON.

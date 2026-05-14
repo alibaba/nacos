@@ -57,7 +57,7 @@ class AgentSpecNoopHandlerTest {
     @Test
     void testReeditThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-            () -> agentSpecNoopHandler.reedit(new AgentSpecPublishForm()));
+            () -> agentSpecNoopHandler.redraft(new AgentSpecPublishForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
 }

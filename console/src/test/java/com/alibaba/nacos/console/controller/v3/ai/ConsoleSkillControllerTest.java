@@ -86,10 +86,10 @@ public class ConsoleSkillControllerTest {
     
     @Test
     void testReeditSuccess() throws Exception {
-        doNothing().when(skillProxy).reedit(any(SkillPublishForm.class));
+        doNothing().when(skillProxy).redraft(any(SkillPublishForm.class));
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
-            Constants.Skills.CONSOLE_PATH + "/reedit").param("namespaceId", "test-ns")
+            Constants.Skills.CONSOLE_PATH + "/redraft").param("namespaceId", "test-ns")
             .param("skillName", "test-skill").param("version", "v1");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -99,7 +99,7 @@ public class ConsoleSkillControllerTest {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
-        verify(skillProxy).reedit(any(SkillPublishForm.class));
+        verify(skillProxy).redraft(any(SkillPublishForm.class));
     }
     
     @Test

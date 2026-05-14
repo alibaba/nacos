@@ -320,14 +320,14 @@ class PromptMaintainerServiceImplTest {
     }
     
     @Test
-    @DisplayName("reedit should return true on success")
+    @DisplayName("redraft should return true on success")
     void testReedit() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(mockRestResult);
         
-        boolean actual = promptService.reedit("public", "testPrompt", "v1");
+        boolean actual = promptService.redraft("public", "testPrompt", "v1");
         assertTrue(actual);
     }
     

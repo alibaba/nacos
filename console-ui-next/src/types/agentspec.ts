@@ -111,7 +111,7 @@ export interface PublishPipelineInfo {
   executionId: string;
   status: PipelineExecutionStatus;
   pipeline: PipelineNode[];
-  stale?: boolean;
+  historical?: boolean;
 }
 
 /** Safely parse publishPipelineInfo JSON string */

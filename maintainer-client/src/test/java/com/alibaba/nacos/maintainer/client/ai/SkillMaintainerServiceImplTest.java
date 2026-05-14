@@ -160,7 +160,7 @@ class SkillMaintainerServiceImplTest {
     }
     
     @Test
-    @DisplayName("reedit should return true")
+    @DisplayName("redraft should return true")
     void testReeditReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult
@@ -168,7 +168,7 @@ class SkillMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(mockRestResult);
         
-        boolean actual = skillService.reedit("public", "testSkill", "v1");
+        boolean actual = skillService.redraft("public", "testSkill", "v1");
         assertTrue(actual);
     }
     

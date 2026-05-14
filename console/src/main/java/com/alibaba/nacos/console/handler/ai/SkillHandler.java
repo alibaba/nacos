@@ -186,7 +186,7 @@ public interface SkillHandler {
      * @param form publish form (contains namespace, skill name, version)
      * @throws NacosException if operation failed
      */
-    void reedit(SkillPublishForm form) throws NacosException;
+    void redraft(SkillPublishForm form) throws NacosException;
     
     /**
      * Update runtime route labels without changing version status.

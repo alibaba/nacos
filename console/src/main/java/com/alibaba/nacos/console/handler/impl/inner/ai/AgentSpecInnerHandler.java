@@ -133,8 +133,8 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     }
     
     @Override
-    public void reedit(AgentSpecPublishForm form) throws NacosException {
-        agentSpecOperationService.reedit(form.getNamespaceId(), form.getAgentSpecName(),
+    public void redraft(AgentSpecPublishForm form) throws NacosException {
+        agentSpecOperationService.redraft(form.getNamespaceId(), form.getAgentSpecName(),
             form.getVersion());
     }
     

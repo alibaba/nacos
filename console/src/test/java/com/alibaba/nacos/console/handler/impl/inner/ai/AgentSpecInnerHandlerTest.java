@@ -121,11 +121,11 @@ class AgentSpecInnerHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setAgentSpecName(AGENTSPEC_NAME);
         form.setVersion("v1");
-        doNothing().when(agentSpecOperationService).reedit(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME),
+        doNothing().when(agentSpecOperationService).redraft(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME),
             eq("v1"));
         
-        agentSpecInnerHandler.reedit(form);
+        agentSpecInnerHandler.redraft(form);
         
-        verify(agentSpecOperationService).reedit(NAMESPACE_ID, AGENTSPEC_NAME, "v1");
+        verify(agentSpecOperationService).redraft(NAMESPACE_ID, AGENTSPEC_NAME, "v1");
     }
 }

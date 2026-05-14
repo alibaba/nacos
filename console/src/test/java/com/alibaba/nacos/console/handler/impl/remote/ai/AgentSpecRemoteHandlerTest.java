@@ -191,11 +191,11 @@ class AgentSpecRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setVersion("v1");
-        when(agentSpecMaintainerService.reedit(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("v1")))
+        when(agentSpecMaintainerService.redraft(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("v1")))
             .thenReturn(true);
         
-        agentSpecRemoteHandler.reedit(form);
+        agentSpecRemoteHandler.redraft(form);
         
-        verify(agentSpecMaintainerService).reedit(NAMESPACE_ID, AGENT_SPEC_NAME, "v1");
+        verify(agentSpecMaintainerService).redraft(NAMESPACE_ID, AGENT_SPEC_NAME, "v1");
     }
 }

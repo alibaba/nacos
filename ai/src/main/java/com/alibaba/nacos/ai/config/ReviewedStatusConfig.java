@@ -24,7 +24,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  *
  * <p>When enabled, pipeline completion (both approved and rejected) transitions version status
  * to {@code reviewed} instead of the legacy behavior (rejected → draft, approved → reviewed).
- * Users must explicitly call reedit to return to draft.</p>
+ * Users must explicitly call redraft to return to draft.</p>
  *
  * <p>Configuration key: {@code nacos.plugin.ai-pipeline.reviewed-status.enabled} (default: false).</p>
  *

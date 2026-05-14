@@ -159,9 +159,9 @@ public class SkillRemoteHandler implements SkillHandler {
     }
     
     @Override
-    public void reedit(SkillPublishForm form) throws NacosException {
+    public void redraft(SkillPublishForm form) throws NacosException {
         clientHolder.getAiMaintainerService().skill()
-            .reedit(form.getNamespaceId(), form.getSkillName(), form.getVersion());
+            .redraft(form.getNamespaceId(), form.getSkillName(), form.getVersion());
     }
     
     @Override

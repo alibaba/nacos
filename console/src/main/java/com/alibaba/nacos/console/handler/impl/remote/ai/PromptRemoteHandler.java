@@ -154,9 +154,9 @@ public class PromptRemoteHandler implements PromptHandler {
     }
     
     @Override
-    public void reedit(String namespaceId, String promptKey, String version)
+    public void redraft(String namespaceId, String promptKey, String version)
         throws NacosException {
-        clientHolder.getAiMaintainerService().prompt().reedit(namespaceId, promptKey, version);
+        clientHolder.getAiMaintainerService().prompt().redraft(namespaceId, promptKey, version);
     }
     
     @Override

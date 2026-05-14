@@ -139,9 +139,9 @@ public class PromptInnerHandler implements PromptHandler {
     }
     
     @Override
-    public void reedit(String namespaceId, String promptKey, String version)
+    public void redraft(String namespaceId, String promptKey, String version)
         throws NacosException {
-        promptOperationService.reedit(namespaceId, promptKey, version);
+        promptOperationService.redraft(namespaceId, promptKey, version);
     }
     
     @Override

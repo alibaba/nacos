@@ -106,7 +106,7 @@ class ConsolePromptControllerTest {
     @Test
     void testReeditSuccess() throws Exception {
         MockHttpServletResponse response = mockMvc.perform(
-            MockMvcRequestBuilders.post(Constants.Prompt.CONSOLE_PATH + "/reedit")
+            MockMvcRequestBuilders.post(Constants.Prompt.CONSOLE_PATH + "/redraft")
                 .param("namespaceId", NS)
                 .param("promptKey", PROMPT_KEY)
                 .param("version", VERSION))
@@ -114,6 +114,6 @@ class ConsolePromptControllerTest {
         
         assertEquals(200, response.getStatus());
         assertTrue(response.getContentAsString().contains("ok"));
-        verify(promptProxy).reedit(eq(NS), eq(PROMPT_KEY), eq(VERSION));
+        verify(promptProxy).redraft(eq(NS), eq(PROMPT_KEY), eq(VERSION));
     }
 }

@@ -361,11 +361,11 @@ class SkillRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
         form.setVersion("v1");
-        when(skillMaintainerService.reedit(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1")))
+        when(skillMaintainerService.redraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1")))
             .thenReturn(true);
         
-        skillRemoteHandler.reedit(form);
+        skillRemoteHandler.redraft(form);
         
-        verify(skillMaintainerService).reedit(NAMESPACE_ID, SKILL_NAME, "v1");
+        verify(skillMaintainerService).redraft(NAMESPACE_ID, SKILL_NAME, "v1");
     }
 }

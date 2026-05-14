@@ -159,7 +159,7 @@ public interface AgentSpecHandler {
      * @param form publish form (contains namespace, agentspec name, version)
      * @throws NacosException if operation failed
      */
-    void reedit(AgentSpecPublishForm form) throws NacosException;
+    void redraft(AgentSpecPublishForm form) throws NacosException;
     
     /**
      * Update runtime route labels without changing version status.

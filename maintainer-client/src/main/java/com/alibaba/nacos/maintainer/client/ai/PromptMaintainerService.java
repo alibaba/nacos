@@ -223,10 +223,10 @@ public interface PromptMaintainerService {
      * @param namespaceId namespace ID
      * @param promptKey   prompt key
      * @param version     version to re-edit
-     * @return true if reedit success
-     * @throws NacosException if fail to reedit
+     * @return true if redraft success
+     * @throws NacosException if fail to redraft
      */
-    boolean reedit(String namespaceId, String promptKey, String version) throws NacosException;
+    boolean redraft(String namespaceId, String promptKey, String version) throws NacosException;
     
     /**
      * Online or offline a version.

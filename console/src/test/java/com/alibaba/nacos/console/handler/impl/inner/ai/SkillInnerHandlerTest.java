@@ -345,10 +345,10 @@ class SkillInnerHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
         form.setVersion("v1");
-        doNothing().when(skillOperationService).reedit(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"));
+        doNothing().when(skillOperationService).redraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"));
         
-        skillInnerHandler.reedit(form);
+        skillInnerHandler.redraft(form);
         
-        verify(skillOperationService).reedit(NAMESPACE_ID, SKILL_NAME, "v1");
+        verify(skillOperationService).redraft(NAMESPACE_ID, SKILL_NAME, "v1");
     }
 }

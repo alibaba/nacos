@@ -139,8 +139,8 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public void reedit(SkillPublishForm form) throws NacosException {
-        skillOperationService.reedit(form.getNamespaceId(), form.getSkillName(),
+    public void redraft(SkillPublishForm form) throws NacosException {
+        skillOperationService.redraft(form.getNamespaceId(), form.getSkillName(),
             form.getVersion());
     }
     

@@ -146,9 +146,9 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
     }
     
     @Override
-    public void reedit(AgentSpecPublishForm form) throws NacosException {
+    public void redraft(AgentSpecPublishForm form) throws NacosException {
         clientHolder.getAiMaintainerService().agentSpec()
-            .reedit(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion());
+            .redraft(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion());
     }
     
     @Override

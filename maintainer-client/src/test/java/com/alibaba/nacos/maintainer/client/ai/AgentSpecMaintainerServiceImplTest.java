@@ -273,7 +273,7 @@ class AgentSpecMaintainerServiceImplTest {
     }
     
     @Test
-    @DisplayName("reedit should return true")
+    @DisplayName("redraft should return true")
     void testReeditReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult
@@ -281,7 +281,7 @@ class AgentSpecMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(mockRestResult);
         
-        boolean actual = agentSpecService.reedit("public", "testAgentSpec", "v1");
+        boolean actual = agentSpecService.redraft("public", "testAgentSpec", "v1");
         assertTrue(actual);
     }
     

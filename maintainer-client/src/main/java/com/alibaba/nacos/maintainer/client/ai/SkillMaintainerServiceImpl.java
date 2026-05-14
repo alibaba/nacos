@@ -299,7 +299,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     }
     
     @Override
-    public boolean reedit(String namespaceId, String skillName, String version)
+    public boolean redraft(String namespaceId, String skillName, String version)
         throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(8);
@@ -309,7 +309,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
         HttpRequest httpRequest =
             buildHttpRequestBuilder(buildRequestResource(namespaceId, skillName))
                 .setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/reedit")
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/redraft")
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =

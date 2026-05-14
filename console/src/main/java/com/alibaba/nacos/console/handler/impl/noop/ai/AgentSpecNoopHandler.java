@@ -132,7 +132,7 @@ public class AgentSpecNoopHandler implements AgentSpecHandler {
     }
     
     @Override
-    public void reedit(AgentSpecPublishForm form) throws NacosException {
+    public void redraft(AgentSpecPublishForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
             ErrorCode.API_FUNCTION_DISABLED,
             AGENTSPEC_NOT_ENABLED_MESSAGE);

@@ -837,7 +837,7 @@ public class AiResourceManager {
         if (!AiResourceConstants.VERSION_STATUS_REVIEWED.equalsIgnoreCase(v.getStatus())
             && !AiResourceConstants.VERSION_STATUS_REVIEWING.equalsIgnoreCase(
             v.getStatus())) {
-            // Allow draft only for legacy data: pipeline rejected → draft (stale is null/false)
+            // Allow draft only for legacy data: pipeline rejected → draft (historical is null/false)
             boolean allowDraft = AiResourceConstants.VERSION_STATUS_DRAFT
                 .equalsIgnoreCase(v.getStatus()) && isLegacyRejectedDraft(v);
             if (!allowDraft) {
@@ -1049,8 +1049,8 @@ public class AiResourceManager {
     }
     
     /**
-     * Check if a draft version is a legacy rejected-to-draft (not from reedit).
-     * Returns true when pipeline info exists with REJECTED status and stale is null/false.
+     * Check if a draft version is a legacy rejected-to-draft (not from redraft).
+     * Returns true when pipeline info exists with REJECTED status and historical is null/false.
      */
     private boolean isLegacyRejectedDraft(AiResourceVersion v) {
         if (StringUtils.isBlank(v.getPublishPipelineInfo())) {
@@ -1060,7 +1060,7 @@ public class AiResourceManager {
             PublishPipelineInfo info =
                 JacksonUtils.toObj(v.getPublishPipelineInfo(), PublishPipelineInfo.class);
             return info.getStatus() == PipelineExecutionStatus.REJECTED
-                && !Boolean.TRUE.equals(info.getStale());
+                && !Boolean.TRUE.equals(info.getHistorical());
         } catch (Exception ex) {
             return false;
         }
@@ -1140,7 +1140,7 @@ public class AiResourceManager {
      * @param type        resource type (skill, prompt, agentspec)
      * @param version     version to re-edit
      */
-    public void doReEdit(String namespaceId, String name, String type, String version)
+    public void doRedraft(String namespaceId, String name, String type, String version)
         throws NacosException {
         AiResource meta = requireMeta(namespaceId, name, type);
         VisibilityHelper.checkWritableResource(meta);
@@ -1160,16 +1160,16 @@ public class AiResourceManager {
         aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
             AiResourceConstants.VERSION_STATUS_DRAFT);
         
-        // Mark pipeline info as stale so forcePublish is not available on re-edited drafts
+        // Mark pipeline info as historical so forcePublish is not available on redrafted versions
         if (StringUtils.isNotBlank(v.getPublishPipelineInfo())) {
             try {
                 PublishPipelineInfo pipelineInfo =
                     JacksonUtils.toObj(v.getPublishPipelineInfo(), PublishPipelineInfo.class);
-                pipelineInfo.setStale(true);
+                pipelineInfo.setHistorical(true);
                 aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, type,
                     version, JacksonUtils.toJson(pipelineInfo));
             } catch (Exception ex) {
-                LOGGER.warn("Failed to mark pipeline info as stale for {}@{}", name, version, ex);
+                LOGGER.warn("Failed to mark pipeline info as historical for {}@{}", name, version, ex);
             }
         }
         
@@ -1180,7 +1180,7 @@ public class AiResourceManager {
         }
         
         AiResourceTraceService.logSuccess(type, name, version,
-            AiResourceTraceService.OP_RE_EDIT,
+            AiResourceTraceService.OP_REDRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     

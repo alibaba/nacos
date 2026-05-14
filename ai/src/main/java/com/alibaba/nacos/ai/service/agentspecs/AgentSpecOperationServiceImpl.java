@@ -907,8 +907,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     @Override
-    public void reedit(String namespaceId, String name, String version) throws NacosException {
-        resourceManager.doReEdit(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version);
+    public void redraft(String namespaceId, String name, String version) throws NacosException {
+        resourceManager.doRedraft(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version);
     }
     
     /**

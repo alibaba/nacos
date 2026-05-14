@@ -244,11 +244,11 @@ public class ConsolePromptController {
     /**
      * Re-edit a reviewed prompt version, transitioning it back to draft status.
      */
-    @PostMapping("/reedit")
+    @PostMapping("/redraft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<String> reedit(PromptVersionPublishForm form) throws NacosException {
+    public Result<String> redraft(PromptVersionPublishForm form) throws NacosException {
         form.validate();
-        promptProxy.reedit(form.getNamespaceId(), form.getPromptKey(), form.getVersion());
+        promptProxy.redraft(form.getNamespaceId(), form.getPromptKey(), form.getVersion());
         return Result.success("ok");
     }
     

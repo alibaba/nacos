@@ -318,10 +318,10 @@ export default function PromptDetailPage() {
     if (ok) { toast.success(t('prompt.forcePublishSuccess')); await refreshAfterAction(version); }
   };
 
-  const handleReedit = async (version: string) => {
+  const handleRedraft = async (version: string) => {
     try {
-      await promptApi.reedit({ promptKey, version, namespaceId });
-      toast.success(t('prompt.reeditSuccess'));
+      await promptApi.redraft({ promptKey, version, namespaceId });
+      toast.success(t('prompt.redraftSuccess'));
       await refreshAfterAction(version);
     } catch { /* handled by interceptor */ }
   };
@@ -815,10 +815,10 @@ export default function PromptDetailPage() {
                               variant="outline"
                               size="sm"
                               className="h-7 text-xs gap-1.5"
-                              onClick={() => handleReedit(selectedVersion)}
+                              onClick={() => handleRedraft(selectedVersion)}
                             >
                               <Pencil className="h-3 w-3" />
-                              {t('prompt.reedit')}
+                              {t('prompt.redraft')}
                             </Button>
                             <Button
                               variant="outline"

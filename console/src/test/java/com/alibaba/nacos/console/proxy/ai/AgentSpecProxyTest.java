@@ -103,11 +103,11 @@ public class AgentSpecProxyTest {
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setVersion("v1");
         
-        doNothing().when(agentSpecHandler).reedit(form);
+        doNothing().when(agentSpecHandler).redraft(form);
         
-        agentSpecProxy.reedit(form);
+        agentSpecProxy.redraft(form);
         
-        verify(agentSpecHandler, times(1)).reedit(form);
+        verify(agentSpecHandler, times(1)).redraft(form);
     }
     
     @Test

@@ -247,11 +247,11 @@ public class ConsoleSkillController {
     /**
      * Re-edit a reviewed skill version, transitioning it back to draft status.
      */
-    @PostMapping("/reedit")
+    @PostMapping("/redraft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<String> reedit(SkillPublishForm form) throws NacosException {
+    public Result<String> redraft(SkillPublishForm form) throws NacosException {
         form.validate();
-        skillProxy.reedit(form);
+        skillProxy.redraft(form);
         return Result.success("ok");
     }
     

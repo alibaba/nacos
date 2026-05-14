@@ -6,7 +6,7 @@
  *   reviewing → (pipeline approved) → reviewed
  *   reviewing → (pipeline rejected) → draft
  *   reviewed  → publish  → online
- *   reviewed  → reedit   → draft
+ *   reviewed  → redraft   → draft
  *   reviewing → publish  → online  (backward compat: historical data without reviewed status)
  *   online    → offline  → offline
  *   offline   → online   → online
@@ -20,7 +20,7 @@ import type { PipelineExecutionStatus } from '@/types/skill';
 const STATE_ACTIONS: Record<string, string[]> = {
   draft: ['submit', 'deleteDraft'],
   reviewing: ['publish'],
-  reviewed: ['publish', 'reedit', 'deleteDraft'],
+  reviewed: ['publish', 'redraft', 'deleteDraft'],
   online: ['offline'],
   offline: ['online'],
 };
@@ -50,7 +50,7 @@ export function getValidActionsWithContext(
   hasEditingOrReviewing: boolean,
   pipelineStatus?: PipelineExecutionStatus | null,
   isGlobalAdmin?: boolean,
-  pipelineStale?: boolean | null,
+  pipelineHistorical?: boolean | null,
 ): ActionItem[] {
   const base = getValidActions(status);
   const items: ActionItem[] = base.map((action) => {
@@ -61,11 +61,11 @@ export function getValidActionsWithContext(
   });
 
   // Admin force-publish: show when pipeline REJECTED on reviewing/reviewed,
-  // or on draft when pipeline is not stale (legacy backward compat)
+  // or on draft when pipeline is not historical (legacy backward compat)
   if (isGlobalAdmin && pipelineStatus === 'REJECTED') {
     if (status === 'reviewing' || status === 'reviewed') {
       items.push({ action: 'forcePublish' });
-    } else if (status === 'draft' && !pipelineStale) {
+    } else if (status === 'draft' && !pipelineHistorical) {
       items.push({ action: 'forcePublish' });
     }
   }

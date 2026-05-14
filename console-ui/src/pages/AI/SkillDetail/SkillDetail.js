@@ -764,7 +764,7 @@ class SkillDetail extends React.Component {
     });
   };
 
-  handleReedit = () => {
+  handleRedraft = () => {
     const { locale = {} } = this.props;
     const { selectedVersion } = this.state;
     const skillName = getParams('name');
@@ -774,7 +774,7 @@ class SkillDetail extends React.Component {
 
     request({
       method: 'POST',
-      url: 'v3/admin/ai/skills/reedit',
+      url: 'v3/admin/ai/skills/redraft',
       data: {
         skillName,
         version: selectedVersion,
@@ -784,17 +784,17 @@ class SkillDetail extends React.Component {
       success: data => {
         this.setState({ publishing: false });
         if (data && data.code === 0) {
-          Message.success(locale.reeditSuccess || 'Re-edit successfully, version is now draft');
+          Message.success(locale.redraftSuccess || 'Re-edit successfully, version is now draft');
           this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
             this.loadSkillData();
           });
         } else {
-          Message.error(data?.message || locale.reeditFailed || 'Failed to re-edit');
+          Message.error(data?.message || locale.redraftFailed || 'Failed to re-edit');
         }
       },
       error: () => {
         this.setState({ publishing: false });
-        Message.error(locale.reeditFailed || 'Failed to re-edit');
+        Message.error(locale.redraftFailed || 'Failed to re-edit');
       },
     });
   };
@@ -1982,8 +1982,8 @@ class SkillDetail extends React.Component {
                   >
                     {locale.publishVersion || 'Publish'}
                   </Button>
-                  <Button onClick={this.handleReedit} loading={publishing}>
-                    {locale.actionReedit || 'Re-edit'}
+                  <Button onClick={this.handleRedraft} loading={publishing}>
+                    {locale.actionRedraft || 'Re-edit'}
                   </Button>
                 </>
               )}

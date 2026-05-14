@@ -488,9 +488,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     }
     
     @Override
-    public void reedit(String namespaceId, String promptKey, String version)
+    public void redraft(String namespaceId, String promptKey, String version)
         throws NacosException {
-        resourceManager.doReEdit(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version);
+        resourceManager.doRedraft(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version);
     }
     
     @Override

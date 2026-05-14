@@ -252,14 +252,14 @@ public class ConsoleAgentSpecController {
      * Re-edit a reviewed agent spec version, transitioning it back to draft status.
      *
      * @param form publish form
-     * @return result of the reedit operation
+     * @return result of the redraft operation
      * @throws NacosException if the operation fails
      */
-    @PostMapping("/reedit")
+    @PostMapping("/redraft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<String> reedit(AgentSpecPublishForm form) throws NacosException {
+    public Result<String> redraft(AgentSpecPublishForm form) throws NacosException {
         form.validate();
-        agentSpecProxy.reedit(form);
+        agentSpecProxy.redraft(form);
         return Result.success("ok");
     }
     

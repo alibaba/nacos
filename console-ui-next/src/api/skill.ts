@@ -115,12 +115,12 @@ export const skillApi = {
     client.post(`${BASE}/force-publish`, data) as ApiResult<string>,
 
   /** Re-edit a reviewed version (transitions back to draft) */
-  reedit: (data: {
+  redraft: (data: {
     namespaceId?: string;
     skillName: string;
     version: string;
   }): ApiResult<string> =>
-    client.post(`${BASE}/reedit`, data) as ApiResult<string>,
+    client.post(`${BASE}/redraft`, data) as ApiResult<string>,
 
   /** Update labels */
   updateLabels: (data: {

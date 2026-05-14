@@ -111,8 +111,8 @@ public class SkillProxy {
         skillHandler.forcePublish(form);
     }
     
-    public void reedit(SkillPublishForm form) throws NacosException {
-        skillHandler.reedit(form);
+    public void redraft(SkillPublishForm form) throws NacosException {
+        skillHandler.redraft(form);
     }
     
     public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {

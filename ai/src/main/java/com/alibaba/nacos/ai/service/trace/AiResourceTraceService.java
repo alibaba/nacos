@@ -86,7 +86,7 @@ public class AiResourceTraceService {
     /**
      * Re-edit a reviewed version (transition back to draft).
      */
-    public static final String OP_RE_EDIT = "RE_EDIT";
+    public static final String OP_REDRAFT = "REDRAFT";
     
     /**
      * Publish a version to online.

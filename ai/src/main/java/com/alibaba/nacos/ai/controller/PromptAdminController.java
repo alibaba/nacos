@@ -252,11 +252,11 @@ public class PromptAdminController {
     /**
      * Re-edit a reviewed prompt version, transitioning it back to draft for modification.
      */
-    @PostMapping("/reedit")
+    @PostMapping("/redraft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<String> reedit(PromptVersionPublishForm form) throws NacosException {
+    public Result<String> redraft(PromptVersionPublishForm form) throws NacosException {
         form.validate();
-        promptOperationService.reedit(form.getNamespaceId(), form.getPromptKey(),
+        promptOperationService.redraft(form.getNamespaceId(), form.getPromptKey(),
             form.getVersion());
         return Result.success("ok");
     }

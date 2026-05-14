@@ -169,7 +169,7 @@ public class SkillNoopHandler implements SkillHandler {
     }
     
     @Override
-    public void reedit(SkillPublishForm form) throws NacosException {
+    public void redraft(SkillPublishForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
             ErrorCode.API_FUNCTION_DISABLED,
             SKILL_NOT_ENABLED_MESSAGE);

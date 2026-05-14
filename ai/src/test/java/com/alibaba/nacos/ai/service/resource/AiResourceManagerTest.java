@@ -1122,10 +1122,10 @@ class AiResourceManagerTest {
         }
     }
     
-    // ---- doReEdit ----
+    // ---- doRedraft ----
     
     @Test
-    void doReEditShouldTransitionReviewedToDraft() throws NacosException {
+    void doRedraftShouldTransitionReviewedToDraft() throws NacosException {
         AiResource meta = buildMeta("res");
         ResourceVersionInfo vInfo = new ResourceVersionInfo();
         vInfo.setReviewingVersion("v1");
@@ -1141,7 +1141,7 @@ class AiResourceManagerTest {
         when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
             eq(1L), any())).thenReturn(true);
         
-        manager.doReEdit(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1");
+        manager.doRedraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1");
         
         verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
             "v1", AiResourceConstants.VERSION_STATUS_DRAFT);
@@ -1155,7 +1155,7 @@ class AiResourceManagerTest {
     }
     
     @Test
-    void doReEditShouldThrowWhenVersionNotReviewed() {
+    void doRedraftShouldThrowWhenVersionNotReviewed() {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
@@ -1167,12 +1167,12 @@ class AiResourceManagerTest {
             .thenReturn(v);
         
         NacosApiException ex = assertThrows(NacosApiException.class,
-            () -> manager.doReEdit(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"));
+            () -> manager.doRedraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
     
     @Test
-    void doReEditShouldThrowWhenVersionNotFound() {
+    void doRedraftShouldThrowWhenVersionNotFound() {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
@@ -1180,7 +1180,7 @@ class AiResourceManagerTest {
             .thenReturn(null);
         
         NacosApiException ex = assertThrows(NacosApiException.class,
-            () -> manager.doReEdit(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99"));
+            () -> manager.doRedraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99"));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
     }
     
@@ -1721,14 +1721,14 @@ class AiResourceManagerTest {
     }
     
     @Test
-    void doForcePublishShouldThrowWhenDraftWithStalePipeline() {
+    void doForcePublishShouldThrowWhenDraftWithHistoricalPipeline() {
         AiResource meta = buildMeta("res");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
         v.setPublishPipelineInfo(
-            "{\"executionId\":\"e1\",\"status\":\"REJECTED\",\"pipeline\":[],\"stale\":true}");
+            "{\"executionId\":\"e1\",\"status\":\"REJECTED\",\"pipeline\":[],\"historical\":true}");
         when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
             .thenReturn(v);
         NacosApiException ex = assertThrows(NacosApiException.class,

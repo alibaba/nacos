@@ -283,7 +283,7 @@ public interface AgentSpecOperationService {
      * @param version     version to re-edit
      * @throws NacosException if version not found or not in reviewed status
      */
-    void reedit(String namespaceId, String name, String version) throws NacosException;
+    void redraft(String namespaceId, String name, String version) throws NacosException;
     
     /**
      * Update labels mapping (label -> version) without changing any version status.

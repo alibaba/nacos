@@ -135,7 +135,7 @@ public class PromptNoopHandler implements PromptHandler {
     }
     
     @Override
-    public void reedit(String namespaceId, String promptKey, String version)
+    public void redraft(String namespaceId, String promptKey, String version)
         throws NacosException {
         throw notImplemented();
     }

@@ -545,11 +545,11 @@ export default function SkillDetailPage() {
     }
   };
 
-  const handleReedit = async (version: string) => {
+  const handleRedraft = async (version: string) => {
     setActionLoading(true);
     try {
-      await skillApi.reedit({ namespaceId, skillName, version });
-      toast.success(t('skill.reeditSuccess'));
+      await skillApi.redraft({ namespaceId, skillName, version });
+      toast.success(t('skill.redraftSuccess'));
       await loadDetail();
     } catch {
       await loadDetail();
@@ -943,7 +943,7 @@ export default function SkillDetailPage() {
                             <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                           )}
                           {/* Admin-only force-publish when pipeline rejected */}
-                          {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && !currentPipelineInfo.stale && (
+                          {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && !currentPipelineInfo.historical && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -981,10 +981,10 @@ export default function SkillDetailPage() {
                             size="sm"
                             className="h-7 text-xs gap-1.5"
                             disabled={actionLoading}
-                            onClick={() => handleReedit(selectedVersion)}
+                            onClick={() => handleRedraft(selectedVersion)}
                           >
                             <Pencil className="h-3 w-3" />
-                            {t('skill.reedit')}
+                            {t('skill.redraft')}
                           </Button>
                           <Button
                             variant="outline"

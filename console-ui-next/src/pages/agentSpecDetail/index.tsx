@@ -315,11 +315,11 @@ export default function AgentSpecDetailPage() {
     }
   };
 
-  const handleReedit = async (version: string) => {
+  const handleRedraft = async (version: string) => {
     setActionLoading(true);
     try {
-      await agentSpecApi.reedit({ namespaceId, agentSpecName, version });
-      toast.success(t('agentSpec.reeditSuccess'));
+      await agentSpecApi.redraft({ namespaceId, agentSpecName, version });
+      toast.success(t('agentSpec.redraftSuccess'));
       await loadDetail();
     } catch {
       await loadDetail();
@@ -1070,10 +1070,10 @@ export default function AgentSpecDetailPage() {
                             size="sm"
                             className="h-7 text-xs gap-1.5"
                             disabled={actionLoading}
-                            onClick={() => handleReedit(selectedVersion)}
+                            onClick={() => handleRedraft(selectedVersion)}
                           >
                             <Pencil className="h-3 w-3" />
-                            {t('agentSpec.reedit')}
+                            {t('agentSpec.redraft')}
                           </Button>
                           <Button
                             variant="outline"

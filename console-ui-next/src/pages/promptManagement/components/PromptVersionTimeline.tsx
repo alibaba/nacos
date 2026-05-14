@@ -165,7 +165,7 @@ export function PromptVersionTimeline({
             hasEditingVersion || hasReviewingVersion,
             pipelineInfo?.status,
             isGlobalAdmin,
-            pipelineInfo?.stale,
+            pipelineInfo?.historical,
           );
 
           const isPendingPublish = (v.status === 'reviewed' && pipelineInfo?.status !== 'REJECTED') || (v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED');

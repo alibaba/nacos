@@ -101,11 +101,11 @@ public class SkillProxyTest {
         form.setSkillName(SKILL_NAME);
         form.setVersion("v1");
         
-        doNothing().when(skillHandler).reedit(form);
+        doNothing().when(skillHandler).redraft(form);
         
-        skillProxy.reedit(form);
+        skillProxy.redraft(form);
         
-        verify(skillHandler, times(1)).reedit(form);
+        verify(skillHandler, times(1)).redraft(form);
     }
     
     @Test
