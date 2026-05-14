@@ -397,7 +397,7 @@ class SkillOperationServiceImplTest {
     @Test
     void testUploadSkillFromZipUsesFrontmatterMetadataVersion() throws NacosException, IOException {
         String namespaceId = "test-namespace";
-        byte[] zipBytes = createZipBytesWithNestedMetadataVersion("1.0");
+        byte[] zipBytes = createZipBytesWithNestedMetadataVersion("1.0.0");
         when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString()))
             .thenReturn(null);
         
@@ -405,7 +405,32 @@ class SkillOperationServiceImplTest {
         
         assertEquals("test-skill", result);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
-            && "1.0".equals(inserted.getVersion())));
+            && "1.0.0".equals(inserted.getVersion())));
+    }
+    
+    @Test
+    void testUploadSkillFromZipRejectsInvalidFrontmatterMetadataVersion() throws IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithNestedMetadataVersion("latest");
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false));
+        assertTrue(exception.getErrMsg().contains("SKILL.md frontmatter"),
+            "error should identify the frontmatter as the source");
+        assertTrue(exception.getErrMsg().contains("latest"),
+            "error should include the offending value");
+    }
+    
+    @Test
+    void testUploadSkillFromZipRejectsInvalidTargetVersion() throws IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithoutVersion();
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false,
+                "not-a-version"));
+        assertTrue(exception.getErrMsg().contains("targetVersion"),
+            "error should identify targetVersion as the source");
     }
     
     @Test

@@ -292,20 +292,33 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     /**
      * Resolve the upload version.
      * Priority: SKILL.md YAML front-matter (version / metadata.version) -> meta.json in ZIP -> user-specified targetVersion -> default "0.0.1".
+     * Rejects non-{@code x.y.z}/{@code vN} versions from any source so invalid values cannot reach storage.
      */
-    private String resolveUploadVersion(String skillMd, byte[] zipBytes, String targetVersion) {
+    private String resolveUploadVersion(String skillMd, byte[] zipBytes, String targetVersion)
+        throws NacosApiException {
         String versionFromSkillMd = resolveVersionFromSkillMd(skillMd);
         if (StringUtils.isNotBlank(versionFromSkillMd)) {
-            return versionFromSkillMd;
+            return validateUploadVersionFormat(versionFromSkillMd, "SKILL.md frontmatter");
         }
         String versionFromMetaJson = SkillZipParser.resolveVersionFromZip(zipBytes);
         if (StringUtils.isNotBlank(versionFromMetaJson)) {
-            return versionFromMetaJson;
+            return validateUploadVersionFormat(versionFromMetaJson, "_meta.json");
         }
         if (StringUtils.isNotBlank(targetVersion)) {
-            return targetVersion.trim();
+            return validateUploadVersionFormat(targetVersion.trim(), "targetVersion parameter");
         }
         return DEFAULT_INITIAL_UPLOAD_VERSION;
+    }
+    
+    private static String validateUploadVersionFormat(String version, String source)
+        throws NacosApiException {
+        if (!VersionUtils.isSupportedVersionFormat(version)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Invalid version from " + source + ": '" + version
+                    + "', expected x.y.z or vN");
+        }
+        return version;
     }
     
     /**

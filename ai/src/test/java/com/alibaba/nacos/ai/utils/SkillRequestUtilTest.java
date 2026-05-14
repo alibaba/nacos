@@ -125,6 +125,39 @@ class SkillRequestUtilTest {
         assertEquals("test", SkillRequestUtil.parseFrontmatterField(result, "name"));
     }
     
+    @Test
+    void testUpdateFrontmatterFieldPreservesNestedIndent() {
+        // Issue #14997: nested `metadata.version` lost its indent and was promoted to a top-level key.
+        String md = "---\nname: hello-world\nmetadata:\n  version: latest\n  openclaw:\n"
+            + "    emoji: 👋\n---\n# Body";
+        String result = SkillRequestUtil.updateFrontmatterField(md, "version", "latest");
+        assertTrue(result.contains("\n  version: latest\n"),
+            "Nested version should keep its 2-space indent");
+        assertTrue(!result.contains("\nversion: latest\n"),
+            "Nested version must not be promoted to a top-level key");
+        assertTrue(result.contains("\n  openclaw:\n    emoji: 👋\n"),
+            "Sibling nested keys must remain intact");
+    }
+    
+    @Test
+    void testUpdateFrontmatterFieldUpdatesNestedValuePreservingIndent() {
+        String md = "---\nname: my-skill\nmetadata:\n  version: 1.0.0\n---\n# Body";
+        String result = SkillRequestUtil.updateFrontmatterField(md, "version", "2.0.0");
+        assertTrue(result.contains("\n  version: 2.0.0\n"),
+            "Nested version value should be updated while preserving indent");
+        assertTrue(!result.contains("\nversion: 2.0.0\n"));
+    }
+    
+    @Test
+    void testUpdateFrontmatterFieldKeepsTopLevelBehavior() {
+        String md = "---\nname: my-skill\nversion: 0.0.1\n---\n# Body";
+        String result = SkillRequestUtil.updateFrontmatterField(md, "version", "2.0.0");
+        assertTrue(result.contains("\nversion: 2.0.0\n"),
+            "Top-level version must remain at the top level after update");
+        assertTrue(!result.contains("  version: 2.0.0"),
+            "Top-level version must not gain unexpected indentation");
+    }
+    
     // ========== normalizeSkillFrontmatter — first create ==========
     
     @Test
