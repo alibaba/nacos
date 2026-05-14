@@ -171,34 +171,26 @@ export default function SkillManagementPage() {
       if (data && (data.succeeded || data.failed)) {
         const succeededList: string[] = data.succeeded ?? [];
         const failedList: { name: string; reason: string }[] = data.failed ?? [];
-        const description = (
-          <div className="flex flex-col gap-1.5 text-xs mt-1">
-            {succeededList.length > 0 && (
-              <div>
-                <div style={{ color: '#16a34a', fontWeight: 600 }}>{t('skill.resultSucceeded', { count: succeededList.length })}</div>
-                {succeededList.map((name) => (
-                  <div key={name} style={{ color: '#16a34a', paddingLeft: 8 }}>✓ {name}</div>
-                ))}
-              </div>
-            )}
-            {failedList.length > 0 && (
-              <div>
-                <div style={{ color: '#dc2626', fontWeight: 600 }}>{t('skill.resultFailed', { count: failedList.length })}</div>
-                {failedList.map((item) => (
-                  <div key={item.name} style={{ color: '#dc2626', paddingLeft: 8 }}>
-                    ✗ {item.name}<span style={{ opacity: 0.8 }}> — {item.reason}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
         if (failedList.length === 0) {
-          toast.success(t('skill.batchUploadAllSuccess', { count: succeededList.length }), { description, duration: 5000 });
-        } else if (succeededList.length === 0) {
-          toast.error(t('skill.batchUploadAllFailed', { count: failedList.length }), { description, duration: 8000 });
+          toast.success(t('skill.batchUploadAllSuccess', { count: succeededList.length }), { duration: 5000 });
         } else {
-          toast.warning(t('skill.batchUploadResult', { succeeded: succeededList.length, failed: failedList.length }), { description, duration: 8000 });
+          const title = succeededList.length > 0
+            ? t('skill.batchUploadResult', { succeeded: succeededList.length, failed: failedList.length })
+            : t('skill.batchUploadAllFailed', { count: failedList.length });
+          const description = (
+            <div className="flex flex-col gap-0.5 text-xs">
+              {succeededList.map((name) => (
+                <div key={name} style={{ color: '#16a34a' }}>✓ {name}</div>
+              ))}
+              {failedList.map((item) => (
+                <div key={item.name} style={{ color: '#dc2626' }}>
+                  ✗ {item.name}<span style={{ opacity: 0.8 }}> — {item.reason}</span>
+                </div>
+              ))}
+            </div>
+          );
+          const toastFn = succeededList.length > 0 ? toast.warning : toast.error;
+          toastFn(title, { description, duration: 8000 });
         }
       } else {
         toast.success(t('skill.uploadSuccess'));
