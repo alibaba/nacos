@@ -101,13 +101,13 @@ NamespaceId -> Group/resourceType -> resourceName
 
 配置领域管理由 namespace、group 和 dataId 标识的动态配置资源。它负责配置内容、
 type、md5、元数据、监听、模糊订阅、灰度/beta 发布、历史、回滚、dump 和
-failover 相关行为。
+failover 相关行为。详细规则由 [Config 规范](../config/config-spec.md)定义。
 
 ### 4.2 注册中心领域
 
 注册中心领域管理由 namespace、group 和 service name 标识的服务发现资源。它负责
-服务元数据、实例、集群、健康状态、临时和持久化语义、订阅者、客户端视图和
-服务变化推送。
+服务元数据、实例、集群、健康状态、临时服务和持久服务语义、订阅者、客户端视图和
+服务变化推送。详细规则由 [Naming 规范](../naming/naming-spec.md)定义。
 
 ### 4.3 AI Registry 领域
 

@@ -127,14 +127,16 @@ hierarchy.
 The configuration domain manages dynamic configuration resources identified by
 namespace, group, and dataId. It owns configuration content, type, md5, metadata,
 listeners, fuzzy watch, gray/beta release, history, rollback, dump, and
-failover-related behavior.
+failover-related behavior. The detailed rules are defined by the
+[Config Spec](../config/config-spec.md).
 
 ### 4.2 Naming Domain
 
 The naming domain manages service discovery resources identified by namespace,
 group, and service name. It owns service metadata, instances, clusters, health
-status, ephemeral and persistent semantics, subscribers, client views, and
-service-change push.
+status, ephemeral-service and persistent-service semantics, subscribers, client
+views, and service-change push. The detailed rules are defined by the
+[Naming Spec](../naming/naming-spec.md).
 
 ### 4.3 AI Registry Domain
 

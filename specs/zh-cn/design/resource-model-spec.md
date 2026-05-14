@@ -33,12 +33,12 @@ NamespaceId -> Group/resourceType -> resourceName
 | 层级 | 含义 | 适用范围 |
 | --- | --- | --- |
 | `NamespaceId` | 租户、团队、环境或管理域隔离边界。 | 所有租户域资源。 |
-| `Group/resourceType` | 第二层分类。微服务应用资源使用 `group`；AI 资源使用 `resourceType`。 | 由领域决定。 |
+| `Group/resourceType` | 第二层分类。微服务应用资源使用概念层 `Group`；AI 资源使用 `resourceType`。 | 由领域决定。 |
 | `resourceName` | 在上层 scope 内标识具体资源的稳定名称。 | 所有可命名资源。 |
 
-`group` 和 `resourceType` 不应被混为同一个字段：
+`Group` 和 `resourceType` 不应被混为同一个字段：
 
-- `group` 是微服务应用资源的业务分组，主要用于配置和注册中心资源。
+- `Group` 是微服务应用资源的业务分组，主要用于配置和注册中心资源。
 - `resourceType` 是资源类型分组，主要用于 AI Registry 等多类型资源共享同一套
   治理模型的场景。
 
@@ -76,15 +76,19 @@ Group 是微服务应用资源的业务分组。它是配置和注册中心资�
 省略的接口中默认值为 `DEFAULT_GROUP`。
 
 Group 适合表达同一类微服务资源的业务隔离，例如应用、业务线、环境内分组或用户
-自定义分组。Group 不表达资源类型，因此同一 group 下可以存在配置和服务等不同
+自定义分组。Group 不表达资源类型，因此同一 Group 下可以存在配置和服务等不同
 领域资源。
+
+当 Group 层在新的规范、HTTP API、SDK 或面向用户文档中表达为具体公开字段时，
+字段名应使用 `groupName`。较短的 `group` 名称只作为概念表达、内部模型字段或
+兼容字段使用。
 
 ### 3.2 resourceType
 
 resourceType 是资源类型分组。它适合表达一类共享治理模型中的不同资源类型，例如
 AI Registry 中的 `mcp`、`a2a`、`prompt`、`skill`、`agentspec`。
 
-resourceType 不表达业务分组。AI 资源不应再引入 group 作为身份字段，除非对应领域
+resourceType 不表达业务分组。AI 资源不应再引入 Group 作为身份字段，除非对应领域
 规范明确给出额外语义。
 
 ## 4. 第三层：resourceName
@@ -121,7 +125,7 @@ NamespaceId -> Group -> resourceName
 Config 资源身份为：
 
 ```text
-namespaceId -> group -> dataId
+namespaceId -> groupName -> dataId
 ```
 
 Config 负责：
@@ -137,6 +141,8 @@ Config 负责：
 `dataId` 是 Config 的 resourceName。`appName`、`type`、`desc` 和 `configTags` 等
 元数据不改变资源身份。
 
+详细规则参见 [Config 资源规范](../config/config-resource-spec.md)。
+
 Prompt 存在旧兼容映射：固定 group 为 `nacos-ai-prompt`，dataId 为
 `{promptKey}.json`。该映射是兼容存储形态，不应让 Prompt 在新规范中被视为普通
 Config 资源。
@@ -146,26 +152,27 @@ Config 资源。
 Naming service 资源身份为：
 
 ```text
-namespaceId -> group -> serviceName
+namespaceId -> groupName -> serviceName
 ```
 
 Naming service 负责：
 
-- 服务元数据和 selector 信息；
-- 临时或持久化服务语义；
+- 服务元数据和内部过滤信息；
+- 临时服务或持久服务语义；
 - cluster 和健康检查配置；
 - subscriber、publisher 和 client connection 视图；
 - service 和 instance 变更事件。
 
 内部 grouped name 可以使用 `group@@serviceName` 表达，但公开 API 和规范应优先
-使用独立的 `group` 与 `serviceName` 字段。
+使用独立的 `groupName` 与 `serviceName` 字段。详细规则参见
+[Naming 资源规范](../naming/naming-resource-spec.md)。
 
 ### 5.3 Cluster 和 Instance
 
 Cluster 和 Instance 是 service 的下级资源，不改变顶层三层模型。
 
 ```text
-namespaceId -> group -> serviceName -> clusterName -> instance
+namespaceId -> groupName -> serviceName -> clusterName -> instance
 ```
 
 Instance 身份通常由 service scope、`clusterName`、`ip` 和 `port` 共同确定；
@@ -175,8 +182,7 @@ Instance 包含 `ip`、`port`、`clusterName`、`weight`、`healthy`、`enabled`
 `ephemeral`、`metadata` 和可选 `instanceId`。脱离 service scope 的 instance 不应
 被单独解释。
 
-临时和持久化语义会影响生命周期和一致性行为。HTTP、gRPC、SDK 和存储模型都必须
-保留该语义。
+临时服务和持久服务语义会影响生命周期和一致性行为。HTTP、gRPC、SDK 和存储模型都必须保留该语义。
 
 ## 6. AI 资源模型
 
@@ -297,7 +303,7 @@ Agent 配置。AgentSpec 应通过稳定身份和 version 或 label 引用其他
 状态值是领域特定的，但必须显式定义并记录：
 
 - Config 资源使用发布、gray/beta、history 和 listener 状态；
-- Naming 资源使用 service、instance、health、enabled 和 ephemeral 状态；
+- Naming 资源使用 service type、instance、health、enabled 和 lifecycle 状态；
 - AI 资源使用 metadata status、version status、labels、pipeline state 和 visibility
   state；
 - Core 资源使用 server、member、readiness、liveness、plugin 和 connection 状态。

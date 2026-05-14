@@ -21,6 +21,7 @@
 ## 设计基础
 
 - [Nacos 设计规范](design/nacos-design-spec.md)
+- [核心功能规范](design/core-capabilities-spec.md)
 - [资源模型规范](design/resource-model-spec.md)
 
 ## 接口模型
@@ -29,6 +30,11 @@
 - [gRPC API 规范](grpc-api/api-spec.md)
 - [SDK 规范](sdk/sdk-spec.md)
 - [Java SDK 实现规范](sdk/sdk-java-impl-spec.md)
+
+## 领域模型
+
+- [Config 规范](config/README.md)
+- [Naming 规范](naming/README.md)
 
 ## 扩展模型
 

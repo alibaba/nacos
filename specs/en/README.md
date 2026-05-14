@@ -22,6 +22,7 @@ extension mechanisms, and cross-cutting security rules.
 ## Design Foundation
 
 - [Nacos Design Spec](design/nacos-design-spec.md)
+- [Core Capabilities Spec](design/core-capabilities-spec.md)
 - [Resource Model Spec](design/resource-model-spec.md)
 
 ## Interface Model
@@ -30,6 +31,11 @@ extension mechanisms, and cross-cutting security rules.
 - [gRPC API Spec](grpc-api/api-spec.md)
 - [SDK Spec](sdk/sdk-spec.md)
 - [Java SDK Implementation Spec](sdk/sdk-java-impl-spec.md)
+
+## Domain Model
+
+- [Config Specs](config/README.md)
+- [Naming Specs](naming/README.md)
 
 ## Extension Model
 

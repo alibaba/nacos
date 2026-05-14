@@ -25,20 +25,22 @@ Spec hierarchy:
 
 ```text
 Nacos design
-  -> Resource model
+  -> Core capabilities and resource model
   -> HTTP / gRPC / SDK interface specs
+  -> Domain specs
   -> Extension model
-  -> Security and domain specs
+  -> Security model
 ```
 
 规范层次：
 
 ```text
 Nacos 顶层设计
-  -> 资源模型
+  -> 核心功能与资源模型
   -> HTTP / gRPC / SDK 接口规范
+  -> 领域规范
   -> 扩展模型
-  -> 安全与领域规范
+  -> 安全模型
 ```
 
 Available languages:
