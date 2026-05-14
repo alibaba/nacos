@@ -154,6 +154,20 @@ class ChooserTest {
         assertEquals(ref, ref2);
     }
     
+    @Test
+    @SuppressWarnings("ConstantConditions")
+    void testEqualsExplicitNullAndOtherType() {
+        // Explicitly trigger equals(null) and equals(other-type) for both Chooser and Ref so the
+        // null/getClass branches are reached (assertNotEquals(null, x) shortcuts via Objects.equals)
+        List<Pair<String>> list = new LinkedList<>();
+        list.add(new Pair<>("test", 1));
+        Chooser<String, String> chooser = new Chooser<>("test", list);
+        assertTrue(!chooser.equals(null));
+        assertTrue(!chooser.equals("not a chooser"));
+        Chooser.Ref ref = chooser.getRef();
+        assertTrue(!ref.equals(null));
+    }
+    
     private List<Instance> getInstanceList() {
         List<Instance> list = new ArrayList<>();
         int size = ThreadLocalRandom.current().nextInt(0, 1000);

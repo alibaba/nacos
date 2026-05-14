@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.ai.cache;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.ai.event.AgentCardChangedEvent;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -30,18 +31,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class NacosAgentCardCacheHolderTest {
@@ -221,6 +228,107 @@ class NacosAgentCardCacheHolderTest {
         cacheHolder.processAgentCardDetailInfo(detailInfo);
         assertNotNull(cacheHolder.getAgentCard("test-agent", "1.0"));
         assertNull(cacheHolder.getAgentCard("test-agent", null));
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static <T> T readField(Object target, String name) throws Exception {
+        Field field = findField(target.getClass(), name);
+        field.setAccessible(true);
+        return (T) field.get(target);
+    }
+    
+    private static Field findField(Class<?> clazz, String name) throws NoSuchFieldException {
+        Class<?> c = clazz;
+        while (c != null) {
+            for (Field f : c.getDeclaredFields()) {
+                if (f.getName().equals(name)) {
+                    return f;
+                }
+            }
+            c = c.getSuperclass();
+        }
+        throw new NoSuchFieldException(name);
+    }
+    
+    @Test
+    void testAddAndRemoveAgentCardUpdateTask() throws Exception {
+        cacheHolder.addAgentCardUpdateTask("test-agent", "1.0");
+        Map<String, ?> taskMap = readField(cacheHolder, "updateTaskMap");
+        assertNotNull(taskMap);
+        assertEquals(1, taskMap.size());
+        // adding same key is a no-op (computeIfAbsent)
+        cacheHolder.addAgentCardUpdateTask("test-agent", "1.0");
+        assertEquals(1, taskMap.size());
+        cacheHolder.removeAgentCardUpdateTask("test-agent", "1.0");
+        assertEquals(0, taskMap.size());
+    }
+    
+    @Test
+    void testRemoveAgentCardUpdateTaskNonExistentNoOp() throws Exception {
+        // No task registered → remove should be a no-op
+        cacheHolder.removeAgentCardUpdateTask("non-existent", "1.0");
+        Map<String, ?> taskMap = readField(cacheHolder, "updateTaskMap");
+        assertEquals(0, taskMap.size());
+    }
+    
+    @Test
+    void testAgentCardUpdaterRunFetchesAndProcesses() throws Exception {
+        AgentCardDetailInfo detailInfo = buildDetailInfo("test-agent", "1.0", true);
+        when(aiGrpcClient.getAgentCard(anyString(), anyString(), anyString()))
+            .thenReturn(detailInfo);
+        Runnable updater = newUpdater("test-agent", "1.0");
+        updater.run();
+        // After run, the detail info should be in the cache
+        assertNotNull(cacheHolder.getAgentCard("test-agent", "1.0"));
+    }
+    
+    @Test
+    void testAgentCardUpdaterRunSwallowsNotFound() throws Exception {
+        when(aiGrpcClient.getAgentCard(anyString(), anyString(), anyString()))
+            .thenThrow(new NacosException(NacosException.NOT_FOUND, "missing"));
+        Runnable updater = newUpdater("test-agent", "1.0");
+        updater.run();
+        // Should not throw and the cache stays empty
+        assertNull(cacheHolder.getAgentCard("test-agent", "1.0"));
+    }
+    
+    @Test
+    void testAgentCardUpdaterRunSwallowsOtherException() throws Exception {
+        when(aiGrpcClient.getAgentCard(anyString(), anyString(), anyString()))
+            .thenThrow(new RuntimeException("boom"));
+        Runnable updater = newUpdater("test-agent", "1.0");
+        // Should not throw, caught and rescheduled
+        updater.run();
+    }
+    
+    @Test
+    void testAgentCardUpdaterCancelExitsEarly() throws Exception {
+        Runnable updater = newUpdater("test-agent", "1.0");
+        AtomicBoolean cancel = readField(updater, "cancel");
+        cancel.set(true);
+        // Should not call aiGrpcClient at all because cancel=true
+        updater.run();
+        org.mockito.Mockito.verifyNoInteractions(aiGrpcClient);
+    }
+    
+    @Test
+    void testAgentCardUpdaterCancelMethod() throws Exception {
+        Runnable updater = newUpdater("test-agent", "1.0");
+        AtomicBoolean cancel = readField(updater, "cancel");
+        assertFalse(cancel.get());
+        Method cancelMethod = updater.getClass().getDeclaredMethod("cancel");
+        cancelMethod.setAccessible(true);
+        cancelMethod.invoke(updater);
+        assertTrue(cancel.get());
+    }
+    
+    private Runnable newUpdater(String agentName, String version) throws Exception {
+        Class<?> updaterClass = Class.forName(
+            "com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder$AgentCardUpdater");
+        java.lang.reflect.Constructor<?> ctor = updaterClass.getDeclaredConstructor(
+            NacosAgentCardCacheHolder.class, String.class, String.class);
+        ctor.setAccessible(true);
+        return (Runnable) ctor.newInstance(cacheHolder, agentName, version);
     }
     
     private AgentCardDetailInfo buildDetailInfo(String name, String version, boolean isLatest) {

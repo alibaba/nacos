@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -109,5 +110,10 @@ class ConcurrentDiskUtilTest {
                 throw e.getCause();
             }
         });
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new ConcurrentDiskUtil());
     }
 }

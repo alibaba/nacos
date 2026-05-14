@@ -22,9 +22,12 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchContext;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
@@ -1283,5 +1286,181 @@ class NacosNamingServiceTest {
         instance.setClusterName(clusterName);
         instance.setHealthy(healthy);
         return instance;
+    }
+    
+    @Test
+    void testSelectInstancesEmptyServiceInfoReturnsEmptyList() throws NacosException {
+        String serviceName = "service-empty";
+        when(proxy.queryInstancesOfService(serviceName, Constants.DEFAULT_GROUP, "", false))
+            .thenReturn(null);
+        List<Instance> result = client.selectInstances(serviceName, true, false);
+        assertTrue(result.isEmpty());
+    }
+    
+    @Test
+    void testSelectInstancesFromFailover() throws NacosException {
+        String serviceName = "svc-failover";
+        ServiceInfo failoverInfo = new ServiceInfo();
+        failoverInfo.setName(serviceName);
+        failoverInfo.addHost(mockInstance(Constants.DEFAULT_CLUSTER_NAME, true));
+        when(serviceInfoHolder.isFailoverSwitch()).thenReturn(true);
+        when(serviceInfoHolder.getFailoverServiceInfo(serviceName, Constants.DEFAULT_GROUP))
+            .thenReturn(failoverInfo);
+        List<Instance> result = client.selectInstances(serviceName, true);
+        assertEquals(1, result.size());
+        verify(proxy, never()).subscribe(anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testSelectInstancesFailoverEmptyFallsBackToSubscribe() throws NacosException {
+        String serviceName = "svc-failover-empty";
+        ServiceInfo emptyFailover = new ServiceInfo();
+        emptyFailover.setName(serviceName);
+        when(serviceInfoHolder.isFailoverSwitch()).thenReturn(true);
+        when(serviceInfoHolder.getFailoverServiceInfo(serviceName, Constants.DEFAULT_GROUP))
+            .thenReturn(emptyFailover);
+        ServiceInfo subscribed = new ServiceInfo();
+        subscribed.setName(serviceName);
+        subscribed.addHost(mockInstance(Constants.DEFAULT_CLUSTER_NAME, true));
+        when(proxy.subscribe(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(subscribed);
+        List<Instance> result = client.selectInstances(serviceName, true);
+        assertEquals(1, result.size());
+    }
+    
+    @Test
+    void testTryToSubscribeUsesCacheWhenAlreadySubscribed() throws NacosException {
+        String serviceName = "svc-cached";
+        ServiceInfo cached = new ServiceInfo();
+        cached.setName(serviceName);
+        cached.addHost(mockInstance(Constants.DEFAULT_CLUSTER_NAME, true));
+        when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP))
+            .thenReturn(cached);
+        when(proxy.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(true);
+        List<Instance> result = client.selectInstances(serviceName, true);
+        assertEquals(1, result.size());
+        verify(proxy, never()).subscribe(anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testTryToSubscribeSwallowsSubscribeFailureAndUsesCache() throws NacosException {
+        String serviceName = "svc-cached-not-subscribed";
+        ServiceInfo cached = new ServiceInfo();
+        cached.setName(serviceName);
+        cached.addHost(mockInstance(Constants.DEFAULT_CLUSTER_NAME, true));
+        when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP))
+            .thenReturn(cached);
+        when(proxy.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(false);
+        when(proxy.subscribe(serviceName, Constants.DEFAULT_GROUP, ""))
+            .thenThrow(new NacosException(500, "boom"));
+        List<Instance> result = client.selectInstances(serviceName, true);
+        assertEquals(1, result.size());
+    }
+    
+    @Test
+    void testFuzzyWatchWithFixedGroupName() throws Exception {
+        NamingFuzzyWatchServiceListHolder holder =
+            org.mockito.Mockito.mock(NamingFuzzyWatchServiceListHolder.class);
+        NamingFuzzyWatchContext ctx = org.mockito.Mockito.mock(NamingFuzzyWatchContext.class);
+        when(holder.registerFuzzyWatcher(anyString(),
+            org.mockito.ArgumentMatchers.any(FuzzyWatchEventWatcher.class))).thenReturn(ctx);
+        Field f = NacosNamingService.class.getDeclaredField("namingFuzzyWatchServiceListHolder");
+        f.setAccessible(true);
+        f.set(client, holder);
+        FuzzyWatchEventWatcher watcher =
+            org.mockito.Mockito.mock(FuzzyWatchEventWatcher.class);
+        client.fuzzyWatch("test-group", watcher);
+        verify(holder).registerFuzzyWatcher(anyString(), eq(watcher));
+    }
+    
+    @Test
+    void testFuzzyWatchWithPatterns() throws Exception {
+        NamingFuzzyWatchServiceListHolder holder =
+            org.mockito.Mockito.mock(NamingFuzzyWatchServiceListHolder.class);
+        NamingFuzzyWatchContext ctx = org.mockito.Mockito.mock(NamingFuzzyWatchContext.class);
+        when(holder.registerFuzzyWatcher(anyString(),
+            org.mockito.ArgumentMatchers.any(FuzzyWatchEventWatcher.class))).thenReturn(ctx);
+        Field f = NacosNamingService.class.getDeclaredField("namingFuzzyWatchServiceListHolder");
+        f.setAccessible(true);
+        f.set(client, holder);
+        FuzzyWatchEventWatcher watcher =
+            org.mockito.Mockito.mock(FuzzyWatchEventWatcher.class);
+        client.fuzzyWatch("svc-*", "grp-*", watcher);
+        verify(holder).registerFuzzyWatcher(anyString(), eq(watcher));
+    }
+    
+    @Test
+    void testFuzzyWatchWithKeysReturnsFuture() throws Exception {
+        NamingFuzzyWatchServiceListHolder holder =
+            org.mockito.Mockito.mock(NamingFuzzyWatchServiceListHolder.class);
+        NamingFuzzyWatchContext ctx = org.mockito.Mockito.mock(NamingFuzzyWatchContext.class);
+        when(holder.registerFuzzyWatcher(anyString(),
+            org.mockito.ArgumentMatchers.any(FuzzyWatchEventWatcher.class))).thenReturn(ctx);
+        when(ctx.createNewFuture())
+            .thenReturn(org.mockito.Mockito.mock(java.util.concurrent.Future.class));
+        Field f = NacosNamingService.class.getDeclaredField("namingFuzzyWatchServiceListHolder");
+        f.setAccessible(true);
+        f.set(client, holder);
+        FuzzyWatchEventWatcher watcher =
+            org.mockito.Mockito.mock(FuzzyWatchEventWatcher.class);
+        assertNotNull(client.fuzzyWatchWithServiceKeys("test-grp", watcher));
+        assertNotNull(client.fuzzyWatchWithServiceKeys("svc-*", "grp-*", watcher));
+    }
+    
+    @Test
+    void testFuzzyWatchNullWatcherReturnsNullFuture() throws Exception {
+        // null watcher means doFuzzyWatch returns null
+        java.util.concurrent.Future<?> result =
+            client.fuzzyWatchWithServiceKeys("group", null);
+        assertEquals(null, result);
+    }
+    
+    @Test
+    void testCancelFuzzyWatchWithFixedGroup() throws Exception {
+        NamingFuzzyWatchServiceListHolder holder =
+            org.mockito.Mockito.mock(NamingFuzzyWatchServiceListHolder.class);
+        NamingFuzzyWatchContext ctx = org.mockito.Mockito.mock(NamingFuzzyWatchContext.class);
+        when(holder.getFuzzyWatchContext(anyString())).thenReturn(ctx);
+        Field f = NacosNamingService.class.getDeclaredField("namingFuzzyWatchServiceListHolder");
+        f.setAccessible(true);
+        f.set(client, holder);
+        FuzzyWatchEventWatcher watcher =
+            org.mockito.Mockito.mock(FuzzyWatchEventWatcher.class);
+        client.cancelFuzzyWatch("group", watcher);
+        verify(ctx).removeWatcher(watcher);
+    }
+    
+    @Test
+    void testCancelFuzzyWatchWithPatterns() throws Exception {
+        NamingFuzzyWatchServiceListHolder holder =
+            org.mockito.Mockito.mock(NamingFuzzyWatchServiceListHolder.class);
+        NamingFuzzyWatchContext ctx = org.mockito.Mockito.mock(NamingFuzzyWatchContext.class);
+        when(holder.getFuzzyWatchContext(anyString())).thenReturn(ctx);
+        Field f = NacosNamingService.class.getDeclaredField("namingFuzzyWatchServiceListHolder");
+        f.setAccessible(true);
+        f.set(client, holder);
+        FuzzyWatchEventWatcher watcher =
+            org.mockito.Mockito.mock(FuzzyWatchEventWatcher.class);
+        client.cancelFuzzyWatch("svc-*", "grp-*", watcher);
+        verify(ctx).removeWatcher(watcher);
+    }
+    
+    @Test
+    void testCancelFuzzyWatchNullWatcherNoOp() throws Exception {
+        client.cancelFuzzyWatch("group", null);
+        // No exception, no interaction expected
+    }
+    
+    @Test
+    void testCancelFuzzyWatchNoContextNoOp() throws Exception {
+        NamingFuzzyWatchServiceListHolder holder =
+            org.mockito.Mockito.mock(NamingFuzzyWatchServiceListHolder.class);
+        when(holder.getFuzzyWatchContext(anyString())).thenReturn(null);
+        Field f = NacosNamingService.class.getDeclaredField("namingFuzzyWatchServiceListHolder");
+        f.setAccessible(true);
+        f.set(client, holder);
+        FuzzyWatchEventWatcher watcher =
+            org.mockito.Mockito.mock(FuzzyWatchEventWatcher.class);
+        client.cancelFuzzyWatch("group", watcher);
+        // No NPE on null context
     }
 }

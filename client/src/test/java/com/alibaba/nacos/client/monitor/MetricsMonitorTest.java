@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.utils;
+package com.alibaba.nacos.client.monitor;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class PreInitUtilsTest {
-    
-    @Test
-    void testAsyncPreLoadCostComponent() throws InterruptedException {
-        // There is no things need to be assert.
-        // The method will called when nacos-client init to async to load some components to reduce the sync load time.
-        PreInitUtils.asyncPreLoadCostComponent();
-        // No exception is ok.
-        // Let async thread run completed
-        TimeUnit.SECONDS.sleep(2);
-    }
+class MetricsMonitorTest {
     
     @Test
     void testConstructor() {
-        assertNotNull(new PreInitUtils());
+        assertNotNull(new MetricsMonitor());
     }
 }

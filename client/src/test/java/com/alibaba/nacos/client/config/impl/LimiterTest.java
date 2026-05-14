@@ -16,9 +16,14 @@
 
 package com.alibaba.nacos.client.config.impl;
 
+import com.google.common.cache.Cache;
+import com.google.common.util.concurrent.RateLimiter;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LimiterTest {
@@ -36,4 +41,27 @@ class LimiterTest {
         // assert  < limit 5qps
         assertTrue(elapse > 980);
     }
+    
+    @Test
+    void testIsLimitConstructor() {
+        // class loading; ensure default ctor is exercised for coverage.
+        assertNotNull(new Limiter());
+    }
+    
+    @Test
+    void testIsLimitTriggered() throws Exception {
+        // Replace cache with a low-rate limiter so a rapid burst triggers the limited path
+        Field cacheField = Limiter.class.getDeclaredField("CACHE");
+        cacheField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Cache<String, RateLimiter> cache = (Cache<String, RateLimiter>) cacheField.get(null);
+        cache.invalidateAll();
+        // Use very small rate so subsequent acquires get limited
+        RateLimiter slowLimiter = RateLimiter.create(0.0001);
+        cache.put("limited-key", slowLimiter);
+        // Drain initial permit; subsequent call should be limited
+        slowLimiter.tryAcquire();
+        assertTrue(Limiter.isLimit("limited-key"));
+    }
+    
 }
