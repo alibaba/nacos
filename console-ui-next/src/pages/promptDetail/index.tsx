@@ -323,6 +323,7 @@ export default function PromptDetailPage() {
       await promptApi.redraft({ promptKey, version, namespaceId });
       toast.success(t('prompt.redraftSuccess'));
       await refreshAfterAction(version);
+      setIsEditingDraft(true);
     } catch { /* handled by interceptor */ }
   };
 

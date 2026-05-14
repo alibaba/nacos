@@ -551,6 +551,14 @@ export default function SkillDetailPage() {
       await skillApi.redraft({ namespaceId, skillName, version });
       toast.success(t('skill.redraftSuccess'));
       await loadDetail();
+      const response = await skillApi.getVersion({ namespaceId, skillName, version });
+      setVersionDoc(response.data);
+      const doc = response.data;
+      setEditInstruction(doc?.skillMd ?? '');
+      setEditDescription(doc?.description ?? '');
+      setEditResources({ ...(doc?.resource ?? {}) });
+      setDraftCommitMsg('');
+      setIsEditingDraft(true);
     } catch {
       await loadDetail();
     } finally {

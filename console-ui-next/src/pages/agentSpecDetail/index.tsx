@@ -321,6 +321,22 @@ export default function AgentSpecDetailPage() {
       await agentSpecApi.redraft({ namespaceId, agentSpecName, version });
       toast.success(t('agentSpec.redraftSuccess'));
       await loadDetail();
+      const response = await agentSpecApi.getVersion({ namespaceId, agentSpecName, version });
+      setDetailDocument(response.data);
+      const doc = response.data;
+      const docResource = doc?.resource || {};
+      const agentsEntry = Object.entries(docResource).find(([, r]) => {
+        const name = r.name.split('/').pop() || r.name;
+        return name.toUpperCase() === 'AGENTS.MD';
+      });
+      const agentsStr = agentsEntry?.[1]?.content || '';
+      const resEntries = Object.entries(docResource).filter(([key]) => key !== agentsEntry?.[0]);
+      setEditDescription(doc?.description ?? '');
+      setEditAgentsContent(agentsStr);
+      setEditResources(Object.fromEntries(resEntries));
+      setEditContent(doc?.content || '{}');
+      setEditVirtualFolders(new Set());
+      setIsEditingDraft(true);
     } catch {
       await loadDetail();
     } finally {
