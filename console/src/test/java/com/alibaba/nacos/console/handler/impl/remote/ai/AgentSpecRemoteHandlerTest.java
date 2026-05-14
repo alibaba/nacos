@@ -18,10 +18,15 @@ package com.alibaba.nacos.console.handler.impl.remote.ai;
 
 import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecOnlineForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
@@ -183,5 +188,151 @@ class AgentSpecRemoteHandlerTest {
         agentSpecRemoteHandler.forcePublish(form);
         
         verify(agentSpecMaintainerService).forcePublish(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", true);
+    }
+    
+    @Test
+    void testDeleteAgentSpec() throws NacosException {
+        AgentSpecForm form = new AgentSpecForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        when(agentSpecMaintainerService.deleteAgentSpec(NAMESPACE_ID, AGENT_SPEC_NAME))
+            .thenReturn(true);
+        
+        agentSpecRemoteHandler.deleteAgentSpec(form);
+        
+        verify(agentSpecMaintainerService).deleteAgentSpec(NAMESPACE_ID, AGENT_SPEC_NAME);
+    }
+    
+    @Test
+    void testListAgentSpecsReturnsNullFromService() throws NacosException {
+        AgentSpecListForm form = new AgentSpecListForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
+        when(agentSpecMaintainerService.listAgentSpecAdminItems(eq(NAMESPACE_ID),
+            eq(AGENT_SPEC_NAME), isNull(), isNull(), isNull(), isNull(), eq(1), eq(10)))
+            .thenReturn(null);
+        
+        Page<AgentSpecSummary> result =
+            agentSpecRemoteHandler.listAgentSpecs(form, new AiResourceFilterableForm(), pageForm);
+        
+        assertNotNull(result);
+        assertEquals(0, result.getTotalCount());
+    }
+    
+    @Test
+    void testUploadAgentSpecFromZip() throws NacosException {
+        byte[] zip = new byte[] {1, 2, 3};
+        when(agentSpecMaintainerService.uploadAgentSpecFromZip(NAMESPACE_ID, zip, true))
+            .thenReturn(AGENT_SPEC_NAME);
+        
+        String result = agentSpecRemoteHandler.uploadAgentSpecFromZip(NAMESPACE_ID, zip, true);
+        
+        assertEquals(AGENT_SPEC_NAME, result);
+    }
+    
+    @Test
+    void testCreateDraft() throws NacosException {
+        AgentSpecDraftCreateForm form = new AgentSpecDraftCreateForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setBasedOnVersion("v1");
+        form.setTargetVersion("v2");
+        when(agentSpecMaintainerService.createDraft(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", "v2"))
+            .thenReturn("v2-draft");
+        
+        String result = agentSpecRemoteHandler.createDraft(form);
+        
+        assertEquals("v2-draft", result);
+    }
+    
+    @Test
+    void testUpdateDraft() throws NacosException {
+        AgentSpecUpdateForm form = new AgentSpecUpdateForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setAgentSpecCard("{\"name\":\"test\"}");
+        form.setSetAsLatest(true);
+        when(agentSpecMaintainerService.updateDraft(NAMESPACE_ID, "{\"name\":\"test\"}", true))
+            .thenReturn(true);
+        
+        agentSpecRemoteHandler.updateDraft(form);
+        
+        verify(agentSpecMaintainerService).updateDraft(NAMESPACE_ID, "{\"name\":\"test\"}", true);
+    }
+    
+    @Test
+    void testDeleteDraft() throws NacosException {
+        AgentSpecForm form = new AgentSpecForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        when(agentSpecMaintainerService.deleteDraft(NAMESPACE_ID, AGENT_SPEC_NAME))
+            .thenReturn(true);
+        
+        agentSpecRemoteHandler.deleteDraft(form);
+        
+        verify(agentSpecMaintainerService).deleteDraft(NAMESPACE_ID, AGENT_SPEC_NAME);
+    }
+    
+    @Test
+    void testSubmit() throws NacosException {
+        AgentSpecSubmitForm form = new AgentSpecSubmitForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setVersion("v1");
+        when(agentSpecMaintainerService.submit(NAMESPACE_ID, AGENT_SPEC_NAME, "v1"))
+            .thenReturn("reviewing");
+        
+        String result = agentSpecRemoteHandler.submit(form);
+        
+        assertEquals("reviewing", result);
+    }
+    
+    @Test
+    void testPublish() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setVersion("v1");
+        form.setUpdateLatestLabel(true);
+        when(agentSpecMaintainerService.publish(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", true))
+            .thenReturn(true);
+        
+        agentSpecRemoteHandler.publish(form);
+        
+        verify(agentSpecMaintainerService).publish(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", true);
+    }
+    
+    @Test
+    void testUpdateLabels() throws NacosException {
+        AgentSpecLabelsUpdateForm form = new AgentSpecLabelsUpdateForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setLabels("{\"env\":\"prod\"}");
+        when(agentSpecMaintainerService.updateLabels(NAMESPACE_ID, AGENT_SPEC_NAME,
+            "{\"env\":\"prod\"}")).thenReturn(true);
+        
+        agentSpecRemoteHandler.updateLabels(form);
+        
+        verify(agentSpecMaintainerService).updateLabels(NAMESPACE_ID, AGENT_SPEC_NAME,
+            "{\"env\":\"prod\"}");
+    }
+    
+    @Test
+    void testChangeOnlineStatus() throws NacosException {
+        AgentSpecOnlineForm form = new AgentSpecOnlineForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setVersion("v1");
+        form.setScope("PUBLIC");
+        when(agentSpecMaintainerService.changeOnlineStatus(NAMESPACE_ID, AGENT_SPEC_NAME,
+            "PUBLIC", "v1", true)).thenReturn(true);
+        
+        agentSpecRemoteHandler.changeOnlineStatus(form, true);
+        
+        verify(agentSpecMaintainerService).changeOnlineStatus(NAMESPACE_ID, AGENT_SPEC_NAME,
+            "PUBLIC", "v1", true);
     }
 }

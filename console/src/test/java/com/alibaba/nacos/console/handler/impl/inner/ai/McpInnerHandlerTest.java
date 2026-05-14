@@ -23,6 +23,9 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -33,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -117,5 +121,33 @@ class McpInnerHandlerTest {
         verify(mcpServerOperationService).deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
             "test", "id",
             "version");
+    }
+    
+    @Test
+    void validateImport() throws NacosException {
+        McpServerImportRequest request = new McpServerImportRequest();
+        McpServerImportValidationResult expected = new McpServerImportValidationResult();
+        when(mcpServerImportService.validateImport(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, request))
+            .thenReturn(expected);
+        
+        McpServerImportValidationResult result =
+            mcpInnerHandler.validateImport(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, request);
+        
+        assertNotNull(result);
+        assertEquals(expected, result);
+    }
+    
+    @Test
+    void executeImport() throws NacosException {
+        McpServerImportRequest request = new McpServerImportRequest();
+        McpServerImportResponse expected = new McpServerImportResponse();
+        when(mcpServerImportService.executeImport(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, request))
+            .thenReturn(expected);
+        
+        McpServerImportResponse result =
+            mcpInnerHandler.executeImport(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, request);
+        
+        assertNotNull(result);
+        assertEquals(expected, result);
     }
 }
