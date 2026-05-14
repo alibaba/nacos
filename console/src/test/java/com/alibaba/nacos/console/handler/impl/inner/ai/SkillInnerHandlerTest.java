@@ -44,6 +44,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -167,13 +168,15 @@ class SkillInnerHandlerTest {
     @Test
     void testUploadSkillFromZip() throws NacosException {
         byte[] zipBytes = "test-zip".getBytes();
-        when(skillOperationService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(false),
-            isNull())).thenReturn(SKILL_NAME);
+        boolean overwrite = false;
+        String targetVersion = null;
+        when(skillOperationService.uploadSkillFromZip(NAMESPACE_ID, zipBytes, overwrite,
+            targetVersion)).thenReturn(SKILL_NAME);
         
-        String result = skillInnerHandler.uploadSkillFromZip(NAMESPACE_ID, zipBytes);
+        String result =
+            skillInnerHandler.uploadSkillFromZip(NAMESPACE_ID, zipBytes, false, null);
         
         assertEquals(SKILL_NAME, result);
-        verify(skillOperationService).uploadSkillFromZip(NAMESPACE_ID, zipBytes, false, null);
     }
     
     @Test
