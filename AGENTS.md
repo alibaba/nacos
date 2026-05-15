@@ -113,6 +113,12 @@ English:
 
 - Design foundation:
   [Nacos Design Spec](./specs/en/design/nacos-design-spec.md),
+  [Foundation Capabilities Spec](./specs/en/design/foundation-capabilities-spec.md),
+  [Cluster Membership Spec](./specs/en/design/foundation-cluster-membership-spec.md),
+  [Remote Connection Lifecycle Spec](./specs/en/design/foundation-remote-connection-spec.md),
+  [Internal RPC And Cluster Request Spec](./specs/en/design/foundation-internal-rpc-spec.md),
+  [AP Consistency Spec](./specs/en/design/foundation-ap-consistency-spec.md),
+  [CP Consistency Spec](./specs/en/design/foundation-cp-consistency-spec.md),
   [Core Capabilities Spec](./specs/en/design/core-capabilities-spec.md),
   [Resource Model Spec](./specs/en/design/resource-model-spec.md)
 - Interface model:
@@ -153,6 +159,12 @@ Simplified Chinese:
 
 - 设计基础：
   [Nacos 设计规范](./specs/zh-cn/design/nacos-design-spec.md)，
+  [基础能力规范](./specs/zh-cn/design/foundation-capabilities-spec.md)，
+  [集群成员规范](./specs/zh-cn/design/foundation-cluster-membership-spec.md)，
+  [远程连接生命周期规范](./specs/zh-cn/design/foundation-remote-connection-spec.md)，
+  [内部 RPC 与集群请求规范](./specs/zh-cn/design/foundation-internal-rpc-spec.md)，
+  [AP 一致性规范](./specs/zh-cn/design/foundation-ap-consistency-spec.md)，
+  [CP 一致性规范](./specs/zh-cn/design/foundation-cp-consistency-spec.md)，
   [核心功能规范](./specs/zh-cn/design/core-capabilities-spec.md)，
   [资源模型规范](./specs/zh-cn/design/resource-model-spec.md)
 - 接口模型：

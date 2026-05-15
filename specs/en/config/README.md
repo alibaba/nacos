@@ -38,6 +38,12 @@ specific behavior.
 ## Related Specs
 
 - [Resource Model Spec](../design/resource-model-spec.md)
+- [Foundation Capabilities Spec](../design/foundation-capabilities-spec.md)
+- [Cluster Membership Spec](../design/foundation-cluster-membership-spec.md)
+- [Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md)
+- [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)
+- [AP Consistency Spec](../design/foundation-ap-consistency-spec.md)
+- [CP Consistency Spec](../design/foundation-cp-consistency-spec.md)
 - [HTTP API Spec](../http-api/api-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [SDK Spec](../sdk/sdk-spec.md)

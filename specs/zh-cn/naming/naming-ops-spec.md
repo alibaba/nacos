@@ -49,8 +49,8 @@ Naming 可以暴露：
 - 某个 IP-port client 的负责节点；
 - 某个 service 的 subscribers。
 
-Subscriber aggregation 是跨 server member 的诊断查询模式，不是 service 资源模型，也不得影响运行时
-订阅语义。
+Subscriber aggregation 是跨 [server member](../design/foundation-cluster-membership-spec.md)
+的诊断查询模式，不是 service 资源模型，也不得影响运行时订阅语义。
 
 ## 4. 开关、指标与日志
 

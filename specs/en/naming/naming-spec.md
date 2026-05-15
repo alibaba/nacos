@@ -168,8 +168,13 @@ the Naming domain:
 
 ## 8. Pending Specs
 
-- TODO: Define the shared Distro AP consistency spec used by Naming ephemeral
-  services and other AP-style runtime state.
-- TODO: Define the shared CP/Raft persistence spec used by Naming persistent
-  services, metadata, and snapshots.
+- TODO: Define the Naming-specific Distro ownership, verify, anti-entropy, and
+  repair rules for ephemeral services. The shared AP foundation is defined by the
+  [AP Consistency Spec](../design/foundation-ap-consistency-spec.md), and the
+  server-to-server Distro transport boundary is defined by the
+  [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
+- TODO: Define the Naming-specific CP group ownership, request shape, snapshot,
+  and recovery rules for persistent services and metadata. The shared CP
+  foundation is defined by the
+  [CP Consistency Spec](../design/foundation-cp-consistency-spec.md).
 - TODO: Define cross-domain visibility behavior for Naming range queries.

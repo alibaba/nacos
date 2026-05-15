@@ -38,7 +38,8 @@ namespaceId -> groupName -> dataId
 ## 2. 变更推送
 
 发布、删除、元数据更新或灰度状态变化成功后，Config 领域发布本地变更事件。gRPC notifier 根据
-变化的 group key 找到监听连接，并推送 `ConfigChangeNotifyRequest`。
+变化的 group key 找到监听连接，并推送 `ConfigChangeNotifyRequest`。Config 变更事件的跨节点刷新可见性
+由[AP 一致性规范](../design/foundation-ap-consistency-spec.md)定义。
 
 变更推送规则：
 
@@ -87,4 +88,5 @@ Admin listener 和 metric API 可以按配置身份、客户端 IP 和集群节�
 
 ## 6. 待补充规范
 
-- TODO: 为 Config、Naming 和 AI 运行时流定义共享的重连、连接生命周期和推送重试语义。
+- TODO: 为 Config、Naming 和 AI 运行时流定义共享的重连、连接生命周期和推送重试语义。基础层连接
+  生命周期边界见[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)。

@@ -98,7 +98,15 @@ own default offsets.
 Some handlers are annotated with `@InvokeSource`. When present, only the listed
 source labels may invoke that payload type.
 
+Server-to-server source rules, handler registration, server identity, and
+cluster request retry boundaries are defined by the
+[Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
+
 ## 4. Connection Lifecycle
+
+The server-side lifecycle details are defined by the
+[Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md).
+This section summarizes the public gRPC flow.
 
 1. A client opens `BiRequestStream.requestBiStream`.
 2. The first stream payload should be `ConnectionSetupRequest`.
@@ -149,7 +157,9 @@ identity, authority, or server identity validation. The filter:
 - validates identity and action permission.
 
 Inner cluster APIs should use `ApiType.INNER_API` and restrict invocation with
-`@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})`.
+`@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})`. Detailed
+inner server-to-server rules are defined by the
+[Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
 
 ## 7. Payload Inventory
 
@@ -162,9 +172,9 @@ Inner cluster APIs should use `ApiType.INNER_API` and restrict invocation with
 | `HealthCheckRequest` | `HealthCheckResponse` | unary | none | Keep-alive health check. |
 | `ClientDetectionRequest` | `ClientDetectionResponse` | stream push | none | Server-side client detection. |
 | `ConnectResetRequest` | `ConnectResetResponse` | stream push | none | Ask the client to reconnect to a target server. |
-| `ServerReloadRequest` | `ServerReloadResponse` | unary | inner, cluster source | Reload server remote context on a peer. |
-| `ServerLoaderInfoRequest` | `ServerLoaderInfoResponse` | unary | inner, cluster source | Query server loader metrics from a peer. |
-| `MemberReportRequest` | `MemberReportResponse` | unary | inner, cluster source | Report member metadata and update server member state. |
+| `ServerReloadRequest` | `ServerReloadResponse` | unary | inner, cluster source | Reload server remote context on a peer. See the [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md). |
+| `ServerLoaderInfoRequest` | `ServerLoaderInfoResponse` | unary | inner, cluster source | Query server loader metrics from a peer. See the [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md). |
+| `MemberReportRequest` | `MemberReportResponse` | unary | inner, cluster source | Report member metadata and update server member state according to the [Cluster Membership Spec](../design/foundation-cluster-membership-spec.md). |
 | `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | handler exists | Query plugin availability on a node. Current code has a handler, but the payload is not listed in the core payload SPI file, so it must be registered before becoming an active gRPC contract. |
 
 ### 7.2 Config
@@ -180,7 +190,7 @@ Inner cluster APIs should use `ApiType.INNER_API` and restrict invocation with
 | `ConfigFuzzyWatchChangeNotifyRequest` | `ConfigFuzzyWatchChangeNotifyResponse` | server push | `groupKey`, `changeType` | Notify client of fuzzy-watch resource changes. |
 | `ConfigFuzzyWatchSyncRequest` | `ConfigFuzzyWatchSyncResponse` | server push | `syncType`, `groupKeyPattern`, `contexts`, `totalBatch`, `currentBatch` | Sync fuzzy-watch initial or diff state. |
 | `ClientConfigMetricRequest` | `ClientConfigMetricResponse` | read | `metricsKeys` | Query client config metrics. |
-| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `isBeta`, `tag`, `grayName` | Sync config change events between server nodes. |
+| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `isBeta`, `tag`, `grayName` | Sync config change events between server nodes through the [internal RPC model](../design/foundation-internal-rpc-spec.md); Config Notify semantics are defined by the [AP Consistency Spec](../design/foundation-ap-consistency-spec.md). |
 
 ### 7.3 Naming
 
@@ -196,7 +206,7 @@ Inner cluster APIs should use `ApiType.INNER_API` and restrict invocation with
 | `NamingFuzzyWatchRequest` | `NamingFuzzyWatchResponse` | read | `namespace`, `groupKeyPattern`, `receivedGroupKeys`, `watchType`, `isInitializing` | Add or cancel fuzzy watch for service keys. |
 | `NamingFuzzyWatchChangeNotifyRequest` | `NamingFuzzyWatchChangeNotifyResponse` | server push | `serviceKey`, `changedType` | Notify client of fuzzy-watch service changes. |
 | `NamingFuzzyWatchSyncRequest` | `NamingFuzzyWatchSyncResponse` | server push | `groupKeyPattern`, `contexts`, `totalBatch`, `currentBatch` | Sync fuzzy-watch initial or diff state. |
-| `DistroDataRequest` | `DistroDataResponse` | inner | `distroData`, `dataOperation` | Distro AP protocol data transport between server nodes. |
+| `DistroDataRequest` | `DistroDataResponse` | inner | `distroData`, `dataOperation` | Distro AP protocol data transport between server nodes through the [internal RPC model](../design/foundation-internal-rpc-spec.md); Distro semantics are defined by the [AP Consistency Spec](../design/foundation-ap-consistency-spec.md). |
 
 ### 7.4 AI
 
@@ -234,3 +244,6 @@ dedicated gRPC payload.
 6. Keep request fields explicit and JSON-compatible.
 7. Update this spec and the [SDK interface spec](../sdk/sdk-spec.md) when the
    operation is exposed through a public SDK interface.
+8. For server-to-server payloads, also update the
+   [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)
+   or the domain spec that owns the cluster request semantics.

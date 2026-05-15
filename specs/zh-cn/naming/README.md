@@ -18,8 +18,13 @@
 
 本目录定义 Nacos Naming 领域规范。Naming 规范基于
 [Nacos 设计规范](../design/nacos-design-spec.md)、
-[资源模型规范](../design/resource-model-spec.md)以及已有 HTTP、gRPC、SDK、鉴权和插件规范，
-进一步定义服务发现领域。
+[资源模型规范](../design/resource-model-spec.md)、[基础能力规范](../design/foundation-capabilities-spec.md)、
+[集群成员规范](../design/foundation-cluster-membership-spec.md)、
+[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)、
+[内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)、
+[AP 一致性规范](../design/foundation-ap-consistency-spec.md)、
+[CP 一致性规范](../design/foundation-cp-consistency-spec.md)，以及已有 HTTP、gRPC、SDK、
+鉴权和插件规范，进一步定义服务发现领域。
 
 ## 规范结构
 

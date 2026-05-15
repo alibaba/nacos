@@ -51,11 +51,13 @@ unhealthy；如果超过 delete timeout 且过期删除启用，可能被移除�
 
 ### 2.2 gRPC 连接存活
 
-gRPC 客户端通过客户端连接生命周期维持临时实例存活。Naming 通过连接关闭和释放事件移除或 redo
-运行时 publisher/subscriber 状态。
+gRPC 客户端通过[远程连接生命周期](../design/foundation-remote-connection-spec.md)维持临时实例存活。
+Naming 通过连接关闭和释放事件移除或 redo 运行时 publisher/subscriber 状态。
 
 为防止连接假死，gRPC 传输层内部封装了心跳与存活检测。对 Naming 模块来说，这部分能力隐藏在
-gRPC 连接层之后。Naming 应依赖连接生命周期事件，而不应重复实现传输层心跳逻辑。
+gRPC 连接层之后。Naming 应依赖
+[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)定义的连接生命周期事件，而不应
+重复实现传输层心跳逻辑。
 
 ## 3. 持久服务主动健康检查
 
@@ -89,6 +91,7 @@ Service `protectThreshold` 用于防止发现结果收缩到过少健康实例�
 ## 6. 待补充规范
 
 - TODO: 在共享 gRPC 连接或 gRPC 客户端规范中定义 gRPC 连接心跳、假死检测和客户端连接存活行为。
+  基础层连接生命周期边界见[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)。
 
 ## 7. 相关规范
 

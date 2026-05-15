@@ -148,6 +148,9 @@ Naming 可以集成扩展机制，但 Naming 领域归属不转移：
 
 ## 8. 待补充规范
 
-- TODO: 定义 Naming 临时服务以及其他 AP 风格运行时状态所使用的共享 Distro AP 一致性规范。
-- TODO: 定义 Naming 持久服务、元数据和 snapshot 所使用的共享 CP/Raft 持久化规范。
+- TODO: 定义 Naming 领域特有的临时服务 Distro ownership、verify、anti-entropy 和 repair 规则。共享
+  AP 基础见[AP 一致性规范](../design/foundation-ap-consistency-spec.md)，服务端间 Distro 传输边界见
+  [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。
+- TODO: 定义 Naming 领域特有的持久服务和元数据 CP group 归属、request 形态、snapshot 和恢复规则。
+  共享 CP 基础见[CP 一致性规范](../design/foundation-cp-consistency-spec.md)。
 - TODO: 定义 Naming 范围查询的跨领域可见性行为。

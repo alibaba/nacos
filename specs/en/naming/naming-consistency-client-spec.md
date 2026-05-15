@@ -70,7 +70,11 @@ for service-level aggregation and push.
 
 Ephemeral services own AP-oriented runtime instance state. Their instances are
 registered under ephemeral clients, synchronized across the cluster through the
-Distro client data path, and removed when heartbeat or connection lifecycle
+Distro client data path defined by the
+[AP Consistency Spec](../design/foundation-ap-consistency-spec.md) and carried by
+the [internal RPC model](../design/foundation-internal-rpc-spec.md), and removed
+when heartbeat or
+[connection lifecycle](../design/foundation-remote-connection-spec.md)
 indicates that the client disappeared.
 
 Ephemeral state should favor fast runtime availability and eventual convergence.
@@ -84,8 +88,9 @@ server-side instance metadata.
 
 Persistent services own CP-oriented instance state. Register, deregister, and
 update operations are written through the persistent service group and applied
-by the persistent client operation service. Persistent instance snapshots are
-used for state recovery.
+by the persistent client operation service. The shared CP foundation is defined
+by the [CP Consistency Spec](../design/foundation-cp-consistency-spec.md).
+Persistent instance snapshots are used for state recovery.
 
 Persistent clients do not support subscriber state. Subscriptions are ephemeral
 client behavior.
@@ -125,13 +130,22 @@ They must not be used as server-side persistence.
 
 ## 7. Pending Cleanup
 
-- The exact Distro data ownership, verify flow, and anti-entropy behavior for
-  ephemeral services should be specified in a shared AP consistency spec.
-- The CP protocol groups used by Naming metadata and persistent services should
-  be specified in a shared persistence/consistency spec.
+- Naming still needs a domain-level expansion of Distro ownership, verify flow,
+  anti-entropy behavior, and repair rules for ephemeral services. The shared
+  foundation is defined by the
+  [AP Consistency Spec](../design/foundation-ap-consistency-spec.md), and the
+  transport boundary is defined by the
+  [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
+- Naming still needs a domain-level expansion of CP protocol groups, request
+  shapes, snapshots, and recovery rules for metadata and persistent services.
+  The shared foundation is defined by the
+  [CP Consistency Spec](../design/foundation-cp-consistency-spec.md).
 
 ## 8. Related Specs
 
 - [Naming Instance Lifecycle Spec](naming-instance-lifecycle-spec.md)
 - [Naming Discovery And Subscription Spec](naming-discovery-subscription-spec.md)
 - [Naming Metadata And Selector Spec](naming-metadata-selector-spec.md)
+- [AP Consistency Spec](../design/foundation-ap-consistency-spec.md)
+- [CP Consistency Spec](../design/foundation-cp-consistency-spec.md)
+- [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)

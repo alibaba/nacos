@@ -26,7 +26,7 @@ created service must choose one service type:
 
 | Service type | Lifecycle rule |
 | --- | --- |
-| Ephemeral service | Runtime publications are owned by live clients and cleaned up by heartbeat or connection lifecycle. |
+| Ephemeral service | Runtime publications are owned by live clients and cleaned up by heartbeat or [connection lifecycle](../design/foundation-remote-connection-spec.md). |
 | Persistent service | Instances are durable resources and are cleaned up only by explicit deregistration, delete, or persistent-state recovery rules. |
 
 Later instance registration must match the service type. Registering a
@@ -65,8 +65,9 @@ advertise gRPC support for persistent instances.
 
 Heartbeat applies to HTTP and compatibility ephemeral IP-port clients. HTTP
 Open API heartbeat reuses `POST /v3/client/ns/instance` with
-`heartBeat=true`. gRPC ephemeral services are kept alive by connection
-lifecycle events; the transport-level heartbeat is defined outside Naming.
+`heartBeat=true`. gRPC ephemeral services are kept alive by
+[connection lifecycle](../design/foundation-remote-connection-spec.md) events;
+the transport-level heartbeat is defined outside Naming.
 
 If heartbeat finds the client and service instance, it updates the last-updated
 time and schedules beat processing. If heartbeat cannot find the instance and no

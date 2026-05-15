@@ -119,6 +119,10 @@ Config 可以集成扩展机制，但 Config 领域的归属不转移：
 
 ## 7. 待补充规范
 
-- TODO: 定义 Config 嵌入式存储、dump 恢复和集群变更传播所依赖的共享一致性与集群复制规范。
-- TODO: 定义覆盖外部数据源、嵌入式存储、repository 契约和数据源方言插件的共享持久化模型规范。
+- TODO: 定义 Config 领域特有的嵌入式存储写入可见性、dump 恢复和集群变更传播一致性规范。嵌入式
+  存储依赖的共享 CP 基础见[CP 一致性规范](../design/foundation-cp-consistency-spec.md)；Config Notify
+  依赖的共享 AP 基础见[AP 一致性规范](../design/foundation-ap-consistency-spec.md)，传输边界见
+  [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。
+- TODO: 定义覆盖外部数据源、嵌入式存储、repository 契约和数据源方言插件的共享持久化模型规范。顶层
+  持久化边界见[基础能力规范](../design/foundation-capabilities-spec.md)。
 - TODO: 定义 Config、Naming、AI 和 Core 运维领域统一的 Trace 与审计事件字段。

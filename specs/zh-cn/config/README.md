@@ -37,6 +37,12 @@
 ## 相关规范
 
 - [资源模型规范](../design/resource-model-spec.md)
+- [基础能力规范](../design/foundation-capabilities-spec.md)
+- [集群成员规范](../design/foundation-cluster-membership-spec.md)
+- [远程连接生命周期规范](../design/foundation-remote-connection-spec.md)
+- [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)
+- [AP 一致性规范](../design/foundation-ap-consistency-spec.md)
+- [CP 一致性规范](../design/foundation-cp-consistency-spec.md)
 - [HTTP API 规范](../http-api/api-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [SDK 规范](../sdk/sdk-spec.md)

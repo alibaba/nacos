@@ -58,7 +58,10 @@ Config 支持嵌入式和外部存储模式：
 - 外部存储直接从配置的数据源初始化 dump；
 - 历史清理和管理类存储操作必须只在存储模式策略选中的节点上执行。
 
-详细一致性契约预留给后续共享一致性与集群规范。
+详细 Config 一致性契约预留给后续领域化的一致性与集群规范。嵌入式存储的 CP 基础见
+[CP 一致性规范](../design/foundation-cp-consistency-spec.md)，Config Notify 传播见
+[AP 一致性规范](../design/foundation-ap-consistency-spec.md)。持久化、dump 和任务边界由
+[基础能力规范](../design/foundation-capabilities-spec.md)定义。
 
 ## 5. 历史
 
@@ -85,4 +88,7 @@ Admin 本地缓存操作可以触发从持久化层到本地缓存的全量 dump
 ## 7. 待补充规范
 
 - TODO: 定义嵌入式存储、外部存储、repository 接口、schema 归属和插件方言规则的共享持久化规范。
-- TODO: 定义写入可见性、dump 顺序和故障恢复的集群级一致性规范。
+- TODO: 定义 Config 领域特有的写入可见性、dump 顺序和故障恢复一致性规范。嵌入式存储使用
+  [CP 一致性规范](../design/foundation-cp-consistency-spec.md)；Config 变更通知使用
+  [AP 一致性规范](../design/foundation-ap-consistency-spec.md)和
+  [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。

@@ -25,7 +25,7 @@ Admin service 创建会创建 service 元数据和 service singleton。创建的
 
 | 服务类型 | 生命周期规则 |
 | --- | --- |
-| 临时服务 | 运行时发布信息由存活 client 持有，并通过心跳或连接生命周期清理。 |
+| 临时服务 | 运行时发布信息由存活 client 持有，并通过心跳或[连接生命周期](../design/foundation-remote-connection-spec.md)清理。 |
 | 持久服务 | 实例是持久资源，只能通过显式注销、删除或持久状态恢复规则清理。 |
 
 持久实例注册到临时服务，或临时实例注册到持久服务，都必须被拒绝。
@@ -55,8 +55,8 @@ Admin service 创建会创建 service 元数据和 service singleton。创建的
 ## 3. 心跳
 
 心跳适用于 HTTP 和兼容临时 IP-port client。HTTP Open API 心跳复用
-`POST /v3/client/ns/instance`，并设置 `heartBeat=true`。gRPC 临时服务通过连接生命周期事件保活；
-传输层心跳在 Naming 之外定义。
+`POST /v3/client/ns/instance`，并设置 `heartBeat=true`。gRPC 临时服务通过
+[连接生命周期](../design/foundation-remote-connection-spec.md)事件保活；传输层心跳在 Naming 之外定义。
 
 如果心跳找到 client 和 service instance，会更新 last-updated time 并调度 beat processing。如果
 心跳找不到 instance 且没有 beat payload，服务端返回 `INSTANCE_NOT_FOUND`，调用方应重新注册。

@@ -18,8 +18,14 @@
 
 This directory defines the Nacos Naming domain. Naming specs refine the
 [Nacos Design Spec](../design/nacos-design-spec.md), the
-[Resource Model Spec](../design/resource-model-spec.md), and the existing HTTP,
-gRPC, SDK, auth, and plugin specs for service discovery.
+[Resource Model Spec](../design/resource-model-spec.md), the
+[Foundation Capabilities Spec](../design/foundation-capabilities-spec.md),
+the [Cluster Membership Spec](../design/foundation-cluster-membership-spec.md),
+the [Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md),
+the [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md),
+the [AP Consistency Spec](../design/foundation-ap-consistency-spec.md),
+the [CP Consistency Spec](../design/foundation-cp-consistency-spec.md),
+and the existing HTTP, gRPC, SDK, auth, and plugin specs for service discovery.
 
 ## Spec Structure
 

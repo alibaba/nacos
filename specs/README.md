@@ -25,9 +25,15 @@ Spec hierarchy:
 
 ```text
 Nacos design
-  -> Core capabilities and resource model
+  -> Resource model
+  -> Foundation capabilities
+     -> Cluster membership
+     -> Remote connection lifecycle
+     -> Internal RPC and cluster requests
+     -> AP consistency
+     -> CP consistency
+  -> Core capabilities and domain capabilities
   -> HTTP / gRPC / SDK interface specs
-  -> Domain specs
   -> Extension model
   -> Security model
 ```
@@ -36,9 +42,15 @@ Nacos design
 
 ```text
 Nacos 顶层设计
-  -> 核心功能与资源模型
+  -> 资源模型
+  -> 基础能力
+     -> 集群成员
+     -> 远程连接生命周期
+     -> 内部 RPC 与集群请求
+     -> AP 一致性
+     -> CP 一致性
+  -> 核心功能与领域功能
   -> HTTP / gRPC / SDK 接口规范
-  -> 领域规范
   -> 扩展模型
   -> 安全模型
 ```

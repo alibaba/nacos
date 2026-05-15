@@ -96,7 +96,7 @@ Config 运维 API 是管理修复或诊断接口：
 | Derby 查询 | 仅当嵌入式存储启用且 `nacos.config.derby.ops.enabled=true` 时，允许有边界的 `SELECT` 语句。 |
 | Derby 导入 | 仅当嵌入式存储启用且 Derby ops 已启用时，导入 Derby 数据。 |
 | 监听诊断 | 按 IP 或 Config 身份查询监听状态。 |
-| 指标 | 在本节点或跨集群节点查询客户端缓存和快照指标。 |
+| 指标 | 在本节点或跨[集群成员](../design/foundation-cluster-membership-spec.md)查询客户端缓存和快照指标。 |
 
 Derby ops 属于 maintainer-only 行为。它必须要求 Admin 权限，并默认保持关闭。
 

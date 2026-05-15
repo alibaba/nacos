@@ -51,8 +51,9 @@ Naming may expose:
 - responsible server for an IP-port client;
 - subscribers for a service.
 
-Subscriber aggregation is a diagnostic query mode across server members. It is
-not a service resource model and must not affect runtime subscription semantics.
+Subscriber aggregation is a diagnostic query mode across
+[server members](../design/foundation-cluster-membership-spec.md). It is not a
+service resource model and must not affect runtime subscription semantics.
 
 ## 4. Switches, Metrics, And Logs
 

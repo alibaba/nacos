@@ -42,7 +42,9 @@ config identity so the client can query the content.
 After a successful publish, delete, metadata update, or gray-state change, the
 Config domain publishes a local change event. The gRPC notifier finds
 connections that listen to the changed group key and pushes a
-`ConfigChangeNotifyRequest`.
+`ConfigChangeNotifyRequest`. Cross-node refresh visibility for Config change
+events is defined by the
+[AP Consistency Spec](../design/foundation-ap-consistency-spec.md).
 
 Change push rules:
 
@@ -103,4 +105,6 @@ not be exposed through runtime Client SDK surfaces.
 ## 6. Pending Specs
 
 - TODO: Define shared reconnect, connection lifecycle, and push retry semantics
-  for Config, Naming, and AI runtime streams.
+  for Config, Naming, and AI runtime streams. The foundation-level connection
+  lifecycle boundary is defined by the
+  [Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md).

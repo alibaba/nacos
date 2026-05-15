@@ -153,9 +153,11 @@ governance principles.
 
 ### 4.4 Core And Operation Domain
 
-The core domain owns namespace management, cluster members, server state,
-readiness/liveness, connection management, log-level operations, plugin state,
-and other server control-plane resources.
+The core domain owns namespace management,
+[cluster members](foundation-cluster-membership-spec.md), server state,
+readiness/liveness, [connection management](foundation-remote-connection-spec.md),
+[internal RPC](foundation-internal-rpc-spec.md), log-level operations, plugin
+state, and other server control-plane resources.
 
 These capabilities are administrative by nature and should be exposed through
 Admin API, Console API, or Maintainer SDK surfaces rather than runtime Client
@@ -190,6 +192,18 @@ Nacos modules should follow these ownership rules:
   interfaces, and transport contracts.
 - `config`, `naming`, and `ai` own domain behavior for their resources.
 - `core` owns cluster, namespace, server, plugin, and operation fundamentals.
+- `common`, `consistency`, and `persistence` provide shared foundation
+  capabilities such as events, tasks, AP/CP protocols, and storage. Core member
+  and connection boundaries are further defined by the
+  [Cluster Membership Spec](foundation-cluster-membership-spec.md) and
+  [Remote Connection Lifecycle Spec](foundation-remote-connection-spec.md).
+  Server-to-server request boundaries are defined by the
+  [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md).
+  AP/CP consistency boundaries are defined by the
+  [AP Consistency Spec](foundation-ap-consistency-spec.md) and
+  [CP Consistency Spec](foundation-cp-consistency-spec.md).
+  Other foundation boundaries are defined by the
+  [Foundation Capabilities Spec](foundation-capabilities-spec.md).
 - `auth` and plugin modules own extensible security and policy behavior.
 - `maintainer-client` exposes typed Java management entry points over Admin API
   semantics.
@@ -215,7 +229,15 @@ semantics:
 
 The implementation may use database persistence, local cache, Distro, Raft, or
 other mechanisms, but public semantics must be expressed in domain specs rather
-than storage implementation details.
+than storage implementation details. The common foundation expectations for
+[membership](foundation-cluster-membership-spec.md),
+[connection lifecycle](foundation-remote-connection-spec.md),
+[internal RPC](foundation-internal-rpc-spec.md),
+[AP consistency](foundation-ap-consistency-spec.md),
+[CP consistency](foundation-cp-consistency-spec.md), persistence, task
+execution, and event dispatch are defined by the
+[Foundation Capabilities Spec](foundation-capabilities-spec.md) and its sub
+specs.
 
 ## 8. New Feature Design Rules
 

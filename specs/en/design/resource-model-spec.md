@@ -336,8 +336,9 @@ Status values are domain-specific but must be explicit and documented.
   state.
 - AI resources use metadata status, version status, labels, pipeline state, and
   visibility state.
-- Core resources use server, member, readiness, liveness, plugin, and connection
-  state.
+- Core resources use server, [member](foundation-cluster-membership-spec.md),
+  readiness, liveness, plugin, and
+  [connection](foundation-remote-connection-spec.md) state.
 
 Runtime APIs should return only states intended for runtime consumers.
 Management APIs may return draft, review, offline, internal, or operational

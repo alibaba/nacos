@@ -306,7 +306,8 @@ Agent 配置。AgentSpec 应通过稳定身份和 version 或 label 引用其他
 - Naming 资源使用 service type、instance、health、enabled 和 lifecycle 状态；
 - AI 资源使用 metadata status、version status、labels、pipeline state 和 visibility
   state；
-- Core 资源使用 server、member、readiness、liveness、plugin 和 connection 状态。
+- Core 资源使用 server、[member](foundation-cluster-membership-spec.md)、readiness、liveness、
+  plugin 和 [connection](foundation-remote-connection-spec.md) 状态。
 
 运行时 API 应只返回运行时消费者需要的状态。管理 API 在授权后可以返回 draft、
 review、offline、internal 或 operational 状态。

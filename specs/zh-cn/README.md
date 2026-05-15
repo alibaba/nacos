@@ -21,8 +21,14 @@
 ## 设计基础
 
 - [Nacos 设计规范](design/nacos-design-spec.md)
-- [核心功能规范](design/core-capabilities-spec.md)
 - [资源模型规范](design/resource-model-spec.md)
+- [基础能力规范](design/foundation-capabilities-spec.md)
+- [集群成员规范](design/foundation-cluster-membership-spec.md)
+- [远程连接生命周期规范](design/foundation-remote-connection-spec.md)
+- [内部 RPC 与集群请求规范](design/foundation-internal-rpc-spec.md)
+- [AP 一致性规范](design/foundation-ap-consistency-spec.md)
+- [CP 一致性规范](design/foundation-cp-consistency-spec.md)
+- [核心功能规范](design/core-capabilities-spec.md)
 
 ## 接口模型
 

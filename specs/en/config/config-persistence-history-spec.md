@@ -68,8 +68,13 @@ Config supports embedded and external storage modes:
 - history cleanup and administrative storage operations must run only on the
   node selected by the storage mode policy.
 
-The detailed consistency contract is reserved for a future shared consistency
-and cluster spec.
+The detailed Config consistency contract is reserved for a future
+domain-specific consistency and cluster spec. The embedded storage CP foundation
+is defined by the [CP Consistency Spec](../design/foundation-cp-consistency-spec.md),
+and Config Notify propagation is defined by the
+[AP Consistency Spec](../design/foundation-ap-consistency-spec.md). Persistence,
+dump, and task boundaries are defined by the
+[Foundation Capabilities Spec](../design/foundation-capabilities-spec.md).
 
 ## 5. History
 
@@ -101,5 +106,9 @@ serving state.
 
 - TODO: Define the shared persistence spec for embedded storage, external
   storage, repository interfaces, schema ownership, and plugin dialect rules.
-- TODO: Define the cluster-level consistency spec for write visibility, dump
-  ordering, and failover recovery.
+- TODO: Define the Config-specific consistency spec for write visibility, dump
+  ordering, and failover recovery. Embedded storage uses the
+  [CP Consistency Spec](../design/foundation-cp-consistency-spec.md); Config
+  change notifications use the
+  [AP Consistency Spec](../design/foundation-ap-consistency-spec.md) and the
+  [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).

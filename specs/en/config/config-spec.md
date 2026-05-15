@@ -139,9 +139,17 @@ the Config domain:
 
 ## 7. Pending Specs
 
-- TODO: Define the shared consistency and cluster replication spec used by
-  Config embedded storage, dump recovery, and cluster change propagation.
+- TODO: Define the Config-specific consistency spec for embedded storage write
+  visibility, dump recovery, and cluster change propagation. The shared CP
+  foundation for embedded storage is defined by the
+  [CP Consistency Spec](../design/foundation-cp-consistency-spec.md). The shared
+  AP foundation for Config Notify is defined by the
+  [AP Consistency Spec](../design/foundation-ap-consistency-spec.md), and its
+  transport boundary is defined by the
+  [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
 - TODO: Define a shared persistence model spec that covers external datasource,
-  embedded storage, repository contracts, and datasource dialect plugins.
+  embedded storage, repository contracts, and datasource dialect plugins. The
+  top-level persistence boundary is defined by the
+  [Foundation Capabilities Spec](../design/foundation-capabilities-spec.md).
 - TODO: Define trace and audit event fields across Config, Naming, AI, and Core
   operation domains.

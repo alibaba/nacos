@@ -22,8 +22,14 @@ extension mechanisms, and cross-cutting security rules.
 ## Design Foundation
 
 - [Nacos Design Spec](design/nacos-design-spec.md)
-- [Core Capabilities Spec](design/core-capabilities-spec.md)
 - [Resource Model Spec](design/resource-model-spec.md)
+- [Foundation Capabilities Spec](design/foundation-capabilities-spec.md)
+- [Cluster Membership Spec](design/foundation-cluster-membership-spec.md)
+- [Remote Connection Lifecycle Spec](design/foundation-remote-connection-spec.md)
+- [Internal RPC And Cluster Request Spec](design/foundation-internal-rpc-spec.md)
+- [AP Consistency Spec](design/foundation-ap-consistency-spec.md)
+- [CP Consistency Spec](design/foundation-cp-consistency-spec.md)
+- [Core Capabilities Spec](design/core-capabilities-spec.md)
 
 ## Interface Model
 

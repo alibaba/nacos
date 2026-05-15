@@ -17,7 +17,8 @@
 # Nacos 核心功能规范
 
 本文定义 Nacos 顶层功能边界。[Nacos 设计规范](nacos-design-spec.md)定义整体设计意图，
-[资源模型规范](resource-model-spec.md)定义共享资源身份，各领域规范定义具体行为。
+[资源模型规范](resource-model-spec.md)定义共享资源身份，[基础能力规范](foundation-capabilities-spec.md)
+定义共享基础设施，各领域规范定义具体行为。
 
 ## 1. 功能分层
 
@@ -26,22 +27,29 @@ Nacos 功能从产品意图到具体接口按如下层次组织：
 ```text
 设计意图
   -> 资源模型
+  -> 基础能力
   -> 领域功能
   -> HTTP / gRPC / SDK 接口
   -> 扩展与安全规则
 ```
 
 领域功能规范负责定义资源和行为的语义。接口规范负责定义这些语义如何暴露。插件规范负责定义
-扩展点，不应重新定义领域归属。
+扩展点，不应重新定义领域归属。基础能力提供
+[集群成员](foundation-cluster-membership-spec.md)、
+[远程连接](foundation-remote-connection-spec.md)、
+[内部 RPC](foundation-internal-rpc-spec.md)、
+[AP 一致性](foundation-ap-consistency-spec.md)、
+[CP 一致性](foundation-cp-consistency-spec.md)、持久化、任务和事件基础设施；它们支撑领域，但不
+拥有领域资源语义。
 
 ## 2. 核心领域
 
 | 领域 | 主要责任 | 资源身份 | 详细规范 |
 | --- | --- | --- | --- |
-| 配置中心 | 动态配置存储、发布、查询、订阅、灰度分发、历史、容量和审计。 | `namespaceId -> group -> dataId` | [Config 规范](../config/config-spec.md) |
-| 注册中心 | 服务发现、服务元数据、实例、健康状态、订阅和运行时推送。 | `namespaceId -> group -> serviceName` | TODO: Naming 领域规范。 |
+| 配置中心 | 动态配置存储、发布、查询、订阅、灰度分发、历史、容量和审计。 | `namespaceId -> groupName -> dataId` | [Config 规范](../config/config-spec.md) |
+| 注册中心 | 服务发现、服务元数据、实例、健康状态、订阅和运行时推送。 | `namespaceId -> groupName -> serviceName` | [Naming 规范](../naming/naming-spec.md) |
 | AI Registry | MCP、A2A、Prompt、Skill、AgentSpec、版本、标签、可见性和发布治理。 | `namespaceId -> resourceType -> resourceName` | TODO: AI Registry 领域规范。 |
-| Core 运维 | Namespace、集群成员、服务端状态、readiness、liveness、插件状态和运维控制。 | 领域特定的管理资源。 | TODO: Core 运维规范。 |
+| Core 运维 | Namespace、[集群成员](foundation-cluster-membership-spec.md)、服务端状态、readiness、liveness、插件状态和运维控制。 | 领域特定的管理资源。 | TODO: Core 运维规范。 |
 | 安全与可见性 | 认证、鉴权、权限、API 分类、资源可见性和身份传播。 | 结构化 Nacos 资源身份。 | [鉴权与权限规范](../auth/auth-permission-spec.md)，[可见性插件规范](../auth/visibility-plugin-spec.md) |
 | 扩展 | 服务端和客户端扩展点，包括鉴权、可见性、数据源、加密、Trace、Control、寻址、AI Pipeline 等。 | 插件类型身份加领域拥有的资源身份。 | [插件规范](../plugin/plugin-spec.md) |
 
@@ -49,7 +57,13 @@ Nacos 功能从产品意图到具体接口按如下层次组织：
 
 - 领域拥有自身资源语义、生命周期、校验规则和可观测状态。
 - `core`、`common`、`persistence`、`consistency`、`auth` 和 `plugin` 模块提供共享基础设施；
-  除非领域规范明确委托，否则它们不拥有 Config、Naming 或 AI 资源语义。
+  共享基础设施规则见[基础能力规范](foundation-capabilities-spec.md)，其中包含
+  [集群成员](foundation-cluster-membership-spec.md)、
+  [远程连接生命周期](foundation-remote-connection-spec.md)、
+  [内部 RPC](foundation-internal-rpc-spec.md)、
+  [AP 一致性](foundation-ap-consistency-spec.md)和
+  [CP 一致性](foundation-cp-consistency-spec.md)。除非领域规范明确委托，否则它们不拥有 Config、
+  Naming 或 AI 资源语义。
 - 运行时客户端接口应只暴露面向已知资源的最小必要能力。大范围列表、导出、克隆、迁移、容量和
   运维 API 属于 Admin API、Console API 或 Maintainer SDK。
 - 所有领域 API 必须保持共享资源模型，并遵循
@@ -63,7 +77,7 @@ Nacos 功能从产品意图到具体接口按如下层次组织：
 每个新功能都应明确：
 
 - 归属领域和模块；
-- 资源身份，以及第二层是 `group` 还是 `resourceType`；
+- 资源身份，以及第二层是 `groupName` 还是 `resourceType`；
 - 面向运行时、管理面还是运维面；
 - HTTP、gRPC、Client SDK、Maintainer SDK、Console 或插件接口；
 - 持久化、缓存、事件、一致性和恢复预期；

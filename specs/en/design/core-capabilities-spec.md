@@ -19,7 +19,9 @@
 This document defines the top-level capability boundaries of Nacos. The
 [Nacos Design Spec](nacos-design-spec.md) defines overall intent, the
 [Resource Model Spec](resource-model-spec.md) defines shared resource identity,
-and domain specs define detailed behavior for each capability.
+the [Foundation Capabilities Spec](foundation-capabilities-spec.md) defines
+shared infrastructure, and domain specs define detailed behavior for each
+capability.
 
 ## 1. Capability Layers
 
@@ -28,6 +30,7 @@ Nacos capabilities are organized from product intent to concrete interfaces:
 ```text
 Design intent
   -> Resource model
+  -> Foundation capabilities
   -> Domain capabilities
   -> HTTP / gRPC / SDK interfaces
   -> Extension and security rules
@@ -35,16 +38,23 @@ Design intent
 
 Domain capability specs own the meaning of resources and behavior. Interface
 specs define how those semantics are exposed. Plugin specs define extension
-points and must not redefine domain ownership.
+points and must not redefine domain ownership. Foundation capabilities provide
+[cluster membership](foundation-cluster-membership-spec.md),
+[remote connection](foundation-remote-connection-spec.md),
+[internal RPC](foundation-internal-rpc-spec.md),
+[AP consistency](foundation-ap-consistency-spec.md),
+[CP consistency](foundation-cp-consistency-spec.md), persistence, task, and
+event infrastructure; they support domains but do not own domain resource
+semantics.
 
 ## 2. Core Domains
 
 | Domain | Primary responsibility | Resource identity | Detailed spec |
 | --- | --- | --- | --- |
-| Configuration | Dynamic configuration storage, release, query, subscription, gray delivery, history, capacity, and audit. | `namespaceId -> group -> dataId` | [Config Spec](../config/config-spec.md) |
-| Naming | Service discovery, service metadata, instances, health, subscription, and runtime push. | `namespaceId -> group -> serviceName` | TODO: Naming domain spec. |
+| Configuration | Dynamic configuration storage, release, query, subscription, gray delivery, history, capacity, and audit. | `namespaceId -> groupName -> dataId` | [Config Spec](../config/config-spec.md) |
+| Naming | Service discovery, service metadata, instances, health, subscription, and runtime push. | `namespaceId -> groupName -> serviceName` | [Naming Spec](../naming/naming-spec.md) |
 | AI Registry | MCP, A2A, Prompt, Skill, AgentSpec, versions, labels, visibility, and publish governance. | `namespaceId -> resourceType -> resourceName` | TODO: AI Registry domain spec. |
-| Core Operations | Namespace, cluster member, server state, readiness, liveness, plugin state, and operation controls. | Domain-specific administrative resources. | TODO: Core operation spec. |
+| Core Operations | Namespace, [cluster member](foundation-cluster-membership-spec.md), server state, readiness, liveness, plugin state, and operation controls. | Domain-specific administrative resources. | TODO: Core operation spec. |
 | Security And Visibility | Authentication, authorization, permissions, API classification, resource visibility, and identity propagation. | Structured Nacos resource identity. | [Auth And Permission Spec](../auth/auth-permission-spec.md), [Visibility Plugin Spec](../auth/visibility-plugin-spec.md) |
 | Extension | Server and client extension points for auth, visibility, datasource, encryption, trace, control, addressing, AI pipeline, and related concerns. | Plugin-type identity plus domain-owned resource identity. | [Plugin Spec](../plugin/plugin-spec.md) |
 
@@ -53,8 +63,15 @@ points and must not redefine domain ownership.
 - A domain owns its resource semantics, lifecycle, validation, and observable
   state.
 - `core`, `common`, `persistence`, `consistency`, `auth`, and `plugin` modules
-  provide shared infrastructure; they do not own Config, Naming, or AI resource
-  semantics unless a domain spec explicitly delegates a behavior.
+  provide shared infrastructure as defined by the
+  [Foundation Capabilities Spec](foundation-capabilities-spec.md), including
+  [cluster membership](foundation-cluster-membership-spec.md),
+  [remote connection lifecycle](foundation-remote-connection-spec.md),
+  [internal RPC](foundation-internal-rpc-spec.md),
+  [AP consistency](foundation-ap-consistency-spec.md), and
+  [CP consistency](foundation-cp-consistency-spec.md); they do not own Config,
+  Naming, or AI resource semantics unless a domain spec explicitly delegates a
+  behavior.
 - Runtime client surfaces should expose least-privilege operations for known
   resources. Broad list, export, clone, migration, capacity, and operation APIs
   belong to Admin API, Console API, or Maintainer SDK.
@@ -71,7 +88,8 @@ points and must not redefine domain ownership.
 Every new capability should identify:
 
 - owning domain and module;
-- resource identity and whether the second layer is `group` or `resourceType`;
+- resource identity and whether the second layer is `groupName` or
+  `resourceType`;
 - runtime-facing, management-facing, or operation-facing audience;
 - HTTP, gRPC, Client SDK, Maintainer SDK, Console, or plugin surface;
 - persistence, cache, event, consistency, and recovery expectations;

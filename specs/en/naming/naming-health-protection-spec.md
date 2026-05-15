@@ -58,14 +58,17 @@ Heartbeat timing can be customized by reserved metadata keys:
 
 ### 2.2 gRPC Connection Liveness
 
-gRPC clients keep ephemeral instances alive through the lifecycle of the client
-connection. Naming observes connection close and release events to remove or
-redo runtime publisher/subscriber state.
+gRPC clients keep ephemeral instances alive through the
+[remote connection lifecycle](../design/foundation-remote-connection-spec.md).
+Naming observes connection close and release events to remove or redo runtime
+publisher/subscriber state.
 
 The gRPC transport has its own heartbeat and liveness detection to avoid
 half-open connections. That heartbeat is hidden behind the gRPC connection
 layer from the Naming module perspective. Naming should depend on connection
-lifecycle events, not duplicate transport-level heartbeat logic.
+lifecycle events defined by the
+[Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md),
+not duplicate transport-level heartbeat logic.
 
 ## 3. Persistent Service Active Health Check
 
@@ -110,6 +113,8 @@ not an assertion that the underlying instances are actually healthy.
 
 - TODO: Define gRPC connection heartbeat, half-open detection, and client-side
   connection liveness behavior in a shared gRPC connection or gRPC client spec.
+  The foundation-level connection lifecycle boundary is defined by the
+  [Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md).
 
 ## 7. Related Specs
 
