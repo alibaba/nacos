@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -24,6 +25,8 @@ import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.sys.env.EnvUtil;
+
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +37,7 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -353,5 +357,59 @@ class ConfigOperationServiceTest {
         Boolean bResult = configOperationService.deleteConfig("test", "test", "", "test", "1.1.1.1",
             "test", "http");
         assertTrue(bResult);
+    }
+    
+    @Test
+    void testPublishConfigCasFailure() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setCasMd5("old-md5");
+        
+        when(configInfoPersistService.insertOrUpdateCas(any(), any(),
+            any(ConfigInfo.class), any()))
+            .thenReturn(new ConfigOperateResult(false));
+        
+        assertThrows(NacosApiException.class,
+            () -> configOperationService.publishConfig(configForm,
+                configRequestInfo, ""));
+    }
+    
+    @Test
+    void testDeleteConfigWithGrayName() {
+        Boolean result = configOperationService.deleteConfig(
+            "test", "test", "", "beta", "1.1.1.1", "user", "http");
+        assertTrue(result);
+        verify(configInfoGrayPersistService).removeConfigInfoGray(
+            eq("test"), eq("test"), eq(""), eq("beta"), any(), any());
+    }
+    
+    @Test
+    void testGetConfigAdvanceInfo() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setConfigTags("tag1,tag2");
+        configForm.setDesc("desc");
+        configForm.setUse("use");
+        configForm.setEffect("effect");
+        configForm.setType("json");
+        configForm.setSchema("schema");
+        
+        Map<String, Object> info =
+            configOperationService.getConfigAdvanceInfo(configForm);
+        assertEquals("tag1,tag2", info.get("config_tags"));
+        assertEquals("desc", info.get("desc"));
+        assertEquals("json", info.get("type"));
+    }
+    
+    @Test
+    void testGetConfigAdvanceInfoWithNulls() {
+        ConfigForm configForm = new ConfigForm();
+        Map<String, Object> info =
+            configOperationService.getConfigAdvanceInfo(configForm);
+        assertNotNull(info);
+        assertEquals(0, info.size());
     }
 }
