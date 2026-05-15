@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
@@ -36,12 +37,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -111,6 +117,137 @@ public class DumpChangeGrayConfigWorkerTest {
             () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeGrayConfigWorker.class),
                 eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
         
+    }
+    
+    @Test
+    public void testRunDumpChangeOff() {
+        MockedStatic<PropertyUtil> propertyUtilMockedStatic =
+            Mockito.mockStatic(PropertyUtil.class);
+        propertyUtilMockedStatic.when(PropertyUtil::isDumpChangeOn)
+            .thenReturn(false);
+        
+        dumpGrayConfigWorker.run();
+        
+        configCacheServiceMockedStatic.verify(
+            () -> ConfigCacheService.dumpGray(anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(),
+                anyLong(), anyString()),
+            never());
+        
+        propertyUtilMockedStatic.close();
+    }
+    
+    @Test
+    public void testRunWithDeletedConfigs() {
+        ConfigInfoStateWrapper deleted = new ConfigInfoStateWrapper();
+        deleted.setDataId("deletedDataId");
+        deleted.setGroup("deletedGroup");
+        deleted.setTenant("deletedTenant");
+        deleted.setGrayName("grayToDelete");
+        deleted.setId(1L);
+        
+        when(historyConfigInfoPersistService.findDeletedConfig(
+            any(Timestamp.class), eq(0L), eq(100), anyString()))
+            .thenReturn(Collections.singletonList(deleted));
+        
+        when(configInfoGrayPersistService.findConfigInfo4GrayState(
+            eq("deletedDataId"), eq("deletedGroup"), eq("deletedTenant"),
+            eq("grayToDelete")))
+            .thenReturn(null);
+        
+        when(configInfoGrayPersistService.findChangeConfig(
+            any(Timestamp.class), anyLong(), eq(100)))
+            .thenReturn(Collections.emptyList());
+        
+        dumpGrayConfigWorker.run();
+        
+        configCacheServiceMockedStatic.verify(
+            () -> ConfigCacheService.removeGray(eq("deletedDataId"),
+                eq("deletedGroup"), eq("deletedTenant"),
+                eq("grayToDelete")));
+        verify(configMigrateService)
+            .checkDeletedConfigGrayMigrateState(any());
+    }
+    
+    @Test
+    public void testRunWithDeletedConfigBlankGrayName() {
+        ConfigInfoStateWrapper deleted = new ConfigInfoStateWrapper();
+        deleted.setDataId("d");
+        deleted.setGroup("g");
+        deleted.setTenant("t");
+        deleted.setGrayName("");
+        deleted.setId(1L);
+        
+        when(historyConfigInfoPersistService.findDeletedConfig(
+            any(Timestamp.class), eq(0L), eq(100), anyString()))
+            .thenReturn(Collections.singletonList(deleted));
+        when(configInfoGrayPersistService.findChangeConfig(
+            any(Timestamp.class), anyLong(), eq(100)))
+            .thenReturn(Collections.emptyList());
+        
+        dumpGrayConfigWorker.run();
+        
+        configCacheServiceMockedStatic.verify(
+            () -> ConfigCacheService.removeGray(anyString(), anyString(),
+                anyString(), anyString()),
+            never());
+    }
+    
+    @Test
+    public void testRunWithDeletedConfigStillExistsInDb() {
+        ConfigInfoStateWrapper deleted = new ConfigInfoStateWrapper();
+        deleted.setDataId("d");
+        deleted.setGroup("g");
+        deleted.setTenant("t");
+        deleted.setGrayName("gray1");
+        deleted.setId(1L);
+        
+        when(historyConfigInfoPersistService.findDeletedConfig(
+            any(Timestamp.class), eq(0L), eq(100), anyString()))
+            .thenReturn(Collections.singletonList(deleted));
+        
+        ConfigInfoStateWrapper existing = new ConfigInfoStateWrapper();
+        when(configInfoGrayPersistService.findConfigInfo4GrayState(
+            eq("d"), eq("g"), eq("t"), eq("gray1")))
+            .thenReturn(existing);
+        
+        when(configInfoGrayPersistService.findChangeConfig(
+            any(Timestamp.class), anyLong(), eq(100)))
+            .thenReturn(Collections.emptyList());
+        
+        dumpGrayConfigWorker.run();
+        
+        configCacheServiceMockedStatic.verify(
+            () -> ConfigCacheService.removeGray(anyString(), anyString(),
+                anyString(), anyString()),
+            never());
+    }
+    
+    @Test
+    public void testRunWithChangedConfigBlankTenant() {
+        ConfigInfoGrayWrapper changed = new ConfigInfoGrayWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        changed.setGrayName("gray1");
+        changed.setContent("content");
+        changed.setGrayRule("{\"type\":\"tag\",\"version\":\"1.0.0\","
+            + "\"expr\":\"test\",\"priority\":1}");
+        
+        when(historyConfigInfoPersistService.findDeletedConfig(
+            any(Timestamp.class), anyLong(), eq(100), anyString()))
+            .thenReturn(Collections.emptyList());
+        when(configInfoGrayPersistService.findChangeConfig(
+            any(Timestamp.class), eq(0L), eq(100)))
+            .thenReturn(Collections.singletonList(changed));
+        
+        dumpGrayConfigWorker.run();
+        
+        configCacheServiceMockedStatic.verify(
+            () -> ConfigCacheService.dumpGray(anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(),
+                anyLong(), anyString()),
+            never());
     }
     
     ConfigInfoGrayWrapper mock(int id) {

@@ -36,6 +36,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -411,5 +414,91 @@ class ConfigOperationServiceTest {
             configOperationService.getConfigAdvanceInfo(configForm);
         assertNotNull(info);
         assertEquals(0, info.size());
+    }
+    
+    @Test
+    void testPublishConfigWithIstioTags() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        configForm.setConfigTags("virtual-service");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcIp("1.1.1.1");
+        
+        when(configInfoPersistService.insertOrUpdate(any(), any(),
+            any(ConfigInfo.class), any()))
+            .thenReturn(new ConfigOperateResult());
+        
+        Boolean result = configOperationService.publishConfig(configForm,
+            configRequestInfo, "");
+        assertTrue(result);
+    }
+    
+    @Test
+    void testPublishConfigBetaCasFailure() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        configForm.setTag("");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setBetaIps("test-betaIps");
+        configRequestInfo.setCasMd5("old-md5");
+        
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(
+            any(ConfigInfo.class), eq("beta"), anyString(),
+            any(), any()))
+            .thenReturn(new ConfigOperateResult(false));
+        
+        assertThrows(NacosApiException.class,
+            () -> configOperationService.publishConfig(configForm,
+                configRequestInfo, ""));
+    }
+    
+    @Test
+    void testPublishConfigBetaGrayVersionOverMaxCount() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        configForm.setTag("");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setBetaIps("test-betaIps");
+        
+        List<String> existingGrays = Arrays.asList(
+            "g1", "g2", "g3", "g4", "g5",
+            "g6", "g7", "g8", "g9", "g10");
+        when(configInfoGrayPersistService.findConfigInfoGrays(
+            anyString(), anyString(), any()))
+            .thenReturn(existingGrays);
+        
+        assertThrows(NacosApiException.class,
+            () -> configOperationService.publishConfig(configForm,
+                configRequestInfo, ""));
+    }
+    
+    @Test
+    void testPublishConfigTagCasFailure() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        configForm.setTag("myTag");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setCasMd5("old-md5");
+        
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(
+            any(ConfigInfo.class), eq("tag_myTag"), anyString(),
+            any(), any()))
+            .thenReturn(new ConfigOperateResult(false));
+        
+        assertThrows(NacosApiException.class,
+            () -> configOperationService.publishConfig(configForm,
+                configRequestInfo, ""));
     }
 }
