@@ -17,7 +17,9 @@
 package com.alibaba.nacos.config.server.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.config.server.controller.v3.HistoryControllerV3;
 import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
@@ -32,6 +34,8 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import org.springframework.dao.DataAccessResourceFailureException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -80,4 +84,39 @@ class GlobalExceptionHandlerTest {
         resultActions2.andExpect(MockMvcResultMatchers.status().is(503));
     }
     
+    @Test
+    void testIllegalArgumentExceptionHandler() throws Exception {
+        when(historyControllerV3.getConfigsByNamespace(any()))
+            .thenThrow(new IllegalArgumentException("bad arg"));
+        
+        ResultActions result = mockMvc.perform(
+            get("/v3/admin/cs/history/configs")
+                .param("namespaceId", "test"));
+        result.andExpect(MockMvcResultMatchers.status().is(400));
+    }
+    
+    @Test
+    void testNacosExceptionHandler() throws Exception {
+        when(historyControllerV3.getConfigsByNamespace(any()))
+            .thenThrow(new NacosApiException(NacosException.SERVER_ERROR,
+                ErrorCode.SERVER_ERROR, "internal error"));
+        
+        ResultActions result = mockMvc.perform(
+            get("/v3/admin/cs/history/configs")
+                .param("namespaceId", "test"));
+        result.andExpect(
+            MockMvcResultMatchers.status().is(NacosException.SERVER_ERROR));
+    }
+    
+    @Test
+    void testDataAccessExceptionHandler() throws Exception {
+        when(historyControllerV3.getConfigsByNamespace(any()))
+            .thenThrow(
+                new DataAccessResourceFailureException("db error"));
+        
+        ResultActions result = mockMvc.perform(
+            get("/v3/admin/cs/history/configs")
+                .param("namespaceId", "test"));
+        result.andExpect(MockMvcResultMatchers.status().is(500));
+    }
 }
