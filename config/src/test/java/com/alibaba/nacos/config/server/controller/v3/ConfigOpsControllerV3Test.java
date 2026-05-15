@@ -236,4 +236,67 @@ class ConfigOpsControllerV3Test {
             mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
     }
+    
+    @Test
+    void testDerbyOpsWithExistingLimit() throws Exception {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
+        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance)
+            .thenReturn(dataSource);
+        LocalDataSourceServiceImpl dataSourceService =
+            Mockito.mock(LocalDataSourceServiceImpl.class);
+        when(dataSource.getDataSource()).thenReturn(dataSourceService);
+        JdbcTemplate template = Mockito.mock(JdbcTemplate.class);
+        when(dataSourceService.getJdbcTemplate()).thenReturn(template);
+        String sqlWithLimit =
+            "SELECT * FROM TEST OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY";
+        when(template.queryForList(sqlWithLimit)).thenReturn(new ArrayList<>());
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(
+                Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby")
+                .param("sql", sqlWithLimit);
+        String actualValue =
+            mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());
+    }
+    
+    @Test
+    void testDerbyOpsException() throws Exception {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
+        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance)
+            .thenReturn(dataSource);
+        LocalDataSourceServiceImpl dataSourceService =
+            Mockito.mock(LocalDataSourceServiceImpl.class);
+        when(dataSource.getDataSource()).thenReturn(dataSourceService);
+        JdbcTemplate template = Mockito.mock(JdbcTemplate.class);
+        when(dataSourceService.getJdbcTemplate()).thenReturn(template);
+        when(template.queryForList(Mockito.anyString()))
+            .thenThrow(new RuntimeException("db error"));
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(
+                Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby")
+                .param("sql", "SELECT * FROM TEST");
+        String actualValue =
+            mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        assertEquals("30000",
+            JacksonUtils.toObj(actualValue).get("code").toString());
+    }
+    
+    @Test
+    void testSetLogLevelError() throws Exception {
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+            .put(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/log")
+            .param("logName", "nonexistent.invalid.logger.12345")
+            .param("logLevel", "INVALID_LEVEL");
+        String actualValue =
+            mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        int status =
+            mockMvc.perform(builder).andReturn().getResponse().getStatus();
+        assertEquals(200, status);
+    }
 }
