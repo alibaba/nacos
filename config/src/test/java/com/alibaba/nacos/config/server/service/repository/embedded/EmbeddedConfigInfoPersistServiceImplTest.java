@@ -60,6 +60,8 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.persistence.repository.RowMapperManager.MAP_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -1172,5 +1174,66 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect check
         assertEquals(mockConfigs, returnConfigPage.getPageItems());
         
+    }
+    
+    @Test
+    void testUpdateConfigInfoMetadataNotFound() {
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"d", "g", ""}),
+            eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        assertThrows(NacosException.class,
+            () -> embeddedConfigInfoPersistService
+                .updateConfigInfoMetadata("d", "g", "", "tags",
+                    "desc"));
+    }
+    
+    @Test
+    void testUpdateConfigInfoMetadataSuccess() throws NacosException {
+        ConfigInfoWrapper wrapper = new ConfigInfoWrapper();
+        wrapper.setId(100L);
+        wrapper.setDataId("d");
+        wrapper.setGroup("g");
+        wrapper.setTenant("");
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"d", "g", ""}),
+            eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenReturn(wrapper);
+        
+        ConfigInfoStateWrapper stateWrapper = new ConfigInfoStateWrapper();
+        stateWrapper.setId(100L);
+        stateWrapper.setLastModified(System.currentTimeMillis());
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"d", "g", ""}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(stateWrapper);
+        
+        ConfigOperateResult result =
+            embeddedConfigInfoPersistService.updateConfigInfoMetadata(
+                "d", "g", "", "tag1", "desc");
+        assertNotNull(result);
+    }
+    
+    @Test
+    void testUpdateConfigInfoMetadataDescOnly() throws NacosException {
+        ConfigInfoWrapper wrapper = new ConfigInfoWrapper();
+        wrapper.setId(100L);
+        wrapper.setDataId("d");
+        wrapper.setGroup("g");
+        wrapper.setTenant("");
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"d", "g", ""}),
+            eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenReturn(wrapper);
+        
+        ConfigInfoStateWrapper stateWrapper = new ConfigInfoStateWrapper();
+        stateWrapper.setId(100L);
+        stateWrapper.setLastModified(System.currentTimeMillis());
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"d", "g", ""}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(stateWrapper);
+        
+        ConfigOperateResult result =
+            embeddedConfigInfoPersistService.updateConfigInfoMetadata(
+                "d", "g", "", null, "newdesc");
+        assertNotNull(result);
     }
 }
