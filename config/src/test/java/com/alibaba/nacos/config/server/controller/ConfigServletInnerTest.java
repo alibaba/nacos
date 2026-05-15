@@ -406,4 +406,74 @@ class ConfigServletInnerTest {
         assertEquals(HttpServletResponse.SC_CONFLICT + "", actualValue);
         
     }
+    
+    @Test
+    void testDoGetConfigNotExistV2() throws Exception {
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString()))
+            .thenReturn(0);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("dataId", "nf");
+        request.setParameter("group", "nf");
+        request.setParameter("tenant", "nf");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        String actualValue =
+            configServletInner.doGetConfig(request, response, "nf", "nf", "nf", null, "false",
+                "localhost", ApiVersionEnum.V2);
+        assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
+    }
+    
+    @Test
+    void testDoGetConfigConflictV2() throws Exception {
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString()))
+            .thenReturn(-1);
+        configCacheServiceMockedStatic.when(
+            () -> ConfigCacheService.getContentCache(anyString()))
+            .thenReturn(new CacheItem("key"));
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("dataId", "cf");
+        request.setParameter("group", "cf");
+        request.setParameter("tenant", "cf");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        String actualValue =
+            configServletInner.doGetConfig(request, response, "cf", "cf", "cf", null, "false",
+                "localhost", ApiVersionEnum.V2);
+        assertEquals(HttpServletResponse.SC_CONFLICT + "", actualValue);
+    }
+    
+    @Test
+    void testDoGetConfigFormalNullContent() throws Exception {
+        String dataId = "dataIdNull";
+        String group = "group";
+        String tenant = "tenant";
+        configCacheServiceMockedStatic.when(
+            () -> ConfigCacheService.tryConfigReadLock(anyString()))
+            .thenReturn(1);
+        CacheItem cacheItem = new CacheItem("test");
+        cacheItem.getConfigCache().setMd5("md5");
+        cacheItem.getConfigCache().setLastModifiedTs(System.currentTimeMillis());
+        configCacheServiceMockedStatic.when(
+            () -> ConfigCacheService.getContentCache(anyString()))
+            .thenReturn(cacheItem);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("dataId", dataId);
+        request.setParameter("group", group);
+        request.setParameter("tenant", tenant);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(configRocksDbDiskService.getContent(dataId, group, tenant)).thenReturn(null);
+        String actualValue =
+            configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "false",
+                "localhost", ApiVersionEnum.V1);
+        assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
+    }
+    
+    @Test
+    void testDoPollingConfigLongPolling() throws Exception {
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Long-Pulling-Timeout", "30000");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        String actualValue =
+            configServletInner.doPollingConfig(request, response, clientMd5Map, 300);
+        assertEquals(HttpServletResponse.SC_OK + "", actualValue);
+    }
 }

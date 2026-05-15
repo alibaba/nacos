@@ -718,4 +718,83 @@ class CapacityManagementAspectTest {
             () -> capacityManagementAspect
                 .aroundPublishConfig(proceedingJoinPoint));
     }
+    
+    @Test
+    void testAroundPublishInsertOverClusterQuota() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getContent()).thenReturn("content");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(false);
+        
+        assertThrows(NacosException.class,
+            () -> capacityManagementAspect
+                .aroundPublishConfig(proceedingJoinPoint));
+    }
+    
+    @Test
+    void testAroundPublishInsertOverTenantQuota() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getNamespaceId()).thenReturn("ns1");
+        when(configForm.getContent()).thenReturn("content");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        when(capacityService.getTenantCapacity(eq("ns1"))).thenReturn(null);
+        when(capacityService.updateTenantUsage(any(), eq("ns1")))
+            .thenReturn(false);
+        when(capacityService.updateClusterUsage(any())).thenReturn(true);
+        
+        assertThrows(NacosException.class,
+            () -> capacityManagementAspect
+                .aroundPublishConfig(proceedingJoinPoint));
+    }
+    
+    @Test
+    void testAroundPublishInsertOversizeContent() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(PropertyUtil.getDefaultMaxSize()).thenReturn(5);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getContent()).thenReturn("oversized content string");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        GroupCapacity cap = new GroupCapacity();
+        cap.setMaxSize(5);
+        cap.setMaxAggrSize(5);
+        when(capacityService.getGroupCapacity(eq("g"))).thenReturn(cap);
+        when(capacityService.updateClusterUsage(any())).thenReturn(true);
+        
+        assertThrows(NacosException.class,
+            () -> capacityManagementAspect
+                .aroundPublishConfig(proceedingJoinPoint));
+    }
+    
+    @Test
+    void testAroundDeleteConfigForTenantNotManaged() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(false);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        
+        Object result = capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+    }
 }

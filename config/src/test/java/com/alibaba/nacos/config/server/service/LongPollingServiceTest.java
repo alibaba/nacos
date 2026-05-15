@@ -44,8 +44,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -350,5 +352,58 @@ class LongPollingServiceTest {
         //expect print not equals group
         Mockito.verify(asyncContext, times(1)).complete();
         
+    }
+    
+    @Test
+    void testGetSubscribleInfoEmpty() {
+        SampleResult result = longPollingService.getSubscribleInfo("d", "g", "t");
+        assertEquals(0, result.getLisentersGroupkeyStatus().size());
+    }
+    
+    @Test
+    void testGetSubscribleInfoByIpEmpty() {
+        SampleResult result = longPollingService.getSubscribleInfoByIp("10.0.0.1");
+        assertEquals(0, result.getLisentersGroupkeyStatus().size());
+    }
+    
+    @Test
+    void testMergeSampleResult() {
+        SampleResult r1 = new SampleResult();
+        Map<String, String> map1 = new HashMap<>();
+        map1.put("key1", "md5a");
+        r1.setLisentersGroupkeyStatus(map1);
+        
+        SampleResult r2 = new SampleResult();
+        Map<String, String> map2 = new HashMap<>();
+        map2.put("key2", "md5b");
+        r2.setLisentersGroupkeyStatus(map2);
+        
+        List<SampleResult> list = new ArrayList<>();
+        list.add(r1);
+        list.add(r2);
+        SampleResult merged = longPollingService.mergeSampleResult(list);
+        assertEquals(2, merged.getLisentersGroupkeyStatus().size());
+    }
+    
+    @Test
+    void testGetRetainIpsAndSubscriberCount() {
+        assertFalse(longPollingService.getRetainIps() == null);
+        assertEquals(0, longPollingService.getSubscriberCount());
+    }
+    
+    @Test
+    void testIsSupportLongPolling() {
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(request.getHeader(eq(LongPollingService.LONG_POLLING_HEADER)))
+            .thenReturn("30000");
+        assertEquals(true, LongPollingService.isSupportLongPolling(request));
+    }
+    
+    @Test
+    void testIsSupportLongPollingFalse() {
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(request.getHeader(eq(LongPollingService.LONG_POLLING_HEADER)))
+            .thenReturn(null);
+        assertFalse(LongPollingService.isSupportLongPolling(request));
     }
 }
