@@ -797,4 +797,88 @@ class CapacityManagementAspectTest {
         Object result = capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint);
         assertEquals(true, result);
     }
+    
+    @Test
+    void testAroundPublishInsertNullContent() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getContent()).thenReturn(null);
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundPublishConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+    }
+    
+    @Test
+    void testAroundPublishUpdateOversizeTenant() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getNamespaceId()).thenReturn("tenantNs");
+        String largeContent = "x".repeat(10 * 1024 + 1);
+        when(configForm.getContent()).thenReturn(largeContent);
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(new ConfigInfoWrapper());
+        NamespaceCapacity tenantCap = new NamespaceCapacity();
+        tenantCap.setMaxSize(0);
+        tenantCap.setMaxAggrSize(0);
+        when(capacityService.getTenantCapacity(eq("tenantNs")))
+            .thenReturn(tenantCap);
+        
+        assertThrows(NacosException.class,
+            () -> capacityManagementAspect
+                .aroundPublishConfig(proceedingJoinPoint));
+    }
+    
+    @Test
+    void testAroundPublishInsertOversizeTenantContent() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getNamespaceId()).thenReturn("tenantNs");
+        when(configForm.getContent()).thenReturn("oversized content string");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        NamespaceCapacity tenantCap = new NamespaceCapacity();
+        tenantCap.setMaxSize(5);
+        tenantCap.setMaxAggrSize(5);
+        when(capacityService.getTenantCapacity(eq("tenantNs")))
+            .thenReturn(tenantCap);
+        when(capacityService.updateClusterUsage(any())).thenReturn(true);
+        
+        assertThrows(NacosException.class,
+            () -> capacityManagementAspect
+                .aroundPublishConfig(proceedingJoinPoint));
+    }
+    
+    @Test
+    void testAroundDeleteConfigNullConfigInfo() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {mockDataId, mockGroup, "", null});
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundDeleteConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+    }
 }

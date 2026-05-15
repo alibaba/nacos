@@ -276,4 +276,79 @@ public class ConfigFuzzyWatchContextServiceTest {
         Assertions.assertTrue(CollectionUtils.isEmpty(matchedClients));
         
     }
+    
+    @Test
+    public void testReachToUpLimitByPattern() throws NacosException {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("data*", "group", "12345");
+        Assertions.assertFalse(
+            configFuzzyWatchContextService.reachToUpLimit(groupKeyPattern));
+        
+        configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, "conn1");
+        for (int i = 0; i < mocMaxPatternConfigCount; i++) {
+            String keyTenant = GroupKey.getKeyTenant("data" + i, "group", "12345");
+            configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, ADD_CONFIG);
+        }
+        Assertions.assertTrue(
+            configFuzzyWatchContextService.reachToUpLimit(groupKeyPattern));
+    }
+    
+    @Test
+    public void testRemoveFuzzyListenNonExistentPattern() throws NacosException {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        configFuzzyWatchContextService.removeFuzzyListen("nonexistent", "conn1");
+    }
+    
+    @Test
+    public void testClearFuzzyWatchContextMultiplePatterns() throws NacosException {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        String pattern1 =
+            FuzzyGroupKeyPattern.generatePattern("data1*", "group", "ns1");
+        String pattern2 =
+            FuzzyGroupKeyPattern.generatePattern("data2*", "group", "ns1");
+        configFuzzyWatchContextService.addFuzzyWatch(pattern1, "conn1");
+        configFuzzyWatchContextService.addFuzzyWatch(pattern2, "conn1");
+        
+        String groupKey1 = GroupKey.getKeyTenant("data1x", "group", "ns1");
+        configFuzzyWatchContextService.syncGroupKeyContext(groupKey1, ADD_CONFIG);
+        
+        Set<String> before = configFuzzyWatchContextService.getMatchedClients(groupKey1);
+        Assertions.assertTrue(before.contains("conn1"));
+        
+        configFuzzyWatchContextService.clearFuzzyWatchContext("conn1");
+        
+        Set<String> after = configFuzzyWatchContextService.getMatchedClients(groupKey1);
+        Assertions.assertTrue(after.isEmpty());
+    }
+    
+    @Test
+    public void testMatchGroupKeysNonExistentPattern() {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        Set<String> result =
+            configFuzzyWatchContextService.matchGroupKeys("nonexistent");
+        Assertions.assertTrue(result.isEmpty());
+    }
+    
+    @Test
+    public void testTrimFuzzyWatchContextWithHighUsage() throws NacosException {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("data*", "group", "12345");
+        configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, "conn1");
+        for (int i = 0; i < mocMaxPatternConfigCount; i++) {
+            String keyTenant =
+                GroupKey.getKeyTenant("data" + i, "group", "12345");
+            configFuzzyWatchContextService.syncGroupKeyContext(
+                keyTenant, ADD_CONFIG);
+        }
+        configFuzzyWatchContextService.trimFuzzyWatchContext();
+        Assertions.assertTrue(
+            configFuzzyWatchContextService.reachToUpLimit(groupKeyPattern));
+    }
 }
