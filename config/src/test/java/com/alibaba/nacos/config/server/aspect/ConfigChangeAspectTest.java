@@ -266,6 +266,67 @@ class ConfigChangeAspectTest {
     }
     
     @Test
+    void testPublishConfigWithBetaIps() throws Throwable {
+        Mockito.when(configChangePluginService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
+        
+        when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("dataId");
+        when(configRequestInfo.getSrcType()).thenReturn("http");
+        when(configRequestInfo.getBetaIps()).thenReturn("10.0.0.1,10.0.0.2");
+        when(pjp.proceed(any())).thenReturn("Success");
+        
+        Object result = configChangeAspect.publishOrUpdateConfigAround(pjp);
+        Thread.sleep(20L);
+        
+        ArgumentCaptor<ConfigChangeRequest> captor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService).execute(captor.capture(), any());
+        assertEquals("beta", captor.getValue().getArg("grayName"));
+        assertEquals("10.0.0.1,10.0.0.2", captor.getValue().getArg("grayRuleExp"));
+    }
+    
+    @Test
+    void testPublishConfigWithTag() throws Throwable {
+        Mockito.when(configChangePluginService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
+        
+        when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("dataId");
+        when(configRequestInfo.getSrcType()).thenReturn("http");
+        when(configRequestInfo.getBetaIps()).thenReturn(null);
+        when(configForm.getTag()).thenReturn("myTag");
+        when(pjp.proceed(any())).thenReturn("Success");
+        
+        Object result = configChangeAspect.publishOrUpdateConfigAround(pjp);
+        Thread.sleep(20L);
+        
+        ArgumentCaptor<ConfigChangeRequest> captor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService).execute(captor.capture(), any());
+        assertEquals("tag_myTag", captor.getValue().getArg("grayName"));
+    }
+    
+    @Test
+    void testRemoveConfigByIdWithRpcType() throws Throwable {
+        Mockito.when(configChangePluginService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
+        
+        when(pjp.getArgs()).thenReturn(
+            new Object[] {"d", "g", "ns", "tag", "127.0.0.1", "user", "rpc"});
+        when(pjp.proceed(any())).thenReturn("ok");
+        
+        configChangeAspect.removeConfigByIdAround(pjp);
+        Thread.sleep(20L);
+        
+        ArgumentCaptor<ConfigChangeRequest> captor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService).execute(captor.capture(), any());
+        assertEquals(ConfigChangePointCutTypes.PUBLISH_BY_RPC,
+            captor.getValue().getRequestType());
+    }
+    
+    @Test
     void testNoPluginsEnabled() throws Throwable {
         Properties properties = new Properties();
         properties.put("mockedConfigChangeService.enabled", "false");

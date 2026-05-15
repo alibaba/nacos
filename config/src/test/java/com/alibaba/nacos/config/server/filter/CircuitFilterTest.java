@@ -29,6 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.lang.reflect.Field;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -123,6 +124,11 @@ class CircuitFilterTest {
         verify(chain).doFilter(request, response);
         verify(response, never()).sendError(eq(HttpServletResponse.SC_FORBIDDEN),
             contains("access denied"));
+    }
+    
+    @Test
+    void testDestroyDoesNotThrow() {
+        assertDoesNotThrow(() -> filter.destroy());
     }
     
     private static void injectField(Object target, String fieldName, Object value)

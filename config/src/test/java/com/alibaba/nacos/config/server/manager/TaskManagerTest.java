@@ -128,6 +128,35 @@ class TaskManagerTest {
     }
     
     @Test
+    void testAwaitWhenEmpty() throws InterruptedException {
+        assertTrue(taskManager.isEmpty());
+        taskManager.await();
+    }
+    
+    @Test
+    void testAwaitWithTimeoutWhenEmpty() throws InterruptedException {
+        assertTrue(taskManager.isEmpty());
+        boolean result = taskManager.await(100, TimeUnit.MILLISECONDS);
+        assertFalse(result);
+    }
+    
+    @Test
+    void testAwaitWithTimeoutWaitsForProcessing() throws InterruptedException {
+        when(taskProcessor.process(abstractTask)).thenReturn(true);
+        taskManager.addTask("awaitTest", abstractTask);
+        boolean result = taskManager.await(2000, TimeUnit.MILLISECONDS);
+        assertTrue(taskManager.isEmpty());
+    }
+    
+    @Test
+    void testProcessTasksSignalsCondition() throws InterruptedException {
+        when(taskProcessor.process(abstractTask)).thenReturn(true);
+        taskManager.addTask("signalTest", abstractTask);
+        TimeUnit.MILLISECONDS.sleep(300);
+        assertTrue(taskManager.isEmpty());
+    }
+    
+    @Test
     void testInit() throws Exception {
         taskManager.init();
         ObjectName oName = new ObjectName(
