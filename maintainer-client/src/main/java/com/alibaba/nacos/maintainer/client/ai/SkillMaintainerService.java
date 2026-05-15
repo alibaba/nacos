@@ -230,8 +230,9 @@ public interface SkillMaintainerService {
      * @return batch upload result with succeeded and failed lists
      * @throws NacosException if fail to upload
      */
-    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-            throws NacosException;
+    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+        boolean overwrite)
+        throws NacosException;
     
     /**
      * Create a brand-new skill draft.
