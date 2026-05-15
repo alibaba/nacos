@@ -16,13 +16,16 @@
 
 package com.alibaba.nacos.config.server.model.form;
 
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * ConfigFormTest
@@ -95,5 +98,80 @@ public class ConfigFormTest {
         // 断言原对象的属性没有改变
         assertNotEquals(original.getContent(), cloned.getContent());
         assertEquals("content", original.getContent());
+    }
+    
+    @Test
+    void testFullConstructor() {
+        ConfigForm form = new ConfigForm("d", "g", "ns", "c", "t",
+            "app", "user", "tags", "desc", "use", "effect", "json",
+            "schema");
+        assertEquals("d", form.getDataId());
+        assertEquals("g", form.getGroup());
+        assertEquals("ns", form.getNamespaceId());
+        assertEquals("c", form.getContent());
+        assertEquals("t", form.getTag());
+        assertEquals("app", form.getAppName());
+        assertEquals("user", form.getSrcUser());
+        assertEquals("tags", form.getConfigTags());
+        assertEquals("desc", form.getDesc());
+        assertEquals("use", form.getUse());
+        assertEquals("effect", form.getEffect());
+        assertEquals("json", form.getType());
+        assertEquals("schema", form.getSchema());
+    }
+    
+    @Test
+    void testValidateBlankDataId() {
+        ConfigForm form = new ConfigForm();
+        form.setGroup("g");
+        assertThrows(NacosApiException.class, form::validate);
+    }
+    
+    @Test
+    void testValidateBlankGroup() {
+        ConfigForm form = new ConfigForm();
+        form.setDataId("d");
+        assertThrows(NacosApiException.class, form::validate);
+    }
+    
+    @Test
+    void testValidateSuccess() {
+        ConfigForm form = new ConfigForm();
+        form.setDataId("d");
+        form.setGroup("g");
+        assertDoesNotThrow(form::validate);
+    }
+    
+    @Test
+    void testValidateWithContentBlank() {
+        ConfigForm form = new ConfigForm();
+        form.setDataId("d");
+        form.setGroup("g");
+        assertThrows(NacosApiException.class,
+            form::validateWithContent);
+    }
+    
+    @Test
+    void testValidateWithContentSuccess() {
+        ConfigForm form = new ConfigForm();
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        assertDoesNotThrow(form::validateWithContent);
+    }
+    
+    @Test
+    void testGettersSetters() {
+        ConfigForm form = new ConfigForm();
+        form.setEncryptedDataKey("ek");
+        form.setGrayName("gn");
+        form.setGrayRuleExp("exp");
+        form.setGrayVersion("1.0");
+        form.setGrayPriority(10);
+        assertEquals("ek", form.getEncryptedDataKey());
+        assertEquals("gn", form.getGrayName());
+        assertEquals("exp", form.getGrayRuleExp());
+        assertEquals("1.0", form.getGrayVersion());
+        assertEquals(10, form.getGrayPriority());
     }
 }
