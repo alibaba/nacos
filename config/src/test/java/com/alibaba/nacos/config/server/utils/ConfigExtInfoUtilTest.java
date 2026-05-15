@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.alibaba.nacos.config.server.model.gray.BetaGrayRule.PRIORITY;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -121,5 +122,28 @@ class ConfigExtInfoUtilTest {
         String result =
             ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(map, "");
         assertNotNull(result);
+    }
+    
+    @Test
+    void testGetExtraInfoFromAdvanceInfoMapWithNonStringValue() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("type", 123);
+        map.put("desc", "valid desc");
+        String result =
+            ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(map, "user");
+        assertNotNull(result);
+        assertTrue(result.contains("c_desc"));
+        assertFalse(result.contains("123"));
+    }
+    
+    @Test
+    void testGetExtraInfoFromAdvanceInfoMapWithBlankStringValue() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("type", "  ");
+        map.put("desc", "desc");
+        String result =
+            ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(map, null);
+        assertNotNull(result);
+        assertTrue(result.contains("c_desc"));
     }
 }
