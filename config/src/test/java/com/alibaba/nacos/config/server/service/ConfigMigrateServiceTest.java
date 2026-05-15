@@ -608,4 +608,162 @@ class ConfigMigrateServiceTest {
         verify(configInfoPersistService, never())
             .insertOrUpdate(any(), any(), any(), any());
     }
+    
+    @Test
+    void testPublishConfigMigrateInsertOrUpdate()
+        throws NacosException {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        ConfigRequestInfo reqInfo = new ConfigRequestInfo();
+        service.publishConfigMigrate(form, reqInfo, "");
+        verify(configInfoPersistService)
+            .insertOrUpdate(any(), anyString(), any(ConfigInfo.class),
+                any());
+    }
+    
+    @Test
+    void testPublishConfigMigrateCasSuccess() throws NacosException {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        ConfigRequestInfo reqInfo = new ConfigRequestInfo();
+        reqInfo.setCasMd5("casMd5");
+        when(configInfoPersistService.insertOrUpdateCas(any(), anyString(),
+            any(ConfigInfo.class), any()))
+            .thenReturn(new ConfigOperateResult(true));
+        service.publishConfigMigrate(form, reqInfo, "");
+        verify(configInfoPersistService)
+            .insertOrUpdateCas(any(), anyString(), any(ConfigInfo.class),
+                any());
+    }
+    
+    @Test
+    void testPublishConfigMigrateCasFailure() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        ConfigRequestInfo reqInfo = new ConfigRequestInfo();
+        reqInfo.setCasMd5("casMd5");
+        when(configInfoPersistService.insertOrUpdateCas(any(), anyString(),
+            any(ConfigInfo.class), any()))
+            .thenReturn(new ConfigOperateResult(false));
+        assertThrows(NacosApiException.class,
+            () -> service.publishConfigMigrate(form, reqInfo, ""));
+    }
+    
+    @Test
+    void testPublishConfigMigrateAddConfigInfo()
+        throws NacosException {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        ConfigRequestInfo reqInfo = new ConfigRequestInfo();
+        reqInfo.setUpdateForExist(false);
+        when(configInfoPersistService.addConfigInfo(any(), anyString(),
+            any(ConfigInfo.class), any()))
+            .thenReturn(new ConfigOperateResult(true));
+        service.publishConfigMigrate(form, reqInfo, "");
+        verify(configInfoPersistService)
+            .addConfigInfo(any(), anyString(), any(ConfigInfo.class),
+                any());
+    }
+    
+    @Test
+    void testRemoveConfigInfoMigrateBlankTenant() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        service.removeConfigInfoMigrate("d", "g", "public", "ip",
+            "user");
+        verify(configInfoPersistService)
+            .removeConfigInfo(eq("d"), eq("g"), eq(""), eq("ip"),
+                anyString());
+    }
+    
+    @Test
+    void testRemoveConfigInfoGrayMigrateNotPublic() {
+        service.removeConfigInfoGrayMigrate("d", "g", "custom", "beta",
+            "ip", "user");
+        verify(configInfoGrayPersistService, never())
+            .removeConfigInfoGray(any(), any(), any(), any(), any(),
+                any());
+    }
+    
+    @Test
+    void testCheckChangedConfigMigrateStateUpdatesTarget()
+        throws NacosException {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoStateWrapper changed = new ConfigInfoStateWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        
+        ConfigAllInfo srcAll = new ConfigAllInfo();
+        srcAll.setDataId("d");
+        srcAll.setGroup("g");
+        srcAll.setMd5("md5-1");
+        srcAll.setModifyTime(100L);
+        srcAll.setCreateUser("someuser");
+        when(configInfoPersistService.findConfigAllInfo("d", "g", ""))
+            .thenReturn(srcAll);
+        
+        ConfigAllInfo targetAll = new ConfigAllInfo();
+        targetAll.setDataId("d");
+        targetAll.setGroup("g");
+        targetAll.setMd5("md5-other");
+        targetAll.setModifyTime(50L);
+        targetAll.setCreateUser("other");
+        when(configInfoPersistService.findConfigAllInfo(
+            "d", "g", "public")).thenReturn(targetAll);
+        
+        service.checkChangedConfigMigrateState(changed);
+        verify(configInfoPersistService)
+            .updateConfigInfo(any(), any(), anyString(), any());
+    }
+    
+    @Test
+    void testCheckChangedConfigGrayMigrateStateUpdates() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoGrayWrapper changed = new ConfigInfoGrayWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        changed.setGrayName("beta");
+        changed.setMd5("md5-1");
+        changed.setGrayRule("rule1");
+        changed.setSrcUser("someuser");
+        changed.setLastModified(200L);
+        
+        ConfigInfoGrayWrapper existing = new ConfigInfoGrayWrapper();
+        existing.setMd5("md5-other");
+        existing.setGrayRule("rule-other");
+        existing.setGrayName("beta");
+        existing.setLastModified(100L);
+        existing.setSrcUser("other");
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            "d", "g", "public", "beta")).thenReturn(existing);
+        
+        service.checkChangedConfigGrayMigrateState(changed);
+        verify(configInfoGrayPersistService)
+            .updateConfigInfo4Gray(any(), eq("beta"), anyString(), any(),
+                anyString());
+    }
 }
