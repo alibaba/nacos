@@ -766,4 +766,524 @@ class ConfigMigrateServiceTest {
             .updateConfigInfo4Gray(any(), eq("beta"), anyString(), any(),
                 anyString());
     }
+    
+    @Test
+    void testPublishConfigGrayMigrateNullGrayRule()
+        throws NacosException {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        form.setGrayName("beta");
+        form.setGrayVersion("invalid-version");
+        form.setGrayRuleExp("1.2.3.4");
+        form.setGrayPriority(1);
+        assertThrows(NacosApiException.class,
+            () -> service.publishConfigGrayMigrate("invalid_type",
+                form, new ConfigRequestInfo()));
+    }
+    
+    @Test
+    void testPublishConfigGrayMigrateInsertOrUpdateGray()
+        throws NacosException {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        propertyUtilMockedStatic.when(PropertyUtil::isGrayCompatibleModel)
+            .thenReturn(false);
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        form.setGrayName("beta");
+        form.setGrayVersion("1.0.0");
+        form.setGrayRuleExp("1.2.3.4");
+        form.setGrayPriority(Integer.MAX_VALUE);
+        service.publishConfigGrayMigrate("beta", form,
+            new ConfigRequestInfo());
+        verify(configInfoGrayPersistService)
+            .insertOrUpdateGray(any(), eq("beta"), anyString(), any(),
+                anyString());
+    }
+    
+    @Test
+    void testPublishConfigGrayMigrateCasSuccess()
+        throws NacosException {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        propertyUtilMockedStatic.when(PropertyUtil::isGrayCompatibleModel)
+            .thenReturn(false);
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        form.setGrayName("beta");
+        form.setGrayVersion("1.0.0");
+        form.setGrayRuleExp("1.2.3.4");
+        form.setGrayPriority(Integer.MAX_VALUE);
+        ConfigRequestInfo reqInfo = new ConfigRequestInfo();
+        reqInfo.setCasMd5("casMd5");
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(
+            any(), eq("beta"), anyString(), any(), anyString()))
+            .thenReturn(new ConfigOperateResult(true));
+        service.publishConfigGrayMigrate("beta", form, reqInfo);
+        verify(configInfoGrayPersistService)
+            .insertOrUpdateGrayCas(any(), eq("beta"), anyString(),
+                any(), anyString());
+    }
+    
+    @Test
+    void testPublishConfigGrayMigrateCasFailure() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        propertyUtilMockedStatic.when(PropertyUtil::isGrayCompatibleModel)
+            .thenReturn(false);
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        form.setGrayName("beta");
+        form.setGrayVersion("1.0.0");
+        form.setGrayRuleExp("1.2.3.4");
+        form.setGrayPriority(Integer.MAX_VALUE);
+        ConfigRequestInfo reqInfo = new ConfigRequestInfo();
+        reqInfo.setCasMd5("casMd5");
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(
+            any(), eq("beta"), anyString(), any(), anyString()))
+            .thenReturn(new ConfigOperateResult(false));
+        assertThrows(NacosApiException.class,
+            () -> service.publishConfigGrayMigrate("beta",
+                form, reqInfo));
+    }
+    
+    @Test
+    void testPublishConfigGrayMigrateWithTagType()
+        throws NacosException {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        propertyUtilMockedStatic.when(PropertyUtil::isGrayCompatibleModel)
+            .thenReturn(true);
+        service.oldTableVersion = true;
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        form.setTag("t1");
+        form.setGrayName("tag_t1");
+        form.setGrayVersion("1.0.0");
+        form.setGrayRuleExp("tagValue");
+        form.setGrayPriority(Integer.MAX_VALUE - 1);
+        service.publishConfigGrayMigrate("tag", form,
+            new ConfigRequestInfo());
+        verify(configInfoTagPersistService)
+            .insertOrUpdateTag(any(), eq("t1"), any(), any());
+        verify(configInfoGrayPersistService)
+            .insertOrUpdateGray(any(), eq("tag_t1"), anyString(),
+                any(), anyString());
+    }
+    
+    @Test
+    void testPublishConfigGrayMigrateWithBetaType()
+        throws NacosException {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        propertyUtilMockedStatic.when(PropertyUtil::isGrayCompatibleModel)
+            .thenReturn(true);
+        service.oldTableVersion = true;
+        ConfigForm form = new ConfigForm();
+        form.setNamespaceId("public");
+        form.setDataId("d");
+        form.setGroup("g");
+        form.setContent("content");
+        form.setGrayName("beta");
+        form.setGrayVersion("1.0.0");
+        form.setGrayRuleExp("1.2.3.4");
+        form.setGrayPriority(Integer.MAX_VALUE);
+        ConfigRequestInfo reqInfo = new ConfigRequestInfo();
+        reqInfo.setBetaIps("1.2.3.4");
+        service.publishConfigGrayMigrate("beta", form, reqInfo);
+        verify(configInfoBetaPersistService)
+            .insertOrUpdateBeta(any(), eq("1.2.3.4"), any(), any());
+    }
+    
+    @Test
+    void testCheckChangedConfigGrayMigrateStateMigrateSrcTargetNull() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoGrayWrapper changed = new ConfigInfoGrayWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        changed.setGrayName("beta");
+        changed.setMd5("md5-1");
+        changed.setGrayRule("rule1");
+        changed.setSrcUser("nacos_namespace_migrate");
+        changed.setLastModified(200L);
+        
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            "d", "g", "public", "beta")).thenReturn(null);
+        
+        service.checkChangedConfigGrayMigrateState(changed);
+        verify(configInfoGrayPersistService)
+            .removeConfigInfoGray(eq("d"), eq("g"), eq(""),
+                eq("beta"), isNull(), anyString());
+    }
+    
+    @Test
+    void testCheckChangedConfigGrayMigrateSrcMigrateMd5DiffTargetNewer() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoGrayWrapper changed = new ConfigInfoGrayWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        changed.setGrayName("beta");
+        changed.setMd5("md5-1");
+        changed.setGrayRule("rule1");
+        changed.setSrcUser("nacos_namespace_migrate");
+        changed.setLastModified(100L);
+        
+        ConfigInfoGrayWrapper target = new ConfigInfoGrayWrapper();
+        target.setMd5("md5-other");
+        target.setGrayRule("rule-other");
+        target.setGrayName("beta");
+        target.setLastModified(200L);
+        target.setSrcUser("other");
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            "d", "g", "public", "beta")).thenReturn(target);
+        
+        service.checkChangedConfigGrayMigrateState(changed);
+        verify(configInfoGrayPersistService)
+            .updateConfigInfo4Gray(eq(target), eq("beta"),
+                anyString(), isNull(), anyString());
+    }
+    
+    @Test
+    void testCheckChangedConfigGrayNonMigrateMd5DiffSourceNewer() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoGrayWrapper changed = new ConfigInfoGrayWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        changed.setGrayName("beta");
+        changed.setMd5("md5-1");
+        changed.setGrayRule("rule1");
+        changed.setSrcUser("someuser");
+        changed.setLastModified(200L);
+        
+        ConfigInfoGrayWrapper target = new ConfigInfoGrayWrapper();
+        target.setMd5("md5-other");
+        target.setGrayRule("rule-other");
+        target.setGrayName("beta");
+        target.setLastModified(100L);
+        target.setSrcUser("nacos_namespace_migrate");
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            "d", "g", "public", "beta")).thenReturn(target);
+        
+        service.checkChangedConfigGrayMigrateState(changed);
+        verify(configInfoGrayPersistService)
+            .updateConfigInfo4Gray(eq(changed), eq("beta"),
+                eq("rule1"), isNull(), anyString());
+    }
+    
+    @Test
+    void testCheckChangedConfigMigrateSrcMigrateTargetNullRemoves() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoStateWrapper changed = new ConfigInfoStateWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        
+        ConfigAllInfo srcAll = new ConfigAllInfo();
+        srcAll.setDataId("d");
+        srcAll.setGroup("g");
+        srcAll.setMd5("md5-1");
+        srcAll.setCreateUser("nacos_namespace_migrate");
+        when(configInfoPersistService.findConfigAllInfo("d", "g", ""))
+            .thenReturn(srcAll);
+        when(configInfoPersistService.findConfigAllInfo(
+            "d", "g", "public")).thenReturn(null);
+        
+        service.checkChangedConfigMigrateState(changed);
+        verify(configInfoPersistService)
+            .removeConfigInfo(eq("d"), eq("g"), eq(""), isNull(),
+                anyString());
+    }
+    
+    @Test
+    void testCheckChangedConfigMigrateSrcMigrateMd5DiffTargetNewer() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoStateWrapper changed = new ConfigInfoStateWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        
+        ConfigAllInfo srcAll = new ConfigAllInfo();
+        srcAll.setDataId("d");
+        srcAll.setGroup("g");
+        srcAll.setMd5("md5-1");
+        srcAll.setModifyTime(100L);
+        srcAll.setCreateUser("nacos_namespace_migrate");
+        when(configInfoPersistService.findConfigAllInfo("d", "g", ""))
+            .thenReturn(srcAll);
+        
+        ConfigAllInfo targetAll = new ConfigAllInfo();
+        targetAll.setMd5("md5-other");
+        targetAll.setModifyTime(200L);
+        targetAll.setCreateUser("other");
+        when(configInfoPersistService.findConfigAllInfo(
+            "d", "g", "public")).thenReturn(targetAll);
+        
+        service.checkChangedConfigMigrateState(changed);
+        verify(configInfoPersistService)
+            .updateConfigInfo(eq(targetAll), isNull(), anyString(),
+                isNull());
+    }
+    
+    @Test
+    void testCheckChangedConfigMigrateNonMigrateSourceNewerUpdates() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoStateWrapper changed = new ConfigInfoStateWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        
+        ConfigAllInfo srcAll = new ConfigAllInfo();
+        srcAll.setDataId("d");
+        srcAll.setGroup("g");
+        srcAll.setMd5("md5-1");
+        srcAll.setModifyTime(200L);
+        srcAll.setCreateUser("someuser");
+        when(configInfoPersistService.findConfigAllInfo("d", "g", ""))
+            .thenReturn(srcAll);
+        
+        ConfigAllInfo targetAll = new ConfigAllInfo();
+        targetAll.setMd5("md5-other");
+        targetAll.setModifyTime(100L);
+        targetAll.setCreateUser("nacos_namespace_migrate");
+        when(configInfoPersistService.findConfigAllInfo(
+            "d", "g", "public")).thenReturn(targetAll);
+        
+        service.checkChangedConfigMigrateState(changed);
+        verify(configInfoPersistService)
+            .updateConfigInfo(eq(srcAll), isNull(), anyString(),
+                isNull());
+    }
+    
+    @Test
+    void testCheckMigrateTagWhenTagNullButGrayExists() {
+        when(configInfoTagPersistService.findConfigInfo4Tag(
+            "d", "g", "ns", "t1")).thenReturn(null);
+        ConfigInfoGrayWrapper gray = new ConfigInfoGrayWrapper();
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            "d", "g", "ns", "tag_t1")).thenReturn(gray);
+        service.checkMigrateTag("d", "g", "ns", "t1");
+        verify(configInfoGrayPersistService)
+            .removeConfigInfoGray(eq("d"), eq("g"), eq("ns"),
+                eq("tag_t1"), any(), any());
+    }
+    
+    @Test
+    void testCheckMigrateBetaGrayNewerThanBeta() {
+        ConfigInfoBetaWrapper beta = new ConfigInfoBetaWrapper();
+        beta.setDataId("d");
+        beta.setGroup("g");
+        beta.setTenant("ns");
+        beta.setBetaIps("1.2.3.4");
+        beta.setLastModified(100L);
+        when(configInfoBetaPersistService.findConfigInfo4Beta(
+            "d", "g", "ns")).thenReturn(beta);
+        ConfigInfoGrayWrapper gray = new ConfigInfoGrayWrapper();
+        gray.setLastModified(200L);
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            "d", "g", "ns", "beta")).thenReturn(gray);
+        service.checkMigrateBeta("d", "g", "ns");
+        verify(configInfoGrayPersistService, never())
+            .insertOrUpdateGray(any(), any(), any(), any(), any());
+    }
+    
+    @Test
+    void testCheckDeletedConfigGrayMigrateTargetNewer() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoStateWrapper deleted = new ConfigInfoStateWrapper();
+        deleted.setDataId("d");
+        deleted.setGroup("g");
+        deleted.setTenant("");
+        deleted.setGrayName("beta");
+        deleted.setLastModified(100L);
+        
+        ConfigInfoStateWrapper target = new ConfigInfoStateWrapper();
+        target.setLastModified(200L);
+        when(configInfoGrayPersistService.findConfigInfo4GrayState(
+            "d", "g", "public", "beta")).thenReturn(target);
+        
+        service.checkDeletedConfigGrayMigrateState(deleted);
+        verify(configInfoGrayPersistService, never())
+            .removeConfigInfoGray(any(), any(), any(), any(), any(),
+                any());
+    }
+    
+    @Test
+    void testCheckDeletedConfigMigrateTargetNewer() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoStateWrapper deleted = new ConfigInfoStateWrapper();
+        deleted.setDataId("d");
+        deleted.setGroup("g");
+        deleted.setTenant("");
+        deleted.setLastModified(100L);
+        
+        ConfigInfoStateWrapper target = new ConfigInfoStateWrapper();
+        target.setLastModified(200L);
+        when(configInfoPersistService.findConfigInfoState(
+            "d", "g", "public")).thenReturn(target);
+        
+        service.checkDeletedConfigMigrateState(deleted);
+        verify(configInfoPersistService, never())
+            .removeConfigInfo(any(), any(), any(), any(), any());
+    }
+    
+    @Test
+    void testCheckDeletedConfigGrayPublicTenantMapsToEmpty() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoStateWrapper deleted = new ConfigInfoStateWrapper();
+        deleted.setDataId("d");
+        deleted.setGroup("g");
+        deleted.setTenant("public");
+        deleted.setGrayName("beta");
+        deleted.setLastModified(200L);
+        
+        ConfigInfoStateWrapper target = new ConfigInfoStateWrapper();
+        target.setLastModified(100L);
+        when(configInfoGrayPersistService.findConfigInfo4GrayState(
+            "d", "g", "", "beta")).thenReturn(target);
+        
+        service.checkDeletedConfigGrayMigrateState(deleted);
+        verify(configInfoGrayPersistService)
+            .removeConfigInfoGray(eq("d"), eq("g"), eq(""), eq("beta"),
+                isNull(), anyString());
+    }
+    
+    @Test
+    void testCheckDeletedConfigMigratePublicTenantMapsToEmpty() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoStateWrapper deleted = new ConfigInfoStateWrapper();
+        deleted.setDataId("d");
+        deleted.setGroup("g");
+        deleted.setTenant("public");
+        deleted.setLastModified(200L);
+        
+        ConfigInfoStateWrapper target = new ConfigInfoStateWrapper();
+        target.setLastModified(100L);
+        when(configInfoPersistService.findConfigInfoState(
+            "d", "g", "")).thenReturn(target);
+        
+        service.checkDeletedConfigMigrateState(deleted);
+        verify(configInfoPersistService)
+            .removeConfigInfo(eq("d"), eq("g"), eq(""), isNull(),
+                anyString());
+    }
+    
+    @Test
+    void testCheckChangedConfigGrayNonMigrateTargetNewerUpdatesTarget() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoGrayWrapper changed = new ConfigInfoGrayWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        changed.setGrayName("beta");
+        changed.setMd5("md5-1");
+        changed.setGrayRule("rule1");
+        changed.setSrcUser("someuser");
+        changed.setLastModified(100L);
+        
+        ConfigInfoGrayWrapper target = new ConfigInfoGrayWrapper();
+        target.setMd5("md5-other");
+        target.setGrayRule("rule-other");
+        target.setGrayName("beta");
+        target.setLastModified(200L);
+        target.setSrcUser("other-user");
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            "d", "g", "public", "beta")).thenReturn(target);
+        
+        service.checkChangedConfigGrayMigrateState(changed);
+        verify(configInfoGrayPersistService)
+            .updateConfigInfo4Gray(eq(target), eq("beta"),
+                anyString(), isNull(), anyString());
+    }
+    
+    @Test
+    void testCheckChangedConfigMigrateNonMigrateTargetNewerUpdates() {
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(true);
+        ConfigInfoStateWrapper changed = new ConfigInfoStateWrapper();
+        changed.setDataId("d");
+        changed.setGroup("g");
+        changed.setTenant("");
+        
+        ConfigAllInfo srcAll = new ConfigAllInfo();
+        srcAll.setDataId("d");
+        srcAll.setGroup("g");
+        srcAll.setMd5("md5-1");
+        srcAll.setModifyTime(100L);
+        srcAll.setCreateUser("someuser");
+        when(configInfoPersistService.findConfigAllInfo("d", "g", ""))
+            .thenReturn(srcAll);
+        
+        ConfigAllInfo targetAll = new ConfigAllInfo();
+        targetAll.setMd5("md5-other");
+        targetAll.setModifyTime(200L);
+        targetAll.setCreateUser("other-user");
+        when(configInfoPersistService.findConfigAllInfo(
+            "d", "g", "public")).thenReturn(targetAll);
+        
+        service.checkChangedConfigMigrateState(changed);
+        verify(configInfoPersistService)
+            .updateConfigInfo(eq(targetAll), isNull(), anyString(),
+                isNull());
+    }
+    
+    @Test
+    void testMigrateGrayCompatibleAndOldTableVersion() throws Exception {
+        when(namespacePersistService.isExistTable("config_info_beta"))
+            .thenReturn(false);
+        when(configCompatibleConfig.isNamespaceCompatibleMode())
+            .thenReturn(false);
+        service.migrate();
+        verify(configInfoBetaPersistService, never())
+            .configInfoBetaCount();
+    }
+    
+    @Test
+    void testCheckMigrateTagGrayNewerThanTag() {
+        ConfigInfoTagWrapper tag = new ConfigInfoTagWrapper();
+        tag.setDataId("d");
+        tag.setGroup("g");
+        tag.setTenant("ns");
+        tag.setTag("t1");
+        tag.setLastModified(100L);
+        when(configInfoTagPersistService.findConfigInfo4Tag(
+            "d", "g", "ns", "t1")).thenReturn(tag);
+        ConfigInfoGrayWrapper gray = new ConfigInfoGrayWrapper();
+        gray.setLastModified(200L);
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            "d", "g", "ns", "tag_t1")).thenReturn(gray);
+        service.checkMigrateTag("d", "g", "ns", "t1");
+        verify(configInfoGrayPersistService, never())
+            .insertOrUpdateGray(any(), any(), any(), any(), any());
+    }
 }

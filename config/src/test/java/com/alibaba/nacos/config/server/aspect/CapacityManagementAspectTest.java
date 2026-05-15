@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
@@ -559,5 +560,162 @@ class CapacityManagementAspectTest {
         Mockito.verify(capacityService, Mockito.times(2))
             .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
         Mockito.verify(localMockProceedingJoinPoint, Mockito.times(1)).proceed();
+    }
+    
+    @Test
+    void testAroundPublishWithBetaIpsSkipsCapacityCheck()
+        throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getContent()).thenReturn("content");
+        when(configRequestInfo.getBetaIps()).thenReturn("1.2.3.4");
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundPublishConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+        Mockito.verify(configInfoPersistService, never())
+            .findConfigInfo(any(), any(), any());
+    }
+    
+    @Test
+    void testAroundDeleteConfigWithGrayNameSkips() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(
+                new Object[] {mockDataId, mockGroup, mockTenant,
+                    "grayName"});
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundDeleteConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+        Mockito.verify(configInfoPersistService, never())
+            .findConfigInfo(any(), any(), any());
+    }
+    
+    @Test
+    void testAroundDeleteConfigNotManaged() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(false);
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundDeleteConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+    }
+    
+    @Test
+    void testAroundPublishConfigUpdateOversize() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getNamespaceId()).thenReturn("ns");
+        String largeContent = "x".repeat(10 * 1024 + 1);
+        when(configForm.getContent()).thenReturn(largeContent);
+        when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(new ConfigInfoWrapper());
+        
+        assertThrows(NacosException.class,
+            () -> capacityManagementAspect
+                .aroundPublishConfig(proceedingJoinPoint));
+    }
+    
+    @Test
+    void testAroundPublishConfigUpdateNotLimitCheck() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(false);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getNamespaceId()).thenReturn("ns");
+        when(configForm.getContent()).thenReturn("content");
+        when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(new ConfigInfoWrapper());
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundPublishConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+    }
+    
+    @Test
+    void testAroundPublishInsertResultFalseRollback() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(false);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getNamespaceId()).thenReturn("ns");
+        when(configForm.getContent()).thenReturn("content");
+        when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        when(capacityService.updateTenantUsage(any(), eq("ns")))
+            .thenReturn(true);
+        when(capacityService.updateClusterUsage(any())).thenReturn(true);
+        when(proceedingJoinPoint.proceed()).thenReturn(false);
+        
+        Object result = capacityManagementAspect
+            .aroundPublishConfig(proceedingJoinPoint);
+        assertEquals(false, result);
+        Mockito.verify(capacityService)
+            .updateClusterUsage(eq(CounterMode.DECREMENT));
+        Mockito.verify(capacityService)
+            .updateTenantUsage(eq(CounterMode.DECREMENT), eq("ns"));
+    }
+    
+    @Test
+    void testAroundPublishWithGrayNameSkips() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getContent()).thenReturn("content");
+        when(configForm.getGrayName()).thenReturn("beta");
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundPublishConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+        Mockito.verify(configInfoPersistService, never())
+            .findConfigInfo(any(), any(), any());
+    }
+    
+    @Test
+    void testAroundPublishInsertOverGroupQuota() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("d");
+        when(configForm.getGroup()).thenReturn("g");
+        when(configForm.getContent()).thenReturn("content");
+        when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
+        when(configRequestInfo.getSrcType()).thenReturn("http");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        when(capacityService.getGroupCapacity(eq("g"))).thenReturn(null);
+        when(capacityService.updateGroupUsage(any(), eq("g")))
+            .thenReturn(false);
+        when(capacityService.updateClusterUsage(any())).thenReturn(true);
+        
+        assertThrows(NacosException.class,
+            () -> capacityManagementAspect
+                .aroundPublishConfig(proceedingJoinPoint));
     }
 }
