@@ -102,11 +102,12 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-            throws NacosException {
+    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+        boolean overwrite)
+        throws NacosException {
         return skillOperationService.batchUploadSkillsFromZip(namespaceId, zipBytes, overwrite);
     }
-
+    
     @Override
     public String createDraft(SkillDraftCreateForm form) throws NacosException {
         return skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(),

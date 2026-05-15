@@ -180,17 +180,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * Batch upload multiple skills from a single zip archive using best-effort strategy.
      */
     @Override
-    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-            throws NacosException {
+    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+        boolean overwrite)
+        throws NacosException {
         SkillZipParser.MultiSkillParseResult parseResult =
-                SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
         BatchUploadResult result = new BatchUploadResult();
-
+        
         // Record parse failures from invalid skill folders
         for (SkillZipParser.ParseFailure failure : parseResult.getFailures()) {
             result.addFailed(failure.getFolder(), failure.getReason());
         }
-
+        
         for (Skill skill : parseResult.getSkills()) {
             String skillName = skill.getName();
             try {
@@ -208,15 +209,15 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return result;
     }
-
+    
     /**
      * Core logic for uploading a single skill: validate, check meta, create/overwrite draft, log.
      */
     private String doUploadSingleSkill(String namespaceId, Skill skill, String uploadVersion,
-            boolean overwrite) throws NacosException {
+        boolean overwrite) throws NacosException {
         String name = skill.getName();
         validateSkillNameByParamChecker(name);
-
+        
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         if (overwrite) {
             return overwriteUploadedSkill(namespaceId, skill, uploadVersion, meta);
@@ -228,11 +229,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
             return name;
         }
-
+        
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         AiResourceManager.ensureNoWorkingVersion(info, "upload");
-
+        
         String newVersion = resolveFinalUploadVersion(namespaceId, name, uploadVersion);
         createDraftWithSkill(namespaceId, skill, newVersion, meta, false);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, newVersion,
@@ -240,7 +241,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return name;
     }
-
+    
     /**
      * Bootstrap a built-in skill from a ZIP archive (delegates to the overload with null source).
      */

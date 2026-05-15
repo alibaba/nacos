@@ -208,12 +208,14 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<BatchUploadResult> batchUploadSkills(HttpServletRequest request,
-            @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
-            @RequestParam("file") MultipartFile file) throws NacosException {
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "overwrite", required = false,
+            defaultValue = "false") boolean overwrite,
+        @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        BatchUploadResult result = skillOperationService.batchUploadSkillsFromZip(namespaceId, zipBytes, overwrite);
+        BatchUploadResult result =
+            skillOperationService.batchUploadSkillsFromZip(namespaceId, zipBytes, overwrite);
         return Result.success(result);
     }
     

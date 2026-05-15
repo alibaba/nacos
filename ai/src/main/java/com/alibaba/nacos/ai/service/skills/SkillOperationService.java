@@ -119,9 +119,10 @@ public interface SkillOperationService {
      * @return batch upload result with succeeded and failed skill names
      * @throws NacosException if zip parsing fails entirely (e.g. invalid format, no SKILL.md found)
      */
-    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-            throws NacosException;
-
+    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+        boolean overwrite)
+        throws NacosException;
+    
     /**
      * Bootstrap skill from zip file as an online skill.
      *

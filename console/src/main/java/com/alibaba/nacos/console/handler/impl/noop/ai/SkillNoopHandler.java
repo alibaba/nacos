@@ -100,12 +100,14 @@ public class SkillNoopHandler implements SkillHandler {
     }
     
     @Override
-    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-            throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                SKILL_NOT_ENABLED_MESSAGE);
+    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+        boolean overwrite)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            SKILL_NOT_ENABLED_MESSAGE);
     }
-
+    
     @Override
     public String createDraft(SkillDraftCreateForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,

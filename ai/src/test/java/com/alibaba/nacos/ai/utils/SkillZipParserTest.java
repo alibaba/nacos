@@ -265,7 +265,7 @@ class SkillZipParserTest {
         
         // When
         SkillZipParser.MultiSkillParseResult result =
-                SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
         
         // Then
         assertNotNull(result.getSkills());
@@ -281,7 +281,7 @@ class SkillZipParserTest {
         
         // When
         SkillZipParser.MultiSkillParseResult result =
-                SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
         
         // Then
         List<Skill> skills = result.getSkills();
@@ -301,14 +301,16 @@ class SkillZipParserTest {
         
         // When
         SkillZipParser.MultiSkillParseResult result =
-                SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
         
         // Then
         List<Skill> skills = result.getSkills();
         assertNotNull(skills);
         assertEquals(2, skills.size());
-        Skill alpha = skills.stream().filter(s -> "skill-alpha".equals(s.getName())).findFirst().orElse(null);
-        Skill beta = skills.stream().filter(s -> "skill-beta".equals(s.getName())).findFirst().orElse(null);
+        Skill alpha =
+            skills.stream().filter(s -> "skill-alpha".equals(s.getName())).findFirst().orElse(null);
+        Skill beta =
+            skills.stream().filter(s -> "skill-beta".equals(s.getName())).findFirst().orElse(null);
         assertNotNull(alpha);
         assertNotNull(beta);
         // alpha has a script resource
@@ -326,7 +328,7 @@ class SkillZipParserTest {
         
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace"));
+            () -> SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace"));
         assertTrue(exception.getMessage().contains("SKILL.md file not found"));
     }
     
@@ -334,28 +336,28 @@ class SkillZipParserTest {
     void testParseMultipleSkillsFromZipWithEmptyBytes() {
         // When & Then
         assertThrows(NacosApiException.class,
-                () -> SkillZipParser.parseMultipleSkillsFromZip(new byte[0], "test-namespace"));
+            () -> SkillZipParser.parseMultipleSkillsFromZip(new byte[0], "test-namespace"));
     }
-
+    
     @Test
     void testParseMultipleSkillsFromZipSkipsInvalidFolder() throws Exception {
         // Given: zip with one valid skill and one invalid skill (malformed YAML)
         byte[] zipBytes = createMultiSkillZipWithInvalidFolder();
-
+        
         // When
         SkillZipParser.MultiSkillParseResult result =
-                SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
-
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
         // Then: only the valid skill is returned, the invalid one is recorded as failure
         assertNotNull(result.getSkills());
         assertEquals(1, result.getSkills().size());
         assertEquals("skill-valid", result.getSkills().get(0).getName());
-
+        
         assertEquals(1, result.getFailures().size());
         assertEquals("skill-broken", result.getFailures().get(0).getFolder());
         assertNotNull(result.getFailures().get(0).getReason());
     }
-
+    
     @Test
     void testParseMultipleSkillsFromZipWarnsForFolderWithoutSkillMd() throws Exception {
         // Given: zip with two valid skills, one random folder without SKILL.md, and a .git folder
@@ -365,18 +367,18 @@ class SkillZipParserTest {
             zos.putNextEntry(entry);
             zos.write("---\nname: skill-a\ndescription: A\n---\n\nA".getBytes());
             zos.closeEntry();
-
+            
             entry = new ZipEntry("skill-b/SKILL.md");
             zos.putNextEntry(entry);
             zos.write("---\nname: skill-b\ndescription: B\n---\n\nB".getBytes());
             zos.closeEntry();
-
+            
             // Folder without SKILL.md - should produce a warning
             entry = new ZipEntry("my-utils/helper.py");
             zos.putNextEntry(entry);
             zos.write("print('hello')".getBytes());
             zos.closeEntry();
-
+            
             // .git folder - should be silently ignored
             entry = new ZipEntry(".git/config");
             zos.putNextEntry(entry);
@@ -384,18 +386,18 @@ class SkillZipParserTest {
             zos.closeEntry();
         }
         byte[] zipBytes = baos.toByteArray();
-
+        
         // When
         SkillZipParser.MultiSkillParseResult result =
-                SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
-
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
         // Then: 2 skills parsed, 1 warning for my-utils/, no warning for .git/
         assertEquals(2, result.getSkills().size());
         assertEquals(1, result.getFailures().size());
         assertEquals("my-utils", result.getFailures().get(0).getFolder());
         assertTrue(result.getFailures().get(0).getReason().contains("SKILL.md not found"));
     }
-
+    
     @Test
     void testParseMultipleSkillsFromZipWarnsCorrectPathForNestedStructure() throws Exception {
         // Given: zip with nested structure: parent/skill-a/SKILL.md, parent/skill-b/SKILL.md,
@@ -406,12 +408,12 @@ class SkillZipParserTest {
             zos.putNextEntry(entry);
             zos.write("---\nname: skill-a\ndescription: A\n---\n\nA".getBytes());
             zos.closeEntry();
-
+            
             entry = new ZipEntry("parent/skill-b/SKILL.md");
             zos.putNextEntry(entry);
             zos.write("---\nname: skill-b\ndescription: B\n---\n\nB".getBytes());
             zos.closeEntry();
-
+            
             // Sibling folder without SKILL.md
             entry = new ZipEntry("parent/random-lib/util.js");
             zos.putNextEntry(entry);
@@ -419,11 +421,11 @@ class SkillZipParserTest {
             zos.closeEntry();
         }
         byte[] zipBytes = baos.toByteArray();
-
+        
         // When
         SkillZipParser.MultiSkillParseResult result =
-                SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
-
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
         // Then: folder name "random-lib" is reported, not full path
         assertEquals(2, result.getSkills().size());
         assertEquals(1, result.getFailures().size());
@@ -772,7 +774,8 @@ class SkillZipParserTest {
             // Skill alpha
             ZipEntry entry = new ZipEntry("skill-alpha/SKILL.md");
             zos.putNextEntry(entry);
-            String skillMdAlpha = "---\n" + "name: skill-alpha\n" + "description: Alpha skill\n" + "---\n\n"
+            String skillMdAlpha =
+                "---\n" + "name: skill-alpha\n" + "description: Alpha skill\n" + "---\n\n"
                     + "Alpha instructions";
             zos.write(skillMdAlpha.getBytes());
             zos.closeEntry();
@@ -780,7 +783,8 @@ class SkillZipParserTest {
             // Skill beta
             entry = new ZipEntry("skill-beta/SKILL.md");
             zos.putNextEntry(entry);
-            String skillMdBeta = "---\n" + "name: skill-beta\n" + "description: Beta skill\n" + "---\n\n"
+            String skillMdBeta =
+                "---\n" + "name: skill-beta\n" + "description: Beta skill\n" + "---\n\n"
                     + "Beta instructions";
             zos.write(skillMdBeta.getBytes());
             zos.closeEntry();
@@ -797,7 +801,8 @@ class SkillZipParserTest {
             // Skill alpha with script resource
             ZipEntry entry = new ZipEntry("skill-alpha/SKILL.md");
             zos.putNextEntry(entry);
-            String skillMdAlpha = "---\n" + "name: skill-alpha\n" + "description: Alpha skill\n" + "---\n\n"
+            String skillMdAlpha =
+                "---\n" + "name: skill-alpha\n" + "description: Alpha skill\n" + "---\n\n"
                     + "Alpha instructions";
             zos.write(skillMdAlpha.getBytes());
             zos.closeEntry();
@@ -810,7 +815,8 @@ class SkillZipParserTest {
             // Skill beta with config resource
             entry = new ZipEntry("skill-beta/SKILL.md");
             zos.putNextEntry(entry);
-            String skillMdBeta = "---\n" + "name: skill-beta\n" + "description: Beta skill\n" + "---\n\n"
+            String skillMdBeta =
+                "---\n" + "name: skill-beta\n" + "description: Beta skill\n" + "---\n\n"
                     + "Beta instructions";
             zos.write(skillMdBeta.getBytes());
             zos.closeEntry();
@@ -822,7 +828,7 @@ class SkillZipParserTest {
         }
         return baos.toByteArray();
     }
-
+    
     /**
      * Create a multi-skill zip with one valid skill and one invalid skill (malformed YAML front-matter).
      */
@@ -832,10 +838,11 @@ class SkillZipParserTest {
             // Valid skill
             ZipEntry entry = new ZipEntry("skill-valid/SKILL.md");
             zos.putNextEntry(entry);
-            String validMd = "---\nname: skill-valid\ndescription: Valid skill\n---\n\nValid instructions";
+            String validMd =
+                "---\nname: skill-valid\ndescription: Valid skill\n---\n\nValid instructions";
             zos.write(validMd.getBytes());
             zos.closeEntry();
-
+            
             // Invalid skill: malformed YAML front-matter (unclosed braces)
             entry = new ZipEntry("skill-broken/SKILL.md");
             zos.putNextEntry(entry);
