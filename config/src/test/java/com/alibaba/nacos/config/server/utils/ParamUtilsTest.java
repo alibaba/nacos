@@ -303,4 +303,55 @@ class ParamUtilsTest {
         assertDoesNotThrow(
             () -> ParamUtils.checkParam("dataId", "group", UUID.randomUUID().toString()));
     }
+    
+    @Test
+    void testIsValidNull() {
+        assertFalse(ParamUtils.isValid(null));
+    }
+    
+    @Test
+    void testCheckParamV2TagInvalid() {
+        assertThrows(NacosApiException.class, () -> ParamUtils.checkParamV2("test!"));
+    }
+    
+    @Test
+    void testCheckParamV2TagTooLong() {
+        assertThrows(NacosApiException.class,
+            () -> ParamUtils.checkParamV2("testtesttesttest1"));
+    }
+    
+    @Test
+    void testCheckParamV2BlankTag() {
+        assertDoesNotThrow(() -> ParamUtils.checkParamV2(""));
+        assertDoesNotThrow(() -> ParamUtils.checkParamV2(null));
+    }
+    
+    @Test
+    void testCheckTenantV2Invalid() {
+        assertThrows(NacosApiException.class,
+            () -> ParamUtils.checkTenantV2("tenant!"));
+    }
+    
+    @Test
+    void testCheckTenantV2TooLong() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 129; i++) {
+            sb.append("t");
+        }
+        assertThrows(NacosApiException.class,
+            () -> ParamUtils.checkTenantV2(sb.toString()));
+    }
+    
+    @Test
+    void testCheckTenantV2Blank() {
+        assertDoesNotThrow(() -> ParamUtils.checkTenantV2(""));
+        assertDoesNotThrow(() -> ParamUtils.checkTenantV2(null));
+    }
+    
+    @Test
+    void testCheckParamAdvanceInfoWithEncryptedDataKey() {
+        Map<String, Object> configAdvanceInfo = new HashMap<>();
+        configAdvanceInfo.put("encryptedDataKey", "some-key");
+        assertDoesNotThrow(() -> ParamUtils.checkParam(configAdvanceInfo));
+    }
 }

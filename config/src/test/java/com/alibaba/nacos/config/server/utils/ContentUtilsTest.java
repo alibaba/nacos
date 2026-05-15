@@ -26,6 +26,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ContentUtilsTest {
     
     @Test
+    void testVerifyIncrementPubContentNull() {
+        try {
+            ContentUtils.verifyIncrementPubContent(null);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertNotNull(e.toString());
+        }
+    }
+    
+    @Test
     void testVerifyIncrementPubContent() {
         
         String content = "";

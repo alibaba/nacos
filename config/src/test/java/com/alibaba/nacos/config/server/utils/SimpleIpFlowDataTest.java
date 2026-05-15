@@ -46,4 +46,11 @@ class SimpleIpFlowDataTest {
         assertEquals(1, simpleIpFlowData.getAverageCount());
     }
     
+    @Test
+    void testNullIp() {
+        SimpleIpFlowData data = new SimpleIpFlowData(3, 10000);
+        assertEquals(1, data.incrementAndGet(null));
+        assertEquals(1, data.getCurrentCount(null));
+    }
+    
 }

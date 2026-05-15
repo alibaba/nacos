@@ -23,22 +23,22 @@ import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import org.junit.jupiter.api.Test;
 
-import static com.alibaba.nacos.config.server.model.gray.BetaGrayRule.PRIORITY;
+import java.util.HashMap;
+import java.util.Map;
 
-public class ConfigExtInfoUtilTest {
+import static com.alibaba.nacos.config.server.model.gray.BetaGrayRule.PRIORITY;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ConfigExtInfoUtilTest {
     
     @Test
     void testExt4Formal() {
-        
-        String dataId = "dataId4567";
-        String group = "group3456789";
-        String tenant = "tenant4567890";
-        
-        //mock exist config info
         ConfigAllInfo configAllInfo = new ConfigAllInfo();
-        configAllInfo.setDataId(dataId);
-        configAllInfo.setGroup(group);
-        configAllInfo.setTenant(tenant);
+        configAllInfo.setDataId("dataId4567");
+        configAllInfo.setGroup("group3456789");
+        configAllInfo.setTenant("tenant4567890");
         configAllInfo.setAppName("old_app");
         configAllInfo.setMd5("old_md5");
         configAllInfo.setId(12345678765L);
@@ -49,23 +49,77 @@ public class ConfigExtInfoUtilTest {
         configAllInfo.setDesc("desc");
         configAllInfo.setUse("use124");
         configAllInfo.setConfigTags("ctag1,ctag2");
-        String extraInfoFromAllInfo = ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo);
-        System.out.println(extraInfoFromAllInfo);
-        
+        String result = ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo);
+        assertNotNull(result);
+        assertTrue(result.contains("json"));
+    }
+    
+    @Test
+    void testExt4FormalAllBlank() {
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        String result = ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo);
+        assertNotNull(result);
     }
     
     @Test
     void testExt4Gray() {
-        String grayName = "gray124";
         ConfigGrayPersistInfo configGrayPersistInfo =
             new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
                 BetaGrayRule.VERSION, "127.0.0.1,127.0.0.2", PRIORITY);
-        
-        String grayRule = GrayRuleManager.serializeConfigGrayPersistInfo(configGrayPersistInfo);
-        String oldSrcUser = "user132";
-        String extraInfoFromAllInfo =
-            ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayName, grayRule, oldSrcUser);
-        System.out.println(extraInfoFromAllInfo);
-        
+        String grayRule =
+            GrayRuleManager.serializeConfigGrayPersistInfo(configGrayPersistInfo);
+        String result =
+            ConfigExtInfoUtil.getExtInfoFromGrayInfo("gray124", grayRule, "user132");
+        assertNotNull(result);
+        assertTrue(result.contains("gray_name"));
+    }
+    
+    @Test
+    void testExt4GrayWithBlanks() {
+        String result = ConfigExtInfoUtil.getExtInfoFromGrayInfo("", "", "");
+        assertNotNull(result);
+    }
+    
+    @Test
+    void testExt4GrayWithInvalidJson() {
+        String result =
+            ConfigExtInfoUtil.getExtInfoFromGrayInfo("gray", "not{json", "user");
+        assertNull(result);
+    }
+    
+    @Test
+    void testGetExtraInfoFromAdvanceInfoMapNull() {
+        assertNull(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(null, "user"));
+    }
+    
+    @Test
+    void testGetExtraInfoFromAdvanceInfoMapEmpty() {
+        assertNull(
+            ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(new HashMap<>(), "user"));
+    }
+    
+    @Test
+    void testGetExtraInfoFromAdvanceInfoMapWithValues() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("type", "json");
+        map.put("desc", "test desc");
+        map.put("config_tags", "tag1,tag2");
+        map.put("use", "testUse");
+        map.put("effect", "online");
+        map.put("schema", "s");
+        String result =
+            ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(map, "srcUser");
+        assertNotNull(result);
+        assertTrue(result.contains("src_user"));
+        assertTrue(result.contains("json"));
+    }
+    
+    @Test
+    void testGetExtraInfoFromAdvanceInfoMapWithBlankSrcUser() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("type", "yaml");
+        String result =
+            ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(map, "");
+        assertNotNull(result);
     }
 }

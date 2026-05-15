@@ -40,6 +40,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -198,4 +200,48 @@ class MD5UtilTest {
         }
     }
     
+    @Test
+    void testCompareMd5ResultStringNull() throws IOException {
+        String result = MD5Util.compareMd5ResultString(null);
+        assertEquals("", result);
+    }
+    
+    @Test
+    void testCompareMd5ResultStringWithNamespaceTransfer() throws IOException {
+        final MockedStatic<GroupKey2> groupKey2MockedStatic = Mockito.mockStatic(GroupKey2.class);
+        try {
+            HashMap<String, ConfigListenState> changedGroupKeys = new HashMap<>();
+            ConfigListenState state = new ConfigListenState("testMd5");
+            state.setNamespaceTransfer(true);
+            changedGroupKeys.put("test", state);
+            
+            String[] arr = new String[] {"d", "g", "ns"};
+            when(GroupKey2.parseKey("test")).thenReturn(arr);
+            
+            String result = MD5Util.compareMd5ResultString(changedGroupKeys);
+            assertFalse(result.contains("ns"));
+        } finally {
+            groupKey2MockedStatic.close();
+        }
+    }
+    
+    @Test
+    void testGetClientMd5MapNullAndEmpty() {
+        assertEquals(0, MD5Util.getClientMd5Map(null).size());
+        assertEquals(0, MD5Util.getClientMd5Map("").size());
+    }
+    
+    @Test
+    void testGetClientMd5MapTooManyKeys() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("d").append(MD5Util.WORD_SEPARATOR_CHAR);
+        sb.append("g").append(MD5Util.WORD_SEPARATOR_CHAR);
+        sb.append("md5").append(MD5Util.WORD_SEPARATOR_CHAR);
+        sb.append("t").append(MD5Util.WORD_SEPARATOR_CHAR);
+        try {
+            MD5Util.getClientMd5Map(sb.toString());
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("too much key"));
+        }
+    }
 }

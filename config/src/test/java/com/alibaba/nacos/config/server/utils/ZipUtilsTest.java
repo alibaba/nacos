@@ -16,12 +16,19 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.constant.Constants;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ZipUtilsTest {
@@ -47,6 +54,73 @@ class ZipUtilsTest {
         assertEquals(zipItemList.size(), result.size());
         assertEquals(zipItemList.get(0).getItemName(), result.get(0).getItemName());
         assertEquals(zipItemList.get(0).getItemData(), result.get(0).getItemData());
+    }
+    
+    @Test
+    void testUnzipWithMetadata() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            zos.putNextEntry(new ZipEntry(Constants.CONFIG_EXPORT_METADATA));
+            zos.write("{\"metadata\":[]}".getBytes());
+            zos.putNextEntry(new ZipEntry("config1.json"));
+            zos.write("data1".getBytes());
+        }
+        ZipUtils.UnZipResult result = ZipUtils.unzip(baos.toByteArray());
+        assertNotNull(result.getMetaDataItem());
+        assertEquals(Constants.CONFIG_EXPORT_METADATA,
+            result.getMetaDataItem().getItemName());
+        assertEquals(1, result.getZipItemList().size());
+    }
+    
+    @Test
+    void testUnzipWithNewMetadata() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            zos.putNextEntry(new ZipEntry(Constants.CONFIG_EXPORT_METADATA_NEW));
+            zos.write("metadata content".getBytes());
+            zos.putNextEntry(new ZipEntry("file.txt"));
+            zos.write("text".getBytes());
+        }
+        ZipUtils.UnZipResult result = ZipUtils.unzip(baos.toByteArray());
+        assertNotNull(result.getMetaDataItem());
+        assertEquals(Constants.CONFIG_EXPORT_METADATA_NEW,
+            result.getMetaDataItem().getItemName());
+    }
+    
+    @Test
+    void testUnzipWithDirectory() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            zos.putNextEntry(new ZipEntry("dir/"));
+            zos.putNextEntry(new ZipEntry("file.txt"));
+            zos.write("content".getBytes());
+        }
+        ZipUtils.UnZipResult result = ZipUtils.unzip(baos.toByteArray());
+        assertEquals(1, result.getZipItemList().size());
+    }
+    
+    @Test
+    void testZipItemSetters() {
+        ZipUtils.ZipItem item = new ZipUtils.ZipItem("name", "data");
+        item.setItemName("newName");
+        item.setItemData("newData");
+        assertEquals("newName", item.getItemName());
+        assertEquals("newData", item.getItemData());
+    }
+    
+    @Test
+    void testUnZipResultSetters() {
+        ZipUtils.UnZipResult result = new ZipUtils.UnZipResult(
+            new ArrayList<>(), null);
+        assertNull(result.getMetaDataItem());
         
+        List<ZipUtils.ZipItem> items = new ArrayList<>();
+        items.add(new ZipUtils.ZipItem("a", "b"));
+        result.setZipItemList(items);
+        assertEquals(1, result.getZipItemList().size());
+        
+        ZipUtils.ZipItem meta = new ZipUtils.ZipItem("meta", "val");
+        result.setMetaDataItem(meta);
+        assertEquals("meta", result.getMetaDataItem().getItemName());
     }
 }
