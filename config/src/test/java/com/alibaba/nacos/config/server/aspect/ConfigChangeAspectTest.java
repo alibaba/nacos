@@ -22,6 +22,8 @@ import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
+import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.core.context.addition.BasicContext;
 import com.alibaba.nacos.plugin.config.ConfigChangePluginManager;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeExecuteTypes;
@@ -80,6 +82,9 @@ class ConfigChangeAspectTest {
     
     @BeforeEach
     void before() {
+        RequestContextHolder.getContext().getBasicContext().setRequestProtocol(null);
+        RequestContextHolder.getContext().getBasicContext().setRequestTarget(null);
+        
         //mock config change service enabled.
         propertiesStatic = Mockito.mockStatic(PropertiesUtil.class);
         requestUtilMockedStatic = Mockito.mockStatic(RequestUtil.class);
@@ -105,6 +110,9 @@ class ConfigChangeAspectTest {
     
     @AfterEach
     void after() {
+        RequestContextHolder.getContext().getBasicContext().setRequestProtocol(null);
+        RequestContextHolder.getContext().getBasicContext().setRequestTarget(null);
+        
         propertiesStatic.close();
         requestUtilMockedStatic.close();
         ConfigChangePluginManager.reset();
@@ -269,6 +277,114 @@ class ConfigChangeAspectTest {
     }
     
     @Test
+    void testRequestProtocolTakesPrecedenceOverSourceTypeForPublish() throws Throwable {
+        RequestContextHolder.getContext().getBasicContext()
+            .setRequestProtocol(BasicContext.HTTP_PROTOCOL);
+        RequestContextHolder.getContext().getBasicContext().setRequestTarget("POST /v3/cs/config");
+        Mockito.when(configChangePluginService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
+        when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configRequestInfo.getSrcType()).thenReturn("rpc");
+        when(configForm.getDataId()).thenReturn("dataId");
+        when(pjp.proceed(any())).thenReturn("Success");
+        
+        configChangeAspect.publishOrUpdateConfigAround(pjp);
+        
+        ArgumentCaptor<ConfigChangeRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService).execute(requestCaptor.capture(), any());
+        assertEquals(ConfigChangePointCutTypes.PUBLISH_BY_HTTP,
+            requestCaptor.getValue().getRequestType());
+    }
+    
+    @Test
+    void testRequestProtocolTakesPrecedenceOverSourceTypeForRemove() throws Throwable {
+        RequestContextHolder.getContext().getBasicContext()
+            .setRequestProtocol(BasicContext.GRPC_PROTOCOL);
+        RequestContextHolder.getContext().getBasicContext().setRequestTarget("ConfigRemoveRequest");
+        Mockito.when(configChangePluginService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
+        when(pjp.getArgs()).thenReturn(
+            new Object[] {"dataId", "group", "namespaceId", null, "127.0.0.1", "nacos", "http"});
+        when(pjp.proceed(any())).thenReturn("Success");
+        
+        configChangeAspect.removeConfigByIdAround(pjp);
+        
+        ArgumentCaptor<ConfigChangeRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService).execute(requestCaptor.capture(), any());
+        assertEquals(ConfigChangePointCutTypes.REMOVE_BY_RPC,
+            requestCaptor.getValue().getRequestType());
+    }
+    
+    @Test
+    void testPublishWithUnknownSourceTypeUsesUnknownPointcut() throws Throwable {
+        Mockito.when(configChangePluginService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
+        when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configRequestInfo.getSrcType()).thenReturn(null);
+        when(configForm.getDataId()).thenReturn("dataId");
+        when(pjp.proceed(any())).thenReturn("Success");
+        
+        configChangeAspect.publishOrUpdateConfigAround(pjp);
+        
+        ArgumentCaptor<ConfigChangeRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService).execute(requestCaptor.capture(), any());
+        assertEquals(ConfigChangePointCutTypes.PUBLISH_BY_UNKNOWN,
+            requestCaptor.getValue().getRequestType());
+    }
+    
+    @Test
+    void testRemoveWithUnknownSourceTypeUsesUnknownPointcut() throws Throwable {
+        Mockito.when(configChangePluginService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
+        when(pjp.getArgs()).thenReturn(
+            new Object[] {"dataId", "group", "namespaceId", null, "127.0.0.1", "nacos", null});
+        when(pjp.proceed(any())).thenReturn("Success");
+        
+        configChangeAspect.removeConfigByIdAround(pjp);
+        
+        ArgumentCaptor<ConfigChangeRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService).execute(requestCaptor.capture(), any());
+        assertEquals(ConfigChangePointCutTypes.REMOVE_BY_UNKNOWN,
+            requestCaptor.getValue().getRequestType());
+    }
+    
+    @Test
+    void testRemoveHttpSourceTypeUsesRemovePointcut() throws Throwable {
+        Mockito.when(configChangePluginService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
+        when(pjp.getArgs()).thenReturn(
+            new Object[] {"dataId", "group", "namespaceId", null, "127.0.0.1", "nacos", "http"});
+        when(pjp.proceed(any())).thenReturn("Success");
+        
+        configChangeAspect.removeConfigByIdAround(pjp);
+        ArgumentCaptor<ConfigChangeRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService).execute(requestCaptor.capture(), any());
+        assertEquals(ConfigChangePointCutTypes.REMOVE_BY_HTTP,
+            requestCaptor.getValue().getRequestType());
+    }
+    
+    @Test
+    void testRemoveRpcSourceTypeUsesRemovePointcut() throws Throwable {
+        Mockito.when(configChangePluginService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
+        when(pjp.getArgs()).thenReturn(
+            new Object[] {"dataId", "group", "namespaceId", null, "127.0.0.1", "nacos", "rpc"});
+        when(pjp.proceed(any())).thenReturn("Success");
+        
+        configChangeAspect.removeConfigByIdAround(pjp);
+        ArgumentCaptor<ConfigChangeRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService).execute(requestCaptor.capture(), any());
+        assertEquals(ConfigChangePointCutTypes.REMOVE_BY_RPC,
+            requestCaptor.getValue().getRequestType());
+    }
+    
+    @Test
     void testPublishConfigWithBetaIps() throws Throwable {
         Mockito.when(configChangePluginService.executeType())
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
@@ -325,7 +441,7 @@ class ConfigChangeAspectTest {
         ArgumentCaptor<ConfigChangeRequest> captor =
             ArgumentCaptor.forClass(ConfigChangeRequest.class);
         verify(configChangePluginService).execute(captor.capture(), any());
-        assertEquals(ConfigChangePointCutTypes.PUBLISH_BY_RPC,
+        assertEquals(ConfigChangePointCutTypes.REMOVE_BY_RPC,
             captor.getValue().getRequestType());
     }
     
