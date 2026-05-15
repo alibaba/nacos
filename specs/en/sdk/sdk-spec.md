@@ -18,7 +18,8 @@
 
 This document defines the shared SDK design rules for Nacos. Language-specific
 SDKs may use idiomatic names, async primitives, and packaging, but their public
-capability boundaries should follow this document.
+capability boundaries should follow this document. The Java baseline is defined
+by the [Java SDK Implementation Spec](./sdk-java-impl-spec.md).
 
 ## 1. SDK Families
 
@@ -102,7 +103,8 @@ SDK capability design must follow least privilege:
 
 The SDK contract is a semantic contract, not a transport contract:
 
-- Client SDKs may use gRPC, HTTP Open APIs, local cache files, or a mix of
+- Client SDKs may use [gRPC](../grpc-api/api-spec.md),
+  [HTTP Open APIs](../http-api/api-spec.md), local cache files, or a mix of
   transports, as long as the public SDK behavior remains stable.
 - Maintainer SDKs should align with Nacos Admin API semantics and result models,
   even if the implementation later changes transport details.
@@ -129,9 +131,3 @@ Language SDKs may expose futures, promises, streams, coroutines, callbacks, or
 context cancellation according to local conventions. These differences should be
 documented in language implementation specs without changing the shared SDK
 scope.
-
-## 7. Related Specs
-
-- [Java SDK Implementation Spec](./sdk-java-impl-spec.md)
-- [HTTP API Spec](../http-api/api-spec.md)
-- [gRPC API Spec](../grpc-api/api-spec.md)

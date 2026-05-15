@@ -122,6 +122,9 @@ public class Constants {
         
         public static final String AI_SKILL_UPLOAD_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/upload";
         
+        public static final String AI_SKILL_BATCH_UPLOAD_ADMIN_PATH =
+            AI_SKILL_UPLOAD_ADMIN_PATH + "/batch";
+        
         public static final String AI_AGENTSPEC_ADMIN_PATH = "/v3/admin/ai/agentspecs";
         
         public static final String AI_AGENTSPEC_LIST_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/list";

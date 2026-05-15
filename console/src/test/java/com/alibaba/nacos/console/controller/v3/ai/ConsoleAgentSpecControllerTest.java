@@ -17,7 +17,8 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -33,55 +34,99 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Collections;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for ConsoleAgentSpecController.
- *
- * @author nacos
- */
 @ExtendWith(MockitoExtension.class)
-public class ConsoleAgentSpecControllerTest {
+class ConsoleAgentSpecControllerTest {
+    
+    private static final String NS = "public";
+    
+    private static final String AGENT_SPEC_NAME = "test-agentspec";
+    
+    private static final String VERSION = "v1";
+    
+    private static final String BASE_PATH = Constants.AgentSpecs.CONSOLE_PATH;
     
     @Mock
     private AgentSpecProxy agentSpecProxy;
     
     private MockMvc mockMvc;
     
-    private ConsoleAgentSpecController consoleAgentSpecController;
-    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        consoleAgentSpecController = new ConsoleAgentSpecController(agentSpecProxy);
-        mockMvc = MockMvcBuilders.standaloneSetup(consoleAgentSpecController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(
+            new ConsoleAgentSpecController(agentSpecProxy)).build();
     }
     
     @Test
-    void testForcePublishSuccess() throws Exception {
-        doNothing().when(agentSpecProxy).forcePublish(any(AgentSpecPublishForm.class));
+    void testGetAgentSpec() throws Exception {
+        AgentSpecMeta meta = new AgentSpecMeta();
+        meta.setName(AGENT_SPEC_NAME);
+        when(agentSpecProxy.getAgentSpec(any())).thenReturn(meta);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
-            Constants.AgentSpecs.CONSOLE_PATH + "/force-publish").param("namespaceId", "test-ns")
-            .param("agentSpecName", "test-agentspec").param("version", "v1");
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get(BASE_PATH)
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME))
+            .andReturn().getResponse();
         
-        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        String content = response.getContentAsString();
-        Result<String> result = JacksonUtils.toObj(content, new TypeReference<>() {
-        });
+        assertEquals(200, response.getStatus());
+        Result<AgentSpecMeta> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals(AGENT_SPEC_NAME, result.getData().getName());
+    }
+    
+    @Test
+    void testGetAgentSpecVersion() throws Exception {
+        AgentSpec spec = new AgentSpec();
+        spec.setName(AGENT_SPEC_NAME);
+        when(agentSpecProxy.getAgentSpecVersion(any())).thenReturn(spec);
         
-        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get(BASE_PATH + "/version")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("version", VERSION))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<AgentSpec> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals(AGENT_SPEC_NAME, result.getData().getName());
+    }
+    
+    @Test
+    void testDeleteAgentSpec() throws Exception {
+        doNothing().when(agentSpecProxy).deleteAgentSpec(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.delete(BASE_PATH)
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
         assertEquals("ok", result.getData());
-        verify(agentSpecProxy).forcePublish(any(AgentSpecPublishForm.class));
     }
     
     @Test
@@ -90,17 +135,17 @@ public class ConsoleAgentSpecControllerTest {
         page.setTotalCount(1);
         page.setPagesAvailable(1);
         AgentSpecSummary item = new AgentSpecSummary();
-        item.setName("test-agentspec");
-        page.setPageItems(java.util.List.of(item));
+        item.setName(AGENT_SPEC_NAME);
+        page.setPageItems(List.of(item));
         when(agentSpecProxy.listAgentSpecs(any(), any(), any())).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.get(Constants.AgentSpecs.CONSOLE_PATH + "/list")
-                .param("pageNo", "1").param("pageSize", "10");
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get(BASE_PATH + "/list")
+                .param("pageNo", "1").param("pageSize", "10"))
+            .andReturn().getResponse();
         
-        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        Result<Page<AgentSpecSummary>> result = JacksonUtils.toObj(response.getContentAsString(),
-            new TypeReference<>() {
+        Result<Page<AgentSpecSummary>> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(1, result.getData().getTotalCount());
@@ -110,15 +155,216 @@ public class ConsoleAgentSpecControllerTest {
     void testListAgentSpecsWithScopeFilter() throws Exception {
         Page<AgentSpecSummary> page = new Page<>();
         page.setTotalCount(0);
-        page.setPageItems(java.util.Collections.emptyList());
+        page.setPageItems(Collections.emptyList());
         when(agentSpecProxy.listAgentSpecs(any(), any(), any())).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.get(Constants.AgentSpecs.CONSOLE_PATH + "/list")
-                .param("scope", "PUBLIC").param("pageNo", "1").param("pageSize", "10");
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get(BASE_PATH + "/list")
+                .param("scope", "PUBLIC").param("pageNo", "1")
+                .param("pageSize", "10"))
+            .andReturn().getResponse();
         
-        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         verify(agentSpecProxy).listAgentSpecs(any(), any(), any());
+    }
+    
+    @Test
+    void testUploadAgentSpec() throws Exception {
+        when(agentSpecProxy.uploadAgentSpecFromZip(anyString(), any(byte[].class),
+            anyBoolean())).thenReturn(AGENT_SPEC_NAME);
+        
+        MockMultipartFile file = new MockMultipartFile("file", "agentspec.zip",
+            "application/zip", new byte[] {0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.multipart(BASE_PATH + "/upload").file(file)
+                .param("namespaceId", NS).param("overwrite", "false"))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals(AGENT_SPEC_NAME, result.getData());
+    }
+    
+    @Test
+    void testCreateDraft() throws Exception {
+        when(agentSpecProxy.createDraft(any())).thenReturn("v1-draft");
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(BASE_PATH + "/draft")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals("v1-draft", result.getData());
+    }
+    
+    @Test
+    void testUpdateDraft() throws Exception {
+        doNothing().when(agentSpecProxy).updateDraft(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.put(BASE_PATH + "/draft")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("version", VERSION)
+                .param("agentSpecCard", "{\"name\":\"test-agentspec\"}"))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals("ok", result.getData());
+    }
+    
+    @Test
+    void testDeleteDraft() throws Exception {
+        doNothing().when(agentSpecProxy).deleteDraft(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.delete(BASE_PATH + "/draft")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals("ok", result.getData());
+    }
+    
+    @Test
+    void testSubmit() throws Exception {
+        when(agentSpecProxy.submit(any())).thenReturn("reviewing");
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(BASE_PATH + "/submit")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("version", VERSION))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals("reviewing", result.getData());
+    }
+    
+    @Test
+    void testPublish() throws Exception {
+        doNothing().when(agentSpecProxy).publish(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(BASE_PATH + "/publish")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("version", VERSION))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(agentSpecProxy).publish(any());
+    }
+    
+    @Test
+    void testForcePublishSuccess() throws Exception {
+        doNothing().when(agentSpecProxy).forcePublish(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(BASE_PATH + "/force-publish")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("version", VERSION))
+            .andReturn().getResponse();
+        
+        Result<String> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+    }
+    
+    @Test
+    void testUpdateLabels() throws Exception {
+        doNothing().when(agentSpecProxy).updateLabels(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.put(BASE_PATH + "/labels")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("labels", "{\"env\":\"prod\"}"))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(agentSpecProxy).updateLabels(any());
+    }
+    
+    @Test
+    void testUpdateBizTags() throws Exception {
+        doNothing().when(agentSpecProxy).updateBizTags(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.put(BASE_PATH + "/biz-tags")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("bizTags", "tag1,tag2"))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(agentSpecProxy).updateBizTags(any());
+    }
+    
+    @Test
+    void testOnline() throws Exception {
+        doNothing().when(agentSpecProxy).online(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(BASE_PATH + "/online")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("version", VERSION))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(agentSpecProxy).online(any());
+    }
+    
+    @Test
+    void testOffline() throws Exception {
+        doNothing().when(agentSpecProxy).offline(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(BASE_PATH + "/offline")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("version", VERSION))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(agentSpecProxy).offline(any());
+    }
+    
+    @Test
+    void testUpdateScope() throws Exception {
+        doNothing().when(agentSpecProxy).updateScope(any());
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.put(BASE_PATH + "/scope")
+                .param("namespaceId", NS)
+                .param("agentSpecName", AGENT_SPEC_NAME)
+                .param("scope", "PUBLIC"))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(agentSpecProxy).updateScope(any());
     }
 }

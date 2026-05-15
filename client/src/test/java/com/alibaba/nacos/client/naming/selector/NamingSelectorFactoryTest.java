@@ -173,6 +173,27 @@ public class NamingSelectorFactoryTest {
     }
     
     @Test
+    public void testNewIpSelectorWithNullRegex() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+            () -> NamingSelectorFactory.newIpSelector(null));
+    }
+    
+    @Test
+    public void testNewMetadataSelectorWithNullMetadata() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+            () -> NamingSelectorFactory.newMetadataSelector(null));
+    }
+    
+    @Test
+    public void testClusterSelectorEqualsNullAndOther() {
+        NamingSelector selector =
+            NamingSelectorFactory.newClusterSelector(Collections.singletonList("a"));
+        assertNotEquals(selector, null);
+        assertNotEquals(selector, new Object());
+        assertEquals(selector, selector);
+    }
+    
+    @Test
     public void testEmptySelector() {
         Instance ins1 = new Instance();
         Instance ins2 = new Instance();

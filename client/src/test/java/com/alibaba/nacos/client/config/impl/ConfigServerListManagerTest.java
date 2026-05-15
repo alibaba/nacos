@@ -461,6 +461,31 @@ class ConfigServerListManagerTest {
     }
     
     @Test
+    void testIteratorWithEmptyServerListLogsError()
+        throws NacosException, NoSuchFieldException, IllegalAccessException {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "1.1.1.1:8848");
+        final NacosClientProperties clientProperties =
+            NacosClientProperties.PROTOTYPE.derive(properties);
+        ConfigServerListManager mgr = new ConfigServerListManager(clientProperties);
+        mgr.start();
+        // Replace the underlying server list with an empty list to drive the LOGGER.error branch
+        Field providerField =
+            AbstractServerListManager.class.getDeclaredField("serverListProvider");
+        providerField.setAccessible(true);
+        ServerListProvider originalProvider = (ServerListProvider) providerField.get(mgr);
+        ServerListProvider empty = mock(ServerListProvider.class);
+        when(empty.getServerList()).thenReturn(java.util.Collections.emptyList());
+        providerField.set(mgr, empty);
+        try {
+            // Calling iterator() on an empty list logs the error but does not throw
+            assertThrows(NoSuchElementException.class, () -> mgr.iterator().next());
+        } finally {
+            providerField.set(mgr, originalProvider);
+        }
+    }
+    
+    @Test
     void testGenNextServerWithMockConcurrent()
         throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties properties = new Properties();

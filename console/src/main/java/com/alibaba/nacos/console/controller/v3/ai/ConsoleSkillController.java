@@ -28,6 +28,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -174,6 +175,32 @@ public class ConsoleSkillController {
         String skillName =
             skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
         return Result.success(skillName);
+    }
+    
+    /**
+     * Batch upload multiple skills from a single zip file. The zip must contain one-level subdirectories,
+     * each with its own SKILL.md. Uses best-effort strategy.
+     *
+     * @param request     HTTP servlet request
+     * @param namespaceId namespace ID
+     * @param overwrite   whether to overwrite existing drafts
+     * @param file        zip file containing multiple skill subdirectories
+     * @return batch upload result with succeeded and failed lists
+     * @throws NacosException if zip parsing fails entirely
+     */
+    @PostMapping(value = "/upload/batch", consumes = "multipart/form-data")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
+    public Result<BatchUploadResult> batchUploadSkills(HttpServletRequest request,
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "overwrite", required = false,
+            defaultValue = "false") boolean overwrite,
+        @RequestParam("file") MultipartFile file) throws NacosException {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
+        BatchUploadResult result =
+            skillProxy.batchUploadSkillsFromZip(namespaceId, zipBytes, overwrite);
+        return Result.success(result);
     }
     
     /**

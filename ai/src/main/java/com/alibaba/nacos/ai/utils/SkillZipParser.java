@@ -237,6 +237,186 @@ public class SkillZipParser {
     }
     
     /**
+     * Parse multiple skills from a single zip archive. Supports zip files containing multiple skill subdirectories,
+     * each with its own SKILL.md. If only one SKILL.md is found, returns a list with a single element.
+     *
+     * <p>Expected zip structure for multi-skill:
+     * <pre>
+     * skills.zip
+     * ├── skill-a/
+     * │   ├── SKILL.md
+     * │   └── resource.txt
+     * ├── skill-b/
+     * │   ├── SKILL.md
+     * │   └── template/prompt.md
+     * </pre>
+     *
+     * @param zipBytes zip file bytes
+     * @param namespaceId namespace ID
+     * @return list of parsed skills (at least one element)
+     * @throws NacosApiException if parsing failed, zip exceeds size limit, or no SKILL.md found
+     */
+    public static MultiSkillParseResult parseMultipleSkillsFromZip(byte[] zipBytes,
+        String namespaceId) throws NacosApiException {
+        if (zipBytes == null || zipBytes.length == 0) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Skill zip file is empty");
+        }
+        if (zipBytes.length > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Skill zip size must not exceed "
+                    + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024) + "MB, current: "
+                    + (zipBytes.length / 1024 / 1024) + "MB");
+        }
+        try {
+            List<ZipEntryData> entries = unzipToEntries(zipBytes);
+            
+            // Find all SKILL.md entries and group by their parent directory
+            List<ZipEntryData> skillMdEntries = new ArrayList<>();
+            for (ZipEntryData entry : entries) {
+                String name = entry.name;
+                if (isMacOsMetadataFile(name)) {
+                    continue;
+                }
+                boolean isSkillMdFile = SKILL_MD_FILE.equals(name);
+                boolean isSkillMdInSubdir = name.endsWith(SLASH + SKILL_MD_FILE);
+                if (isSkillMdFile || isSkillMdInSubdir) {
+                    skillMdEntries.add(entry);
+                }
+            }
+            
+            if (skillMdEntries.isEmpty()) {
+                throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "SKILL.md file not found in zip");
+            }
+            
+            // If only one SKILL.md, delegate to single-skill parsing (preserves existing behavior)
+            if (skillMdEntries.size() == 1) {
+                MultiSkillParseResult result = new MultiSkillParseResult();
+                result.addSkill(parseSkillFromZip(zipBytes, namespaceId));
+                return result;
+            }
+            
+            // Collect directories that have SKILL.md and determine their nesting depth
+            Set<String> skillPrefixes = new HashSet<>();
+            for (ZipEntryData skillMdEntry : skillMdEntries) {
+                skillPrefixes.add(getSkillPrefix(skillMdEntry.name));
+            }
+            
+            // Determine the depth of skill directories (number of '/' segments in prefix)
+            int skillDepth = 0;
+            for (String prefix : skillPrefixes) {
+                if (!prefix.isEmpty()) {
+                    skillDepth = prefix.split("/").length;
+                    break;
+                }
+            }
+            
+            // Detect directories at the same depth that have files but no SKILL.md
+            Set<String> nonSkillDirs = new HashSet<>();
+            for (ZipEntryData entry : entries) {
+                String name = entry.name;
+                String peerDir = extractPrefixAtDepth(name, skillDepth);
+                if (peerDir == null) {
+                    continue;
+                }
+                if (skillPrefixes.contains(peerDir) || nonSkillDirs.contains(peerDir)) {
+                    continue;
+                }
+                if (isIgnorableDirectory(peerDir)) {
+                    continue;
+                }
+                nonSkillDirs.add(peerDir);
+            }
+            
+            // Multiple SKILL.md files: parse each skill with its scoped entries
+            MultiSkillParseResult parseResult = new MultiSkillParseResult();
+            
+            // Record warnings for directories without SKILL.md
+            for (String dir : nonSkillDirs) {
+                parseResult.addFailure(extractFolderName(dir),
+                    "SKILL.md not found in this folder, skipped");
+            }
+            for (ZipEntryData skillMdEntry : skillMdEntries) {
+                String skillMdPath = skillMdEntry.name;
+                String prefix = getSkillPrefix(skillMdPath);
+                
+                try {
+                    String skillMdContent =
+                        stripBom(new String(skillMdEntry.data, StandardCharsets.UTF_8));
+                    if (StringUtils.isBlank(skillMdContent)) {
+                        parseResult.addFailure(extractFolderName(prefix),
+                            "SKILL.md content is empty");
+                        continue;
+                    }
+                    
+                    Skill skill = parseSkillMarkdown(skillMdContent, namespaceId);
+                    
+                    // Filter entries belonging to this skill's directory
+                    List<ZipEntryData> scopedEntries = filterEntriesByPrefix(entries, prefix);
+                    Map<String, SkillResource> resources =
+                        parseResources(scopedEntries, skill.getName());
+                    skill.setResource(resources);
+                    parseResult.addSkill(skill);
+                } catch (Exception e) {
+                    LOGGER.warn("Skipping invalid skill folder [{}]: {}", prefix, e.getMessage());
+                    parseResult.addFailure(extractFolderName(prefix), e.getMessage());
+                }
+            }
+            
+            if (parseResult.getSkills().isEmpty()) {
+                throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "No valid skills found in zip");
+            }
+            return parseResult;
+        } catch (NacosApiException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse multi-skill zip file", e);
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARSING_DATA_FAILED,
+                "Failed to parse zip file: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get the directory prefix for a SKILL.md path. For "skill-a/SKILL.md" returns "skill-a/".
+     * For root-level "SKILL.md" returns empty string.
+     */
+    private static String getSkillPrefix(String skillMdPath) {
+        int lastSlash = skillMdPath.lastIndexOf('/');
+        if (lastSlash < 0) {
+            return "";
+        }
+        return skillMdPath.substring(0, lastSlash + 1);
+    }
+    
+    /**
+     * Filter entries by directory prefix and strip the prefix from entry names.
+     */
+    private static List<ZipEntryData> filterEntriesByPrefix(List<ZipEntryData> entries,
+        String prefix) {
+        if (prefix.isEmpty()) {
+            return entries;
+        }
+        List<ZipEntryData> result = new ArrayList<>();
+        for (ZipEntryData entry : entries) {
+            if (entry.name.startsWith(prefix)) {
+                // Strip prefix so parseResources sees paths relative to the skill directory
+                String relativeName = entry.name.substring(prefix.length());
+                if (!relativeName.isEmpty()) {
+                    result.add(new ZipEntryData(relativeName, entry.data));
+                }
+            }
+        }
+        return result;
+    }
+    
+    /**
      * Unzip to list of (name, raw bytes). Does not decode as text so binary files are preserved.
      * Uses Apache Commons Compress to support zip files with STORED entries that have data descriptor
      * (e.g. created on macOS or by some tools), which JDK ZipInputStream rejects.
@@ -575,6 +755,53 @@ public class SkillZipParser {
     }
     
     /**
+     * Check if a top-level directory is a well-known non-skill directory that should be silently
+     * ignored without producing a warning.
+     */
+    private static boolean isIgnorableDirectory(String dirName) {
+        String name = dirName.endsWith("/") ? dirName.substring(0, dirName.length() - 1) : dirName;
+        // Check the last segment for dot-prefixed or known non-skill directories
+        int lastSlash = name.lastIndexOf('/');
+        String leaf = lastSlash >= 0 ? name.substring(lastSlash + 1) : name;
+        return leaf.startsWith(".") || "__MACOSX".equals(leaf) || "node_modules".equals(leaf);
+    }
+    
+    /**
+     * Extract the first {@code depth} directory segments from a path as a prefix ending with '/'.
+     * Returns null if the path does not have enough segments.
+     *
+     * <p>Example: extractPrefixAtDepth("a/b/c/file.txt", 2) -> "a/b/"</p>
+     */
+    private static String extractPrefixAtDepth(String path, int depth) {
+        if (depth <= 0 || path == null) {
+            return null;
+        }
+        int slashCount = 0;
+        for (int i = 0; i < path.length(); i++) {
+            if (path.charAt(i) == '/') {
+                slashCount++;
+                if (slashCount == depth) {
+                    return path.substring(0, i + 1);
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Extract the last directory name from a prefix path.
+     * For example: "parent/random-lib/" -> "random-lib", "skill-a/" -> "skill-a".
+     */
+    private static String extractFolderName(String prefix) {
+        if (StringUtils.isBlank(prefix)) {
+            return "unknown";
+        }
+        String trimmed = prefix.endsWith("/") ? prefix.substring(0, prefix.length() - 1) : prefix;
+        int lastSlash = trimmed.lastIndexOf('/');
+        return lastSlash >= 0 ? trimmed.substring(lastSlash + 1) : trimmed;
+    }
+    
+    /**
      * Strip UTF-8 BOM character from the beginning of a string if present.
      *
      * @param content the string to strip BOM from
@@ -585,5 +812,60 @@ public class SkillZipParser {
             return content.substring(1);
         }
         return content;
+    }
+    
+    /**
+     * Result of parsing a multi-skill zip archive. Contains both successfully parsed skills and
+     * failures (folder name + error message) for folders that could not be parsed.
+     */
+    public static class MultiSkillParseResult {
+        
+        private final List<Skill> skills;
+        
+        private final List<ParseFailure> failures;
+        
+        public MultiSkillParseResult() {
+            this.skills = new ArrayList<>();
+            this.failures = new ArrayList<>();
+        }
+        
+        public List<Skill> getSkills() {
+            return skills;
+        }
+        
+        public List<ParseFailure> getFailures() {
+            return failures;
+        }
+        
+        public void addSkill(Skill skill) {
+            this.skills.add(skill);
+        }
+        
+        public void addFailure(String folder, String reason) {
+            this.failures.add(new ParseFailure(folder, reason));
+        }
+    }
+    
+    /**
+     * Represents a skill folder that failed to parse.
+     */
+    public static class ParseFailure {
+        
+        private final String folder;
+        
+        private final String reason;
+        
+        public ParseFailure(String folder, String reason) {
+            this.folder = folder;
+            this.reason = reason;
+        }
+        
+        public String getFolder() {
+            return folder;
+        }
+        
+        public String getReason() {
+            return reason;
+        }
     }
 }

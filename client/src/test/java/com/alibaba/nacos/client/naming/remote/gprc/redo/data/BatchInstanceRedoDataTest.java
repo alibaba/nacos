@@ -53,4 +53,14 @@ class BatchInstanceRedoDataTest {
         redoData2.getInstances().get(0).setIp("1.1.1.1");
         assertNotEquals(redoData1.hashCode(), redoData2.hashCode());
     }
+    
+    @Test
+    @SuppressWarnings("all")
+    void testEqualsWithDifferentType() {
+        BatchInstanceRedoData redoData = new BatchInstanceRedoData("a", "b");
+        redoData.setInstances(Collections.singletonList(new Instance()));
+        // not a BatchInstanceRedoData -> equals returns false at the early instanceof check
+        assertNotEquals(redoData, new Object());
+        assertNotEquals(redoData, "string");
+    }
 }

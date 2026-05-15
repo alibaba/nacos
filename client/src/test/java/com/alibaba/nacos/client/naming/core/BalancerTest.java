@@ -66,4 +66,11 @@ class BalancerTest {
         });
         assertTrue(exception.getMessage().contains("no host to srv for serviceInfo: null"));
     }
+    
+    @Test
+    void testDefaultConstructors() {
+        // exercise default constructors so JaCoCo accounts for the class declaration lines
+        org.junit.jupiter.api.Assertions.assertNotNull(new Balancer());
+        org.junit.jupiter.api.Assertions.assertNotNull(new Balancer.RandomByWeight());
+    }
 }

@@ -22,6 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class CacheDirUtilTest {
     
@@ -77,5 +78,10 @@ class CacheDirUtilTest {
         properties.setProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR, "custom");
         String actual = CacheDirUtil.initCacheDir("test", properties);
         assertEquals("/home/snapshot/nacos/custom/naming/test", actual);
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new CacheDirUtil());
     }
 }

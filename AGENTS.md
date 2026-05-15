@@ -111,37 +111,49 @@ standards when generating controller code.
 Authoritative API and SDK specs live under [`specs/`](./specs/README.md).
 English:
 
-- [Nacos Design Spec](./specs/en/design/nacos-design-spec.md)
-- [Resource Model Spec](./specs/en/design/resource-model-spec.md)
-- [Plugin Spec](./specs/en/plugin/plugin-spec.md)
-- [Auth And Permission Spec](./specs/en/auth/auth-permission-spec.md)
-- [Auth Plugin Spec](./specs/en/auth/auth-plugin-spec.md)
-- [Visibility Plugin Spec](./specs/en/auth/visibility-plugin-spec.md)
-- [Default Auth Plugin Implementation Spec](./specs/en/auth/default-auth-plugin-spec.md)
-- [HTTP API Spec](./specs/en/http-api/api-spec.md)
-- [Authorization Spec](./specs/en/http-api/authorization-spec.md)
-- [Response And Error Spec](./specs/en/http-api/response-error-spec.md)
-- [V3 API Surface](./specs/en/http-api/v3-api-surface.md)
-- [gRPC API Spec](./specs/en/grpc-api/api-spec.md)
-- [SDK Spec](./specs/en/sdk/sdk-spec.md)
-- [Java SDK Implementation Spec](./specs/en/sdk/sdk-java-impl-spec.md)
+- Design foundation:
+  [Nacos Design Spec](./specs/en/design/nacos-design-spec.md),
+  [Resource Model Spec](./specs/en/design/resource-model-spec.md)
+- Interface model:
+  [HTTP API Spec](./specs/en/http-api/api-spec.md),
+  [Authorization Spec](./specs/en/http-api/authorization-spec.md),
+  [Response And Error Spec](./specs/en/http-api/response-error-spec.md),
+  [V3 API Surface](./specs/en/http-api/v3-api-surface.md),
+  [gRPC API Spec](./specs/en/grpc-api/api-spec.md),
+  [SDK Spec](./specs/en/sdk/sdk-spec.md),
+  [Java SDK Implementation Spec](./specs/en/sdk/sdk-java-impl-spec.md)
+- Extension model:
+  [Plugin Specs](./specs/en/plugin/README.md)
+- Security model:
+  [Auth And Permission Spec](./specs/en/auth/auth-permission-spec.md),
+  [Auth Plugin Spec](./specs/en/auth/auth-plugin-spec.md),
+  [RAM Auth Plugin Spec](./specs/en/auth/ram-auth-plugin-spec.md),
+  [OIDC Auth Plugin Spec](./specs/en/auth/oidc-auth-plugin-spec.md),
+  [Visibility Plugin Spec](./specs/en/auth/visibility-plugin-spec.md),
+  [Default Auth Plugin Implementation Spec](./specs/en/auth/default-auth-plugin-spec.md)
 
 Simplified Chinese:
 
-- [Nacos 设计规范](./specs/zh-cn/design/nacos-design-spec.md)
-- [资源模型规范](./specs/zh-cn/design/resource-model-spec.md)
-- [插件化规范](./specs/zh-cn/plugin/plugin-spec.md)
-- [鉴权与权限规范](./specs/zh-cn/auth/auth-permission-spec.md)
-- [鉴权插件规范](./specs/zh-cn/auth/auth-plugin-spec.md)
-- [可见性插件规范](./specs/zh-cn/auth/visibility-plugin-spec.md)
-- [默认鉴权插件实现规范](./specs/zh-cn/auth/default-auth-plugin-spec.md)
-- [HTTP API 规范](./specs/zh-cn/http-api/api-spec.md)
-- [鉴权规范](./specs/zh-cn/http-api/authorization-spec.md)
-- [响应与错误规范](./specs/zh-cn/http-api/response-error-spec.md)
-- [V3 API 范围](./specs/zh-cn/http-api/v3-api-surface.md)
-- [gRPC API 规范](./specs/zh-cn/grpc-api/api-spec.md)
-- [SDK 规范](./specs/zh-cn/sdk/sdk-spec.md)
-- [Java SDK 实现规范](./specs/zh-cn/sdk/sdk-java-impl-spec.md)
+- 设计基础：
+  [Nacos 设计规范](./specs/zh-cn/design/nacos-design-spec.md)，
+  [资源模型规范](./specs/zh-cn/design/resource-model-spec.md)
+- 接口模型：
+  [HTTP API 规范](./specs/zh-cn/http-api/api-spec.md)，
+  [鉴权规范](./specs/zh-cn/http-api/authorization-spec.md)，
+  [响应与错误规范](./specs/zh-cn/http-api/response-error-spec.md)，
+  [V3 API 范围](./specs/zh-cn/http-api/v3-api-surface.md)，
+  [gRPC API 规范](./specs/zh-cn/grpc-api/api-spec.md)，
+  [SDK 规范](./specs/zh-cn/sdk/sdk-spec.md)，
+  [Java SDK 实现规范](./specs/zh-cn/sdk/sdk-java-impl-spec.md)
+- 扩展模型：
+  [插件规范](./specs/zh-cn/plugin/README.md)
+- 安全模型：
+  [鉴权与权限规范](./specs/zh-cn/auth/auth-permission-spec.md)，
+  [鉴权插件规范](./specs/zh-cn/auth/auth-plugin-spec.md)，
+  [RAM 鉴权插件规范](./specs/zh-cn/auth/ram-auth-plugin-spec.md)，
+  [OIDC 鉴权插件规范](./specs/zh-cn/auth/oidc-auth-plugin-spec.md)，
+  [可见性插件规范](./specs/zh-cn/auth/visibility-plugin-spec.md)，
+  [默认鉴权插件实现规范](./specs/zh-cn/auth/default-auth-plugin-spec.md)
 
 This section is a quick implementation checklist for agents. If it conflicts
 with the specs, follow the specs and update this checklist.

@@ -18,10 +18,11 @@
 
 ## Purpose
 
-Nacos uses plugins to keep cross-cutting infrastructure and replaceable domain
-capabilities outside the fixed server core. A plugin may provide authentication,
-resource visibility, data source dialects, encryption, tracing, flow control,
-environment adaptation, AI pipeline behavior, or AI storage behavior.
+Nacos uses plugins and SPI extensions to keep cross-cutting infrastructure and
+replaceable domain capabilities outside the fixed core. A plugin may provide
+authentication, resource visibility, data source dialects, encryption, tracing,
+flow control, environment adaptation, AI pipeline behavior, AI storage behavior,
+or Java client-side request adaptation.
 
 The plugin mechanism must let Nacos keep a stable core model while allowing
 deployments to choose an implementation that matches their identity system,
@@ -42,21 +43,40 @@ synchronization, persisted plugin state, and user-facing diagnostics.
 
 The current plugin type registry is defined by `PluginType`.
 
-| Type | Purpose |
-|------|---------|
-| `auth` | Authentication and authorization implementation. |
-| `visibility` | Resource visibility and query visibility advisory. |
-| `datasource-dialect` | Database dialect and persistence adaptation. |
-| `config-change` | Configuration change extension. |
-| `encryption` | Encryption and decryption extension. |
-| `trace` | Trace and observability extension. |
-| `environment` | Environment adaptation extension. |
-| `control` | Traffic and control extension. |
-| `ai-pipeline` | AI registry pipeline extension. |
-| `ai-storage` | AI registry storage extension. |
+| Type | Purpose | Contract |
+|------|---------|----------|
+| `auth` | Authentication and authorization implementation. | [Auth Plugin Spec](../auth/auth-plugin-spec.md) |
+| `visibility` | Resource visibility and query visibility advisory. | [Visibility Plugin Spec](../auth/visibility-plugin-spec.md) |
+| `datasource-dialect` | Database dialect and persistence adaptation. | [Data Source Dialect Plugin Spec](datasource-dialect-plugin-spec.md) |
+| `config-change` | Configuration change extension. | [Config Change Plugin Spec](config-change-plugin-spec.md) |
+| `encryption` | Encryption and decryption extension. | [Config Encryption Plugin Spec](config-encryption-plugin-spec.md) |
+| `trace` | Trace and observability extension. | [Trace Plugin Spec](trace-plugin-spec.md) |
+| `environment` | Environment adaptation extension. | [Environment Plugin Spec](environment-plugin-spec.md) |
+| `control` | Traffic and control extension. | [Control Plugin Spec](control-plugin-spec.md) |
+| `ai-pipeline` | AI registry pipeline extension. | [AI Publish Pipeline Plugin Spec](ai-pipeline-plugin-spec.md) |
+| `ai-storage` | AI registry storage extension. | [AI Storage Plugin Spec](ai-storage-plugin-spec.md) |
 
 Domain-specific plugin contracts are defined by their own specs. This document
 defines the common runtime contract shared by all plugin categories.
+
+[Addressing extension](addressing-plugin-spec.md) is documented with plugin
+specs for continuity with the public plugin documentation, but current server
+code handles it through `MemberLookup` and does not register it in `PluginType`.
+
+## Runtime Location
+
+Nacos has two plugin-like extension surfaces:
+
+| Runtime | Loading model | State owner | Examples |
+|---------|---------------|-------------|----------|
+| Server plugin | Domain SPI plus `PluginProvider`, listed and managed by server plugin APIs where supported. | Nacos server process and, for managed plugins, server plugin state. | `auth`, `visibility`, `datasource-dialect`, `control`, `trace`. |
+| Java client extension | Java SPI or SDK API loaded inside the client process. | Client classpath, client properties, and SDK instance lifecycle. | `ServerListProvider`, `ClientAuthService`, `IConfigFilter`, client-side config encryption. |
+
+Client extensions are not managed by `/v3/admin/core/plugin/*` and do not have a
+server-side `PluginStateCheckerHolder` decision unless their corresponding
+server plugin also participates in request handling. They must still follow
+Nacos resource identity, authorization, and payload semantics because they shape
+requests sent by the SDK.
 
 ## Execution Modes
 
@@ -149,17 +169,20 @@ The core plugin admin API is:
 | `PUT` | `/v3/admin/core/plugin/status` | Enable or disable a plugin. |
 | `PUT` | `/v3/admin/core/plugin/config` | Update plugin configuration. |
 
-These endpoints are Admin APIs and require console-scoped authorization. Plugin
-management must use the standard v3 response and error model.
+These endpoints are Admin APIs and require console-scoped authorization as
+defined by the [HTTP Authorization Spec](../http-api/authorization-spec.md).
+Plugin management must use the standard v3
+[response and error model](../http-api/response-error-spec.md).
 
 ## Design Requirements
 
 Plugin implementations must follow these rules:
 
-- Use existing Nacos resource identifiers and domain models instead of inventing
-  an incompatible model for the same resource.
-- Preserve v3 API response, error, and authorization conventions for any
-  plugin-provided HTTP APIs.
+- Use existing Nacos [resource identifiers](../design/resource-model-spec.md)
+  and domain models instead of inventing an incompatible model for the same
+  resource.
+- Preserve v3 [HTTP API](../http-api/api-spec.md) response, error, and
+  authorization conventions for any plugin-provided HTTP APIs.
 - Expose only plugin-owned configuration through `PluginConfigSpec`.
 - Keep cluster-wide state changes synchronized unless the caller explicitly
   requests a local-only operation for diagnosis or emergency handling.

@@ -33,6 +33,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -112,6 +113,24 @@ class AiGrpcRedoServiceTest {
         redoService.removeAgentEndpointForRedo("testAgent");
         Set<RedoData<AgentEndpointWrapper>> redoDatas = redoService.findAgentEndpointRedoData();
         assertTrue(redoDatas.isEmpty());
+    }
+    
+    @Test
+    void getAgentEndpointReturnsCachedWrapper() {
+        AgentEndpoint endpoint = new AgentEndpoint();
+        endpoint.setAddress("127.0.0.1");
+        endpoint.setPort(8080);
+        AgentEndpointWrapper wrapper = AgentEndpointWrapper.wrap(endpoint);
+        redoService.cachedAgentEndpointForRedo("testAgent", wrapper);
+        AgentEndpointWrapper actual = redoService.getAgentEndpoint("testAgent");
+        assertNotNull(actual);
+        assertFalse(actual.isBatch());
+        assertEquals("127.0.0.1", actual.getData().getAddress());
+    }
+    
+    @Test
+    void getAgentEndpointReturnsNullWhenNotCached() {
+        assertNull(redoService.getAgentEndpoint("missing"));
     }
     
     @Test

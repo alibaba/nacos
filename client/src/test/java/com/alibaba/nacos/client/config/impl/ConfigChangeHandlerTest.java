@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigChangeHandlerTest {
     
@@ -38,5 +39,12 @@ class ConfigChangeHandlerTest {
         Map properties = ConfigChangeHandler.getInstance().parseChangeData("",
             "app:\n  name: nacos", "yaml");
         assertEquals("nacos", ((ConfigChangeItem) properties.get("app.name")).getNewValue());
+    }
+    
+    @Test
+    void testParseUnsupportedTypeReturnsEmpty() throws IOException {
+        Map properties = ConfigChangeHandler.getInstance().parseChangeData("", "foo=bar",
+            "unsupported-type-xx");
+        assertTrue(properties.isEmpty());
     }
 }

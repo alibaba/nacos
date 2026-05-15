@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ValidatorUtilsTest {
@@ -82,5 +83,10 @@ class ValidatorUtilsTest {
                 NacosClientProperties.PROTOTYPE.derive(properties);
             ValidatorUtils.checkInitParam(nacosClientProperties);
         });
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new ValidatorUtils());
     }
 }

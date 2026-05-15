@@ -18,7 +18,9 @@
 
 This document defines the Nacos gRPC API model used by Java SDKs, Nacos server
 nodes, and remote module handlers. Unlike the HTTP API, Nacos gRPC has a small
-fixed proto surface and a Java payload type surface.
+fixed proto surface and a Java payload type surface. Payload identity must align
+with the [Resource Model Spec](../design/resource-model-spec.md), and public
+client behavior must align with the [SDK Spec](../sdk/sdk-spec.md).
 
 ## 1. Design Model
 
@@ -133,7 +135,9 @@ throwables, `errorCode` falls back to `500`.
 
 ## 6. Authorization
 
-gRPC authorization is applied by `RemoteRequestAuthFilter`.
+gRPC authorization is applied by `RemoteRequestAuthFilter`. Shared identity,
+resource, and action semantics are defined by the
+[Auth And Permission Spec](../auth/auth-permission-spec.md).
 
 Handlers should annotate `handle(...)` with `@Secured` when the operation needs
 identity, authority, or server identity validation. The filter:
@@ -228,5 +232,5 @@ dedicated gRPC payload.
 4. Add `@Secured` for SDK-facing or inner protected operations.
 5. Add `@InvokeSource` for cluster-only payloads.
 6. Keep request fields explicit and JSON-compatible.
-7. Update this spec and the SDK interface spec when the operation is exposed
-   through a public SDK interface.
+7. Update this spec and the [SDK interface spec](../sdk/sdk-spec.md) when the
+   operation is exposed through a public SDK interface.

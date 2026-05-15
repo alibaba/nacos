@@ -83,8 +83,9 @@ Admin API 应使用 `ApiType.ADMIN_API`。Console API 应使用
 
 ## 5. 插件提供的 Auth API
 
-`/v3/auth/*` API 面属于鉴权插件。Nacos 默认鉴权插件随 Nacos 一起发布，
-必须遵循 Nacos HTTP API 对路径形态、响应形态、参数校验和错误行为的规范。
+`/v3/auth/*` API 面属于鉴权插件。[Nacos 默认鉴权插件](../auth/default-auth-plugin-spec.md)
+随 Nacos 一起发布，必须遵循 [Nacos HTTP API](api-spec.md) 对路径形态、响应形态、
+参数校验和错误行为的规范。
 
 第三方鉴权插件通过 Nacos 暴露 HTTP API 时，也建议遵循同一套规则。
 

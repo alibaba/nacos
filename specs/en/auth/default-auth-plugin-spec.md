@@ -18,10 +18,20 @@
 
 ## Scope
 
-The default auth implementation package provides the `nacos` and `ldap` auth
-plugins. The `nacos` plugin provides username/password login, token
+The default auth implementation package currently provides the `nacos` and
+`ldap` auth plugins. The `nacos` plugin provides username/password login, token
 authentication, RBAC permission management, and the default visibility
-integration used by AI resources.
+integration used by AI resources. It implements the
+[Auth Plugin Spec](auth-plugin-spec.md), the shared
+[Auth And Permission Spec](auth-permission-spec.md), and the
+[Visibility Plugin Spec](visibility-plugin-spec.md).
+
+The Java client provides `NacosClientAuthServiceImpl` for the username/password
+and token flow exposed by the default plugin. Other built-in client auth
+services, such as RAM and OIDC, are Java Client SDK auth extensions and are
+specified by the [Java SDK Implementation Spec](../sdk/sdk-java-impl-spec.md)
+and the [Auth Plugin Spec](auth-plugin-spec.md), not by this server-side default
+plugin implementation.
 
 The default implementation is intended to reduce accidental misuse in trusted
 internal networks. It is not a full strong-auth solution for hostile public
@@ -74,6 +84,23 @@ Anonymous AI access is allowed only when all of these are true:
 
 When anonymous AI access is enabled, the implementation initializes the reserved
 anonymous user and role with read permission on `public:*:ai/*`.
+
+## Default Java Client Auth Integration
+
+The Java client-side integration for this default plugin is
+`NacosClientAuthServiceImpl`. It is loaded through the client auth SPI and uses
+the default `/v3/auth/user/login` API when `username` and `password` are
+configured.
+
+| Client implementation | Identity material | Contract |
+|-----------------------|-------------------|----------|
+| `NacosClientAuthServiceImpl` | `username`, `password`, and `accessToken`. | Log in through the default auth API, attach the returned `accessToken`, and refresh the token before expiration. |
+
+This integration must not mutate request payloads. It only provides identity
+material consumed by the selected server-side auth plugin. Additional client
+auth implementations, including [RAM](ram-auth-plugin-spec.md) and
+[OIDC](oidc-auth-plugin-spec.md), are documented as Java Client SDK extensions
+in the [Java SDK Implementation Spec](../sdk/sdk-java-impl-spec.md).
 
 ## RBAC Storage Model
 
@@ -137,7 +164,9 @@ such as `console/users`, `console/roles`, `console/permissions`, and
 
 Login is intentionally public. Administrator bootstrap is intentionally exposed
 only for the no-admin initialization state and must be rejected after a global
-administrator exists.
+administrator exists. These APIs are part of the
+[V3 API Surface](../http-api/v3-api-surface.md) and must follow the
+[HTTP Authorization Spec](../http-api/authorization-spec.md).
 
 ## Default Visibility Implementation
 
@@ -175,3 +204,12 @@ with the visible resource set and avoids full-load in-memory filtering.
 Legacy or compatibility endpoints may remain for existing clients, but new
 documentation and new development should target the v3 auth API and the plugin
 contracts defined here.
+
+## Pending Issues
+
+- The `ldap` plugin is currently coupled into the default auth implementation
+  package by extending `NacosAuthPluginService`. Conceptually LDAP is a separate
+  identity-provider-backed auth plugin, not part of the default Nacos
+  username/password and token implementation. It should be split into a
+  standalone auth plugin package and spec while preserving compatibility for
+  existing `nacos.core.auth.system.type=ldap` deployments.

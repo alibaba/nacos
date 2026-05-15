@@ -65,6 +65,8 @@ class SkillManagement extends React.Component {
       nownamespace_id: '',
       nownamespace_desc: '',
       orderBy: '',
+      isDragOver: false,
+      uploading: false,
     };
   }
 
@@ -398,6 +400,13 @@ class SkillManagement extends React.Component {
       ''}&accessToken=${accessToken}&username=${username}`;
   };
 
+  getBatchUploadAction = () => {
+    const { accessToken = '', username = '' } = this.getTokenInfo();
+    const basePath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    return `${basePath}v3/console/ai/skills/upload/batch?namespaceId=${getParams('namespace') ||
+      ''}&accessToken=${accessToken}&username=${username}`;
+  };
+
   getUploadHeaders = () => {
     const { accessToken = '' } = this.getTokenInfo();
     return { accessToken };
@@ -475,6 +484,113 @@ class SkillManagement extends React.Component {
     Message.error(errorMessage);
   };
 
+  handleDragEnter = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    this.setState({ isDragOver: true });
+  };
+
+  handleDragOver = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    this.setState({ isDragOver: true });
+  };
+
+  handleDragLeave = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set isDragOver to false if leaving the drop zone (not entering a child)
+    if (e.currentTarget && !e.currentTarget.contains(e.relatedTarget)) {
+      this.setState({ isDragOver: false });
+    }
+  };
+
+  handleDrop = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.setState({ isDragOver: false });
+
+    const { locale = {} } = this.props;
+    const files = e.dataTransfer.files;
+
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    // Support multiple zip files in one drop
+    const zipFiles = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.zip'));
+    if (zipFiles.length === 0) {
+      Message.error(locale.uploadSkillFormatError || 'Please upload a zip file');
+      return;
+    }
+
+    zipFiles.forEach(file => this.uploadFile(file));
+  };
+
+  uploadFile = file => {
+    const { locale = {} } = this.props;
+    this.setState({ uploading: true });
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const uploadUrl = this.getBatchUploadAction();
+    const headers = this.getUploadHeaders();
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', uploadUrl, true);
+    Object.keys(headers).forEach(key => {
+      xhr.setRequestHeader(key, headers[key]);
+    });
+
+    xhr.onload = () => {
+      this.setState({ uploading: false });
+      try {
+        const res = JSON.parse(xhr.responseText);
+        if (res && (res.code === 0 || res.code === 200)) {
+          const data = res.data || {};
+          const succeeded = data.succeeded || [];
+          const failed = data.failed || [];
+          if (succeeded.length > 0) {
+            Message.success(
+              `${file.name}: ${succeeded.length} ${locale.skillsUploadedSuccessfully ||
+                'skill(s) uploaded successfully'}${
+                succeeded.length <= 5 ? ' (' + succeeded.join(', ') + ')' : ''
+              }`
+            );
+          }
+          if (failed.length > 0) {
+            failed.forEach(item => {
+              Message.error(`${item.name}: ${item.reason}`);
+            });
+          }
+          if (succeeded.length > 0) {
+            this.getData();
+          }
+        } else {
+          Message.error(
+            `${file.name}: ${res?.message || locale.uploadSkillFailed || 'Upload failed'}`
+          );
+        }
+      } catch (err) {
+        Message.error(`${file.name}: ${locale.uploadSkillFailed || 'Upload failed'}`);
+      }
+    };
+
+    xhr.onerror = () => {
+      this.setState({ uploading: false });
+      Message.error(`${file.name}: ${locale.uploadSkillFailed || 'Upload failed'}`);
+    };
+
+    xhr.send(formData);
+  };
+
   renderOperationColumn = (value, index, record) => {
     const { locale = {} } = this.props;
     const isEnabled = record.enable !== false;
@@ -513,11 +629,34 @@ class SkillManagement extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const { loading, dataSource, total, pageSize, currentPage, selectedRowKeys } = this.state;
+    const {
+      loading,
+      dataSource,
+      total,
+      pageSize,
+      currentPage,
+      selectedRowKeys,
+      isDragOver,
+      uploading,
+    } = this.state;
 
     return (
       <>
-        <div>
+        <div
+          className="skill-management-wrapper"
+          onDragEnter={this.handleDragEnter}
+          onDragOver={this.handleDragOver}
+          onDragLeave={this.handleDragLeave}
+          onDrop={this.handleDrop}
+        >
+          {isDragOver && (
+            <div className="drag-overlay">
+              <div className="drag-overlay-content">
+                <Icon type="upload" size="xl" />
+                <p>{locale.dropZipHere || 'Drop .zip file here to upload Skill'}</p>
+              </div>
+            </div>
+          )}
           <div style={{ position: 'relative' }}>
             <PageTitle
               title={locale.skillManagement || 'Skill Management'}
@@ -578,6 +717,9 @@ class SkillManagement extends React.Component {
                 >
                   <Button type="normal">{locale.uploadSkill || 'Upload Skill'}</Button>
                 </Upload>
+                <span style={{ color: '#999', fontSize: 12 }}>
+                  {locale.dragDropHint || 'Supports drag-and-drop .zip file to this page'}
+                </span>
               </div>
             </div>
 

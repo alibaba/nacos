@@ -16,8 +16,9 @@
 
 # Nacos 设计规范
 
-本文档定义 Nacos 的顶层设计意图。API、SDK、资源模型、模块、插件和兼容性等
-更细粒度规范都应遵循本文档。
+本文档定义 Nacos 的顶层设计意图。[资源模型规范](./resource-model-spec.md)细化资源身份，
+[HTTP API 规范](../http-api/api-spec.md)、[gRPC API 规范](../grpc-api/api-spec.md) 和
+[SDK 规范](../sdk/sdk-spec.md)细化外部接口规则。
 
 ## 1. 定位
 
@@ -185,10 +186,3 @@ Nacos 模块应遵循以下职责边界：
 - 能让规范可执行的测试或校验规则。
 
 如果一个功能无法回答这些问题，它还不应成为稳定的 Nacos 契约。
-
-## 9. 相关规范
-
-- [资源模型规范](./resource-model-spec.md)
-- [HTTP API 规范](../http-api/api-spec.md)
-- [gRPC API 规范](../grpc-api/api-spec.md)
-- [SDK 规范](../sdk/sdk-spec.md)

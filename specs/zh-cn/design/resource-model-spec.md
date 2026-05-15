@@ -17,7 +17,8 @@
 # Nacos 资源模型规范
 
 本文档定义 Nacos 共享资源模型，是 HTTP API、gRPC API、SDK、控制台流程、持久化
-模型和用户文档的语义来源。
+模型和用户文档的语义来源。它细化 [Nacos 设计规范](nacos-design-spec.md)中的顶层领域
+结构。
 
 ## 1. 顶层资源层次
 
@@ -289,6 +290,7 @@ Agent 配置。AgentSpec 应通过稳定身份和 version 或 label 引用其他
 - owner identity。
 
 可见性影响发现、详情查看、下载和写入操作。它补充授权逻辑，但不能替代权限校验。
+权限语义由[鉴权与权限规范](../auth/auth-permission-spec.md)定义。
 
 ## 8. 状态和生命周期
 
@@ -307,9 +309,10 @@ review、offline、internal 或 operational 状态。
 
 所有 API 家族必须保持相同的资源身份：
 
-- HTTP path 和参数名应使用本规范中的标准资源术语。
-- gRPC request 对象即使使用 JSON payload，也应携带同样的身份字段。
-- Client SDK 应暴露运行时安全的资源操作。
+- [HTTP](../http-api/api-spec.md) path 和参数名应使用本规范中的标准资源术语。
+- [gRPC](../grpc-api/api-spec.md) request 对象即使使用 JSON payload，也应携带同样的
+  身份字段。
+- [Client SDK](../sdk/sdk-spec.md) 应暴露运行时安全的资源操作。
 - Maintainer SDK 应暴露大范围管理资源操作。
 - Console API 可以为 UI 调整数据形态，但不能重新定义资源身份。
 

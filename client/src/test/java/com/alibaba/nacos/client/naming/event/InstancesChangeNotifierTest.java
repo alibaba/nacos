@@ -173,4 +173,23 @@ class InstancesChangeNotifierTest {
     void testSubscribeType() {
         assertEquals(InstancesChangeEvent.class, instancesChangeNotifier.subscribeType());
     }
+    
+    @Test
+    void testRegisterListenerWithNullWrapper() {
+        instancesChangeNotifier.registerListener(GROUP_CASE, SERVICE_NAME_CASE, null);
+        assertFalse(instancesChangeNotifier.isSubscribed(GROUP_CASE, SERVICE_NAME_CASE));
+    }
+    
+    @Test
+    void testDeregisterListenerWithNullWrapper() {
+        instancesChangeNotifier.deregisterListener(GROUP_CASE, SERVICE_NAME_CASE, null);
+        assertFalse(instancesChangeNotifier.isSubscribed(GROUP_CASE, SERVICE_NAME_CASE));
+    }
+    
+    @Test
+    void testJustForTestConstructor() {
+        InstancesChangeNotifier notifier = new InstancesChangeNotifier();
+        // event scope is generated and not null
+        assertEquals(InstancesChangeEvent.class, notifier.subscribeType());
+    }
 }

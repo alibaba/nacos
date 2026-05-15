@@ -27,7 +27,10 @@ IdentityContext + Resource + Action -> allowed or rejected
 ```
 
 The auth plugin does not own Nacos resource modeling. It consumes resources
-created by Nacos controllers, protocol filters, and resource parsers.
+created by Nacos controllers, protocol filters, and resource parsers. The
+shared permission model is defined by the
+[Auth And Permission Spec](auth-permission-spec.md), and common plugin lifecycle
+rules are defined by the [Nacos Plugin Spec](../plugin/plugin-spec.md).
 
 ## Server SPI
 
@@ -48,14 +51,42 @@ permissions so that the protocol layer can map them to standard API errors.
 
 ## Client SPI
 
-Client-side auth plugins provide request identity material. A client plugin must
-inject only the credentials or tokens required by the selected server plugin and
-must not alter the semantic request payload.
+Client-side auth plugins provide request identity material for Java SDK
+requests. A client plugin must inject only the credentials or tokens required by
+the selected server plugin and must not alter the semantic request payload.
+
+The Java client loads `AbstractClientAuthService` implementations through SPI
+and exposes them through `ClientAuthPluginManager` and `SecurityProxy`.
+
+| Method | Requirement |
+|--------|-------------|
+| `login(properties)` | Initialize or refresh identity material from client properties or an external identity provider. |
+| `setServerList(serverList)` | Receive the current client-side server list for login or token refresh requests. |
+| `setNacosRestTemplate(template)` | Receive the HTTP client used for plugin login calls. |
+| `getLoginIdentityContext(resource)` | Return headers or parameters to attach to a request for the supplied `RequestResource`. |
+| `shutdown()` | Release plugin-owned resources. |
+
+`SecurityProxy` combines identity context from all loaded client auth services.
+When the Java client receives an auth failure that requires re-login, it marks
+the loaded client auth services for refresh before the next login attempt.
 
 The Java client must support the built-in username/password and token flow. A
 custom client auth plugin may provide access keys, signatures, certificates, or
 external tokens, but it must keep compatibility with the server-side identity
 names declared by the matching auth plugin.
+
+Built-in Java client auth services are client-side extensions. The default
+username/password token service integrates with the
+[default Nacos auth plugin](default-auth-plugin-spec.md), while
+[RAM](ram-auth-plugin-spec.md) and [OIDC](oidc-auth-plugin-spec.md) services
+provide alternative identity material through the same client SPI. The Java
+client implementation details for these built-ins are specified by the
+[Java SDK Implementation Spec](../sdk/sdk-java-impl-spec.md).
+
+Client auth plugins must preserve Nacos resource semantics. When a plugin needs
+resource-aware signing, it must use the supplied `RequestResource` fields for
+config, naming, AI, lock, or explicit resources instead of parsing transport
+payloads independently.
 
 ## Selection And State
 
@@ -105,8 +136,18 @@ If an auth plugin exposes HTTP APIs, those APIs must:
 - Add `@Secured` to protected management endpoints.
 - Document any intentionally public endpoint, such as login or bootstrap.
 
-The default Nacos auth plugin is the reference implementation for the current
-`/v3/auth/user`, `/v3/auth/role`, and `/v3/auth/permission` surface.
+The [default Nacos auth plugin](default-auth-plugin-spec.md) is the reference
+implementation for the current `/v3/auth/user`, `/v3/auth/role`, and
+`/v3/auth/permission` surface. HTTP authorization rules for these endpoints are
+defined by the [HTTP Authorization Spec](../http-api/authorization-spec.md).
+
+## Built-In Auth Implementations
+
+| Implementation | Runtime location | Spec |
+|----------------|------------------|------|
+| Default Nacos auth | Server plugin plus Java client token integration. | [Default Auth Plugin Implementation Spec](default-auth-plugin-spec.md) |
+| RAM-compatible auth | Java client auth extension and server compatibility contract. | [RAM Auth Plugin Spec](ram-auth-plugin-spec.md) |
+| OIDC auth | Server plugin plus Java client client-credentials integration. | [OIDC Auth Plugin Spec](oidc-auth-plugin-spec.md) |
 
 ## Relationship With Visibility
 
@@ -114,9 +155,9 @@ Auth answers who the caller is and whether the caller has permission for a
 resource/action pair. Visibility answers which resources should be visible in a
 single-resource operation or range query.
 
-Visibility plugins may delegate explicit permission checks back to the selected
-auth plugin. Auth plugins must therefore keep permission evaluation stable for
-explicit resources as well as domain resources.
+[Visibility plugins](visibility-plugin-spec.md) may delegate explicit permission
+checks back to the selected auth plugin. Auth plugins must therefore keep
+permission evaluation stable for explicit resources as well as domain resources.
 
 ## Safety Requirements
 
@@ -124,4 +165,3 @@ The built-in Nacos auth plugin is designed for trusted internal networks and is
 not a complete strong-auth solution for hostile public networks. Deployments
 that require stronger authentication should provide or select an auth plugin
 that matches their security requirements.
-

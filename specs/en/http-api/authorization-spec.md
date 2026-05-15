@@ -87,9 +87,10 @@ Bootstrap behavior:
 
 ## 5. Plugin-Provided Auth APIs
 
-The `/v3/auth/*` API surface belongs to auth plugins. The default Nacos auth
-plugin is shipped with Nacos and must follow the Nacos HTTP API rules for path
-shape, response shape, validation, and error behavior.
+The `/v3/auth/*` API surface belongs to auth plugins. The
+[default Nacos auth plugin](../auth/default-auth-plugin-spec.md) is shipped with
+Nacos and must follow the [Nacos HTTP API rules](api-spec.md) for path shape,
+response shape, validation, and error behavior.
 
 Third-party auth plugins should follow the same rules when exposing HTTP APIs
 through Nacos.

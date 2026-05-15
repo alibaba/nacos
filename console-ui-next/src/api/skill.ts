@@ -52,6 +52,17 @@ export const skillApi = {
     }) as ApiResult<string>;
   },
 
+  /** Batch upload skills from a multi-skill ZIP archive */
+  batchUpload: (namespaceId: string, file: File): ApiResult<{ succeeded: string[]; failed: { name: string; reason: string }[] }> => {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('namespaceId', namespaceId);
+    return client.post(`${BASE}/upload/batch`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    }) as ApiResult<{ succeeded: string[]; failed: { name: string; reason: string }[] }>;
+  },
+
   /** Delete skill */
   delete: (params: {
     namespaceId?: string;

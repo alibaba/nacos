@@ -17,7 +17,8 @@
 # V3 HTTP API 范围
 
 本文档说明当前 v3 HTTP API 覆盖范围。它补充
-[HTTP API 规范](api-spec.md)，后者定义通用设计规则。
+[HTTP API 规范](api-spec.md)，后者定义通用设计规则。端点鉴权遵循
+[HTTP 鉴权规范](authorization-spec.md)，响应形态遵循[响应与错误规范](response-error-spec.md)。
 
 ## 1. 范围
 
@@ -29,7 +30,7 @@
 | `/v3/client` | Open API | SDK 和自定义客户端 | `ApiType.OPEN_API` |
 | `/v3/admin` | Admin API | 运维人员和维护工具 | `ApiType.ADMIN_API` |
 | `/v3/console` | Console API | Nacos 控制台 UI 后端调用 | `ApiType.CONSOLE_API` |
-| `/v3/auth` | Auth plugin API | 插件提供的鉴权和初始化 API | 默认鉴权插件 |
+| `/v3/auth` | Auth plugin API | 插件提供的鉴权和初始化 API | [默认鉴权插件](../auth/default-auth-plugin-spec.md) |
 
 本文档不覆盖：
 
@@ -155,8 +156,8 @@ V3 Auth API 位于默认鉴权插件中，而不是 core 模块中：
 - 权限管理支持添加、删除和列表。
 - 第一个管理员初始化由 `POST /v3/auth/user/admin` 实现。
 
-默认鉴权插件随 Nacos 一起发布，因此它的 v3 auth 端点应遵循 Nacos HTTP
-API 规范。
+默认鉴权插件随 Nacos 一起发布，因此它的 v3 auth 端点应遵循 Nacos HTTP API 规范和
+[鉴权插件规范](../auth/auth-plugin-spec.md)。
 
 ## 8. 文档 Gap 记录
 

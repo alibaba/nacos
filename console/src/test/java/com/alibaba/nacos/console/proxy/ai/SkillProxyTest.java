@@ -17,11 +17,20 @@
 package com.alibaba.nacos.console.proxy.ai;
 
 import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -31,25 +40,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for SkillProxy.
- *
- * @author nacos
- */
 @ExtendWith(MockitoExtension.class)
-public class SkillProxyTest {
+class SkillProxyTest {
     
-    private static final String NAMESPACE_ID = "test-ns";
+    private static final String NS = "test-ns";
     
     private static final String SKILL_NAME = "test-skill";
     
@@ -59,63 +61,255 @@ public class SkillProxyTest {
     private SkillProxy skillProxy;
     
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         skillProxy = new SkillProxy(skillHandler);
     }
     
     @Test
-    public void testForcePublish() throws NacosException {
-        SkillPublishForm form = new SkillPublishForm();
-        form.setNamespaceId(NAMESPACE_ID);
+    void testGetSkill() throws NacosException {
+        SkillForm form = new SkillForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        SkillMeta meta = new SkillMeta();
+        meta.setName(SKILL_NAME);
+        when(skillHandler.getSkill(form)).thenReturn(meta);
+        
+        SkillMeta result = skillProxy.getSkill(form);
+        
+        assertEquals(SKILL_NAME, result.getName());
+        verify(skillHandler).getSkill(form);
+    }
+    
+    @Test
+    void testGetSkillVersion() throws NacosException {
+        SkillForm form = new SkillForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        Skill skill = new Skill();
+        skill.setName(SKILL_NAME);
+        when(skillHandler.getSkillVersion(form)).thenReturn(skill);
+        
+        Skill result = skillProxy.getSkillVersion(form);
+        
+        assertEquals(SKILL_NAME, result.getName());
+        verify(skillHandler).getSkillVersion(form);
+    }
+    
+    @Test
+    void testDownloadSkillVersion() throws NacosException {
+        SkillForm form = new SkillForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        Skill skill = new Skill();
+        skill.setName(SKILL_NAME);
+        when(skillHandler.downloadSkillVersion(form)).thenReturn(skill);
+        
+        Skill result = skillProxy.downloadSkillVersion(form);
+        
+        assertNotNull(result);
+        verify(skillHandler).downloadSkillVersion(form);
+    }
+    
+    @Test
+    void testDeleteSkill() throws NacosException {
+        SkillForm form = new SkillForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        doNothing().when(skillHandler).deleteSkill(form);
+        
+        skillProxy.deleteSkill(form);
+        
+        verify(skillHandler).deleteSkill(form);
+    }
+    
+    @Test
+    void testListSkills() throws NacosException {
+        SkillListForm listForm = new SkillListForm();
+        AiResourceFilterableForm filterForm = new AiResourceFilterableForm();
+        PageForm pageForm = new PageForm();
+        Page<SkillSummary> page = new Page<>();
+        page.setTotalCount(2);
+        page.setPageItems(List.of(new SkillSummary(), new SkillSummary()));
+        when(skillHandler.listSkills(listForm, filterForm, pageForm)).thenReturn(page);
+        
+        Page<SkillSummary> result = skillProxy.listSkills(listForm, filterForm, pageForm);
+        
+        assertEquals(2, result.getTotalCount());
+        verify(skillHandler).listSkills(listForm, filterForm, pageForm);
+    }
+    
+    @Test
+    void testUploadSkillFromZipNoArgs() throws NacosException {
+        byte[] zipBytes = new byte[] {1, 2, 3};
+        when(skillHandler.uploadSkillFromZip(NS, zipBytes, false, null))
+            .thenReturn(SKILL_NAME);
+        
+        String result = skillProxy.uploadSkillFromZip(NS, zipBytes);
+        
+        assertEquals(SKILL_NAME, result);
+        verify(skillHandler).uploadSkillFromZip(NS, zipBytes, false, null);
+    }
+    
+    @Test
+    void testUploadSkillFromZipWithOverwrite() throws NacosException {
+        byte[] zipBytes = new byte[] {1, 2, 3};
+        when(skillHandler.uploadSkillFromZip(NS, zipBytes, true, null))
+            .thenReturn(SKILL_NAME);
+        
+        String result = skillProxy.uploadSkillFromZip(NS, zipBytes, true);
+        
+        assertEquals(SKILL_NAME, result);
+        verify(skillHandler).uploadSkillFromZip(NS, zipBytes, true, null);
+    }
+    
+    @Test
+    void testUploadSkillFromZipWithOverwriteAndVersion() throws NacosException {
+        byte[] zipBytes = new byte[] {1, 2, 3};
+        when(skillHandler.uploadSkillFromZip(NS, zipBytes, true, "v2"))
+            .thenReturn(SKILL_NAME);
+        
+        String result = skillProxy.uploadSkillFromZip(NS, zipBytes, true, "v2");
+        
+        assertEquals(SKILL_NAME, result);
+        verify(skillHandler).uploadSkillFromZip(NS, zipBytes, true, "v2");
+    }
+    
+    @Test
+    void testCreateDraft() throws NacosException {
+        SkillDraftCreateForm form = new SkillDraftCreateForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        when(skillHandler.createDraft(form)).thenReturn("v1-draft");
+        
+        String result = skillProxy.createDraft(form);
+        
+        assertEquals("v1-draft", result);
+        verify(skillHandler).createDraft(form);
+    }
+    
+    @Test
+    void testUpdateDraft() throws NacosException {
+        SkillUpdateForm form = new SkillUpdateForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        doNothing().when(skillHandler).updateDraft(form);
+        
+        skillProxy.updateDraft(form);
+        
+        verify(skillHandler).updateDraft(form);
+    }
+    
+    @Test
+    void testDeleteDraft() throws NacosException {
+        SkillForm form = new SkillForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        doNothing().when(skillHandler).deleteDraft(form);
+        
+        skillProxy.deleteDraft(form);
+        
+        verify(skillHandler).deleteDraft(form);
+    }
+    
+    @Test
+    void testSubmit() throws NacosException {
+        SkillSubmitForm form = new SkillSubmitForm();
+        form.setNamespaceId(NS);
         form.setSkillName(SKILL_NAME);
         form.setVersion("v1");
-        form.setUpdateLatestLabel(true);
+        when(skillHandler.submit(form)).thenReturn("reviewing");
         
+        String result = skillProxy.submit(form);
+        
+        assertEquals("reviewing", result);
+        verify(skillHandler).submit(form);
+    }
+    
+    @Test
+    void testPublish() throws NacosException {
+        SkillPublishForm form = new SkillPublishForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
+        doNothing().when(skillHandler).publish(form);
+        
+        skillProxy.publish(form);
+        
+        verify(skillHandler).publish(form);
+    }
+    
+    @Test
+    void testForcePublish() throws NacosException {
+        SkillPublishForm form = new SkillPublishForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
         doNothing().when(skillHandler).forcePublish(form);
         
         skillProxy.forcePublish(form);
         
-        verify(skillHandler, times(1)).forcePublish(form);
+        verify(skillHandler).forcePublish(form);
     }
     
     @Test
-    public void testForcePublishPropagatesException() throws NacosException {
-        SkillPublishForm form = new SkillPublishForm();
-        form.setNamespaceId(NAMESPACE_ID);
+    void testUpdateLabels() throws NacosException {
+        SkillLabelsUpdateForm form = new SkillLabelsUpdateForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        doNothing().when(skillHandler).updateLabels(form);
+        
+        skillProxy.updateLabels(form);
+        
+        verify(skillHandler).updateLabels(form);
+    }
+    
+    @Test
+    void testUpdateBizTags() throws NacosException {
+        SkillBizTagsUpdateForm form = new SkillBizTagsUpdateForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        doNothing().when(skillHandler).updateBizTags(form);
+        
+        skillProxy.updateBizTags(form);
+        
+        verify(skillHandler).updateBizTags(form);
+    }
+    
+    @Test
+    void testOnline() throws NacosException {
+        SkillOnlineForm form = new SkillOnlineForm();
+        form.setNamespaceId(NS);
         form.setSkillName(SKILL_NAME);
         form.setVersion("v1");
+        doNothing().when(skillHandler).changeOnlineStatus(form, true);
         
-        NacosApiException expectedException = new NacosApiException(NacosException.NOT_FOUND,
-            com.alibaba.nacos.api.model.v2.ErrorCode.RESOURCE_NOT_FOUND, "version not found");
-        doThrow(expectedException).when(skillHandler).forcePublish(any(SkillPublishForm.class));
+        skillProxy.online(form);
         
-        NacosApiException ex =
-            assertThrows(NacosApiException.class, () -> skillProxy.forcePublish(form));
-        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+        verify(skillHandler).changeOnlineStatus(form, true);
     }
     
     @Test
-    public void testListSkills() throws NacosException {
-        SkillListForm listForm = new SkillListForm();
-        listForm.setNamespaceId(NAMESPACE_ID);
-        listForm.setSkillName(SKILL_NAME);
-        AiResourceFilterableForm filterableForm = new AiResourceFilterableForm();
-        filterableForm.setOwner("alice");
-        PageForm pageForm = new PageForm();
-        pageForm.setPageNo(1);
-        pageForm.setPageSize(10);
-        Page<SkillSummary> page = new Page<>();
-        page.setTotalCount(1);
-        SkillSummary item = new SkillSummary();
-        item.setName(SKILL_NAME);
-        page.setPageItems(java.util.List.of(item));
-        when(skillHandler.listSkills(any(SkillListForm.class), any(AiResourceFilterableForm.class),
-            any(PageForm.class))).thenReturn(page);
+    void testOffline() throws NacosException {
+        SkillOnlineForm form = new SkillOnlineForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
+        doNothing().when(skillHandler).changeOnlineStatus(form, false);
         
-        Page<SkillSummary> result = skillProxy.listSkills(listForm, filterableForm, pageForm);
+        skillProxy.offline(form);
         
-        assertNotNull(result);
-        assertEquals(1, result.getTotalCount());
-        verify(skillHandler, times(1)).listSkills(listForm, filterableForm, pageForm);
+        verify(skillHandler).changeOnlineStatus(form, false);
+    }
+    
+    @Test
+    void testUpdateScope() throws NacosException {
+        SkillScopeForm form = new SkillScopeForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        doNothing().when(skillHandler).updateScope(form);
+        
+        skillProxy.updateScope(form);
+        
+        verify(skillHandler).updateScope(form);
     }
 }

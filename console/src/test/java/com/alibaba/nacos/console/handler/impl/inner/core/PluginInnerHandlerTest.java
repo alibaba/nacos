@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.core;
 
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
+import com.alibaba.nacos.core.cluster.remote.response.PluginAvailabilityResponse;
 import com.alibaba.nacos.core.plugin.PluginManager;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
@@ -37,6 +39,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -230,6 +234,203 @@ class PluginInnerHandlerTest {
         assertNotNull(traceVo);
         assertTrue(authVo.getExclusive());
         assertTrue(traceVo.getExclusive());
+    }
+    
+    @Test
+    void testListPluginsWithRemoteMember() throws NacosException {
+        PluginInfo pluginInfo = createMockPluginInfo("auth:test", PluginType.AUTH, "test", true);
+        List<PluginInfo> pluginList = Collections.singletonList(pluginInfo);
+        
+        Member selfMember = new Member();
+        selfMember.setIp("127.0.0.1");
+        selfMember.setPort(8848);
+        
+        Member remoteMember = new Member();
+        remoteMember.setIp("192.168.1.2");
+        remoteMember.setPort(8848);
+        remoteMember.setState(NodeState.UP);
+        
+        when(pluginManager.listAllPlugins()).thenReturn(pluginList);
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(selfMember, remoteMember));
+        when(memberManager.getSelf()).thenReturn(selfMember);
+        
+        PluginAvailabilityResponse response = new PluginAvailabilityResponse();
+        Map<String, Boolean> availMap = new HashMap<>();
+        availMap.put("auth:test", true);
+        response.setPluginAvailabilityMap(availMap);
+        when(rpcClientProxy.sendRequest(eq(remoteMember), any())).thenReturn(response);
+        
+        List<PluginInfoVO> result = pluginInnerHandler.listPlugins(null);
+        
+        assertEquals(1, result.size());
+        assertEquals(2, result.get(0).getTotalNodeCount());
+        assertEquals(2, result.get(0).getAvailableNodeCount());
+    }
+    
+    @Test
+    void testListPluginsWithRemoteMemberDown() throws NacosException {
+        PluginInfo pluginInfo = createMockPluginInfo("auth:test", PluginType.AUTH, "test", true);
+        
+        Member selfMember = new Member();
+        selfMember.setIp("127.0.0.1");
+        selfMember.setPort(8848);
+        
+        Member remoteMember = new Member();
+        remoteMember.setIp("192.168.1.2");
+        remoteMember.setPort(8848);
+        remoteMember.setState(NodeState.DOWN);
+        
+        when(pluginManager.listAllPlugins()).thenReturn(Collections.singletonList(pluginInfo));
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(selfMember, remoteMember));
+        when(memberManager.getSelf()).thenReturn(selfMember);
+        
+        List<PluginInfoVO> result = pluginInnerHandler.listPlugins(null);
+        
+        assertEquals(1, result.size());
+        assertEquals(2, result.get(0).getTotalNodeCount());
+        assertEquals(1, result.get(0).getAvailableNodeCount());
+    }
+    
+    @Test
+    void testListPluginsWithRemoteMemberNullResponse() throws NacosException {
+        PluginInfo pluginInfo = createMockPluginInfo("auth:test", PluginType.AUTH, "test", true);
+        
+        Member selfMember = new Member();
+        selfMember.setIp("127.0.0.1");
+        selfMember.setPort(8848);
+        
+        Member remoteMember = new Member();
+        remoteMember.setIp("192.168.1.2");
+        remoteMember.setPort(8848);
+        remoteMember.setState(NodeState.UP);
+        
+        when(pluginManager.listAllPlugins()).thenReturn(Collections.singletonList(pluginInfo));
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(selfMember, remoteMember));
+        when(memberManager.getSelf()).thenReturn(selfMember);
+        when(rpcClientProxy.sendRequest(eq(remoteMember), any())).thenReturn(null);
+        
+        List<PluginInfoVO> result = pluginInnerHandler.listPlugins(null);
+        
+        assertEquals(1, result.size());
+        assertEquals(1, result.get(0).getAvailableNodeCount());
+    }
+    
+    @Test
+    void testListPluginsWithRemoteMemberException() throws NacosException {
+        PluginInfo pluginInfo = createMockPluginInfo("auth:test", PluginType.AUTH, "test", true);
+        
+        Member selfMember = new Member();
+        selfMember.setIp("127.0.0.1");
+        selfMember.setPort(8848);
+        
+        Member remoteMember = new Member();
+        remoteMember.setIp("192.168.1.2");
+        remoteMember.setPort(8848);
+        remoteMember.setState(NodeState.UP);
+        
+        when(pluginManager.listAllPlugins()).thenReturn(Collections.singletonList(pluginInfo));
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(selfMember, remoteMember));
+        when(memberManager.getSelf()).thenReturn(selfMember);
+        when(rpcClientProxy.sendRequest(eq(remoteMember), any()))
+            .thenThrow(new NacosException(500, "rpc failed"));
+        
+        List<PluginInfoVO> result = pluginInnerHandler.listPlugins(null);
+        
+        assertEquals(1, result.size());
+        assertEquals(1, result.get(0).getAvailableNodeCount());
+    }
+    
+    @Test
+    void testGetPluginAvailabilityWithRemoteMember() throws NacosException {
+        Member selfMember = new Member();
+        selfMember.setIp("127.0.0.1");
+        selfMember.setPort(8848);
+        
+        Member remoteMember = new Member();
+        remoteMember.setIp("192.168.1.2");
+        remoteMember.setPort(8848);
+        remoteMember.setState(NodeState.UP);
+        
+        when(pluginManager.isPluginAvailable("auth:test")).thenReturn(true);
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(selfMember, remoteMember));
+        when(memberManager.getSelf()).thenReturn(selfMember);
+        
+        PluginAvailabilityResponse response = new PluginAvailabilityResponse();
+        response.setAvailable(true);
+        when(rpcClientProxy.sendRequest(eq(remoteMember), any())).thenReturn(response);
+        
+        Map<String, Boolean> result = pluginInnerHandler.getPluginAvailability("auth", "test");
+        
+        assertEquals(2, result.size());
+        assertTrue(result.get("127.0.0.1:8848"));
+        assertTrue(result.get("192.168.1.2:8848"));
+    }
+    
+    @Test
+    void testGetPluginAvailabilityWithRemoteMemberDown() throws NacosException {
+        Member selfMember = new Member();
+        selfMember.setIp("127.0.0.1");
+        selfMember.setPort(8848);
+        
+        Member remoteMember = new Member();
+        remoteMember.setIp("192.168.1.2");
+        remoteMember.setPort(8848);
+        remoteMember.setState(NodeState.DOWN);
+        
+        when(pluginManager.isPluginAvailable("auth:test")).thenReturn(true);
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(selfMember, remoteMember));
+        when(memberManager.getSelf()).thenReturn(selfMember);
+        
+        Map<String, Boolean> result = pluginInnerHandler.getPluginAvailability("auth", "test");
+        
+        assertEquals(2, result.size());
+        assertTrue(result.get("127.0.0.1:8848"));
+        assertFalse(result.get("192.168.1.2:8848"));
+    }
+    
+    @Test
+    void testGetPluginAvailabilityWithRemoteNullResponse() throws NacosException {
+        Member selfMember = new Member();
+        selfMember.setIp("127.0.0.1");
+        selfMember.setPort(8848);
+        
+        Member remoteMember = new Member();
+        remoteMember.setIp("192.168.1.2");
+        remoteMember.setPort(8848);
+        remoteMember.setState(NodeState.UP);
+        
+        when(pluginManager.isPluginAvailable("auth:test")).thenReturn(true);
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(selfMember, remoteMember));
+        when(memberManager.getSelf()).thenReturn(selfMember);
+        when(rpcClientProxy.sendRequest(eq(remoteMember), any())).thenReturn(null);
+        
+        Map<String, Boolean> result = pluginInnerHandler.getPluginAvailability("auth", "test");
+        
+        assertEquals(2, result.size());
+        assertFalse(result.get("192.168.1.2:8848"));
+    }
+    
+    @Test
+    void testGetPluginAvailabilityWithRemoteException() throws NacosException {
+        Member selfMember = new Member();
+        selfMember.setIp("127.0.0.1");
+        selfMember.setPort(8848);
+        
+        Member remoteMember = new Member();
+        remoteMember.setIp("192.168.1.2");
+        remoteMember.setPort(8848);
+        remoteMember.setState(NodeState.UP);
+        
+        when(pluginManager.isPluginAvailable("auth:test")).thenReturn(true);
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(selfMember, remoteMember));
+        when(memberManager.getSelf()).thenReturn(selfMember);
+        when(rpcClientProxy.sendRequest(eq(remoteMember), any()))
+            .thenThrow(new NacosException(500, "connection failed"));
+        
+        Map<String, Boolean> result = pluginInnerHandler.getPluginAvailability("auth", "test");
+        
+        assertEquals(2, result.size());
+        assertFalse(result.get("192.168.1.2:8848"));
     }
     
     private PluginInfo createMockPluginInfo(String pluginId, PluginType type, String name,

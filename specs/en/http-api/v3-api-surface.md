@@ -17,7 +17,9 @@
 # V3 HTTP API Surface
 
 This document describes the current v3 HTTP API coverage. It complements
-[HTTP API Spec](api-spec.md), which defines the design rules.
+[HTTP API Spec](api-spec.md), which defines the design rules. Endpoint
+authorization follows the [HTTP Authorization Spec](authorization-spec.md), and
+response shape follows the [Response And Error Spec](response-error-spec.md).
 
 ## 1. Scope
 
@@ -29,7 +31,7 @@ v3 prefixes after the Nacos web context path:
 | `/v3/client` | Open API | SDKs and custom clients | `ApiType.OPEN_API` |
 | `/v3/admin` | Admin API | operators and maintainer tooling | `ApiType.ADMIN_API` |
 | `/v3/console` | Console API | Nacos console UI backend calls | `ApiType.CONSOLE_API` |
-| `/v3/auth` | Auth plugin API | plugin-provided auth and bootstrap APIs | default auth plugin |
+| `/v3/auth` | Auth plugin API | plugin-provided auth and bootstrap APIs | [default auth plugin](../auth/default-auth-plugin-spec.md) |
 
 This document does not cover:
 
@@ -162,7 +164,8 @@ Implemented behavior:
 - first-admin bootstrap is implemented by `POST /v3/auth/user/admin`.
 
 The default auth plugin is shipped with Nacos, so its v3 auth endpoints should
-follow the Nacos HTTP API rules.
+follow the Nacos HTTP API rules and the
+[Auth Plugin Spec](../auth/auth-plugin-spec.md).
 
 ## 8. Documentation Gap Notes
 

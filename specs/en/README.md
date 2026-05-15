@@ -16,19 +16,33 @@
 
 # Nacos Specs
 
-Current specs:
+Current specs are organized from top-level design to external interfaces,
+extension mechanisms, and cross-cutting security rules.
+
+## Design Foundation
 
 - [Nacos Design Spec](design/nacos-design-spec.md)
 - [Resource Model Spec](design/resource-model-spec.md)
-- [Plugin Spec](plugin/plugin-spec.md)
-- [Auth And Permission Spec](auth/auth-permission-spec.md)
-- [Auth Plugin Spec](auth/auth-plugin-spec.md)
-- [Visibility Plugin Spec](auth/visibility-plugin-spec.md)
-- [Default Auth Plugin Implementation Spec](auth/default-auth-plugin-spec.md)
+
+## Interface Model
+
 - [HTTP API Spec](http-api/api-spec.md)
 - [gRPC API Spec](grpc-api/api-spec.md)
 - [SDK Spec](sdk/sdk-spec.md)
 - [Java SDK Implementation Spec](sdk/sdk-java-impl-spec.md)
+
+## Extension Model
+
+- [Plugin Specs](plugin/README.md)
+
+## Security Model
+
+- [Auth And Permission Spec](auth/auth-permission-spec.md)
+- [Auth Plugin Spec](auth/auth-plugin-spec.md)
+- [RAM Auth Plugin Spec](auth/ram-auth-plugin-spec.md)
+- [OIDC Auth Plugin Spec](auth/oidc-auth-plugin-spec.md)
+- [Visibility Plugin Spec](auth/visibility-plugin-spec.md)
+- [Default Auth Plugin Implementation Spec](auth/default-auth-plugin-spec.md)
 
 Agent guidance files such as [AGENTS.md](../../AGENTS.md) should summarize these
 specs for local execution. The specs remain the rule source when API guidance is

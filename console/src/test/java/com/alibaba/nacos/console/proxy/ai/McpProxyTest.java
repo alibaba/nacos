@@ -19,6 +19,9 @@ package com.alibaba.nacos.console.proxy.ai;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -152,5 +155,31 @@ public class McpProxyTest {
         doNothing().when(mcpHandler).deleteMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version");
         mcpProxy.deleteMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version");
         verify(mcpHandler).deleteMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version");
+    }
+    
+    @Test
+    public void validateImport() throws NacosException {
+        McpServerImportRequest request = new McpServerImportRequest();
+        McpServerImportValidationResult expected = new McpServerImportValidationResult();
+        when(mcpHandler.validateImport(NAMESPACE_ID, request)).thenReturn(expected);
+        
+        McpServerImportValidationResult result = mcpProxy.validateImport(NAMESPACE_ID, request);
+        
+        assertNotNull(result);
+        assertEquals(expected, result);
+        verify(mcpHandler).validateImport(NAMESPACE_ID, request);
+    }
+    
+    @Test
+    public void executeImport() throws NacosException {
+        McpServerImportRequest request = new McpServerImportRequest();
+        McpServerImportResponse expected = new McpServerImportResponse();
+        when(mcpHandler.executeImport(NAMESPACE_ID, request)).thenReturn(expected);
+        
+        McpServerImportResponse result = mcpProxy.executeImport(NAMESPACE_ID, request);
+        
+        assertNotNull(result);
+        assertEquals(expected, result);
+        verify(mcpHandler).executeImport(NAMESPACE_ID, request);
     }
 }

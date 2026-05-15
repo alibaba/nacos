@@ -18,7 +18,8 @@
 
 This document defines the shared resource model for Nacos. It is the semantic
 source for HTTP APIs, gRPC APIs, SDKs, console workflows, persistence models, and
-documentation.
+documentation. It refines the top-level domain structure from the
+[Nacos Design Spec](nacos-design-spec.md).
 
 ## 1. Top-level Resource Hierarchy
 
@@ -312,7 +313,9 @@ Resources that support visibility must expose:
 - owner identity.
 
 Visibility affects discovery, detail viewing, download, and write operations.
-It complements authorization and must not replace permission checks.
+It complements authorization and must not replace permission checks. Permission
+semantics are defined by the
+[Auth And Permission Spec](../auth/auth-permission-spec.md).
 
 ## 8. Status And Lifecycle
 
@@ -333,11 +336,12 @@ states when authorized.
 
 All API families must preserve the same resource identity:
 
-- HTTP path and parameter names should use the canonical resource terms from
-  this spec.
-- gRPC request objects should carry the same identity fields even when the
-  transport payload is JSON encoded.
-- Client SDKs should expose runtime-safe resource operations.
+- [HTTP](../http-api/api-spec.md) path and parameter names should use the
+  canonical resource terms from this spec.
+- [gRPC](../grpc-api/api-spec.md) request objects should carry the same identity
+  fields even when the transport payload is JSON encoded.
+- [Client SDKs](../sdk/sdk-spec.md) should expose runtime-safe resource
+  operations.
 - Maintainer SDKs should expose broad management resource operations.
 - Console APIs may shape data for UI, but must not redefine resource identity.
 
