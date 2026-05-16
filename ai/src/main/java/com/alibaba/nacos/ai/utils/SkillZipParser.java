@@ -33,7 +33,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -67,12 +66,15 @@ public class SkillZipParser {
     private static final String ESCAPED_DOUBLE_QUOTE = "\\\"";
     private static final String SLASH = "/";
     private static final String DOT = ".";
-    /** Metadata key for binary resources: value "base64" means content is Base64-encoded. */
-    public static final String METADATA_ENCODING = "encoding";
-    public static final String METADATA_ENCODING_BASE64 = "base64";
+    /**
+     * Metadata key for binary resources: value "base64" means content is Base64-encoded.
+     * Kept as constants on this class for backward compatibility with existing callers
+     * (e.g. {@code SkillOperationServiceImpl}); the canonical definition lives on
+     * {@link ResourceContentEncoder}.
+     */
+    public static final String METADATA_ENCODING = ResourceContentEncoder.METADATA_ENCODING;
     
-    /** File extensions treated as binary; content will be stored as Base64. */
-    private static final Set<String> BINARY_EXTENSIONS = new HashSet<>();
+    public static final String METADATA_ENCODING_BASE64 = ResourceContentEncoder.METADATA_ENCODING_BASE64;
     
     /**
      * Maximum total decompressed size allowed (50MB). Prevents Zip Bomb attacks.
@@ -83,23 +85,6 @@ public class SkillZipParser {
      * Maximum number of entries allowed in a ZIP file.
      */
     private static final int MAX_ZIP_ENTRIES = 500;
-    
-    static {
-        BINARY_EXTENSIONS.add("ttf");
-        BINARY_EXTENSIONS.add("otf");
-        BINARY_EXTENSIONS.add("woff");
-        BINARY_EXTENSIONS.add("woff2");
-        BINARY_EXTENSIONS.add("eot");
-        BINARY_EXTENSIONS.add("png");
-        BINARY_EXTENSIONS.add("jpg");
-        BINARY_EXTENSIONS.add("jpeg");
-        BINARY_EXTENSIONS.add("gif");
-        BINARY_EXTENSIONS.add("webp");
-        BINARY_EXTENSIONS.add("ico");
-        BINARY_EXTENSIONS.add("cur");
-        BINARY_EXTENSIONS.add("pdf");
-        BINARY_EXTENSIONS.add("bin");
-    }
     
     private static final Pattern YAML_FRONT_MATTER = Pattern.compile(
         "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
@@ -568,21 +553,14 @@ public class SkillZipParser {
                 continue;
             }
             
-            boolean isBinary = isBinaryResource(resourceName);
-            String content;
-            Map<String, Object> metadata = new HashMap<>(4);
-            if (isBinary) {
-                content = Base64.getEncoder().encodeToString(entry.data);
-                metadata.put(METADATA_ENCODING, METADATA_ENCODING_BASE64);
-            } else {
-                content = new String(entry.data, StandardCharsets.UTF_8);
-            }
+            ResourceContentEncoder.EncodedContent encoded =
+                ResourceContentEncoder.encode(entry.data, resourceName);
             
             SkillResource resource = new SkillResource();
             resource.setName(resourceName);
             resource.setType(type);
-            resource.setContent(content);
-            resource.setMetadata(metadata.isEmpty() ? null : metadata);
+            resource.setContent(encoded.getContent());
+            resource.setMetadata(encoded.getMetadata());
             // Use same key as getSkillDetail so resource map is consistent when skill is read back
             String key = SkillUtils.generateResourceId(type, resourceName);
             resources.put(key, resource);
@@ -592,17 +570,14 @@ public class SkillZipParser {
     }
     
     /**
-     * check is binary
-     * @param fileName file name
-     * @return
+     * Check whether a resource should be persisted as Base64-encoded binary content.
+     * Backward-compatible facade over {@link ResourceContentEncoder#isBinary(String)}.
+     *
+     * @param fileName resource file name (with extension)
+     * @return {@code true} when the file is not in the text whitelist
      */
     public static boolean isBinaryResource(String fileName) {
-        if (StringUtils.isBlank(fileName) || !fileName.contains(DOT)) {
-            return false;
-        }
-        String ext =
-            fileName.substring(fileName.lastIndexOf(DOT.charAt(0)) + 1).trim().toLowerCase();
-        return BINARY_EXTENSIONS.contains(ext);
+        return ResourceContentEncoder.isBinary(fileName);
     }
     
     private static final class ZipEntryData {

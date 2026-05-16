@@ -36,12 +36,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * AgentSpec zip parser utility. Mirrors {@link SkillZipParser} for HiClaw Worker packages.
@@ -63,13 +60,6 @@ public class AgentSpecZipParser {
     
     private static final String SLASH = "/";
     
-    private static final String DOT = ".";
-    
-    /** Metadata key for binary resources: value "base64" means content is Base64-encoded. */
-    private static final String METADATA_ENCODING = "encoding";
-    
-    private static final String METADATA_ENCODING_BASE64 = "base64";
-    
     /**
      * Maximum total decompressed size allowed (50MB). Prevents Zip Bomb attacks.
      */
@@ -79,26 +69,6 @@ public class AgentSpecZipParser {
      * Maximum number of entries allowed in a ZIP file. Prevents entry-count flooding attacks.
      */
     private static final int MAX_ZIP_ENTRIES = 500;
-    
-    /** File extensions treated as binary; content will be stored as Base64. */
-    private static final Set<String> BINARY_EXTENSIONS = new HashSet<>();
-    
-    static {
-        BINARY_EXTENSIONS.add("ttf");
-        BINARY_EXTENSIONS.add("otf");
-        BINARY_EXTENSIONS.add("woff");
-        BINARY_EXTENSIONS.add("woff2");
-        BINARY_EXTENSIONS.add("eot");
-        BINARY_EXTENSIONS.add("png");
-        BINARY_EXTENSIONS.add("jpg");
-        BINARY_EXTENSIONS.add("jpeg");
-        BINARY_EXTENSIONS.add("gif");
-        BINARY_EXTENSIONS.add("webp");
-        BINARY_EXTENSIONS.add("ico");
-        BINARY_EXTENSIONS.add("cur");
-        BINARY_EXTENSIONS.add("pdf");
-        BINARY_EXTENSIONS.add("bin");
-    }
     
     /**
      * Parse AgentSpec from zip file bytes. Zip size must not exceed {@link Constants.AgentSpecs#MAX_UPLOAD_ZIP_BYTES}.
@@ -332,21 +302,14 @@ public class AgentSpecZipParser {
                 resourceName = parts[parts.length - 1];
             }
             
-            boolean isBinary = isBinaryResource(resourceName);
-            String content;
-            Map<String, Object> metadata = new HashMap<>(4);
-            if (isBinary) {
-                content = Base64.getEncoder().encodeToString(entry.data);
-                metadata.put(METADATA_ENCODING, METADATA_ENCODING_BASE64);
-            } else {
-                content = new String(entry.data, StandardCharsets.UTF_8);
-            }
+            ResourceContentEncoder.EncodedContent encoded =
+                ResourceContentEncoder.encode(entry.data, resourceName);
             
             AgentSpecResource resource = new AgentSpecResource();
             resource.setName(resourceName);
             resource.setType(type);
-            resource.setContent(content);
-            resource.setMetadata(metadata.isEmpty() ? null : metadata);
+            resource.setContent(encoded.getContent());
+            resource.setMetadata(encoded.getMetadata());
             String key = AgentSpecUtils.generateResourceId(type, resourceName);
             resources.put(key, resource);
         }
@@ -365,15 +328,6 @@ public class AgentSpecZipParser {
             return "tool-analysis";
         }
         return "";
-    }
-    
-    private static boolean isBinaryResource(String fileName) {
-        if (StringUtils.isBlank(fileName) || !fileName.contains(DOT)) {
-            return false;
-        }
-        String ext =
-            fileName.substring(fileName.lastIndexOf(DOT.charAt(0)) + 1).trim().toLowerCase();
-        return BINARY_EXTENSIONS.contains(ext);
     }
     
     /**
