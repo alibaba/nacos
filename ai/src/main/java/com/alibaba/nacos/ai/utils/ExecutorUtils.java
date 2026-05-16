@@ -38,16 +38,34 @@ public final class ExecutorUtils {
         "nacos.ai.skill.storage.io.concurrency";
     
     /**
+     * System config key for async concurrency when persisting AgentSpec resource files to storage.
+     */
+    public static final String AGENTSPEC_STORAGE_IO_CONCURRENCY_CONFIG_KEY =
+        "nacos.ai.agentspec.storage.io.concurrency";
+    
+    /**
      * Default concurrency for async skill resource persistence.
      */
     private static final int DEFAULT_SKILL_STORAGE_IO_CONCURRENCY =
         PropertyUtils.getProcessorsCount();
     
+    /**
+     * Default concurrency for async AgentSpec resource persistence.
+     */
+    private static final int DEFAULT_AGENTSPEC_STORAGE_IO_CONCURRENCY =
+        PropertyUtils.getProcessorsCount();
+    
     private static final ExecutorService SKILL_STORAGE_IO_EXECUTOR =
         ExecutorFactory.Managed.newFixedExecutorService(
             ExecutorUtils.class.getCanonicalName(),
-            resolveStorageIoConcurrency(),
+            resolveSkillStorageIoConcurrency(),
             new NameThreadFactory("com.alibaba.nacos.ai.skill.storage-io"));
+    
+    private static final ExecutorService AGENTSPEC_STORAGE_IO_EXECUTOR =
+        ExecutorFactory.Managed.newFixedExecutorService(
+            ExecutorUtils.class.getCanonicalName(),
+            resolveAgentSpecStorageIoConcurrency(),
+            new NameThreadFactory("com.alibaba.nacos.ai.agentspec.storage-io"));
     
     /**
      * Executor for async storage IO of skill resources.
@@ -56,13 +74,30 @@ public final class ExecutorUtils {
         return SKILL_STORAGE_IO_EXECUTOR;
     }
     
-    private static int resolveStorageIoConcurrency() {
+    /**
+     * Executor for async storage IO of AgentSpec resources.
+     */
+    public static ExecutorService getAgentSpecStorageIoExecutor() {
+        return AGENTSPEC_STORAGE_IO_EXECUTOR;
+    }
+    
+    private static int resolveSkillStorageIoConcurrency() {
         String val = EnvUtil.getProperty(SKILL_STORAGE_IO_CONCURRENCY_CONFIG_KEY,
             String.valueOf(DEFAULT_SKILL_STORAGE_IO_CONCURRENCY));
         try {
             return Integer.max(1, Integer.parseInt(val));
         } catch (Exception ignored) {
             return DEFAULT_SKILL_STORAGE_IO_CONCURRENCY;
+        }
+    }
+    
+    private static int resolveAgentSpecStorageIoConcurrency() {
+        String val = EnvUtil.getProperty(AGENTSPEC_STORAGE_IO_CONCURRENCY_CONFIG_KEY,
+            String.valueOf(DEFAULT_AGENTSPEC_STORAGE_IO_CONCURRENCY));
+        try {
+            return Integer.max(1, Integer.parseInt(val));
+        } catch (Exception ignored) {
+            return DEFAULT_AGENTSPEC_STORAGE_IO_CONCURRENCY;
         }
     }
 }

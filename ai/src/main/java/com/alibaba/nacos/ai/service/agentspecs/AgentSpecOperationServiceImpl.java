@@ -31,6 +31,7 @@ import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
 import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
+import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
@@ -61,6 +62,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 
 /**
  * AgentSpec operation service implementation. Mirrors {@code SkillOperationServiceImpl} with AgentSpec types.
@@ -125,29 +129,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         long uniformId = System.currentTimeMillis();
         String currentUser = VisibilityHelper.resolveCurrentIdentity();
         
-        // 1) write storage for draft version
-        byte[] mainContent = buildMainContent(agentSpec, uniformId);
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
-            namespaceId,
-            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
-            NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
-        storageRouter.route(mainKey).save(mainKey, mainContent);
-        
-        if (agentSpec.getResource() != null && !agentSpec.getResource().isEmpty()) {
-            for (Map.Entry<String, AgentSpecResource> entry : agentSpec.getResource().entrySet()) {
-                AgentSpecResource resource = entry.getValue();
-                String path =
-                    NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(resource.getType(),
-                        resource.getName());
-                byte[] resourceContent = buildResourceContent(resource, uniformId);
-                StorageKey resourceKey =
-                    NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
-                        namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
-                        agentSpecName, version,
-                        path);
-                storageRouter.route(resourceKey).save(resourceKey, resourceContent);
-            }
-        }
+        // 1) write storage for draft version (main config + resources persisted concurrently)
+        saveAgentSpecFilesConcurrently(namespaceId, agentSpec, version, uniformId);
         
         // 2) insert draft version row
         resourceManager.insertVersionRow(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC,
@@ -1151,18 +1134,45 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      * Write all AgentSpec files (main config + resources) to storage.
      * Main config is serialized as JSON containing name, description, content, and resource references.
      * Each resource file is serialized as JSON with a uniformId for consistency tracking.
+     *
+     * <p>Files are persisted concurrently via a dedicated IO executor to reduce latency
+     * when AgentSpec contains multiple resource files. Mirrors the Skill implementation.</p>
      */
     private void writeAgentSpecToStorage(String namespaceId, AgentSpec agentSpec, String version,
         long uniformId)
         throws NacosException {
-        // Step 1: Serialize and store main config file (manifest.json), containing name/description/content and resource reference list
+        saveAgentSpecFilesConcurrently(namespaceId, agentSpec, version, uniformId);
+    }
+    
+    /**
+     * Persist AgentSpec main config (manifest.json) and all resource files concurrently.
+     *
+     * <p>Each file (main + N resources) is submitted to {@link ExecutorUtils#getAgentSpecStorageIoExecutor()}
+     * and waited on via {@link CompletableFuture#allOf}. Underlying {@link NacosException}s thrown from
+     * individual save tasks are unwrapped from {@link CompletionException} and rethrown to keep the
+     * original exception semantics aligned with the previous serial implementation.</p>
+     */
+    private void saveAgentSpecFilesConcurrently(String namespaceId, AgentSpec agentSpec,
+        String version, long uniformId) throws NacosException {
+        String provider = resolveStorageProvider();
+        String agentSpecName = agentSpec.getName();
+        Executor executor = ExecutorUtils.getAgentSpecStorageIoExecutor();
+        List<CompletableFuture<Void>> tasks = new ArrayList<>();
+        
+        // 1) Main config file (manifest.json)
         byte[] mainContent = buildMainContent(agentSpec, uniformId);
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
-            namespaceId,
-            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpec.getName(), version,
+        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
+            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
             NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
-        storageRouter.route(mainKey).save(mainKey, mainContent);
-        // Step 2: Serialize and store each resource file (each resource carries a uniformId for consistency tracking)
+        tasks.add(CompletableFuture.runAsync(() -> {
+            try {
+                storageRouter.route(mainKey).save(mainKey, mainContent);
+            } catch (NacosException e) {
+                throw new CompletionException(e);
+            }
+        }, executor));
+        
+        // 2) Resource files (each carries a uniformId for consistency tracking)
         if (agentSpec.getResource() != null && !agentSpec.getResource().isEmpty()) {
             for (Map.Entry<String, AgentSpecResource> entry : agentSpec.getResource().entrySet()) {
                 AgentSpecResource resource = entry.getValue();
@@ -1170,13 +1180,27 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                     NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(resource.getType(),
                         resource.getName());
                 byte[] content = buildResourceContent(resource, uniformId);
-                StorageKey resourceKey =
-                    NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
-                        namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
-                        agentSpec.getName(),
-                        version, path);
-                storageRouter.route(resourceKey).save(resourceKey, content);
+                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(provider,
+                    namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                    agentSpecName, version, path);
+                tasks.add(CompletableFuture.runAsync(() -> {
+                    try {
+                        storageRouter.route(resourceKey).save(resourceKey, content);
+                    } catch (NacosException e) {
+                        throw new CompletionException(e);
+                    }
+                }, executor));
             }
+        }
+        
+        try {
+            CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+        } catch (CompletionException ex) {
+            Throwable cause = ex.getCause();
+            if (cause instanceof NacosException) {
+                throw (NacosException) cause;
+            }
+            throw ex;
         }
     }
     
