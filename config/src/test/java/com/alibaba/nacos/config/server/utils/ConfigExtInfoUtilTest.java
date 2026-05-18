@@ -146,4 +146,25 @@ class ConfigExtInfoUtilTest {
         assertNotNull(result);
         assertTrue(result.contains("c_desc"));
     }
+    
+    @Test
+    void testExt4GrayWithPartialGrayRule() {
+        String partialGrayRule = "{\"type\":\"tag\"}";
+        String result =
+            ConfigExtInfoUtil.getExtInfoFromGrayInfo("gray1", partialGrayRule, "user1");
+        assertNotNull(result);
+        assertTrue(result.contains("type"));
+        assertTrue(result.contains("tag"));
+    }
+    
+    @Test
+    void testExt4GrayWithOnlyExprAndVersion() {
+        String partialGrayRule =
+            "{\"expr\":\"ip=1.1.1.1\",\"version\":\"v1\"}";
+        String result =
+            ConfigExtInfoUtil.getExtInfoFromGrayInfo("gray2", partialGrayRule, "user2");
+        assertNotNull(result);
+        assertTrue(result.contains("expr"));
+        assertTrue(result.contains("version"));
+    }
 }

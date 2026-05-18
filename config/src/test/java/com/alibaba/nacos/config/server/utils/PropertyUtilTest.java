@@ -31,6 +31,8 @@ import java.io.File;
 import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(SpringExtension.class)
@@ -131,4 +133,59 @@ class PropertyUtilTest {
         }
     }
     
+    @Test
+    void testIsStandaloneMode() {
+        envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
+        assertTrue(PropertyUtil.isStandaloneMode());
+        
+        envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(false);
+        assertFalse(PropertyUtil.isStandaloneMode());
+    }
+    
+    @Test
+    void testSetConfigRententionDaysInvalid() throws Exception {
+        envUtilMockedStatic.when(
+            () -> EnvUtil.getProperty(eq("nacos.config.retention.days")))
+            .thenReturn("not_a_number");
+        
+        int originalDays = PropertyUtil.getConfigRententionDays();
+        
+        java.lang.reflect.Method m =
+            PropertyUtil.class.getDeclaredMethod("setConfigRententionDays");
+        m.setAccessible(true);
+        m.invoke(new PropertyUtil());
+        
+        assertEquals(originalDays, PropertyUtil.getConfigRententionDays());
+    }
+    
+    @Test
+    void testSetConfigRententionDaysZero() throws Exception {
+        envUtilMockedStatic.when(
+            () -> EnvUtil.getProperty(eq("nacos.config.retention.days")))
+            .thenReturn("0");
+        
+        int originalDays = PropertyUtil.getConfigRententionDays();
+        
+        java.lang.reflect.Method m =
+            PropertyUtil.class.getDeclaredMethod("setConfigRententionDays");
+        m.setAccessible(true);
+        m.invoke(new PropertyUtil());
+        
+        assertEquals(originalDays, PropertyUtil.getConfigRententionDays());
+    }
+    
+    @Test
+    void testGetStringNonNull() throws Exception {
+        envUtilMockedStatic.when(
+            () -> EnvUtil.getProperty(eq("test.key.existing")))
+            .thenReturn("actual_value");
+        
+        java.lang.reflect.Method m =
+            PropertyUtil.class.getDeclaredMethod("getString", String.class,
+                String.class);
+        m.setAccessible(true);
+        String result = (String) m.invoke(new PropertyUtil(), "test.key.existing",
+            "default");
+        assertEquals("actual_value", result);
+    }
 }
