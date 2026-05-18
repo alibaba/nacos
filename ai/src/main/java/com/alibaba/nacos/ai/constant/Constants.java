@@ -176,7 +176,13 @@ public class Constants {
         public static final String AGENTSPEC_MAIN_DATA_ID = "manifest.json";
         
         /**
-         * Max allowed size for agentspec zip upload (50MB). Exceeding this will result in a clear error.
+         * Default max allowed size for agentspec zip upload (50MB).
+         *
+         * <p>Runtime callers should use
+         * {@code com.alibaba.nacos.ai.utils.AgentSpecZipParser#resolveMaxUploadBytes()} instead,
+         * which honors the {@code nacos.ai.agentspec.zip.max-upload-size-mb} property when an
+         * operator needs to raise this cap. This constant is preserved as the historical default
+         * and for backward compatibility with callers outside the AgentSpec upload path.
          */
         public static final long MAX_UPLOAD_ZIP_BYTES = 50L * 1024 * 1024;
         
