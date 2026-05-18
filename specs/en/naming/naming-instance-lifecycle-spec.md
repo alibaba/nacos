@@ -56,6 +56,9 @@ Instance registration must:
 7. update service indexes and service storage through Naming events;
 8. publish trace events for audit and diagnostics.
 
+Naming events follow the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
+
 Ephemeral-service registration is supported through gRPC and HTTP Open/Admin
 APIs. Persistent-service registration is supported through the persistent
 request path and may fall back to HTTP compatibility when the server does not
@@ -132,4 +135,5 @@ events needed by subscribers, indexes, metadata cleanup, and trace.
 - [Naming Resource Spec](naming-resource-spec.md)
 - [Naming Health And Protection Spec](naming-health-protection-spec.md)
 - [Naming Consistency And Client State Spec](naming-consistency-client-spec.md)
+- [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)
 - [Trace Plugin Spec](../plugin/trace-plugin-spec.md)

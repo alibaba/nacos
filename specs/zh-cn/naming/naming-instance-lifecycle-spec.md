@@ -49,6 +49,8 @@ Admin service 创建会创建 service 元数据和 service singleton。创建的
 7. 通过 Naming 事件更新 service 索引和 service storage；
 8. 发布 trace 事件用于审计和诊断。
 
+Naming 事件遵循[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。
+
 临时服务注册通过 gRPC 和 HTTP Open/Admin API 支持。持久服务注册通过 persistent request 路径支持；当
 服务端未声明支持 gRPC 持久实例能力时，客户端可以回退到 HTTP 兼容路径。
 
@@ -107,4 +109,5 @@ Naming 清理包括：
 - [Naming 资源规范](naming-resource-spec.md)
 - [Naming 健康检查与保护规范](naming-health-protection-spec.md)
 - [Naming 一致性与客户端状态规范](naming-consistency-client-spec.md)
+- [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)
 - [Trace 插件规范](../plugin/trace-plugin-spec.md)

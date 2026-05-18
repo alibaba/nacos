@@ -48,7 +48,8 @@ service scope, cluster, IP, port, and service type.
 
 Client state is the source for publisher and subscriber indexes. Indexes are
 derived serving state and may be rebuilt from client state, metadata snapshots,
-and events.
+and events. Local Naming event behavior follows the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 
 The main publish-to-push flow is:
 
@@ -149,3 +150,5 @@ They must not be used as server-side persistence.
 - [AP Consistency Spec](../design/foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](../design/foundation-cp-consistency-spec.md)
 - [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)
+- [Task Execution Spec](../design/foundation-task-execution-spec.md)
+- [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)

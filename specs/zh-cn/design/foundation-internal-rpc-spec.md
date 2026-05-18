@@ -161,10 +161,13 @@ Cluster RPC 调用方必须定义自己的重试或补偿行为。
 - 异步调用必须定义 callback 行为、超时处理和重试调度；
 - 超时或传输失败不能证明远端领域操作一定没有发生；
 - response success 表示单个目标节点上的 handler 级成功，不表示全局收敛；
-- 后台重试任务必须幂等，或由时间戳、版本、操作类型或领域状态保护。
+- 后台重试任务必须按[任务执行规范](foundation-task-execution-spec.md)保持幂等，或由时间戳、版本、
+  操作类型或领域状态保护。
 
 例如 Config change sync 可以通过 async notify task 路径重试；Naming Distro verify 失败可以产生
-领域事件并调度修复。这些重试规则属于 Config 和 Naming 一致性规范。
+领域事件并调度修复。本地事件行为由
+[事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)定义。这些重试规则属于 Config
+和 Naming 一致性规范。
 
 ## 9. 边界规则
 
@@ -183,6 +186,8 @@ Cluster RPC 调用方必须定义自己的重试或补偿行为。
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [CP 一致性规范](foundation-cp-consistency-spec.md)
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
+- [任务执行规范](foundation-task-execution-spec.md)
+- [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [鉴权与权限规范](../auth/auth-permission-spec.md)
 - [Config 规范](../config/config-spec.md)

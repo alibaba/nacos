@@ -71,7 +71,8 @@ Gray publish must:
 - enforce the maximum gray-version count, default `10` through
   `nacos.config.gray.version.max.count`;
 - persist gray content and rule metadata;
-- publish a Config change event with the affected `grayName`;
+- publish a Config change event with the affected `grayName`, following the
+  [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md);
 - record persistence trace with a gray-specific event type.
 
 Deleting a gray variant removes only that variant and not the formal config.

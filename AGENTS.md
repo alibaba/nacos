@@ -113,6 +113,7 @@ English:
 
 - Design foundation:
   [Nacos Design Spec](./specs/en/design/nacos-design-spec.md),
+  [Resource Model Spec](./specs/en/design/resource-model-spec.md),
   [Foundation Capabilities Spec](./specs/en/design/foundation-capabilities-spec.md),
   [Cluster Membership Spec](./specs/en/design/foundation-cluster-membership-spec.md),
   [Remote Connection Lifecycle Spec](./specs/en/design/foundation-remote-connection-spec.md),
@@ -120,8 +121,9 @@ English:
   [AP Consistency Spec](./specs/en/design/foundation-ap-consistency-spec.md),
   [CP Consistency Spec](./specs/en/design/foundation-cp-consistency-spec.md),
   [Persistence And Dump Spec](./specs/en/design/foundation-persistence-dump-spec.md),
-  [Core Capabilities Spec](./specs/en/design/core-capabilities-spec.md),
-  [Resource Model Spec](./specs/en/design/resource-model-spec.md)
+  [Task Execution Spec](./specs/en/design/foundation-task-execution-spec.md),
+  [Event Dispatch And NotifyCenter Spec](./specs/en/design/foundation-event-dispatch-spec.md),
+  [Core Capabilities Spec](./specs/en/design/core-capabilities-spec.md)
 - Interface model:
   [HTTP API Spec](./specs/en/http-api/api-spec.md),
   [Authorization Spec](./specs/en/http-api/authorization-spec.md),
@@ -160,6 +162,7 @@ Simplified Chinese:
 
 - 设计基础：
   [Nacos 设计规范](./specs/zh-cn/design/nacos-design-spec.md)，
+  [资源模型规范](./specs/zh-cn/design/resource-model-spec.md)，
   [基础能力规范](./specs/zh-cn/design/foundation-capabilities-spec.md)，
   [集群成员规范](./specs/zh-cn/design/foundation-cluster-membership-spec.md)，
   [远程连接生命周期规范](./specs/zh-cn/design/foundation-remote-connection-spec.md)，
@@ -167,8 +170,9 @@ Simplified Chinese:
   [AP 一致性规范](./specs/zh-cn/design/foundation-ap-consistency-spec.md)，
   [CP 一致性规范](./specs/zh-cn/design/foundation-cp-consistency-spec.md)，
   [持久化与 Dump 规范](./specs/zh-cn/design/foundation-persistence-dump-spec.md)，
-  [核心功能规范](./specs/zh-cn/design/core-capabilities-spec.md)，
-  [资源模型规范](./specs/zh-cn/design/resource-model-spec.md)
+  [任务执行规范](./specs/zh-cn/design/foundation-task-execution-spec.md)，
+  [事件分发与 NotifyCenter 规范](./specs/zh-cn/design/foundation-event-dispatch-spec.md)，
+  [核心功能规范](./specs/zh-cn/design/core-capabilities-spec.md)
 - 接口模型：
   [HTTP API 规范](./specs/zh-cn/http-api/api-spec.md)，
   [鉴权规范](./specs/zh-cn/http-api/authorization-spec.md)，

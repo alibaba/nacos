@@ -66,7 +66,8 @@ namespaceId -> groupName -> dataId -> grayName
 - 校验规则类型、版本、表达式和优先级；
 - 执行最大灰度版本数限制，默认通过 `nacos.config.gray.version.max.count` 配置为 `10`；
 - 持久化灰度内容和规则元数据；
-- 发布携带对应 `grayName` 的 Config 变更事件；
+- 发布携带对应 `grayName` 的 Config 变更事件，并遵循
+  [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)；
 - 记录灰度专用事件类型的持久化 trace。
 
 删除灰度版本只移除该版本，不删除正式配置。

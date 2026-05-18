@@ -196,11 +196,14 @@ Rules:
 - response success means handler-level success for one target node, not global
   convergence;
 - background retry tasks must be idempotent or guarded by timestamp, version,
-  operation type, or domain state.
+  operation type, or domain state, following the
+  [Task Execution Spec](foundation-task-execution-spec.md).
 
 For example, Config change sync may be retried through its async notify task
 path, while Naming Distro verify failures may emit domain events and schedule
-repair. Those retry rules belong to the Config and Naming consistency specs.
+repair. Local event behavior is defined by the
+[Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
+Those retry rules belong to the Config and Naming consistency specs.
 
 ## 9. Boundary Rules
 
@@ -225,6 +228,8 @@ repair. Those retry rules belong to the Config and Naming consistency specs.
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
+- [Task Execution Spec](foundation-task-execution-spec.md)
+- [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [Auth And Permission Spec](../auth/auth-permission-spec.md)
 - [Config Spec](../config/config-spec.md)

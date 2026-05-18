@@ -52,6 +52,10 @@ database queries.
 After a successful write, Config publishes a change event. The dump service
 turns the event into a dump task. The task reloads the affected formal or gray
 record from persistence and updates the local cache and local dump file.
+Local event behavior is defined by the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md),
+and dump task behavior is defined by the
+[Task Execution Spec](../design/foundation-task-execution-spec.md).
 
 Dump must ignore stale timestamps and preserve newer local state. If the md5 is
 unchanged but the timestamp is newer, it updates timestamp state without
@@ -73,8 +77,10 @@ domain-specific consistency and cluster spec. The embedded storage CP foundation
 is defined by the [CP Consistency Spec](../design/foundation-cp-consistency-spec.md),
 and Config Notify propagation is defined by the
 [AP Consistency Spec](../design/foundation-ap-consistency-spec.md). Persistence,
-dump, and task boundaries are defined by the
-[Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
+dump, task, and event boundaries are defined by the
+[Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md),
+[Task Execution Spec](../design/foundation-task-execution-spec.md), and
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 
 ## 5. History
 
@@ -117,4 +123,6 @@ serving state.
 - [CP Consistency Spec](../design/foundation-cp-consistency-spec.md)
 - [AP Consistency Spec](../design/foundation-ap-consistency-spec.md)
 - [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)
+- [Task Execution Spec](../design/foundation-task-execution-spec.md)
+- [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)
 - [Datasource Dialect Plugin Spec](../plugin/datasource-dialect-plugin-spec.md)

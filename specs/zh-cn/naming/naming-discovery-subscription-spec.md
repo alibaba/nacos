@@ -38,7 +38,8 @@ metadata 等管理视图。这些管理视图不得重新定义运行时发现�
 
 gRPC 订阅会在调用方连接下记录 subscriber，并返回当前 `ServiceInfo` 视图。后续 service 变化会推送
 给已订阅客户端。取消订阅会移除 subscriber；当本地没有 listener 时，客户端应停止该 service 的
-服务端推送。
+服务端推送。服务端变更事件遵循
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。
 
 Java SDK 会尽可能将同一 service 的多个本地 listener 映射成一个服务端订阅。本地 listener 选择由
 客户端侧 `NamingSelector` wrapper 完成，规则见
@@ -60,6 +61,8 @@ HTTP Open API 不支持长轮询或推送订阅。自定义 HTTP 客户端应显
 
 客户端可以在订阅建立、重连、缓存缺失或轮询兜底时重新查询服务端。本地磁盘缓存是恢复和 failover
 辅助，不是服务端持久化数据源。
+
+服务端推送 fan-out 和重试任务必须遵循[任务执行规范](../design/foundation-task-execution-spec.md)。
 
 ## 4. 模糊订阅
 
@@ -97,5 +100,7 @@ Failover 数据是客户端应急视图。它不得改变服务端资源模型�
 
 - [Naming 资源规范](naming-resource-spec.md)
 - [Naming 健康检查与保护规范](naming-health-protection-spec.md)
+- [任务执行规范](../design/foundation-task-execution-spec.md)
+- [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [SDK 规范](../sdk/sdk-spec.md)

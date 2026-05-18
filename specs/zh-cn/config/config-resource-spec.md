@@ -65,7 +65,8 @@ namespaceId -> groupName -> dataId
 | `createTime` / `modifyTime` | 创建和修改时间。 | 否 |
 
 元数据更新不得创建新的 Config 资源身份。元数据更新应发布普通 Config 变更事件，使依赖元数据的
-监听方可以刷新视图。
+监听方可以刷新视图。本地事件投递由
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义。
 
 ## 4. 校验规则
 
@@ -103,3 +104,4 @@ dump 和模糊订阅状态。该派生 key 是实现细节，新 API 或 SDK 契
 - [Config 发布与查询规范](config-publish-query-spec.md)
 - [Config 灰度发布规范](config-gray-release-spec.md)
 - [Config 容量与运维规范](config-capacity-ops-spec.md)
+- [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)

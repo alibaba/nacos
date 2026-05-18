@@ -127,7 +127,8 @@ Member 健康是本地对服务端 peer 的观测。它不能替代 AP/CP 协议
 ## 6. Member Change 事件
 
 `MembersChangeEvent` 是携带有效 member 视图和可选 trigger member 的进程内事件。
-`MemberChangeListener` 订阅该事件，并默认忽略过期事件。
+`MemberChangeListener` 订阅该事件，并默认忽略过期事件。通用本地事件语义由
+[事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)定义。
 
 已知使用方包括：
 
@@ -162,6 +163,7 @@ Member 健康是本地对服务端 peer 的观测。它不能替代 AP/CP 协议
 - [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [CP 一致性规范](foundation-cp-consistency-spec.md)
+- [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
 - [寻址插件规范](../plugin/addressing-plugin-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [Control 插件规范](../plugin/control-plugin-spec.md)

@@ -42,7 +42,9 @@ must not redefine runtime discovery semantics.
 gRPC subscription records a subscriber under the caller connection and returns
 the current `ServiceInfo` view. Later service changes are pushed to subscribed
 clients. Unsubscribe removes the subscriber and stops server push for that
-client and service when no local listener remains.
+client and service when no local listener remains. Server-side change events
+follow the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 
 The Java SDK maps multiple local listeners for the same service to one server
 subscription where possible. Local listener selection is performed by
@@ -66,6 +68,9 @@ Server push updates the client `ServiceInfo` cache. The Java SDK:
 Clients may re-query the server on subscription setup, reconnect, cache miss, or
 polling fallback. Local disk cache is a recovery and failover aid, not a
 durable server-side source of truth.
+
+Server push fan-out and retry work must follow the
+[Task Execution Spec](../design/foundation-task-execution-spec.md).
 
 ## 4. Fuzzy Watch
 
@@ -110,5 +115,7 @@ resource model, service metadata, or instance lifecycle.
 
 - [Naming Resource Spec](naming-resource-spec.md)
 - [Naming Health And Protection Spec](naming-health-protection-spec.md)
+- [Task Execution Spec](../design/foundation-task-execution-spec.md)
+- [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [SDK Spec](../sdk/sdk-spec.md)

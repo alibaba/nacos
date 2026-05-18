@@ -46,7 +46,8 @@ HTTP clients, 1.x clients, and other clients that do not use gRPC keep
 ephemeral instances alive by reporting heartbeats. Beat check tasks inspect the
 last heartbeat time. If an instance is unhealthy for longer than its heartbeat
 timeout, it may be marked unhealthy. If it exceeds the delete timeout and
-expiration is enabled, it may be removed.
+expiration is enabled, it may be removed. Beat check task scheduling must
+follow the [Task Execution Spec](../design/foundation-task-execution-spec.md).
 
 Heartbeat timing can be customized by reserved metadata keys:
 
@@ -61,7 +62,8 @@ Heartbeat timing can be customized by reserved metadata keys:
 gRPC clients keep ephemeral instances alive through the
 [remote connection lifecycle](../design/foundation-remote-connection-spec.md).
 Naming observes connection close and release events to remove or redo runtime
-publisher/subscriber state.
+publisher/subscriber state. Local event delivery follows the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 
 The gRPC transport has its own heartbeat and liveness detection to avoid
 half-open connections. That heartbeat is hidden behind the gRPC connection
@@ -121,3 +123,5 @@ not an assertion that the underlying instances are actually healthy.
 - [Naming Resource Spec](naming-resource-spec.md)
 - [Naming Discovery And Subscription Spec](naming-discovery-subscription-spec.md)
 - [Naming Metadata And Selector Spec](naming-metadata-selector-spec.md)
+- [Task Execution Spec](../design/foundation-task-execution-spec.md)
+- [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)

@@ -46,6 +46,8 @@ Repository 接口定义 Config 语义。具体 SQL 和数据库方言属于实�
 
 写入成功后，Config 发布变更事件。Dump service 将事件转化为 dump 任务。任务从持久化层重新加载
 受影响的正式或灰度记录，并更新本地缓存和本地 dump 文件。
+本地事件行为由[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义，
+dump task 行为由[任务执行规范](../design/foundation-task-execution-spec.md)定义。
 
 Dump 必须忽略过期时间戳，并保留更新的本地状态。如果 md5 未变化但时间戳更新，只更新时间戳状态
 而不重写内容。如果内容变化，则同时更新本地文件内容和 JVM md5 状态。
@@ -60,8 +62,10 @@ Config 支持嵌入式和外部存储模式：
 
 详细 Config 一致性契约预留给后续领域化的一致性与集群规范。嵌入式存储的 CP 基础见
 [CP 一致性规范](../design/foundation-cp-consistency-spec.md)，Config Notify 传播见
-[AP 一致性规范](../design/foundation-ap-consistency-spec.md)。持久化、dump 和任务边界由
-[持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
+[AP 一致性规范](../design/foundation-ap-consistency-spec.md)。持久化、dump、任务和事件边界由
+[持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)、
+[任务执行规范](../design/foundation-task-execution-spec.md)和
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义。
 
 ## 5. 历史
 
@@ -98,4 +102,6 @@ Admin 本地缓存操作可以触发从持久化层到本地缓存的全量 dump
 - [CP 一致性规范](../design/foundation-cp-consistency-spec.md)
 - [AP 一致性规范](../design/foundation-ap-consistency-spec.md)
 - [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)
+- [任务执行规范](../design/foundation-task-execution-spec.md)
+- [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)
 - [数据源方言插件规范](../plugin/datasource-dialect-plugin-spec.md)

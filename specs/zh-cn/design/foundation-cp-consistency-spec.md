@@ -80,7 +80,8 @@ Processor 规则：
 - `onRequest(ReadRequest)` 必须按照该 group 的读规则返回响应；
 - group 需要 snapshot 恢复时，`loadSnapshotOperate()` 必须声明 snapshot operation；
 - processor 必须将未知 operation 作为显式失败处理；
-- processor 只能在 committed apply 更新本地状态之后发布领域事件。
+- processor 只能在 committed apply 更新本地状态之后，按
+  [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)发布领域事件。
 
 Processor 拥有领域语义。CP 基础层拥有 group 路由、leader 转发、日志提交、read-index 处理、
 metadata 和 snapshot 集成。
@@ -161,6 +162,7 @@ CP 基础能力和[持久化与 Dump 规范](foundation-persistence-dump-spec.md
 - [基础能力规范](foundation-capabilities-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
+- [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
 - [集群成员规范](foundation-cluster-membership-spec.md)
 - [Config 规范](../config/config-spec.md)
 - [Config 持久化、Dump 与历史规范](../config/config-persistence-history-spec.md)

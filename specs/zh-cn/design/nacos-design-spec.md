@@ -159,7 +159,9 @@ Nacos 模块应遵循以下职责边界：
   [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)定义，AP/CP 一致性边界由
   [AP 一致性规范](foundation-ap-consistency-spec.md)和
   [CP 一致性规范](foundation-cp-consistency-spec.md)定义，持久化与 dump 边界由
-  [持久化与 Dump 规范](foundation-persistence-dump-spec.md)定义，其他基础能力边界由
+  [持久化与 Dump 规范](foundation-persistence-dump-spec.md)定义，任务和事件边界由
+  [任务执行规范](foundation-task-execution-spec.md)和
+  [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)定义，其他基础能力边界由
   [基础能力规范](foundation-capabilities-spec.md)定义。
 - `auth` 和 plugin 模块负责可扩展的安全与策略行为。
 - `maintainer-client` 基于 Admin API 语义暴露类型化 Java 管理入口。
@@ -183,7 +185,9 @@ Nacos 模块应遵循以下职责边界：
 [连接生命周期](foundation-remote-connection-spec.md)、[内部 RPC](foundation-internal-rpc-spec.md)、
 [AP 一致性](foundation-ap-consistency-spec.md)、
 [CP 一致性](foundation-cp-consistency-spec.md)、
-[持久化与 dump](foundation-persistence-dump-spec.md)、任务执行和事件分发的通用基础要求由
+[持久化与 dump](foundation-persistence-dump-spec.md)、
+[任务执行](foundation-task-execution-spec.md)和
+[事件分发](foundation-event-dispatch-spec.md)的通用基础要求由
 [基础能力规范](foundation-capabilities-spec.md)及其子规范定义。
 
 ## 8. 新功能设计规则

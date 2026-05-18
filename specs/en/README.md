@@ -30,6 +30,8 @@ extension mechanisms, and cross-cutting security rules.
 - [AP Consistency Spec](design/foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](design/foundation-cp-consistency-spec.md)
 - [Persistence And Dump Spec](design/foundation-persistence-dump-spec.md)
+- [Task Execution Spec](design/foundation-task-execution-spec.md)
+- [Event Dispatch And NotifyCenter Spec](design/foundation-event-dispatch-spec.md)
 - [Core Capabilities Spec](design/core-capabilities-spec.md)
 
 ## Interface Model

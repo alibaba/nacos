@@ -123,7 +123,8 @@ Local rules are always available as the safe baseline. External rule storage
 must fail closed only when the selected control plugin explicitly requires it.
 
 Rule reloads are published through control rule change events and applied by the
-active managers.
+active managers. Local event dispatch follows the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 
 External rule storage is selected by:
 

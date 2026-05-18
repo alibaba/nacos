@@ -41,7 +41,8 @@ Client id 是内部状态。公开运行时 API 应通过 service scope、cluste
 实例。
 
 Client state 是 publisher 和 subscriber 索引的来源。索引是派生服务状态，可以根据 client state、
-metadata snapshot 和事件重建。
+metadata snapshot 和事件重建。本地 Naming 事件行为遵循
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。
 
 发布到推送的主链路为：
 
@@ -118,3 +119,5 @@ Java SDK 缓存已注册实例和订阅，用于 gRPC 重连后的 redo。Redo �
 - [AP 一致性规范](../design/foundation-ap-consistency-spec.md)
 - [CP 一致性规范](../design/foundation-cp-consistency-spec.md)
 - [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)
+- [任务执行规范](../design/foundation-task-execution-spec.md)
+- [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)

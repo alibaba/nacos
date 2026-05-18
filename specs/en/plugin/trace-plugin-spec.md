@@ -26,6 +26,9 @@ This is a subscriber or broadcast plugin. Multiple subscribers may observe the
 same event. Trace plugins must not own the primary business decision. Common
 plugin lifecycle and state rules are defined by the
 [Nacos Plugin Spec](plugin-spec.md).
+Trace event dispatch runs on Nacos local event infrastructure and must also
+follow the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 
 Unlike generic distributed tracing, Nacos trace events describe Nacos resource
 operations, such as instance registration, service removal, service push, and
@@ -90,6 +93,9 @@ only matching event classes to each plugin subscriber. If `executor()` returns
 `null`, the callback runs in the event dispatch path. Plugins that write to
 remote systems, files, databases, or other slow sinks should return a dedicated
 executor.
+
+The trace publisher is allowed to degrade by dropping trace events under queue
+pressure, as defined by the local event degradation rules.
 
 Trace subscribers are loaded by SPI. Duplicate names in the same type are not
 stable for production use; plugin packages should use unique names.

@@ -32,6 +32,9 @@
 - 记录持久化 trace 数据；
 - 写入成功后发布 Config 变更事件。
 
+Config 变更事件遵循
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。
+
 CAS 发布必须比较请求携带的 `casMd5` 和已存储 md5。md5 不匹配表示资源冲突，不能覆盖已存储配置。
 
 ## 2. 删除
@@ -81,6 +84,7 @@ Config 列表和搜索是管理操作。它们根据 API 支持的范围，对 `
 `namespaceId`、`appName`、`configTags`、`type` 和内容详情进行精确或模糊检索。
 
 搜索必须受队列、线程数、容量和等待时间控制，避免大范围管理查询影响运行时查询和监听链路。
+Executor 和队列边界由[任务执行规范](../design/foundation-task-execution-spec.md)定义。
 
 ## 6. 导入、导出与克隆
 

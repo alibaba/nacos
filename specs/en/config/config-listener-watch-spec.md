@@ -45,16 +45,21 @@ connections that listen to the changed group key and pushes a
 `ConfigChangeNotifyRequest`. Cross-node refresh visibility for Config change
 events is defined by the
 [AP Consistency Spec](../design/foundation-ap-consistency-spec.md).
+The local event dispatch boundary is defined by the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 
 Change push rules:
 
 - push carries the changed Config identity, not authoritative content;
 - clients must query the Config after receiving a change notification;
-- push uses retry and control points;
+- push uses retry, task execution, and control points;
 - if push retry exceeds the configured limit, the server may unregister the
   stale connection;
 - disconnected clients lose in-memory listener state and must re-register after
   reconnect.
+
+Push retry and asynchronous notifier execution must follow the
+[Task Execution Spec](../design/foundation-task-execution-spec.md).
 
 ## 3. Fuzzy Watch
 

@@ -39,7 +39,8 @@ Java SDK selection 过滤。
 
 HTTP 客户端、1.x 客户端以及其他不使用 gRPC 的客户端，通过上报心跳来维持临时实例存活。
 Beat check task 会检查 last heartbeat time。如果实例超过 heartbeat timeout 未恢复，可能被标记为
-unhealthy；如果超过 delete timeout 且过期删除启用，可能被移除。
+unhealthy；如果超过 delete timeout 且过期删除启用，可能被移除。Beat check 任务调度必须遵循
+[任务执行规范](../design/foundation-task-execution-spec.md)。
 
 心跳时间可由保留元数据 key 自定义：
 
@@ -52,7 +53,8 @@ unhealthy；如果超过 delete timeout 且过期删除启用，可能被移除�
 ### 2.2 gRPC 连接存活
 
 gRPC 客户端通过[远程连接生命周期](../design/foundation-remote-connection-spec.md)维持临时实例存活。
-Naming 通过连接关闭和释放事件移除或 redo 运行时 publisher/subscriber 状态。
+Naming 通过连接关闭和释放事件移除或 redo 运行时 publisher/subscriber 状态。本地事件投递遵循
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。
 
 为防止连接假死，gRPC 传输层内部封装了心跳与存活检测。对 Naming 模块来说，这部分能力隐藏在
 gRPC 连接层之后。Naming 应依赖
@@ -98,3 +100,5 @@ Service `protectThreshold` 用于防止发现结果收缩到过少健康实例�
 - [Naming 资源规范](naming-resource-spec.md)
 - [Naming 发现与订阅规范](naming-discovery-subscription-spec.md)
 - [Naming 元数据与 Selector 规范](naming-metadata-selector-spec.md)
+- [任务执行规范](../design/foundation-task-execution-spec.md)
+- [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)

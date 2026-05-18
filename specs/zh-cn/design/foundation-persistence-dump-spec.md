@@ -177,8 +177,10 @@ Durable write or cluster change notification
 - 持久写成功后，领域必须为受影响资源调度 dump refresh；
 - 集群变更通知可以要求 peer 节点从持久化层重新加载本地 dump；通知 payload 不是权威内容；
 - full dump 任务是修复和漂移控制机制；
-- change dump task 应带有 key，使同一资源的重复变更能按 task engine 规则合并或替换；
-- dump apply 必须在本地服务状态更新后，才发布本地变更事件。
+- change dump task 应带有 key，使同一资源的重复变更能按
+  [任务执行](foundation-task-execution-spec.md)规则合并或替换；
+- dump apply 必须在本地服务状态更新后，按
+  [事件分发](foundation-event-dispatch-spec.md)规则发布本地变更事件。
 
 对于当前 Config 实现，运行时客户端读取从本地 cache 和 dump 文件服务。持久化层仍然是持久事实来源。
 
@@ -210,7 +212,8 @@ Durable write or cluster change notification
 - remove dump 必须删除本地磁盘数据并移除 JVM cache 状态；
 - 灰度 dump 还必须在对应字段变化时更新 gray rule、encrypted data key 和灰度排序；
 - 同一资源 key 的 cache 和 dump 变更必须由本地读写锁保护；
-- `LocalDataChangeEvent` 是本地可见性事件，不得视为跨节点复制保证。
+- `LocalDataChangeEvent` 是本地可见性事件，不得视为跨节点复制保证；参见
+  [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)。
 
 如果本地磁盘已满或无法安全保存正式 dump 内容，服务端必须将其视为致命条件，因为运行时查询路径依赖
 本地服务状态。
@@ -246,6 +249,8 @@ Durable write or cluster change notification
 - [CP 一致性规范](foundation-cp-consistency-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)
+- [任务执行规范](foundation-task-execution-spec.md)
+- [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
 - [Config 持久化、Dump 与历史规范](../config/config-persistence-history-spec.md)
 - [Config 监听与 Watch 规范](../config/config-listener-watch-spec.md)
 - [数据源方言插件规范](../plugin/datasource-dialect-plugin-spec.md)

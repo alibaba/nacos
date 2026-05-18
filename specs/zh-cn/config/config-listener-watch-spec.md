@@ -39,15 +39,18 @@ namespaceId -> groupName -> dataId
 
 发布、删除、元数据更新或灰度状态变化成功后，Config 领域发布本地变更事件。gRPC notifier 根据
 变化的 group key 找到监听连接，并推送 `ConfigChangeNotifyRequest`。Config 变更事件的跨节点刷新可见性
-由[AP 一致性规范](../design/foundation-ap-consistency-spec.md)定义。
+由[AP 一致性规范](../design/foundation-ap-consistency-spec.md)定义。本地事件分发边界由
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义。
 
 变更推送规则：
 
 - 推送携带变化的 Config 身份，不携带权威配置内容；
 - 客户端收到变更通知后必须查询 Config；
-- 推送使用重试和 Control 点；
+- 推送使用重试、任务执行和 Control 点；
 - 当推送重试超过配置次数时，服务端可以注销失效连接；
 - 断开的客户端会丢失内存中的监听状态，重连后必须重新注册。
+
+推送重试和异步 notifier 执行必须遵循[任务执行规范](../design/foundation-task-execution-spec.md)。
 
 ## 3. 模糊订阅
 

@@ -29,7 +29,8 @@ Naming 元数据有三类资源层次：
 | Instance metadata | 实例权重、enabled 状态和扩展元数据。 | 运行时注册和管理 API |
 
 元数据不改变 service 身份。元数据变更应发布 service 或 instance information change 事件，使 storage
-索引、推送和诊断可以刷新。
+索引、推送和诊断可以刷新。本地事件投递由
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义。
 
 Naming 同时区分两类元数据来源：
 
@@ -107,3 +108,4 @@ Service metadata、cluster metadata 和 instance metadata 操作通过 CP metada
 - [Naming 资源规范](naming-resource-spec.md)
 - [Naming 健康检查与保护规范](naming-health-protection-spec.md)
 - [Naming 一致性与客户端状态规范](naming-consistency-client-spec.md)
+- [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)

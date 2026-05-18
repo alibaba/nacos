@@ -36,6 +36,9 @@ Publish behavior:
 - records persistence trace data;
 - publishes a Config change event after a successful write.
 
+Config change events follow the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
+
 CAS publish must compare the supplied `casMd5` with the stored md5. A mismatch
 is a resource conflict and must not overwrite the stored config.
 
@@ -98,6 +101,8 @@ conditions over `dataId`, `groupName`, `namespaceId`, `appName`, `configTags`,
 
 Search must be protected by queue, thread, capacity, and wait-time controls so a
 broad management search does not disrupt runtime query and listen paths.
+Executor and queue boundaries are defined by the
+[Task Execution Spec](../design/foundation-task-execution-spec.md).
 
 ## 6. Import, Export, And Clone
 

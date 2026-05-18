@@ -78,7 +78,10 @@ checks do not depend directly on broad database scans.
 
 The persistence layer remains the durable source of truth. The local dump cache
 is a serving and recovery layer and must be refreshed from persistence during
-startup and on change events.
+startup and on change events. Local change event semantics are defined by the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md);
+background dump and refresh execution is defined by the
+[Task Execution Spec](../design/foundation-task-execution-spec.md).
 
 ### 4.3 Content Version By md5
 
@@ -107,7 +110,7 @@ the Config domain:
 | Concern | Rule |
 | --- | --- |
 | Encryption | Config owns content identity and persistence; encryption algorithms are provided by the [Config Encryption Plugin Spec](../plugin/config-encryption-plugin-spec.md). |
-| Config change notification | Config owns change events; external callbacks are provided by the [Config Change Plugin Spec](../plugin/config-change-plugin-spec.md). |
+| Config change notification | Config owns local change events defined by the [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md); external callbacks are provided by the [Config Change Plugin Spec](../plugin/config-change-plugin-spec.md). |
 | Datasource dialect | Config owns repository semantics; SQL dialect behavior is provided by the [Datasource Dialect Plugin Spec](../plugin/datasource-dialect-plugin-spec.md). |
 | Authorization | Config APIs and gRPC handlers use `SignType.CONFIG` and must follow the [Auth And Permission Spec](../auth/auth-permission-spec.md). |
 | Control | High-frequency publish, query, listen, push, and fuzzy watch flows should expose stable control points for the [Control Plugin Spec](../plugin/control-plugin-spec.md). |
@@ -153,3 +156,6 @@ the Config domain:
 Shared datasource, embedded/external storage, repository, dump, and cache
 boundaries are defined by the
 [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
+Shared task execution and local event boundaries are defined by the
+[Task Execution Spec](../design/foundation-task-execution-spec.md) and
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).

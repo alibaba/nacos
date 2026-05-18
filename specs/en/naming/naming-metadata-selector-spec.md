@@ -31,7 +31,8 @@ Naming metadata exists at three resource levels:
 
 Metadata does not change service identity. Metadata changes should publish
 service or instance information change events so storage indexes, push, and
-diagnostics can refresh.
+diagnostics can refresh. Local event delivery is defined by the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 
 Naming also distinguishes two metadata sources:
 
@@ -121,3 +122,4 @@ after recovery.
 - [Naming Resource Spec](naming-resource-spec.md)
 - [Naming Health And Protection Spec](naming-health-protection-spec.md)
 - [Naming Consistency And Client State Spec](naming-consistency-client-spec.md)
+- [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)

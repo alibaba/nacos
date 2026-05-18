@@ -122,3 +122,5 @@ Rules can be reloaded by:
 
 The `external` flag selects whether the reload should read external storage
 when an external rule storage plugin is configured.
+The rule change events are local process events and follow the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).

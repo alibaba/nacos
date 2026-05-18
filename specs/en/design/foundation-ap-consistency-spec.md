@@ -54,6 +54,9 @@ schema state, long-lived permissions, or resources that require a single global
 commit order. Those resources should use the
 [CP Consistency Spec](foundation-cp-consistency-spec.md) or the
 [Persistence And Dump Spec](foundation-persistence-dump-spec.md).
+Delayed task, execute task, and local event rules used by AP paths are defined
+by the [Task Execution Spec](foundation-task-execution-spec.md) and the
+[Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
 
 AP consumers must define:
 
@@ -216,6 +219,8 @@ Rules:
 - [Cluster Membership Spec](foundation-cluster-membership-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
+- [Task Execution Spec](foundation-task-execution-spec.md)
+- [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
 - [Config Spec](../config/config-spec.md)
 - [Config Listener And Watch Spec](../config/config-listener-watch-spec.md)
 - [Naming Consistency And Client State Spec](../naming/naming-consistency-client-spec.md)

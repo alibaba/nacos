@@ -47,6 +47,9 @@ AP 状态适用于具备以下特征的资源：
 AP 状态不适合持久管理元数据、运维覆盖、schema 状态、长期权限，或要求单一全局提交顺序的资源。
 这些资源应使用[CP 一致性规范](foundation-cp-consistency-spec.md)或
 [持久化与 Dump 规范](foundation-persistence-dump-spec.md)。
+AP 路径使用的 delayed task、execute task 和本地事件规则由
+[任务执行规范](foundation-task-execution-spec.md)和
+[事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)定义。
 
 AP 使用方必须定义：
 
@@ -186,6 +189,8 @@ AP 使用方必须处理部分成功。
 - [集群成员规范](foundation-cluster-membership-spec.md)
 - [CP 一致性规范](foundation-cp-consistency-spec.md)
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
+- [任务执行规范](foundation-task-execution-spec.md)
+- [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
 - [Config 规范](../config/config-spec.md)
 - [Config 监听与订阅规范](../config/config-listener-watch-spec.md)
 - [Naming 一致性与客户端状态规范](../naming/naming-consistency-client-spec.md)

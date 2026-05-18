@@ -23,6 +23,8 @@ Trace 插件用于将 Nacos 领域操作事件发布给订阅者。它面向 Nac
 
 这是订阅或广播插件。多个订阅者可以观察同一个事件。Trace 插件不得拥有主业务决策权。
 通用插件生命周期和状态规则由 [Nacos 插件化规范](plugin-spec.md) 定义。
+Trace 事件分发运行在 Nacos 本地事件基础设施之上，并必须遵循
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。
 
 与通用分布式链路追踪不同，Nacos Trace 事件描述的是 Nacos 资源操作，例如实例注册、
 服务删除、服务推送和健康状态变化。它不是应用服务之间调用链的 span。
@@ -81,6 +83,8 @@ Trace 事件携带事件类型、事件时间、命名空间、分组和资源�
 `NacosCombinedTraceSubscriber` 注册领域事件 publisher，并只把匹配的事件类分发给插件
 订阅者。如果 `executor()` 返回 `null`，回调会在事件分发路径中执行。写远端系统、文件、
 数据库或其他慢 sink 的插件应返回专用 executor。
+
+Trace publisher 允许在队列压力下丢弃 trace event 进行降级，具体边界遵循本地事件降级规则。
 
 Trace 订阅者通过 SPI 加载。同一类型内重复名称不适合生产稳定使用，插件包应使用唯一名称。
 

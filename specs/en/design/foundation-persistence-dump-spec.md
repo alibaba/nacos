@@ -219,9 +219,11 @@ Runtime dump rules:
   persistence; the notification payload is not authoritative content;
 - full dump tasks are repair and drift-control mechanisms;
 - change dump tasks should be keyed so repeated changes to the same resource can
-  be merged or replaced according to the task engine;
+  be merged or replaced according to the
+  [task execution](foundation-task-execution-spec.md) rules;
 - dump apply must publish local change events only after local serving state has
-  been updated.
+  been updated, following the
+  [event dispatch](foundation-event-dispatch-spec.md) rules.
 
 For the current Config implementation, runtime client reads are served from local
 cache and dump files. The persistence layer remains the durable source of truth.
@@ -264,7 +266,8 @@ Rules:
 - local read and write locks must protect cache and dump mutation for the same
   resource key;
 - `LocalDataChangeEvent` is a local visibility event and must not be treated as a
-  cross-node replication guarantee.
+  cross-node replication guarantee; see the
+  [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
 
 If local disk is full or cannot safely store formal dump content, the server must
 treat the condition as fatal because the runtime query path depends on local
@@ -309,6 +312,8 @@ Rules:
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md)
+- [Task Execution Spec](foundation-task-execution-spec.md)
+- [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
 - [Config Persistence, Dump, And History Spec](../config/config-persistence-history-spec.md)
 - [Config Listener And Watch Spec](../config/config-listener-watch-spec.md)
 - [Datasource Dialect Plugin Spec](../plugin/datasource-dialect-plugin-spec.md)

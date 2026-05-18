@@ -114,7 +114,8 @@ TPS manager 必须满足：
 规则可以来自本地磁盘存储，也可以来自外部规则存储插件。本地规则始终是安全基线。只有当
 选中的 control 插件明确要求时，外部规则存储失败才应导致 fail closed。
 
-规则重载通过 control 规则变更事件发布，并由当前活跃 manager 应用。
+规则重载通过 control 规则变更事件发布，并由当前活跃 manager 应用。本地事件分发遵循
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。
 
 外部规则存储通过以下配置选择：
 

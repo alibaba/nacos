@@ -91,7 +91,8 @@ Processor rules:
   snapshot recovery;
 - processors must treat unknown operations as explicit failures;
 - processors must publish domain events only after committed apply has updated
-  local state.
+  local state, following the
+  [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
 
 The processor owns domain semantics. The CP foundation owns group routing,
 leader forwarding, log commit, read-index handling, metadata, and snapshot
@@ -193,6 +194,7 @@ built on the CP foundation and the
 - [Foundation Capabilities Spec](foundation-capabilities-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
+- [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
 - [Cluster Membership Spec](foundation-cluster-membership-spec.md)
 - [Config Spec](../config/config-spec.md)
 - [Config Persistence, Dump, And History Spec](../config/config-persistence-history-spec.md)

@@ -67,7 +67,9 @@ Config 内容必须持久化保存。运行时读取通过 Config 缓存和本�
 查询和变更检查依赖大范围数据库查询。
 
 持久化层是可靠的数据源。本地 dump 缓存是服务端查询和恢复层，必须在启动阶段和变更事件后从
-持久化数据刷新。
+持久化数据刷新。本地变更事件语义由
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义；后台 dump
+和刷新执行由[任务执行规范](../design/foundation-task-execution-spec.md)定义。
 
 ### 4.3 以 md5 表达内容版本
 
@@ -92,7 +94,7 @@ Config 可以集成扩展机制，但 Config 领域的归属不转移：
 | 关注点 | 规则 |
 | --- | --- |
 | 加密 | Config 拥有内容身份和持久化；加密算法由[配置加密插件规范](../plugin/config-encryption-plugin-spec.md)定义。 |
-| 配置变更通知 | Config 拥有变更事件；外部回调由[配置变更插件规范](../plugin/config-change-plugin-spec.md)定义。 |
+| 配置变更通知 | Config 拥有由[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义的本地变更事件；外部回调由[配置变更插件规范](../plugin/config-change-plugin-spec.md)定义。 |
 | 数据源方言 | Config 拥有 repository 语义；SQL 方言由[数据源方言插件规范](../plugin/datasource-dialect-plugin-spec.md)定义。 |
 | 鉴权 | Config API 和 gRPC handler 使用 `SignType.CONFIG`，并遵循[鉴权与权限规范](../auth/auth-permission-spec.md)。 |
 | Control | 高频发布、查询、监听、推送和模糊订阅流程应暴露稳定的 Control 点，遵循 [Control 插件规范](../plugin/control-plugin-spec.md)。 |
@@ -127,3 +129,5 @@ Config 可以集成扩展机制，但 Config 领域的归属不转移：
 
 共享 datasource、嵌入式/外部存储、repository、dump 和 cache 边界由
 [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
+共享任务执行和本地事件边界由[任务执行规范](../design/foundation-task-execution-spec.md)和
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义。

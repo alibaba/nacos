@@ -113,3 +113,5 @@ Point name 一旦文档化就必须保持稳定，因为规则文件和外部规
 - 发布 `TpsControlRuleChangeEvent` 或 `ConnectionLimitRuleChangeEvent`。
 
 当配置了外部规则存储插件时，`external` 标记决定是否从外部存储读取规则。
+规则变更事件是进程内本地事件，并遵循
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。

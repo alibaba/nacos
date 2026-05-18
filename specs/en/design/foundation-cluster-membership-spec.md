@@ -150,7 +150,9 @@ resource health.
 
 `MembersChangeEvent` is the local in-process event that carries the effective
 member view and optional trigger members. `MemberChangeListener` subscribes to
-that event and ignores expired events by default.
+that event and ignores expired events by default. General local event semantics
+are defined by the
+[Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
 
 Known consumers include:
 
@@ -190,6 +192,7 @@ Consumers of cluster membership must follow these rules:
 - [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
+- [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
 - [Addressing Plugin Spec](../plugin/addressing-plugin-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [Control Plugin Spec](../plugin/control-plugin-spec.md)

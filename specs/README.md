@@ -33,6 +33,8 @@ Nacos design
      -> AP consistency
      -> CP consistency
      -> Persistence and dump
+     -> Task execution
+     -> Event dispatch and NotifyCenter
   -> Core capabilities and domain capabilities
   -> HTTP / gRPC / SDK interface specs
   -> Extension model
@@ -51,6 +53,8 @@ Nacos 顶层设计
      -> AP 一致性
      -> CP 一致性
      -> 持久化与 dump
+     -> 任务执行
+     -> 事件分发与 NotifyCenter
   -> 核心功能与领域功能
   -> HTTP / gRPC / SDK 接口规范
   -> 扩展模型

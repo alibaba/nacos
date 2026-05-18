@@ -23,9 +23,10 @@ The foundation layer provides infrastructure such as
 [internal RPC and cluster requests](foundation-internal-rpc-spec.md),
 [AP consistency](foundation-ap-consistency-spec.md),
 [CP consistency](foundation-cp-consistency-spec.md),
-[persistence and dump](foundation-persistence-dump-spec.md), task execution, and
-event dispatch. It must support domain semantics without owning Config, Naming,
-AI, or security resource meaning.
+[persistence and dump](foundation-persistence-dump-spec.md),
+[task execution](foundation-task-execution-spec.md), and
+[event dispatch](foundation-event-dispatch-spec.md). It must support domain
+semantics without owning Config, Naming, AI, or security resource meaning.
 
 ## 1. Positioning
 
@@ -55,8 +56,8 @@ validation, authorization, and user-visible semantics.
 | [AP consistency](foundation-ap-consistency-spec.md) | `core.distributed.distro`, Config notify path | Provide Distro runtime data sync and Config Notify-style eventual propagation for AP resources. | Domains must define resource type, owner, operation semantics, retry, verify, repair, and convergence tolerance. |
 | [CP consistency](foundation-cp-consistency-spec.md) | `core.distributed.raft`, `consistency.cp` | Provide Raft/JRaft-backed strongly ordered writes, groups, processors, snapshots, and recovery for durable state. | Domains must define group ownership, request type, snapshot shape, read/write visibility, and unavailable behavior. |
 | [Persistence and dump](foundation-persistence-dump-spec.md) | `persistence`, domain storage modules | Store durable data in embedded or external storage, load local dump data, and recover serving cache. | Domains must define schema, compatibility, data ownership, and whether dump is cache or source of truth. |
-| Task execution | `common.task`, `common.executor`, domain task engines | Run immediate, delayed, retry, merge, batch, and scheduled tasks with bounded resources. | Tasks must be idempotent or explicitly guarded because retries, merge, and node changes can repeat work. |
-| Event dispatch | `common.notify`, domain event publishers | Publish in-process events to subscribers, update indexes, trigger async work, and bridge trace events. | Events are local process facts unless a domain routes them through persistence or cluster protocols. |
+| [Task execution](foundation-task-execution-spec.md) | `common.task`, `common.executor`, domain task engines | Run immediate, delayed, retry, merge, batch, and scheduled tasks with bounded resources. | Tasks must be idempotent or explicitly guarded because retries, merge, and node changes can repeat work. |
+| [Event dispatch](foundation-event-dispatch-spec.md) | `common.notify`, domain event publishers | Publish in-process events to subscribers, update indexes, trigger async work, and bridge trace events. | Events are local process facts unless a domain routes them through persistence or cluster protocols. |
 | Observability hooks | `core.monitor`, `common.trace`, plugin trace/control | Report metrics, traces, queue depth, connection state, and operation events. | Observability must not change resource semantics or become a required control path. |
 
 ## 3. Cluster Membership
@@ -182,6 +183,10 @@ Task rules:
 - task engines should expose metrics or diagnostics for queue length, retry
   count, failures, and execution latency.
 
+Detailed delayed task, execute task, processor, queue, retry, merge, and
+domain-executor rules are defined by the
+[Task Execution Spec](foundation-task-execution-spec.md).
+
 ## 8. Event Dispatch And Message Bus
 
 `NotifyCenter` and domain event publishers provide an in-process event bus. They
@@ -202,6 +207,10 @@ Event rules:
 When a domain requires cross-node event visibility, it must explicitly route the
 state change through persistence, AP consistency, CP consistency, or an
 [internal cluster request](foundation-internal-rpc-spec.md).
+
+Detailed `NotifyCenter`, publisher, subscriber, slow-event, custom publisher,
+and local event semantics are defined by the
+[Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
 
 ## 9. Foundation Boundary Rules
 
@@ -226,6 +235,8 @@ state change through persistence, AP consistency, CP consistency, or an
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
+- [Task Execution Spec](foundation-task-execution-spec.md)
+- [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [Plugin Spec](../plugin/plugin-spec.md)
 - [Addressing Plugin Spec](../plugin/addressing-plugin-spec.md)

@@ -29,6 +29,8 @@
 - [AP 一致性规范](design/foundation-ap-consistency-spec.md)
 - [CP 一致性规范](design/foundation-cp-consistency-spec.md)
 - [持久化与 Dump 规范](design/foundation-persistence-dump-spec.md)
+- [任务执行规范](design/foundation-task-execution-spec.md)
+- [事件分发与 NotifyCenter 规范](design/foundation-event-dispatch-spec.md)
 - [核心功能规范](design/core-capabilities-spec.md)
 
 ## 接口模型

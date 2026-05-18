@@ -69,7 +69,8 @@ but core Config semantics are defined at whole-resource granularity.
 
 Metadata update must not create a new Config resource identity. Metadata updates
 should publish a normal Config change event so listeners can refresh views that
-depend on metadata.
+depend on metadata. Local event delivery is defined by the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 
 ## 4. Validation Rules
 
@@ -112,3 +113,4 @@ new API or SDK contracts.
 - [Config Publish And Query Spec](config-publish-query-spec.md)
 - [Config Gray Release Spec](config-gray-release-spec.md)
 - [Config Capacity And Ops Spec](config-capacity-ops-spec.md)
+- [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)

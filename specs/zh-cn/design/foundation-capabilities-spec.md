@@ -22,8 +22,10 @@
 [内部 RPC 与集群请求](foundation-internal-rpc-spec.md)、
 [AP 一致性](foundation-ap-consistency-spec.md)、
 [CP 一致性](foundation-cp-consistency-spec.md)、
-[持久化与 dump](foundation-persistence-dump-spec.md)、任务执行和事件分发等基础设施。它支撑领域语义，
-但不拥有 Config、Naming、AI 或安全资源本身的含义。
+[持久化与 dump](foundation-persistence-dump-spec.md)、
+[任务执行](foundation-task-execution-spec.md)和
+[事件分发](foundation-event-dispatch-spec.md)等基础设施。它支撑领域语义，但不拥有 Config、Naming、
+AI 或安全资源本身的含义。
 
 ## 1. 定位
 
@@ -51,8 +53,8 @@
 | [AP 一致性](foundation-ap-consistency-spec.md) | `core.distributed.distro`、Config notify path | 提供 Distro 运行时数据同步和 Config Notify 风格的 AP 最终传播能力。 | 领域必须定义 resource type、owner、操作语义、重试、verify、修复和收敛容忍度。 |
 | [CP 一致性](foundation-cp-consistency-spec.md) | `core.distributed.raft`、`consistency.cp` | 提供 Raft/JRaft 支持的强顺序写、group、processor、snapshot 和恢复能力。 | 领域必须定义 group 归属、request 类型、snapshot 形态、读写可见性和不可用行为。 |
 | [持久化与 dump](foundation-persistence-dump-spec.md) | `persistence`、领域存储模块 | 将持久数据写入内置或外部存储，加载本地 dump，并恢复服务缓存。 | 领域必须定义 schema、兼容性、数据归属，以及 dump 是缓存还是事实来源。 |
-| 任务执行 | `common.task`、`common.executor`、领域 task engine | 执行立即、延迟、重试、合并、批量和定时任务，并控制资源使用。 | 任务必须具备幂等性，或通过版本、时间戳、状态、CAS 等机制显式保护。 |
-| 事件分发 | `common.notify`、领域事件 publisher | 发布进程内事件，用于更新索引、触发异步任务和桥接 trace 事件。 | 除非领域通过持久化或集群协议传递，否则事件只是本进程事实。 |
+| [任务执行](foundation-task-execution-spec.md) | `common.task`、`common.executor`、领域 task engine | 执行立即、延迟、重试、合并、批量和定时任务，并控制资源使用。 | 任务必须具备幂等性，或通过版本、时间戳、状态、CAS 等机制显式保护。 |
+| [事件分发](foundation-event-dispatch-spec.md) | `common.notify`、领域事件 publisher | 发布进程内事件，用于更新索引、触发异步任务和桥接 trace 事件。 | 除非领域通过持久化或集群协议传递，否则事件只是本进程事实。 |
 | 可观测钩子 | `core.monitor`、`common.trace`、Trace/Control 插件 | 上报指标、trace、队列深度、连接状态和操作事件。 | 可观测能力不得改变资源语义，也不得成为必须依赖的控制路径。 |
 
 ## 3. 集群成员
@@ -143,6 +145,9 @@ Nacos 使用 task engine 和 executor 执行延迟同步、重试、dump、健�
 - 除非 API 明确等待任务完成，否则用户可见成功应绑定到领域语义，而不是后台任务完成；
 - task engine 应暴露队列长度、重试次数、失败次数和执行延迟等指标或诊断信息。
 
+Delayed task、execute task、processor、queue、retry、merge 和领域 executor 规则由
+[任务执行规范](foundation-task-execution-spec.md)定义。
+
 ## 8. 事件分发与消息总线
 
 `NotifyCenter` 和领域事件 publisher 提供进程内事件总线，用于更新派生索引、调度异步任务、通知
@@ -159,6 +164,9 @@ push 组件和桥接 trace 事件。
 
 当领域需要跨节点事件可见性时，必须显式通过持久化、AP 一致性、CP 一致性或
 [内部集群请求](foundation-internal-rpc-spec.md)传递状态。
+
+`NotifyCenter`、publisher、subscriber、slow event、自定义 publisher 和本地事件语义由
+[事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)定义。
 
 ## 9. 基础能力边界规则
 
@@ -178,6 +186,8 @@ push 组件和桥接 trace 事件。
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [CP 一致性规范](foundation-cp-consistency-spec.md)
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
+- [任务执行规范](foundation-task-execution-spec.md)
+- [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [插件规范](../plugin/plugin-spec.md)
 - [寻址插件规范](../plugin/addressing-plugin-spec.md)

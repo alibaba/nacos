@@ -40,8 +40,9 @@ Nacos 功能从产品意图到具体接口按如下层次组织：
 [内部 RPC](foundation-internal-rpc-spec.md)、
 [AP 一致性](foundation-ap-consistency-spec.md)、
 [CP 一致性](foundation-cp-consistency-spec.md)、
-[持久化与 dump](foundation-persistence-dump-spec.md)、任务和事件基础设施；它们支撑领域，但不拥有
-领域资源语义。
+[持久化与 dump](foundation-persistence-dump-spec.md)、
+[任务](foundation-task-execution-spec.md)和
+[事件](foundation-event-dispatch-spec.md)基础设施；它们支撑领域，但不拥有领域资源语义。
 
 ## 2. 核心领域
 
@@ -64,8 +65,10 @@ Nacos 功能从产品意图到具体接口按如下层次组织：
   [内部 RPC](foundation-internal-rpc-spec.md)、
   [AP 一致性](foundation-ap-consistency-spec.md)、
   [CP 一致性](foundation-cp-consistency-spec.md)和
-  [持久化与 dump](foundation-persistence-dump-spec.md)。除非领域规范明确委托，否则它们不拥有
-  Config、Naming 或 AI 资源语义。
+  [持久化与 dump](foundation-persistence-dump-spec.md)、
+  [任务执行](foundation-task-execution-spec.md)和
+  [事件分发](foundation-event-dispatch-spec.md)。除非领域规范明确委托，否则它们不拥有 Config、Naming
+  或 AI 资源语义。
 - 运行时客户端接口应只暴露面向已知资源的最小必要能力。大范围列表、导出、克隆、迁移、容量和
   运维 API 属于 Admin API、Console API 或 Maintainer SDK。
 - 所有领域 API 必须保持共享资源模型，并遵循
