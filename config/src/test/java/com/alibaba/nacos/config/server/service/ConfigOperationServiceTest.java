@@ -22,6 +22,8 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.model.gray.GrayRule;
+import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -32,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -500,5 +504,74 @@ class ConfigOperationServiceTest {
         assertThrows(NacosApiException.class,
             () -> configOperationService.publishConfig(configForm,
                 configRequestInfo, ""));
+    }
+    
+    @Test
+    void testPublishConfigGrayVersionInvalid() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        configForm.setTag("");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setBetaIps("1.1.1.1");
+        
+        try (MockedStatic<GrayRuleManager> mockedStatic =
+            Mockito.mockStatic(GrayRuleManager.class)) {
+            mockedStatic.when(() -> GrayRuleManager.constructGrayRule(any()))
+                .thenReturn(null);
+            assertThrows(NacosApiException.class,
+                () -> configOperationService.publishConfig(configForm,
+                    configRequestInfo, ""));
+        }
+    }
+    
+    @Test
+    void testPublishConfigGrayRuleFormatInvalid() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        configForm.setTag("");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setBetaIps("1.1.1.1");
+        
+        GrayRule mockGrayRule = Mockito.mock(GrayRule.class);
+        when(mockGrayRule.isValid()).thenReturn(false);
+        
+        try (MockedStatic<GrayRuleManager> mockedStatic =
+            Mockito.mockStatic(GrayRuleManager.class)) {
+            mockedStatic.when(() -> GrayRuleManager.constructGrayRule(any()))
+                .thenReturn(mockGrayRule);
+            assertThrows(NacosApiException.class,
+                () -> configOperationService.publishConfig(configForm,
+                    configRequestInfo, ""));
+        }
+    }
+    
+    @Test
+    void testPublishConfigBetaGrayNameAlreadyExists() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        configForm.setTag("");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setBetaIps("1.1.1.1");
+        
+        List<String> existingGrays = Arrays.asList("beta", "g2", "g3");
+        when(configInfoGrayPersistService.findConfigInfoGrays(
+            anyString(), anyString(), any()))
+            .thenReturn(existingGrays);
+        when(configInfoGrayPersistService.insertOrUpdateGray(
+            any(ConfigInfo.class), eq("beta"), anyString(), any(), any()))
+            .thenReturn(new ConfigOperateResult());
+        
+        Boolean result = configOperationService.publishConfig(
+            configForm, configRequestInfo, "");
+        assertTrue(result);
     }
 }

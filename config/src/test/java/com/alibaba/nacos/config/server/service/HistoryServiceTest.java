@@ -21,6 +21,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.OperationType;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfoDetail;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -371,6 +372,42 @@ class HistoryServiceTest {
                 TEST_TENANT, 1L);
         assertNotNull(detail);
         assertEquals(TEST_UPDATED_CONTENT, detail.getUpdatedContent());
+        assertEquals(TEST_CONTENT, detail.getOriginalContent());
+    }
+    
+    @Test
+    void testGetConfigHistoryInfoDetailUpdateGrayWithNoNext() throws Exception {
+        ConfigHistoryInfo info = new ConfigHistoryInfo();
+        info.setDataId(TEST_DATA_ID);
+        info.setGroup(TEST_GROUP);
+        info.setTenant(TEST_TENANT);
+        info.setOpType(OperationType.UPDATE.getValue());
+        info.setContent(TEST_CONTENT);
+        info.setMd5(TEST_MD5);
+        info.setPublishType("gray");
+        info.setGrayName("beta");
+        info.setCreatedTime(new Timestamp(new Date().getTime()));
+        info.setLastModifiedTime(new Timestamp(new Date().getTime()));
+        when(historyConfigInfoPersistService.detailConfigHistory(2L))
+            .thenReturn(info);
+        when(historyConfigInfoPersistService.getNextHistoryInfo(
+            TEST_DATA_ID, TEST_GROUP, TEST_TENANT, "gray",
+            "beta", 2L)).thenReturn(null);
+        
+        ConfigInfoGrayWrapper grayConfig = new ConfigInfoGrayWrapper();
+        grayConfig.setContent(TEST_UPDATED_CONTENT);
+        grayConfig.setMd5(TEST_UPDATED_MD5);
+        grayConfig.setEncryptedDataKey("grayKey");
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            TEST_DATA_ID, TEST_GROUP, TEST_TENANT, "beta"))
+            .thenReturn(grayConfig);
+        
+        ConfigHistoryInfoDetail detail =
+            historyService.getConfigHistoryInfoDetail(TEST_DATA_ID, TEST_GROUP,
+                TEST_TENANT, 2L);
+        assertNotNull(detail);
+        assertEquals(TEST_UPDATED_CONTENT, detail.getUpdatedContent());
+        assertEquals(TEST_UPDATED_MD5, detail.getUpdatedMd5());
         assertEquals(TEST_CONTENT, detail.getOriginalContent());
     }
 }

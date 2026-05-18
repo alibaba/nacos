@@ -351,4 +351,27 @@ public class ConfigFuzzyWatchContextServiceTest {
         Assertions.assertTrue(
             configFuzzyWatchContextService.reachToUpLimit(groupKeyPattern));
     }
+    
+    @Test
+    public void testMakeupMatchedGroupKeysNullPattern() {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        configFuzzyWatchContextService.makeupMatchedGroupKeys("nonexistent_pattern");
+    }
+    
+    @Test
+    public void testAddFuzzyWatchDuplicatePattern() throws NacosException {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("dup*", "group", "ns1");
+        configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, "conn1");
+        configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, "conn2");
+        String groupKey = GroupKey.getKeyTenant("dup123", "group", "ns1");
+        configFuzzyWatchContextService.syncGroupKeyContext(groupKey, ADD_CONFIG);
+        Set<String> clients =
+            configFuzzyWatchContextService.getMatchedClients(groupKey);
+        Assertions.assertTrue(clients.contains("conn1"));
+        Assertions.assertTrue(clients.contains("conn2"));
+    }
 }
