@@ -489,11 +489,7 @@ public class SkillZipParser {
      * Nacos environment has not been initialized (e.g. in unit tests that bypass Spring boot-up).
      */
     static int resolveMaxZipEntries() {
-        if (EnvUtil.getEnvironment() == null) {
-            return DEFAULT_MAX_ZIP_ENTRIES;
-        }
-        Integer configured = EnvUtil.getProperty(CONFIG_MAX_ZIP_ENTRIES, Integer.class);
-        return configured != null && configured > 0 ? configured : DEFAULT_MAX_ZIP_ENTRIES;
+        return resolvePositiveIntProperty(CONFIG_MAX_ZIP_ENTRIES, DEFAULT_MAX_ZIP_ENTRIES);
     }
     
     /**
@@ -502,15 +498,23 @@ public class SkillZipParser {
      * and positive. Returns {@link #DEFAULT_MAX_UNCOMPRESSED_SIZE_MB} MB otherwise.
      */
     static long resolveMaxUncompressedBytes() {
-        int mb = DEFAULT_MAX_UNCOMPRESSED_SIZE_MB;
-        if (EnvUtil.getEnvironment() != null) {
-            Integer configured =
-                EnvUtil.getProperty(CONFIG_MAX_UNCOMPRESSED_SIZE_MB, Integer.class);
-            if (configured != null && configured > 0) {
-                mb = configured;
-            }
-        }
+        int mb = resolvePositiveIntProperty(
+            CONFIG_MAX_UNCOMPRESSED_SIZE_MB, DEFAULT_MAX_UNCOMPRESSED_SIZE_MB);
         return (long) mb * 1024L * 1024L;
+    }
+    
+    /**
+     * Read an int-valued property from {@link EnvUtil}, returning {@code defaultValue} whenever
+     * the override is missing, non-positive, or the environment has not yet been initialized.
+     * Non-positive overrides are deliberately rejected so misconfiguration cannot silently
+     * disable the underlying security guards.
+     */
+    private static int resolvePositiveIntProperty(String key, int defaultValue) {
+        if (EnvUtil.getEnvironment() == null) {
+            return defaultValue;
+        }
+        Integer configured = EnvUtil.getProperty(key, Integer.class);
+        return configured != null && configured > 0 ? configured : defaultValue;
     }
     
     private static ZipEntryData findSkillMdEntry(List<ZipEntryData> entries) {

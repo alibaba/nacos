@@ -26,7 +26,9 @@ import org.springframework.mock.env.MockEnvironment;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -113,6 +115,14 @@ class SkillZipParserLimitsConfigTest {
     }
     
     @Test
+    void resolveMaxUncompressedBytesFallsBackToDefaultWhenEnvironmentMissing() {
+        EnvUtil.setEnvironment(null);
+        long expectedBytes =
+            (long) SkillZipParser.DEFAULT_MAX_UNCOMPRESSED_SIZE_MB * 1024L * 1024L;
+        assertEquals(expectedBytes, SkillZipParser.resolveMaxUncompressedBytes());
+    }
+    
+    @Test
     void parseSkillFromZipUsesConfiguredEntryLimit() throws IOException {
         ((MockEnvironment) EnvUtil.getEnvironment())
             .setProperty(SkillZipParser.CONFIG_MAX_ZIP_ENTRIES, "3");
@@ -131,21 +141,20 @@ class SkillZipParserLimitsConfigTest {
     }
     
     @Test
-    void parseSkillFromZipAcceptsLargeEntryCountWhenLimitRaised() throws Exception {
-        // 600 entries exceeds DEFAULT_MAX_ZIP_ENTRIES (=500), but a raised limit must accept it.
+    void unzipToEntriesAcceptsEntryCountAboveDefaultWhenLimitRaised() throws Exception {
+        // 600 entries exceeds DEFAULT_MAX_ZIP_ENTRIES (=500), but the configured cap (1000) is
+        // higher, so the entry-count guard must let every entry through. We invoke the private
+        // {@code unzipToEntries} directly so the assertion targets the guard, not later parsing.
         ((MockEnvironment) EnvUtil.getEnvironment())
             .setProperty(SkillZipParser.CONFIG_MAX_ZIP_ENTRIES, "1000");
         byte[] zipBytes = buildZipWithEntryCount(600);
         
-        // parseSkillFromZip succeeds (returns a skill) or fails on a non-limit reason.
-        // We only assert that NO entry-count exception is raised at the configured higher limit.
-        try {
-            SkillZipParser.parseSkillFromZip(zipBytes, NAMESPACE_ID);
-        } catch (NacosApiException e) {
-            assertTrue(!e.getMessage().contains("too many entries"),
-                "Raising the limit must lift the entry-count guard, but message was: "
-                    + e.getMessage());
-        }
+        List<?> entries = invokeUnzipToEntries(zipBytes);
+        
+        // 600 added entries plus the SKILL.md header entry built by the helper.
+        assertEquals(601, entries.size(),
+            "Raising the entry-count limit must allow all 600 + SKILL.md entries through, "
+                + "but got: " + entries.size());
     }
     
     @Test
@@ -170,6 +179,18 @@ class SkillZipParserLimitsConfigTest {
     }
     
     // -------- Helpers --------
+    
+    /**
+     * Reflectively invoke {@code SkillZipParser#unzipToEntries(byte[])} so tests can assert
+     * directly against the entry-count / size guards without going through the rest of the
+     * {@code parseSkillFromZip} pipeline (which would obscure why the parse passed or failed).
+     */
+    @SuppressWarnings("unchecked")
+    private static List<Object> invokeUnzipToEntries(byte[] zipBytes) throws Exception {
+        Method unzip = SkillZipParser.class.getDeclaredMethod("unzipToEntries", byte[].class);
+        unzip.setAccessible(true);
+        return (List<Object>) unzip.invoke(null, (Object) zipBytes);
+    }
     
     private static byte[] buildZipWithEntryCount(int entryCount) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
