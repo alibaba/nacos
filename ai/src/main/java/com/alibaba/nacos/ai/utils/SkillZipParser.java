@@ -79,11 +79,13 @@ public class SkillZipParser {
         ResourceContentEncoder.METADATA_ENCODING_BASE64;
     
     /**
-     * Default maximum compressed (upload) size in MB for a skill ZIP. Mirrors the historical
-     * {@link Constants.Skills#MAX_UPLOAD_ZIP_BYTES} value; the public constant is kept for
-     * backward compatibility but runtime callers should consult {@link #resolveMaxUploadBytes()}.
+     * Default maximum compressed (upload) size in MB for a skill ZIP. Derived from the historical
+     * {@link Constants.Skills#MAX_UPLOAD_ZIP_BYTES} so the public constant remains the single
+     * source of truth; runtime callers should consult {@link #resolveMaxUploadBytes()} which
+     * honors the {@value #CONFIG_MAX_UPLOAD_SIZE_MB} override.
      */
-    static final int DEFAULT_MAX_UPLOAD_SIZE_MB = 10;
+    static final int DEFAULT_MAX_UPLOAD_SIZE_MB =
+        (int) (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024L / 1024L);
     
     /**
      * Default maximum number of entries allowed in a skill ZIP. Overridable via the

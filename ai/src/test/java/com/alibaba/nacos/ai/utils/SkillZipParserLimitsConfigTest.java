@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Random;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -265,7 +266,7 @@ class SkillZipParserLimitsConfigTest {
             // Random bytes don't compress, so the produced zip stays roughly the same size as
             // the raw payload. Seeded for determinism so the test is reproducible.
             byte[] payload = new byte[targetMb * 1024 * 1024];
-            new java.util.Random(42).nextBytes(payload);
+            new Random(42).nextBytes(payload);
             addZipEntry(zos, "assets/random.bin", payload);
         }
         return baos.toByteArray();
