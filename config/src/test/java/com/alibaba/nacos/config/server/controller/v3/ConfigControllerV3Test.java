@@ -596,7 +596,7 @@ class ConfigControllerV3Test {
                 .param("dataId", "test").param("groupName", "test")
                 .param("appName", "myApp")
                 .param("namespaceId", "")
-                .param("config_tags", "tag1")
+                .param("configTags", "tag1")
                 .param("type", "json")
                 .param("configDetail", "someDetail")
                 .param("pageNo", "1").param("pageSize", "10");
