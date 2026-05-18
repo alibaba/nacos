@@ -92,6 +92,60 @@ class SkillZipParserLimitsConfigTest {
     }
     
     @Test
+    void resolveMaxUploadBytesReturnsDefaultWhenUnset() {
+        long expectedBytes =
+            (long) SkillZipParser.DEFAULT_MAX_UPLOAD_SIZE_MB * 1024L * 1024L;
+        assertEquals(expectedBytes, SkillZipParser.resolveMaxUploadBytes());
+    }
+    
+    @Test
+    void resolveMaxUploadBytesHonorsPositiveOverride() {
+        ((MockEnvironment) EnvUtil.getEnvironment())
+            .setProperty(SkillZipParser.CONFIG_MAX_UPLOAD_SIZE_MB, "100");
+        assertEquals(100L * 1024L * 1024L, SkillZipParser.resolveMaxUploadBytes());
+    }
+    
+    @Test
+    void resolveMaxUploadBytesIgnoresNonPositiveOverride() {
+        MockEnvironment env = (MockEnvironment) EnvUtil.getEnvironment();
+        env.setProperty(SkillZipParser.CONFIG_MAX_UPLOAD_SIZE_MB, "0");
+        long expectedBytes =
+            (long) SkillZipParser.DEFAULT_MAX_UPLOAD_SIZE_MB * 1024L * 1024L;
+        assertEquals(expectedBytes, SkillZipParser.resolveMaxUploadBytes());
+    }
+    
+    @Test
+    void resolveMaxUploadBytesFallsBackToDefaultWhenEnvironmentMissing() {
+        EnvUtil.setEnvironment(null);
+        long expectedBytes =
+            (long) SkillZipParser.DEFAULT_MAX_UPLOAD_SIZE_MB * 1024L * 1024L;
+        assertEquals(expectedBytes, SkillZipParser.resolveMaxUploadBytes());
+    }
+    
+    @Test
+    void parseSkillFromZipUsesConfiguredUploadLimit() throws IOException {
+        // Default upload cap is 10 MB. Lower it to 1 MB so a ~2 MB zip is rejected at the
+        // upload-size guard before reaching the entry-count / decompressed-size guards.
+        // We use incompressible random bytes so the compressed zip really exceeds 1 MB —
+        // the existing zero-fill helper would compress down to a few KB and slip past.
+        ((MockEnvironment) EnvUtil.getEnvironment())
+            .setProperty(SkillZipParser.CONFIG_MAX_UPLOAD_SIZE_MB, "1");
+        byte[] zipBytes = buildZipWithIncompressiblePayloadMb(2);
+        
+        try {
+            SkillZipParser.parseSkillFromZip(zipBytes, NAMESPACE_ID);
+            fail("Expected the configured upload-size limit to reject this zip");
+        } catch (NacosApiException e) {
+            assertTrue(e.getMessage().contains("Skill zip size must not exceed"),
+                "NacosApiException should describe the upload-size violation, got: "
+                    + e.getMessage());
+            assertTrue(e.getMessage().contains("1MB"),
+                "Error message should report the configured maximum (1MB), got: "
+                    + e.getMessage());
+        }
+    }
+    
+    @Test
     void resolveMaxUncompressedBytesReturnsDefaultWhenUnset() {
         long expectedBytes =
             (long) SkillZipParser.DEFAULT_MAX_UNCOMPRESSED_SIZE_MB * 1024L * 1024L;
@@ -200,6 +254,19 @@ class SkillZipParserLimitsConfigTest {
             for (int i = 0; i < entryCount; i++) {
                 addZipEntry(zos, "assets/entry_" + i + ".txt", small);
             }
+        }
+        return baos.toByteArray();
+    }
+    
+    private static byte[] buildZipWithIncompressiblePayloadMb(int targetMb) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "SKILL.md", VALID_SKILL_MD.getBytes(StandardCharsets.UTF_8));
+            // Random bytes don't compress, so the produced zip stays roughly the same size as
+            // the raw payload. Seeded for determinism so the test is reproducible.
+            byte[] payload = new byte[targetMb * 1024 * 1024];
+            new java.util.Random(42).nextBytes(payload);
+            addZipEntry(zos, "assets/random.bin", payload);
         }
         return baos.toByteArray();
     }

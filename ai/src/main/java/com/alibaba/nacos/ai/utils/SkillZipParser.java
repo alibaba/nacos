@@ -79,6 +79,13 @@ public class SkillZipParser {
         ResourceContentEncoder.METADATA_ENCODING_BASE64;
     
     /**
+     * Default maximum compressed (upload) size in MB for a skill ZIP. Mirrors the historical
+     * {@link Constants.Skills#MAX_UPLOAD_ZIP_BYTES} value; the public constant is kept for
+     * backward compatibility but runtime callers should consult {@link #resolveMaxUploadBytes()}.
+     */
+    static final int DEFAULT_MAX_UPLOAD_SIZE_MB = 10;
+    
+    /**
      * Default maximum number of entries allowed in a skill ZIP. Overridable via the
      * {@value #CONFIG_MAX_ZIP_ENTRIES} property when users legitimately upload larger skills.
      */
@@ -90,6 +97,12 @@ public class SkillZipParser {
      * {@value #CONFIG_MAX_UNCOMPRESSED_SIZE_MB} property.
      */
     static final int DEFAULT_MAX_UNCOMPRESSED_SIZE_MB = 50;
+    
+    /**
+     * Property key for overriding {@link #DEFAULT_MAX_UPLOAD_SIZE_MB}. The value is in megabytes
+     * and applies to the raw compressed skill ZIP before parsing. Non-positive values are ignored.
+     */
+    static final String CONFIG_MAX_UPLOAD_SIZE_MB = "nacos.ai.skill.zip.max-upload-size-mb";
     
     /**
      * Property key for overriding {@link #DEFAULT_MAX_ZIP_ENTRIES}. Non-positive values are ignored.
@@ -177,7 +190,8 @@ public class SkillZipParser {
     }
     
     /**
-     * Parse skill from zip file bytes. Zip size must not exceed {@link Constants.Skills#MAX_UPLOAD_ZIP_BYTES}.
+     * Parse skill from zip file bytes. Zip size must not exceed the limit returned by
+     * {@link #resolveMaxUploadBytes()} (configurable via {@value #CONFIG_MAX_UPLOAD_SIZE_MB}).
      * Text files are decoded as UTF-8; binary files (by extension) are stored as Base64 with metadata encoding=base64.
      *
      * @param zipBytes zip file bytes
@@ -192,11 +206,12 @@ public class SkillZipParser {
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip file is empty");
         }
-        if (zipBytes.length > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
+        long maxUploadBytes = resolveMaxUploadBytes();
+        if (zipBytes.length > maxUploadBytes) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip size must not exceed "
-                    + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024) + "MB, current: "
+                    + (maxUploadBytes / 1024 / 1024) + "MB, current: "
                     + (zipBytes.length / 1024 / 1024) + "MB");
         }
         try {
@@ -265,11 +280,12 @@ public class SkillZipParser {
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip file is empty");
         }
-        if (zipBytes.length > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
+        long maxUploadBytes = resolveMaxUploadBytes();
+        if (zipBytes.length > maxUploadBytes) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip size must not exceed "
-                    + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024) + "MB, current: "
+                    + (maxUploadBytes / 1024 / 1024) + "MB, current: "
                     + (zipBytes.length / 1024 / 1024) + "MB");
         }
         try {
@@ -480,6 +496,19 @@ public class SkillZipParser {
             }
         }
         return result;
+    }
+    
+    /**
+     * Resolve the maximum compressed (upload) size in bytes, honoring the
+     * {@value #CONFIG_MAX_UPLOAD_SIZE_MB} override (interpreted in megabytes) when present and
+     * positive. Returns {@link #DEFAULT_MAX_UPLOAD_SIZE_MB} MB otherwise. Keep this in sync with
+     * the Spring multipart cap ({@code spring.servlet.multipart.max-file-size}); the multipart
+     * filter rejects oversize uploads first, but operators raising the multipart cap also need
+     * to raise this property for the change to take effect on the skill upload pipeline.
+     */
+    static long resolveMaxUploadBytes() {
+        int mb = resolvePositiveIntProperty(CONFIG_MAX_UPLOAD_SIZE_MB, DEFAULT_MAX_UPLOAD_SIZE_MB);
+        return (long) mb * 1024L * 1024L;
     }
     
     /**
