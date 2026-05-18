@@ -21,17 +21,22 @@ import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterS
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.config.server.configuration.ConfigCompatibleConfig;
 import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -112,5 +117,72 @@ class ConfigChangeClusterSyncRequestHandlerTest {
             configChangeSyncRequest.getTag());
         assertEquals(configChangeClusterSyncResponse.getResultCode(),
             ResponseCode.SUCCESS.getCode());
+    }
+    
+    @Test
+    void testCheckNamespaceCompatibleDisabled() {
+        ConfigChangeClusterSyncRequest req = new ConfigChangeClusterSyncRequest();
+        req.setTenant("public");
+        RequestMeta meta = new RequestMeta();
+        meta.setClientVersion("Nacos-Server:v3.0.0");
+        assertFalse(
+            configChangeClusterSyncRequestHandler.checkNamespaceCompatible(req, meta));
+    }
+    
+    @Test
+    void testCheckNamespaceCompatibleNewVersion() {
+        MockedStatic<ConfigCompatibleConfig> mocked =
+            Mockito.mockStatic(ConfigCompatibleConfig.class);
+        ConfigCompatibleConfig config = Mockito.mock(ConfigCompatibleConfig.class);
+        Mockito.when(config.isNamespaceCompatibleMode()).thenReturn(true);
+        mocked.when(ConfigCompatibleConfig::getInstance).thenReturn(config);
+        try {
+            ConfigChangeClusterSyncRequest req = new ConfigChangeClusterSyncRequest();
+            req.setTenant("public");
+            RequestMeta meta = new RequestMeta();
+            meta.setClientVersion("Nacos-Server:v3.0.0");
+            assertFalse(configChangeClusterSyncRequestHandler
+                .checkNamespaceCompatible(req, meta));
+        } finally {
+            mocked.close();
+        }
+    }
+    
+    @Test
+    void testCheckNamespaceCompatibleOldVersion() {
+        MockedStatic<ConfigCompatibleConfig> mocked =
+            Mockito.mockStatic(ConfigCompatibleConfig.class);
+        ConfigCompatibleConfig config = Mockito.mock(ConfigCompatibleConfig.class);
+        Mockito.when(config.isNamespaceCompatibleMode()).thenReturn(true);
+        mocked.when(ConfigCompatibleConfig::getInstance).thenReturn(config);
+        try {
+            ConfigChangeClusterSyncRequest req = new ConfigChangeClusterSyncRequest();
+            req.setTenant("public");
+            RequestMeta meta = new RequestMeta();
+            meta.setClientVersion("Nacos-Java-Client:v2.1.0");
+            assertTrue(configChangeClusterSyncRequestHandler
+                .checkNamespaceCompatible(req, meta));
+        } finally {
+            mocked.close();
+        }
+    }
+    
+    @Test
+    void testCheckNamespaceCompatibleInvalidVersion() {
+        MockedStatic<ConfigCompatibleConfig> mocked =
+            Mockito.mockStatic(ConfigCompatibleConfig.class);
+        ConfigCompatibleConfig config = Mockito.mock(ConfigCompatibleConfig.class);
+        Mockito.when(config.isNamespaceCompatibleMode()).thenReturn(true);
+        mocked.when(ConfigCompatibleConfig::getInstance).thenReturn(config);
+        try {
+            ConfigChangeClusterSyncRequest req = new ConfigChangeClusterSyncRequest();
+            req.setTenant("");
+            RequestMeta meta = new RequestMeta();
+            meta.setClientVersion("unknown-client");
+            assertTrue(configChangeClusterSyncRequestHandler
+                .checkNamespaceCompatible(req, meta));
+        } finally {
+            mocked.close();
+        }
     }
 }
