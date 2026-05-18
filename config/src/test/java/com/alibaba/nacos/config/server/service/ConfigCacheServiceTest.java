@@ -490,6 +490,59 @@ class ConfigCacheServiceTest {
     }
     
     @Test
+    void testTryWriteLock() {
+        assertEquals(0, ConfigCacheService.tryWriteLock("noExistKeyWrite"));
+    }
+    
+    @Test
+    void testTryWriteLockExistingItem() {
+        ConfigCacheService.dumpWithMd5("wlD", "wlG", "wlT", "c", "md5",
+            System.currentTimeMillis(), "text", "");
+        String gk = GroupKey2.getKey("wlD", "wlG", "wlT");
+        int result = ConfigCacheService.tryWriteLock(gk);
+        assertEquals(1, result);
+        ConfigCacheService.releaseWriteLock(gk);
+        ConfigCacheService.remove("wlD", "wlG", "wlT");
+    }
+    
+    @Test
+    void testReleaseWriteLockNoItem() {
+        ConfigCacheService.releaseWriteLock("noExistKeyReleaseWrite");
+    }
+    
+    @Test
+    void testGetContentMd5WithConnLabels() {
+        ConfigCacheService.dumpWithMd5("clD", "clG", "clT", "content", "md5val",
+            System.currentTimeMillis(), "text", "");
+        String gk = GroupKey2.getKey("clD", "clG", "clT");
+        Map<String, String> labels = new java.util.HashMap<>();
+        labels.put("clientIp", "1.1.1.1");
+        String md5 = ConfigCacheService.getContentMd5(gk, null, null, labels);
+        assertEquals("md5val", md5);
+        ConfigCacheService.remove("clD", "clG", "clT");
+    }
+    
+    @Test
+    void testGetContentMd5WithIpCreatesLabels() {
+        ConfigCacheService.dumpWithMd5("ipD", "ipG", "ipT", "content", "md5ip",
+            System.currentTimeMillis(), "text", "");
+        String gk = GroupKey2.getKey("ipD", "ipG", "ipT");
+        String md5 = ConfigCacheService.getContentMd5(gk, "10.0.0.1", null, null);
+        assertEquals("md5ip", md5);
+        ConfigCacheService.remove("ipD", "ipG", "ipT");
+    }
+    
+    @Test
+    void testIsUptodateWithIpAndTag() {
+        ConfigCacheService.dumpWithMd5("upD", "upG", "upT", "c", "upMd5",
+            System.currentTimeMillis(), "text", "");
+        String gk = GroupKey2.getKey("upD", "upG", "upT");
+        assertTrue(ConfigCacheService.isUptodate(gk, "upMd5", "1.1.1.1", "tag1"));
+        assertFalse(ConfigCacheService.isUptodate(gk, "wrongMd5", "1.1.1.1", "tag1"));
+        ConfigCacheService.remove("upD", "upG", "upT");
+    }
+    
+    @Test
     void testTryConfigReadLock() throws Exception {
         String dataId = "123testTryConfigReadLock";
         String group = "1234";

@@ -881,4 +881,79 @@ class CapacityManagementAspectTest {
             .aroundDeleteConfig(proceedingJoinPoint);
         assertEquals(true, result);
     }
+    
+    @Test
+    void testAroundPublishInsertNullGroupNoLimitType() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(configForm.getDataId()).thenReturn(mockDataId);
+        when(configForm.getGroup()).thenReturn(null);
+        when(configForm.getNamespaceId()).thenReturn("");
+        when(configForm.getContent()).thenReturn("testContent");
+        when(configForm.getTag()).thenReturn(null);
+        when(configForm.getGrayName()).thenReturn(null);
+        when(configRequestInfo.getBetaIps()).thenReturn(null);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        
+        Object result = capacityManagementAspect
+            .aroundPublishConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+    }
+    
+    @Test
+    void testAroundDeleteConfigWithTenantCorrectUsage() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {mockDataId, mockGroup, mockTenant, null});
+        ConfigInfoWrapper ciw = new ConfigInfoWrapper();
+        ciw.setContent(null);
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(ciw);
+        when(proceedingJoinPoint.proceed()).thenReturn(false);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        when(capacityService.insertAndUpdateTenantUsage(any(), eq(mockTenant), anyBoolean()))
+            .thenReturn(true);
+        when(capacityService.updateClusterUsage(any())).thenReturn(true);
+        when(capacityService.updateTenantUsage(any(), eq(mockTenant))).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundDeleteConfig(proceedingJoinPoint);
+        assertEquals(false, result);
+        Mockito.verify(capacityService)
+            .updateClusterUsage(any());
+    }
+    
+    @Test
+    void testAroundPublishInsertCapacityNullThenInsert() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
+        when(configForm.getDataId()).thenReturn(mockDataId);
+        when(configForm.getGroup()).thenReturn(mockGroup);
+        when(configForm.getNamespaceId()).thenReturn(mockTenant);
+        when(configForm.getContent()).thenReturn("c");
+        when(configForm.getTag()).thenReturn(null);
+        when(configForm.getGrayName()).thenReturn(null);
+        when(configRequestInfo.getBetaIps()).thenReturn(null);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {configForm, configRequestInfo});
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(null);
+        when(capacityService.updateTenantUsage(any(), eq(mockTenant))).thenReturn(true);
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(null);
+        
+        Object result = capacityManagementAspect
+            .aroundPublishConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+        Mockito.verify(capacityService).initTenantCapacity(mockTenant);
+    }
 }

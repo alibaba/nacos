@@ -32,9 +32,15 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.alibaba.nacos.api.remote.AbstractPushCallBack;
+import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
+import org.mockito.ArgumentCaptor;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -129,14 +135,99 @@ class FuzzyWatchChangeNotifyTaskTest {
     
     @Test
     void testRunPushSuccess() {
+        MockedStatic<ConfigCommonConfig> configMocked =
+            Mockito.mockStatic(ConfigCommonConfig.class);
+        try {
+            ConfigCommonConfig configCommonConfig =
+                Mockito.mock(ConfigCommonConfig.class);
+            Mockito.when(configCommonConfig.getPushTimeout()).thenReturn(3000L);
+            configMocked.when(ConfigCommonConfig::getInstance)
+                .thenReturn(configCommonConfig);
+            
+            ConfigFuzzyWatchChangeNotifyRequest request =
+                new ConfigFuzzyWatchChangeNotifyRequest();
+            FuzzyWatchChangeNotifyTask task = new FuzzyWatchChangeNotifyTask(
+                connectionManager, rpcPushService, request, 3, "conn1");
+            when(connectionManager.getConnection("conn1")).thenReturn(connection);
+            TpsCheckResponse successResp = new TpsCheckResponse(true, 200, "ok");
+            when(tpsControlManager.check(any())).thenReturn(successResp);
+            task.run();
+            verify(rpcPushService).pushWithCallback(any(), any(), any(), any());
+        } finally {
+            configMocked.close();
+        }
+    }
+    
+    @Test
+    void testRunTpsCheckFail() {
         ConfigFuzzyWatchChangeNotifyRequest request =
             new ConfigFuzzyWatchChangeNotifyRequest();
         FuzzyWatchChangeNotifyTask task = new FuzzyWatchChangeNotifyTask(
             connectionManager, rpcPushService, request, 3, "conn1");
         when(connectionManager.getConnection("conn1")).thenReturn(connection);
-        TpsCheckResponse successResp = new TpsCheckResponse(true, 200, "ok");
-        when(tpsControlManager.check(any())).thenReturn(successResp);
+        TpsCheckResponse failResp = new TpsCheckResponse(false, 503, "limited");
+        when(tpsControlManager.check(any())).thenReturn(failResp);
         task.run();
-        verify(rpcPushService).pushWithCallback(any(), any(), any(), any());
+        verify(rpcPushService, never()).pushWithCallback(any(), any(), any(), any());
+    }
+    
+    @Test
+    void testPushCallbackOnSuccess() {
+        MockedStatic<ConfigCommonConfig> configMocked =
+            Mockito.mockStatic(ConfigCommonConfig.class);
+        try {
+            ConfigCommonConfig configCommonConfig =
+                Mockito.mock(ConfigCommonConfig.class);
+            Mockito.when(configCommonConfig.getPushTimeout()).thenReturn(3000L);
+            configMocked.when(ConfigCommonConfig::getInstance)
+                .thenReturn(configCommonConfig);
+            
+            ConfigFuzzyWatchChangeNotifyRequest request =
+                new ConfigFuzzyWatchChangeNotifyRequest();
+            FuzzyWatchChangeNotifyTask task = new FuzzyWatchChangeNotifyTask(
+                connectionManager, rpcPushService, request, 3, "conn1");
+            when(connectionManager.getConnection("conn1")).thenReturn(connection);
+            TpsCheckResponse resp = new TpsCheckResponse(true, 200, "ok");
+            when(tpsControlManager.check(any())).thenReturn(resp);
+            task.run();
+            
+            ArgumentCaptor<AbstractPushCallBack> captor =
+                ArgumentCaptor.forClass(AbstractPushCallBack.class);
+            verify(rpcPushService).pushWithCallback(
+                eq("conn1"), any(), captor.capture(), any());
+            captor.getValue().onSuccess();
+        } finally {
+            configMocked.close();
+        }
+    }
+    
+    @Test
+    void testPushCallbackOnFail() {
+        MockedStatic<ConfigCommonConfig> configMocked =
+            Mockito.mockStatic(ConfigCommonConfig.class);
+        try {
+            ConfigCommonConfig configCommonConfig =
+                Mockito.mock(ConfigCommonConfig.class);
+            Mockito.when(configCommonConfig.getPushTimeout()).thenReturn(3000L);
+            configMocked.when(ConfigCommonConfig::getInstance)
+                .thenReturn(configCommonConfig);
+            
+            ConfigFuzzyWatchChangeNotifyRequest request =
+                new ConfigFuzzyWatchChangeNotifyRequest();
+            FuzzyWatchChangeNotifyTask task = new FuzzyWatchChangeNotifyTask(
+                connectionManager, rpcPushService, request, 3, "conn1");
+            when(connectionManager.getConnection("conn1")).thenReturn(connection);
+            TpsCheckResponse resp = new TpsCheckResponse(true, 200, "ok");
+            when(tpsControlManager.check(any())).thenReturn(resp);
+            task.run();
+            
+            ArgumentCaptor<AbstractPushCallBack> captor =
+                ArgumentCaptor.forClass(AbstractPushCallBack.class);
+            verify(rpcPushService).pushWithCallback(
+                eq("conn1"), any(), captor.capture(), any());
+            captor.getValue().onFail(new RuntimeException("push error"));
+        } finally {
+            configMocked.close();
+        }
     }
 }
