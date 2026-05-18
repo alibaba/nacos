@@ -74,7 +74,8 @@ public class SkillZipParser {
      */
     public static final String METADATA_ENCODING = ResourceContentEncoder.METADATA_ENCODING;
     
-    public static final String METADATA_ENCODING_BASE64 = ResourceContentEncoder.METADATA_ENCODING_BASE64;
+    public static final String METADATA_ENCODING_BASE64 =
+        ResourceContentEncoder.METADATA_ENCODING_BASE64;
     
     /**
      * Maximum total decompressed size allowed (50MB). Prevents Zip Bomb attacks.

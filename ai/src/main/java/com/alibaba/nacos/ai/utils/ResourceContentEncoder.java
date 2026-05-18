@@ -54,40 +54,39 @@ public final class ResourceContentEncoder {
     static {
         Set<String> exts = new HashSet<>();
         Collections.addAll(exts,
-                // Markup / docs
-                "md", "markdown", "mdx", "txt", "rst", "adoc", "asciidoc",
-                // Structured data / config
-                "json", "json5", "yaml", "yml", "xml", "html", "htm", "css", "scss", "sass", "less",
-                "properties", "conf", "cfg", "ini", "toml", "env", "tpl", "tmpl", "j2", "mustache", "hbs",
-                // Common script / source code
-                "js", "mjs", "cjs", "ts", "tsx", "jsx", "vue", "svelte",
-                "py", "java", "kt", "kts", "scala", "groovy", "go", "rs", "rb", "php",
-                "swift", "m", "mm", "c", "h", "cpp", "cc", "cxx", "hpp", "hh", "hxx",
-                "cs", "fs", "fsx", "vb", "lua", "r", "pl", "pm", "ex", "exs", "erl",
-                "dart", "zig", "nim", "jl", "clj", "cljs", "edn", "elm",
-                // Shell / build
-                "sh", "bash", "zsh", "fish", "ps1", "psm1", "bat", "cmd",
-                "gradle", "sbt", "make", "mk",
-                // Data / log
-                "sql", "graphql", "gql", "csv", "tsv", "log", "diff", "patch",
-                // Misc text
-                "proto", "thrift", "ipynb"
-        );
+            // Markup / docs
+            "md", "markdown", "mdx", "txt", "rst", "adoc", "asciidoc",
+            // Structured data / config
+            "json", "json5", "yaml", "yml", "xml", "html", "htm", "css", "scss", "sass", "less",
+            "properties", "conf", "cfg", "ini", "toml", "env", "tpl", "tmpl", "j2", "mustache",
+            "hbs",
+            // Common script / source code
+            "js", "mjs", "cjs", "ts", "tsx", "jsx", "vue", "svelte",
+            "py", "java", "kt", "kts", "scala", "groovy", "go", "rs", "rb", "php",
+            "swift", "m", "mm", "c", "h", "cpp", "cc", "cxx", "hpp", "hh", "hxx",
+            "cs", "fs", "fsx", "vb", "lua", "r", "pl", "pm", "ex", "exs", "erl",
+            "dart", "zig", "nim", "jl", "clj", "cljs", "edn", "elm",
+            // Shell / build
+            "sh", "bash", "zsh", "fish", "ps1", "psm1", "bat", "cmd",
+            "gradle", "sbt", "make", "mk",
+            // Data / log
+            "sql", "graphql", "gql", "csv", "tsv", "log", "diff", "patch",
+            // Misc text
+            "proto", "thrift", "ipynb");
         TEXT_EXTENSIONS = Collections.unmodifiableSet(exts);
         
         Set<String> names = new HashSet<>();
         Collections.addAll(names,
-                // Common no-extension text files (case-insensitive match)
-                "dockerfile", "containerfile", "makefile", "rakefile", "gemfile", "gemfile.lock",
-                "jenkinsfile", "vagrantfile", "procfile", "brewfile",
-                "license", "license.txt", "notice", "readme", "changelog", "authors",
-                "contributors", "maintainers", "codeowners", "version", "manifest",
-                // Dotfiles
-                ".gitignore", ".gitattributes", ".gitmodules", ".gitkeep",
-                ".dockerignore", ".editorconfig", ".env", ".envrc",
-                ".npmrc", ".nvmrc", ".yarnrc", ".prettierrc", ".eslintrc",
-                ".babelrc", ".browserslistrc", ".stylelintrc"
-        );
+            // Common no-extension text files (case-insensitive match)
+            "dockerfile", "containerfile", "makefile", "rakefile", "gemfile", "gemfile.lock",
+            "jenkinsfile", "vagrantfile", "procfile", "brewfile",
+            "license", "license.txt", "notice", "readme", "changelog", "authors",
+            "contributors", "maintainers", "codeowners", "version", "manifest",
+            // Dotfiles
+            ".gitignore", ".gitattributes", ".gitmodules", ".gitkeep",
+            ".dockerignore", ".editorconfig", ".env", ".envrc",
+            ".npmrc", ".nvmrc", ".yarnrc", ".prettierrc", ".eslintrc",
+            ".babelrc", ".browserslistrc", ".stylelintrc");
         TEXT_FILE_NAMES = Collections.unmodifiableSet(names);
     }
     
