@@ -237,6 +237,10 @@ dedicated gRPC payload.
 
 ### 7.5 Lock
 
+Lock domain semantics are defined by the
+[Distributed Lock Spec](../lock/lock-spec.md). The current gRPC surface is
+experimental and may change with that domain.
+
 | Request type | Response type | Action | Main fields | Contract |
 | --- | --- | --- | --- | --- |
 | `LockOperationRequest` | `LockOperationResponse` | none in handler | `lockInstance`, `lockOperationEnum` | Try lock or release a Nacos distributed lock. |

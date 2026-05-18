@@ -60,6 +60,8 @@ but do not own domain resource semantics.
 | Naming | Service discovery, service metadata, instances, health, subscription, and runtime push. | `namespaceId -> groupName -> serviceName` | [Naming Spec](../naming/naming-spec.md) |
 | AI Registry | MCP, A2A, Prompt, Skill, AgentSpec, versions, labels, visibility, and publish governance. | `namespaceId -> resourceType -> resourceName` | [AI Registry Spec](../ai/ai-registry-spec.md) |
 | Core Operations | Namespace, [cluster member](foundation-cluster-membership-spec.md), server state, readiness, liveness, plugin state, and operation controls. | Domain-specific administrative resources. | [Core Operations Spec](../core/core-operations-spec.md) |
+| Console | Web UI, Console API backend, deployment bridge, and UI workflow adaptation for domain-owned resources. | UI workflows over domain-owned resources. | [Console Spec](../console/console-spec.md) |
+| Distributed Lock | Experimental short critical-section mutual exclusion over CP state. | `lockType -> key` | [Distributed Lock Spec](../lock/lock-spec.md) |
 | Security And Visibility | Authentication, authorization, permissions, API classification, resource visibility, and identity propagation. | Structured Nacos resource identity. | [Auth And Permission Spec](../auth/auth-permission-spec.md), [Visibility Plugin Spec](../auth/visibility-plugin-spec.md) |
 | Extension | Server and client extension points for auth, visibility, datasource, encryption, trace, control, addressing, AI pipeline, and related concerns. | Plugin-type identity plus domain-owned resource identity. | [Plugin Spec](../plugin/plugin-spec.md) |
 

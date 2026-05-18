@@ -17,7 +17,8 @@
 # Core 运维规范
 
 本文档定义 Nacos Core Operations 领域。Core 运维负责 Config、Naming、AI Registry、
-插件、控制台和 maintainer 工具共同使用的服务端控制面资源和运维动作。
+插件、[Console](../console/console-spec.md) 和 maintainer 工具共同使用的服务端控制面资源和
+运维动作。
 
 ## 1. 范围
 

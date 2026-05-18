@@ -46,7 +46,7 @@ Every HTTP API must first declare its audience:
 | --- | --- | --- |
 | Open API | `/v3/client` | SDKs and custom runtime clients |
 | Admin API | `/v3/admin` | operators and maintainer tooling |
-| Console API | `/v3/console` | Nacos console UI |
+| Console API | `/v3/console` | [Nacos console UI](../console/console-spec.md) |
 | Auth API | `/v3/auth` | plugin-provided auth APIs and bootstrap flows |
 
 An endpoint should not be documented as an Open API only because it is reachable

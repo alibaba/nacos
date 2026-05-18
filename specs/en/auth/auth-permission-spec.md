@@ -106,7 +106,7 @@ the request.
 | `NAMING` | Naming and service discovery resources. |
 | `AI` | AI registry resources such as MCP, prompts, agents, and tools. |
 | `CONSOLE` | Console management resources such as users, roles, and permissions. |
-| `LOCK` | Lock resources. |
+| `LOCK` | [Lock resources](../lock/lock-spec.md). |
 | `SPECIFIED` | Explicit resource string supplied by the secured endpoint. |
 
 ### `ActionTypes`

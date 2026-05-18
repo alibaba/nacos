@@ -18,7 +18,8 @@
 
 This document defines the Nacos Core Operations domain. Core Operations owns
 server control-plane resources and operational actions that are shared by
-Config, Naming, AI Registry, plugins, console, and maintainer tooling.
+Config, Naming, AI Registry, plugins, [Console](../console/console-spec.md),
+and maintainer tooling.
 
 ## 1. Scope
 

@@ -132,6 +132,8 @@ Implemented behavior to document more explicitly:
 Console APIs serve the Nacos web console and are not the same stability surface
 as Open APIs. They default to `ApiType.CONSOLE_API` and often use console-specific
 resource names, `ONLY_IDENTITY`, or UI-oriented response models.
+Console deployment, UI, and handler boundaries are defined by the
+[Console Spec](../console/console-spec.md).
 
 Console API modules mirror Admin modules where the UI needs them:
 

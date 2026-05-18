@@ -186,6 +186,9 @@ details.
 
 ### 5.4 LockService
 
+`LockService` is an experimental runtime primitive. Its domain semantics are
+defined by the [Distributed Lock Spec](../lock/lock-spec.md).
+
 | Capability | Methods | Contract |
 | --- | --- | --- |
 | User lock | `lock` | Acquire a lock through `LockInstance#lock`. |

@@ -96,7 +96,7 @@ Nacos 将请求级授权和数据级可见性分开处理。
 | `NAMING` | 服务发现和注册资源。 |
 | `AI` | MCP、Prompt、Agent、Tool 等 AI 注册中心资源。 |
 | `CONSOLE` | 用户、角色、权限等控制台管理资源。 |
-| `LOCK` | 锁资源。 |
+| `LOCK` | [锁资源](../lock/lock-spec.md)。 |
 | `SPECIFIED` | 由受保护端点显式提供的资源字符串。 |
 
 ### `ActionTypes`

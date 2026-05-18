@@ -167,6 +167,8 @@ interface 契约应独立于具体传输方式保持稳定。
 
 ### 5.4 LockService
 
+`LockService` 是实验性运行时原语，其领域语义由[分布式锁规范](../lock/lock-spec.md)定义。
+
 | 能力 | 方法 | 契约 |
 | --- | --- | --- |
 | 用户加锁 | `lock` | 通过 `LockInstance#lock` 获取锁。 |

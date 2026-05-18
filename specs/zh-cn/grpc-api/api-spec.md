@@ -221,6 +221,9 @@ Skill ZIP 下载和 AgentSpec 组装属于 Java SDK interface 能力，但当前
 
 ### 7.5 Lock
 
+Lock 领域语义由[分布式锁规范](../lock/lock-spec.md)定义。当前 gRPC 入口仍为实验性能力，
+可能随该领域一起变化。
+
 | Request type | Response type | 动作 | 主要字段 | 契约 |
 | --- | --- | --- | --- | --- |
 | `LockOperationRequest` | `LockOperationResponse` | handler 未声明 | `lockInstance`, `lockOperationEnum` | 尝试获取或释放 Nacos 分布式锁。 |

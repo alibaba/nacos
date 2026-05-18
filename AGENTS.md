@@ -160,7 +160,9 @@ English:
   [Prompt Spec](./specs/en/ai/prompt-spec.md),
   [Skill Spec](./specs/en/ai/skill-spec.md),
   [AgentSpec Spec](./specs/en/ai/agentspec-spec.md),
-  [Core Operations Spec](./specs/en/core/core-operations-spec.md)
+  [Core Operations Spec](./specs/en/core/core-operations-spec.md),
+  [Console Spec](./specs/en/console/console-spec.md),
+  [Distributed Lock Spec](./specs/en/lock/lock-spec.md)
 - Extension model:
   [Plugin Specs](./specs/en/plugin/README.md)
 - Security model:
@@ -222,7 +224,9 @@ Simplified Chinese:
   [Prompt 规范](./specs/zh-cn/ai/prompt-spec.md)，
   [Skill 规范](./specs/zh-cn/ai/skill-spec.md)，
   [AgentSpec 规范](./specs/zh-cn/ai/agentspec-spec.md)，
-  [Core 运维规范](./specs/zh-cn/core/core-operations-spec.md)
+  [Core 运维规范](./specs/zh-cn/core/core-operations-spec.md)，
+  [Console 规范](./specs/zh-cn/console/console-spec.md)，
+  [分布式锁规范](./specs/zh-cn/lock/lock-spec.md)
 - 扩展模型：
   [插件规范](./specs/zh-cn/plugin/README.md)
 - 安全模型：

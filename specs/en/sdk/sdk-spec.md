@@ -46,8 +46,8 @@ the capabilities that a runtime application normally needs:
 - query and subscribe to known services used by the application;
 - register, resolve, and subscribe to runtime AI resources, such as MCP
   endpoints, A2A agent endpoints, Prompt, Skill, and AgentSpec resources;
-- use optional runtime primitives such as distributed lock when the language SDK
-  supports them;
+- use optional runtime primitives such as
+  [distributed lock](../lock/lock-spec.md) when the language SDK supports them;
 - manage its own lifecycle, local cache, listeners, and connections.
 
 The Client SDK should avoid broad management capabilities, including:

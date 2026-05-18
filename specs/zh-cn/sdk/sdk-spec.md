@@ -41,7 +41,7 @@ Client SDK 面向应用运行时访问，应只暴露运行时应用通常需要
 - 查询和订阅应用已知依赖的服务；
 - 注册、解析和订阅运行时 AI 资源，例如 MCP endpoint、A2A agent endpoint、
   Prompt、Skill 和 AgentSpec；
-- 在语言 SDK 支持时，提供分布式锁等可选运行时原语；
+- 在语言 SDK 支持时，提供[分布式锁](../lock/lock-spec.md)等可选运行时原语；
 - 管理自身生命周期、本地缓存、监听器和连接。
 
 Client SDK 应避免暴露大范围管理能力，包括：
