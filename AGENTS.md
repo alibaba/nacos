@@ -159,7 +159,8 @@ English:
   [A2A Agent Spec](./specs/en/ai/a2a-agent-spec.md),
   [Prompt Spec](./specs/en/ai/prompt-spec.md),
   [Skill Spec](./specs/en/ai/skill-spec.md),
-  [AgentSpec Spec](./specs/en/ai/agentspec-spec.md)
+  [AgentSpec Spec](./specs/en/ai/agentspec-spec.md),
+  [Core Operations Spec](./specs/en/core/core-operations-spec.md)
 - Extension model:
   [Plugin Specs](./specs/en/plugin/README.md)
 - Security model:
@@ -220,7 +221,8 @@ Simplified Chinese:
   [A2A Agent 规范](./specs/zh-cn/ai/a2a-agent-spec.md)，
   [Prompt 规范](./specs/zh-cn/ai/prompt-spec.md)，
   [Skill 规范](./specs/zh-cn/ai/skill-spec.md)，
-  [AgentSpec 规范](./specs/zh-cn/ai/agentspec-spec.md)
+  [AgentSpec 规范](./specs/zh-cn/ai/agentspec-spec.md)，
+  [Core 运维规范](./specs/zh-cn/core/core-operations-spec.md)
 - 扩展模型：
   [插件规范](./specs/zh-cn/plugin/README.md)
 - 安全模型：

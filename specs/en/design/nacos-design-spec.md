@@ -153,7 +153,7 @@ governance principles.
 
 ### 4.4 Core And Operation Domain
 
-The core domain owns namespace management,
+The [Core Operations domain](../core/core-operations-spec.md) owns namespace management,
 [cluster members](foundation-cluster-membership-spec.md), server state,
 readiness/liveness,
 [server lifecycle and environment](foundation-server-lifecycle-env-spec.md),

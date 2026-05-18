@@ -122,7 +122,8 @@ namespace、API、SDK、鉴权、插件和资源治理原则。
 
 ### 4.4 Core 和运维领域
 
-Core 领域负责 namespace 管理、[集群成员](foundation-cluster-membership-spec.md)、服务端状态、
+[Core 运维领域](../core/core-operations-spec.md)负责 namespace 管理、
+[集群成员](foundation-cluster-membership-spec.md)、服务端状态、
 readiness/liveness、[服务端生命周期与环境](foundation-server-lifecycle-env-spec.md)、
 [连接管理](foundation-remote-connection-spec.md)、
 [请求过滤与运行时上下文](foundation-request-context-spec.md)、

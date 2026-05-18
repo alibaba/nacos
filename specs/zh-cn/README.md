@@ -48,6 +48,7 @@
 - [Config 规范](config/README.md)
 - [Naming 规范](naming/README.md)
 - [AI Registry 规范](ai/README.md)
+- [Core 运维规范](core/core-operations-spec.md)
 
 ## 扩展模型
 
