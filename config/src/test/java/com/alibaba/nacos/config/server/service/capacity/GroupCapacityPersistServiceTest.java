@@ -414,6 +414,22 @@ class GroupCapacityPersistServiceTest {
     }
     
     @Test
+    void testGetClusterUsageNullResult() {
+        doReturn(new ConfigInfoMapperByMySql()).when(mapperManager).findMapper(any(),
+            eq(TableConstant.CONFIG_INFO));
+        String groupId = GroupCapacityPersistService.CLUSTER;
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {groupId})))
+            .thenReturn(new ArrayList<>());
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(null);
+        try {
+            service.getClusterUsage();
+            assertTrue(false);
+        } catch (IllegalArgumentException e) {
+            assertEquals("configInfoCount error", e.getMessage());
+        }
+    }
+    
+    @Test
     void testDeleteGroupCapacity() {
         
         when(jdbcTemplate.update(any(PreparedStatementCreator.class))).thenReturn(1);

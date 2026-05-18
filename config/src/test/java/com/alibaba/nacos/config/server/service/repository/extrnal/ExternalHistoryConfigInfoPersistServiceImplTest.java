@@ -352,6 +352,30 @@ class ExternalHistoryConfigInfoPersistServiceImplTest {
         }
     }
     
+    @Test
+    void testGetNextHistoryInfo() {
+        ConfigHistoryInfo mockHistory = createMockConfigHistoryInfo(100);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            Mockito.any(Object[].class), eq(HISTORY_DETAIL_ROW_MAPPER)))
+            .thenReturn(mockHistory);
+        ConfigHistoryInfo result =
+            externalHistoryConfigInfoPersistService.getNextHistoryInfo("d", "g", "t",
+                "formal", null, 1L);
+        assertEquals(mockHistory, result);
+    }
+    
+    @Test
+    void testGetNextHistoryInfoEmpty() {
+        Mockito.when(
+            jdbcTemplate.queryForObject(anyString(), Mockito.any(Object[].class),
+                eq(HISTORY_DETAIL_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1));
+        ConfigHistoryInfo result =
+            externalHistoryConfigInfoPersistService.getNextHistoryInfo("d", "g", "t",
+                "formal", null, 1L);
+        assertNull(result);
+    }
+    
     private ConfigHistoryInfo createMockConfigHistoryInfo(long mockId) {
         ConfigHistoryInfo configAllInfo = new ConfigHistoryInfo();
         configAllInfo.setDataId("test" + mockId + ".yaml");

@@ -476,4 +476,24 @@ class ConfigServletInnerTest {
             configServletInner.doPollingConfig(request, response, clientMd5Map, 300);
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
     }
+    
+    @Test
+    void testDoPollingConfigNewVersion() throws Exception {
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Client-Version", "2.0.4");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        HashMap<String, ConfigListenState> changedGroups = new HashMap<>();
+        changedGroups.put("1", new ConfigListenState("md5"));
+        
+        md5UtilMockedStatic.when(() -> MD5Util.compareMd5(request, response, clientMd5Map))
+            .thenReturn(changedGroups);
+        md5UtilMockedStatic.when(() -> MD5Util.compareMd5ResultString(changedGroups))
+            .thenReturn("result-new");
+        
+        String actualValue =
+            configServletInner.doPollingConfig(request, response, clientMd5Map, 1);
+        assertEquals(HttpServletResponse.SC_OK + "", actualValue);
+        assertEquals("result-new", request.getAttribute("content"));
+    }
 }
