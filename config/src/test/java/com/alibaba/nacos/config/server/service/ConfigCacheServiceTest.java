@@ -543,6 +543,88 @@ class ConfigCacheServiceTest {
     }
     
     @Test
+    void testDumpWriteLockFailed() throws Exception {
+        String dataId = "lockFailD";
+        String group = "lockFailG";
+        String tenant = "lockFailT";
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        CacheItem cacheItem = Mockito.mock(CacheItem.class);
+        SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
+        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
+        Mockito.when(lock.tryWriteLock()).thenReturn(false);
+        Field cacheField = ConfigCacheService.class.getDeclaredField("CACHE");
+        cacheField.setAccessible(true);
+        ConcurrentHashMap<String, CacheItem> cache =
+            (ConcurrentHashMap<String, CacheItem>) cacheField.get(null);
+        cache.put(groupKey, cacheItem);
+        boolean result = ConfigCacheService.dump(dataId, group, tenant,
+            "content", System.currentTimeMillis(), "text", "key");
+        assertFalse(result);
+        cache.remove(groupKey);
+    }
+    
+    @Test
+    void testDumpGrayWriteLockFailed() throws Exception {
+        String dataId = "grayLockD";
+        String group = "grayLockG";
+        String tenant = "grayLockT";
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        CacheItem cacheItem = Mockito.mock(CacheItem.class);
+        SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
+        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
+        Mockito.when(lock.tryWriteLock()).thenReturn(false);
+        Field cacheField = ConfigCacheService.class.getDeclaredField("CACHE");
+        cacheField.setAccessible(true);
+        ConcurrentHashMap<String, CacheItem> cache =
+            (ConcurrentHashMap<String, CacheItem>) cacheField.get(null);
+        cache.put(groupKey, cacheItem);
+        boolean result = ConfigCacheService.dumpGray(dataId, group, tenant,
+            "gray1", "{}", "content", System.currentTimeMillis(), "key");
+        assertFalse(result);
+        cache.remove(groupKey);
+    }
+    
+    @Test
+    void testRemoveWriteLockFailed() throws Exception {
+        String dataId = "rmLockD";
+        String group = "rmLockG";
+        String tenant = "rmLockT";
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        CacheItem cacheItem = Mockito.mock(CacheItem.class);
+        SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
+        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
+        Mockito.when(lock.tryWriteLock()).thenReturn(false);
+        Field cacheField = ConfigCacheService.class.getDeclaredField("CACHE");
+        cacheField.setAccessible(true);
+        ConcurrentHashMap<String, CacheItem> cache =
+            (ConcurrentHashMap<String, CacheItem>) cacheField.get(null);
+        cache.put(groupKey, cacheItem);
+        boolean result = ConfigCacheService.remove(dataId, group, tenant);
+        assertFalse(result);
+        cache.remove(groupKey);
+    }
+    
+    @Test
+    void testRemoveGrayWriteLockFailed() throws Exception {
+        String dataId = "rmGrayLockD";
+        String group = "rmGrayLockG";
+        String tenant = "rmGrayLockT";
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        CacheItem cacheItem = Mockito.mock(CacheItem.class);
+        SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
+        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
+        Mockito.when(lock.tryWriteLock()).thenReturn(false);
+        Field cacheField = ConfigCacheService.class.getDeclaredField("CACHE");
+        cacheField.setAccessible(true);
+        ConcurrentHashMap<String, CacheItem> cache =
+            (ConcurrentHashMap<String, CacheItem>) cacheField.get(null);
+        cache.put(groupKey, cacheItem);
+        boolean result = ConfigCacheService.removeGray(dataId, group, tenant, "gray1");
+        assertFalse(result);
+        cache.remove(groupKey);
+    }
+    
+    @Test
     void testTryConfigReadLock() throws Exception {
         String dataId = "123testTryConfigReadLock";
         String group = "1234";

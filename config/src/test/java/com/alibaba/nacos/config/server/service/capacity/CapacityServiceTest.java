@@ -628,4 +628,17 @@ class CapacityServiceTest {
         Mockito.verify(groupCapacityPersistService, times(0))
             .updateQuota(anyString(), Mockito.anyInt());
     }
+    
+    @Test
+    void testInsertTenantCapacityDuplicateKey() {
+        when(tenantCapacityPersistService.insertTenantCapacity(any()))
+            .thenThrow(new DuplicateKeyException("dup"));
+        NamespaceCapacity nc = new NamespaceCapacity();
+        nc.setNamespaceId("dupTenant");
+        nc.setUsage(0);
+        when(tenantCapacityPersistService.getTenantCapacity(eq("dupTenant"))).thenReturn(nc);
+        service.initTenantCapacity("dupTenant");
+        Mockito.verify(tenantCapacityPersistService, times(1))
+            .insertTenantCapacity(any());
+    }
 }
