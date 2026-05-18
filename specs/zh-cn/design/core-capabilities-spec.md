@@ -53,7 +53,7 @@ Nacos 功能从产品意图到具体接口按如下层次组织：
 | --- | --- | --- | --- |
 | 配置中心 | 动态配置存储、发布、查询、订阅、灰度分发、历史、容量和审计。 | `namespaceId -> groupName -> dataId` | [Config 规范](../config/config-spec.md) |
 | 注册中心 | 服务发现、服务元数据、实例、健康状态、订阅和运行时推送。 | `namespaceId -> groupName -> serviceName` | [Naming 规范](../naming/naming-spec.md) |
-| AI Registry | MCP、A2A、Prompt、Skill、AgentSpec、版本、标签、可见性和发布治理。 | `namespaceId -> resourceType -> resourceName` | TODO: AI Registry 领域规范。 |
+| AI Registry | MCP、A2A、Prompt、Skill、AgentSpec、版本、标签、可见性和发布治理。 | `namespaceId -> resourceType -> resourceName` | [AI Registry 规范](../ai/ai-registry-spec.md) |
 | Core 运维 | Namespace、[集群成员](foundation-cluster-membership-spec.md)、服务端状态、readiness、liveness、插件状态和运维控制。 | 领域特定的管理资源。 | TODO: Core 运维规范。 |
 | 安全与可见性 | 认证、鉴权、权限、API 分类、资源可见性和身份传播。 | 结构化 Nacos 资源身份。 | [鉴权与权限规范](../auth/auth-permission-spec.md)，[可见性插件规范](../auth/visibility-plugin-spec.md) |
 | 扩展 | 服务端和客户端扩展点，包括鉴权、可见性、数据源、加密、Trace、Control、寻址、AI Pipeline 等。 | 插件类型身份加领域拥有的资源身份。 | [插件规范](../plugin/plugin-spec.md) |

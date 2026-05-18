@@ -26,7 +26,8 @@ MCP、AgentSpec 以及未来的通用 AI 资源类型。
 [Nacos 插件化规范](plugin-spec.md) 定义。
 
 Pipeline 属于 AI 资源治理。它可以批准或拒绝一次发布操作，但不得改变被发布
-[AI 资源](../design/resource-model-spec.md)的规范身份。
+[AI 资源](../ai/ai-resource-model-spec.md)的规范身份。领域生命周期如何响应 pipeline
+结果由 [AI 资源生命周期规范](../ai/ai-resource-lifecycle-spec.md)定义。
 
 ## 概念
 

@@ -48,6 +48,7 @@ extension mechanisms, and cross-cutting security rules.
 
 - [Config Specs](config/README.md)
 - [Naming Specs](naming/README.md)
+- [AI Registry Specs](ai/README.md)
 
 ## Extension Model
 

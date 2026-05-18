@@ -192,7 +192,11 @@ AI 资源模型使用：
 NamespaceId -> resourceType -> resourceName
 ```
 
-它覆盖 MCP Server、A2A AgentCard、Prompt、Skill、AgentSpec 等 AI Registry 资源。
+它覆盖 [MCP Server](../ai/mcp-server-spec.md)、
+[A2A AgentCard](../ai/a2a-agent-spec.md)、[Prompt](../ai/prompt-spec.md)、
+[Skill](../ai/skill-spec.md)、[AgentSpec](../ai/agentspec-spec.md) 等 AI Registry
+资源。共享 AI 模型由 [AI Registry 规范](../ai/ai-registry-spec.md)和
+[AI 资源模型规范](../ai/ai-resource-model-spec.md)定义。
 
 AI 资源共享一套治理属性：
 

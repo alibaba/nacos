@@ -217,6 +217,9 @@ inner server-to-server rules are defined by the
 
 ### 7.4 AI
 
+AI payload semantics are defined by the
+[AI Registry Spec](../ai/ai-registry-spec.md) and each resource type spec.
+
 | Request type | Response type | Action | Main fields | Contract |
 | --- | --- | --- | --- | --- |
 | `QueryMcpServerRequest` | `QueryMcpServerResponse` | read | `namespace`, `mcpName`, `version` | Query MCP server detail. |

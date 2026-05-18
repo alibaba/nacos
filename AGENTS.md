@@ -150,7 +150,16 @@ English:
   [Naming Health And Protection Spec](./specs/en/naming/naming-health-protection-spec.md),
   [Naming Metadata And Selector Spec](./specs/en/naming/naming-metadata-selector-spec.md),
   [Naming Consistency And Client State Spec](./specs/en/naming/naming-consistency-client-spec.md),
-  [Naming Ops Spec](./specs/en/naming/naming-ops-spec.md)
+  [Naming Ops Spec](./specs/en/naming/naming-ops-spec.md),
+  [AI Registry Spec](./specs/en/ai/ai-registry-spec.md),
+  [AI Resource Model Spec](./specs/en/ai/ai-resource-model-spec.md),
+  [AI Resource Lifecycle Spec](./specs/en/ai/ai-resource-lifecycle-spec.md),
+  [AI Registry Adaptor Spec](./specs/en/ai/ai-registry-adaptor-spec.md),
+  [MCP Server Spec](./specs/en/ai/mcp-server-spec.md),
+  [A2A Agent Spec](./specs/en/ai/a2a-agent-spec.md),
+  [Prompt Spec](./specs/en/ai/prompt-spec.md),
+  [Skill Spec](./specs/en/ai/skill-spec.md),
+  [AgentSpec Spec](./specs/en/ai/agentspec-spec.md)
 - Extension model:
   [Plugin Specs](./specs/en/plugin/README.md)
 - Security model:
@@ -202,7 +211,16 @@ Simplified Chinese:
   [Naming 健康检查与保护规范](./specs/zh-cn/naming/naming-health-protection-spec.md)，
   [Naming 元数据与 Selector 规范](./specs/zh-cn/naming/naming-metadata-selector-spec.md)，
   [Naming 一致性与客户端状态规范](./specs/zh-cn/naming/naming-consistency-client-spec.md)，
-  [Naming 运维规范](./specs/zh-cn/naming/naming-ops-spec.md)
+  [Naming 运维规范](./specs/zh-cn/naming/naming-ops-spec.md)，
+  [AI Registry 规范](./specs/zh-cn/ai/ai-registry-spec.md)，
+  [AI 资源模型规范](./specs/zh-cn/ai/ai-resource-model-spec.md)，
+  [AI 资源生命周期规范](./specs/zh-cn/ai/ai-resource-lifecycle-spec.md)，
+  [AI Registry 适配器规范](./specs/zh-cn/ai/ai-registry-adaptor-spec.md)，
+  [MCP Server 规范](./specs/zh-cn/ai/mcp-server-spec.md)，
+  [A2A Agent 规范](./specs/zh-cn/ai/a2a-agent-spec.md)，
+  [Prompt 规范](./specs/zh-cn/ai/prompt-spec.md)，
+  [Skill 规范](./specs/zh-cn/ai/skill-spec.md)，
+  [AgentSpec 规范](./specs/zh-cn/ai/agentspec-spec.md)
 - 扩展模型：
   [插件规范](./specs/zh-cn/plugin/README.md)
 - 安全模型：

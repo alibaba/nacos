@@ -163,6 +163,8 @@ a compatibility surface.
 ### 5.3 AiService and A2aService
 
 `AiService` extends `A2aService`.
+Resource semantics are defined by the [AI Registry Spec](../ai/ai-registry-spec.md)
+and the individual AI resource type specs.
 
 | Capability | Methods | Contract |
 | --- | --- | --- |

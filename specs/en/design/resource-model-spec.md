@@ -209,8 +209,12 @@ The AI resource model uses:
 NamespaceId -> resourceType -> resourceName
 ```
 
-It covers AI Registry resources such as MCP Server, A2A AgentCard, Prompt,
-Skill, and AgentSpec.
+It covers AI Registry resources such as
+[MCP Server](../ai/mcp-server-spec.md), [A2A AgentCard](../ai/a2a-agent-spec.md),
+[Prompt](../ai/prompt-spec.md), [Skill](../ai/skill-spec.md), and
+[AgentSpec](../ai/agentspec-spec.md). The shared AI model is defined by the
+[AI Registry Spec](../ai/ai-registry-spec.md) and the
+[AI Resource Model Spec](../ai/ai-resource-model-spec.md).
 
 AI resources share governance attributes:
 

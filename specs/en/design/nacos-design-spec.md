@@ -140,8 +140,8 @@ views, and service-change push. The detailed rules are defined by the
 
 ### 4.3 AI Registry Domain
 
-The AI registry domain manages AI resources such as MCP Server, A2A AgentCard,
-Prompt, Skill, and AgentSpec. AI resources use
+The [AI Registry domain](../ai/ai-registry-spec.md) manages AI resources such as
+MCP Server, A2A AgentCard, Prompt, Skill, and AgentSpec. AI resources use
 `NamespaceId -> resourceType -> resourceName` as their top-level identity. The
 domain owns AI resource metadata, versions, labels, visibility, endpoints, tool
 or skill descriptors, publish pipeline state, download/distribution, and

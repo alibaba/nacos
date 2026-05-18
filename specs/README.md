@@ -39,6 +39,7 @@ Nacos design
      -> Event dispatch and NotifyCenter
      -> Observability hooks
   -> Core capabilities and domain capabilities
+     -> Config / Naming / AI Registry
   -> HTTP / gRPC / SDK interface specs
   -> Extension model
   -> Security model
@@ -62,6 +63,7 @@ Nacos 顶层设计
      -> 事件分发与 NotifyCenter
      -> 可观测钩子
   -> 核心功能与领域功能
+     -> Config / Naming / AI Registry
   -> HTTP / gRPC / SDK 接口规范
   -> 扩展模型
   -> 安全模型

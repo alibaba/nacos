@@ -146,6 +146,7 @@ context，而不是修改请求 payload 或让无关 SDK 调用失败。默认 N
 ### 5.3 AiService 和 A2aService
 
 `AiService` 继承 `A2aService`。
+资源语义由 [AI Registry 规范](../ai/ai-registry-spec.md)和各 AI 资源类型规范定义。
 
 | 能力 | 方法 | 契约 |
 | --- | --- | --- |
