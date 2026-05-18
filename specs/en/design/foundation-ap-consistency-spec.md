@@ -52,7 +52,8 @@ AP state is appropriate for resources with these characteristics:
 AP state is not appropriate for durable management metadata, operator overrides,
 schema state, long-lived permissions, or resources that require a single global
 commit order. Those resources should use the
-[CP Consistency Spec](foundation-cp-consistency-spec.md) or persistence specs.
+[CP Consistency Spec](foundation-cp-consistency-spec.md) or the
+[Persistence And Dump Spec](foundation-persistence-dump-spec.md).
 
 AP consumers must define:
 
@@ -214,6 +215,7 @@ Rules:
 - [Remote Connection Lifecycle Spec](foundation-remote-connection-spec.md)
 - [Cluster Membership Spec](foundation-cluster-membership-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
+- [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
 - [Config Spec](../config/config-spec.md)
 - [Config Listener And Watch Spec](../config/config-listener-watch-spec.md)
 - [Naming Consistency And Client State Spec](../naming/naming-consistency-client-spec.md)

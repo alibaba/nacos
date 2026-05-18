@@ -42,7 +42,8 @@ This spec covers:
 This spec does not define the AP or CP consistency algorithms themselves. Distro
 data ownership, Raft group behavior, Config dump ordering, and Naming
 anti-entropy rules must be defined by domain or consistency specs that use this
-internal RPC foundation.
+internal RPC foundation. Shared Config dump and local cache boundaries are
+defined by the [Persistence And Dump Spec](foundation-persistence-dump-spec.md).
 
 ## 2. Design Model
 
@@ -223,6 +224,7 @@ repair. Those retry rules belong to the Config and Naming consistency specs.
 - [Remote Connection Lifecycle Spec](foundation-remote-connection-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
+- [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [Auth And Permission Spec](../auth/auth-permission-spec.md)
 - [Config Spec](../config/config-spec.md)

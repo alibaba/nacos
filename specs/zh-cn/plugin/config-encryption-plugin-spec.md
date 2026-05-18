@@ -76,7 +76,8 @@ Java 客户端通过配置 filter chain 集成加解密。它使用 Java `Servic
 ## 数据模型
 
 加密配置必须存储密文内容和受保护的数据密钥。配置持久化表使用 `encrypted_data_key` 保存
-该信息。普通配置的 `encrypted_data_key` 为空。
+该信息。普通配置的 `encrypted_data_key` 为空。持久化与 dump 边界由
+[持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
 
 dataId 前缀属于用户可见契约：
 

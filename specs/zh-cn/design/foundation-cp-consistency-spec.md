@@ -144,7 +144,7 @@ Snapshot 规则：
 - 领域规范必须定义 snapshot 恢复如何与本地 cache 和派生索引交互。
 
 对于 Config 内置存储，启动阶段会等待 CP metadata 表明数据可读后继续 dump 恢复。这是建立在
-CP 基础能力上的 Config 持久化规则。
+CP 基础能力和[持久化与 Dump 规范](foundation-persistence-dump-spec.md)上的 Config 持久化规则。
 
 ## 9. 边界规则
 
@@ -160,6 +160,7 @@ CP 基础能力上的 Config 持久化规则。
 
 - [基础能力规范](foundation-capabilities-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
+- [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
 - [集群成员规范](foundation-cluster-membership-spec.md)
 - [Config 规范](../config/config-spec.md)
 - [Config 持久化、Dump 与历史规范](../config/config-persistence-history-spec.md)

@@ -119,6 +119,7 @@ English:
   [Internal RPC And Cluster Request Spec](./specs/en/design/foundation-internal-rpc-spec.md),
   [AP Consistency Spec](./specs/en/design/foundation-ap-consistency-spec.md),
   [CP Consistency Spec](./specs/en/design/foundation-cp-consistency-spec.md),
+  [Persistence And Dump Spec](./specs/en/design/foundation-persistence-dump-spec.md),
   [Core Capabilities Spec](./specs/en/design/core-capabilities-spec.md),
   [Resource Model Spec](./specs/en/design/resource-model-spec.md)
 - Interface model:
@@ -165,6 +166,7 @@ Simplified Chinese:
   [内部 RPC 与集群请求规范](./specs/zh-cn/design/foundation-internal-rpc-spec.md)，
   [AP 一致性规范](./specs/zh-cn/design/foundation-ap-consistency-spec.md)，
   [CP 一致性规范](./specs/zh-cn/design/foundation-cp-consistency-spec.md)，
+  [持久化与 Dump 规范](./specs/zh-cn/design/foundation-persistence-dump-spec.md)，
   [核心功能规范](./specs/zh-cn/design/core-capabilities-spec.md)，
   [资源模型规范](./specs/zh-cn/design/resource-model-spec.md)
 - 接口模型：

@@ -22,9 +22,10 @@ The foundation layer provides infrastructure such as
 [remote connection lifecycle](foundation-remote-connection-spec.md),
 [internal RPC and cluster requests](foundation-internal-rpc-spec.md),
 [AP consistency](foundation-ap-consistency-spec.md),
-[CP consistency](foundation-cp-consistency-spec.md), persistence, task
-execution, and event dispatch. It must support domain semantics without owning
-Config, Naming, AI, or security resource meaning.
+[CP consistency](foundation-cp-consistency-spec.md),
+[persistence and dump](foundation-persistence-dump-spec.md), task execution, and
+event dispatch. It must support domain semantics without owning Config, Naming,
+AI, or security resource meaning.
 
 ## 1. Positioning
 
@@ -53,7 +54,7 @@ validation, authorization, and user-visible semantics.
 | [Internal RPC and cluster requests](foundation-internal-rpc-spec.md) | `core.remote`, domain request handlers | Send server-to-server requests, cluster notifications, verification requests, and acknowledgements over the remote layer. | Internal RPC must not redefine public HTTP/gRPC API semantics. Domain handlers own payload meaning. |
 | [AP consistency](foundation-ap-consistency-spec.md) | `core.distributed.distro`, Config notify path | Provide Distro runtime data sync and Config Notify-style eventual propagation for AP resources. | Domains must define resource type, owner, operation semantics, retry, verify, repair, and convergence tolerance. |
 | [CP consistency](foundation-cp-consistency-spec.md) | `core.distributed.raft`, `consistency.cp` | Provide Raft/JRaft-backed strongly ordered writes, groups, processors, snapshots, and recovery for durable state. | Domains must define group ownership, request type, snapshot shape, read/write visibility, and unavailable behavior. |
-| Persistence and dump | `persistence`, domain storage modules | Store durable data in embedded or external storage, load local dump data, and recover serving cache. | Domains must define schema, compatibility, data ownership, and whether dump is cache or source of truth. |
+| [Persistence and dump](foundation-persistence-dump-spec.md) | `persistence`, domain storage modules | Store durable data in embedded or external storage, load local dump data, and recover serving cache. | Domains must define schema, compatibility, data ownership, and whether dump is cache or source of truth. |
 | Task execution | `common.task`, `common.executor`, domain task engines | Run immediate, delayed, retry, merge, batch, and scheduled tasks with bounded resources. | Tasks must be idempotent or explicitly guarded because retries, merge, and node changes can repeat work. |
 | Event dispatch | `common.notify`, domain event publishers | Publish in-process events to subscribers, update indexes, trigger async work, and bridge trace events. | Events are local process facts unless a domain routes them through persistence or cluster protocols. |
 | Observability hooks | `core.monitor`, `common.trace`, plugin trace/control | Report metrics, traces, queue depth, connection state, and operation events. | Observability must not change resource semantics or become a required control path. |
@@ -121,7 +122,7 @@ Domains must select consistency behavior based on resource semantics:
 | --- | --- |
 | Runtime, high-frequency, client-owned, disposable, eventually convergent state. | AP consistency through Distro-style protocols. |
 | Durable, management-owned, snapshot-recoverable, strongly ordered state. | CP consistency through Raft/JRaft-style protocols. |
-| Durable database state with local serving cache. | Persistence plus dump and domain-defined cache invalidation. |
+| Durable database state with local serving cache. | [Persistence plus dump](foundation-persistence-dump-spec.md) and domain-defined cache invalidation. |
 
 Protocol choice is a semantic decision. A domain must not use Distro or Raft
 only because an implementation path is convenient.
@@ -157,6 +158,10 @@ Persistence rules:
   views become visible;
 - schema remnants kept for compatibility should be documented as compatibility
   fields or pending removal.
+
+Detailed datasource, repository, embedded storage, dump, cache update, and
+maintenance rules are defined by the
+[Persistence And Dump Spec](foundation-persistence-dump-spec.md).
 
 ## 7. Task Execution
 
@@ -220,6 +225,7 @@ state change through persistence, AP consistency, CP consistency, or an
 - [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
+- [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [Plugin Spec](../plugin/plugin-spec.md)
 - [Addressing Plugin Spec](../plugin/addressing-plugin-spec.md)

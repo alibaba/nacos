@@ -28,6 +28,7 @@
 - [内部 RPC 与集群请求规范](design/foundation-internal-rpc-spec.md)
 - [AP 一致性规范](design/foundation-ap-consistency-spec.md)
 - [CP 一致性规范](design/foundation-cp-consistency-spec.md)
+- [持久化与 Dump 规范](design/foundation-persistence-dump-spec.md)
 - [核心功能规范](design/core-capabilities-spec.md)
 
 ## 接口模型

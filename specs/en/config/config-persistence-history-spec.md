@@ -74,7 +74,7 @@ is defined by the [CP Consistency Spec](../design/foundation-cp-consistency-spec
 and Config Notify propagation is defined by the
 [AP Consistency Spec](../design/foundation-ap-consistency-spec.md). Persistence,
 dump, and task boundaries are defined by the
-[Foundation Capabilities Spec](../design/foundation-capabilities-spec.md).
+[Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
 
 ## 5. History
 
@@ -104,11 +104,17 @@ serving state.
 
 ## 7. Pending Specs
 
-- TODO: Define the shared persistence spec for embedded storage, external
-  storage, repository interfaces, schema ownership, and plugin dialect rules.
 - TODO: Define the Config-specific consistency spec for write visibility, dump
   ordering, and failover recovery. Embedded storage uses the
   [CP Consistency Spec](../design/foundation-cp-consistency-spec.md); Config
   change notifications use the
   [AP Consistency Spec](../design/foundation-ap-consistency-spec.md) and the
   [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
+
+## 8. Related Specs
+
+- [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md)
+- [CP Consistency Spec](../design/foundation-cp-consistency-spec.md)
+- [AP Consistency Spec](../design/foundation-ap-consistency-spec.md)
+- [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)
+- [Datasource Dialect Plugin Spec](../plugin/datasource-dialect-plugin-spec.md)

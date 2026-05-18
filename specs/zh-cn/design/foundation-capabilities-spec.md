@@ -21,8 +21,9 @@
 [远程连接生命周期](foundation-remote-connection-spec.md)、
 [内部 RPC 与集群请求](foundation-internal-rpc-spec.md)、
 [AP 一致性](foundation-ap-consistency-spec.md)、
-[CP 一致性](foundation-cp-consistency-spec.md)、持久化、任务执行和事件分发等
-基础设施。它支撑领域语义，但不拥有 Config、Naming、AI 或安全资源本身的含义。
+[CP 一致性](foundation-cp-consistency-spec.md)、
+[持久化与 dump](foundation-persistence-dump-spec.md)、任务执行和事件分发等基础设施。它支撑领域语义，
+但不拥有 Config、Naming、AI 或安全资源本身的含义。
 
 ## 1. 定位
 
@@ -49,7 +50,7 @@
 | [内部 RPC 与集群请求](foundation-internal-rpc-spec.md) | `core.remote`、领域 request handler | 通过远程层发送服务端间请求、集群通知、校验请求和 ack。 | 内部 RPC 不得重新定义公开 HTTP/gRPC API 语义；领域 handler 拥有 payload 含义。 |
 | [AP 一致性](foundation-ap-consistency-spec.md) | `core.distributed.distro`、Config notify path | 提供 Distro 运行时数据同步和 Config Notify 风格的 AP 最终传播能力。 | 领域必须定义 resource type、owner、操作语义、重试、verify、修复和收敛容忍度。 |
 | [CP 一致性](foundation-cp-consistency-spec.md) | `core.distributed.raft`、`consistency.cp` | 提供 Raft/JRaft 支持的强顺序写、group、processor、snapshot 和恢复能力。 | 领域必须定义 group 归属、request 类型、snapshot 形态、读写可见性和不可用行为。 |
-| 持久化与 dump | `persistence`、领域存储模块 | 将持久数据写入内置或外部存储，加载本地 dump，并恢复服务缓存。 | 领域必须定义 schema、兼容性、数据归属，以及 dump 是缓存还是事实来源。 |
+| [持久化与 dump](foundation-persistence-dump-spec.md) | `persistence`、领域存储模块 | 将持久数据写入内置或外部存储，加载本地 dump，并恢复服务缓存。 | 领域必须定义 schema、兼容性、数据归属，以及 dump 是缓存还是事实来源。 |
 | 任务执行 | `common.task`、`common.executor`、领域 task engine | 执行立即、延迟、重试、合并、批量和定时任务，并控制资源使用。 | 任务必须具备幂等性，或通过版本、时间戳、状态、CAS 等机制显式保护。 |
 | 事件分发 | `common.notify`、领域事件 publisher | 发布进程内事件，用于更新索引、触发异步任务和桥接 trace 事件。 | 除非领域通过持久化或集群协议传递，否则事件只是本进程事实。 |
 | 可观测钩子 | `core.monitor`、`common.trace`、Trace/Control 插件 | 上报指标、trace、队列深度、连接状态和操作事件。 | 可观测能力不得改变资源语义，也不得成为必须依赖的控制路径。 |
@@ -98,7 +99,7 @@
 | --- | --- |
 | 运行时、高频、客户端拥有、可丢弃、允许最终收敛的状态。 | Distro 风格 AP 一致性。 |
 | 持久、管理面拥有、可通过 snapshot 恢复、需要强顺序的状态。 | Raft/JRaft 风格 CP 一致性。 |
-| 数据库存储的持久数据，并通过本地服务缓存加速读取。 | 持久化加 dump，以及领域定义的缓存失效规则。 |
+| 数据库存储的持久数据，并通过本地服务缓存加速读取。 | [持久化加 dump](foundation-persistence-dump-spec.md)，以及领域定义的缓存失效规则。 |
 
 协议选择是语义决策。领域不得仅因为实现路径方便就使用 Distro 或 Raft。
 
@@ -125,6 +126,9 @@ CP 一致性提供强顺序持久状态。当前内置 CP 行为通过 `JRaftPro
 - dump 文件和本地 cache 必须说明自己是可恢复缓存、failover 数据还是内置存储事实来源；
 - 持久写成功后，领域应定义本地缓存和 listener 视图何时可见；
 - 为兼容保留的冗余 schema 字段应记录为兼容字段或待移除项。
+
+Datasource、repository、嵌入式存储、dump、缓存更新和维护规则由
+[持久化与 Dump 规范](foundation-persistence-dump-spec.md)定义。
 
 ## 7. 任务执行
 
@@ -173,6 +177,7 @@ push 组件和桥接 trace 事件。
 - [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [CP 一致性规范](foundation-cp-consistency-spec.md)
+- [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [插件规范](../plugin/plugin-spec.md)
 - [寻址插件规范](../plugin/addressing-plugin-spec.md)

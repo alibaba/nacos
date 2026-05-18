@@ -169,7 +169,8 @@ Snapshot rules:
 
 For embedded Config storage, startup waits for CP metadata indicating readable
 data before dump recovery continues. That wait is a Config persistence rule
-built on the CP foundation.
+built on the CP foundation and the
+[Persistence And Dump Spec](foundation-persistence-dump-spec.md).
 
 ## 9. Boundary Rules
 
@@ -191,6 +192,7 @@ built on the CP foundation.
 
 - [Foundation Capabilities Spec](foundation-capabilities-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
+- [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
 - [Cluster Membership Spec](foundation-cluster-membership-spec.md)
 - [Config Spec](../config/config-spec.md)
 - [Config Persistence, Dump, And History Spec](../config/config-persistence-history-spec.md)

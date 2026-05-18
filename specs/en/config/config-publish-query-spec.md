@@ -77,7 +77,8 @@ The effective semantic order is:
 8. Resolve the response content type from the config type, defaulting to text.
 
 Runtime query must use cached and dumped content rather than broad persistence
-queries.
+queries. The shared dump and cache boundary is defined by the
+[Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
 
 ## 4. Admin Query
 

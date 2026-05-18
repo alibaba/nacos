@@ -105,7 +105,7 @@ Config operation APIs are administrative repair or diagnostics surfaces:
 
 | Operation | Rule |
 | --- | --- |
-| Local cache dump | Triggers a full local cache refresh from persistence. |
+| Local cache dump | Triggers a full local cache refresh from persistence according to the [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md). |
 | Log level update | Changes Config module log level. |
 | Derby query | Allows bounded `SELECT` statements only when embedded storage is active and `nacos.config.derby.ops.enabled=true`. |
 | Derby import | Imports Derby data only when embedded storage is active and Derby ops is enabled. |
@@ -119,4 +119,5 @@ must remain disabled by default.
 
 - [HTTP API Spec](../http-api/api-spec.md)
 - [Auth And Permission Spec](../auth/auth-permission-spec.md)
+- [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md)
 - [Control Plugin Spec](../plugin/control-plugin-spec.md)

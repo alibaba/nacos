@@ -43,6 +43,7 @@
 - [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)
 - [AP 一致性规范](../design/foundation-ap-consistency-spec.md)
 - [CP 一致性规范](../design/foundation-cp-consistency-spec.md)
+- [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)
 - [HTTP API 规范](../http-api/api-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [SDK 规范](../sdk/sdk-spec.md)

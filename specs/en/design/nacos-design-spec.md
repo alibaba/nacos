@@ -201,7 +201,9 @@ Nacos modules should follow these ownership rules:
   [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md).
   AP/CP consistency boundaries are defined by the
   [AP Consistency Spec](foundation-ap-consistency-spec.md) and
-  [CP Consistency Spec](foundation-cp-consistency-spec.md).
+  [CP Consistency Spec](foundation-cp-consistency-spec.md). Persistence and dump
+  boundaries are defined by the
+  [Persistence And Dump Spec](foundation-persistence-dump-spec.md).
   Other foundation boundaries are defined by the
   [Foundation Capabilities Spec](foundation-capabilities-spec.md).
 - `auth` and plugin modules own extensible security and policy behavior.
@@ -234,8 +236,9 @@ than storage implementation details. The common foundation expectations for
 [connection lifecycle](foundation-remote-connection-spec.md),
 [internal RPC](foundation-internal-rpc-spec.md),
 [AP consistency](foundation-ap-consistency-spec.md),
-[CP consistency](foundation-cp-consistency-spec.md), persistence, task
-execution, and event dispatch are defined by the
+[CP consistency](foundation-cp-consistency-spec.md),
+[persistence and dump](foundation-persistence-dump-spec.md), task execution, and
+event dispatch are defined by the
 [Foundation Capabilities Spec](foundation-capabilities-spec.md) and its sub
 specs.
 

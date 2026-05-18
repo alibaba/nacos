@@ -32,6 +32,7 @@ Nacos design
      -> Internal RPC and cluster requests
      -> AP consistency
      -> CP consistency
+     -> Persistence and dump
   -> Core capabilities and domain capabilities
   -> HTTP / gRPC / SDK interface specs
   -> Extension model
@@ -49,6 +50,7 @@ Nacos 顶层设计
      -> 内部 RPC 与集群请求
      -> AP 一致性
      -> CP 一致性
+     -> 持久化与 dump
   -> 核心功能与领域功能
   -> HTTP / gRPC / SDK 接口规范
   -> 扩展模型

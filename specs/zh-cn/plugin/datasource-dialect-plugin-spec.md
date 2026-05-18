@@ -28,7 +28,12 @@
 
 该插件的存在原因是：Nacos 持久化需要保持同一套逻辑 schema 和 repository 契约，同时允许
 不同数据库使用不同 SQL 方言。数据源方言插件不是持久化领域的 owner；它把 repository 契约
-翻译成数据库相关 SQL。
+翻译成数据库相关 SQL。持久化与 dump 边界由
+[持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
+
+领域模块仍然可以拥有具体持久化实现，因为存储记录通常承载领域语义。例如 Config repository service
+拥有 Config 发布、历史、灰度和容量语义，而本插件只提供这些 repository 使用的数据库相关 SQL 方言和
+mapper 层。
 
 ## 概念
 
@@ -38,6 +43,9 @@
 | Dialect | 数据库级 SQL 行为，例如分页、生成主键和函数。 |
 | Mapper | 某个逻辑 Nacos 表在某个数据库类型下的表级 SQL provider。 |
 | Logical schema | 所有数据库共享的 Nacos 表和列语义。 |
+
+Repository 实现负责选择逻辑操作，并在需要时调用 mapper。Mapper 不得决定资源身份、鉴权、兼容策略或
+用户可见的领域行为。
 
 SQL platform 必须选择同一个数据库族的 `DatabaseDialect` 和 mapper 集合。混用一个数据库的
 dialect 和另一个数据库的 mapper 是无效行为。

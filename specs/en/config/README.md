@@ -44,6 +44,7 @@ specific behavior.
 - [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)
 - [AP Consistency Spec](../design/foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](../design/foundation-cp-consistency-spec.md)
+- [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md)
 - [HTTP API Spec](../http-api/api-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [SDK Spec](../sdk/sdk-spec.md)

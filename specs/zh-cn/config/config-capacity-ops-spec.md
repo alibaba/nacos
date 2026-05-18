@@ -91,7 +91,7 @@ Config 运维 API 是管理修复或诊断接口：
 
 | 操作 | 规则 |
 | --- | --- |
-| 本地缓存 dump | 触发从持久化层全量刷新本地缓存。 |
+| 本地缓存 dump | 按[持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)从持久化层全量刷新本地缓存。 |
 | 日志级别更新 | 修改 Config 模块日志级别。 |
 | Derby 查询 | 仅当嵌入式存储启用且 `nacos.config.derby.ops.enabled=true` 时，允许有边界的 `SELECT` 语句。 |
 | Derby 导入 | 仅当嵌入式存储启用且 Derby ops 已启用时，导入 Derby 数据。 |
@@ -104,4 +104,5 @@ Derby ops 属于 maintainer-only 行为。它必须要求 Admin 权限，并默�
 
 - [HTTP API 规范](../http-api/api-spec.md)
 - [鉴权与权限规范](../auth/auth-permission-spec.md)
+- [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)
 - [Control 插件规范](../plugin/control-plugin-spec.md)

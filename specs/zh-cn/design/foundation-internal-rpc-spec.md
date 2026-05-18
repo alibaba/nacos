@@ -37,7 +37,8 @@
 - 共享传输行为与领域 payload 语义之间的边界。
 
 本文不定义 AP 或 CP 一致性算法本身。Distro data ownership、Raft group 行为、Config dump
-顺序和 Naming anti-entropy 规则，应由使用该内部 RPC 基础能力的领域规范或一致性规范定义。
+顺序和 Naming anti-entropy 规则，应由使用该内部 RPC 基础能力的领域规范或一致性规范定义。共享
+Config dump 和本地 cache 边界由[持久化与 Dump 规范](foundation-persistence-dump-spec.md)定义。
 
 ## 2. 设计模型
 
@@ -181,6 +182,7 @@ Cluster RPC 调用方必须定义自己的重试或补偿行为。
 - [远程连接生命周期规范](foundation-remote-connection-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [CP 一致性规范](foundation-cp-consistency-spec.md)
+- [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [鉴权与权限规范](../auth/auth-permission-spec.md)
 - [Config 规范](../config/config-spec.md)

@@ -61,7 +61,7 @@ Config 支持嵌入式和外部存储模式：
 详细 Config 一致性契约预留给后续领域化的一致性与集群规范。嵌入式存储的 CP 基础见
 [CP 一致性规范](../design/foundation-cp-consistency-spec.md)，Config Notify 传播见
 [AP 一致性规范](../design/foundation-ap-consistency-spec.md)。持久化、dump 和任务边界由
-[基础能力规范](../design/foundation-capabilities-spec.md)定义。
+[持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
 
 ## 5. 历史
 
@@ -87,8 +87,15 @@ Admin 本地缓存操作可以触发从持久化层到本地缓存的全量 dump
 
 ## 7. 待补充规范
 
-- TODO: 定义嵌入式存储、外部存储、repository 接口、schema 归属和插件方言规则的共享持久化规范。
 - TODO: 定义 Config 领域特有的写入可见性、dump 顺序和故障恢复一致性规范。嵌入式存储使用
   [CP 一致性规范](../design/foundation-cp-consistency-spec.md)；Config 变更通知使用
   [AP 一致性规范](../design/foundation-ap-consistency-spec.md)和
   [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。
+
+## 8. 相关规范
+
+- [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)
+- [CP 一致性规范](../design/foundation-cp-consistency-spec.md)
+- [AP 一致性规范](../design/foundation-ap-consistency-spec.md)
+- [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)
+- [数据源方言插件规范](../plugin/datasource-dialect-plugin-spec.md)

@@ -43,7 +43,8 @@ points and must not redefine domain ownership. Foundation capabilities provide
 [remote connection](foundation-remote-connection-spec.md),
 [internal RPC](foundation-internal-rpc-spec.md),
 [AP consistency](foundation-ap-consistency-spec.md),
-[CP consistency](foundation-cp-consistency-spec.md), persistence, task, and
+[CP consistency](foundation-cp-consistency-spec.md),
+[persistence and dump](foundation-persistence-dump-spec.md), task, and
 event infrastructure; they support domains but do not own domain resource
 semantics.
 
@@ -69,9 +70,10 @@ semantics.
   [remote connection lifecycle](foundation-remote-connection-spec.md),
   [internal RPC](foundation-internal-rpc-spec.md),
   [AP consistency](foundation-ap-consistency-spec.md), and
-  [CP consistency](foundation-cp-consistency-spec.md); they do not own Config,
-  Naming, or AI resource semantics unless a domain spec explicitly delegates a
-  behavior.
+  [CP consistency](foundation-cp-consistency-spec.md), and
+  [persistence and dump](foundation-persistence-dump-spec.md); they do not own
+  Config, Naming, or AI resource semantics unless a domain spec explicitly
+  delegates a behavior.
 - Runtime client surfaces should expose least-privilege operations for known
   resources. Broad list, export, clone, migration, capacity, and operation APIs
   belong to Admin API, Console API, or Maintainer SDK.

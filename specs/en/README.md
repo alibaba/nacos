@@ -29,6 +29,7 @@ extension mechanisms, and cross-cutting security rules.
 - [Internal RPC And Cluster Request Spec](design/foundation-internal-rpc-spec.md)
 - [AP Consistency Spec](design/foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](design/foundation-cp-consistency-spec.md)
+- [Persistence And Dump Spec](design/foundation-persistence-dump-spec.md)
 - [Core Capabilities Spec](design/core-capabilities-spec.md)
 
 ## Interface Model

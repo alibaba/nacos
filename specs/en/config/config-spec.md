@@ -147,9 +147,9 @@ the Config domain:
   [AP Consistency Spec](../design/foundation-ap-consistency-spec.md), and its
   transport boundary is defined by the
   [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
-- TODO: Define a shared persistence model spec that covers external datasource,
-  embedded storage, repository contracts, and datasource dialect plugins. The
-  top-level persistence boundary is defined by the
-  [Foundation Capabilities Spec](../design/foundation-capabilities-spec.md).
 - TODO: Define trace and audit event fields across Config, Naming, AI, and Core
   operation domains.
+
+Shared datasource, embedded/external storage, repository, dump, and cache
+boundaries are defined by the
+[Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
