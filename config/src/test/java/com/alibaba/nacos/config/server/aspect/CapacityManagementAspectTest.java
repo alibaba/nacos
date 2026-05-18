@@ -931,6 +931,52 @@ class CapacityManagementAspectTest {
     }
     
     @Test
+    void testAroundDeleteConfigGroupRollback() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {mockDataId, mockGroup, "", null});
+        ConfigInfoWrapper ciw = new ConfigInfoWrapper();
+        ciw.setContent("content");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(ciw);
+        when(proceedingJoinPoint.proceed()).thenReturn(false);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenReturn(true);
+        when(capacityService.insertAndUpdateGroupUsage(any(), eq(mockGroup), anyBoolean()))
+            .thenReturn(true);
+        when(capacityService.updateClusterUsage(any())).thenReturn(true);
+        when(capacityService.updateGroupUsage(any(), eq(mockGroup))).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundDeleteConfig(proceedingJoinPoint);
+        assertEquals(false, result);
+        Mockito.verify(capacityService)
+            .insertAndUpdateGroupUsage(eq(CounterMode.DECREMENT), eq(mockGroup), anyBoolean());
+        Mockito.verify(capacityService)
+            .updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
+    }
+    
+    @Test
+    void testAroundDeleteConfigInsertOrUpdateUsageThrows() throws Throwable {
+        when(PropertyUtil.isManageCapacity()).thenReturn(true);
+        when(proceedingJoinPoint.getArgs())
+            .thenReturn(new Object[] {mockDataId, mockGroup, mockTenant, null});
+        ConfigInfoWrapper ciw = new ConfigInfoWrapper();
+        ciw.setContent("content");
+        when(configInfoPersistService.findConfigInfo(any(), any(), any()))
+            .thenReturn(ciw);
+        when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean()))
+            .thenThrow(new RuntimeException("svc fail"));
+        when(proceedingJoinPoint.proceed()).thenReturn(true);
+        when(capacityService.updateClusterUsage(any())).thenReturn(true);
+        when(capacityService.updateTenantUsage(any(), eq(mockTenant))).thenReturn(true);
+        
+        Object result = capacityManagementAspect
+            .aroundDeleteConfig(proceedingJoinPoint);
+        assertEquals(true, result);
+    }
+    
+    @Test
     void testAroundPublishInsertCapacityNullThenInsert() throws Throwable {
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(PropertyUtil.isCapacityLimitCheck()).thenReturn(true);
