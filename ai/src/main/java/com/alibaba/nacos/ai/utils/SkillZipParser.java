@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,14 +79,29 @@ public class SkillZipParser {
         ResourceContentEncoder.METADATA_ENCODING_BASE64;
     
     /**
-     * Maximum total decompressed size allowed (50MB). Prevents Zip Bomb attacks.
+     * Default maximum number of entries allowed in a skill ZIP. Overridable via the
+     * {@value #CONFIG_MAX_ZIP_ENTRIES} property when users legitimately upload larger skills.
      */
-    private static final long MAX_TOTAL_UNCOMPRESSED_BYTES = 50L * 1024 * 1024;
+    static final int DEFAULT_MAX_ZIP_ENTRIES = 500;
     
     /**
-     * Maximum number of entries allowed in a ZIP file.
+     * Default maximum total decompressed size (in MB) for a skill ZIP. Prevents Zip Bomb attacks
+     * while still permitting legitimate uploads. Overridable via the
+     * {@value #CONFIG_MAX_UNCOMPRESSED_SIZE_MB} property.
      */
-    private static final int MAX_ZIP_ENTRIES = 500;
+    static final int DEFAULT_MAX_UNCOMPRESSED_SIZE_MB = 50;
+    
+    /**
+     * Property key for overriding {@link #DEFAULT_MAX_ZIP_ENTRIES}. Non-positive values are ignored.
+     */
+    static final String CONFIG_MAX_ZIP_ENTRIES = "nacos.ai.skill.zip.max-entries";
+    
+    /**
+     * Property key for overriding {@link #DEFAULT_MAX_UNCOMPRESSED_SIZE_MB}. The value is in megabytes.
+     * Non-positive values are ignored.
+     */
+    static final String CONFIG_MAX_UNCOMPRESSED_SIZE_MB =
+        "nacos.ai.skill.zip.max-uncompressed-size-mb";
     
     private static final Pattern YAML_FRONT_MATTER = Pattern.compile(
         "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
@@ -410,8 +426,11 @@ public class SkillZipParser {
      * <p>Security hardening:
      * <ul>
      *   <li>Rejects entries with path traversal sequences (..) or absolute paths</li>
-     *   <li>Enforces maximum total decompressed size ({@link #MAX_TOTAL_UNCOMPRESSED_BYTES})</li>
-     *   <li>Enforces maximum number of entries ({@link #MAX_ZIP_ENTRIES})</li>
+     *   <li>Enforces maximum total decompressed size (configurable via
+     *       {@value #CONFIG_MAX_UNCOMPRESSED_SIZE_MB}, default
+     *       {@link #DEFAULT_MAX_UNCOMPRESSED_SIZE_MB} MB)</li>
+     *   <li>Enforces maximum number of entries (configurable via
+     *       {@value #CONFIG_MAX_ZIP_ENTRIES}, default {@link #DEFAULT_MAX_ZIP_ENTRIES})</li>
      * </ul>
      *
      * <p>Security-limit violations are reported as {@link NacosRuntimeException} (not {@link IOException})
@@ -420,6 +439,8 @@ public class SkillZipParser {
      * for the HTTP layer.
      */
     private static List<ZipEntryData> unzipToEntries(byte[] zipBytes) throws IOException {
+        final int maxEntries = resolveMaxZipEntries();
+        final long maxUncompressedBytes = resolveMaxUncompressedBytes();
         List<ZipEntryData> result = new ArrayList<>();
         long totalSize = 0;
         try (ZipArchiveInputStream zis =
@@ -439,19 +460,19 @@ public class SkillZipParser {
                 if (isMacOsxEntry) {
                     continue;
                 }
-                if (result.size() >= MAX_ZIP_ENTRIES) {
+                if (result.size() >= maxEntries) {
                     throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
-                        "ZIP file contains too many entries (max " + MAX_ZIP_ENTRIES + ")");
+                        "ZIP file contains too many entries (max " + maxEntries + ")");
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 int n;
                 while ((n = zis.read(buffer)) != -1) {
                     totalSize += n;
-                    if (totalSize > MAX_TOTAL_UNCOMPRESSED_BYTES) {
+                    if (totalSize > maxUncompressedBytes) {
                         throw new NacosRuntimeException(
                             ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
                             "ZIP decompressed size exceeds limit ("
-                                + (MAX_TOTAL_UNCOMPRESSED_BYTES / 1024 / 1024) + "MB)");
+                                + (maxUncompressedBytes / 1024 / 1024) + "MB)");
                     }
                     out.write(buffer, 0, n);
                 }
@@ -459,6 +480,37 @@ public class SkillZipParser {
             }
         }
         return result;
+    }
+    
+    /**
+     * Resolve the maximum number of ZIP entries allowed, honoring the
+     * {@value #CONFIG_MAX_ZIP_ENTRIES} override when present and positive.
+     * Returns {@link #DEFAULT_MAX_ZIP_ENTRIES} when no override is configured or when the
+     * Nacos environment has not been initialized (e.g. in unit tests that bypass Spring boot-up).
+     */
+    static int resolveMaxZipEntries() {
+        if (EnvUtil.getEnvironment() == null) {
+            return DEFAULT_MAX_ZIP_ENTRIES;
+        }
+        Integer configured = EnvUtil.getProperty(CONFIG_MAX_ZIP_ENTRIES, Integer.class);
+        return configured != null && configured > 0 ? configured : DEFAULT_MAX_ZIP_ENTRIES;
+    }
+    
+    /**
+     * Resolve the maximum total decompressed size in bytes, honoring the
+     * {@value #CONFIG_MAX_UNCOMPRESSED_SIZE_MB} override (interpreted in megabytes) when present
+     * and positive. Returns {@link #DEFAULT_MAX_UNCOMPRESSED_SIZE_MB} MB otherwise.
+     */
+    static long resolveMaxUncompressedBytes() {
+        int mb = DEFAULT_MAX_UNCOMPRESSED_SIZE_MB;
+        if (EnvUtil.getEnvironment() != null) {
+            Integer configured =
+                EnvUtil.getProperty(CONFIG_MAX_UNCOMPRESSED_SIZE_MB, Integer.class);
+            if (configured != null && configured > 0) {
+                mb = configured;
+            }
+        }
+        return (long) mb * 1024L * 1024L;
     }
     
     private static ZipEntryData findSkillMdEntry(List<ZipEntryData> entries) {
