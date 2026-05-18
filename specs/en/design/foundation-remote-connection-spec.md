@@ -23,6 +23,8 @@ connections in Nacos. It refines the remote connection part of the
 The remote connection layer owns transport connection state, request context,
 push and acknowledgement plumbing, and connection protection. It does not own
 domain request semantics.
+The detailed request context and filter rules are defined by the
+[Request Filtering And Runtime Context Spec](foundation-request-context-spec.md).
 
 ## 1. Scope
 
@@ -140,6 +142,8 @@ Request processing rules:
 
 Request handlers own payload semantics. The remote layer only resolves routing,
 metadata, context, filtering, and response conversion.
+Request filter execution is further constrained by the
+[Request Filtering And Runtime Context Spec](foundation-request-context-spec.md).
 
 ## 6. Push And Acknowledgement
 
@@ -233,6 +237,7 @@ Domains consuming remote connection lifecycle must follow these rules:
 - [Foundation Capabilities Spec](foundation-capabilities-spec.md)
 - [Cluster Membership Spec](foundation-cluster-membership-spec.md)
 - [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md)
+- [Request Filtering And Runtime Context Spec](foundation-request-context-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [Control Plugin Spec](../plugin/control-plugin-spec.md)
 - [Trace Plugin Spec](../plugin/trace-plugin-spec.md)

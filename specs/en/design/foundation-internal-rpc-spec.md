@@ -20,7 +20,8 @@ This document defines the foundation-level server-to-server RPC model used by
 Nacos cluster nodes. It expands the internal RPC part of the
 [Foundation Capabilities Spec](foundation-capabilities-spec.md) and depends on
 the [Cluster Membership Spec](foundation-cluster-membership-spec.md),
-[Remote Connection Lifecycle Spec](foundation-remote-connection-spec.md), and
+[Remote Connection Lifecycle Spec](foundation-remote-connection-spec.md),
+[Request Filtering And Runtime Context Spec](foundation-request-context-spec.md), and
 [gRPC API Spec](../grpc-api/api-spec.md).
 
 ## 1. Scope
@@ -225,6 +226,7 @@ Those retry rules belong to the Config and Naming consistency specs.
 - [Foundation Capabilities Spec](foundation-capabilities-spec.md)
 - [Cluster Membership Spec](foundation-cluster-membership-spec.md)
 - [Remote Connection Lifecycle Spec](foundation-remote-connection-spec.md)
+- [Request Filtering And Runtime Context Spec](foundation-request-context-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)

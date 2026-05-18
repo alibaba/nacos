@@ -35,8 +35,10 @@ Nacos 功能从产品意图到具体接口按如下层次组织：
 
 领域功能规范负责定义资源和行为的语义。接口规范负责定义这些语义如何暴露。插件规范负责定义
 扩展点，不应重新定义领域归属。基础能力提供
+[服务端生命周期与环境](foundation-server-lifecycle-env-spec.md)、
 [集群成员](foundation-cluster-membership-spec.md)、
 [远程连接](foundation-remote-connection-spec.md)、
+[请求过滤与运行时上下文](foundation-request-context-spec.md)、
 [内部 RPC](foundation-internal-rpc-spec.md)、
 [AP 一致性](foundation-ap-consistency-spec.md)、
 [CP 一致性](foundation-cp-consistency-spec.md)、
@@ -61,8 +63,10 @@ Nacos 功能从产品意图到具体接口按如下层次组织：
 - 领域拥有自身资源语义、生命周期、校验规则和可观测状态。
 - `core`、`common`、`persistence`、`consistency`、`auth` 和 `plugin` 模块提供共享基础设施；
   共享基础设施规则见[基础能力规范](foundation-capabilities-spec.md)，其中包含
+  [服务端生命周期与环境](foundation-server-lifecycle-env-spec.md)、
   [集群成员](foundation-cluster-membership-spec.md)、
   [远程连接生命周期](foundation-remote-connection-spec.md)、
+  [请求过滤与运行时上下文](foundation-request-context-spec.md)、
   [内部 RPC](foundation-internal-rpc-spec.md)、
   [AP 一致性](foundation-ap-consistency-spec.md)、
   [CP 一致性](foundation-cp-consistency-spec.md)和

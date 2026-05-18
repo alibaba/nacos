@@ -24,8 +24,10 @@ extension mechanisms, and cross-cutting security rules.
 - [Nacos Design Spec](design/nacos-design-spec.md)
 - [Resource Model Spec](design/resource-model-spec.md)
 - [Foundation Capabilities Spec](design/foundation-capabilities-spec.md)
+- [Server Lifecycle And Environment Configuration Spec](design/foundation-server-lifecycle-env-spec.md)
 - [Cluster Membership Spec](design/foundation-cluster-membership-spec.md)
 - [Remote Connection Lifecycle Spec](design/foundation-remote-connection-spec.md)
+- [Request Filtering And Runtime Context Spec](design/foundation-request-context-spec.md)
 - [Internal RPC And Cluster Request Spec](design/foundation-internal-rpc-spec.md)
 - [AP Consistency Spec](design/foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](design/foundation-cp-consistency-spec.md)
@@ -34,11 +36,6 @@ extension mechanisms, and cross-cutting security rules.
 - [Event Dispatch And NotifyCenter Spec](design/foundation-event-dispatch-spec.md)
 - [Observability Hooks Spec](design/foundation-observability-hooks-spec.md)
 - [Core Capabilities Spec](design/core-capabilities-spec.md)
-
-Planned foundation specs:
-
-- Request Filtering And Runtime Context Spec
-- Server Lifecycle And Environment Configuration Spec
 
 ## Interface Model
 

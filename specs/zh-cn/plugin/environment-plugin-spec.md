@@ -23,7 +23,8 @@
 
 这是有序覆盖插件。多个插件可以处理不同 key，也可以处理同一个 key。当前实现按 `order()`
 升序应用，后写入的值覆盖先写入的值，因此更大的 order 拥有更高最终优先级。通用生命周期
-和状态规则由 [Nacos 插件化规范](plugin-spec.md) 定义。
+和状态规则由 [Nacos 插件化规范](plugin-spec.md) 定义。服务端启动和 `EnvUtil` 接入规则由
+[服务端生命周期与环境配置规范](../design/foundation-server-lifecycle-env-spec.md)定义。
 
 该插件用于部署时配置适配。它必须在 Nacos 模块消费最终配置值之前执行，不应作为通用运行时
 配置变更机制。

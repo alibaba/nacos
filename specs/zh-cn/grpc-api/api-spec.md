@@ -21,6 +21,8 @@
 业务 API 由 Java payload 类型表达。Payload 身份必须与
 [资源模型规范](../design/resource-model-spec.md)对齐，公开客户端行为必须与
 [SDK 规范](../sdk/sdk-spec.md)对齐。
+服务端请求过滤和运行时上下文模型由
+[请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义。
 
 ## 1. 设计模型
 
@@ -98,6 +100,8 @@ Java 客户端可通过 `nacos.server.grpc.port.offset` 覆盖端口偏移。服
 
 服务端连接生命周期细节由
 [远程连接生命周期规范](../design/foundation-remote-connection-spec.md)定义。本节仅总结公开 gRPC 流程。
+请求上下文初始化、request filter、鉴权/Control 钩子和参数提取由
+[请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义。
 
 1. 客户端打开 `BiRequestStream.requestBiStream`。
 2. 流上的第一个 payload 应为 `ConnectionSetupRequest`。
@@ -134,6 +138,7 @@ Java 客户端可通过 `nacos.server.grpc.port.offset` 覆盖端口偏移。服
 
 gRPC 鉴权由 `RemoteRequestAuthFilter` 执行。共享身份、资源和动作语义由
 [鉴权与权限规范](../auth/auth-permission-spec.md)定义。
+filter 执行契约由[请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义。
 
 需要身份、权限或服务端身份校验的处理器，应在 `handle(...)` 上添加
 `@Secured`。该 filter 会：

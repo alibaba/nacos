@@ -19,7 +19,9 @@
 This document defines the shared foundation capabilities used by Nacos domains.
 The foundation layer provides infrastructure such as
 [cluster membership](foundation-cluster-membership-spec.md),
+[server lifecycle and environment configuration](foundation-server-lifecycle-env-spec.md),
 [remote connection lifecycle](foundation-remote-connection-spec.md),
+[request filtering and runtime context](foundation-request-context-spec.md),
 [internal RPC and cluster requests](foundation-internal-rpc-spec.md),
 [AP consistency](foundation-ap-consistency-spec.md),
 [CP consistency](foundation-cp-consistency-spec.md),
@@ -51,8 +53,10 @@ validation, authorization, and user-visible semantics.
 
 | Capability | Primary modules | Responsibility | Domain contract |
 | --- | --- | --- | --- |
+| [Server lifecycle and environment configuration](foundation-server-lifecycle-env-spec.md) | `bootstrap`, `server`, `core.listener`, `sys.env` | Start process contexts, select deployment mode, inject environment, load pre-properties, refresh runtime server config, and expose module/server state. | Domains may read environment and lifecycle state, but must not define resource semantics through startup mechanics. |
 | [Cluster membership](foundation-cluster-membership-spec.md) | `core.cluster`, addressing plugin | Discover members, keep member state, expose member-change notifications, and support member-based routing or aggregation. | Domains may depend on current member views, but must tolerate membership change and standalone mode. |
 | [Remote connection lifecycle](foundation-remote-connection-spec.md) | `core.remote`, `common.remote` | Register gRPC connections, track connection metadata, process connection close/eject events, and expose request context. | Runtime domains may bind state to connection lifecycle, but transport heartbeat details remain hidden behind the connection layer. |
+| [Request filtering and runtime context](foundation-request-context-spec.md) | `core.context`, `core.auth`, `core.paramcheck`, `core.control`, `core.remote` | Populate request context, execute HTTP/gRPC pre-handler filters, validate common parameters, and invoke auth/control/namespace guards. | Filters may enrich or reject requests, but domain handlers own resource lifecycle and operation semantics. |
 | [Internal RPC and cluster requests](foundation-internal-rpc-spec.md) | `core.remote`, domain request handlers | Send server-to-server requests, cluster notifications, verification requests, and acknowledgements over the remote layer. | Internal RPC must not redefine public HTTP/gRPC API semantics. Domain handlers own payload meaning. |
 | [AP consistency](foundation-ap-consistency-spec.md) | `core.distributed.distro`, Config notify path | Provide Distro runtime data sync and Config Notify-style eventual propagation for AP resources. | Domains must define resource type, owner, operation semantics, retry, verify, repair, and convergence tolerance. |
 | [CP consistency](foundation-cp-consistency-spec.md) | `core.distributed.raft`, `consistency.cp` | Provide Raft/JRaft-backed strongly ordered writes, groups, processors, snapshots, and recovery for durable state. | Domains must define group ownership, request type, snapshot shape, read/write visibility, and unavailable behavior. |
@@ -61,7 +65,30 @@ validation, authorization, and user-visible semantics.
 | [Event dispatch](foundation-event-dispatch-spec.md) | `common.notify`, domain event publishers | Publish in-process events to subscribers, update indexes, trigger async work, and bridge trace events. | Events are local process facts unless a domain routes them through persistence or cluster protocols. |
 | [Observability hooks](foundation-observability-hooks-spec.md) | `core.monitor`, `common.trace`, plugin trace/control | Report metrics, traces, queue depth, connection state, and operation events. | Observability must not change resource semantics or become a required control path. |
 
-## 3. Cluster Membership
+## 3. Server Lifecycle And Environment Configuration
+
+Server lifecycle and environment configuration define how a Nacos process starts,
+loads runtime configuration, exposes application context, selects deployment
+type, and reports module/server state.
+
+Lifecycle rules:
+
+- bootstrap must select deployment type before context-specific beans and module
+  state builders depend on it;
+- `EnvUtil` is the shared facade for server environment properties, Nacos home,
+  port, context path, standalone mode, function mode, member list, and
+  processor sizing;
+- startup phases must prepare work directories, property sources, system
+  properties, and custom environment hooks before serving traffic;
+- runtime server configuration refresh is a local process mechanism and must
+  publish `ServerConfigChangeEvent` for dynamic config subscribers;
+- module state and server state are operational views and must not contain
+  secrets or redefine domain resources.
+
+Detailed rules are defined by the
+[Server Lifecycle And Environment Configuration Spec](foundation-server-lifecycle-env-spec.md).
+
+## 4. Cluster Membership
 
 Cluster membership defines the set of Nacos server members that can participate
 in cluster routing, aggregation, and internal protocols.
@@ -84,7 +111,7 @@ Detailed membership rules are defined by the
 server-side member lookup extension is defined by the
 [Addressing Plugin Spec](../plugin/addressing-plugin-spec.md).
 
-## 4. Remote Connection Lifecycle
+## 5. Remote Connection Lifecycle
 
 The remote layer owns gRPC connection setup, connection metadata, request
 context, push, acknowledgement, connection ejection, and disconnect events.
@@ -114,9 +141,33 @@ Server-to-server request rules, cluster-source restrictions, handler
 registration, server identity, and payload registration are defined by the
 [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md).
 
-## 5. Consistency Protocols
+## 6. Request Filtering And Runtime Context
 
-### 5.1 Protocol Selection
+Request filtering and runtime context define the pre-handler layer for HTTP and
+gRPC requests.
+
+Filtering rules:
+
+- HTTP and gRPC entry points must populate `RequestContext` with protocol,
+  target, identity-related, app, user agent, and remote/source address metadata
+  when available;
+- request context is runtime-only and must be cleared after a reusable worker
+  thread finishes request processing;
+- auth, control, parameter checking, and namespace validation are cross-cutting
+  guards, not domain resource implementations;
+- filters may reject requests before handlers execute, but should use the
+  transport's standard response and error model;
+- common structural validation belongs in shared filters and extractors, while
+  domain-specific validation remains in domain forms, requests, services, or
+  handlers.
+
+Detailed HTTP/gRPC filter, `RequestContext`, extractor, namespace validation,
+auth, and control hook rules are defined by the
+[Request Filtering And Runtime Context Spec](foundation-request-context-spec.md).
+
+## 7. Consistency Protocols
+
+### 7.1 Protocol Selection
 
 Domains must select consistency behavior based on resource semantics:
 
@@ -129,21 +180,21 @@ Domains must select consistency behavior based on resource semantics:
 Protocol choice is a semantic decision. A domain must not use Distro or Raft
 only because an implementation path is convenient.
 
-### 5.2 AP Consistency
+### 7.2 AP Consistency
 
 AP consistency provides eventual convergence for runtime state or cache/listener
 visibility. Current AP-style implementations are Distro and Config Notify. The
 shared resource selection and implementation rules are defined by the
 [AP Consistency Spec](foundation-ap-consistency-spec.md).
 
-### 5.3 CP Consistency
+### 7.3 CP Consistency
 
 CP consistency provides strongly ordered durable state. Current built-in CP
 behavior is backed by Raft/JRaft through `JRaftProtocol`. The shared group,
 processor, read/write, snapshot, and recovery rules are defined by the
 [CP Consistency Spec](foundation-cp-consistency-spec.md).
 
-## 6. Persistence, Dump, And Local Cache
+## 8. Persistence, Dump, And Local Cache
 
 Persistence stores durable data in embedded or external storage. Dump and local
 cache provide serving acceleration or failover, but they are not automatically
@@ -165,7 +216,7 @@ Detailed datasource, repository, embedded storage, dump, cache update, and
 maintenance rules are defined by the
 [Persistence And Dump Spec](foundation-persistence-dump-spec.md).
 
-## 7. Task Execution
+## 9. Task Execution
 
 Nacos uses task engines and executors for delayed sync, retries, dump, health
 checks, push, metrics collection, and other async work.
@@ -188,7 +239,7 @@ Detailed delayed task, execute task, processor, queue, retry, merge, and
 domain-executor rules are defined by the
 [Task Execution Spec](foundation-task-execution-spec.md).
 
-## 8. Event Dispatch And Message Bus
+## 10. Event Dispatch And Message Bus
 
 `NotifyCenter` and domain event publishers provide an in-process event bus. They
 are used to update derived indexes, schedule async tasks, notify push
@@ -213,7 +264,7 @@ Detailed `NotifyCenter`, publisher, subscriber, slow-event, custom publisher,
 and local event semantics are defined by the
 [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
 
-## 9. Observability Hooks
+## 11. Observability Hooks
 
 Observability hooks expose runtime facts for metrics, trace, audit logs, health,
 server state, queue status, worker status, and diagnostic APIs.
@@ -235,17 +286,7 @@ Detailed metric registry, trace, audit, health, server state, diagnostics, and
 external scrape rules are defined by the
 [Observability Hooks Spec](foundation-observability-hooks-spec.md).
 
-## 10. Planned Foundation Specs
-
-Two foundation areas are intentionally planned as independent specs instead of
-being folded into observability:
-
-| Planned spec | Scope | Expected link points |
-| --- | --- | --- |
-| Request Filtering And Runtime Context Spec | HTTP filters, gRPC request filters, `RequestContext`, parameter extraction, namespace validation, auth/control filter order, and request context propagation. | HTTP API, gRPC API, authorization, Control plugin, response/error, and remote connection lifecycle specs. |
-| Server Lifecycle And Environment Configuration Spec | Application startup listeners, `EnvUtil`, `ApplicationUtils`, deployment/function mode, dynamic configuration, module state, server state, and shutdown/lifecycle behavior. | Nacos design, core capabilities, cluster membership, plugin, environment plugin, and server state/operation specs. |
-
-## 11. Foundation Boundary Rules
+## 12. Foundation Boundary Rules
 
 - Foundation capabilities do not own Config `dataId`, Naming `serviceName`, AI
   resource names, or auth permission meaning.
@@ -258,12 +299,14 @@ being folded into observability:
 - Security, visibility, trace, and control remain cross-cutting concerns and
   must follow their own specs even when they hook into foundation paths.
 
-## 12. Related Specs
+## 13. Related Specs
 
 - [Nacos Core Capabilities Spec](core-capabilities-spec.md)
 - [Resource Model Spec](resource-model-spec.md)
+- [Server Lifecycle And Environment Configuration Spec](foundation-server-lifecycle-env-spec.md)
 - [Cluster Membership Spec](foundation-cluster-membership-spec.md)
 - [Remote Connection Lifecycle Spec](foundation-remote-connection-spec.md)
+- [Request Filtering And Runtime Context Spec](foundation-request-context-spec.md)
 - [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)

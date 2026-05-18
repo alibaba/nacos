@@ -155,7 +155,10 @@ governance principles.
 
 The core domain owns namespace management,
 [cluster members](foundation-cluster-membership-spec.md), server state,
-readiness/liveness, [connection management](foundation-remote-connection-spec.md),
+readiness/liveness,
+[server lifecycle and environment](foundation-server-lifecycle-env-spec.md),
+[connection management](foundation-remote-connection-spec.md),
+[request filtering and runtime context](foundation-request-context-spec.md),
 [internal RPC](foundation-internal-rpc-spec.md), log-level operations, plugin
 state, and other server control-plane resources.
 
@@ -197,6 +200,9 @@ Nacos modules should follow these ownership rules:
   and connection boundaries are further defined by the
   [Cluster Membership Spec](foundation-cluster-membership-spec.md) and
   [Remote Connection Lifecycle Spec](foundation-remote-connection-spec.md).
+  Server lifecycle and request context boundaries are defined by the
+  [Server Lifecycle And Environment Configuration Spec](foundation-server-lifecycle-env-spec.md)
+  and [Request Filtering And Runtime Context Spec](foundation-request-context-spec.md).
   Server-to-server request boundaries are defined by the
   [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md).
   AP/CP consistency boundaries are defined by the
@@ -237,8 +243,10 @@ semantics:
 The implementation may use database persistence, local cache, Distro, Raft, or
 other mechanisms, but public semantics must be expressed in domain specs rather
 than storage implementation details. The common foundation expectations for
+[server lifecycle](foundation-server-lifecycle-env-spec.md),
 [membership](foundation-cluster-membership-spec.md),
 [connection lifecycle](foundation-remote-connection-spec.md),
+[request filtering](foundation-request-context-spec.md),
 [internal RPC](foundation-internal-rpc-spec.md),
 [AP consistency](foundation-ap-consistency-spec.md),
 [CP consistency](foundation-cp-consistency-spec.md),

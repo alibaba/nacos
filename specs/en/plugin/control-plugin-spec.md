@@ -34,6 +34,10 @@ monitoring requests when access to a control point exceeds configured rules.
 Control plugins must not change resource semantics; they only decide whether the
 current connection or request may continue.
 
+HTTP and gRPC TPS control hooks are connected through the shared request
+filtering model defined by the
+[Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md).
+
 ## Concepts
 
 | Concept | Meaning |

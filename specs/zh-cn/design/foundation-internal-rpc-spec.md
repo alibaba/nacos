@@ -19,7 +19,8 @@
 本文定义 Nacos 服务端节点之间使用的基础层 RPC 模型。它是
 [基础能力规范](foundation-capabilities-spec.md)中内部 RPC 部分的展开，并依赖
 [集群成员规范](foundation-cluster-membership-spec.md)、
-[远程连接生命周期规范](foundation-remote-connection-spec.md)和
+[远程连接生命周期规范](foundation-remote-connection-spec.md)、
+[请求过滤与运行时上下文规范](foundation-request-context-spec.md)和
 [gRPC API 规范](../grpc-api/api-spec.md)。
 
 ## 1. 范围
@@ -183,6 +184,7 @@ Cluster RPC 调用方必须定义自己的重试或补偿行为。
 - [基础能力规范](foundation-capabilities-spec.md)
 - [集群成员规范](foundation-cluster-membership-spec.md)
 - [远程连接生命周期规范](foundation-remote-connection-spec.md)
+- [请求过滤与运行时上下文规范](foundation-request-context-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [CP 一致性规范](foundation-cp-consistency-spec.md)
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)

@@ -39,8 +39,10 @@ Design intent
 Domain capability specs own the meaning of resources and behavior. Interface
 specs define how those semantics are exposed. Plugin specs define extension
 points and must not redefine domain ownership. Foundation capabilities provide
+[server lifecycle and environment](foundation-server-lifecycle-env-spec.md),
 [cluster membership](foundation-cluster-membership-spec.md),
 [remote connection](foundation-remote-connection-spec.md),
+[request filtering and runtime context](foundation-request-context-spec.md),
 [internal RPC](foundation-internal-rpc-spec.md),
 [AP consistency](foundation-ap-consistency-spec.md),
 [CP consistency](foundation-cp-consistency-spec.md),
@@ -68,8 +70,10 @@ but do not own domain resource semantics.
 - `core`, `common`, `persistence`, `consistency`, `auth`, and `plugin` modules
   provide shared infrastructure as defined by the
   [Foundation Capabilities Spec](foundation-capabilities-spec.md), including
+  [server lifecycle and environment](foundation-server-lifecycle-env-spec.md),
   [cluster membership](foundation-cluster-membership-spec.md),
   [remote connection lifecycle](foundation-remote-connection-spec.md),
+  [request filtering and runtime context](foundation-request-context-spec.md),
   [internal RPC](foundation-internal-rpc-spec.md),
   [AP consistency](foundation-ap-consistency-spec.md), and
   [CP consistency](foundation-cp-consistency-spec.md), and

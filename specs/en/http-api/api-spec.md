@@ -105,6 +105,8 @@ explicitly public, bootstrap-only, or health-oriented. Authorization must reflec
 the API audience, resource domain, and action.
 
 Detailed rules are defined in [Authorization Spec](authorization-spec.md).
+The shared HTTP filter and runtime request context model is defined by the
+[Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md).
 
 ### 2.6 Compatibility Is Part Of The API
 
@@ -154,6 +156,7 @@ Additional detail specs:
 
 - [Authorization Spec](authorization-spec.md)
 - [Response And Error Spec](response-error-spec.md)
+- [Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md)
 
 ## 4. Rules For Adding Or Changing HTTP APIs
 

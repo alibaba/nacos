@@ -21,6 +21,8 @@ nodes, and remote module handlers. Unlike the HTTP API, Nacos gRPC has a small
 fixed proto surface and a Java payload type surface. Payload identity must align
 with the [Resource Model Spec](../design/resource-model-spec.md), and public
 client behavior must align with the [SDK Spec](../sdk/sdk-spec.md).
+The server-side request filter and runtime context model is defined by the
+[Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md).
 
 ## 1. Design Model
 
@@ -106,6 +108,9 @@ cluster request retry boundaries are defined by the
 
 The server-side lifecycle details are defined by the
 [Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md).
+Request context initialization, request filters, auth/control hooks, and
+parameter extraction are defined by the
+[Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md).
 This section summarizes the public gRPC flow.
 
 1. A client opens `BiRequestStream.requestBiStream`.
@@ -146,6 +151,8 @@ throwables, `errorCode` falls back to `500`.
 gRPC authorization is applied by `RemoteRequestAuthFilter`. Shared identity,
 resource, and action semantics are defined by the
 [Auth And Permission Spec](../auth/auth-permission-spec.md).
+The filter execution contract is defined by the
+[Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md).
 
 Handlers should annotate `handle(...)` with `@Secured` when the operation needs
 identity, authority, or server identity validation. The filter:

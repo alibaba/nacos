@@ -30,6 +30,9 @@ Control 是 Nacos 的反脆弱机制。它在某个控制点访问量超过规�
 拒绝，用于保护当前服务端节点。Control 插件不得改变资源语义；它只判断当前连接或请求能否
 继续执行。
 
+HTTP 和 gRPC TPS control 钩子通过
+[请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义的共享请求过滤模型接入。
+
 ## 概念
 
 | 概念 | 含义 |

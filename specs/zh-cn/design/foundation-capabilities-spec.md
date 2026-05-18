@@ -18,7 +18,9 @@
 
 本文定义 Nacos 各领域共用的底层基础能力。基础能力层提供
 [集群成员](foundation-cluster-membership-spec.md)、
+[服务端生命周期与环境配置](foundation-server-lifecycle-env-spec.md)、
 [远程连接生命周期](foundation-remote-connection-spec.md)、
+[请求过滤与运行时上下文](foundation-request-context-spec.md)、
 [内部 RPC 与集群请求](foundation-internal-rpc-spec.md)、
 [AP 一致性](foundation-ap-consistency-spec.md)、
 [CP 一致性](foundation-cp-consistency-spec.md)、
@@ -48,8 +50,10 @@ AI 或安全资源本身的含义。
 
 | 能力 | 主要模块 | 职责 | 领域契约 |
 | --- | --- | --- | --- |
+| [服务端生命周期与环境配置](foundation-server-lifecycle-env-spec.md) | `bootstrap`、`server`、`core.listener`、`sys.env` | 启动进程 context、选择部署模式、注入 environment、加载预置属性、刷新运行时服务端配置，并暴露 module/server state。 | 领域可以读取环境和生命周期状态，但不得通过启动机制定义资源语义。 |
 | [集群成员](foundation-cluster-membership-spec.md) | `core.cluster`、寻址插件 | 发现 member、维护 member 状态、发布 member 变化通知，并支持基于 member 的路由或聚合。 | 领域可以依赖当前 member 视图，但必须容忍 member 变化和单机模式。 |
 | [远程连接生命周期](foundation-remote-connection-spec.md) | `core.remote`、`common.remote` | 注册 gRPC 连接、维护连接元数据、处理连接关闭/踢除事件，并提供请求上下文。 | 运行时领域可以把状态绑定到连接生命周期，但传输层心跳细节隐藏在连接层之后。 |
+| [请求过滤与运行时上下文](foundation-request-context-spec.md) | `core.context`、`core.auth`、`core.paramcheck`、`core.control`、`core.remote` | 填充请求上下文，执行 HTTP/gRPC handler 前置过滤，校验公共参数，并调用鉴权、Control、namespace guard。 | Filter 可以补充或拒绝请求，但领域 handler 拥有资源生命周期和操作语义。 |
 | [内部 RPC 与集群请求](foundation-internal-rpc-spec.md) | `core.remote`、领域 request handler | 通过远程层发送服务端间请求、集群通知、校验请求和 ack。 | 内部 RPC 不得重新定义公开 HTTP/gRPC API 语义；领域 handler 拥有 payload 含义。 |
 | [AP 一致性](foundation-ap-consistency-spec.md) | `core.distributed.distro`、Config notify path | 提供 Distro 运行时数据同步和 Config Notify 风格的 AP 最终传播能力。 | 领域必须定义 resource type、owner、操作语义、重试、verify、修复和收敛容忍度。 |
 | [CP 一致性](foundation-cp-consistency-spec.md) | `core.distributed.raft`、`consistency.cp` | 提供 Raft/JRaft 支持的强顺序写、group、processor、snapshot 和恢复能力。 | 领域必须定义 group 归属、request 类型、snapshot 形态、读写可见性和不可用行为。 |
@@ -58,7 +62,23 @@ AI 或安全资源本身的含义。
 | [事件分发](foundation-event-dispatch-spec.md) | `common.notify`、领域事件 publisher | 发布进程内事件，用于更新索引、触发异步任务和桥接 trace 事件。 | 除非领域通过持久化或集群协议传递，否则事件只是本进程事实。 |
 | [可观测钩子](foundation-observability-hooks-spec.md) | `core.monitor`、`common.trace`、Trace/Control 插件 | 上报指标、trace、队列深度、连接状态和操作事件。 | 可观测能力不得改变资源语义，也不得成为必须依赖的控制路径。 |
 
-## 3. 集群成员
+## 3. 服务端生命周期与环境配置
+
+服务端生命周期与环境配置定义 Nacos 进程如何启动、加载运行时配置、暴露 application context、选择
+部署类型，并上报 module/server state。
+
+生命周期规则：
+
+- bootstrap 必须在 context 专属 bean 和 module state builder 依赖部署类型之前选择部署类型；
+- `EnvUtil` 是服务端环境属性、Nacos home、端口、context path、单机模式、function mode、
+  member list 和 processor sizing 的共享门面；
+- 启动阶段必须在服务流量前准备工作目录、property source、system property 和自定义环境钩子；
+- 运行时服务端配置刷新是本地进程机制，必须为动态配置 subscriber 发布 `ServerConfigChangeEvent`；
+- module state 和 server state 是运维视图，不得包含密钥或重新定义领域资源。
+
+详细规则由[服务端生命周期与环境配置规范](foundation-server-lifecycle-env-spec.md)定义。
+
+## 4. 集群成员
 
 集群成员定义可以参与集群路由、聚合和内部协议的 Nacos 服务端 member 集合。
 
@@ -73,7 +93,7 @@ AI 或安全资源本身的含义。
 详细成员规则由[集群成员规范](foundation-cluster-membership-spec.md)定义。服务端 member lookup
 扩展由[寻址插件规范](../plugin/addressing-plugin-spec.md)定义。
 
-## 4. 远程连接生命周期
+## 5. 远程连接生命周期
 
 远程层负责 gRPC 建连、连接元数据、请求上下文、推送、ack、连接踢除和断连事件。
 
@@ -92,9 +112,26 @@ AI 或安全资源本身的含义。
 服务端间请求规则、cluster 来源限制、handler 注册、服务端身份和 payload 注册由
 [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)定义。
 
-## 5. 一致性协议
+## 6. 请求过滤与运行时上下文
 
-### 5.1 协议选择
+请求过滤与运行时上下文定义 HTTP 和 gRPC 请求的 handler 前置层。
+
+过滤规则：
+
+- HTTP 和 gRPC 入口应在可用时把协议、请求目标、身份相关信息、app、user agent 和远端/source
+  地址元数据写入 `RequestContext`；
+- 请求上下文仅属于运行时，并且在可复用工作线程完成请求处理后必须清理；
+- 鉴权、Control、参数检查和 namespace 校验是横切 guard，不是领域资源实现；
+- Filter 可以在 handler 执行前拒绝请求，但应使用当前传输协议的标准 response 和错误模型；
+- 公共结构校验属于共享 filter 和 extractor，领域特有校验仍属于领域 form、request、service 或
+  handler。
+
+HTTP/gRPC filter、`RequestContext`、extractor、namespace 校验、鉴权和 Control 钩子规则由
+[请求过滤与运行时上下文规范](foundation-request-context-spec.md)定义。
+
+## 7. 一致性协议
+
+### 7.1 协议选择
 
 领域必须根据资源语义选择一致性行为：
 
@@ -106,18 +143,18 @@ AI 或安全资源本身的含义。
 
 协议选择是语义决策。领域不得仅因为实现路径方便就使用 Distro 或 Raft。
 
-### 5.2 AP 一致性
+### 7.2 AP 一致性
 
 AP 一致性为运行时状态或缓存/listener 可见性提供最终收敛。当前 AP 风格实现包括 Distro 和
 Config Notify。共享资源选择和实现规则由[AP 一致性规范](foundation-ap-consistency-spec.md)定义。
 
-### 5.3 CP 一致性
+### 7.3 CP 一致性
 
 CP 一致性提供强顺序持久状态。当前内置 CP 行为通过 `JRaftProtocol` 使用 Raft/JRaft 实现。
 共享 group、processor、读写、snapshot 和恢复规则由[CP 一致性规范](foundation-cp-consistency-spec.md)
 定义。
 
-## 6. 持久化、Dump 与本地缓存
+## 8. 持久化、Dump 与本地缓存
 
 持久化将 durable data 写入内置或外部存储。Dump 和本地 cache 提供服务加速或 failover，但它们不
 自动成为事实来源。
@@ -133,7 +170,7 @@ CP 一致性提供强顺序持久状态。当前内置 CP 行为通过 `JRaftPro
 Datasource、repository、嵌入式存储、dump、缓存更新和维护规则由
 [持久化与 Dump 规范](foundation-persistence-dump-spec.md)定义。
 
-## 7. 任务执行
+## 9. 任务执行
 
 Nacos 使用 task engine 和 executor 执行延迟同步、重试、dump、健康检查、推送、指标采集等异步工作。
 
@@ -149,7 +186,7 @@ Nacos 使用 task engine 和 executor 执行延迟同步、重试、dump、健�
 Delayed task、execute task、processor、queue、retry、merge 和领域 executor 规则由
 [任务执行规范](foundation-task-execution-spec.md)定义。
 
-## 8. 事件分发与消息总线
+## 10. 事件分发与消息总线
 
 `NotifyCenter` 和领域事件 publisher 提供进程内事件总线，用于更新派生索引、调度异步任务、通知
 push 组件和桥接 trace 事件。
@@ -169,7 +206,7 @@ push 组件和桥接 trace 事件。
 `NotifyCenter`、publisher、subscriber、slow event、自定义 publisher 和本地事件语义由
 [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)定义。
 
-## 9. 可观测钩子
+## 11. 可观测钩子
 
 可观测钩子为 metrics、trace、审计日志、健康、服务端状态、队列状态、worker 状态和诊断 API 暴露
 运行时事实。
@@ -186,16 +223,7 @@ push 组件和桥接 trace 事件。
 Metric registry、trace、审计、健康、服务端状态、诊断和外部采集规则由
 [可观测钩子规范](foundation-observability-hooks-spec.md)定义。
 
-## 10. 规划中的基础能力规范
-
-下面两类基础能力会独立成章，不合并进可观测：
-
-| 规划规范 | 范围 | 预期关联位置 |
-| --- | --- | --- |
-| 请求过滤与运行时上下文规范 | HTTP filter、gRPC request filter、`RequestContext`、参数提取、namespace 校验、auth/control filter 顺序和 request context 传播。 | HTTP API、gRPC API、鉴权、Control 插件、响应错误和远程连接生命周期规范。 |
-| 服务端生命周期与环境配置规范 | 应用启动 listener、`EnvUtil`、`ApplicationUtils`、部署/function mode、动态配置、module state、server state 和 shutdown/lifecycle 行为。 | Nacos 设计、核心功能、集群成员、插件、环境插件和 server state/operation 规范。 |
-
-## 11. 基础能力边界规则
+## 12. 基础能力边界规则
 
 - 基础能力不拥有 Config `dataId`、Naming `serviceName`、AI resource name 或 auth permission 含义。
 - 领域规范必须选择并约束基础能力行为，而不是继承所有实现细节。
@@ -203,12 +231,14 @@ Metric registry、trace、审计、健康、服务端状态、诊断和外部采
 - 当兼容行为影响用户可见数据或 API 行为时，应记录在领域规范中。
 - 安全、可见性、Trace 和 Control 是横切关注点，即使接入基础能力路径，也必须遵循各自规范。
 
-## 12. 相关规范
+## 13. 相关规范
 
 - [Nacos 核心功能规范](core-capabilities-spec.md)
 - [资源模型规范](resource-model-spec.md)
+- [服务端生命周期与环境配置规范](foundation-server-lifecycle-env-spec.md)
 - [集群成员规范](foundation-cluster-membership-spec.md)
 - [远程连接生命周期规范](foundation-remote-connection-spec.md)
+- [请求过滤与运行时上下文规范](foundation-request-context-spec.md)
 - [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [CP 一致性规范](foundation-cp-consistency-spec.md)

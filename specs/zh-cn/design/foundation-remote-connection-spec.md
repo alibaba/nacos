@@ -20,6 +20,7 @@
 [基础能力规范](foundation-capabilities-spec.md)中远程连接部分的展开。
 
 远程连接层负责传输连接状态、请求上下文、推送与 ack 管道，以及连接保护。它不负责领域请求语义。
+详细请求上下文和 filter 规则由[请求过滤与运行时上下文规范](foundation-request-context-spec.md)定义。
 
 ## 1. 范围
 
@@ -118,6 +119,7 @@ Unary 请求由 `GrpcRequestAcceptor` 处理。
 - 已接受的 unary 请求会在进入领域处理前刷新连接 active time。
 
 Request handler 拥有 payload 语义。远程层只负责路由解析、元数据、上下文、filter 和响应转换。
+Request filter 执行还必须遵循[请求过滤与运行时上下文规范](foundation-request-context-spec.md)。
 
 ## 6. Push 与 Ack
 
@@ -193,6 +195,7 @@ Push 和 ack 管道不定义领域订阅语义。Config、Naming 和 AI 规范�
 - [基础能力规范](foundation-capabilities-spec.md)
 - [集群成员规范](foundation-cluster-membership-spec.md)
 - [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)
+- [请求过滤与运行时上下文规范](foundation-request-context-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [Control 插件规范](../plugin/control-plugin-spec.md)
 - [Trace 插件规范](../plugin/trace-plugin-spec.md)

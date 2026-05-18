@@ -122,7 +122,9 @@ namespace、API、SDK、鉴权、插件和资源治理原则。
 ### 4.4 Core 和运维领域
 
 Core 领域负责 namespace 管理、[集群成员](foundation-cluster-membership-spec.md)、服务端状态、
-readiness/liveness、[连接管理](foundation-remote-connection-spec.md)、
+readiness/liveness、[服务端生命周期与环境](foundation-server-lifecycle-env-spec.md)、
+[连接管理](foundation-remote-connection-spec.md)、
+[请求过滤与运行时上下文](foundation-request-context-spec.md)、
 [内部 RPC](foundation-internal-rpc-spec.md)、日志级别操作、插件状态和其他服务端控制面资源。
 
 这些能力天然属于管理能力，应通过 Admin API、Console API 或 Maintainer SDK 暴露，
@@ -155,7 +157,9 @@ Nacos 模块应遵循以下职责边界：
 - `core` 负责集群、namespace、服务端、插件和运维基础能力。
 - `common`、`consistency` 和 `persistence` 提供事件、任务、AP/CP 协议和存储等共享基础能力。
   Core member 和连接边界进一步由[集群成员规范](foundation-cluster-membership-spec.md)和
-  [远程连接生命周期规范](foundation-remote-connection-spec.md)定义，服务端间请求边界由
+  [远程连接生命周期规范](foundation-remote-connection-spec.md)定义，服务端生命周期和请求上下文边界由
+  [服务端生命周期与环境配置规范](foundation-server-lifecycle-env-spec.md)和
+  [请求过滤与运行时上下文规范](foundation-request-context-spec.md)定义，服务端间请求边界由
   [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)定义，AP/CP 一致性边界由
   [AP 一致性规范](foundation-ap-consistency-spec.md)和
   [CP 一致性规范](foundation-cp-consistency-spec.md)定义，持久化与 dump 边界由
@@ -182,8 +186,9 @@ Nacos 模块应遵循以下职责边界：
 - 服务端和集群资源需要显式管理控制和运维安全。
 
 实现可以使用数据库持久化、本地缓存、Distro、Raft 或其他机制，但公开语义必须
-通过领域规范表达，而不是通过存储实现细节表达。[member](foundation-cluster-membership-spec.md)、
-[连接生命周期](foundation-remote-connection-spec.md)、[内部 RPC](foundation-internal-rpc-spec.md)、
+通过领域规范表达，而不是通过存储实现细节表达。[服务端生命周期](foundation-server-lifecycle-env-spec.md)、
+[member](foundation-cluster-membership-spec.md)、[连接生命周期](foundation-remote-connection-spec.md)、
+[请求过滤](foundation-request-context-spec.md)、[内部 RPC](foundation-internal-rpc-spec.md)、
 [AP 一致性](foundation-ap-consistency-spec.md)、
 [CP 一致性](foundation-cp-consistency-spec.md)、
 [持久化与 dump](foundation-persistence-dump-spec.md)、

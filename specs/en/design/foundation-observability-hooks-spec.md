@@ -179,6 +179,10 @@ Rules:
 
 Observability hooks usually attach to other foundation paths:
 
+- server state and readiness reporting depend on the
+  [Server Lifecycle And Environment Configuration Spec](foundation-server-lifecycle-env-spec.md);
+- request metrics, auth context, and request diagnostics consume fields from the
+  [Request Filtering And Runtime Context Spec](foundation-request-context-spec.md);
 - task engines expose queue and execution status according to the
   [Task Execution Spec](foundation-task-execution-spec.md);
 - event publishers and trace bridges follow the
@@ -208,6 +212,8 @@ Observability hooks usually attach to other foundation paths:
 ## 10. Related Specs
 
 - [Foundation Capabilities Spec](foundation-capabilities-spec.md)
+- [Server Lifecycle And Environment Configuration Spec](foundation-server-lifecycle-env-spec.md)
+- [Request Filtering And Runtime Context Spec](foundation-request-context-spec.md)
 - [Task Execution Spec](foundation-task-execution-spec.md)
 - [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
 - [Cluster Membership Spec](foundation-cluster-membership-spec.md)

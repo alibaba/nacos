@@ -23,8 +23,10 @@
 - [Nacos 设计规范](design/nacos-design-spec.md)
 - [资源模型规范](design/resource-model-spec.md)
 - [基础能力规范](design/foundation-capabilities-spec.md)
+- [服务端生命周期与环境配置规范](design/foundation-server-lifecycle-env-spec.md)
 - [集群成员规范](design/foundation-cluster-membership-spec.md)
 - [远程连接生命周期规范](design/foundation-remote-connection-spec.md)
+- [请求过滤与运行时上下文规范](design/foundation-request-context-spec.md)
 - [内部 RPC 与集群请求规范](design/foundation-internal-rpc-spec.md)
 - [AP 一致性规范](design/foundation-ap-consistency-spec.md)
 - [CP 一致性规范](design/foundation-cp-consistency-spec.md)
@@ -33,11 +35,6 @@
 - [事件分发与 NotifyCenter 规范](design/foundation-event-dispatch-spec.md)
 - [可观测钩子规范](design/foundation-observability-hooks-spec.md)
 - [核心功能规范](design/core-capabilities-spec.md)
-
-规划中的基础规范：
-
-- 请求过滤与运行时上下文规范
-- 服务端生命周期与环境配置规范
 
 ## 接口模型
 

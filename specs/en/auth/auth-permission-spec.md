@@ -24,6 +24,8 @@ details are defined by the [HTTP Authorization Spec](../http-api/authorization-s
 and the [gRPC API Spec](../grpc-api/api-spec.md). Plugin contracts are defined
 by the [Auth Plugin Spec](auth-plugin-spec.md) and
 [Visibility Plugin Spec](visibility-plugin-spec.md).
+Transport filter execution and `AuthContext` population are defined by the
+[Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md).
 
 Nacos authorization is modeled as:
 

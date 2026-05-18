@@ -143,6 +143,10 @@ Liveness 表示进程是否运行。Readiness 表示 Nacos 是否应接收普通
 
 可观测钩子通常附着在其他基础路径上：
 
+- server state 和 readiness 上报依赖
+  [服务端生命周期与环境配置规范](foundation-server-lifecycle-env-spec.md)；
+- 请求指标、鉴权上下文和请求诊断使用
+  [请求过滤与运行时上下文规范](foundation-request-context-spec.md)中的字段；
 - task engine 按[任务执行规范](foundation-task-execution-spec.md)暴露队列和执行状态；
 - event publisher 和 trace bridge 遵循[事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)；
 - 内部集群诊断使用[集群成员规范](foundation-cluster-membership-spec.md)的 member 路由，以及
@@ -162,6 +166,8 @@ Liveness 表示进程是否运行。Readiness 表示 Nacos 是否应接收普通
 ## 10. 相关规范
 
 - [基础能力规范](foundation-capabilities-spec.md)
+- [服务端生命周期与环境配置规范](foundation-server-lifecycle-env-spec.md)
+- [请求过滤与运行时上下文规范](foundation-request-context-spec.md)
 - [任务执行规范](foundation-task-execution-spec.md)
 - [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
 - [集群成员规范](foundation-cluster-membership-spec.md)
