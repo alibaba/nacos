@@ -674,6 +674,89 @@ class ConfigControllerV3Test {
     }
     
     @Test
+    void testImportConfigWithUnrecognizedItems() throws Exception {
+        List<ZipUtils.ZipItem> zipItems = new ArrayList<>();
+        String dataId = "dataId1.json";
+        String groupName = "group1";
+        String content = "content123";
+        zipItems.add(new ZipUtils.ZipItem(groupName + "/" + dataId, content));
+        zipItems.add(new ZipUtils.ZipItem("badNameNoSlash", "data"));
+        zipItems.add(new ZipUtils.ZipItem("unknownGroup/unknownDataId", "data2"));
+        
+        ConfigMetadata configMetadata = new ConfigMetadata();
+        configMetadata.setMetadata(new ArrayList<>());
+        ConfigMetadata.ConfigExportItem item = new ConfigMetadata.ConfigExportItem();
+        item.setDataId(dataId);
+        item.setGroup(groupName);
+        item.setType("json");
+        configMetadata.getMetadata().add(item);
+        ConfigMetadata.ConfigExportItem item2 = new ConfigMetadata.ConfigExportItem();
+        item2.setDataId("noFileDataId");
+        item2.setGroup("noFileGroup");
+        item2.setType("text");
+        configMetadata.getMetadata().add(item2);
+        
+        ZipUtils.UnZipResult unziped = new ZipUtils.UnZipResult(zipItems,
+            new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
+                YamlParserUtil.dumpObject(configMetadata)));
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                .thenReturn(unziped);
+            when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
+            Map<String, Object> map = new HashMap<>();
+            map.put("succCount", 1);
+            when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(),
+                any(), any())).thenReturn(map);
+            
+            MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(
+                Constants.CONFIG_ADMIN_V3_PATH + "/import").file(file).param("src_user", "test")
+                .param("namespaceId", "public").param("policy", "ABORT");
+            
+            String actualValue =
+                mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+            String code = JacksonUtils.toObj(actualValue).get("code").toString();
+            assertEquals("0", code);
+            JsonNode data = JacksonUtils.toObj(actualValue).get("data");
+            assertEquals("3", data.get("unrecognizedCount").toString());
+        }
+    }
+    
+    @Test
+    void testImportConfigWithInvalidMetadata() throws Exception {
+        List<ZipUtils.ZipItem> zipItems = new ArrayList<>();
+        zipItems.add(new ZipUtils.ZipItem("group/data.json", "content"));
+        
+        ConfigMetadata configMetadata = new ConfigMetadata();
+        configMetadata.setMetadata(new ArrayList<>());
+        ConfigMetadata.ConfigExportItem badItem = new ConfigMetadata.ConfigExportItem();
+        badItem.setDataId("");
+        badItem.setGroup("group");
+        badItem.setType("json");
+        configMetadata.getMetadata().add(badItem);
+        
+        ZipUtils.UnZipResult unziped = new ZipUtils.UnZipResult(zipItems,
+            new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
+                YamlParserUtil.dumpObject(configMetadata)));
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                .thenReturn(unziped);
+            
+            MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(
+                Constants.CONFIG_ADMIN_V3_PATH + "/import").file(file).param("src_user", "test")
+                .param("namespaceId", "").param("policy", "ABORT");
+            
+            String actualValue =
+                mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+            String code = JacksonUtils.toObj(actualValue).get("code").toString();
+            assertEquals("100002", code);
+        }
+    }
+    
+    @Test
     void testCloneConfigEmptyQueryResult() throws Exception {
         ConfigCloneInfo info = new ConfigCloneInfo();
         info.setConfigId(1L);

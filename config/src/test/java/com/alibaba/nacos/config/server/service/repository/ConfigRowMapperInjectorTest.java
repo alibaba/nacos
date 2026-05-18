@@ -535,6 +535,8 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn("encKey");
         Mockito.when(resultSet.getString(eq("c_desc"))).thenReturn("测试配置描述");
         Mockito.when(resultSet.getString(eq("config_tags"))).thenReturn("tag1,tag2,tag3");
+        Timestamp gmtModified = new Timestamp(1700000000000L);
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(gmtModified);
         
         ConfigInfo configInfo = mapper.mapRow(resultSet, 1);
         
@@ -549,6 +551,7 @@ class ConfigRowMapperInjectorTest {
         assertEquals("encKey", configInfo.getEncryptedDataKey());
         assertEquals("测试配置描述", configInfo.getDesc());
         assertEquals("tag1,tag2,tag3", configInfo.getConfigTags());
+        assertEquals(1700000000000L, configInfo.getGmtModified());
     }
     
     @Test
@@ -567,7 +570,8 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("type"))).thenReturn("properties");
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn("encKey");
         Mockito.when(resultSet.getString(eq("c_desc"))).thenReturn(null);
-        Mockito.when(resultSet.getString(eq("config_tags"))).thenReturn(null);
+        Mockito.when(resultSet.getString(eq("config_tags"))).thenReturn("  ");
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(null);
         
         ConfigInfo configInfo = mapper.mapRow(resultSet, 1);
         

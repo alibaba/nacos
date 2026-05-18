@@ -269,6 +269,16 @@ class ConfigSubServiceTest {
         assertEquals(201, sampleResultMerge2.getCode());
         assertFalse(sampleResultMerge2.isHasListener());
         
+        //all ip return false, and size equals member size
+        sampleResult1 = new ListenerCheckResult();
+        sampleResult1.setHasListener(false);
+        sampleResult1.setCode(200);
+        ListenerCheckResult sampleResultMerge3 =
+            configSubService.mergeListenerCheckResult(sampleResult1, sampleResults,
+                2);
+        assertEquals(200, sampleResultMerge3.getCode());
+        assertFalse(sampleResultMerge3.isHasListener());
+        
     }
     
     private Future<SampleResult> createSampleResultFuture(boolean success,
