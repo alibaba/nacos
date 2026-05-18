@@ -47,8 +47,10 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
@@ -297,6 +299,57 @@ class ConfigOpsControllerV3Test {
             mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         int status =
             mockMvc.perform(builder).andReturn().getResponse().getStatus();
+        assertEquals(200, status);
+    }
+    
+    @Test
+    void testImportDerbyWithSuccessCallback() throws Exception {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        
+        DatabaseOperate mockDbOperate = Mockito.mock(DatabaseOperate.class);
+        applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
+            .thenReturn(mockDbOperate);
+        
+        CompletableFuture<com.alibaba.nacos.common.model.RestResult<String>> future =
+            new CompletableFuture<>();
+        when(mockDbOperate.dataImport(any())).thenReturn(future);
+        future.complete(
+            com.alibaba.nacos.common.model.RestResultUtils.success("import success"));
+        
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.sql", "text/plain",
+                "INSERT INTO test VALUES(1)".getBytes());
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+            .multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
+            .file(file);
+        int status = mockMvc.perform(builder).andReturn().getResponse().getStatus();
+        assertEquals(200, status);
+    }
+    
+    @Test
+    void testImportDerbyWithFailureCallback() throws Exception {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        
+        DatabaseOperate mockDbOperate = Mockito.mock(DatabaseOperate.class);
+        applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
+            .thenReturn(mockDbOperate);
+        
+        CompletableFuture<com.alibaba.nacos.common.model.RestResult<String>> future =
+            new CompletableFuture<>();
+        when(mockDbOperate.dataImport(any())).thenReturn(future);
+        future.completeExceptionally(new RuntimeException("import failed"));
+        
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.sql", "text/plain",
+                "INSERT INTO test VALUES(1)".getBytes());
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+            .multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
+            .file(file);
+        int status = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, status);
     }
 }
