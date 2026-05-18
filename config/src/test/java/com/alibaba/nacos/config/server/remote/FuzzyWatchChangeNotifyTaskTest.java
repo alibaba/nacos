@@ -109,6 +109,8 @@ class FuzzyWatchChangeNotifyTaskTest {
         FuzzyWatchChangeNotifyTask task = new FuzzyWatchChangeNotifyTask(
             connectionManager, rpcPushService, request, 1, "conn1");
         task.tryTimes = 1;
+        TpsCheckResponse resp = new TpsCheckResponse(true, 200, "ok");
+        when(tpsControlManager.check(any())).thenReturn(resp);
         task.run();
         verify(connectionManager).unregister("conn1");
     }
