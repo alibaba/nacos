@@ -120,7 +120,7 @@ Naming 可以集成扩展机制，但 Naming 领域归属不转移：
 | 鉴权 | Naming API 和 gRPC handler 使用 Naming 资源，并遵循[鉴权与权限规范](../auth/auth-permission-spec.md)。 |
 | 可见性 | 对 service、instance、subscriber 或 client 的范围查询，在启用可见性插件时应应用[可见性](../auth/visibility-plugin-spec.md)规则。 |
 | Control | 高频注册、注销、查询、订阅、推送和列表流程应暴露稳定的 Control 点，遵循 [Control 插件规范](../plugin/control-plugin-spec.md)。 |
-| Trace | Naming 生命周期事件应遵循 [Trace 插件规范](../plugin/trace-plugin-spec.md)。 |
+| Trace 与指标 | Naming 生命周期事件应遵循 [Trace 插件规范](../plugin/trace-plugin-spec.md)；共享指标和诊断遵循[可观测钩子规范](../design/foundation-observability-hooks-spec.md)。 |
 | 健康检查扩展 | 健康检查类型通过 health checker registry 加载，并必须保持 service/cluster/instance 资源模型不变。 |
 | 寻址 | 客户端服务端寻址应遵循[寻址插件规范](../plugin/addressing-plugin-spec.md)。 |
 

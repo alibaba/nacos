@@ -195,6 +195,7 @@ The local event bus rules are defined by the
 
 - [Foundation Capabilities Spec](foundation-capabilities-spec.md)
 - [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
+- [Observability Hooks Spec](foundation-observability-hooks-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)

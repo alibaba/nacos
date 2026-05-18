@@ -35,6 +35,9 @@ Nacos design
      -> Persistence and dump
      -> Task execution
      -> Event dispatch and NotifyCenter
+     -> Observability hooks
+     -> Request filtering and runtime context (planned)
+     -> Server lifecycle and environment configuration (planned)
   -> Core capabilities and domain capabilities
   -> HTTP / gRPC / SDK interface specs
   -> Extension model
@@ -55,6 +58,9 @@ Nacos 顶层设计
      -> 持久化与 dump
      -> 任务执行
      -> 事件分发与 NotifyCenter
+     -> 可观测钩子
+     -> 请求过滤与运行时上下文（规划中）
+     -> 服务端生命周期与环境配置（规划中）
   -> 核心功能与领域功能
   -> HTTP / gRPC / SDK 接口规范
   -> 扩展模型

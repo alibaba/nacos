@@ -24,7 +24,8 @@
 [CP 一致性](foundation-cp-consistency-spec.md)、
 [持久化与 dump](foundation-persistence-dump-spec.md)、
 [任务执行](foundation-task-execution-spec.md)和
-[事件分发](foundation-event-dispatch-spec.md)等基础设施。它支撑领域语义，但不拥有 Config、Naming、
+[事件分发](foundation-event-dispatch-spec.md)，以及
+[可观测钩子](foundation-observability-hooks-spec.md)等基础设施。它支撑领域语义，但不拥有 Config、Naming、
 AI 或安全资源本身的含义。
 
 ## 1. 定位
@@ -55,7 +56,7 @@ AI 或安全资源本身的含义。
 | [持久化与 dump](foundation-persistence-dump-spec.md) | `persistence`、领域存储模块 | 将持久数据写入内置或外部存储，加载本地 dump，并恢复服务缓存。 | 领域必须定义 schema、兼容性、数据归属，以及 dump 是缓存还是事实来源。 |
 | [任务执行](foundation-task-execution-spec.md) | `common.task`、`common.executor`、领域 task engine | 执行立即、延迟、重试、合并、批量和定时任务，并控制资源使用。 | 任务必须具备幂等性，或通过版本、时间戳、状态、CAS 等机制显式保护。 |
 | [事件分发](foundation-event-dispatch-spec.md) | `common.notify`、领域事件 publisher | 发布进程内事件，用于更新索引、触发异步任务和桥接 trace 事件。 | 除非领域通过持久化或集群协议传递，否则事件只是本进程事实。 |
-| 可观测钩子 | `core.monitor`、`common.trace`、Trace/Control 插件 | 上报指标、trace、队列深度、连接状态和操作事件。 | 可观测能力不得改变资源语义，也不得成为必须依赖的控制路径。 |
+| [可观测钩子](foundation-observability-hooks-spec.md) | `core.monitor`、`common.trace`、Trace/Control 插件 | 上报指标、trace、队列深度、连接状态和操作事件。 | 可观测能力不得改变资源语义，也不得成为必须依赖的控制路径。 |
 
 ## 3. 集群成员
 
@@ -168,7 +169,33 @@ push 组件和桥接 trace 事件。
 `NotifyCenter`、publisher、subscriber、slow event、自定义 publisher 和本地事件语义由
 [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)定义。
 
-## 9. 基础能力边界规则
+## 9. 可观测钩子
+
+可观测钩子为 metrics、trace、审计日志、健康、服务端状态、队列状态、worker 状态和诊断 API 暴露
+运行时事实。
+
+可观测规则：
+
+- 指标和日志可能延迟、采样、重置、丢弃或不完整；
+- stable metrics 必须使用有边界的名称和低基数 tag；
+- 高基数观测应使用 TopN、采样或显式诊断 API；
+- trace 和审计 payload 不得包含密钥或完整黑盒 Config content；
+- liveness/readiness 和 server state 是运维视图，不得替代领域校验或鉴权；
+- 插件提供的可观测能力必须对核心数据变更 fail open，除非治理规范明确规定阻塞策略。
+
+Metric registry、trace、审计、健康、服务端状态、诊断和外部采集规则由
+[可观测钩子规范](foundation-observability-hooks-spec.md)定义。
+
+## 10. 规划中的基础能力规范
+
+下面两类基础能力会独立成章，不合并进可观测：
+
+| 规划规范 | 范围 | 预期关联位置 |
+| --- | --- | --- |
+| 请求过滤与运行时上下文规范 | HTTP filter、gRPC request filter、`RequestContext`、参数提取、namespace 校验、auth/control filter 顺序和 request context 传播。 | HTTP API、gRPC API、鉴权、Control 插件、响应错误和远程连接生命周期规范。 |
+| 服务端生命周期与环境配置规范 | 应用启动 listener、`EnvUtil`、`ApplicationUtils`、部署/function mode、动态配置、module state、server state 和 shutdown/lifecycle 行为。 | Nacos 设计、核心功能、集群成员、插件、环境插件和 server state/operation 规范。 |
+
+## 11. 基础能力边界规则
 
 - 基础能力不拥有 Config `dataId`、Naming `serviceName`、AI resource name 或 auth permission 含义。
 - 领域规范必须选择并约束基础能力行为，而不是继承所有实现细节。
@@ -176,7 +203,7 @@ push 组件和桥接 trace 事件。
 - 当兼容行为影响用户可见数据或 API 行为时，应记录在领域规范中。
 - 安全、可见性、Trace 和 Control 是横切关注点，即使接入基础能力路径，也必须遵循各自规范。
 
-## 10. 相关规范
+## 12. 相关规范
 
 - [Nacos 核心功能规范](core-capabilities-spec.md)
 - [资源模型规范](resource-model-spec.md)
@@ -188,6 +215,7 @@ push 组件和桥接 trace 事件。
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
 - [任务执行规范](foundation-task-execution-spec.md)
 - [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
+- [可观测钩子规范](foundation-observability-hooks-spec.md)
 - [gRPC API 规范](../grpc-api/api-spec.md)
 - [插件规范](../plugin/plugin-spec.md)
 - [寻址插件规范](../plugin/addressing-plugin-spec.md)

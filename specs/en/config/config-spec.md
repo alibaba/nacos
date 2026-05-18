@@ -150,8 +150,10 @@ the Config domain:
   [AP Consistency Spec](../design/foundation-ap-consistency-spec.md), and its
   transport boundary is defined by the
   [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
-- TODO: Define trace and audit event fields across Config, Naming, AI, and Core
-  operation domains.
+- TODO: Define domain-specific trace and audit event fields across Config,
+  Naming, AI, and Core operation domains. Shared observability boundaries are
+  defined by the
+  [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
 
 Shared datasource, embedded/external storage, repository, dump, and cache
 boundaries are defined by the
@@ -159,3 +161,5 @@ boundaries are defined by the
 Shared task execution and local event boundaries are defined by the
 [Task Execution Spec](../design/foundation-task-execution-spec.md) and
 [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
+Shared observability boundaries are defined by the
+[Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).

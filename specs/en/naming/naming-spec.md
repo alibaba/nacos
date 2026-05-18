@@ -137,7 +137,7 @@ the Naming domain:
 | Authorization | Naming APIs and gRPC handlers use Naming resources and must follow the [Auth And Permission Spec](../auth/auth-permission-spec.md). |
 | Visibility | Range queries over services, instances, subscribers, or clients should apply [visibility](../auth/visibility-plugin-spec.md) rules when a visibility plugin is enabled. |
 | Control | High-frequency register, deregister, query, subscribe, push, and list flows should expose stable control points for the [Control Plugin Spec](../plugin/control-plugin-spec.md). |
-| Trace | Naming lifecycle events should follow the [Trace Plugin Spec](../plugin/trace-plugin-spec.md). |
+| Trace and metrics | Naming lifecycle events should follow the [Trace Plugin Spec](../plugin/trace-plugin-spec.md); shared metrics and diagnostics follow the [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md). |
 | Health check extension | Health checker types are loaded through the health checker registry and must keep the service/cluster/instance resource model intact. |
 | Addressing | Client server discovery should follow the [Addressing Plugin Spec](../plugin/addressing-plugin-spec.md). |
 

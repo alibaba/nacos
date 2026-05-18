@@ -123,6 +123,7 @@ English:
   [Persistence And Dump Spec](./specs/en/design/foundation-persistence-dump-spec.md),
   [Task Execution Spec](./specs/en/design/foundation-task-execution-spec.md),
   [Event Dispatch And NotifyCenter Spec](./specs/en/design/foundation-event-dispatch-spec.md),
+  [Observability Hooks Spec](./specs/en/design/foundation-observability-hooks-spec.md),
   [Core Capabilities Spec](./specs/en/design/core-capabilities-spec.md)
 - Interface model:
   [HTTP API Spec](./specs/en/http-api/api-spec.md),
@@ -172,6 +173,7 @@ Simplified Chinese:
   [持久化与 Dump 规范](./specs/zh-cn/design/foundation-persistence-dump-spec.md)，
   [任务执行规范](./specs/zh-cn/design/foundation-task-execution-spec.md)，
   [事件分发与 NotifyCenter 规范](./specs/zh-cn/design/foundation-event-dispatch-spec.md)，
+  [可观测钩子规范](./specs/zh-cn/design/foundation-observability-hooks-spec.md)，
   [核心功能规范](./specs/zh-cn/design/core-capabilities-spec.md)
 - 接口模型：
   [HTTP API 规范](./specs/zh-cn/http-api/api-spec.md)，

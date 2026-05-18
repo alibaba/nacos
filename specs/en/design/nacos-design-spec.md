@@ -207,6 +207,8 @@ Nacos modules should follow these ownership rules:
   event boundaries are defined by the
   [Task Execution Spec](foundation-task-execution-spec.md) and
   [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
+  Observability boundaries are defined by the
+  [Observability Hooks Spec](foundation-observability-hooks-spec.md).
   Other foundation boundaries are defined by the
   [Foundation Capabilities Spec](foundation-capabilities-spec.md).
 - `auth` and plugin modules own extensible security and policy behavior.
@@ -242,7 +244,8 @@ than storage implementation details. The common foundation expectations for
 [CP consistency](foundation-cp-consistency-spec.md),
 [persistence and dump](foundation-persistence-dump-spec.md),
 [task execution](foundation-task-execution-spec.md), and
-[event dispatch](foundation-event-dispatch-spec.md) are defined by the
+[event dispatch](foundation-event-dispatch-spec.md), and
+[observability hooks](foundation-observability-hooks-spec.md) are defined by the
 [Foundation Capabilities Spec](foundation-capabilities-spec.md) and its sub
 specs.
 

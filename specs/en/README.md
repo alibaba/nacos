@@ -32,7 +32,13 @@ extension mechanisms, and cross-cutting security rules.
 - [Persistence And Dump Spec](design/foundation-persistence-dump-spec.md)
 - [Task Execution Spec](design/foundation-task-execution-spec.md)
 - [Event Dispatch And NotifyCenter Spec](design/foundation-event-dispatch-spec.md)
+- [Observability Hooks Spec](design/foundation-observability-hooks-spec.md)
 - [Core Capabilities Spec](design/core-capabilities-spec.md)
+
+Planned foundation specs:
+
+- Request Filtering And Runtime Context Spec
+- Server Lifecycle And Environment Configuration Spec
 
 ## Interface Model
 

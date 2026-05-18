@@ -46,7 +46,8 @@ points and must not redefine domain ownership. Foundation capabilities provide
 [CP consistency](foundation-cp-consistency-spec.md),
 [persistence and dump](foundation-persistence-dump-spec.md),
 [task](foundation-task-execution-spec.md), and
-[event](foundation-event-dispatch-spec.md) infrastructure; they support domains
+[event](foundation-event-dispatch-spec.md), and
+[observability](foundation-observability-hooks-spec.md) infrastructure; they support domains
 but do not own domain resource semantics.
 
 ## 2. Core Domains
@@ -74,7 +75,8 @@ but do not own domain resource semantics.
   [CP consistency](foundation-cp-consistency-spec.md), and
   [persistence and dump](foundation-persistence-dump-spec.md),
   [task execution](foundation-task-execution-spec.md), and
-  [event dispatch](foundation-event-dispatch-spec.md); they do not own Config,
+  [event dispatch](foundation-event-dispatch-spec.md), and
+  [observability hooks](foundation-observability-hooks-spec.md); they do not own Config,
   Naming, or AI resource semantics unless a domain spec explicitly delegates a
   behavior.
 - Runtime client surfaces should expose least-privilege operations for known

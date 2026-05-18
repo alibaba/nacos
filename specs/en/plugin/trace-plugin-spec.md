@@ -29,6 +29,8 @@ plugin lifecycle and state rules are defined by the
 Trace event dispatch runs on Nacos local event infrastructure and must also
 follow the
 [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
+Shared trace, audit, metrics, and diagnostic boundaries are defined by the
+[Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
 
 Unlike generic distributed tracing, Nacos trace events describe Nacos resource
 operations, such as instance registration, service removal, service push, and

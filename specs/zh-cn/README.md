@@ -31,7 +31,13 @@
 - [持久化与 Dump 规范](design/foundation-persistence-dump-spec.md)
 - [任务执行规范](design/foundation-task-execution-spec.md)
 - [事件分发与 NotifyCenter 规范](design/foundation-event-dispatch-spec.md)
+- [可观测钩子规范](design/foundation-observability-hooks-spec.md)
 - [核心功能规范](design/core-capabilities-spec.md)
+
+规划中的基础规范：
+
+- 请求过滤与运行时上下文规范
+- 服务端生命周期与环境配置规范
 
 ## 接口模型
 

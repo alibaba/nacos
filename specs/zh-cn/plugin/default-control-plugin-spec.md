@@ -85,6 +85,8 @@ TPS 规则示例：
 
 默认 barrier 会定期把通过与拒绝计数输出到 TPS 日志。如果某个 point 没有注册 barrier，
 或 TPS 应用过程失败，检查会跳过并允许请求继续。
+TPS 和拒绝观测属于运维指标，必须遵循
+[可观测钩子规范](../design/foundation-observability-hooks-spec.md)。
 
 ## 内置 Point Name
 

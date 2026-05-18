@@ -64,7 +64,9 @@ push-related behavior.
 
 Metrics may include service count, instance count, subscription count, client
 count, push queues, and health status summaries. Metrics are observational and
-must not define resource identity.
+must not define resource identity. Shared metrics, trace, log, and diagnostic
+rules are defined by the
+[Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
 
 ## 5. Cleanup Diagnostics
 
@@ -90,4 +92,5 @@ converge toward the common Nacos API error model.
 - [Naming Spec](naming-spec.md)
 - [Naming Resource Spec](naming-resource-spec.md)
 - [Naming Health And Protection Spec](naming-health-protection-spec.md)
+- [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md)
 - [Control Plugin Spec](../plugin/control-plugin-spec.md)

@@ -161,6 +161,7 @@ Naming 通过 `NamingExecuteTaskDispatcher` 使用该模型，使 service 相关
 
 - [基础能力规范](foundation-capabilities-spec.md)
 - [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
+- [可观测钩子规范](foundation-observability-hooks-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
 - [CP 一致性规范](foundation-cp-consistency-spec.md)
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)

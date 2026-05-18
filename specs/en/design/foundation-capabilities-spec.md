@@ -25,7 +25,8 @@ The foundation layer provides infrastructure such as
 [CP consistency](foundation-cp-consistency-spec.md),
 [persistence and dump](foundation-persistence-dump-spec.md),
 [task execution](foundation-task-execution-spec.md), and
-[event dispatch](foundation-event-dispatch-spec.md). It must support domain
+[event dispatch](foundation-event-dispatch-spec.md), and
+[observability hooks](foundation-observability-hooks-spec.md). It must support domain
 semantics without owning Config, Naming, AI, or security resource meaning.
 
 ## 1. Positioning
@@ -58,7 +59,7 @@ validation, authorization, and user-visible semantics.
 | [Persistence and dump](foundation-persistence-dump-spec.md) | `persistence`, domain storage modules | Store durable data in embedded or external storage, load local dump data, and recover serving cache. | Domains must define schema, compatibility, data ownership, and whether dump is cache or source of truth. |
 | [Task execution](foundation-task-execution-spec.md) | `common.task`, `common.executor`, domain task engines | Run immediate, delayed, retry, merge, batch, and scheduled tasks with bounded resources. | Tasks must be idempotent or explicitly guarded because retries, merge, and node changes can repeat work. |
 | [Event dispatch](foundation-event-dispatch-spec.md) | `common.notify`, domain event publishers | Publish in-process events to subscribers, update indexes, trigger async work, and bridge trace events. | Events are local process facts unless a domain routes them through persistence or cluster protocols. |
-| Observability hooks | `core.monitor`, `common.trace`, plugin trace/control | Report metrics, traces, queue depth, connection state, and operation events. | Observability must not change resource semantics or become a required control path. |
+| [Observability hooks](foundation-observability-hooks-spec.md) | `core.monitor`, `common.trace`, plugin trace/control | Report metrics, traces, queue depth, connection state, and operation events. | Observability must not change resource semantics or become a required control path. |
 
 ## 3. Cluster Membership
 
@@ -212,7 +213,39 @@ Detailed `NotifyCenter`, publisher, subscriber, slow-event, custom publisher,
 and local event semantics are defined by the
 [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
 
-## 9. Foundation Boundary Rules
+## 9. Observability Hooks
+
+Observability hooks expose runtime facts for metrics, trace, audit logs, health,
+server state, queue status, worker status, and diagnostic APIs.
+
+Observability rules:
+
+- metrics and logs may be delayed, sampled, reset, dropped, or incomplete;
+- stable metrics must use bounded names and low-cardinality tags;
+- high-cardinality observations should use TopN, sampling, or explicit
+  diagnostics APIs;
+- trace and audit payloads must not contain secrets or full opaque Config
+  content;
+- liveness/readiness and server state are operational views and must not replace
+  domain validation or authorization;
+- plugin-provided observability must fail open for core data changes unless a
+  governance spec explicitly defines a blocking policy.
+
+Detailed metric registry, trace, audit, health, server state, diagnostics, and
+external scrape rules are defined by the
+[Observability Hooks Spec](foundation-observability-hooks-spec.md).
+
+## 10. Planned Foundation Specs
+
+Two foundation areas are intentionally planned as independent specs instead of
+being folded into observability:
+
+| Planned spec | Scope | Expected link points |
+| --- | --- | --- |
+| Request Filtering And Runtime Context Spec | HTTP filters, gRPC request filters, `RequestContext`, parameter extraction, namespace validation, auth/control filter order, and request context propagation. | HTTP API, gRPC API, authorization, Control plugin, response/error, and remote connection lifecycle specs. |
+| Server Lifecycle And Environment Configuration Spec | Application startup listeners, `EnvUtil`, `ApplicationUtils`, deployment/function mode, dynamic configuration, module state, server state, and shutdown/lifecycle behavior. | Nacos design, core capabilities, cluster membership, plugin, environment plugin, and server state/operation specs. |
+
+## 11. Foundation Boundary Rules
 
 - Foundation capabilities do not own Config `dataId`, Naming `serviceName`, AI
   resource names, or auth permission meaning.
@@ -225,7 +258,7 @@ and local event semantics are defined by the
 - Security, visibility, trace, and control remain cross-cutting concerns and
   must follow their own specs even when they hook into foundation paths.
 
-## 10. Related Specs
+## 12. Related Specs
 
 - [Nacos Core Capabilities Spec](core-capabilities-spec.md)
 - [Resource Model Spec](resource-model-spec.md)
@@ -237,6 +270,7 @@ and local event semantics are defined by the
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
 - [Task Execution Spec](foundation-task-execution-spec.md)
 - [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
+- [Observability Hooks Spec](foundation-observability-hooks-spec.md)
 - [gRPC API Spec](../grpc-api/api-spec.md)
 - [Plugin Spec](../plugin/plugin-spec.md)
 - [Addressing Plugin Spec](../plugin/addressing-plugin-spec.md)

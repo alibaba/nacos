@@ -110,7 +110,7 @@ Config operation APIs are administrative repair or diagnostics surfaces:
 | Derby query | Allows bounded `SELECT` statements only when embedded storage is active and `nacos.config.derby.ops.enabled=true`. |
 | Derby import | Imports Derby data only when embedded storage is active and Derby ops is enabled. |
 | Listener diagnostics | Queries listener state by IP or Config identity. |
-| Metrics | Queries client cache and snapshot metrics locally or across [cluster members](../design/foundation-cluster-membership-spec.md). |
+| Metrics | Queries client cache and snapshot metrics locally or across [cluster members](../design/foundation-cluster-membership-spec.md), following the [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md). |
 
 Derby ops are maintainer-only behavior. They must require Admin permission and
 must remain disabled by default.
@@ -120,4 +120,5 @@ must remain disabled by default.
 - [HTTP API Spec](../http-api/api-spec.md)
 - [Auth And Permission Spec](../auth/auth-permission-spec.md)
 - [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md)
+- [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md)
 - [Control Plugin Spec](../plugin/control-plugin-spec.md)

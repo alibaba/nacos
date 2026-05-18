@@ -58,7 +58,8 @@ Naming 运维 API 可以暴露模块开关、指标和日志级别更新。开�
 健康检查、心跳、清理、保护或推送等运行时行为。
 
 指标可以包含 service 数、instance 数、subscription 数、client 数、push queue 和健康状态摘要。
-指标是观测数据，不定义资源身份。
+指标是观测数据，不定义资源身份。共享指标、trace、日志和诊断规则由
+[可观测钩子规范](../design/foundation-observability-hooks-spec.md)定义。
 
 ## 5. 清理诊断
 
@@ -81,4 +82,5 @@ Naming 仍存在模块级 exception handler。新的 v3 运维 API 应收敛到�
 - [Naming 规范](naming-spec.md)
 - [Naming 资源规范](naming-resource-spec.md)
 - [Naming 健康检查与保护规范](naming-health-protection-spec.md)
+- [可观测钩子规范](../design/foundation-observability-hooks-spec.md)
 - [Control 插件规范](../plugin/control-plugin-spec.md)

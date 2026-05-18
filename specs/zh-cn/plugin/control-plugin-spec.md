@@ -116,6 +116,8 @@ TPS manager 必须满足：
 
 规则重载通过 control 规则变更事件发布，并由当前活跃 manager 应用。本地事件分发遵循
 [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。
+Control 指标和拒绝观测遵循
+[可观测钩子规范](../design/foundation-observability-hooks-spec.md)。
 
 外部规则存储通过以下配置选择：
 

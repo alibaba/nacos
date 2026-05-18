@@ -125,9 +125,11 @@ Config 可以集成扩展机制，但 Config 领域的归属不转移：
   存储依赖的共享 CP 基础见[CP 一致性规范](../design/foundation-cp-consistency-spec.md)；Config Notify
   依赖的共享 AP 基础见[AP 一致性规范](../design/foundation-ap-consistency-spec.md)，传输边界见
   [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。
-- TODO: 定义 Config、Naming、AI 和 Core 运维领域统一的 Trace 与审计事件字段。
+- TODO: 定义 Config、Naming、AI 和 Core 运维领域特定的 Trace 与审计事件字段。共享可观测边界由
+  [可观测钩子规范](../design/foundation-observability-hooks-spec.md)定义。
 
 共享 datasource、嵌入式/外部存储、repository、dump 和 cache 边界由
 [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
 共享任务执行和本地事件边界由[任务执行规范](../design/foundation-task-execution-spec.md)和
 [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义。
+共享可观测边界由[可观测钩子规范](../design/foundation-observability-hooks-spec.md)定义。

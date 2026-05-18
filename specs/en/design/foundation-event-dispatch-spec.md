@@ -174,6 +174,7 @@ Rules:
 
 - [Foundation Capabilities Spec](foundation-capabilities-spec.md)
 - [Task Execution Spec](foundation-task-execution-spec.md)
+- [Observability Hooks Spec](foundation-observability-hooks-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](foundation-cp-consistency-spec.md)
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)

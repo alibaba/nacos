@@ -92,6 +92,8 @@ can apply updated rules through reload events.
 The default barrier reports pass and denied counts periodically to the TPS log.
 If a point has no registered barrier or if applying TPS fails, the check is
 skipped and the request is allowed.
+TPS and denied observations are operational metrics and must follow the
+[Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
 
 ## Built-In Point Names
 
