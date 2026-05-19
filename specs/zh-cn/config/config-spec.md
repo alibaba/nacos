@@ -86,6 +86,8 @@ Config 变更推送只通知客户端某个资源可能发生变化。推送内�
 运行时客户端应查询已知配置，并监听已知配置或模式匹配的配置。大范围列表、搜索、导入、导出、
 克隆、监听诊断、历史、容量、指标和本地缓存操作属于管理能力，应通过 Admin API、Console API
 或 Maintainer SDK 暴露。
+运行时客户端连接、listener recovery、snapshot 和 failover 行为由
+[客户端运行时规范](../client/README.md)定义。
 
 ### 4.6 横切能力通过扩展接入
 

@@ -131,7 +131,7 @@ Naming 可以集成扩展机制，但 Naming 领域归属不转移：
 | HTTP Open API | `/v3/client/ns/instance` 面向自定义运行时客户端提供注册、心跳、注销和列表查询。 |
 | HTTP Admin API | `/v3/admin/ns/*` 提供 service、instance、cluster、health、client 和运维管理。 |
 | gRPC API | 提供运行时注册、批量注册、持久注册、查询、订阅、模糊订阅和服务端推送。参见 [gRPC API 规范](../grpc-api/api-spec.md)。 |
-| Client SDK | 通过 `NamingService` 面向运行时应用提供注册、注销、查询、订阅、模糊订阅、本地缓存和 failover。参见 [SDK 规范](../sdk/sdk-spec.md)。 |
+| Client SDK | 通过 `NamingService` 面向运行时应用提供注册、注销、查询、订阅、模糊订阅、本地缓存和 failover。参见 [SDK 规范](../sdk/sdk-spec.md)和[客户端运行时规范](../client/README.md)。 |
 | Maintainer SDK | 通过 naming maintainer service 提供管理类接入。 |
 | Console API | 面向 UI 的管理流程。Console API 可以调整展示形态，但不能重新定义 Naming 语义。 |
 

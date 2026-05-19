@@ -101,6 +101,8 @@ Runtime clients should query known configs and listen to known or pattern-based
 configs. Broad list, search, import, export, clone, listener diagnostics,
 history, capacity, metrics, and local cache operations are management
 capabilities and belong to Admin API, Console API, or Maintainer SDK surfaces.
+Runtime client connection, listener recovery, snapshot, and failover behavior is
+defined by the [Client Runtime Specs](../client/README.md).
 
 ### 4.6 Extensible Cross-cutting Behavior
 

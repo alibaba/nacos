@@ -111,12 +111,13 @@ healthy in that protected view.
 Protection threshold is a discovery availability protection mechanism. It is
 not an assertion that the underlying instances are actually healthy.
 
-## 6. Pending Specs
+## 6. Runtime Connection Health
 
-- TODO: Define gRPC connection heartbeat, half-open detection, and client-side
-  connection liveness behavior in a shared gRPC connection or gRPC client spec.
-  The foundation-level connection lifecycle boundary is defined by the
-  [Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md).
+gRPC connection heartbeat, half-open detection, and client-side connection
+liveness behavior are defined by the
+[Client Connection And Failover Spec](../client/client-connection-failover-spec.md).
+The foundation-level server connection lifecycle boundary is defined by the
+[Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md).
 
 ## 7. Related Specs
 

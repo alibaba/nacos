@@ -42,6 +42,7 @@
 - [gRPC API 规范](grpc-api/api-spec.md)
 - [SDK 规范](sdk/sdk-spec.md)
 - [Java SDK 实现规范](sdk/sdk-java-impl-spec.md)
+- [客户端运行时规范](client/README.md)
 
 ## 领域模型
 

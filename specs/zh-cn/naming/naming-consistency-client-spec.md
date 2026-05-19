@@ -98,8 +98,9 @@ Naming 维护派生索引：
 
 ## 6. 客户端 Redo 与恢复
 
-Java SDK 缓存已注册实例和订阅，用于 gRPC 重连后的 redo。Redo 恢复客户端进程的运行时意图，不改变
-服务端资源身份模型或 service type。
+Java SDK 缓存已注册实例和订阅，用于 gRPC 重连后的 redo。Redo 按
+[客户端本地缓存与 Redo 规范](../client/client-local-cache-redo-spec.md)恢复客户端进程的运行时意图，
+不改变服务端资源身份模型或 service type。
 
 客户端磁盘缓存和 failover 数据为 discovery read 提供本地恢复，不得作为服务端持久化使用。
 

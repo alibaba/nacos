@@ -48,7 +48,8 @@ the capabilities that a runtime application normally needs:
   endpoints, A2A agent endpoints, Prompt, Skill, and AgentSpec resources;
 - use optional runtime primitives such as
   [distributed lock](../lock/lock-spec.md) when the language SDK supports them;
-- manage its own lifecycle, local cache, listeners, and connections.
+- manage its own lifecycle, local cache, listeners, and connections according to
+  the [Client Runtime Specs](../client/README.md).
 
 The Client SDK should avoid broad management capabilities, including:
 
@@ -106,6 +107,8 @@ The SDK contract is a semantic contract, not a transport contract:
 - Client SDKs may use [gRPC](../grpc-api/api-spec.md),
   [HTTP Open APIs](../http-api/api-spec.md), local cache files, or a mix of
   transports, as long as the public SDK behavior remains stable.
+- Client SDK connection, server list, ability negotiation, local cache, and redo
+  behavior is defined by the [Client Runtime Spec](../client/client-runtime-spec.md).
 - Maintainer SDKs should align with Nacos Admin API semantics and result models,
   even if the implementation later changes transport details.
 - SDK model objects should align with the HTTP and gRPC semantic objects so the
@@ -125,7 +128,8 @@ semantics. Other language SDKs should align with the same capability families:
 - consistent data identity rules, such as namespace, group, dataId, service
   name, cluster, version, and label;
 - consistent listener, subscription, retry, timeout, and local cache behavior
-  where the language runtime supports them.
+  where the language runtime supports them, following the
+  [Client Local Cache And Redo Spec](../client/client-local-cache-redo-spec.md).
 
 Language SDKs may expose futures, promises, streams, coroutines, callbacks, or
 context cancellation according to local conventions. These differences should be

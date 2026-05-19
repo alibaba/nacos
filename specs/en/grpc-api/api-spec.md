@@ -108,19 +108,24 @@ cluster request retry boundaries are defined by the
 
 The server-side lifecycle details are defined by the
 [Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md).
+Client-side server selection, reconnect, TLS, and ability negotiation behavior
+is defined by the [Client Runtime Specs](../client/README.md), especially the
+[Client Connection And Failover Spec](../client/client-connection-failover-spec.md)
+and [Client Ability Negotiation Spec](../client/client-ability-negotiation-spec.md).
 Request context initialization, request filters, auth/control hooks, and
 parameter extraction are defined by the
 [Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md).
 This section summarizes the public gRPC flow.
 
-1. A client opens `BiRequestStream.requestBiStream`.
-2. The first stream payload should be `ConnectionSetupRequest`.
-3. Server creates a `Connection` using the connection id, remote address, client
-   version, namespace, labels, and ability table.
-4. If the client sends an ability table, the server replies with
+1. The client calls unary `ServerCheckRequest` to verify that the selected
+   server is usable and to obtain a connection id. The server replies with
+   `ServerCheckResponse`.
+2. The client opens `BiRequestStream.requestBiStream`.
+3. The first stream payload should be `ConnectionSetupRequest`.
+4. Server creates and registers a `Connection` using the connection id, remote
+   address, client version, namespace, labels, and ability table.
+5. If the client sends an ability table, the server replies with
    `SetupAckRequest` containing server abilities.
-5. The client calls unary `ServerCheckRequest` to verify that the connection is
-   usable. The server replies with `ServerCheckResponse`.
 6. Unary business requests are accepted only after the connection is registered.
 7. Server push requests are sent over the stream and clients answer with response
    payloads such as `NotifySubscriberResponse`, `ConfigChangeNotifyResponse`, or
@@ -175,7 +180,7 @@ inner server-to-server rules are defined by the
 | Request type | Response type | Direction | Auth/source | Contract |
 | --- | --- | --- | --- | --- |
 | `ConnectionSetupRequest` | `SetupAckRequest` | stream | connection bootstrap | Register a gRPC connection with client version, namespace, labels, and ability table. |
-| `ServerCheckRequest` | `ServerCheckResponse` | unary | registered connection | Verify the selected server connection and return connection id and ability negotiation support. |
+| `ServerCheckRequest` | `ServerCheckResponse` | unary | none | Verify the selected server and return connection id and ability negotiation support before stream setup. |
 | `HealthCheckRequest` | `HealthCheckResponse` | unary | none | Keep-alive health check. |
 | `ClientDetectionRequest` | `ClientDetectionResponse` | stream push | none | Server-side client detection. |
 | `ConnectResetRequest` | `ConnectResetResponse` | stream push | none | Ask the client to reconnect to a target server. |

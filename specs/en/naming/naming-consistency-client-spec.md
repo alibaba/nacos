@@ -123,8 +123,9 @@ indexes as authoritative storage contracts.
 ## 6. Client Redo And Recovery
 
 The Java SDK caches registered instances and subscriptions for redo after gRPC
-reconnect. Redo restores runtime intent from the client process. It does not
-change the server resource identity model or service type.
+reconnect. Redo restores runtime intent from the client process according to
+the [Client Local Cache And Redo Spec](../client/client-local-cache-redo-spec.md).
+It does not change the server resource identity model or service type.
 
 Client disk cache and failover data provide local recovery for discovery reads.
 They must not be used as server-side persistence.

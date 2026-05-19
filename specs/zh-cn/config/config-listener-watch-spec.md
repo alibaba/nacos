@@ -89,7 +89,10 @@ namespaceId >> groupPattern >> dataIdPattern
 Admin listener 和 metric API 可以按配置身份、客户端 IP 和集群节点查询监听状态。这些 API 属于
 管理诊断能力，不应通过运行时 Client SDK 暴露。
 
-## 6. 待补充规范
+## 6. 运行时恢复
 
-- TODO: 为 Config、Naming 和 AI 运行时流定义共享的重连、连接生命周期和推送重试语义。基础层连接
-  生命周期边界见[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)。
+Config listener reconnect、连接生命周期和 push retry 行为遵循
+[客户端连接与故障切换规范](../client/client-connection-failover-spec.md)。Config 本地
+failover、snapshot、listener resync 和 fuzzy watch recovery 由
+[客户端本地缓存与 Redo 规范](../client/client-local-cache-redo-spec.md)定义。基础层服务端
+连接边界仍由[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)定义。

@@ -28,8 +28,9 @@ Java SDK 当前包含两类公开能力：
 - Java Maintainer SDK，由 `nacos-maintainer-client` artifact 和
   `maintainer-client` 模块中的公开 interface 提供。
 
-Java Client SDK 是现有运行时应用行为的基准。Java Maintainer SDK 是管理、
-UI、网关和运维场景的推荐 Java 接入方式。
+Java Client SDK 是现有运行时应用行为的基准。它的连接、server list、能力协商、
+本地缓存和 redo 行为由[客户端运行时规范](../client/README.md)定义。Java Maintainer SDK
+是管理、UI、网关和运维场景的推荐 Java 接入方式。
 
 ## 2. Java Client SDK Factory 和生命周期
 

@@ -134,7 +134,11 @@ English:
   [V3 API Surface](./specs/en/http-api/v3-api-surface.md),
   [gRPC API Spec](./specs/en/grpc-api/api-spec.md),
   [SDK Spec](./specs/en/sdk/sdk-spec.md),
-  [Java SDK Implementation Spec](./specs/en/sdk/sdk-java-impl-spec.md)
+  [Java SDK Implementation Spec](./specs/en/sdk/sdk-java-impl-spec.md),
+  [Client Runtime Spec](./specs/en/client/client-runtime-spec.md),
+  [Client Connection And Failover Spec](./specs/en/client/client-connection-failover-spec.md),
+  [Client Ability Negotiation Spec](./specs/en/client/client-ability-negotiation-spec.md),
+  [Client Local Cache And Redo Spec](./specs/en/client/client-local-cache-redo-spec.md)
 - Domain model:
   [Config Spec](./specs/en/config/config-spec.md),
   [Config Resource Spec](./specs/en/config/config-resource-spec.md),
@@ -198,7 +202,11 @@ Simplified Chinese:
   [V3 API 范围](./specs/zh-cn/http-api/v3-api-surface.md)，
   [gRPC API 规范](./specs/zh-cn/grpc-api/api-spec.md)，
   [SDK 规范](./specs/zh-cn/sdk/sdk-spec.md)，
-  [Java SDK 实现规范](./specs/zh-cn/sdk/sdk-java-impl-spec.md)
+  [Java SDK 实现规范](./specs/zh-cn/sdk/sdk-java-impl-spec.md)，
+  [客户端运行时规范](./specs/zh-cn/client/client-runtime-spec.md)，
+  [客户端连接与故障切换规范](./specs/zh-cn/client/client-connection-failover-spec.md)，
+  [客户端能力协商规范](./specs/zh-cn/client/client-ability-negotiation-spec.md)，
+  [客户端本地缓存与 Redo 规范](./specs/zh-cn/client/client-local-cache-redo-spec.md)
 - 领域模型：
   [Config 规范](./specs/zh-cn/config/config-spec.md)，
   [Config 资源规范](./specs/zh-cn/config/config-resource-spec.md)，

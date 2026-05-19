@@ -148,7 +148,7 @@ the Naming domain:
 | HTTP Open API | `/v3/client/ns/instance` register, heartbeat, deregister, and list for custom runtime clients. |
 | HTTP Admin API | `/v3/admin/ns/*` service, instance, cluster, health, client, and operation management. |
 | gRPC API | Runtime register, batch register, persistent register, query, subscribe, fuzzy watch, and server push. See the [gRPC API Spec](../grpc-api/api-spec.md). |
-| Client SDK | Runtime application access through `NamingService`, including register, deregister, query, subscribe, fuzzy watch, local cache, and failover. See the [SDK Spec](../sdk/sdk-spec.md). |
+| Client SDK | Runtime application access through `NamingService`, including register, deregister, query, subscribe, fuzzy watch, local cache, and failover. See the [SDK Spec](../sdk/sdk-spec.md) and [Client Runtime Specs](../client/README.md). |
 | Maintainer SDK | Management integration through naming maintainer services. |
 | Console API | UI-oriented management workflows. Console APIs may shape presentation data, but must not redefine Naming semantics. |
 

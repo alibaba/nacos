@@ -107,9 +107,12 @@ Admin listener and metric APIs may query listener state by config identity,
 client IP, and cluster member. These APIs are management diagnostics and must
 not be exposed through runtime Client SDK surfaces.
 
-## 6. Pending Specs
+## 6. Runtime Recovery
 
-- TODO: Define shared reconnect, connection lifecycle, and push retry semantics
-  for Config, Naming, and AI runtime streams. The foundation-level connection
-  lifecycle boundary is defined by the
-  [Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md).
+Config listener reconnect, connection lifecycle, and push retry behavior follows
+the [Client Connection And Failover Spec](../client/client-connection-failover-spec.md).
+Config local failover, snapshot, listener resync, and fuzzy watch recovery are
+defined by the
+[Client Local Cache And Redo Spec](../client/client-local-cache-redo-spec.md).
+The foundation-level server connection boundary remains defined by the
+[Remote Connection Lifecycle Spec](../design/foundation-remote-connection-spec.md).

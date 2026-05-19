@@ -25,7 +25,8 @@ the [Remote Connection Lifecycle Spec](../design/foundation-remote-connection-sp
 the [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md),
 the [AP Consistency Spec](../design/foundation-ap-consistency-spec.md),
 the [CP Consistency Spec](../design/foundation-cp-consistency-spec.md),
-and the existing HTTP, gRPC, SDK, auth, and plugin specs for service discovery.
+the [Client Runtime Specs](../client/README.md), and the existing HTTP, gRPC,
+SDK, auth, and plugin specs for service discovery.
 
 ## Spec Structure
 

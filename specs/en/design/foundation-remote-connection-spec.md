@@ -44,7 +44,8 @@ It does not own:
 - Config, Naming, AI, or auth payload semantics;
 - public HTTP API behavior;
 - durable domain state;
-- SDK retry, failover, or server-list selection behavior;
+- SDK retry, failover, or server-list selection behavior, which is defined by
+  the [Client Connection And Failover Spec](../client/client-connection-failover-spec.md);
 - AP/CP consistency membership.
 
 The public gRPC envelope and JSON payload policy are defined by the

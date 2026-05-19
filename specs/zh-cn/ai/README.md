@@ -20,7 +20,8 @@ AI Registry 规范定义 Nacos 3.x 的 AI 资源模型。它扩展
 [Nacos 设计规范](../design/nacos-design-spec.md)，遵循共享的
 [资源模型规范](../design/resource-model-spec.md)，并通过
 [HTTP API](../http-api/api-spec.md)、[gRPC API](../grpc-api/api-spec.md) 和
-[SDK](../sdk/sdk-spec.md) 规范暴露能力。
+[SDK](../sdk/sdk-spec.md) 规范暴露能力；运行时连接、能力协商和 redo 行为遵循
+[客户端运行时规范](../client/README.md)。
 
 ## 总览
 

@@ -125,7 +125,8 @@ Naming 领域数据那样受[持久化与 Dump 规范](../design/foundation-pers
 
 分布式锁通过运行时 SDK 暴露给客户端，而不是作为大范围管理 API 暴露。Java 客户端使用
 [gRPC API 规范](../grpc-api/api-spec.md)定义的 gRPC 请求路径。客户端必须在发送锁操作前检查
-服务端是否支持 `SERVER_DISTRIBUTED_LOCK` ability。
+服务端是否支持 `SERVER_DISTRIBUTED_LOCK` ability，并遵循
+[客户端能力协商规范](../client/client-ability-negotiation-spec.md)。
 
 公开 SDK 边界为：
 

@@ -40,6 +40,7 @@
 - [基础能力规范](../design/foundation-capabilities-spec.md)
 - [集群成员规范](../design/foundation-cluster-membership-spec.md)
 - [远程连接生命周期规范](../design/foundation-remote-connection-spec.md)
+- [客户端运行时规范](../client/README.md)
 - [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)
 - [AP 一致性规范](../design/foundation-ap-consistency-spec.md)
 - [CP 一致性规范](../design/foundation-cp-consistency-spec.md)

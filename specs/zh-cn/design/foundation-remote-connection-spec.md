@@ -40,7 +40,8 @@
 - Config、Naming、AI 或 auth payload 语义；
 - 公开 HTTP API 行为；
 - 持久领域状态；
-- SDK 重试、failover 或 server-list 选择行为；
+- SDK 重试、failover 或 server-list 选择行为，这部分由
+  [客户端连接与故障切换规范](../client/client-connection-failover-spec.md)定义；
 - AP/CP 一致性 membership。
 
 公开 gRPC 包裹和 JSON payload 策略由 [gRPC API 规范](../grpc-api/api-spec.md)定义。本文定义承载

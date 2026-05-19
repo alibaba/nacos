@@ -20,7 +20,8 @@ AI Registry specs define the Nacos 3.x AI resource model. They extend the
 [Nacos Design Spec](../design/nacos-design-spec.md), follow the shared
 [Resource Model Spec](../design/resource-model-spec.md), and expose their
 behavior through the [HTTP API](../http-api/api-spec.md),
-[gRPC API](../grpc-api/api-spec.md), and [SDK](../sdk/sdk-spec.md) specs.
+[gRPC API](../grpc-api/api-spec.md), [SDK](../sdk/sdk-spec.md), and
+[Client Runtime](../client/README.md) specs.
 
 ## Overview
 

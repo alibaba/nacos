@@ -41,6 +41,7 @@ Nacos design
   -> Core capabilities and domain capabilities
      -> Config / Naming / AI Registry / Core Operations / Console / Distributed Lock
   -> HTTP / gRPC / SDK interface specs
+     -> Client runtime
   -> Extension model
   -> Security model
 ```
@@ -65,6 +66,7 @@ Nacos 顶层设计
   -> 核心功能与领域功能
      -> Config / Naming / AI Registry / Core 运维 / Console / 分布式锁
   -> HTTP / gRPC / SDK 接口规范
+     -> 客户端运行时
   -> 扩展模型
   -> 安全模型
 ```

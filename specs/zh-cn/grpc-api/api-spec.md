@@ -99,18 +99,21 @@ Java 客户端可通过 `nacos.server.grpc.port.offset` 覆盖端口偏移。服
 ## 4. 连接生命周期
 
 服务端连接生命周期细节由
-[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)定义。本节仅总结公开 gRPC 流程。
+[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)定义。客户端侧 server
+selection、reconnect、TLS 和能力协商行为由[客户端运行时规范](../client/README.md)定义，
+尤其是[客户端连接与故障切换规范](../client/client-connection-failover-spec.md)和
+[客户端能力协商规范](../client/client-ability-negotiation-spec.md)。本节仅总结公开 gRPC 流程。
 请求上下文初始化、request filter、鉴权/Control 钩子和参数提取由
 [请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义。
 
-1. 客户端打开 `BiRequestStream.requestBiStream`。
-2. 流上的第一个 payload 应为 `ConnectionSetupRequest`。
-3. 服务端根据 connection id、远端地址、客户端版本、命名空间、labels 和
-   ability table 创建 `Connection`。
-4. 如果客户端发送 ability table，服务端返回包含服务端能力的
+1. 客户端通过 unary `ServerCheckRequest` 校验选中服务端可用性，并获取 connection id。
+   服务端返回 `ServerCheckResponse`。
+2. 客户端打开 `BiRequestStream.requestBiStream`。
+3. 流上的第一个 payload 应为 `ConnectionSetupRequest`。
+4. 服务端根据 connection id、远端地址、客户端版本、命名空间、labels 和
+   ability table 创建并注册 `Connection`。
+5. 如果客户端发送 ability table，服务端返回包含服务端能力的
    `SetupAckRequest`。
-5. 客户端通过 unary `ServerCheckRequest` 校验连接可用性，服务端返回
-   `ServerCheckResponse`。
 6. unary 业务请求只有在连接已注册后才会被接受。
 7. 服务端推送请求通过双向流发送，客户端以 `NotifySubscriberResponse`、
    `ConfigChangeNotifyResponse` 或与 `PushAckRequest` 相关的响应返回 ack。
@@ -161,7 +164,7 @@ inner 请求的详细规则由
 | Request type | Response type | 方向 | 鉴权/来源 | 契约 |
 | --- | --- | --- | --- | --- |
 | `ConnectionSetupRequest` | `SetupAckRequest` | stream | 建连 | 使用客户端版本、命名空间、labels 和 ability table 注册 gRPC 连接。 |
-| `ServerCheckRequest` | `ServerCheckResponse` | unary | 已注册连接 | 校验当前连接并返回 connection id 和能力协商支持情况。 |
+| `ServerCheckRequest` | `ServerCheckResponse` | unary | 无 | stream setup 前校验选中服务端，并返回 connection id 和能力协商支持情况。 |
 | `HealthCheckRequest` | `HealthCheckResponse` | unary | 无 | keep-alive 健康检查。 |
 | `ClientDetectionRequest` | `ClientDetectionResponse` | stream push | 无 | 服务端发起客户端探测。 |
 | `ConnectResetRequest` | `ConnectResetResponse` | stream push | 无 | 要求客户端重连到目标服务端。 |

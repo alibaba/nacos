@@ -30,8 +30,10 @@ The Java SDK has two public families:
   interfaces under the `maintainer-client` module.
 
 The Java Client SDK is the baseline for existing runtime application behavior.
-The Java Maintainer SDK is the preferred Java entry point for management, UI,
-gateway, and operation scenarios.
+Its connection, server list, ability negotiation, local cache, and redo behavior
+is defined by the [Client Runtime Specs](../client/README.md). The Java
+Maintainer SDK is the preferred Java entry point for management, UI, gateway,
+and operation scenarios.
 
 ## 2. Java Client SDK Factories and Lifecycle
 

@@ -23,8 +23,9 @@
 [远程连接生命周期规范](../design/foundation-remote-connection-spec.md)、
 [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)、
 [AP 一致性规范](../design/foundation-ap-consistency-spec.md)、
-[CP 一致性规范](../design/foundation-cp-consistency-spec.md)，以及已有 HTTP、gRPC、SDK、
-鉴权和插件规范，进一步定义服务发现领域。
+[CP 一致性规范](../design/foundation-cp-consistency-spec.md)、
+[客户端运行时规范](../client/README.md)，以及已有 HTTP、gRPC、SDK、鉴权和插件规范，
+进一步定义服务发现领域。
 
 ## 规范结构
 
