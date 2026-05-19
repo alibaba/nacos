@@ -16,13 +16,17 @@
 
 package com.alibaba.nacos.naming.core.v2.index;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,9 +40,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 class ClientServiceIndexesManagerTest {
@@ -163,6 +169,58 @@ class ClientServiceIndexesManagerTest {
         
         assertNotNull(allClientsSubscribeService);
         assertEquals(2, allClientsSubscribeService.size());
+    }
+    
+    @Test
+    void testAddPublisherIndexesEmitsAddServiceOnFirstAndInstanceChangedOnRepeat()
+        throws Exception {
+        // The shared setUp() pre-seeds publisherIndexes for `service`, so use a fresh
+        // manager + fresh service to exercise the "first-time registration" path.
+        ClientServiceIndexesManager freshManager = new ClientServiceIndexesManager();
+        Service freshService = Mockito.mock(Service.class);
+        Method addPublisherIndexes = ClientServiceIndexesManager.class.getDeclaredMethod(
+            "addPublisherIndexes", Service.class, String.class);
+        addPublisherIndexes.setAccessible(true);
+        
+        AtomicInteger addServiceEventCount = new AtomicInteger();
+        AtomicInteger instanceChangedEventCount = new AtomicInteger();
+        
+        try (MockedStatic<NotifyCenter> mocked = Mockito.mockStatic(NotifyCenter.class)) {
+            mocked.when(() -> NotifyCenter.publishEvent(any())).thenAnswer(invocation -> {
+                Object event = invocation.getArgument(0);
+                if (event instanceof ServiceEvent.ServiceChangedEvent) {
+                    String type = ((ServiceEvent.ServiceChangedEvent) event).getChangedType();
+                    if (Constants.ServiceChangedType.ADD_SERVICE.equals(type)) {
+                        addServiceEventCount.incrementAndGet();
+                    } else if (Constants.ServiceChangedType.INSTANCE_CHANGED.equals(type)) {
+                        instanceChangedEventCount.incrementAndGet();
+                    }
+                }
+                return true;
+            });
+            
+            // First registration of the service: must emit ADD_SERVICE exactly once and the
+            // index entry must already exist by the time the event is published (the new
+            // implementation orders the computeIfAbsent before the publishEvent for that reason).
+            addPublisherIndexes.invoke(freshManager, freshService, "client-1");
+            assertEquals(1, addServiceEventCount.get(),
+                "First-time registration must emit ADD_SERVICE once");
+            assertEquals(0, instanceChangedEventCount.get(),
+                "First-time registration must not emit INSTANCE_CHANGED");
+            assertEquals(1, freshManager.getAllClientsRegisteredService(freshService).size(),
+                "Index entry must be present by the time the event is published");
+            
+            // Subsequent registrations of the same service must emit INSTANCE_CHANGED, not
+            // another ADD_SERVICE.
+            addPublisherIndexes.invoke(freshManager, freshService, "client-2");
+            addPublisherIndexes.invoke(freshManager, freshService, "client-3");
+            assertEquals(1, addServiceEventCount.get(),
+                "Re-registration must not re-emit ADD_SERVICE");
+            assertEquals(2, instanceChangedEventCount.get(),
+                "Each re-registration must emit one INSTANCE_CHANGED");
+            assertEquals(3, freshManager.getAllClientsRegisteredService(freshService).size(),
+                "All three clients must be present in the index");
+        }
     }
     
     @Test

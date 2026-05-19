@@ -134,14 +134,21 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void addPublisherIndexes(Service service, String clientId) {
-        String serviceChangedType = Constants.ServiceChangedType.INSTANCE_CHANGED;
-        if (!publisherIndexes.containsKey(service)) {
-            // The only time the index needs to be updated is when the service is first created
-            serviceChangedType = Constants.ServiceChangedType.ADD_SERVICE;
-        }
-        NotifyCenter
-            .publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
-        publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
+        // Detect the first registration atomically: only the thread whose mapping function actually
+        // ran on ConcurrentHashMap#computeIfAbsent sets firstInsert[0] = true, so concurrent
+        // first-time registrations of the same service no longer each see containsKey == false and
+        // each emit an ADD_SERVICE event. The event is also published only after the index entry
+        // exists, so subscribers that re-query the map on ADD_SERVICE no longer race the writer.
+        boolean[] firstInsert = {false};
+        publisherIndexes.computeIfAbsent(service, key -> {
+            firstInsert[0] = true;
+            return new ConcurrentHashSet<>();
+        }).add(clientId);
+        String serviceChangedType = firstInsert[0]
+            ? Constants.ServiceChangedType.ADD_SERVICE
+            : Constants.ServiceChangedType.INSTANCE_CHANGED;
+        NotifyCenter.publishEvent(
+            new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
