@@ -6,6 +6,18 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Cop
 
 - **Do NOT post AI-generated comments** on issues or PRs. Discussions are for humans only.
 - **Discuss before implementing**: Ensure the implementation direction is agreed upon with maintainers in the issue comments before starting work.
+- **Spec-first coding is mandatory**: Before changing behavior, APIs, SDKs,
+  plugins, storage, runtime flow, or domain semantics, AI agents MUST read the
+  relevant specs under [`specs/`](./specs/README.md) and treat them as the rule
+  source for the implementation.
+- **Discuss spec-impacting changes before coding**: If a change touches behavior
+  covered by an existing spec, or exposes a gap between the code and the spec,
+  AI agents MUST discuss the implementation direction and the required spec
+  update with maintainers before starting the code change.
+- **Update specs with the design**: Any design proposal that changes or
+  clarifies spec-covered behavior MUST include the corresponding spec updates
+  in the same change set. When the design is large or controversial, prefer a
+  spec/design-only PR first, then follow with implementation PRs.
 - **Disclose AI usage**: When a significant part of a commit is AI-generated, add a trailer to your commit message:
   ```
   Assisted-by: Claude Code
@@ -109,6 +121,13 @@ Nacos v3 APIs follow strict conventions. AI agents **must** comply with these
 standards when generating controller code.
 
 Authoritative API and SDK specs live under [`specs/`](./specs/README.md).
+Before coding any API, SDK, plugin, storage, runtime, or domain change, AI
+agents **MUST** consult the relevant specs below. If the intended behavior
+differs from the existing spec, do not silently implement the code first:
+discuss the change with maintainers and update the affected specs as part of
+the design. For broad or uncertain changes, submit a spec/design PR first so
+the contract is reviewed before implementation.
+
 English:
 
 - Design foundation:
