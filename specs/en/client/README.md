@@ -25,3 +25,4 @@ Naming, AI Registry, and Distributed Lock.
 - [Client Connection And Failover Spec](client-connection-failover-spec.md)
 - [Client Ability Negotiation Spec](client-ability-negotiation-spec.md)
 - [Client Local Cache And Redo Spec](client-local-cache-redo-spec.md)
+- [Runtime Push And Reconnect Spec](runtime-push-reconnect-spec.md)

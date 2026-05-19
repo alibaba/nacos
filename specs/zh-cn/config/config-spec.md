@@ -47,6 +47,7 @@ namespaceId -> groupName -> dataId
 | 监听与订阅 | 定义精确配置监听、变更推送、模糊订阅和客户端同步语义。 | [Config 监听与订阅规范](config-listener-watch-spec.md) |
 | 灰度发布 | 定义正式配置、灰度配置、beta、tag、规则匹配和灰度查询优先级。 | [Config 灰度发布规范](config-gray-release-spec.md) |
 | 持久化与历史 | 定义持久化存储、本地 dump 缓存、md5 状态、历史、恢复和清理预期。 | [Config 持久化、Dump 与历史规范](config-persistence-history-spec.md) |
+| 一致性与可见性 | 定义写入可见性、dump 顺序、集群传播和运行时查询可见性。 | [Config 一致性、Dump 与可见性规范](config-consistency-dump-visibility-spec.md) |
 | 容量与运维 | 定义配额、大小限制、用量统计、指标、监听诊断、本地缓存操作和 Derby 运维边界。 | [Config 容量与运维规范](config-capacity-ops-spec.md) |
 
 ## 4. 设计原则
@@ -123,15 +124,13 @@ Config 可以集成扩展机制，但 Config 领域的归属不转移：
 
 ## 7. 待补充规范
 
-- TODO: 定义 Config 领域特有的嵌入式存储写入可见性、dump 恢复和集群变更传播一致性规范。嵌入式
-  存储依赖的共享 CP 基础见[CP 一致性规范](../design/foundation-cp-consistency-spec.md)；Config Notify
-  依赖的共享 AP 基础见[AP 一致性规范](../design/foundation-ap-consistency-spec.md)，传输边界见
-  [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。
 - TODO: 定义 Config、Naming、AI 和 Core 运维领域特定的 Trace 与审计事件字段。共享可观测边界由
   [可观测钩子规范](../design/foundation-observability-hooks-spec.md)定义。
 
 共享 datasource、嵌入式/外部存储、repository、dump 和 cache 边界由
 [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
+Config 特有的写入可见性、dump 恢复和集群变更传播由
+[Config 一致性、Dump 与可见性规范](config-consistency-dump-visibility-spec.md)定义。
 共享任务执行和本地事件边界由[任务执行规范](../design/foundation-task-execution-spec.md)和
 [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义。
 共享可观测边界由[可观测钩子规范](../design/foundation-observability-hooks-spec.md)定义。

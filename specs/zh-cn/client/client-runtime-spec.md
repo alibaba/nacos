@@ -94,6 +94,7 @@ redo、临时实例 redo、AI endpoint redo 和其他运行时修复。除非领
 | Server list 与连接 | 解析服务端地址、刷新动态地址列表、创建 HTTP/gRPC client、故障重连并应用 TLS。 | [客户端连接与故障切换规范](client-connection-failover-spec.md) |
 | 能力协商 | 交换客户端与服务端能力表，并按当前连接能力状态控制可选能力。 | [客户端能力协商规范](client-ability-negotiation-spec.md) |
 | 缓存与 redo | 维护本地 snapshot、failover 视图、监听状态、订阅状态和重连 redo 数据。 | [客户端本地缓存与 Redo 规范](client-local-cache-redo-spec.md) |
+| Push 与重连恢复 | 定义服务端 push 语义、push retry、disconnect cleanup 和重连后的客户端恢复。 | [运行时推送与重连规范](runtime-push-reconnect-spec.md) |
 
 ## 5. 领域对齐
 

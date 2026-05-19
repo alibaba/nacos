@@ -76,6 +76,8 @@ service 内混用类型的独立实例策略。
 | --- | --- | --- |
 | 实例生命周期 | 定义通用生命周期，以及按服务类型区分的注册、心跳、注销、更新、批量注册和清理行为。 | [Naming 实例生命周期规范](naming-instance-lifecycle-spec.md) |
 | 一致性与客户端状态 | 定义通用 client 身份，以及临时服务 AP 状态、持久服务 CP 状态、索引和 snapshot。 | [Naming 一致性与客户端状态规范](naming-consistency-client-spec.md) |
+| 临时服务 Distro 一致性 | 定义临时 ownership、Distro 同步、verify、anti-entropy、清理和 AP 可见性。 | [Naming 临时服务 Distro 一致性规范](naming-ephemeral-distro-consistency-spec.md) |
+| 持久服务 CP 一致性 | 定义持久实例 CP 写入、metadata group、snapshot、恢复和可见性。 | [Naming 持久服务 CP 一致性规范](naming-persistent-cp-consistency-spec.md) |
 
 ## 5. 设计原则
 
@@ -146,11 +148,11 @@ Naming 可以集成扩展机制，但 Naming 领域归属不转移：
 - 内部过滤和 SDK selector 是发现侧过滤与选择工具。遗留 API 定义的 service selector 是兼容字段，
   不应成为新流量策略语义的基础。
 
-## 8. 待补充规范
+## 8. 相关规范
 
-- TODO: 定义 Naming 领域特有的临时服务 Distro ownership、verify、anti-entropy 和 repair 规则。共享
-  AP 基础见[AP 一致性规范](../design/foundation-ap-consistency-spec.md)，服务端间 Distro 传输边界见
-  [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。
-- TODO: 定义 Naming 领域特有的持久服务和元数据 CP group 归属、request 形态、snapshot 和恢复规则。
-  共享 CP 基础见[CP 一致性规范](../design/foundation-cp-consistency-spec.md)。
-- TODO: 定义 Naming 范围查询的跨领域可见性行为。
+- [Naming 临时服务 Distro 一致性规范](naming-ephemeral-distro-consistency-spec.md)
+- [Naming 持久服务 CP 一致性规范](naming-persistent-cp-consistency-spec.md)
+- [运行时推送与重连规范](../client/runtime-push-reconnect-spec.md)
+- [AP 一致性规范](../design/foundation-ap-consistency-spec.md)
+- [CP 一致性规范](../design/foundation-cp-consistency-spec.md)
+- [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)

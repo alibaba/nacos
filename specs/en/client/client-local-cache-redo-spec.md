@@ -150,7 +150,8 @@ user explicitly calls a cache cleanup operation.
 - Naming redo currently uses its own implementation while newer AI redo uses
   common redo abstractions. The implementations should converge on the shared
   redo model.
-- Config listener recovery, Naming redo, AI redo, and future runtime push
-  recovery should share common observability fields.
+- Config listener recovery, Naming redo, AI redo, and runtime push recovery
+  defined by the [Runtime Push And Reconnect Spec](runtime-push-reconnect-spec.md)
+  should share common observability fields.
 - Multi-language SDKs should document which local cache and redo behaviors they
   support and where they intentionally differ from Java.

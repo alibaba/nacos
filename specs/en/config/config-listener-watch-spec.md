@@ -109,8 +109,8 @@ not be exposed through runtime Client SDK surfaces.
 
 ## 6. Runtime Recovery
 
-Config listener reconnect, connection lifecycle, and push retry behavior follows
-the [Client Connection And Failover Spec](../client/client-connection-failover-spec.md).
+Config listener reconnect, connection lifecycle, and push retry behavior follow
+the [Runtime Push And Reconnect Spec](../client/runtime-push-reconnect-spec.md).
 Config local failover, snapshot, listener resync, and fuzzy watch recovery are
 defined by the
 [Client Local Cache And Redo Spec](../client/client-local-cache-redo-spec.md).

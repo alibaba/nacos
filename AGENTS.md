@@ -138,7 +138,8 @@ English:
   [Client Runtime Spec](./specs/en/client/client-runtime-spec.md),
   [Client Connection And Failover Spec](./specs/en/client/client-connection-failover-spec.md),
   [Client Ability Negotiation Spec](./specs/en/client/client-ability-negotiation-spec.md),
-  [Client Local Cache And Redo Spec](./specs/en/client/client-local-cache-redo-spec.md)
+  [Client Local Cache And Redo Spec](./specs/en/client/client-local-cache-redo-spec.md),
+  [Runtime Push And Reconnect Spec](./specs/en/client/runtime-push-reconnect-spec.md)
 - Domain model:
   [Config Spec](./specs/en/config/config-spec.md),
   [Config Resource Spec](./specs/en/config/config-resource-spec.md),
@@ -146,6 +147,7 @@ English:
   [Config Listener And Watch Spec](./specs/en/config/config-listener-watch-spec.md),
   [Config Gray Release Spec](./specs/en/config/config-gray-release-spec.md),
   [Config Persistence And History Spec](./specs/en/config/config-persistence-history-spec.md),
+  [Config Consistency, Dump, And Visibility Spec](./specs/en/config/config-consistency-dump-visibility-spec.md),
   [Config Capacity And Ops Spec](./specs/en/config/config-capacity-ops-spec.md),
   [Naming Spec](./specs/en/naming/naming-spec.md),
   [Naming Resource Spec](./specs/en/naming/naming-resource-spec.md),
@@ -154,6 +156,8 @@ English:
   [Naming Health And Protection Spec](./specs/en/naming/naming-health-protection-spec.md),
   [Naming Metadata And Selector Spec](./specs/en/naming/naming-metadata-selector-spec.md),
   [Naming Consistency And Client State Spec](./specs/en/naming/naming-consistency-client-spec.md),
+  [Naming Ephemeral Distro Consistency Spec](./specs/en/naming/naming-ephemeral-distro-consistency-spec.md),
+  [Naming Persistent CP Consistency Spec](./specs/en/naming/naming-persistent-cp-consistency-spec.md),
   [Naming Ops Spec](./specs/en/naming/naming-ops-spec.md),
   [AI Registry Spec](./specs/en/ai/ai-registry-spec.md),
   [AI Resource Model Spec](./specs/en/ai/ai-resource-model-spec.md),
@@ -206,7 +210,8 @@ Simplified Chinese:
   [客户端运行时规范](./specs/zh-cn/client/client-runtime-spec.md)，
   [客户端连接与故障切换规范](./specs/zh-cn/client/client-connection-failover-spec.md)，
   [客户端能力协商规范](./specs/zh-cn/client/client-ability-negotiation-spec.md)，
-  [客户端本地缓存与 Redo 规范](./specs/zh-cn/client/client-local-cache-redo-spec.md)
+  [客户端本地缓存与 Redo 规范](./specs/zh-cn/client/client-local-cache-redo-spec.md)，
+  [运行时推送与重连规范](./specs/zh-cn/client/runtime-push-reconnect-spec.md)
 - 领域模型：
   [Config 规范](./specs/zh-cn/config/config-spec.md)，
   [Config 资源规范](./specs/zh-cn/config/config-resource-spec.md)，
@@ -214,6 +219,7 @@ Simplified Chinese:
   [Config 监听与 Watch 规范](./specs/zh-cn/config/config-listener-watch-spec.md)，
   [Config 灰度发布规范](./specs/zh-cn/config/config-gray-release-spec.md)，
   [Config 持久化与历史规范](./specs/zh-cn/config/config-persistence-history-spec.md)，
+  [Config 一致性、Dump 与可见性规范](./specs/zh-cn/config/config-consistency-dump-visibility-spec.md)，
   [Config 容量与运维规范](./specs/zh-cn/config/config-capacity-ops-spec.md)，
   [Naming 规范](./specs/zh-cn/naming/naming-spec.md)，
   [Naming 资源规范](./specs/zh-cn/naming/naming-resource-spec.md)，
@@ -222,6 +228,8 @@ Simplified Chinese:
   [Naming 健康检查与保护规范](./specs/zh-cn/naming/naming-health-protection-spec.md)，
   [Naming 元数据与 Selector 规范](./specs/zh-cn/naming/naming-metadata-selector-spec.md)，
   [Naming 一致性与客户端状态规范](./specs/zh-cn/naming/naming-consistency-client-spec.md)，
+  [Naming 临时服务 Distro 一致性规范](./specs/zh-cn/naming/naming-ephemeral-distro-consistency-spec.md)，
+  [Naming 持久服务 CP 一致性规范](./specs/zh-cn/naming/naming-persistent-cp-consistency-spec.md)，
   [Naming 运维规范](./specs/zh-cn/naming/naming-ops-spec.md)，
   [AI Registry 规范](./specs/zh-cn/ai/ai-registry-spec.md)，
   [AI 资源模型规范](./specs/zh-cn/ai/ai-resource-model-spec.md)，

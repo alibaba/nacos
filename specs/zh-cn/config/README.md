@@ -32,6 +32,7 @@
 ## 运维与存储
 
 - [Config 持久化、Dump 与历史规范](config-persistence-history-spec.md)
+- [Config 一致性、Dump 与可见性规范](config-consistency-dump-visibility-spec.md)
 - [Config 容量与运维规范](config-capacity-ops-spec.md)
 
 ## 相关规范

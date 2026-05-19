@@ -59,9 +59,9 @@ service 维度聚合和推送而维护的派生加速结构。
 ## 2. 临时服务一致性
 
 临时服务拥有偏 AP 的运行时实例状态。实例注册在临时 client 下，通过
-[AP 一致性规范](../design/foundation-ap-consistency-spec.md)定义、由
-[内部 RPC 模型](../design/foundation-internal-rpc-spec.md)承载的 Distro client data 路径在集群中同步，
-并在心跳或[连接生命周期](../design/foundation-remote-connection-spec.md)表明 client 消失时移除。
+[Naming 临时服务 Distro 一致性规范](naming-ephemeral-distro-consistency-spec.md)定义的 Distro
+client data 路径在集群中同步，并在心跳或
+[连接生命周期](../design/foundation-remote-connection-spec.md)表明 client 消失时移除。
 
 临时状态应优先保证快速运行时可用和最终收敛，不应视为持久元数据。
 
@@ -72,7 +72,9 @@ instance metadata。
 
 持久服务拥有偏 CP 的实例状态。注册、注销和更新操作会写入 persistent service group，并由
 persistent client operation service apply。共享 CP 基础见
-[CP 一致性规范](../design/foundation-cp-consistency-spec.md)。持久实例 snapshot 用于状态恢复。
+[CP 一致性规范](../design/foundation-cp-consistency-spec.md)，Naming 特有的持久行为由
+[Naming 持久服务 CP 一致性规范](naming-persistent-cp-consistency-spec.md)定义。持久实例 snapshot
+用于状态恢复。
 
 持久 client 不支持 subscriber state。订阅属于临时 client 行为。
 
@@ -104,19 +106,13 @@ Java SDK 缓存已注册实例和订阅，用于 gRPC 重连后的 redo。Redo �
 
 客户端磁盘缓存和 failover 数据为 discovery read 提供本地恢复，不得作为服务端持久化使用。
 
-## 7. 待处理问题
-
-- Naming 仍需要领域级展开临时服务的 Distro ownership、verify flow、anti-entropy 行为和 repair 规则。
-  共享基础见[AP 一致性规范](../design/foundation-ap-consistency-spec.md)，传输边界见
-  [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。
-- Naming 仍需要领域级展开 metadata 和持久服务的 CP protocol group、request 形态、snapshot 和恢复规则。
-  共享基础见[CP 一致性规范](../design/foundation-cp-consistency-spec.md)。
-
-## 8. 相关规范
+## 7. 相关规范
 
 - [Naming 实例生命周期规范](naming-instance-lifecycle-spec.md)
 - [Naming 发现与订阅规范](naming-discovery-subscription-spec.md)
 - [Naming 元数据与 Selector 规范](naming-metadata-selector-spec.md)
+- [Naming 临时服务 Distro 一致性规范](naming-ephemeral-distro-consistency-spec.md)
+- [Naming 持久服务 CP 一致性规范](naming-persistent-cp-consistency-spec.md)
 - [AP 一致性规范](../design/foundation-ap-consistency-spec.md)
 - [CP 一致性规范](../design/foundation-cp-consistency-spec.md)
 - [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)

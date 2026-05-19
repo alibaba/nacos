@@ -52,6 +52,7 @@ The concrete identity rules are defined by the
 | Listener and watch | Define exact config listening, change push, fuzzy watch, and client synchronization semantics. | [Config Listener And Watch Spec](config-listener-watch-spec.md) |
 | Gray release | Define formal config, gray config, beta, tag, rule matching, and gray query precedence. | [Config Gray Release Spec](config-gray-release-spec.md) |
 | Persistence and history | Define persistent storage, local dump cache, md5 state, history, recovery, and cleanup expectations. | [Config Persistence, Dump, And History Spec](config-persistence-history-spec.md) |
+| Consistency and visibility | Define write visibility, dump ordering, cluster propagation, and runtime query visibility. | [Config Consistency, Dump, And Visibility Spec](config-consistency-dump-visibility-spec.md) |
 | Capacity and operations | Define quota, size limit, usage accounting, metrics, listener diagnostics, local cache operation, and Derby ops boundaries. | [Config Capacity And Ops Spec](config-capacity-ops-spec.md) |
 
 ## 4. Design Principles
@@ -144,14 +145,6 @@ the Config domain:
 
 ## 7. Pending Specs
 
-- TODO: Define the Config-specific consistency spec for embedded storage write
-  visibility, dump recovery, and cluster change propagation. The shared CP
-  foundation for embedded storage is defined by the
-  [CP Consistency Spec](../design/foundation-cp-consistency-spec.md). The shared
-  AP foundation for Config Notify is defined by the
-  [AP Consistency Spec](../design/foundation-ap-consistency-spec.md), and its
-  transport boundary is defined by the
-  [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
 - TODO: Define domain-specific trace and audit event fields across Config,
   Naming, AI, and Core operation domains. Shared observability boundaries are
   defined by the
@@ -160,6 +153,9 @@ the Config domain:
 Shared datasource, embedded/external storage, repository, dump, and cache
 boundaries are defined by the
 [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
+Config-specific write visibility, dump recovery, and cluster change propagation
+are defined by the
+[Config Consistency, Dump, And Visibility Spec](config-consistency-dump-visibility-spec.md).
 Shared task execution and local event boundaries are defined by the
 [Task Execution Spec](../design/foundation-task-execution-spec.md) and
 [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).

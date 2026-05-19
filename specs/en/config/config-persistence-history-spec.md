@@ -72,10 +72,11 @@ Config supports embedded and external storage modes:
 - history cleanup and administrative storage operations must run only on the
   node selected by the storage mode policy.
 
-The detailed Config consistency contract is reserved for a future
-domain-specific consistency and cluster spec. The embedded storage CP foundation
-is defined by the [CP Consistency Spec](../design/foundation-cp-consistency-spec.md),
-and Config Notify propagation is defined by the
+The detailed Config consistency contract is defined by the
+[Config Consistency, Dump, And Visibility Spec](config-consistency-dump-visibility-spec.md).
+The embedded storage CP foundation is defined by the
+[CP Consistency Spec](../design/foundation-cp-consistency-spec.md), and Config
+Notify propagation is defined by the
 [AP Consistency Spec](../design/foundation-ap-consistency-spec.md). Persistence,
 dump, task, and event boundaries are defined by the
 [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md),
@@ -108,17 +109,9 @@ When local disk is full or cannot safely store dump content, the server must
 treat the condition as fatal because runtime query correctness depends on local
 serving state.
 
-## 7. Pending Specs
+## 7. Related Specs
 
-- TODO: Define the Config-specific consistency spec for write visibility, dump
-  ordering, and failover recovery. Embedded storage uses the
-  [CP Consistency Spec](../design/foundation-cp-consistency-spec.md); Config
-  change notifications use the
-  [AP Consistency Spec](../design/foundation-ap-consistency-spec.md) and the
-  [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md).
-
-## 8. Related Specs
-
+- [Config Consistency, Dump, And Visibility Spec](config-consistency-dump-visibility-spec.md)
 - [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md)
 - [CP Consistency Spec](../design/foundation-cp-consistency-spec.md)
 - [AP Consistency Spec](../design/foundation-ap-consistency-spec.md)

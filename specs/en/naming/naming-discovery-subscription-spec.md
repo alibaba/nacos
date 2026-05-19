@@ -70,7 +70,8 @@ polling fallback. Local disk cache is a recovery and failover aid, not a
 durable server-side source of truth.
 
 Server push fan-out and retry work must follow the
-[Task Execution Spec](../design/foundation-task-execution-spec.md).
+[Runtime Push And Reconnect Spec](../client/runtime-push-reconnect-spec.md) and
+the [Task Execution Spec](../design/foundation-task-execution-spec.md).
 
 ## 4. Fuzzy Watch
 

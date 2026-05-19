@@ -106,6 +106,7 @@ identity to the selected transport.
 | Server list and connection | Resolve server addresses, refresh dynamic address lists, create HTTP/gRPC clients, reconnect on failure, and apply TLS. | [Client Connection And Failover Spec](client-connection-failover-spec.md) |
 | Ability negotiation | Exchange client and server ability tables and gate optional features by the current connection ability state. | [Client Ability Negotiation Spec](client-ability-negotiation-spec.md) |
 | Cache and redo | Maintain local snapshots, failover views, listener state, subscription state, and reconnect redo data. | [Client Local Cache And Redo Spec](client-local-cache-redo-spec.md) |
+| Push and reconnect recovery | Define server push semantics, push retry, disconnect cleanup, and client recovery after reconnect. | [Runtime Push And Reconnect Spec](runtime-push-reconnect-spec.md) |
 
 ## 5. Domain Alignment
 

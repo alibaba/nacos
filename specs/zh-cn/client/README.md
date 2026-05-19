@@ -24,3 +24,4 @@ Naming、AI Registry 和分布式锁等领域规范。
 - [客户端连接与故障切换规范](client-connection-failover-spec.md)
 - [客户端能力协商规范](client-ability-negotiation-spec.md)
 - [客户端本地缓存与 Redo 规范](client-local-cache-redo-spec.md)
+- [运行时推送与重连规范](runtime-push-reconnect-spec.md)

@@ -92,7 +92,7 @@ Admin listener 和 metric API 可以按配置身份、客户端 IP 和集群节�
 ## 6. 运行时恢复
 
 Config listener reconnect、连接生命周期和 push retry 行为遵循
-[客户端连接与故障切换规范](../client/client-connection-failover-spec.md)。Config 本地
+[运行时推送与重连规范](../client/runtime-push-reconnect-spec.md)。Config 本地
 failover、snapshot、listener resync 和 fuzzy watch recovery 由
 [客户端本地缓存与 Redo 规范](../client/client-local-cache-redo-spec.md)定义。基础层服务端
 连接边界仍由[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)定义。

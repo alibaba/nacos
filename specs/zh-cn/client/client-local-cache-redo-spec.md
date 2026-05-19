@@ -131,5 +131,6 @@ cache/failover refresh task。除非用户显式调用缓存清理操作，shutd
 
 - Naming redo 当前仍使用独立实现，较新的 AI redo 使用通用 redo 抽象。后续实现应收敛到共享 redo
   模型。
-- Config listener recovery、Naming redo、AI redo 和未来 runtime push recovery 应共享可观测字段。
+- Config listener recovery、Naming redo、AI redo 和
+  [运行时推送与重连规范](runtime-push-reconnect-spec.md)定义的 runtime push recovery 应共享可观测字段。
 - 多语言 SDK 应说明自己支持哪些本地缓存和 redo 行为，以及哪些行为有意与 Java 不同。

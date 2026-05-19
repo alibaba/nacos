@@ -62,7 +62,9 @@ HTTP Open API 不支持长轮询或推送订阅。自定义 HTTP 客户端应显
 客户端可以在订阅建立、重连、缓存缺失或轮询兜底时重新查询服务端。本地磁盘缓存是恢复和 failover
 辅助，不是服务端持久化数据源。
 
-服务端推送 fan-out 和重试任务必须遵循[任务执行规范](../design/foundation-task-execution-spec.md)。
+服务端推送 fan-out 和重试任务必须遵循
+[运行时推送与重连规范](../client/runtime-push-reconnect-spec.md)和
+[任务执行规范](../design/foundation-task-execution-spec.md)。
 
 ## 4. 模糊订阅
 

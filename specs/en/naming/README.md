@@ -56,6 +56,12 @@ SDK, auth, and plugin specs for service discovery.
 - [Naming Consistency And Client State Spec](naming-consistency-client-spec.md):
   common client state plus ephemeral-service AP state, persistent-service CP
   state, indexes, and snapshots.
+- [Naming Ephemeral Distro Consistency Spec](naming-ephemeral-distro-consistency-spec.md):
+  ephemeral client ownership, Distro sync, verify, anti-entropy, cleanup, and
+  eventual visibility.
+- [Naming Persistent CP Consistency Spec](naming-persistent-cp-consistency-spec.md):
+  persistent instance CP writes, metadata groups, snapshots, recovery, and
+  visibility boundaries.
 
 ## Implementation Source
 

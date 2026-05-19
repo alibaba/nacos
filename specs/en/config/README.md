@@ -33,6 +33,7 @@ specific behavior.
 ## Operations And Storage
 
 - [Config Persistence, Dump, And History Spec](config-persistence-history-spec.md)
+- [Config Consistency, Dump, And Visibility Spec](config-consistency-dump-visibility-spec.md)
 - [Config Capacity And Ops Spec](config-capacity-ops-spec.md)
 
 ## Related Specs
