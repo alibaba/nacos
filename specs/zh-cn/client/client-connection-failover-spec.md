@@ -145,5 +145,6 @@ Client SDK 应区分：
 
 ## 10. 待处理问题
 
-- HTTP 和 gRPC 连接指标应由后续可观测事件 schema 统一。
+- HTTP 和 gRPC 连接指标应遵循
+  [可观测钩子规范](../design/foundation-observability-hooks-spec.md)中的共享字段和 label 指引。
 - 多语言 SDK 应对齐 server list refresh event 语义和 reconnect status 命名。

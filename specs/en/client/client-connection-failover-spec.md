@@ -168,7 +168,8 @@ own recovery state:
 
 ## 10. Pending Issues
 
-- HTTP and gRPC connection metrics should be normalized by a future
-  observability event schema.
+- HTTP and gRPC connection metrics should follow the shared field and label
+  guidance in the
+  [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
 - Multi-language SDKs should align on server list refresh event semantics and
   reconnect status names.
