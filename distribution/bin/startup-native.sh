@@ -12,6 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Re-execute under bash when invoked via a non-bash shell (e.g. `sh startup-native.sh`
+# on Debian/Ubuntu, where /bin/sh is dash and does not support the `[[` syntax
+# this script relies on). The `#!/bin/bash` shebang above is honored only when the
+# script is executed directly or via `bash startup-native.sh`; it is ignored when
+# an explicit interpreter such as `sh` is invoked.
+if [ -z "$BASH_VERSION" ]; then
+    if command -v bash >/dev/null 2>&1; then
+        exec bash "$0" "$@"
+    fi
+    echo "ERROR: bash is required to run this script, but it is not installed." >&2
+    exit 1
+fi
+
 #===========================================================================================
 # Setting system properties
 #===========================================================================================
