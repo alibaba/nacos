@@ -114,7 +114,7 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
             }
         } catch (Throwable throwable) {
             Loggers.SRV_LOG.error(
-                "[fuzzy-watch] failed to trim watched-clients context on client release",
+                "[fuzzy-watch] scheduled fuzzy-watch context trim failed",
                 throwable);
         }
     }
