@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigFuzzyWatchSyncRequest;
 import com.alibaba.nacos.common.task.BatchTaskCounter;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
@@ -110,6 +111,25 @@ class FuzzyWatchSyncNotifyTaskTest {
         when(tpsControlManager.check(any())).thenReturn(successResp);
         task.run();
         verify(rpcPushService).pushWithCallback(any(), any(), any(), any());
+    }
+    
+    @Test
+    void testRunSchedulesSelfWhenTpsCheckFails() {
+        ConfigFuzzyWatchSyncRequest request = new ConfigFuzzyWatchSyncRequest();
+        FuzzyWatchSyncNotifyTask task = new FuzzyWatchSyncNotifyTask(
+            connectionManager, rpcPushService, request, batchTaskCounter,
+            3, "conn1");
+        when(connectionManager.getConnection("conn1")).thenReturn(connection);
+        TpsCheckResponse failedResp = new TpsCheckResponse(false, 429, "limited");
+        when(tpsControlManager.check(any())).thenReturn(failedResp);
+        
+        try (MockedStatic<ConfigExecutor> mockedConfigExecutor =
+            Mockito.mockStatic(ConfigExecutor.class)) {
+            task.run();
+            
+            mockedConfigExecutor.verify(
+                () -> ConfigExecutor.scheduleClientConfigNotifier(any(), Mockito.anyLong(), any()));
+        }
     }
     
     @Test

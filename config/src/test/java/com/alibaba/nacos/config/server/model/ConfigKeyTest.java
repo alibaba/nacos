@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.model;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -64,12 +65,12 @@ class ConfigKeyTest {
     
     @Test
     void testNotEqualsNull() {
-        assertNotEquals(null, new ConfigKey());
+        assertFalse(new ConfigKey().equals(null));
     }
     
     @Test
     void testNotEqualsDifferentClass() {
-        assertNotEquals("str", new ConfigKey());
+        assertFalse(new ConfigKey().equals("str"));
     }
     
     @Test

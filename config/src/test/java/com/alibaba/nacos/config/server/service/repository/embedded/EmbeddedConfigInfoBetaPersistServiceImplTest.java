@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
@@ -43,6 +44,8 @@ import java.util.List;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -297,6 +300,21 @@ class EmbeddedConfigInfoBetaPersistServiceImplTest {
     }
     
     @Test
+    void testRemoveConfigInfo4BetaThrowsWhenUpdateFails() {
+        String dataId = "dataId456789";
+        String group = "group4567";
+        String tenant = "tenant56789o0";
+        ConfigInfoStateWrapper mockedConfigInfoStateWrapper = new ConfigInfoStateWrapper();
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
+        Mockito.when(databaseOperate.update(any(List.class))).thenReturn(false);
+        
+        assertThrows(NacosConfigException.class,
+            () -> embeddedConfigInfoBetaPersistService.removeConfigInfo4Beta(dataId, group,
+                tenant));
+    }
+    
+    @Test
     void testFindConfigInfo4Beta() {
         String dataId = "dataId456789";
         String group = "group4567";
@@ -323,6 +341,56 @@ class EmbeddedConfigInfoBetaPersistServiceImplTest {
         Mockito.when(databaseOperate.queryOne(anyString(), eq(Integer.class))).thenReturn(101);
         int returnCount = embeddedConfigInfoBetaPersistService.configInfoBetaCount();
         assertEquals(101, returnCount);
+    }
+    
+    @Test
+    void testConfigInfoBetaCountThrowsWhenResultNull() {
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(Integer.class))).thenReturn(null);
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> embeddedConfigInfoBetaPersistService.configInfoBetaCount());
+    }
+    
+    @Test
+    void testAddConfigInfo4BetaReturnsFalseWhenStateMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        
+        ConfigOperateResult result = embeddedConfigInfoBetaPersistService.addConfigInfo4Beta(
+            configInfo, "1.1.1.1", "srcIp", "srcUser");
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4BetaReturnsFalseWhenStateMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        
+        ConfigOperateResult result = embeddedConfigInfoBetaPersistService.updateConfigInfo4Beta(
+            configInfo, "1.1.1.1", "srcIp", "srcUser");
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4BetaCasReturnsFalseWhenBlockUpdateFails() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        Mockito.when(databaseOperate.blockUpdate()).thenReturn(false);
+        
+        ConfigOperateResult result = embeddedConfigInfoBetaPersistService.updateConfigInfo4BetaCas(
+            configInfo, "1.1.1.1", "srcIp", "srcUser");
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4BetaCasReturnsFalseWhenStateMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        Mockito.when(databaseOperate.blockUpdate()).thenReturn(true);
+        
+        ConfigOperateResult result = embeddedConfigInfoBetaPersistService.updateConfigInfo4BetaCas(
+            configInfo, "1.1.1.1", "srcIp", "srcUser");
+        
+        assertFalse(result.isSuccess());
     }
     
     @Test

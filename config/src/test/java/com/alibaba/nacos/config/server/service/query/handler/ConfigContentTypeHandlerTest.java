@@ -44,6 +44,11 @@ class ConfigContentTypeHandlerTest {
     }
     
     @Test
+    public void getNameReturnsHandlerName() {
+        assertEquals("ConfigContentTypeHandler", configContentTypeHandler.getName());
+    }
+    
+    @Test
     public void handleConfigNotFoundReturnsSameResponse() throws IOException {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();

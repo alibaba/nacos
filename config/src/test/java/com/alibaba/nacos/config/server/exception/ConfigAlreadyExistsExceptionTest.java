@@ -25,6 +25,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class ConfigAlreadyExistsExceptionTest {
     
     @Test
+    void testDefaultConstructor() {
+        ConfigAlreadyExistsException ex = new ConfigAlreadyExistsException();
+        assertEquals(0, ex.getErrCode());
+    }
+    
+    @Test
     void testMessageConstructor() {
         ConfigAlreadyExistsException ex =
             new ConfigAlreadyExistsException("already exists");

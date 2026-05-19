@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.query.model;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -88,13 +89,13 @@ class ConfigQueryChainResponseTest {
     @Test
     void testNotEqualsNull() {
         ConfigQueryChainResponse a = new ConfigQueryChainResponse();
-        assertNotEquals(null, a);
+        assertFalse(a.equals(null));
     }
     
     @Test
     void testNotEqualsDifferentClass() {
         ConfigQueryChainResponse a = new ConfigQueryChainResponse();
-        assertNotEquals("str", a);
+        assertFalse(a.equals("str"));
     }
     
     @Test

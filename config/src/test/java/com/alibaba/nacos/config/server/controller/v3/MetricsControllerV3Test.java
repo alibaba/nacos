@@ -16,13 +16,21 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.core.env.StandardEnvironment;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -30,7 +38,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 class MetricsControllerV3Test {
     
@@ -104,5 +116,58 @@ class MetricsControllerV3Test {
         cb.onCancel();
         assertFalse(complete.get());
         assertEquals(0, latch.getCount());
+    }
+    
+    @Test
+    void testMetricInterruptedSetsCompleteFalse() throws Exception {
+        ServerMemberManager serverMemberManager = Mockito.mock(ServerMemberManager.class);
+        ConnectionManager connectionManager = Mockito.mock(ConnectionManager.class);
+        when(serverMemberManager.allMembers()).thenReturn(Collections.emptyList());
+        MetricsControllerV3 controller = new MetricsControllerV3(serverMemberManager,
+            connectionManager);
+        Thread.currentThread().interrupt();
+        try {
+            Result<Map<String, Object>> result =
+                controller.metric("127.0.0.1", "dataId", "group", "");
+            
+            assertEquals(Boolean.FALSE, result.getData().get("complete"));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+    
+    @Test
+    void testGetClientMetrics() throws Exception {
+        ServerMemberManager serverMemberManager = Mockito.mock(ServerMemberManager.class);
+        ConnectionManager connectionManager = Mockito.mock(ConnectionManager.class);
+        Connection connection = Mockito.mock(Connection.class);
+        ClientConfigMetricResponse response = new ClientConfigMetricResponse();
+        response.putMetric("cache", "ok");
+        when(connectionManager.getConnectionByIp("127.0.0.1"))
+            .thenReturn(Collections.singletonList(connection));
+        when(connection.request(any(), eq(1000L))).thenReturn(response);
+        MetricsControllerV3 controller = new MetricsControllerV3(serverMemberManager,
+            connectionManager);
+        
+        Result<Map<String, Object>> result =
+            controller.getClientMetrics("127.0.0.1", "dataId", "group", "");
+        
+        assertEquals("ok", result.getData().get("cache"));
+    }
+    
+    @Test
+    void testGetClientMetricsThrowsNacosExceptionWhenClientRequestFails() throws Exception {
+        ServerMemberManager serverMemberManager = Mockito.mock(ServerMemberManager.class);
+        ConnectionManager connectionManager = Mockito.mock(ConnectionManager.class);
+        Connection connection = Mockito.mock(Connection.class);
+        when(connectionManager.getConnectionByIp("127.0.0.1"))
+            .thenReturn(Collections.singletonList(connection));
+        when(connection.request(any(), eq(1000L)))
+            .thenThrow(new RuntimeException("request failed"));
+        MetricsControllerV3 controller = new MetricsControllerV3(serverMemberManager,
+            connectionManager);
+        
+        assertThrows(NacosException.class,
+            () -> controller.getClientMetrics("127.0.0.1", "dataId", "group", ""));
     }
 }

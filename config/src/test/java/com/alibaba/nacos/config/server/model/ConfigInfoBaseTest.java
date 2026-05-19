@@ -22,6 +22,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -193,6 +194,7 @@ class ConfigInfoBaseTest {
     @Test
     void testEqualsNull() {
         ConfigInfoBase base = new ConfigInfoBase("dataId", "group", "content");
+        assertFalse(base.equals(null));
         assertNotEquals(null, base);
     }
     
@@ -218,6 +220,14 @@ class ConfigInfoBaseTest {
     }
     
     @Test
+    void testEqualsDataIdDifferent() {
+        ConfigInfoBase a = new ConfigInfoBase("dataId1", "group", "content");
+        ConfigInfoBase b = new ConfigInfoBase("dataId2", "group", "content");
+        assertFalse(a.equals(b));
+        assertNotEquals(a, b);
+    }
+    
+    @Test
     void testEqualsDataIdNullVsNonNull() {
         ConfigInfoBase a = new ConfigInfoBase();
         a.setContent("content");
@@ -226,6 +236,7 @@ class ConfigInfoBaseTest {
         b.setContent("content");
         b.setGroup("group");
         b.setDataId("dataId");
+        assertFalse(a.equals(b));
         assertNotEquals(a, b);
     }
     
@@ -238,6 +249,15 @@ class ConfigInfoBaseTest {
         b.setDataId("dataId");
         b.setContent("content");
         b.setGroup("group");
+        assertFalse(a.equals(b));
+        assertNotEquals(a, b);
+    }
+    
+    @Test
+    void testEqualsGroupDifferent() {
+        ConfigInfoBase a = new ConfigInfoBase("dataId", "group1", "content");
+        ConfigInfoBase b = new ConfigInfoBase("dataId", "group2", "content");
+        assertFalse(a.equals(b));
         assertNotEquals(a, b);
     }
     

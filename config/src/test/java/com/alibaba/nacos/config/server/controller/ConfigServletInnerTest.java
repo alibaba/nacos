@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
+import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
 import com.alibaba.nacos.config.server.model.ConfigListenState;
@@ -35,6 +36,8 @@ import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
+import com.alibaba.nacos.config.server.service.query.enums.ResponseCode;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.MD5Util;
@@ -59,11 +62,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 import static com.alibaba.nacos.config.server.constant.Constants.CONTENT_MD5;
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -551,5 +556,110 @@ class ConfigServletInnerTest {
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertTrue(response.getHeader(HttpHeaderConsts.CONTENT_TYPE)
             .contains("text/plain"));
+    }
+    
+    @Test
+    void testDoGetConfigWhenQueryChainFails() {
+        ConfigQueryChainResponse chainResponse = ConfigQueryChainResponse.buildFailResponse(
+            ResponseCode.FAIL.getCode(), "query failed");
+        useMockQueryChain(chainResponse);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        NacosConfigException actual = assertThrows(NacosConfigException.class,
+            () -> configServletInner.doGetConfig(request, response, "data", "group", "tenant",
+                null, "false", "127.0.0.1", ApiVersionEnum.V1));
+        
+        assertEquals("query failed", actual.getMessage());
+    }
+    
+    @Test
+    void testDoGetConfigV1WhenFormalContentIsNull() throws Exception {
+        ConfigQueryChainResponse chainResponse = buildFormalResponse(null);
+        useMockQueryChain(chainResponse);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        String actualValue = configServletInner.doGetConfig(request, response, "data", "group",
+            "tenant", null, "false", "127.0.0.1", ApiVersionEnum.V1);
+        
+        assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
+        assertTrue(response.getContentAsString().contains("config data not exist"));
+    }
+    
+    @Test
+    void testDoGetConfigV2WhenFormalContentIsNull() throws Exception {
+        ConfigQueryChainResponse chainResponse = buildFormalResponse(null);
+        useMockQueryChain(chainResponse);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        String actualValue = configServletInner.doGetConfig(request, response, "data", "group",
+            "tenant", null, "false", "127.0.0.1", ApiVersionEnum.V2);
+        
+        assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
+        assertTrue(response.getContentAsString().contains("config data not exist"));
+    }
+    
+    @Test
+    void testDoGetConfigV1UsesDefaultHeadersFromChainResponse() throws Exception {
+        ConfigQueryChainResponse chainResponse = buildFormalResponse("content");
+        chainResponse.setContentType("");
+        useMockQueryChain(chainResponse);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        String actualValue = configServletInner.doGetConfig(request, response, "data", "group",
+            "tenant", null, "false", "127.0.0.1", ApiVersionEnum.V1);
+        
+        assertEquals(HttpServletResponse.SC_OK + "", actualValue);
+        assertTrue(response.getHeader(HttpHeaderConsts.CONTENT_TYPE).contains("text/plain"));
+        assertEquals("text", response.getHeader(CONFIG_TYPE));
+        assertEquals("content", response.getContentAsString());
+    }
+    
+    @Test
+    void testDoGetConfigV1UsesConfigTypeFromChainResponse() throws Exception {
+        ConfigQueryChainResponse chainResponse = buildFormalResponse("content");
+        chainResponse.setConfigType("yaml");
+        useMockQueryChain(chainResponse);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        String actualValue = configServletInner.doGetConfig(request, response, "data", "group",
+            "tenant", null, "false", "127.0.0.1", ApiVersionEnum.V1);
+        
+        assertEquals(HttpServletResponse.SC_OK + "", actualValue);
+        assertEquals("yaml", response.getHeader(CONFIG_TYPE));
+    }
+    
+    @Test
+    void testDoGetConfigWhenGrayMatchedInfoIsNull() {
+        ConfigQueryChainResponse chainResponse = buildFormalResponse("content");
+        chainResponse.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY);
+        useMockQueryChain(chainResponse);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        assertThrows(NullPointerException.class,
+            () -> configServletInner.doGetConfig(request, response, "data", "group", "tenant",
+                null, "false", "127.0.0.1", ApiVersionEnum.V1));
+    }
+    
+    private void useMockQueryChain(ConfigQueryChainResponse chainResponse) {
+        ConfigQueryChainService queryChainService = Mockito.mock(ConfigQueryChainService.class);
+        when(queryChainService.handle(Mockito.any())).thenReturn(chainResponse);
+        ReflectionTestUtils.setField(configServletInner, "configQueryChainService",
+            queryChainService);
+    }
+    
+    private ConfigQueryChainResponse buildFormalResponse(String content) {
+        ConfigQueryChainResponse chainResponse = new ConfigQueryChainResponse();
+        chainResponse.setResultCode(ResponseCode.SUCCESS.getCode());
+        chainResponse.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        chainResponse.setContent(content);
+        chainResponse.setMd5("md5");
+        chainResponse.setLastModified(System.currentTimeMillis());
+        return chainResponse;
     }
 }

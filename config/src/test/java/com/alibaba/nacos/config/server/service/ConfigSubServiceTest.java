@@ -43,9 +43,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -209,6 +211,43 @@ class ConfigSubServiceTest {
         assertEquals(1, sampleResults2.size());
         assertFalse(sampleResults2.get(0).getLisentersGroupkeyStatus().isEmpty());
         
+    }
+    
+    @Test
+    void testClusterListenerJobWhenSubmitThrowsException() {
+        Map<String, Member> mockedMembers = new HashMap<>();
+        mockedMembers.put("127.0.0.1", createMember("127.0.0.1"));
+        Mockito.when(serverMemberManager.allMembers()).thenReturn(mockedMembers.values());
+        CompletionService mockService = Mockito.mock(CompletionService.class);
+        Mockito.when(mockService.submit(any(Callable.class)))
+            .thenThrow(new RuntimeException("full"));
+        
+        ConfigSubService.ClusterListenerJob clusterListenerJob =
+            new ConfigSubService.ClusterListenerJob(new HashMap<>(), mockService,
+                serverMemberManager);
+        List<SampleResult> sampleResults = clusterListenerJob.runJobs();
+        
+        assertTrue(sampleResults.isEmpty());
+    }
+    
+    @Test
+    void testClusterListenerJobWhenFutureTimeout() throws Exception {
+        Map<String, Member> mockedMembers = new HashMap<>();
+        mockedMembers.put("127.0.0.1", createMember("127.0.0.1"));
+        Mockito.when(serverMemberManager.allMembers()).thenReturn(mockedMembers.values());
+        CompletionService mockService = Mockito.mock(CompletionService.class);
+        Future future = Mockito.mock(Future.class);
+        Mockito.when(mockService.poll(anyLong(), any(TimeUnit.class))).thenReturn(future);
+        Mockito.when(future.get(anyLong(), any(TimeUnit.class)))
+            .thenThrow(new TimeoutException("timeout"));
+        
+        ConfigSubService.ClusterListenerJob clusterListenerJob =
+            new ConfigSubService.ClusterListenerJob(new HashMap<>(), mockService,
+                serverMemberManager);
+        List<SampleResult> sampleResults = clusterListenerJob.runJobs();
+        
+        assertTrue(sampleResults.isEmpty());
+        Mockito.verify(future, Mockito.times(1)).cancel(true);
     }
     
     @Test

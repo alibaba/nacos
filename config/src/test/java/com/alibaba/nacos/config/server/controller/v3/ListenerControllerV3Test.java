@@ -126,4 +126,45 @@ class ListenerControllerV3Test {
         assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());
     }
     
+    @Test
+    void testGetAllSubClientConfigByIpWithAllFlag() throws Exception {
+        ConfigListenerInfo sampleResult = new ConfigListenerInfo();
+        Map<String, String> map = new HashMap<>();
+        map.put("dataId+group+tenant", "md5");
+        sampleResult.setListenersStatus(map);
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+            .thenReturn(sampleResult);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
+                .param("ip", "localhost").param("all", "true");
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        String data = JacksonUtils.toObj(actualValue).get("data").toString();
+        ConfigListenerInfo configListenerInfo = JacksonUtils.toObj(data, ConfigListenerInfo.class);
+        assertEquals("md5", configListenerInfo.getListenersStatus().get("dataId+group+tenant"));
+    }
+    
+    @Test
+    void testGetAllSubClientConfigByIpKeepsDefaultNamespaceWhenAllIsFalse()
+        throws Exception {
+        ConfigListenerInfo sampleResult = new ConfigListenerInfo();
+        Map<String, String> map = new HashMap<>();
+        map.put("dataId+group", "md5");
+        sampleResult.setListenersStatus(map);
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+            .thenReturn(sampleResult);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
+                .param("ip", "localhost").param("all", "false");
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        String data = JacksonUtils.toObj(actualValue).get("data").toString();
+        ConfigListenerInfo configListenerInfo = JacksonUtils.toObj(data, ConfigListenerInfo.class);
+        assertEquals("md5", configListenerInfo.getListenersStatus().get("dataId+group"));
+    }
+    
 }

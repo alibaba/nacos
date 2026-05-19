@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
 import com.alibaba.nacos.config.server.utils.GroupKey;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -30,12 +31,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.HashMap;
 import java.util.Set;
 
 import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.ADD_CONFIG;
 import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.DELETE_CONFIG;
 import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -60,6 +66,8 @@ public class ConfigFuzzyWatchContextServiceTest {
         envUtilMockedStatic
             .when(() -> EnvUtil.getProperty(eq("nacos.config.cache.type"), anyString()))
             .thenReturn("nacos");
+        envUtilMockedStatic.when(() -> EnvUtil.getAvailableProcessors(anyInt()))
+            .thenAnswer(invocation -> invocation.getArgument(0));
         
         configCommonConfigMockedStatic = Mockito.mockStatic(ConfigCommonConfig.class);
         
@@ -121,6 +129,25 @@ public class ConfigFuzzyWatchContextServiceTest {
         Set<String> matchedGroupKeys3 =
             configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern);
         Assertions.assertTrue(matchedGroupKeys3.isEmpty());
+    }
+    
+    @Test
+    public void testInitRunsScheduledTrimTask() {
+        try (MockedStatic<GlobalExecutor> globalExecutorMockedStatic =
+            Mockito.mockStatic(GlobalExecutor.class)) {
+            globalExecutorMockedStatic.when(
+                () -> GlobalExecutor.scheduleWithFixDelayByCommon(any(Runnable.class),
+                    anyLong()))
+                .thenAnswer(invocation -> {
+                    invocation.<Runnable>getArgument(0).run();
+                    return null;
+                });
+            
+            new ConfigFuzzyWatchContextService().init();
+            
+            globalExecutorMockedStatic.verify(
+                () -> GlobalExecutor.scheduleWithFixDelayByCommon(any(Runnable.class), eq(30000L)));
+        }
     }
     
     @Test
@@ -350,6 +377,60 @@ public class ConfigFuzzyWatchContextServiceTest {
         configFuzzyWatchContextService.trimFuzzyWatchContext();
         Assertions.assertTrue(
             configFuzzyWatchContextService.reachToUpLimit(groupKeyPattern));
+    }
+    
+    @Test
+    public void testTrimFuzzyWatchContextWithWarningUsage() throws NacosException {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("warn*", "group", "12345");
+        configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, "conn1");
+        for (int i = 0; i < 8; i++) {
+            String keyTenant = GroupKey.getKeyTenant("warn" + i, "group", "12345");
+            configFuzzyWatchContextService.syncGroupKeyContext(keyTenant, ADD_CONFIG);
+        }
+        
+        configFuzzyWatchContextService.trimFuzzyWatchContext();
+        
+        Assertions.assertFalse(configFuzzyWatchContextService.reachToUpLimit(groupKeyPattern));
+    }
+    
+    @Test
+    public void testTrimFuzzyWatchContextIgnoresUnexpectedContextFailure() {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        HashMap<String, Set<String>> brokenContext = new HashMap<String, Set<String>>() {
+            
+            @Override
+            public Set<java.util.Map.Entry<String, Set<String>>> entrySet() {
+                throw new RuntimeException("broken");
+            }
+        };
+        ReflectionTestUtils.setField(configFuzzyWatchContextService, "matchedGroupKeysMap",
+            brokenContext);
+        
+        configFuzzyWatchContextService.trimFuzzyWatchContext();
+    }
+    
+    @Test
+    public void testMakeupMatchedGroupKeysCompletesBelowLimit() throws NacosException {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService =
+            new ConfigFuzzyWatchContextService();
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("makeupEnd*", "group", "12345");
+        String firstGroupKey = GroupKey.getKeyTenant("makeupEnd1", "group", "12345");
+        String secondGroupKey = GroupKey.getKeyTenant("makeupEnd2", "group", "12345");
+        configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, "conn1");
+        configFuzzyWatchContextService.syncGroupKeyContext(firstGroupKey, ADD_CONFIG);
+        ConfigCacheService.dump("makeupEnd2", "group", "12345", "content",
+            System.currentTimeMillis(), null, null);
+        
+        configFuzzyWatchContextService.makeupMatchedGroupKeys(groupKeyPattern);
+        
+        Assertions.assertTrue(
+            configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern)
+                .contains(secondGroupKey));
     }
     
     @Test

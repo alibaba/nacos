@@ -136,9 +136,12 @@ class DumpAllGrayProcessorTest {
     void testProcessWithValidTaskType() throws Exception {
         final DumpAllGrayTask validTask = mock(DumpAllGrayTask.class);
         List<ConfigInfoGrayWrapper> configList = new ArrayList<>();
-        configList.add(createGrayWrapper("dataId-1", "group-1"));
+        ConfigInfoGrayWrapper wrapper = createGrayWrapper("dataId-1", "group-1");
+        wrapper.setTenant("");
+        configList.add(wrapper);
         
         Page<ConfigInfoGrayWrapper> page = new Page<>();
+        page.setPageItems(configList);
         when(configInfoGrayPersistService.configInfoGrayCount()).thenReturn(1);
         when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(anyInt(), anyInt()))
             .thenReturn(page);

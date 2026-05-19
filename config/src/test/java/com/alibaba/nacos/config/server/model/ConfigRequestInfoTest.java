@@ -85,13 +85,13 @@ class ConfigRequestInfoTest {
     @Test
     void testNotEqualsNull() {
         ConfigRequestInfo a = new ConfigRequestInfo("ip", "type", "app", "beta", "md5");
-        assertNotEquals(null, a);
+        assertFalse(a.equals(null));
     }
     
     @Test
     void testNotEqualsDifferentClass() {
         ConfigRequestInfo a = new ConfigRequestInfo("ip", "type", "app", "beta", "md5");
-        assertNotEquals("str", a);
+        assertFalse(a.equals("str"));
     }
     
     @Test

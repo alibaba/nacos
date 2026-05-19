@@ -41,6 +41,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -172,6 +173,15 @@ class MD5UtilTest {
     }
     
     @Test
+    void testToStringUsesDefaultEncodingWhenEncodingIsNull() throws IOException {
+        InputStream input = IOUtils.toInputStream("test", StandardCharsets.UTF_8);
+        
+        String actualValue = MD5Util.toString(input, null);
+        
+        assertEquals("test", actualValue);
+    }
+    
+    @Test
     void testToStringV2() {
         
         try {
@@ -198,6 +208,17 @@ class MD5UtilTest {
         } catch (IOException e) {
             System.out.println(e.toString());
         }
+    }
+    
+    @Test
+    void testCopyEmptyReader() throws IOException {
+        Reader input = new CharArrayReader(new char[0]);
+        Writer output = new CharArrayWriter();
+        
+        long actualValue = MD5Util.copy(input, output);
+        
+        assertEquals(0, actualValue);
+        assertEquals("", output.toString());
     }
     
     @Test
@@ -243,5 +264,19 @@ class MD5UtilTest {
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("too much key"));
         }
+    }
+    
+    @Test
+    void testGetClientMd5MapTooManyListeners() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i <= 10000; i++) {
+            sb.append("d").append(i).append(MD5Util.WORD_SEPARATOR_CHAR);
+            sb.append("g").append(i).append(MD5Util.WORD_SEPARATOR_CHAR);
+            sb.append("md5").append(i).append(MD5Util.LINE_SEPARATOR_CHAR);
+        }
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> MD5Util.getClientMd5Map(sb.toString()));
+        assertTrue(exception.getMessage().contains("too much listener"));
     }
 }

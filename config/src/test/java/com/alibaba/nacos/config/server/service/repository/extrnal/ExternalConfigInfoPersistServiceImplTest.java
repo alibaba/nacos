@@ -46,6 +46,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -83,6 +84,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
@@ -441,6 +443,20 @@ class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
+    void testUpdateConfigInfoReturnsFalseWhenOldConfigMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "tenant", "app", "content");
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", "tenant"}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(null);
+        
+        ConfigOperateResult result =
+            externalConfigInfoPersistService.updateConfigInfo(configInfo, "srcIp", "srcUser",
+                null);
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
     void testInsertOrUpdateCasOfUpdateConfigSuccess() {
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "tag1,tag2");
@@ -582,6 +598,75 @@ class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
+    void testCreatePsForInsertConfigInfoWithoutAdvanceInfo() throws SQLException {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "tenant", "app", "content");
+        Connection mockConnection = Mockito.mock(Connection.class);
+        PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
+        ConfigInfoMapper configInfoMapper =
+            externalConfigInfoPersistService.mapperManager.findMapper(
+                dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO);
+        Mockito.when(mockConnection.prepareStatement(anyString(), any(String[].class)))
+            .thenReturn(preparedStatement);
+        
+        externalConfigInfoPersistService.createPsForInsertConfigInfo("srcIp", "srcUser",
+            configInfo, null, mockConnection, configInfoMapper);
+        
+        Mockito.verify(preparedStatement, times(14)).setString(anyInt(), nullable(String.class));
+    }
+    
+    @Test
+    void testAddConfigInfoReturnsFalseWhenInsertedStateMissing() {
+        GeneratedKeyHolder generatedKeyHolder = TestCaseUtils.createGeneratedKeyHolder(1L);
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder)
+            .thenReturn(generatedKeyHolder);
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class),
+            eq(generatedKeyHolder))).thenReturn(1);
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "tenant", "app", "content");
+        
+        ConfigOperateResult result =
+            externalConfigInfoPersistService.addConfigInfo("srcIp", "srcUser", configInfo, null);
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testAddConfigInfoAtomicThrowsExceptionWhenGeneratedKeyMissing() {
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder)
+            .thenReturn(new GeneratedKeyHolder());
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class),
+            any(KeyHolder.class))).thenReturn(1);
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "tenant", "app", "content");
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> externalConfigInfoPersistService.addConfigInfoAtomic(-1, "srcIp", "srcUser",
+                configInfo, null));
+    }
+    
+    @Test
+    void testAddConfigInfoAtomicExecutesPreparedStatementCreator() throws SQLException {
+        GeneratedKeyHolder generatedKeyHolder = TestCaseUtils.createGeneratedKeyHolder(7L);
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder)
+            .thenReturn(generatedKeyHolder);
+        Connection connection = Mockito.mock(Connection.class);
+        PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
+        Mockito.when(connection.prepareStatement(anyString(), any(String[].class)))
+            .thenReturn(preparedStatement);
+        Mockito.doAnswer(invocation -> {
+            PreparedStatementCreator creator = invocation.getArgument(0);
+            creator.createPreparedStatement(connection);
+            return 1;
+        }).when(jdbcTemplate).update(any(PreparedStatementCreator.class), eq(generatedKeyHolder));
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        configInfo.setEncryptedDataKey("secretKey");
+        
+        long id = externalConfigInfoPersistService.addConfigInfoAtomic(1L, "srcIp", "srcUser",
+            configInfo, null);
+        
+        assertEquals(7L, id);
+        Mockito.verify(preparedStatement).setString(eq(14), eq("secretKey"));
+    }
+    
+    @Test
     void testRemoveConfigInfo() {
         String dataId = "dataId4567";
         String group = "group3456789";
@@ -665,6 +750,50 @@ class ExternalConfigInfoPersistServiceImplTest {
                 eq(srcUser), any(), eq("D"), eq("formal"), eq(null),
                 eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfos.get(0))));
         
+    }
+    
+    @Test
+    void testRemoveConfigInfoByIdsReturnsNullWhenIdsEmpty() {
+        assertNull(externalConfigInfoPersistService.removeConfigInfoByIds(new ArrayList<>(),
+            "srcIp", "srcUser"));
+    }
+    
+    @Test
+    void testRemoveConfigInfoRethrowsWhenFindOldConfigFails() {
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.removeConfigInfo("dataId", "group", "",
+                "srcIp", "srcUser"));
+    }
+    
+    @Test
+    void testRemoveConfigInfoByIdsRethrowsWhenFindOldConfigsFails() {
+        Mockito.when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
+            eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.removeConfigInfoByIds(
+                new ArrayList<>(Arrays.asList(1L, 2L)), "srcIp", "srcUser"));
+    }
+    
+    @Test
+    void testRemoveConfigInfoAtomicWithBlankTenant() {
+        externalConfigInfoPersistService.removeConfigInfoAtomic("dataId", "group", null, "srcIp",
+            "srcUser");
+        
+        Mockito.verify(jdbcTemplate, times(1)).update(anyString(), eq("dataId"), eq("group"),
+            eq(StringUtils.EMPTY));
+    }
+    
+    @Test
+    void testRemoveConfigInfoByIdsAtomicWithBlankIds() {
+        externalConfigInfoPersistService.removeConfigInfoByIdsAtomic("");
+        
+        Mockito.verify(jdbcTemplate, times(0)).update(anyString(), Mockito.<Object[]>any());
     }
     
     @Test
@@ -756,6 +885,65 @@ class ExternalConfigInfoPersistServiceImplTest {
         //skip config 3
         assertEquals(configInfoList.get(2).getDataId(),
             ((List<Map<String, String>>) stringObjectMap.get("skipData")).get(0).get("dataId"));
+    }
+    
+    @Test
+    void testBatchInsertOrUpdateWithNullAdvanceInfoAndDefaultType() throws NacosException {
+        List<ConfigAllInfo> configInfoList = new ArrayList<>();
+        ConfigAllInfo configAllInfo = createMockConfigAllInfo(0);
+        configAllInfo.setDataId("dataIdWithoutExtension");
+        configAllInfo.setEncryptedDataKey("cipherKey");
+        configAllInfo.setType(null);
+        configInfoList.add(configAllInfo);
+        TransactionTemplate transactionTemplateCurrent = Mockito.mock(TransactionTemplate.class);
+        ReflectionTestUtils.setField(externalConfigInfoPersistService, "tjt",
+            transactionTemplateCurrent);
+        Mockito.when(transactionTemplateCurrent.execute(any()))
+            .thenReturn(new ConfigOperateResult(true));
+        
+        Map<String, Object> result = externalConfigInfoPersistService.batchInsertOrUpdate(
+            configInfoList, "srcUser", "srcIp", null, SameConfigPolicy.SKIP);
+        
+        assertEquals(1, result.get("succCount"));
+        assertEquals(0, result.get("skipCount"));
+    }
+    
+    @Test
+    void testBatchInsertOrUpdateSkipsWhenInsertThrowsDataIntegrityViolationException()
+        throws NacosException {
+        List<ConfigAllInfo> configInfoList = Collections.singletonList(createMockConfigAllInfo(0));
+        TransactionTemplate transactionTemplateCurrent = Mockito.mock(TransactionTemplate.class);
+        ReflectionTestUtils.setField(externalConfigInfoPersistService, "tjt",
+            transactionTemplateCurrent);
+        Mockito.when(transactionTemplateCurrent.execute(any()))
+            .thenThrow(new DataIntegrityViolationException("duplicate"));
+        
+        Map<String, Object> result = externalConfigInfoPersistService.batchInsertOrUpdate(
+            configInfoList, "srcUser", "srcIp", new HashMap<>(), SameConfigPolicy.SKIP);
+        
+        assertEquals(0, result.get("succCount"));
+        assertEquals(1, result.get("skipCount"));
+    }
+    
+    @Test
+    void testBatchInsertOrUpdateRethrowsInvalidConfig() {
+        ConfigAllInfo configAllInfo = createMockConfigAllInfo(0);
+        configAllInfo.setDataId("");
+        
+        assertThrows(NacosException.class,
+            () -> externalConfigInfoPersistService.batchInsertOrUpdate(
+                Collections.singletonList(configAllInfo), "srcUser", "srcIp",
+                new HashMap<>(), SameConfigPolicy.SKIP));
+    }
+    
+    @Test
+    void testGetConfigInfoOperateResultReturnsFalseWhenStateMissing() {
+        ConfigOperateResult result = ReflectionTestUtils.invokeMethod(
+            externalConfigInfoPersistService, "getConfigInfoOperateResult", "dataId", "group",
+            "tenant");
+        
+        assertNotNull(result);
+        assertFalse(result.isSuccess());
     }
     
     private ConfigAllInfo createMockConfigAllInfo(long mockId) {
@@ -958,6 +1146,35 @@ class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
+    void testFindConfigInfo4PageWithAdvanceFilters() {
+        Map<String, Object> configAdvanceInfo = new HashMap<>();
+        configAdvanceInfo.put("appName", "appName");
+        configAdvanceInfo.put("content", "content");
+        ConfigInfo configInfo = createMockConfigInfo(0);
+        configInfo.setEncryptedDataKey("");
+        List<ConfigInfo> result = Collections.singletonList(configInfo);
+        when(jdbcTemplate.queryForObject(anyString(), Mockito.<Object[]>any(),
+            eq(Integer.class))).thenReturn(1);
+        when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
+            eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
+        
+        Page<ConfigInfo> page = externalConfigInfoPersistService.findConfigInfo4Page(1, 3,
+            "dataId", "group", "", configAdvanceInfo);
+        
+        assertEquals(1, page.getPageItems().size());
+    }
+    
+    @Test
+    void testFindConfigInfo4PageRethrowsConnectionException() {
+        when(jdbcTemplate.queryForObject(anyString(), Mockito.<Object[]>any(),
+            eq(Integer.class))).thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.findConfigInfo4Page(1, 3, "dataId", "group",
+                "", new HashMap<>()));
+    }
+    
+    @Test
     void testConfigInfoCount() {
         
         //mock total count
@@ -1068,6 +1285,33 @@ class ExternalConfigInfoPersistServiceImplTest {
         assertEquals(result.size(), configInfo4Page.getPageItems().size());
         assertEquals(9, configInfo4Page.getTotalCount());
         
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageWithTypes() {
+        Map<String, Object> configAdvanceInfo = new HashMap<>();
+        configAdvanceInfo.put("types", "yaml,properties");
+        ConfigInfo configInfo = createMockConfigInfo(0);
+        configInfo.setEncryptedDataKey("");
+        when(jdbcTemplate.queryForObject(anyString(), Mockito.<Object[]>any(),
+            eq(Integer.class))).thenReturn(1);
+        when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
+            eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(Collections.singletonList(configInfo));
+        
+        Page<ConfigInfo> page = externalConfigInfoPersistService.findConfigInfoLike4Page(1, 3,
+            "dataId*", "group*", "", configAdvanceInfo);
+        
+        assertEquals(1, page.getPageItems().size());
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageRethrowsConnectionException() {
+        when(jdbcTemplate.queryForObject(anyString(), Mockito.<Object[]>any(),
+            eq(Integer.class))).thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.findConfigInfoLike4Page(1, 3, "dataId*",
+                "group*", "", new HashMap<>()));
     }
     
     @Test
@@ -1518,6 +1762,295 @@ class ExternalConfigInfoPersistServiceImplTest {
                 "d", "g", "", null, "newdesc");
         assertNotNull(result);
         assertTrue(result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfoMetadataRethrowsConnectionException() {
+        ConfigInfoWrapper wrapper = new ConfigInfoWrapper();
+        wrapper.setId(100L);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {"d", "g", ""}),
+            eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenReturn(wrapper);
+        Mockito.when(jdbcTemplate.update(anyString(), eq("newdesc"), eq(100L)))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.updateConfigInfoMetadata(
+                "d", "g", "", null, "newdesc"));
+    }
+    
+    @Test
+    void testInsertOrUpdateCasRethrowsLookupException() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.insertOrUpdateCas("srcIp", "srcUser",
+                configInfo, null));
+    }
+    
+    @Test
+    void testUpdateConfigInfoWithTagsReturnsLastState() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", null, "content");
+        ConfigAllInfo oldConfig = createMockConfigAllInfo(1);
+        oldConfig.setId(100L);
+        oldConfig.setDataId("dataId");
+        oldConfig.setGroup("group");
+        oldConfig.setTenant("");
+        oldConfig.setAppName("oldApp");
+        ConfigInfoStateWrapper state = new ConfigInfoStateWrapper();
+        state.setId(100L);
+        state.setLastModified(123L);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(oldConfig);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(state);
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any())).thenReturn(1);
+        Map<String, Object> advanceInfo = new HashMap<>();
+        advanceInfo.put("config_tags", "tag1,tag2");
+        
+        ConfigOperateResult result = externalConfigInfoPersistService.updateConfigInfo(
+            configInfo, "srcIp", "srcUser", advanceInfo);
+        
+        assertTrue(result.isSuccess());
+        assertEquals(100L, result.getId());
+        assertEquals(123L, result.getLastModified());
+    }
+    
+    @Test
+    void testAddConfigInfoAtomicThrowsWhenGeneratedKeyMissing() {
+        KeyHolder keyHolder = Mockito.mock(KeyHolder.class);
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder)
+            .thenReturn(keyHolder);
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class), eq(keyHolder)))
+            .thenReturn(1);
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> externalConfigInfoPersistService.addConfigInfoAtomic(1L, "srcIp", "srcUser",
+                new ConfigInfo("dataId", "group", "", "app", "content"), null));
+    }
+    
+    @Test
+    void testAddConfigInfoAtomicRethrowsConnectionException() {
+        KeyHolder keyHolder = Mockito.mock(KeyHolder.class);
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder)
+            .thenReturn(keyHolder);
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class), eq(keyHolder)))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.addConfigInfoAtomic(1L, "srcIp", "srcUser",
+                new ConfigInfo("dataId", "group", "", "app", "content"), null));
+    }
+    
+    @Test
+    void testAddConfigTagRelationAtomicRethrowsConnectionException() {
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any()))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.addConfigTagRelationAtomic(1L, "tag",
+                "dataId", "group", ""));
+    }
+    
+    @Test
+    void testRemoveTagByIdAtomicRethrowsConnectionException() {
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any()))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.removeTagByIdAtomic(1L));
+    }
+    
+    @Test
+    void testRemoveConfigInfoAtomicRethrowsConnectionException() {
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any()))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.removeConfigInfoAtomic("dataId", "group",
+                "", "srcIp", "srcUser"));
+    }
+    
+    @Test
+    void testRemoveConfigInfoByIdsAtomicRethrowsConnectionException() {
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any()))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.removeConfigInfoByIdsAtomic("1,2"));
+    }
+    
+    @Test
+    void testUpdateConfigInfoAtomicWithNullAdvanceInfoRethrowsConnectionException() {
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any()))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.updateConfigInfoAtomic(
+                new ConfigInfo("dataId", "group", "", null, "content"), "srcIp", "srcUser",
+                null));
+    }
+    
+    @Test
+    void testUpdateConfigInfoRethrowsConnectionExceptionFromAtomicUpdate() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", null, "content");
+        ConfigAllInfo oldConfig = createMockConfigAllInfo(1);
+        oldConfig.setAppName("oldApp");
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(oldConfig);
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any()))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.updateConfigInfo(configInfo, "srcIp",
+                "srcUser", null));
+    }
+    
+    @Test
+    void testUpdateConfigInfoCasReturnsFalseWhenRowsZero() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", null, "content");
+        ConfigAllInfo oldConfig = createMockConfigAllInfo(1);
+        oldConfig.setAppName("oldApp");
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(oldConfig);
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any())).thenReturn(0);
+        
+        ConfigOperateResult result =
+            externalConfigInfoPersistService.updateConfigInfoCas(configInfo, "srcIp", "srcUser",
+                null);
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfoCasReturnsFalseWhenOldConfigMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", null, "content");
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(null);
+        
+        ConfigOperateResult result =
+            externalConfigInfoPersistService.updateConfigInfoCas(configInfo, "srcIp", "srcUser",
+                null);
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfoCasReturnsFalseWhenUpdatedStateMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", null, "content");
+        ConfigAllInfo oldConfig = createMockConfigAllInfo(1);
+        oldConfig.setAppName("oldApp");
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(oldConfig);
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any())).thenReturn(1);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(null);
+        
+        ConfigOperateResult result =
+            externalConfigInfoPersistService.updateConfigInfoCas(configInfo, "srcIp", "srcUser",
+                null);
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfoCasWithTagsReturnsLastState() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", null, "content");
+        ConfigAllInfo oldConfig = createMockConfigAllInfo(1);
+        oldConfig.setId(100L);
+        oldConfig.setDataId("dataId");
+        oldConfig.setGroup("group");
+        oldConfig.setTenant("");
+        oldConfig.setAppName("oldApp");
+        ConfigInfoStateWrapper state = new ConfigInfoStateWrapper();
+        state.setId(101L);
+        state.setLastModified(234L);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(oldConfig);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(state);
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any())).thenReturn(1);
+        Map<String, Object> advanceInfo = new HashMap<>();
+        advanceInfo.put("config_tags", "tag1,tag2");
+        
+        ConfigOperateResult result = externalConfigInfoPersistService.updateConfigInfoCas(
+            configInfo, "srcIp", "srcUser", advanceInfo);
+        
+        assertTrue(result.isSuccess());
+        assertEquals(101L, result.getId());
+        assertEquals(234L, result.getLastModified());
+    }
+    
+    @Test
+    void testUpdateConfigInfoCasRethrowsConnectionExceptionFromAtomicUpdate() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", null, "content");
+        ConfigAllInfo oldConfig = createMockConfigAllInfo(1);
+        oldConfig.setAppName("oldApp");
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", ""}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(oldConfig);
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any()))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoPersistService.updateConfigInfoCas(
+                configInfo, "srcIp", "srcUser", null));
+    }
+    
+    @Test
+    void testFindAllConfigInfo4ExportFillsConfigTags() {
+        ConfigAllInfo configAllInfo = createMockConfigAllInfo(1);
+        configAllInfo.setDataId("dataId");
+        configAllInfo.setGroup("group");
+        configAllInfo.setTenant("");
+        Mockito.when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
+            eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(Collections.singletonList(configAllInfo));
+        Mockito.when(jdbcTemplate.queryForList(anyString(), Mockito.<Object[]>any(),
+            eq(String.class))).thenReturn(Arrays.asList("tag1", "tag2"));
+        
+        List<ConfigAllInfo> result = externalConfigInfoPersistService.findAllConfigInfo4Export(
+            "dataId", "group", "", null, null);
+        
+        assertEquals("tag1,tag2", result.get(0).getConfigTags());
+    }
+    
+    @Test
+    void testFindAllConfigInfo4ExportReturnsEmptyResult() {
+        Mockito.when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
+            eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(Collections.emptyList());
+        
+        List<ConfigAllInfo> result = externalConfigInfoPersistService.findAllConfigInfo4Export(
+            "dataId", "group", "", null, null);
+        
+        assertTrue(result.isEmpty());
+    }
+    
+    @Test
+    void testQueryConfigInfoByNamespaceRejectsNullTenant() {
+        assertThrows(IllegalArgumentException.class,
+            () -> externalConfigInfoPersistService.queryConfigInfoByNamespace(null));
+    }
+    
+    @Test
+    void testQueryConfigInfoByNamespaceUsesEmptyTenant() {
+        Mockito.when(jdbcTemplate.query(anyString(), eq(new Object[] {StringUtils.EMPTY}),
+            eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenReturn(Collections.emptyList());
+        
+        List<ConfigInfoWrapper> result =
+            externalConfigInfoPersistService.queryConfigInfoByNamespace("");
+        
+        assertEquals(Collections.emptyList(), result);
     }
     
     @Test

@@ -121,12 +121,20 @@ class ConfigChangeClusterSyncRequestHandlerTest {
     
     @Test
     void testCheckNamespaceCompatibleDisabled() {
-        ConfigChangeClusterSyncRequest req = new ConfigChangeClusterSyncRequest();
-        req.setTenant("public");
-        RequestMeta meta = new RequestMeta();
-        meta.setClientVersion("Nacos-Server:v3.0.0");
-        assertFalse(
-            configChangeClusterSyncRequestHandler.checkNamespaceCompatible(req, meta));
+        MockedStatic<ConfigCompatibleConfig> mocked =
+            Mockito.mockStatic(ConfigCompatibleConfig.class);
+        ConfigCompatibleConfig config = Mockito.mock(ConfigCompatibleConfig.class);
+        Mockito.when(config.isNamespaceCompatibleMode()).thenReturn(false);
+        mocked.when(ConfigCompatibleConfig::getInstance).thenReturn(config);
+        try {
+            ConfigChangeClusterSyncRequest req = new ConfigChangeClusterSyncRequest();
+            req.setTenant("public");
+            RequestMeta meta = new RequestMeta();
+            meta.setClientVersion("Nacos-Server:v3.0.0");
+            assertFalse(configChangeClusterSyncRequestHandler.checkNamespaceCompatible(req, meta));
+        } finally {
+            mocked.close();
+        }
     }
     
     @Test

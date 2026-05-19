@@ -27,13 +27,18 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class ResponseUtilTest {
     
@@ -49,6 +54,16 @@ class ResponseUtilTest {
         } catch (UnsupportedEncodingException e) {
             System.out.println(e.toString());
         }
+    }
+    
+    @Test
+    void testWriteErrMsgIgnoresWriterIoException() throws IOException {
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getWriter()).thenThrow(new IOException("mock error"));
+        
+        ResponseUtil.writeErrMsg(response, 500, "error");
+        
+        verify(response).setStatus(500);
     }
     
     @Test

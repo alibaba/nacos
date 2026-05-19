@@ -17,7 +17,9 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
+import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.SwitchService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +51,8 @@ class DumpConfigHandlerTest {
     void tearDown() {
         configCacheServiceMockedStatic.close();
         envUtilMockedStatic.close();
+        ClientIpWhiteList.load("");
+        SwitchService.load("");
     }
     
     @Test
@@ -122,6 +126,39 @@ class DumpConfigHandlerTest {
             .handleIp("1.1.1.1").remove(false).build();
         
         assertFalse(DumpConfigHandler.configDump(event));
+    }
+    
+    @Test
+    void testConfigDumpClientIpWhiteListMetadata() {
+        String content = "{\"isOpen\":true,\"ips\":[\"1.1.1.1\"]}";
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.dump(
+            ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "g", "ns", content, 100L, "text",
+            "edk")).thenReturn(true);
+        
+        ConfigDumpEvent event = ConfigDumpEvent.builder()
+            .dataId(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA).group("g")
+            .namespaceId("ns").content(content).lastModifiedTs(100L).type("text")
+            .encryptedDataKey("edk").handleIp("1.1.1.1").remove(false).build();
+        
+        assertTrue(DumpConfigHandler.configDump(event));
+        assertTrue(ClientIpWhiteList.isEnableWhitelist());
+        assertTrue(ClientIpWhiteList.isLegalClient("1.1.1.1"));
+    }
+    
+    @Test
+    void testConfigDumpSwitchMetadata() {
+        String content = SwitchService.FIXED_DELAY_TIME + "=1000";
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.dump(
+            SwitchService.SWITCH_META_DATA_ID, "g", "ns", content, 100L, "text", "edk"))
+            .thenReturn(true);
+        
+        ConfigDumpEvent event = ConfigDumpEvent.builder()
+            .dataId(SwitchService.SWITCH_META_DATA_ID).group("g").namespaceId("ns")
+            .content(content).lastModifiedTs(100L).type("text").encryptedDataKey("edk")
+            .handleIp("1.1.1.1").remove(false).build();
+        
+        assertTrue(DumpConfigHandler.configDump(event));
+        assertEquals(1000, SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 0));
     }
     
     @Test

@@ -73,6 +73,11 @@ class ContentUtilsTest {
     }
     
     @Test
+    void testVerifyIncrementPubContentAllowsPlainContent() {
+        ContentUtils.verifyIncrementPubContent("plain-content");
+    }
+    
+    @Test
     void testGetContentIdentity() {
         String content = "abc" + Constants.WORD_SEPARATOR + "edf";
         String result = ContentUtils.getContentIdentity(content);

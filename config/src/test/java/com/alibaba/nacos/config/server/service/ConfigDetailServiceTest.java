@@ -30,9 +30,11 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -110,6 +112,64 @@ class ConfigDetailServiceTest {
     }
     
     @Test
+    void testFindConfigInfoPageWhenQueueFullThrowsException() {
+        BlockingQueue<ConfigDetailService.SearchEvent> queue = mockSearchEventQueue();
+        when(queue.offer(any())).thenReturn(false);
+        ReflectionTestUtils.setField(configDetailService, "eventLinkedBlockingQueue", queue);
+        
+        assertThrows(NacosRuntimeException.class,
+            () -> configDetailService.findConfigInfoPage(Constants.CONFIG_SEARCH_BLUR, 1, 10,
+                "d", "g", "ns", new HashMap<>()));
+    }
+    
+    @Test
+    void testFindConfigInfoPageWhenInterruptedThrowsException() {
+        BlockingQueue<ConfigDetailService.SearchEvent> queue = mockSearchEventQueue();
+        when(queue.offer(any())).thenReturn(true);
+        ReflectionTestUtils.setField(configDetailService, "eventLinkedBlockingQueue", queue);
+        
+        Thread.currentThread().interrupt();
+        try {
+            assertThrows(NacosRuntimeException.class,
+                () -> configDetailService.findConfigInfoPage(Constants.CONFIG_SEARCH_BLUR, 1, 10,
+                    "d", "g", "ns", new HashMap<>()));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+    
+    @Test
+    void testFindConfigInfoPageWhenNoResponseThrowsException() {
+        BlockingQueue<ConfigDetailService.SearchEvent> queue = mockSearchEventQueue();
+        when(queue.offer(any())).thenReturn(true);
+        ReflectionTestUtils.setField(configDetailService, "eventLinkedBlockingQueue", queue);
+        ConfigDetailService.setWaitTimeout(1L);
+        
+        try {
+            assertThrows(NacosRuntimeException.class,
+                () -> configDetailService.findConfigInfoPage(Constants.CONFIG_SEARCH_BLUR, 1, 10,
+                    "d", "g", "ns", new HashMap<>()));
+        } finally {
+            ConfigDetailService.setWaitTimeout(8000L);
+        }
+    }
+    
+    @Test
+    void testFindConfigInfoPageWhenSearchWorkerCatchesException() throws Exception {
+        when(configInfoPersistService.findConfigInfoLike4Page(anyInt(), anyInt(), anyString(),
+            anyString(), anyString(), any())).thenThrow(new RuntimeException("search failed"));
+        ConfigDetailService.setWaitTimeout(50L);
+        
+        try {
+            assertThrows(NacosRuntimeException.class,
+                () -> configDetailService.findConfigInfoPage(Constants.CONFIG_SEARCH_BLUR, 1, 10,
+                    "d", "g", "ns", new HashMap<>()));
+        } finally {
+            ConfigDetailService.setWaitTimeout(8000L);
+        }
+    }
+    
+    @Test
     void testGettersAndSetters() {
         ConfigDetailService.setMaxCapacity(8);
         assertEquals(8, ConfigDetailService.getMaxCapacity());
@@ -146,5 +206,10 @@ class ConfigDetailServiceTest {
         Page<ConfigInfo> page = new Page<>();
         event.setResponse(page);
         assertEquals(page, event.getResponse());
+    }
+    
+    @SuppressWarnings("unchecked")
+    private BlockingQueue<ConfigDetailService.SearchEvent> mockSearchEventQueue() {
+        return Mockito.mock(BlockingQueue.class);
     }
 }

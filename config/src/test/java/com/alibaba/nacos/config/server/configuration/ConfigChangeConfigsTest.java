@@ -17,10 +17,14 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.PropertiesUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Properties;
@@ -77,6 +81,20 @@ class ConfigChangeConfigsTest {
         assertNotNull(properties);
         assertTrue(properties.isEmpty());
         assertNull(properties.getProperty("enabled"));
+    }
+    
+    @Test
+    void testRefreshPluginPropertiesIgnoresPropertyLoadingException() {
+        try (MockedStatic<PropertiesUtil> mocked = Mockito.mockStatic(PropertiesUtil.class)) {
+            mocked.when(() -> PropertiesUtil.getPropertiesWithPrefix(environment,
+                ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX))
+                .thenThrow(new RuntimeException("failed"));
+            
+            configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
+        }
+        
+        assertTrue(configChangeConfigs.getPluginProperties("mockPlugin")
+            .containsKey("enabled"));
     }
     
     @Test

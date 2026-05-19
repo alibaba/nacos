@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.model.form;
 
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * ConfigFormTest
@@ -158,6 +161,73 @@ public class ConfigFormTest {
         form.setGroup("g");
         form.setContent("content");
         assertDoesNotThrow(form::validateWithContent);
+    }
+    
+    @Test
+    void testConfigFormV3ValidateMissingGroupName() {
+        ConfigFormV3 form = new ConfigFormV3();
+        form.setDataId("d");
+        
+        assertThrows(NacosApiException.class, form::validate);
+    }
+    
+    @Test
+    void testConfigFormV3ValidateUsesGroupName() {
+        ConfigFormV3 form = new ConfigFormV3();
+        form.setDataId("d");
+        form.setGroupName("groupName");
+        
+        assertDoesNotThrow(form::validate);
+        assertEquals("groupName", form.getGroup());
+    }
+    
+    @Test
+    void testConfigFormV3BlurSearchValidateDefaultsNullFields() throws NacosApiException {
+        ConfigFormV3 form = new ConfigFormV3();
+        
+        form.blurSearchValidate();
+        
+        assertEquals("", form.getGroupName());
+        assertEquals("", form.getGroup());
+        assertEquals("", form.getDataId());
+    }
+    
+    @Test
+    void testUpdateCapacityFormValidateRequiresCapacityField() {
+        UpdateCapacityForm form = new UpdateCapacityForm();
+        
+        assertThrows(NacosApiException.class, form::validate);
+    }
+    
+    @Test
+    void testUpdateCapacityFormValidateWithCapacityField() {
+        UpdateCapacityForm form = new UpdateCapacityForm();
+        form.setQuota(1);
+        form.setMaxSize(2);
+        form.setMaxAggrCount(3);
+        form.setMaxAggrSize(4);
+        
+        assertDoesNotThrow(form::validate);
+        assertEquals(1, form.getQuota());
+        assertEquals(2, form.getMaxSize());
+        assertEquals(3, form.getMaxAggrCount());
+        assertEquals(4, form.getMaxAggrSize());
+    }
+    
+    @Test
+    void testUpdateCapacityFormChecksNamespaceOrGroupName() {
+        UpdateCapacityForm form = new UpdateCapacityForm();
+        CapacityService capacityService = mock(CapacityService.class);
+        
+        assertThrows(NacosApiException.class,
+            () -> form.checkNamespaceIdAndGroupName(capacityService));
+        verify(capacityService).initAllCapacity();
+        
+        form.setGroupName("group");
+        form.setNamespaceId("namespace");
+        assertDoesNotThrow(() -> form.checkNamespaceIdAndGroupName(capacityService));
+        assertEquals("group", form.getGroupName());
+        assertEquals("namespace", form.getNamespaceId());
     }
     
     @Test

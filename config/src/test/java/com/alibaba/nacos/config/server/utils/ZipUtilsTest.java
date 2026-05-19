@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -34,11 +35,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ZipUtilsTest {
     
     @Test
+    void testConstructor() {
+        assertNotNull(new ZipUtils());
+    }
+    
+    @Test
     void testZip() {
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         zipItemList.add(new ZipUtils.ZipItem("test", "content"));
         byte[] zip = ZipUtils.zip(zipItemList);
         assertTrue(zip != null && zip.length > 0);
+    }
+    
+    @Test
+    void testZipReturnsNullWhenDuplicateEntryFails() {
+        List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
+        zipItemList.add(new ZipUtils.ZipItem("test", "content"));
+        zipItemList.add(new ZipUtils.ZipItem("test", "duplicate"));
+        
+        assertNull(ZipUtils.zip(zipItemList));
     }
     
     @Test
@@ -97,6 +112,35 @@ class ZipUtilsTest {
         }
         ZipUtils.UnZipResult result = ZipUtils.unzip(baos.toByteArray());
         assertEquals(1, result.getZipItemList().size());
+    }
+    
+    @Test
+    void testUnzipIgnoresCorruptedEntry() {
+        List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
+        zipItemList.add(new ZipUtils.ZipItem("test", "content"));
+        byte[] zip = ZipUtils.zip(zipItemList);
+        
+        ZipUtils.UnZipResult result = ZipUtils.unzip(Arrays.copyOf(zip, zip.length / 2));
+        
+        assertNotNull(result);
+    }
+    
+    @Test
+    void testUnzipIgnoresMalformedLocalHeaders() {
+        byte[] malformedEntryData = new byte[] {
+            0x50, 0x4b, 0x03, 0x04, 20, 0, 0, 0, 8, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 5, 0,
+            0, 0, 5, 0, 0, 0, 4, 0, 0, 0,
+            't', 'e', 's', 't', 1, 2, 3, 4, 5
+        };
+        byte[] truncatedHeader = new byte[] {
+            0x50, 0x4b, 0x03, 0x04, 20, 0, 0, 0, 8, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 5, 0,
+            0, 0, 5, 0, 0, 0, 4, 0, 0, 0
+        };
+        
+        assertNotNull(ZipUtils.unzip(malformedEntryData));
+        assertNotNull(ZipUtils.unzip(truncatedHeader));
     }
     
     @Test

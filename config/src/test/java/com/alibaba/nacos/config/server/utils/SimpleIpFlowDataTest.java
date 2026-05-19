@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.utils;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SimpleIpFlowDataTest {
@@ -51,6 +52,18 @@ class SimpleIpFlowDataTest {
         SimpleIpFlowData data = new SimpleIpFlowData(3, 10000);
         assertEquals(1, data.incrementAndGet(null));
         assertEquals(1, data.getCurrentCount(null));
+    }
+    
+    @Test
+    void testNegativeHashIp() {
+        SimpleIpFlowData data = new SimpleIpFlowData(5, 10000);
+        assertEquals(1, data.incrementAndGet("client-ip"));
+        assertEquals(1, data.getCurrentCount("client-ip"));
+    }
+    
+    @Test
+    void testNonPositiveSlotCountUsesMinimumSlotCount() {
+        assertDoesNotThrow(() -> new SimpleIpFlowData(0, 10000));
     }
     
 }

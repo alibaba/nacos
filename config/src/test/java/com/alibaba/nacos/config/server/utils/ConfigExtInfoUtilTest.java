@@ -148,6 +148,24 @@ class ConfigExtInfoUtilTest {
     }
     
     @Test
+    void testGetExtraInfoFromAdvanceInfoMapReturnsNullWhenMapThrowsException() {
+        Map<String, Object> map = new HashMap<>() {
+            
+            @Override
+            public boolean isEmpty() {
+                return false;
+            }
+            
+            @Override
+            public Object get(Object key) {
+                throw new IllegalStateException("broken map");
+            }
+        };
+        
+        assertNull(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(map, "user"));
+    }
+    
+    @Test
     void testExt4GrayWithPartialGrayRule() {
         String partialGrayRule = "{\"type\":\"tag\"}";
         String result =

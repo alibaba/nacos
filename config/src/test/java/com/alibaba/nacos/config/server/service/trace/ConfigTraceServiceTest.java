@@ -16,11 +16,57 @@
 
 package com.alibaba.nacos.config.server.service.trace;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.env.MockEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ConfigTraceServiceTest {
+    
+    @BeforeAll
+    static void setUpEnvironment() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new ConfigTraceService());
+    }
+    
+    @Test
+    void testLogEventsReturnWhenTraceLogDisabled() {
+        Logger traceLogger = (Logger) LogUtil.TRACE_LOG;
+        Level originalLevel = traceLogger.getLevel();
+        traceLogger.setLevel(Level.OFF);
+        try {
+            assertDoesNotThrow(() -> ConfigTraceService.logPersistenceEvent(
+                "dataId", "group", "tenant", "app", System.currentTimeMillis(),
+                "127.0.0.1", ConfigTraceService.PERSISTENCE_EVENT,
+                ConfigTraceService.PERSISTENCE_TYPE_PUB, "content"));
+            assertDoesNotThrow(() -> ConfigTraceService.logNotifyEvent(
+                "dataId", "group", "tenant", "app", System.currentTimeMillis(),
+                "127.0.0.1", ConfigTraceService.NOTIFY_EVENT,
+                ConfigTraceService.NOTIFY_TYPE_OK, 100L, "10.0.0.1"));
+            assertDoesNotThrow(() -> ConfigTraceService.logDumpEvent(
+                "dataId", "group", "tenant", "app", System.currentTimeMillis(),
+                "127.0.0.1", ConfigTraceService.DUMP_TYPE_OK, 50L, 1024L));
+            assertDoesNotThrow(() -> ConfigTraceService.logDumpAllEvent(
+                "dataId", "group", "tenant", "app", System.currentTimeMillis(),
+                "127.0.0.1", ConfigTraceService.DUMP_TYPE_OK));
+            assertDoesNotThrow(() -> ConfigTraceService.logPullEvent(
+                "dataId", "group", "tenant", "app", System.currentTimeMillis(),
+                ConfigTraceService.PULL_EVENT, ConfigTraceService.PULL_TYPE_OK,
+                200L, "10.0.0.1", false, "http"));
+        } finally {
+            traceLogger.setLevel(originalLevel);
+        }
+    }
     
     @Test
     void testLogPersistenceEvent() {

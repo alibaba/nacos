@@ -38,6 +38,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -480,6 +481,29 @@ class ConfigCacheServiceTest {
     }
     
     @Test
+    void testConstructor() {
+        assertNotNull(new ConfigCacheService());
+    }
+    
+    @Test
+    void testDumpWithSameMd5AndTimestampKeepsCache() throws Exception {
+        String dataId = "sameMd5D";
+        String group = "sameMd5G";
+        String tenant = "sameMd5T";
+        String content = "same-content";
+        String md5 = MD5Utils.md5Hex(content, "UTF-8");
+        long timestamp = System.currentTimeMillis();
+        
+        assertTrue(ConfigCacheService.dumpWithMd5(dataId, group, tenant, content, md5,
+            timestamp, "text", ""));
+        assertTrue(ConfigCacheService.dumpWithMd5(dataId, group, tenant, content, md5,
+            timestamp, "text", ""));
+        
+        Mockito.verify(configDiskService, times(1)).saveToDisk(dataId, group, tenant, content);
+        ConfigCacheService.remove(dataId, group, tenant);
+    }
+    
+    @Test
     void testTryReadLock() {
         assertEquals(0, ConfigCacheService.tryReadLock("noExistKey"));
     }
@@ -487,6 +511,16 @@ class ConfigCacheServiceTest {
     @Test
     void testReleaseReadLockNoItem() {
         ConfigCacheService.releaseReadLock("noExistKey");
+    }
+    
+    @Test
+    void testReleaseReadLockExistingItem() {
+        ConfigCacheService.dumpWithMd5("rlD", "rlG", "rlT", "c", "md5",
+            System.currentTimeMillis(), "text", "");
+        String gk = GroupKey2.getKey("rlD", "rlG", "rlT");
+        assertEquals(1, ConfigCacheService.tryReadLock(gk));
+        ConfigCacheService.releaseReadLock(gk);
+        ConfigCacheService.remove("rlD", "rlG", "rlT");
     }
     
     @Test
@@ -515,11 +549,42 @@ class ConfigCacheServiceTest {
         ConfigCacheService.dumpWithMd5("clD", "clG", "clT", "content", "md5val",
             System.currentTimeMillis(), "text", "");
         String gk = GroupKey2.getKey("clD", "clG", "clT");
-        Map<String, String> labels = new java.util.HashMap<>();
+        Map<String, String> labels = new HashMap<>();
         labels.put("clientIp", "1.1.1.1");
         String md5 = ConfigCacheService.getContentMd5(gk, null, null, labels);
         assertEquals("md5val", md5);
         ConfigCacheService.remove("clD", "clG", "clT");
+    }
+    
+    @Test
+    void testGetContentMd5FallsBackWhenGrayRuleDoesNotMatch() {
+        String dataId = "grayMissD";
+        String group = "grayMissG";
+        String tenant = "grayMissT";
+        String grayRule = "{\"type\":\"tag\",\"version\":\"1.0.0\",\"expr\":\"blue\","
+            + "\"priority\":1}";
+        ConfigCacheService.dumpWithMd5(dataId, group, tenant, "formal", "formalMd5",
+            System.currentTimeMillis(), "text", "");
+        ConfigCacheService.dumpGray(dataId, group, tenant, "tag_blue", grayRule,
+            "grayContent", System.currentTimeMillis(), "");
+        
+        String gk = GroupKey2.getKey(dataId, group, tenant);
+        assertEquals("formalMd5", ConfigCacheService.getContentMd5(gk, null, "red", null));
+        ConfigCacheService.remove(dataId, group, tenant);
+    }
+    
+    @Test
+    void testGetContentMd5ReturnsNullConstantWhenMd5IsNull() {
+        String dataId = "nullMd5D";
+        String group = "nullMd5G";
+        String tenant = "nullMd5T";
+        ConfigCacheService.dumpWithMd5(dataId, group, tenant, "content", "md5",
+            System.currentTimeMillis(), "text", "");
+        String gk = GroupKey2.getKey(dataId, group, tenant);
+        ConfigCacheService.getContentCache(gk).getConfigCache().setMd5(null);
+        
+        assertEquals(NULL, ConfigCacheService.getContentMd5(gk));
+        ConfigCacheService.remove(dataId, group, tenant);
     }
     
     @Test
@@ -547,20 +612,13 @@ class ConfigCacheServiceTest {
         String dataId = "lockFailD";
         String group = "lockFailG";
         String tenant = "lockFailT";
-        String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        CacheItem cacheItem = Mockito.mock(CacheItem.class);
         SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
-        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
         Mockito.when(lock.tryWriteLock()).thenReturn(false);
-        Field cacheField = ConfigCacheService.class.getDeclaredField("CACHE");
-        cacheField.setAccessible(true);
-        ConcurrentHashMap<String, CacheItem> cache =
-            (ConcurrentHashMap<String, CacheItem>) cacheField.get(null);
-        cache.put(groupKey, cacheItem);
+        String groupKey = putMockCacheItem(dataId, group, tenant, lock);
         boolean result = ConfigCacheService.dump(dataId, group, tenant,
             "content", System.currentTimeMillis(), "text", "key");
         assertFalse(result);
-        cache.remove(groupKey);
+        cache().remove(groupKey);
     }
     
     @Test
@@ -568,20 +626,13 @@ class ConfigCacheServiceTest {
         String dataId = "grayLockD";
         String group = "grayLockG";
         String tenant = "grayLockT";
-        String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        CacheItem cacheItem = Mockito.mock(CacheItem.class);
         SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
-        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
         Mockito.when(lock.tryWriteLock()).thenReturn(false);
-        Field cacheField = ConfigCacheService.class.getDeclaredField("CACHE");
-        cacheField.setAccessible(true);
-        ConcurrentHashMap<String, CacheItem> cache =
-            (ConcurrentHashMap<String, CacheItem>) cacheField.get(null);
-        cache.put(groupKey, cacheItem);
+        String groupKey = putMockCacheItem(dataId, group, tenant, lock);
         boolean result = ConfigCacheService.dumpGray(dataId, group, tenant,
             "gray1", "{}", "content", System.currentTimeMillis(), "key");
         assertFalse(result);
-        cache.remove(groupKey);
+        cache().remove(groupKey);
     }
     
     @Test
@@ -589,19 +640,12 @@ class ConfigCacheServiceTest {
         String dataId = "rmLockD";
         String group = "rmLockG";
         String tenant = "rmLockT";
-        String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        CacheItem cacheItem = Mockito.mock(CacheItem.class);
         SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
-        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
         Mockito.when(lock.tryWriteLock()).thenReturn(false);
-        Field cacheField = ConfigCacheService.class.getDeclaredField("CACHE");
-        cacheField.setAccessible(true);
-        ConcurrentHashMap<String, CacheItem> cache =
-            (ConcurrentHashMap<String, CacheItem>) cacheField.get(null);
-        cache.put(groupKey, cacheItem);
+        String groupKey = putMockCacheItem(dataId, group, tenant, lock);
         boolean result = ConfigCacheService.remove(dataId, group, tenant);
         assertFalse(result);
-        cache.remove(groupKey);
+        cache().remove(groupKey);
     }
     
     @Test
@@ -609,19 +653,12 @@ class ConfigCacheServiceTest {
         String dataId = "rmGrayLockD";
         String group = "rmGrayLockG";
         String tenant = "rmGrayLockT";
-        String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        CacheItem cacheItem = Mockito.mock(CacheItem.class);
         SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
-        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
         Mockito.when(lock.tryWriteLock()).thenReturn(false);
-        Field cacheField = ConfigCacheService.class.getDeclaredField("CACHE");
-        cacheField.setAccessible(true);
-        ConcurrentHashMap<String, CacheItem> cache =
-            (ConcurrentHashMap<String, CacheItem>) cacheField.get(null);
-        cache.put(groupKey, cacheItem);
+        String groupKey = putMockCacheItem(dataId, group, tenant, lock);
         boolean result = ConfigCacheService.removeGray(dataId, group, tenant, "gray1");
         assertFalse(result);
-        cache.remove(groupKey);
+        cache().remove(groupKey);
     }
     
     @Test
@@ -633,10 +670,7 @@ class ConfigCacheServiceTest {
         SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
         Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        Field cache1 = ConfigCacheService.class.getDeclaredField("CACHE");
-        cache1.setAccessible(true);
-        ConcurrentHashMap<String, CacheItem> cache =
-            (ConcurrentHashMap<String, CacheItem>) cache1.get(null);
+        ConcurrentHashMap<String, CacheItem> cache = cache();
         cache.put(groupKey, cacheItem);
         
         // lock ==0,not exist
@@ -667,6 +701,21 @@ class ConfigCacheServiceTest {
     }
     
     @Test
+    void testTryConfigReadLockWhenSleepInterrupted() throws Exception {
+        String dataId = "interruptReadLockD";
+        String group = "interruptReadLockG";
+        String tenant = "interruptReadLockT";
+        SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
+        Mockito.when(lock.tryReadLock()).thenReturn(false);
+        String groupKey = putMockCacheItem(dataId, group, tenant, lock);
+        
+        Thread.currentThread().interrupt();
+        assertEquals(-1, ConfigCacheService.tryConfigReadLock(groupKey));
+        assertFalse(Thread.currentThread().isInterrupted());
+        cache().remove(groupKey);
+    }
+    
+    @Test
     void testGetContentMd5MatchesGrayRule() {
         String dataId = "grayMatchD";
         String group = "grayMatchG";
@@ -685,5 +734,43 @@ class ConfigCacheServiceTest {
         String md5 = ConfigCacheService.getContentMd5(gk, null, "myTag", null);
         assertEquals(grayMd5, md5);
         ConfigCacheService.remove(dataId, group, tenant);
+    }
+    
+    @Test
+    void testRemoveGraySortsRemainingGrayRules() {
+        String dataId = "graySortD";
+        String group = "graySortG";
+        String tenant = "graySortT";
+        String highPriorityRule = "{\"type\":\"tag\",\"version\":\"1.0.0\",\"expr\":\"high\","
+            + "\"priority\":2}";
+        String lowPriorityRule = "{\"type\":\"tag\",\"version\":\"1.0.0\",\"expr\":\"low\","
+            + "\"priority\":1}";
+        ConfigCacheService.dumpWithMd5(dataId, group, tenant, "formal", "formalMd5",
+            System.currentTimeMillis(), "text", "");
+        ConfigCacheService.dumpGray(dataId, group, tenant, "tag_high", highPriorityRule,
+            "highContent", System.currentTimeMillis(), "");
+        ConfigCacheService.dumpGray(dataId, group, tenant, "tag_low", lowPriorityRule,
+            "lowContent", System.currentTimeMillis(), "");
+        
+        assertTrue(ConfigCacheService.removeGray(dataId, group, tenant, "tag_high"));
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        assertEquals("tag_low",
+            ConfigCacheService.getContentCache(groupKey).getSortConfigGrays().get(0).getGrayName());
+        ConfigCacheService.remove(dataId, group, tenant);
+    }
+    
+    private String putMockCacheItem(String dataId, String group, String tenant,
+        SimpleReadWriteLock lock) throws Exception {
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        CacheItem cacheItem = Mockito.mock(CacheItem.class);
+        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
+        cache().put(groupKey, cacheItem);
+        return groupKey;
+    }
+    
+    private ConcurrentHashMap<String, CacheItem> cache() throws Exception {
+        Field cacheField = ConfigCacheService.class.getDeclaredField("CACHE");
+        cacheField.setAccessible(true);
+        return (ConcurrentHashMap<String, CacheItem>) cacheField.get(null);
     }
 }

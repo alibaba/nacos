@@ -49,11 +49,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -241,6 +244,30 @@ class LongPollingServiceTest {
     }
     
     @Test
+    void testAddLongPollingClientWithNoHangUp() throws IOException {
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
+        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(httpServletRequest.getHeader(
+            eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
+            .thenReturn("true");
+        Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For")))
+            .thenReturn("192.168.0.1");
+        HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
+        
+        try (MockedStatic<MD5Util> md5UtilMockedStatic = Mockito.mockStatic(MD5Util.class)) {
+            md5UtilMockedStatic.when(() -> MD5Util.compareMd5(httpServletRequest,
+                httpServletResponse, clientMd5Map))
+                .thenReturn(Collections.emptyMap());
+            
+            longPollingService.addLongPollingClient(httpServletRequest, httpServletResponse,
+                clientMd5Map, 1);
+        }
+        
+        Mockito.verify(httpServletRequest, times(0)).startAsync();
+        Mockito.verify(httpServletResponse, times(0)).setStatus(anyInt());
+    }
+    
+    @Test
     void testReceiveDataChangeEventAndNotify() throws Exception {
         configExecutorMocked.close();
         
@@ -386,6 +413,28 @@ class LongPollingServiceTest {
     }
     
     @Test
+    void testCollectSubscribleInfoWhenInterrupted() {
+        Thread.currentThread().interrupt();
+        try {
+            SampleResult result = longPollingService.getCollectSubscribleInfo("d", "g", "t");
+            assertEquals(0, result.getLisentersGroupkeyStatus().size());
+        } finally {
+            Thread.interrupted();
+        }
+    }
+    
+    @Test
+    void testCollectSubscribleInfoByIpWhenInterrupted() {
+        Thread.currentThread().interrupt();
+        try {
+            SampleResult result = longPollingService.getCollectSubscribleInfoByIp("10.0.0.1");
+            assertEquals(0, result.getLisentersGroupkeyStatus().size());
+        } finally {
+            Thread.interrupted();
+        }
+    }
+    
+    @Test
     void testGetRetainIpsAndSubscriberCount() {
         assertFalse(longPollingService.getRetainIps() == null);
         assertEquals(0, longPollingService.getSubscriberCount());
@@ -405,5 +454,123 @@ class LongPollingServiceTest {
         Mockito.when(request.getHeader(eq(LongPollingService.LONG_POLLING_HEADER)))
             .thenReturn(null);
         assertFalse(LongPollingService.isSupportLongPolling(request));
+    }
+    
+    @Test
+    void testDataChangeTaskCatchesException() {
+        String groupKey = GroupKey.getKeyTenant("data", "group", "tenant");
+        AsyncContext asyncContext = Mockito.mock(AsyncContext.class);
+        Mockito.when(asyncContext.getRequest()).thenThrow(new RuntimeException("mock-error"));
+        LongPollingService.ClientLongPolling clientLongPolling = newClientLongPolling(asyncContext,
+            Collections.singletonMap(groupKey, new ConfigListenState("md5")));
+        longPollingService.allSubs.add(clientLongPolling);
+        
+        longPollingService.new DataChangeTask(groupKey).run();
+        
+        assertEquals(0, longPollingService.getSubscriberCount());
+    }
+    
+    @Test
+    void testClientLongPollingTimeoutWhenRemoveFailed() {
+        Runnable[] timeoutRunnable = new Runnable[1];
+        ScheduledFuture<?> future = Mockito.mock(ScheduledFuture.class);
+        configExecutorMocked.when(() -> ConfigExecutor.scheduleLongPolling(any(Runnable.class),
+            anyLong(), any(TimeUnit.class)))
+            .thenAnswer(invocation -> {
+                timeoutRunnable[0] = invocation.getArgument(0);
+                return future;
+            });
+        LongPollingService.ClientLongPolling clientLongPolling = newClientLongPolling(
+            Mockito.mock(AsyncContext.class), Collections.emptyMap());
+        
+        clientLongPolling.run();
+        longPollingService.allSubs.remove(clientLongPolling);
+        timeoutRunnable[0].run();
+        
+        assertEquals(0, longPollingService.getSubscriberCount());
+    }
+    
+    @Test
+    void testClientLongPollingTimeoutCatchesException() {
+        Runnable[] timeoutRunnable = new Runnable[1];
+        ScheduledFuture<?> future = Mockito.mock(ScheduledFuture.class);
+        configExecutorMocked.when(() -> ConfigExecutor.scheduleLongPolling(any(Runnable.class),
+            anyLong(), any(TimeUnit.class)))
+            .thenAnswer(invocation -> {
+                timeoutRunnable[0] = invocation.getArgument(0);
+                return future;
+            });
+        AsyncContext asyncContext = Mockito.mock(AsyncContext.class);
+        Mockito.when(asyncContext.getRequest()).thenThrow(new RuntimeException("mock-error"));
+        LongPollingService.ClientLongPolling clientLongPolling = newClientLongPolling(asyncContext,
+            Collections.emptyMap());
+        
+        clientLongPolling.run();
+        timeoutRunnable[0].run();
+        
+        assertEquals(0, longPollingService.getSubscriberCount());
+    }
+    
+    @Test
+    void testClientLongPollingGenerateResponseWhenWriterThrows() throws Exception {
+        AsyncContext asyncContext = Mockito.mock(AsyncContext.class);
+        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        Mockito.when(asyncContext.getResponse()).thenReturn(response);
+        Mockito.when(response.getWriter()).thenThrow(new IOException("mock-error"));
+        LongPollingService.ClientLongPolling clientLongPolling = newClientLongPolling(asyncContext,
+            Collections.emptyMap());
+        
+        clientLongPolling.generateResponse(
+            Collections.singletonMap("data+group+tenant", new ConfigListenState("md5")));
+        
+        Mockito.verify(asyncContext, times(1)).complete();
+    }
+    
+    @Test
+    void testClientLongPollingToString() {
+        LongPollingService.ClientLongPolling clientLongPolling = newClientLongPolling(
+            Mockito.mock(AsyncContext.class), Collections.emptyMap());
+        
+        String actual = clientLongPolling.toString();
+        
+        assertFalse(actual.isEmpty());
+    }
+    
+    @Test
+    void testGenerateResponseWithNullChangedGroups() throws Exception {
+        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        
+        longPollingService.generateResponse(Mockito.mock(HttpServletRequest.class), response, null);
+        
+        Mockito.verify(response, times(0)).getWriter();
+    }
+    
+    @Test
+    void testGenerateResponseWhenWriterThrows() throws Exception {
+        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        Mockito.when(response.getWriter()).thenThrow(new IOException("mock-error"));
+        
+        longPollingService.generateResponse(Mockito.mock(HttpServletRequest.class), response,
+            Collections.singletonMap("data+group+tenant", new ConfigListenState("md5")));
+        
+        Mockito.verify(response, times(1)).setStatus(HttpServletResponse.SC_OK);
+    }
+    
+    @Test
+    void testGenerate503ResponseWhenWriterThrows() throws Exception {
+        AsyncContext asyncContext = Mockito.mock(AsyncContext.class);
+        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        Mockito.when(response.getWriter()).thenThrow(new IOException("mock-error"));
+        
+        longPollingService.generate503Response(asyncContext, response, "over limit");
+        
+        Mockito.verify(response, times(1)).setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        Mockito.verify(asyncContext, times(0)).complete();
+    }
+    
+    private LongPollingService.ClientLongPolling newClientLongPolling(AsyncContext asyncContext,
+        Map<String, ConfigListenState> clientMd5Map) {
+        return longPollingService.new ClientLongPolling(asyncContext, clientMd5Map, "127.0.0.1",
+            1, 1L, "app", "tag");
     }
 }

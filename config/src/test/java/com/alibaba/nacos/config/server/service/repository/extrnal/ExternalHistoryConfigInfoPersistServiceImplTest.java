@@ -32,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -46,6 +47,7 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -374,6 +376,17 @@ class ExternalHistoryConfigInfoPersistServiceImplTest {
             externalHistoryConfigInfoPersistService.getNextHistoryInfo("d", "g", "t",
                 "formal", null, 1L);
         assertNull(result);
+    }
+    
+    @Test
+    void testGetNextHistoryInfoRethrowsDataAccessException() {
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), Mockito.any(Object[].class),
+            eq(HISTORY_DETAIL_ROW_MAPPER)))
+            .thenThrow(new DataAccessResourceFailureException("db failed"));
+        
+        assertThrows(DataAccessResourceFailureException.class,
+            () -> externalHistoryConfigInfoPersistService.getNextHistoryInfo("d", "g", "t",
+                "formal", null, 1L));
     }
     
     private ConfigHistoryInfo createMockConfigHistoryInfo(long mockId) {

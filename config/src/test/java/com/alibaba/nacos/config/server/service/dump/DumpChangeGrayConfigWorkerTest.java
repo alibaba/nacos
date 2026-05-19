@@ -250,6 +250,68 @@ public class DumpChangeGrayConfigWorkerTest {
             never());
     }
     
+    @Test
+    public void testRunWithDeletedConfigNextPage() {
+        dumpGrayConfigWorker.pageSize = 1;
+        ConfigInfoStateWrapper deleted = new ConfigInfoStateWrapper();
+        deleted.setDataId("d");
+        deleted.setGroup("g");
+        deleted.setTenant("t");
+        deleted.setGrayName("");
+        deleted.setId(10L);
+        
+        when(historyConfigInfoPersistService.findDeletedConfig(
+            any(Timestamp.class), eq(0L), eq(1), anyString()))
+            .thenReturn(Collections.singletonList(deleted));
+        when(historyConfigInfoPersistService.findDeletedConfig(
+            any(Timestamp.class), eq(10L), eq(1), anyString()))
+            .thenReturn(Collections.emptyList());
+        when(configInfoGrayPersistService.findChangeConfig(
+            any(Timestamp.class), anyLong(), eq(1)))
+            .thenReturn(Collections.emptyList());
+        
+        dumpGrayConfigWorker.run();
+        
+        verify(historyConfigInfoPersistService).findDeletedConfig(
+            any(Timestamp.class), eq(10L), eq(1), anyString());
+    }
+    
+    @Test
+    public void testRunWithChangedConfigNextPage() {
+        dumpGrayConfigWorker.pageSize = 1;
+        ConfigInfoGrayWrapper changed = mock(2);
+        changed.setTenant("");
+        changed.setId(20L);
+        
+        when(historyConfigInfoPersistService.findDeletedConfig(
+            any(Timestamp.class), anyLong(), eq(1), anyString()))
+            .thenReturn(Collections.emptyList());
+        when(configInfoGrayPersistService.findChangeConfig(
+            any(Timestamp.class), eq(0L), eq(1)))
+            .thenReturn(Collections.singletonList(changed));
+        when(configInfoGrayPersistService.findChangeConfig(
+            any(Timestamp.class), eq(20L), eq(1)))
+            .thenReturn(Collections.emptyList());
+        
+        dumpGrayConfigWorker.run();
+        
+        verify(configInfoGrayPersistService).findChangeConfig(
+            any(Timestamp.class), eq(20L), eq(1));
+    }
+    
+    @Test
+    public void testRunWithExceptionStillSchedulesNextTask() {
+        when(historyConfigInfoPersistService.findDeletedConfig(
+            any(Timestamp.class), anyLong(), eq(100), anyString()))
+            .thenThrow(new RuntimeException("query failed"));
+        
+        dumpGrayConfigWorker.run();
+        
+        configExecutorMockedStatic.verify(
+            () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeGrayConfigWorker.class),
+                eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
+    }
+    
     ConfigInfoGrayWrapper mock(int id) {
         ConfigInfoGrayWrapper configInfoGrayWrapper = new ConfigInfoGrayWrapper();
         configInfoGrayWrapper.setDataId("mockdataid" + id);
@@ -258,7 +320,8 @@ public class DumpChangeGrayConfigWorkerTest {
         configInfoGrayWrapper.setContent("content" + id);
         configInfoGrayWrapper.setGrayName("graytags1" + id);
         configInfoGrayWrapper.setGrayRule(
-            "{\"type\":\"tagv2\",\"version\":\"1.0.0\",\"expr\":\"middleware.server.key\\u003dgray123\",\"priority\":1}");
+            "{\"type\":\"tagv2\",\"version\":\"1.0.0\","
+                + "\"expr\":\"middleware.server.key\\u003dgray123\",\"priority\":1}");
         return configInfoGrayWrapper;
     }
 }

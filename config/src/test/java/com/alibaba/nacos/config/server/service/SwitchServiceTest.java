@@ -20,14 +20,21 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.alibaba.nacos.common.utils.IoUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.StringReader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 
 class SwitchServiceTest {
     
@@ -151,6 +158,22 @@ class SwitchServiceTest {
         SwitchService.load("notAnInt=abc");
         
         assertEquals(123, SwitchService.getSwitchInteger("notAnInt", 123));
+    }
+    
+    @Test
+    void testLoadLogsIoExceptionWhenReadLinesFails() {
+        try (MockedStatic<IoUtils> ioUtilsMockedStatic = Mockito.mockStatic(IoUtils.class)) {
+            ioUtilsMockedStatic.when(() -> IoUtils.readLines(any(StringReader.class)))
+                .thenThrow(new IOException("mock error"));
+            
+            SwitchService.load("key=value");
+        }
+        
+        long errorLogs = fatalLogAppender.list.stream()
+            .filter(event -> event.getLevel() == Level.WARN)
+            .filter(event -> event.getFormattedMessage().contains("[reload-switches] error"))
+            .count();
+        assertEquals(1, errorLogs);
     }
     
     @Test

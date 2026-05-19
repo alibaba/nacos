@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,283 +16,324 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
-import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.model.CacheItem;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
-import com.alibaba.nacos.config.server.service.dump.ExternalDumpService;
-import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
+import com.alibaba.nacos.config.server.service.SwitchService;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.persistence.datasource.DataSourceService;
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.BeanUtils;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@Disabled(value = "Github CI will crash in this class unit test. "
-    + "It is suspected that the inability to write to the disk is related to the invocation of System.exit.")
 class DumpAllProcessorTest {
     
-    private static int newConfigCount = 1;
+    private static final int PAGE_SIZE = 100;
     
     @Mock
-    DynamicDataSource dynamicDataSource;
+    private ConfigInfoPersistService configInfoPersistService;
     
-    @Mock
-    DataSourceService dataSourceService;
+    private MockedStatic<PropertyUtil> propertyUtilMockedStatic;
     
-    @Mock
-    ConfigInfoGrayPersistService configInfoGrayPersistService;
-    
-    ConfigMigrateService configMigrateService;
-    
-    DumpAllProcessor dumpAllProcessor;
-    
-    ExternalDumpService dumpService;
-    
-    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-    
-    MockedStatic<PropertyUtil> propertyUtilMockedStatic;
-    
-    @Mock
-    ConfigInfoPersistService configInfoPersistService;
-    
-    MockedStatic<EnvUtil> envUtilMockedStatic;
-    
-    private String mockMem = "tmpmocklimitfile.txt";
+    private DumpAllProcessor dumpAllProcessor;
     
     @BeforeEach
-    void init() throws Exception {
-        dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
-        envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+    void setUp() {
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
-        propertyUtilMockedStatic.when(PropertyUtil::getAllDumpPageSize).thenReturn(100);
+        propertyUtilMockedStatic.when(PropertyUtil::getAllDumpPageSize).thenReturn(PAGE_SIZE);
         dumpAllProcessor = new DumpAllProcessor(configInfoPersistService);
-        when(EnvUtil.getNacosHome()).thenReturn(System.getProperty("user.home"));
-        when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class),
-            eq(false))).thenReturn(false);
-        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance)
-            .thenReturn(dynamicDataSource);
-        
-        when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
-        
-        dumpService = new ExternalDumpService(configInfoPersistService, null,
-            null, configInfoGrayPersistService, null, configMigrateService);
-        
-        dumpAllProcessor = new DumpAllProcessor(configInfoPersistService);
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("memory_limit_file_path"),
-            eq("/sys/fs/cgroup/memory/memory.limit_in_bytes"))).thenReturn(mockMem);
-        
     }
     
     @AfterEach
-    void after() throws Exception {
-        dynamicDataSourceMockedStatic.close();
-        envUtilMockedStatic.close();
+    void tearDown() {
         propertyUtilMockedStatic.close();
     }
     
-    private ConfigInfoWrapper createNewConfig(int id) {
-        ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
-        String dataId = "dataIdTime" + newConfigCount;
-        configInfoWrapper.setDataId(dataId);
-        String group = "groupTime" + newConfigCount;
-        configInfoWrapper.setGroup(group);
-        String tenant = "tenantTime" + newConfigCount;
-        configInfoWrapper.setTenant(tenant);
-        String content = "content " + newConfigCount;
-        configInfoWrapper.setContent(content);
-        configInfoWrapper.setId(id);
-        newConfigCount++;
-        return configInfoWrapper;
+    @Test
+    void testProcessRejectsInvalidTask() {
+        NacosTask task = () -> true;
+        
+        assertFalse(dumpAllProcessor.process(task));
+        
+        verify(configInfoPersistService, never()).findConfigMaxId();
     }
     
     @Test
-    void testDumpAllOnStartUp() throws Exception {
-        ConfigInfoWrapper configInfoWrapper1 = createNewConfig(1);
-        ConfigInfoWrapper configInfoWrapper2 = createNewConfig(2);
-        long timestamp = System.currentTimeMillis();
-        configInfoWrapper1.setLastModified(timestamp);
-        configInfoWrapper2.setLastModified(timestamp);
-        Page<ConfigInfoWrapper> page = new Page<>();
-        page.setTotalCount(2);
-        page.setPagesAvailable(2);
-        page.setPageNumber(1);
-        List<ConfigInfoWrapper> list = Arrays.asList(configInfoWrapper1, configInfoWrapper2);
-        page.setPageItems(list);
+    void testProcessReturnsTrueWhenNoConfig() {
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(0L);
         
-        Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(2L);
-        Mockito
-            .when(configInfoPersistService.findAllConfigInfoFragment(0,
-                PropertyUtil.getAllDumpPageSize(), true))
-            .thenReturn(page);
-        
-        // For config 1, assign a latter time, to make sure that it would be updated.
-        // For config 2, assign an earlier time, to make sure that it is not be updated.
-        String md51 = MD5Utils.md5Hex(configInfoWrapper1.getContent(), "UTF-8");
-        String md52 = MD5Utils.md5Hex(configInfoWrapper2.getContent(), "UTF-8");
-        long latterTimestamp = timestamp + 999;
-        long earlierTimestamp = timestamp - 999;
-        String encryptedDataKey = "testEncryptedDataKey";
-        ConfigCacheService.dumpWithMd5(configInfoWrapper1.getDataId(),
-            configInfoWrapper1.getGroup(),
-            configInfoWrapper1.getTenant(), configInfoWrapper1.getContent(), md51, latterTimestamp,
-            "json",
-            encryptedDataKey);
-        ConfigCacheService.dumpWithMd5(configInfoWrapper2.getDataId(),
-            configInfoWrapper2.getGroup(),
-            configInfoWrapper2.getTenant(), configInfoWrapper2.getContent(), md52, earlierTimestamp,
-            "json",
-            encryptedDataKey);
-        
-        DumpAllTask dumpAllTask = new DumpAllTask(true);
-        
-        boolean process = dumpAllProcessor.process(dumpAllTask);
-        assertTrue(process);
-        
-        //Check cache
-        CacheItem contentCache1 = ConfigCacheService.getContentCache(
-            GroupKey2.getKey(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(),
-                configInfoWrapper1.getTenant()));
-        assertEquals(md51, contentCache1.getConfigCache().getMd5());
-        // check if config1 is updated
-        assertTrue(timestamp < contentCache1.getConfigCache().getLastModifiedTs());
-        //check disk
-        String contentFromDisk1 = ConfigDiskServiceFactory.getInstance()
-            .getContent(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(),
-                configInfoWrapper1.getTenant());
-        assertEquals(configInfoWrapper1.getContent(), contentFromDisk1);
-        
-        //Check cache
-        CacheItem contentCache2 = ConfigCacheService.getContentCache(
-            GroupKey2.getKey(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(),
-                configInfoWrapper2.getTenant()));
-        assertEquals(MD5Utils.md5Hex(configInfoWrapper2.getContent(), "UTF-8"),
-            contentCache2.getConfigCache().getMd5());
-        // check if config2 is updated
-        assertEquals(timestamp, contentCache2.getConfigCache().getLastModifiedTs());
-        //check disk
-        String contentFromDisk2 = ConfigDiskServiceFactory.getInstance()
-            .getContent(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(),
-                configInfoWrapper2.getTenant());
-        assertEquals(configInfoWrapper2.getContent(), contentFromDisk2);
+        try (MockedConstruction<ThreadPoolExecutor> mockedExecutors =
+            mockExecutorConstruction(0)) {
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(true)));
+            
+            assertEquals(1, mockedExecutors.constructed().size());
+            verify(mockedExecutors.constructed().get(0)).shutdown();
+        }
     }
     
-    /**
-     * test dump all for all check task.
-     */
     @Test
-    void testDumpAllOnCheckAll() throws Exception {
-        ConfigInfoWrapper configInfoWrapper1 = createNewConfig(1);
-        ConfigInfoWrapper configInfoWrapper2 = createNewConfig(2);
-        long timestamp = System.currentTimeMillis();
-        configInfoWrapper1.setLastModified(timestamp);
-        configInfoWrapper2.setLastModified(timestamp);
+    void testProcessBreaksWhenPageItemsNull() {
         Page<ConfigInfoWrapper> page = new Page<>();
-        page.setTotalCount(2);
-        page.setPagesAvailable(2);
-        page.setPageNumber(1);
-        List<ConfigInfoWrapper> list = Arrays.asList(configInfoWrapper1, configInfoWrapper2);
-        page.setPageItems(list);
-        
-        Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(2L);
-        Mockito
-            .when(configInfoPersistService.findAllConfigInfoFragment(0,
-                PropertyUtil.getAllDumpPageSize(), false))
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(1L);
+        when(configInfoPersistService.findAllConfigInfoFragment(0L, PAGE_SIZE, false))
             .thenReturn(page);
         
-        ConfigInfoWrapper configInfoWrapperSingle1 = new ConfigInfoWrapper();
-        BeanUtils.copyProperties(configInfoWrapper1, configInfoWrapperSingle1);
-        configInfoWrapperSingle1.setContent("content123456");
-        Mockito.when(
-            configInfoPersistService.findConfigInfo(configInfoWrapper1.getDataId(),
-                configInfoWrapper1.getGroup(),
-                configInfoWrapper1.getTenant()))
-            .thenReturn(configInfoWrapperSingle1);
-        
-        ConfigInfoWrapper configInfoWrapperSingle2 = new ConfigInfoWrapper();
-        BeanUtils.copyProperties(configInfoWrapper2, configInfoWrapperSingle2);
-        configInfoWrapperSingle2.setContent("content123456222");
-        Mockito.when(
-            configInfoPersistService.findConfigInfo(configInfoWrapper2.getDataId(),
-                configInfoWrapper2.getGroup(),
-                configInfoWrapper2.getTenant()))
-            .thenReturn(configInfoWrapperSingle2);
-        
-        // For config 1, assign a latter time, to make sure that it would not be updated.
-        // For config 2, assign an earlier time, to make sure that it would be updated.
-        String md51 = MD5Utils.md5Hex(configInfoWrapper1.getContent(), "UTF-8");
-        String md52 = MD5Utils.md5Hex(configInfoWrapper2.getContent(), "UTF-8");
-        long latterTimestamp = timestamp + 999;
-        long earlierTimestamp = timestamp - 999;
-        String encryptedDataKey = "testEncryptedDataKey";
-        ConfigCacheService.dumpWithMd5(configInfoWrapper1.getDataId(),
-            configInfoWrapper1.getGroup(),
-            configInfoWrapper1.getTenant(), configInfoWrapper1.getContent(), md51, latterTimestamp,
-            "json",
-            encryptedDataKey);
-        ConfigCacheService.dumpWithMd5(configInfoWrapper2.getDataId(),
-            configInfoWrapper2.getGroup(),
-            configInfoWrapper2.getTenant(), configInfoWrapper2.getContent(), md52, earlierTimestamp,
-            "json",
-            encryptedDataKey);
-        
-        DumpAllTask dumpAllTask = new DumpAllTask(false);
-        boolean process = dumpAllProcessor.process(dumpAllTask);
-        
-        assertTrue(process);
-        
-        //Check cache
-        CacheItem contentCache1 = ConfigCacheService.getContentCache(
-            GroupKey2.getKey(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(),
-                configInfoWrapper1.getTenant()));
-        // check if config1 is not updated
-        assertEquals(md51, contentCache1.getConfigCache().getMd5());
-        assertEquals(latterTimestamp, contentCache1.getConfigCache().getLastModifiedTs());
-        //check disk
-        String contentFromDisk1 = ConfigDiskServiceFactory.getInstance()
-            .getContent(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(),
-                configInfoWrapper1.getTenant());
-        assertEquals(configInfoWrapper1.getContent(), contentFromDisk1);
-        
-        //Check cache
-        CacheItem contentCache2 = ConfigCacheService.getContentCache(
-            GroupKey2.getKey(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(),
-                configInfoWrapper2.getTenant()));
-        // check if config2 is updated
-        assertEquals(MD5Utils.md5Hex(configInfoWrapperSingle2.getContent(), "UTF-8"),
-            contentCache2.getConfigCache().getMd5());
-        assertEquals(configInfoWrapper2.getLastModified(),
-            contentCache2.getConfigCache().getLastModifiedTs());
-        //check disk
-        String contentFromDisk2 = ConfigDiskServiceFactory.getInstance()
-            .getContent(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(),
-                configInfoWrapper2.getTenant());
-        assertEquals(configInfoWrapperSingle2.getContent(), contentFromDisk2);
+        try (MockedConstruction<ThreadPoolExecutor> mockedExecutors =
+            mockExecutorConstruction(0)) {
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(false)));
+            
+            assertEquals(1, mockedExecutors.constructed().size());
+            verify(mockedExecutors.constructed().get(0), never()).execute(any(Runnable.class));
+        }
     }
     
+    @Test
+    void testProcessSkipsBlankTenant() {
+        ConfigInfoWrapper configInfo = newConfigInfo(1L, "dataId", "group", " ", "content");
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(1L);
+        when(configInfoPersistService.findAllConfigInfoFragment(0L, PAGE_SIZE, true))
+            .thenReturn(newPage(configInfo));
+        
+        try (MockedConstruction<ThreadPoolExecutor> mockedExecutors =
+            mockExecutorConstruction(0)) {
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(true)));
+            
+            verify(mockedExecutors.constructed().get(0), never()).execute(any(Runnable.class));
+        }
+    }
+    
+    @Test
+    void testProcessStartupDumpsConfigAndLoadsMetadata() {
+        ConfigInfoWrapper whiteList = newConfigInfo(1L,
+            ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "group", "tenant", "127.0.0.1");
+        ConfigInfoWrapper switchConfig = newConfigInfo(2L, SwitchService.SWITCH_META_DATA_ID,
+            "group", "tenant", "switch=true");
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(2L);
+        when(configInfoPersistService.findAllConfigInfoFragment(0L, PAGE_SIZE, true))
+            .thenReturn(newPage(whiteList, switchConfig));
+        
+        try (MockedConstruction<ThreadPoolExecutor> ignored = mockExecutorConstruction(0);
+            MockedStatic<ConfigCacheService> configCacheServiceMockedStatic =
+                mockDumpWithMd5(true);
+            MockedStatic<ClientIpWhiteList> clientIpWhiteListMockedStatic =
+                Mockito.mockStatic(ClientIpWhiteList.class);
+            MockedStatic<SwitchService> switchServiceMockedStatic =
+                Mockito.mockStatic(SwitchService.class)) {
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(true)));
+            
+            clientIpWhiteListMockedStatic.verify(() -> ClientIpWhiteList.load("127.0.0.1"));
+            switchServiceMockedStatic.verify(() -> SwitchService.load("switch=true"));
+            configCacheServiceMockedStatic.verify(() -> ConfigCacheService.dumpWithMd5(
+                eq(whiteList.getDataId()), eq("group"), eq("tenant"), eq("127.0.0.1"),
+                anyString(), eq(10L), eq("text"), eq("key")));
+            configCacheServiceMockedStatic.verify(() -> ConfigCacheService.dumpWithMd5(
+                eq(switchConfig.getDataId()), eq("group"), eq("tenant"), eq("switch=true"),
+                anyString(), eq(20L), eq("text"), eq("key")));
+        }
+    }
+    
+    @Test
+    void testProcessContinuesWhenDumpFails() {
+        ConfigInfoWrapper configInfo = newConfigInfo(1L, "dataId", "group", "tenant", "content");
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(1L);
+        when(configInfoPersistService.findAllConfigInfoFragment(0L, PAGE_SIZE, true))
+            .thenReturn(newPage(configInfo));
+        
+        try (MockedConstruction<ThreadPoolExecutor> ignored = mockExecutorConstruction(0);
+            MockedStatic<ConfigCacheService> configCacheServiceMockedStatic =
+                mockDumpWithMd5(false)) {
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(true)));
+            
+            configCacheServiceMockedStatic.verify(() -> ConfigCacheService.dumpWithMd5(
+                eq("dataId"), eq("group"), eq("tenant"), eq("content"), anyString(),
+                eq(10L), eq("text"), eq("key")));
+        }
+    }
+    
+    @Test
+    void testProcessCheckSkipsWhenCacheUnchanged() {
+        ConfigInfoWrapper configInfo = newConfigInfo(1L, "dataId", "group", "tenant", "content");
+        configInfo.setMd5("sameMd5");
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(1L);
+        when(configInfoPersistService.findAllConfigInfoFragment(0L, PAGE_SIZE, false))
+            .thenReturn(newPage(configInfo));
+        
+        try (MockedConstruction<ThreadPoolExecutor> mockedExecutors =
+            mockExecutorConstruction(0);
+            MockedStatic<ConfigCacheService> configCacheServiceMockedStatic =
+                Mockito.mockStatic(ConfigCacheService.class)) {
+            String groupKey = GroupKey2.getKey("dataId", "group", "tenant");
+            configCacheServiceMockedStatic
+                .when(() -> ConfigCacheService.getLastModifiedTs(groupKey))
+                .thenReturn(configInfo.getLastModified());
+            configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentMd5(groupKey))
+                .thenReturn("sameMd5");
+            
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(false)));
+            
+            verify(configInfoPersistService, never()).findConfigInfo(anyString(), anyString(),
+                anyString());
+            verify(mockedExecutors.constructed().get(0), never()).execute(any(Runnable.class));
+        }
+    }
+    
+    @Test
+    void testProcessCheckSkipsWhenChangedConfigDeleted() {
+        ConfigInfoWrapper configInfo = newConfigInfo(1L, "dataId", "group", "tenant", "content");
+        configInfo.setMd5("newMd5");
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(1L);
+        when(configInfoPersistService.findAllConfigInfoFragment(0L, PAGE_SIZE, false))
+            .thenReturn(newPage(configInfo));
+        when(configInfoPersistService.findConfigInfo("dataId", "group", "tenant"))
+            .thenReturn(null);
+        
+        try (MockedConstruction<ThreadPoolExecutor> mockedExecutors =
+            mockExecutorConstruction(0);
+            MockedStatic<ConfigCacheService> configCacheServiceMockedStatic =
+                Mockito.mockStatic(ConfigCacheService.class)) {
+            String groupKey = GroupKey2.getKey("dataId", "group", "tenant");
+            configCacheServiceMockedStatic
+                .when(() -> ConfigCacheService.getLastModifiedTs(groupKey))
+                .thenReturn(0L);
+            configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentMd5(groupKey))
+                .thenReturn("oldMd5");
+            
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(false)));
+            
+            verify(mockedExecutors.constructed().get(0), never()).execute(any(Runnable.class));
+        }
+    }
+    
+    @Test
+    void testProcessCheckDumpsChangedConfig() {
+        ConfigInfoWrapper configInfo = newConfigInfo(1L, "dataId", "group", "tenant", "summary");
+        configInfo.setMd5("newMd5");
+        ConfigInfoWrapper fullConfig = newConfigInfo(1L, "dataId", "group", "tenant", "content");
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(1L);
+        when(configInfoPersistService.findAllConfigInfoFragment(0L, PAGE_SIZE, false))
+            .thenReturn(newPage(configInfo));
+        when(configInfoPersistService.findConfigInfo("dataId", "group", "tenant"))
+            .thenReturn(fullConfig);
+        
+        try (MockedConstruction<ThreadPoolExecutor> ignored = mockExecutorConstruction(0);
+            MockedStatic<ConfigCacheService> configCacheServiceMockedStatic =
+                Mockito.mockStatic(ConfigCacheService.class)) {
+            String groupKey = GroupKey2.getKey("dataId", "group", "tenant");
+            configCacheServiceMockedStatic
+                .when(() -> ConfigCacheService.getLastModifiedTs(groupKey))
+                .thenReturn(0L);
+            configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentMd5(groupKey))
+                .thenReturn("oldMd5");
+            configCacheServiceMockedStatic.when(() -> ConfigCacheService.dumpWithMd5(
+                anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(),
+                anyString(), anyString())).thenReturn(true);
+            
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(false)));
+            
+            configCacheServiceMockedStatic.verify(() -> ConfigCacheService.dumpWithMd5(
+                eq("dataId"), eq("group"), eq("tenant"), eq("content"), anyString(),
+                eq(10L), eq("text"), eq("key")));
+        }
+    }
+    
+    @Test
+    void testProcessWaitsForUnfinishedTasks() {
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(0L);
+        
+        try (MockedConstruction<ThreadPoolExecutor> mockedExecutors =
+            mockExecutorConstruction(1, 0)) {
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(true)));
+            
+            verify(mockedExecutors.constructed().get(0), atLeast(2)).getQueue();
+        }
+    }
+    
+    @Test
+    void testProcessIgnoresWaitException() {
+        when(configInfoPersistService.findConfigMaxId()).thenReturn(0L);
+        
+        try (MockedConstruction<ThreadPoolExecutor> mockedExecutors =
+            mockExecutorConstructionWithWaitException()) {
+            assertTrue(dumpAllProcessor.process(new DumpAllTask(true)));
+            
+            verify(mockedExecutors.constructed().get(0), never()).shutdown();
+        }
+    }
+    
+    private ConfigInfoWrapper newConfigInfo(long id, String dataId, String group, String tenant,
+        String content) {
+        ConfigInfoWrapper configInfo = new ConfigInfoWrapper();
+        configInfo.setId(id);
+        configInfo.setDataId(dataId);
+        configInfo.setGroup(group);
+        configInfo.setTenant(tenant);
+        configInfo.setContent(content);
+        configInfo.setLastModified(id * 10L);
+        configInfo.setType("text");
+        configInfo.setEncryptedDataKey("key");
+        return configInfo;
+    }
+    
+    private Page<ConfigInfoWrapper> newPage(ConfigInfoWrapper... items) {
+        Page<ConfigInfoWrapper> page = new Page<>();
+        page.setPageItems(Arrays.asList(items));
+        return page;
+    }
+    
+    private MockedStatic<ConfigCacheService> mockDumpWithMd5(boolean result) {
+        MockedStatic<ConfigCacheService> configCacheServiceMockedStatic =
+            Mockito.mockStatic(ConfigCacheService.class);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.dumpWithMd5(
+            anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(),
+            anyString(), anyString())).thenReturn(result);
+        return configCacheServiceMockedStatic;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private MockedConstruction<ThreadPoolExecutor> mockExecutorConstruction(Integer... queueSizes) {
+        return Mockito.mockConstruction(ThreadPoolExecutor.class, (mock, context) -> {
+            doAnswer(invocation -> {
+                invocation.getArgument(0, Runnable.class).run();
+                return null;
+            }).when(mock).execute(any(Runnable.class));
+            BlockingQueue<Runnable> queue = Mockito.mock(BlockingQueue.class);
+            Integer[] remaining = Arrays.copyOfRange(queueSizes, 1, queueSizes.length);
+            when(queue.size()).thenReturn(queueSizes[0], remaining);
+            when(mock.getQueue()).thenReturn(queue);
+            when(mock.getActiveCount()).thenReturn(0);
+        });
+    }
+    
+    private MockedConstruction<ThreadPoolExecutor> mockExecutorConstructionWithWaitException() {
+        return Mockito.mockConstruction(ThreadPoolExecutor.class,
+            (mock, context) -> when(mock.getQueue()).thenThrow(new RuntimeException("failed")));
+    }
 }

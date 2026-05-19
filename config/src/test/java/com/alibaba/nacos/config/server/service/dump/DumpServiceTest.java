@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigMigrateService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
@@ -44,6 +47,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -126,6 +131,7 @@ class DumpServiceTest {
         configExecutorMocked.close();
         propertyUtilMockedStatic.close();
         historyConfigCleanerManagerMockedStatic.close();
+        ReflectionTestUtils.setField(ConfigDiskServiceFactory.class, "configDiskService", null);
     }
     
     @Test
@@ -166,7 +172,7 @@ class DumpServiceTest {
         Mockito.when(namespacePersistService.isExistTable(TAG_TABLE_NAME)).thenReturn(true);
         
         Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(300L);
-        dumpService.dumpOperate();
+        dumpService.init();
         
         // expect dump
         Mockito.verify(configInfoPersistService, times(1)).findAllConfigInfoFragment(0, 100, true);
@@ -196,6 +202,34 @@ class DumpServiceTest {
                 anyLong(), anyLong(),
                 eq(TimeUnit.MINUTES)),
             times(1));
+    }
+    
+    @Test
+    void dumpOperateThrowsNacosExceptionWhenClearAllFails() {
+        ConfigDiskService configDiskService = Mockito.mock(ConfigDiskService.class);
+        Mockito.doThrow(new RuntimeException("clear failed")).when(configDiskService).clearAll();
+        ReflectionTestUtils.setField(ConfigDiskServiceFactory.class, "configDiskService",
+            configDiskService);
+        
+        NacosException exception =
+            assertThrows(NacosException.class, () -> dumpService.dumpOperate());
+        
+        assertTrue(exception.getMessage().contains("bean construction failure"));
+    }
+    
+    @Test
+    void dumpOperateThrowsNacosExceptionWhenClearAllGrayFails() {
+        ConfigDiskService configDiskService = Mockito.mock(ConfigDiskService.class);
+        Mockito.doThrow(new RuntimeException("clear gray failed")).when(configDiskService)
+            .clearAllGray();
+        ReflectionTestUtils.setField(ConfigDiskServiceFactory.class, "configDiskService",
+            configDiskService);
+        Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(0L);
+        
+        NacosException exception =
+            assertThrows(NacosException.class, () -> dumpService.dumpOperate());
+        
+        assertTrue(exception.getMessage().contains("bean construction failure"));
     }
     
     @Test

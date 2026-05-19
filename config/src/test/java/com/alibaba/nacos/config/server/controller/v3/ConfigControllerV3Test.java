@@ -20,7 +20,9 @@ import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -51,6 +53,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -61,7 +64,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -639,6 +644,19 @@ class ConfigControllerV3Test {
     }
     
     @Test
+    void testImportConfigWithFileReadException() throws Exception {
+        MultipartFile file = Mockito.mock(MultipartFile.class);
+        when(file.getBytes()).thenThrow(new IOException("broken"));
+        when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
+        
+        Result<Map<String, Object>> result = configControllerV3.importAndPublishConfig(
+            new MockHttpServletRequest(), "test", "public", SameConfigPolicy.ABORT, file);
+        
+        assertEquals(100004, result.getCode());
+        assertEquals(0, result.getData().get("succCount"));
+    }
+    
+    @Test
     void testCloneConfigEmpty() throws Exception {
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post(
@@ -758,6 +776,38 @@ class ConfigControllerV3Test {
     }
     
     @Test
+    void testImportConfigWithMissingConfigFile() throws Exception {
+        ConfigMetadata configMetadata = new ConfigMetadata();
+        configMetadata.setMetadata(new ArrayList<>());
+        ConfigMetadata.ConfigExportItem item = new ConfigMetadata.ConfigExportItem();
+        item.setDataId("missing.json");
+        item.setGroup("group");
+        item.setType("json");
+        configMetadata.getMetadata().add(item);
+        
+        ZipUtils.UnZipResult unziped = new ZipUtils.UnZipResult(new ArrayList<>(),
+            new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
+                YamlParserUtil.dumpObject(configMetadata)));
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                .thenReturn(unziped);
+            when(namespacePersistService.tenantInfoCountByTenantId("public"))
+                .thenReturn(1);
+            
+            MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(
+                Constants.CONFIG_ADMIN_V3_PATH + "/import").file(file).param("src_user", "test")
+                .param("namespaceId", "public").param("policy", "ABORT");
+            
+            String actualValue =
+                mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+            String code = JacksonUtils.toObj(actualValue).get("code").toString();
+            assertEquals("100005", code);
+        }
+    }
+    
+    @Test
     void testCloneConfigEmptyQueryResult() throws Exception {
         ConfigCloneInfo info = new ConfigCloneInfo();
         info.setConfigId(1L);
@@ -793,6 +843,7 @@ class ConfigControllerV3Test {
         configAllInfo.setDataId("orig");
         configAllInfo.setGroup("origGroup");
         configAllInfo.setAppName("myApp");
+        configAllInfo.setEncryptedDataKey("cipherKey");
         configAllInfo.setId(1L);
         List<ConfigAllInfo> queryedDataList = new ArrayList<>();
         queryedDataList.add(configAllInfo);

@@ -16,11 +16,17 @@
 
 package com.alibaba.nacos.config.server.model.gray;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GrayRuleManagerTest {
@@ -49,6 +55,15 @@ class GrayRuleManagerTest {
     }
     
     @Test
+    void testTagGrayRuleBlankExpressionAndEqualsSameInstance() {
+        TagGrayRule rule = new TagGrayRule("", TagGrayRule.PRIORITY);
+        
+        assertEquals(TagGrayRule.TYPE_TAG, rule.getType());
+        assertEquals(TagGrayRule.VERSION, rule.getVersion());
+        assertEquals(rule, rule);
+    }
+    
+    @Test
     void testConstructGrayRuleUnknownTypeReturnsNull() {
         ConfigGrayPersistInfo info = new ConfigGrayPersistInfo(
             "unknown_type", "v999", "expr", 1);
@@ -61,6 +76,7 @@ class GrayRuleManagerTest {
         BetaGrayRule betaRule = new BetaGrayRule("1.1.1.1", BetaGrayRule.PRIORITY);
         ConfigGrayPersistInfo info =
             GrayRuleManager.constructConfigGrayPersistInfo(betaRule);
+        assertTrue(betaRule.equals(betaRule));
         assertEquals(BetaGrayRule.TYPE_BETA, info.getType());
         assertEquals(BetaGrayRule.VERSION, info.getVersion());
         assertEquals("1.1.1.1", info.getExpr());
@@ -92,5 +108,133 @@ class GrayRuleManagerTest {
             TagGrayRule.TYPE_TAG, TagGrayRule.VERSION));
         assertNull(GrayRuleManager.getClassByTypeAndVersion(
             "nonexist", "v1"));
+    }
+    
+    @Test
+    void testConstructGrayRuleThrowsWhenRegisteredClassHasNoExpectedConstructor()
+        throws Exception {
+        Map<String, Class<?>> grayRuleMap = getGrayRuleMap();
+        String key = BrokenGrayRule.TYPE + GrayRuleManager.SPLIT + BrokenGrayRule.VERSION;
+        grayRuleMap.put(key, BrokenGrayRule.class);
+        ConfigGrayPersistInfo info = new ConfigGrayPersistInfo(BrokenGrayRule.TYPE,
+            BrokenGrayRule.VERSION, "broken", 1);
+        try {
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> GrayRuleManager.constructGrayRule(info));
+            assertTrue(exception.getMessage().contains(BrokenGrayRule.TYPE));
+            assertTrue(exception.getMessage().contains(BrokenGrayRule.VERSION));
+        } finally {
+            grayRuleMap.remove(key);
+        }
+    }
+    
+    @Test
+    void testAbstractGrayRuleDefaultConstructor() {
+        ValidGrayRule rule = new ValidGrayRule();
+        
+        assertTrue(rule.isValid());
+        assertNull(rule.getRawGrayRuleExp());
+        assertEquals(0, rule.getPriority());
+    }
+    
+    @Test
+    void testAbstractGrayRuleMarksInvalidWhenParseThrows() {
+        InvalidGrayRule rule = new InvalidGrayRule("invalid", 7);
+        
+        assertFalse(rule.isValid());
+        assertEquals("invalid", rule.getRawGrayRuleExp());
+        assertEquals(0, rule.getPriority());
+        rule.setPriority(9);
+        assertEquals(9, rule.getPriority());
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, Class<?>> getGrayRuleMap() throws Exception {
+        Field field = GrayRuleManager.class.getDeclaredField("GRAY_RULE_MAP");
+        field.setAccessible(true);
+        return (Map<String, Class<?>>) field.get(null);
+    }
+    
+    private static class BrokenGrayRule extends AbstractGrayRule {
+        
+        private static final String TYPE = "broken";
+        
+        private static final String VERSION = "v1";
+        
+        @Override
+        protected void parse(String rawGrayRule) {
+        }
+        
+        @Override
+        public boolean match(Map<String, String> labels) {
+            return false;
+        }
+        
+        @Override
+        public String getType() {
+            return TYPE;
+        }
+        
+        @Override
+        public String getVersion() {
+            return VERSION;
+        }
+    }
+    
+    private static class ValidGrayRule extends AbstractGrayRule {
+        
+        private static final String TYPE = "valid";
+        
+        private static final String VERSION = "v1";
+        
+        @Override
+        protected void parse(String rawGrayRule) {
+        }
+        
+        @Override
+        public boolean match(Map<String, String> labels) {
+            return false;
+        }
+        
+        @Override
+        public String getType() {
+            return TYPE;
+        }
+        
+        @Override
+        public String getVersion() {
+            return VERSION;
+        }
+    }
+    
+    private static class InvalidGrayRule extends AbstractGrayRule {
+        
+        private static final String TYPE = "invalid";
+        
+        private static final String VERSION = "v1";
+        
+        InvalidGrayRule(String rawGrayRuleExp, int priority) {
+            super(rawGrayRuleExp, priority);
+        }
+        
+        @Override
+        protected void parse(String rawGrayRule) throws NacosException {
+            throw new NacosException(NacosException.INVALID_PARAM, "invalid");
+        }
+        
+        @Override
+        public boolean match(Map<String, String> labels) {
+            return false;
+        }
+        
+        @Override
+        public String getType() {
+            return TYPE;
+        }
+        
+        @Override
+        public String getVersion() {
+            return VERSION;
+        }
     }
 }

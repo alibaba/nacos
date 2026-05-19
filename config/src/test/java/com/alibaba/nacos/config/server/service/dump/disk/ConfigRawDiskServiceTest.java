@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.dump.disk;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -34,6 +35,7 @@ import java.nio.file.Paths;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigRawDiskServiceTest {
     
@@ -86,6 +88,19 @@ class ConfigRawDiskServiceTest {
     }
     
     @Test
+    void testTargetGrayFileWithInvalidParam() throws Exception {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetGrayFile", String.class,
+            String.class, String.class, String.class);
+        method.setAccessible(true);
+        
+        InvocationTargetException exception =
+            assertThrows(InvocationTargetException.class,
+                () -> method.invoke(null, "dataId", "group", "tenant", "../gray"));
+        
+        assertTrue(exception.getCause() instanceof NacosRuntimeException);
+    }
+    
+    @Test
     void testSaveToDiskAndGetContent() throws IOException {
         try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
             envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
@@ -102,6 +117,19 @@ class ConfigRawDiskServiceTest {
             envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
             ConfigRawDiskService service = new ConfigRawDiskService();
             assertNull(service.getContent("noexist", "group", ""));
+        }
+    }
+    
+    @Test
+    void testGetContentReturnsNullWhenTargetIsDirectory() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            File target = ConfigRawDiskService.targetFile("dirData", "group", "");
+            FileUtils.forceMkdir(target);
+            
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            
+            assertNull(service.getContent("dirData", "group", ""));
         }
     }
     
@@ -161,6 +189,40 @@ class ConfigRawDiskServiceTest {
             service.clearAllGray();
             assertNull(service.getGrayContent("d1", "g1", "", "gn"));
             assertNull(service.getGrayContent("d2", "g2", "t1", "gn2"));
+        }
+    }
+    
+    @Test
+    void testClearAllWhenDeleteFails() {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<FileUtils> fileUtilsMock = Mockito.mockStatic(FileUtils.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            assertTrue(new File(tempDir, "data/config-data").mkdirs());
+            assertTrue(new File(tempDir, "data/tenant-config-data").mkdirs());
+            fileUtilsMock.when(() -> FileUtils.deleteQuietly(Mockito.any(File.class)))
+                .thenReturn(false);
+            
+            new ConfigRawDiskService().clearAll();
+            
+            fileUtilsMock.verify(() -> FileUtils.deleteQuietly(Mockito.any(File.class)),
+                Mockito.times(2));
+        }
+    }
+    
+    @Test
+    void testClearAllGrayWhenDeleteFails() {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<FileUtils> fileUtilsMock = Mockito.mockStatic(FileUtils.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            assertTrue(new File(tempDir, "data/gray-data").mkdirs());
+            assertTrue(new File(tempDir, "data/tenant-gray-data").mkdirs());
+            fileUtilsMock.when(() -> FileUtils.deleteQuietly(Mockito.any(File.class)))
+                .thenReturn(false);
+            
+            new ConfigRawDiskService().clearAllGray();
+            
+            fileUtilsMock.verify(() -> FileUtils.deleteQuietly(Mockito.any(File.class)),
+                Mockito.times(2));
         }
     }
     

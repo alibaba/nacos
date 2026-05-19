@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
@@ -48,6 +49,7 @@ import java.util.List;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -330,6 +332,80 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
     }
     
     @Test
+    void testAddConfigInfo4GrayWithBlankOptionalValuesReturnsFalseWhenStateMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        
+        ConfigOperateResult result = embeddedConfigInfoGrayPersistService.addConfigInfo4Gray(
+            configInfo, " ", " ", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+        embeddedStorageContextHolderMockedStatic.verify(
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), any(), eq("dataId"),
+                eq("group"), eq(StringUtils.EMPTY), eq(StringUtils.EMPTY), eq(StringUtils.EMPTY),
+                eq(StringUtils.EMPTY), eq("content"), eq(MD5Utils.md5Hex("content",
+                    Constants.ENCODE)),
+                eq("srcIp"), eq("srcUser"), any(Timestamp.class),
+                any(Timestamp.class)),
+            times(1));
+    }
+    
+    @Test
+    void testUpdateConfigInfo4GrayReturnsFalseWhenOldGrayMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        
+        ConfigOperateResult result = embeddedConfigInfoGrayPersistService.updateConfigInfo4Gray(
+            configInfo, " ", " ", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4GrayCasReturnsFalseWhenOldGrayMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        
+        ConfigOperateResult result = embeddedConfigInfoGrayPersistService.updateConfigInfo4GrayCas(
+            configInfo, " ", " ", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4GrayCasReturnsFalseWhenBlockUpdateFails() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        configInfo.setMd5("oldMd5");
+        ConfigInfoGrayWrapper oldGray = new ConfigInfoGrayWrapper();
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(oldGray);
+        when(databaseOperate.blockUpdate()).thenReturn(false);
+        
+        ConfigOperateResult result = embeddedConfigInfoGrayPersistService.updateConfigInfo4GrayCas(
+            configInfo, "", "", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+    }
+    
+    @Test
+    void testRemoveConfigInfoGrayThrowsWhenOldGrayMissing() {
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        
+        assertThrows(NullPointerException.class,
+            () -> embeddedConfigInfoGrayPersistService.removeConfigInfoGray(
+                "dataId", "group", null, "", "srcIp", "srcUser"));
+    }
+    
+    @Test
     public void testRemoveConfigInfoGrayName() {
         String dataId = "dataId1112222";
         String group = "group22";
@@ -397,6 +473,14 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
     }
     
     @Test
+    void testConfigInfoGrayCountRejectsNullResult() {
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(Integer.class))).thenReturn(null);
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> embeddedConfigInfoGrayPersistService.configInfoGrayCount());
+    }
+    
+    @Test
     public void testFindAllConfigInfoGrayForDumpAll() {
         
         //mock count
@@ -436,6 +520,19 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         List<String> configInfoGrays =
             embeddedConfigInfoGrayPersistService.findConfigInfoGrays(dataId, group, tenant);
         assertEquals(mockedGrays, configInfoGrays);
+    }
+    
+    @Test
+    void testFindConfigInfoGraysUsesEmptyTenant() {
+        List<String> mockedGrays = Arrays.asList("gray1", "gray2");
+        Mockito.when(databaseOperate.queryMany(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY}), eq(String.class)))
+            .thenReturn(mockedGrays);
+        
+        List<String> result = embeddedConfigInfoGrayPersistService.findConfigInfoGrays(
+            "dataId", "group", null);
+        
+        assertEquals(mockedGrays, result);
     }
     
     @Test

@@ -41,6 +41,7 @@ import java.util.List;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -259,6 +260,18 @@ class EmbeddedHistoryConfigInfoPersistServiceImplTest {
         int count = embeddedHistoryConfigInfoPersistService.findConfigHistoryCountByTime(timestamp);
         assertEquals(308, count);
         
+    }
+    
+    @Test
+    void testFindConfigHistoryCountByTimeThrowsWhenResultNull() {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        Mockito
+            .when(databaseOperate.queryOne(anyString(), eq(new Object[] {timestamp}),
+                eq(Integer.class)))
+            .thenReturn(null);
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> embeddedHistoryConfigInfoPersistService.findConfigHistoryCountByTime(timestamp));
     }
     
     @Test

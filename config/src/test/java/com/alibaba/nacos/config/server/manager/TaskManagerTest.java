@@ -134,6 +134,19 @@ class TaskManagerTest {
     }
     
     @Test
+    void testAwaitWaitsForProcessing() throws InterruptedException {
+        when(taskProcessor.process(abstractTask)).thenAnswer(invocation -> {
+            TimeUnit.MILLISECONDS.sleep(100);
+            return true;
+        });
+        taskManager.addTask("awaitTest", abstractTask);
+        
+        taskManager.await();
+        
+        assertTrue(taskManager.isEmpty());
+    }
+    
+    @Test
     void testAwaitWithTimeoutWhenEmpty() throws InterruptedException {
         assertTrue(taskManager.isEmpty());
         boolean result = taskManager.await(100, TimeUnit.MILLISECONDS);
@@ -162,5 +175,15 @@ class TaskManagerTest {
         ObjectName oName = new ObjectName(
             TaskManagerTest.class.getName() + ":type=" + TaskManager.class.getSimpleName());
         assertTrue(ManagementFactory.getPlatformMBeanServer().isRegistered(oName));
+    }
+    
+    @Test
+    void testInitIgnoresInvalidObjectName() {
+        TaskManager invalidTaskManager = new TaskManager("invalid:name");
+        try {
+            invalidTaskManager.init();
+        } finally {
+            invalidTaskManager.close();
+        }
     }
 }
