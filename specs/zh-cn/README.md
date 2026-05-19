@@ -22,6 +22,7 @@
 
 - [Nacos 设计规范](design/nacos-design-spec.md)
 - [资源模型规范](design/resource-model-spec.md)
+- [兼容与废弃策略规范](design/compatibility-deprecation-spec.md)
 - [基础能力规范](design/foundation-capabilities-spec.md)
 - [服务端生命周期与环境配置规范](design/foundation-server-lifecycle-env-spec.md)
 - [集群成员规范](design/foundation-cluster-membership-spec.md)

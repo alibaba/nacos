@@ -58,7 +58,8 @@ Config publish 或 delete 操作必须：
 
 CAS 写入只有在持久化层确认 expected MD5 时才成功。CAS 失败不得发布变更事件。
 
-聚合配置不属于标准 Config 能力模型，不得被引入新的 consistency 规则。
+聚合配置不属于标准 Config 能力模型，不得被引入新的 consistency 规则；其兼容状态遵循
+[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)。
 
 ## 4. 外部存储可见性
 

@@ -126,12 +126,10 @@ for diagnostics, but runtime behavior should prefer ability status whenever an
 ability key exists.
 
 Legacy fallback must be documented by the domain spec. A fallback can be
-removed only through a shared compatibility and deprecation strategy once that
-strategy is defined as a separate spec.
+removed only according to the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 ## 7. Pending Issues
 
-- A shared compatibility and deprecation spec should define when an ability-gated
-  fallback can be removed.
 - The public list of ability keys should be generated from source to avoid
   documentation drift.

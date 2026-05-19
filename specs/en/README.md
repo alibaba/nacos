@@ -23,6 +23,7 @@ extension mechanisms, and cross-cutting security rules.
 
 - [Nacos Design Spec](design/nacos-design-spec.md)
 - [Resource Model Spec](design/resource-model-spec.md)
+- [Compatibility And Deprecation Spec](design/compatibility-deprecation-spec.md)
 - [Foundation Capabilities Spec](design/foundation-capabilities-spec.md)
 - [Server Lifecycle And Environment Configuration Spec](design/foundation-server-lifecycle-env-spec.md)
 - [Cluster Membership Spec](design/foundation-cluster-membership-spec.md)

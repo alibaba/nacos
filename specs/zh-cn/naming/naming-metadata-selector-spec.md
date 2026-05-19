@@ -101,7 +101,8 @@ Service metadata、cluster metadata 和 instance metadata 操作通过 CP metada
 ## 6. 待移除问题
 
 - API 定义的 service selector 字段和请求参数属于遗留兼容行为。新 API 和 SDK 规范应将其废弃；
-  等兼容要求允许后，应从正式 Naming 行为中移除。
+  等兼容要求允许后，应按照[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)
+  从正式 Naming 行为中移除。
 
 ## 7. 相关规范
 
@@ -109,3 +110,4 @@ Service metadata、cluster metadata 和 instance metadata 操作通过 CP metada
 - [Naming 健康检查与保护规范](naming-health-protection-spec.md)
 - [Naming 一致性与客户端状态规范](naming-consistency-client-spec.md)
 - [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)
+- [兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)

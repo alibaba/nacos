@@ -26,6 +26,7 @@ Spec hierarchy:
 ```text
 Nacos design
   -> Resource model
+  -> Compatibility and deprecation
   -> Foundation capabilities
      -> Server lifecycle and environment configuration
      -> Cluster membership
@@ -51,6 +52,7 @@ Nacos design
 ```text
 Nacos 顶层设计
   -> 资源模型
+  -> 兼容与废弃策略
   -> 基础能力
      -> 服务端生命周期与环境配置
      -> 集群成员

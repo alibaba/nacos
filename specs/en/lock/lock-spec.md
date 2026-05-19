@@ -66,6 +66,8 @@ The following compatibility guarantees are not provided yet:
 
 Applications that require strong production-grade lock guarantees should verify
 the current behavior against their failure model before relying on this module.
+Experimental compatibility expectations follow the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 ## 3. Resource Model
 

@@ -115,7 +115,8 @@ after recovery.
 - API-defined service selector fields and request parameters are legacy
   compatibility behavior. They should be deprecated in new API and SDK specs,
   and removed from the formal Naming behavior after compatibility requirements
-  allow it.
+  allow it, following the
+  [Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 ## 7. Related Specs
 
@@ -123,3 +124,4 @@ after recovery.
 - [Naming Health And Protection Spec](naming-health-protection-spec.md)
 - [Naming Consistency And Client State Spec](naming-consistency-client-spec.md)
 - [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)
+- [Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md)

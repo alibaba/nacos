@@ -114,6 +114,7 @@ English:
 - Design foundation:
   [Nacos Design Spec](./specs/en/design/nacos-design-spec.md),
   [Resource Model Spec](./specs/en/design/resource-model-spec.md),
+  [Compatibility And Deprecation Spec](./specs/en/design/compatibility-deprecation-spec.md),
   [Foundation Capabilities Spec](./specs/en/design/foundation-capabilities-spec.md),
   [Server Lifecycle And Environment Configuration Spec](./specs/en/design/foundation-server-lifecycle-env-spec.md),
   [Cluster Membership Spec](./specs/en/design/foundation-cluster-membership-spec.md),
@@ -186,6 +187,7 @@ Simplified Chinese:
 - 设计基础：
   [Nacos 设计规范](./specs/zh-cn/design/nacos-design-spec.md)，
   [资源模型规范](./specs/zh-cn/design/resource-model-spec.md)，
+  [兼容与废弃策略规范](./specs/zh-cn/design/compatibility-deprecation-spec.md)，
   [基础能力规范](./specs/zh-cn/design/foundation-capabilities-spec.md)，
   [服务端生命周期与环境配置规范](./specs/zh-cn/design/foundation-server-lifecycle-env-spec.md)，
   [集群成员规范](./specs/zh-cn/design/foundation-cluster-membership-spec.md)，

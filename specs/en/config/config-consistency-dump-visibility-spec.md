@@ -64,7 +64,8 @@ CAS writes are successful only when the persistence layer confirms the expected
 MD5. A failed CAS must not publish a change event.
 
 Aggregation config is outside the standard Config capability model and must not
-be introduced into new consistency rules.
+be introduced into new consistency rules. Its compatibility status is governed
+by the [Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 ## 4. External Storage Visibility
 

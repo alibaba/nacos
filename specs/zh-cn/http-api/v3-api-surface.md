@@ -193,4 +193,5 @@ REST 风格 API 替代。这些旧端点应视为废弃兼容 API：
 - Pipeline 中不符合当前 `/list` 和 `/detail` 形态的 legacy REST 风格端点。
 
 兼容端点可以在过渡期内继续保留，但面向用户的文档应以新 API 作为主要契约。
-废弃端点只应出现在兼容章节中，并提供迁移说明。
+废弃端点只应出现在兼容章节中，并按照
+[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)提供迁移说明。

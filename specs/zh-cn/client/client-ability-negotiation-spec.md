@@ -105,9 +105,9 @@ Unknown 不是成功。新功能应优先返回 fail-fast unsupported error，�
 能力协商是混合版本兼容机制。新增运行时行为前应优先使用能力协商，而不是增加临时版本判断。版本号
 可以用于日志和诊断，但只要存在 ability key，运行时行为应优先使用 ability status。
 
-Legacy fallback 必须由领域规范说明。Fallback 的移除应遵循未来单独定义的共享兼容与废弃策略规范。
+Legacy fallback 必须由领域规范说明。Fallback 的移除应遵循
+[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)。
 
 ## 7. 待处理问题
 
-- 共享兼容与废弃策略规范需要定义 ability-gated fallback 的移除条件。
 - 公开 ability key 列表应由源码生成，避免文档漂移。

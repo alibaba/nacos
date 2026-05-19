@@ -65,7 +65,8 @@ AI Registry does not own:
 - **Fast evolution tolerance**: AI protocols and resource formats change
   quickly. Specs may need incompatible or major revisions when MCP, A2A, agent
   packaging, or model-tool ecosystems change. Such revisions must state
-  migration, compatibility, and deprecation behavior.
+  migration, compatibility, and deprecation behavior according to the
+  [Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 ## 3. Standard AI Resource Model
 

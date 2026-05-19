@@ -209,4 +209,5 @@ deprecated compatibility APIs:
 Compatibility endpoints may remain available for a transition period, but the
 user-facing documentation should describe the new APIs as the primary contract.
 Deprecated endpoints should be documented only in compatibility sections with
-migration guidance.
+migration guidance, following the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).

@@ -65,7 +65,8 @@ artifacts and are pending removal.
 New specs, APIs, SDKs, and user-facing documents must not define formal behavior
 based on aggregation config. Some database fields may remain temporarily to
 avoid forcing users to adjust schemas frequently. The future standard database
-schema should remove these fields when the compatibility window allows.
+schema should remove these fields when the compatibility window allows, following
+the [Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 ## 4. Enforcement
 
