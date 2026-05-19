@@ -116,5 +116,5 @@ Push delivery order 只在某个节点的本地 event 和 task path 内成立。
 ## 8. 待处理问题
 
 - AI runtime push 和 reconnect 行为应在 AI SDK subscription API 稳定后进一步细化。
-- 后续 trace/audit event schema 应定义共享的 push retry label、timeout label 和 reconnect recovery
-  label。
+- push retry、timeout 和 reconnect recovery 观测应遵循
+  [可观测钩子规范](../design/foundation-observability-hooks-spec.md)中的共享字段和 label 指引。

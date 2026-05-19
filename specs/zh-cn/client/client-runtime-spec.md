@@ -127,6 +127,6 @@ Lock 语义由[分布式锁规范](../lock/lock-spec.md)定义。
 ## 7. 待处理问题
 
 - 多语言 SDK 尚未完全对齐 server list 刷新、failover、redo、能力协商和 TLS 行为。
-- 客户端运行时指标分散在多个模块中。后续 trace/audit/metric schema 规范应定义稳定的事件
-  与 label 字段。
+- 客户端运行时指标和 trace 字段应遵循
+  [可观测钩子规范](../design/foundation-observability-hooks-spec.md)中的共享字段和 label 指引。
 - 如果客户端鉴权、TLS 和加解密行为继续扩展，可能需要在当前插件和连接契约之下拆分子规范。

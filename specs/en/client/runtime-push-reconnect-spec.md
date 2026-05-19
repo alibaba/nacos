@@ -134,5 +134,6 @@ Domain specs must define when a local serving view is visible:
 
 - AI runtime push and reconnect behavior should be refined when AI SDK
   subscription APIs stabilize.
-- A future trace/audit event schema should define shared push retry labels,
-  timeout labels, and reconnect recovery labels.
+- Push retry, timeout, and reconnect recovery observations should follow the
+  shared field and label guidance in the
+  [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).

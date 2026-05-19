@@ -124,7 +124,10 @@ additional ports.
 
 The following items are current compatibility or deprecation examples:
 
-- v1/v2 HTTP APIs and pre-spec v3 compatibility endpoints;
+- v1/v2 HTTP APIs, which have been removed from the main server distribution
+  and migrated to the external
+  [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter);
+- pre-spec v3 compatibility endpoints;
 - AI Prompt legacy endpoints and legacy Pipeline REST-style endpoints;
 - Naming API-defined service selector fields and request parameters;
 - Config aggregation fields and related database columns;
@@ -136,7 +139,28 @@ The following items are current compatibility or deprecation examples:
 This list is not exhaustive. Each domain spec remains responsible for exact
 domain behavior and migration details.
 
-## 9. Related Specs
+## 9. Legacy HTTP API Adapter
+
+Starting with the Nacos 3.2.0 line, legacy v1 and v2 HTTP APIs are no longer
+part of the default Nacos server distribution. They are a separate compatibility
+surface provided by
+[nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter).
+
+Rules:
+
+- v3 HTTP APIs and current SDKs are the canonical migration target.
+- The legacy adapter is a temporary migration aid, not a renewed API contract.
+- The adapter must be installed explicitly, such as by placing its jar in the
+  Nacos `plugins` directory or adding it as a dependency for embedded/custom
+  applications.
+- The adapter version must match the target Nacos server version.
+- The adapter is not guaranteed to be supported by future Nacos versions and is
+  not the place to define new v1/v2 behavior.
+
+Domain specs should mention legacy v1/v2 behavior only as migration context or
+when a current compatibility path depends on it.
+
+## 10. Related Specs
 
 - [HTTP API Spec](../http-api/api-spec.md)
 - [V3 API Surface](../http-api/v3-api-surface.md)
@@ -144,4 +168,5 @@ domain behavior and migration details.
 - [Client Ability Negotiation Spec](../client/client-ability-negotiation-spec.md)
 - [Resource Model Spec](resource-model-spec.md)
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
+- [Integration And Adapter Spec](../integration/integration-adapter-spec.md)
 - [Plugin Specs](../plugin/README.md)

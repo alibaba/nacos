@@ -56,6 +56,7 @@
 
 ## 扩展模型
 
+- [集成规范](integration/README.md)
 - [插件规范](plugin/README.md)
 
 ## 安全模型

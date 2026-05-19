@@ -173,6 +173,7 @@ English:
   [Console Spec](./specs/en/console/console-spec.md),
   [Distributed Lock Spec](./specs/en/lock/lock-spec.md)
 - Extension model:
+  [Integration And Adapter Spec](./specs/en/integration/integration-adapter-spec.md),
   [Plugin Specs](./specs/en/plugin/README.md)
 - Security model:
   [Auth And Permission Spec](./specs/en/auth/auth-permission-spec.md),
@@ -246,6 +247,7 @@ Simplified Chinese:
   [Console 规范](./specs/zh-cn/console/console-spec.md)，
   [分布式锁规范](./specs/zh-cn/lock/lock-spec.md)
 - 扩展模型：
+  [集成与适配器规范](./specs/zh-cn/integration/integration-adapter-spec.md)，
   [插件规范](./specs/zh-cn/plugin/README.md)
 - 安全模型：
   [鉴权与权限规范](./specs/zh-cn/auth/auth-permission-spec.md)，

@@ -63,6 +63,11 @@ The plugin is exposed to the core plugin manager as type `trace`.
 Trace events carry Nacos [resource information](../design/resource-model-spec.md)
 such as event type, event time, namespace, group, and resource name. Domain
 events may add extra fields.
+Common field names, sanitization rules, and metric label boundaries are defined
+by the
+[Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
+This plugin spec does not require every domain to emit identical business
+fields.
 
 Subscribers must treat events as immutable facts. They must not mutate Nacos
 resources from the trace callback unless the owning domain explicitly documents

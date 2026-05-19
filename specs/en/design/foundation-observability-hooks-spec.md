@@ -128,6 +128,38 @@ The Trace plugin surface is defined by the
 must also follow the
 [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md).
 
+### 5.1 Field Guidance
+
+Trace and audit payloads should keep a small stable base field set:
+
+| Field category | Examples | Rule |
+| --- | --- | --- |
+| Signal identity | `eventType`, `signalType`, `module`, `domain` | Identify what happened without encoding business payload. |
+| Resource identity | `resourceType`, `namespaceId`, `groupName`, `resourceName`, `version` | Use canonical resource names when available. |
+| Operation context | `action`, `operation`, `phase`, `requestId`, `traceId` | Describe the operation and its phase. |
+| Actor and source | `user`, `sourceIp`, `clientId`, `connectionId`, `member` | Include only when available and safe. |
+| Result | `success`, `errorCode`, `exceptionClass`, `reason`, `latency` | Distinguish success, failure, and cost. |
+| Extension | `labels`, `metadata`, `ext` | Keep bounded and sanitized. |
+
+Metrics should use low-cardinality labels such as `module`, `operation`,
+`protocol`, `result`, `errorCode`, `exceptionClass`, `registry`, `queue`,
+`task`, `connectionType`, or `memberRole`. Stable metrics must not use raw
+`dataId`, `serviceName`, `instanceIp`, `clientId`, Config content, AI artifact
+body, tokens, or credentials as labels. High-cardinality facts should use TopN
+registries, trace/audit logs, or diagnostic APIs instead.
+
+Domain-owned examples:
+
+- Config may include Config identity, publish/query/listen/dump/notify phase,
+  and result fields, but not Config content.
+- Naming may include service identity, instance operation reason, push phase,
+  and health-check phase, but not arbitrary instance metadata payloads.
+- AI may include AI resource identity, version, status, review result,
+  visibility result, and pipeline stage, but not artifact bodies or model
+  credentials.
+- Core and foundation modules may include member identity, request type, raft
+  group, task name, queue name, connection type, and lifecycle phase.
+
 ## 6. Health, Readiness, And Server State
 
 Liveness answers whether the process is running. Readiness answers whether

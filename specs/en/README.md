@@ -57,6 +57,7 @@ extension mechanisms, and cross-cutting security rules.
 
 ## Extension Model
 
+- [Integration Specs](integration/README.md)
 - [Plugin Specs](plugin/README.md)
 
 ## Security Model

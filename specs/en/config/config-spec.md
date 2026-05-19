@@ -143,12 +143,7 @@ the Config domain:
 - Gray release state is subordinate to a Config resource. It must not create a
   second top-level Config identity.
 
-## 7. Pending Specs
-
-- TODO: Define domain-specific trace and audit event fields across Config,
-  Naming, AI, and Core operation domains. Shared observability boundaries are
-  defined by the
-  [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
+## 7. Foundation Alignment
 
 Shared datasource, embedded/external storage, repository, dump, and cache
 boundaries are defined by the
@@ -161,3 +156,5 @@ Shared task execution and local event boundaries are defined by the
 [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
 Shared observability boundaries are defined by the
 [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
+Config trace and audit fields should follow the shared field guidance in that
+spec and must not include full Config content.

@@ -34,7 +34,8 @@
 
 本文档不覆盖：
 
-- v1/v2 兼容 API；
+- v1/v2 兼容 API，它们已经外置到
+  [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)；
 - gRPC 请求和响应契约；
 - 未作为 v3 HTTP Controller 暴露的内部集群 API；
 - AI Registry adaptor API，它有独立的兼容性边界。

@@ -146,7 +146,8 @@ contract instead of hiding the failure as a domain success.
 
 - Multi-language SDKs have not yet fully aligned on server list refresh,
   failover, redo, ability negotiation, and TLS behavior.
-- Client runtime metrics exist in several modules. A future
-  trace/audit/metric schema spec should define stable event and label fields.
+- Client runtime metrics and trace fields should follow the shared field and
+  label guidance in the
+  [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
 - Client-side auth, TLS, and encryption behavior may need separate child specs
   if they grow beyond the current plugin and connection contracts.

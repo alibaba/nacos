@@ -104,6 +104,35 @@ label、visibility 和生命周期操作写入 JSON 风格 trace 日志。
 Trace 插件接口面由[Trace 插件规范](../plugin/trace-plugin-spec.md)定义。本地 trace event 分发还必须
 遵循[事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)。
 
+### 5.1 字段指引
+
+Trace 和审计 payload 应保持一组小而稳定的基础字段：
+
+| 字段类别 | 示例 | 规则 |
+| --- | --- | --- |
+| 信号身份 | `eventType`、`signalType`、`module`、`domain` | 说明发生了什么，不编码业务 payload。 |
+| 资源身份 | `resourceType`、`namespaceId`、`groupName`、`resourceName`、`version` | 优先使用标准资源名称。 |
+| 操作上下文 | `action`、`operation`、`phase`、`requestId`、`traceId` | 描述操作及其阶段。 |
+| 操作者和来源 | `user`、`sourceIp`、`clientId`、`connectionId`、`member` | 仅在可获得且安全时包含。 |
+| 结果 | `success`、`errorCode`、`exceptionClass`、`reason`、`latency` | 区分成功、失败和成本。 |
+| 扩展 | `labels`、`metadata`、`ext` | 必须有边界且经过脱敏。 |
+
+指标应使用低基数 label，例如 `module`、`operation`、`protocol`、`result`、`errorCode`、
+`exceptionClass`、`registry`、`queue`、`task`、`connectionType` 或 `memberRole`。
+稳定指标不得把原始 `dataId`、`serviceName`、`instanceIp`、`clientId`、Config 内容、AI artifact
+正文、token 或凭据作为 label。高基数事实应使用 TopN registry、trace/audit 日志或诊断 API 表达。
+
+领域拥有的字段示例：
+
+- Config 可以包含 Config 身份、publish/query/listen/dump/notify 阶段和结果字段，但不得包含
+  Config content。
+- Naming 可以包含 service 身份、instance 操作原因、push 阶段和 health-check 阶段，但不得包含
+  任意 instance metadata payload。
+- AI 可以包含 AI resource 身份、版本、状态、review 结果、visibility 结果和 pipeline stage，
+  但不得包含 artifact 正文或模型凭据。
+- Core 和基础模块可以包含 member 身份、request type、raft group、task name、queue name、
+  connection type 和生命周期阶段。
+
 ## 6. 健康、就绪与服务端状态
 
 Liveness 表示进程是否运行。Readiness 表示 Nacos 是否应接收普通流量。模块就绪检查通过

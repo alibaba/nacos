@@ -35,7 +35,8 @@ v3 prefixes after the Nacos web context path:
 
 This document does not cover:
 
-- v1/v2 compatibility APIs;
+- v1/v2 compatibility APIs, which are externalized to
+  [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter);
 - gRPC request and response contracts;
 - internal cluster APIs that are not exposed as v3 HTTP controllers;
 - the AI Registry adaptor API, which has a separate compatibility surface.

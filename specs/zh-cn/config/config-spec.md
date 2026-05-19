@@ -122,10 +122,7 @@ Config 可以集成扩展机制，但 Config 领域的归属不转移：
 - `appName`、`desc`、`configTags`、`type`、`use`、`effect`、`schema` 等元数据不改变资源身份。
 - 灰度发布状态是 Config 资源的从属状态，不应创建第二套顶层 Config 身份。
 
-## 7. 待补充规范
-
-- TODO: 定义 Config、Naming、AI 和 Core 运维领域特定的 Trace 与审计事件字段。共享可观测边界由
-  [可观测钩子规范](../design/foundation-observability-hooks-spec.md)定义。
+## 7. 基础能力对齐
 
 共享 datasource、嵌入式/外部存储、repository、dump 和 cache 边界由
 [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
@@ -134,3 +131,4 @@ Config 特有的写入可见性、dump 恢复和集群变更传播由
 共享任务执行和本地事件边界由[任务执行规范](../design/foundation-task-execution-spec.md)和
 [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)定义。
 共享可观测边界由[可观测钩子规范](../design/foundation-observability-hooks-spec.md)定义。
+Config trace 与审计字段应遵循该规范中的共享字段指引，并且不得包含完整 Config content。

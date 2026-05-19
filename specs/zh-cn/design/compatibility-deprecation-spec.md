@@ -99,7 +99,9 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 
 以下是当前的兼容或废弃示例：
 
-- v1/v2 HTTP API 和 spec 出现前发布的 v3 兼容端点；
+- v1/v2 HTTP API。它们已经从主服务端发行包中移除，并迁移到外部
+  [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)；
+- spec 出现前发布的 v3 兼容端点；
 - AI Prompt legacy endpoints 和旧 Pipeline REST 风格端点；
 - Naming API 定义的 service selector 字段和请求参数；
 - Config 聚合配置字段及相关数据库列；
@@ -110,7 +112,23 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 
 此清单不穷尽所有项目。每个领域规范仍负责精确领域行为和迁移细节。
 
-## 9. 相关规范
+## 9. Legacy HTTP API Adapter
+
+从 Nacos 3.2.0 版本线开始，legacy v1 和 v2 HTTP API 不再属于默认 Nacos server 发行包。它们是由
+[nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)提供的独立兼容面。
+
+规则：
+
+- v3 HTTP API 和当前 SDK 是标准迁移目标。
+- legacy adapter 是临时迁移辅助，不是重新承诺的 API 契约。
+- adapter 必须显式安装，例如将 jar 放入 Nacos `plugins` 目录，或在 embedded/custom application
+  中添加依赖。
+- adapter version 必须与目标 Nacos server version 匹配。
+- adapter 不保证在未来 Nacos 版本中继续支持，也不应用于定义新的 v1/v2 行为。
+
+领域规范只应在迁移上下文中提及 legacy v1/v2 行为，或在当前兼容路径依赖它时进行说明。
+
+## 10. 相关规范
 
 - [HTTP API 规范](../http-api/api-spec.md)
 - [V3 API 范围](../http-api/v3-api-surface.md)
@@ -118,4 +136,5 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 - [客户端能力协商规范](../client/client-ability-negotiation-spec.md)
 - [资源模型规范](resource-model-spec.md)
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
+- [集成与适配器规范](../integration/integration-adapter-spec.md)
 - [插件规范](../plugin/README.md)
