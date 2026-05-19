@@ -665,4 +665,25 @@ class ConfigCacheServiceTest {
         int readLockSuccessAfterRetry = ConfigCacheService.tryConfigReadLock(groupKey);
         assertEquals(1, readLockSuccessAfterRetry);
     }
+    
+    @Test
+    void testGetContentMd5MatchesGrayRule() {
+        String dataId = "grayMatchD";
+        String group = "grayMatchG";
+        String tenant = "grayMatchT";
+        String grayName = "tag_myTag";
+        String grayRule =
+            "{\"type\":\"tag\",\"version\":\"1.0.0\",\"expr\":\"myTag\","
+                + "\"priority\":-999}";
+        String content = "grayContent";
+        String grayMd5 = MD5Utils.md5Hex(content, "UTF-8");
+        ConfigCacheService.dumpWithMd5(dataId, group, tenant, "formal", "formalMd5",
+            System.currentTimeMillis(), "text", "");
+        ConfigCacheService.dumpGray(dataId, group, tenant, grayName, grayRule,
+            content, System.currentTimeMillis(), "");
+        String gk = GroupKey2.getKey(dataId, group, tenant);
+        String md5 = ConfigCacheService.getContentMd5(gk, null, "myTag", null);
+        assertEquals(grayMd5, md5);
+        ConfigCacheService.remove(dataId, group, tenant);
+    }
 }

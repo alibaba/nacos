@@ -496,4 +496,60 @@ class ConfigServletInnerTest {
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertEquals("result-new", request.getAttribute("content"));
     }
+    
+    @Test
+    void testDoGetConfigFormalNullContentV2() throws Exception {
+        String dataId = "dataIdNullV2";
+        String group = "group";
+        String tenant = "tenant";
+        configCacheServiceMockedStatic.when(
+            () -> ConfigCacheService.tryConfigReadLock(anyString()))
+            .thenReturn(1);
+        CacheItem cacheItem = new CacheItem("test");
+        cacheItem.getConfigCache().setMd5("md5");
+        cacheItem.getConfigCache().setLastModifiedTs(System.currentTimeMillis());
+        configCacheServiceMockedStatic.when(
+            () -> ConfigCacheService.getContentCache(anyString()))
+            .thenReturn(cacheItem);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("dataId", dataId);
+        request.setParameter("group", group);
+        request.setParameter("tenant", tenant);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(configRocksDbDiskService.getContent(dataId, group, tenant)).thenReturn(null);
+        String actualValue =
+            configServletInner.doGetConfig(request, response, dataId, group, tenant,
+                null, "false", "localhost", ApiVersionEnum.V2);
+        assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
+    }
+    
+    @Test
+    void testDoGetConfigV1BlankContentType() throws Exception {
+        String dataId = "dataIdBlankType";
+        String group = "group";
+        String tenant = "tenant";
+        configCacheServiceMockedStatic.when(
+            () -> ConfigCacheService.tryConfigReadLock(anyString()))
+            .thenReturn(1);
+        CacheItem cacheItem = new CacheItem("test");
+        cacheItem.getConfigCache().setMd5("md5");
+        cacheItem.getConfigCache().setLastModifiedTs(System.currentTimeMillis());
+        configCacheServiceMockedStatic.when(
+            () -> ConfigCacheService.getContentCache(anyString()))
+            .thenReturn(cacheItem);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("dataId", dataId);
+        request.setParameter("group", group);
+        request.setParameter("tenant", tenant);
+        request.addHeader(CLIENT_APPNAME_HEADER, "test");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(configRocksDbDiskService.getContent(dataId, group, tenant))
+            .thenReturn("some content");
+        String actualValue =
+            configServletInner.doGetConfig(request, response, dataId, group, tenant,
+                null, "false", "localhost", ApiVersionEnum.V1);
+        assertEquals(HttpServletResponse.SC_OK + "", actualValue);
+        assertTrue(response.getHeader(HttpHeaderConsts.CONTENT_TYPE)
+            .contains("text/plain"));
+    }
 }

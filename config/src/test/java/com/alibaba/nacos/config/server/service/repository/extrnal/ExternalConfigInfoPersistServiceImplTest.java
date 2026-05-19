@@ -1534,4 +1534,25 @@ class ExternalConfigInfoPersistServiceImplTest {
             select);
     }
     
+    @Test
+    void testGenerateLikeArgumentWithUnderscore() {
+        String result = externalConfigInfoPersistService.generateLikeArgument(
+            "data_id*");
+        assertEquals("data\\_id%", result);
+    }
+    
+    @Test
+    void testGenerateLikeArgumentWithoutWildcard() {
+        String result = externalConfigInfoPersistService.generateLikeArgument(
+            "plain_text");
+        assertEquals("plain\\_text", result);
+    }
+    
+    @Test
+    void testGenerateLikeArgumentWithWildcardOnly() {
+        String result = externalConfigInfoPersistService.generateLikeArgument(
+            "data*");
+        assertEquals("data%", result);
+    }
+    
 }

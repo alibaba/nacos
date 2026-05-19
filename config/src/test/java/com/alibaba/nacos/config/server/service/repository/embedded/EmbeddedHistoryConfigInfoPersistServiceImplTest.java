@@ -261,6 +261,17 @@ class EmbeddedHistoryConfigInfoPersistServiceImplTest {
         
     }
     
+    @Test
+    void testGetNextHistoryInfo() {
+        ConfigHistoryInfo mock = createMockConfigHistoryInfo(1);
+        when(databaseOperate.queryOne(anyString(), Mockito.any(Object[].class),
+            eq(HISTORY_DETAIL_ROW_MAPPER))).thenReturn(mock);
+        ConfigHistoryInfo result =
+            embeddedHistoryConfigInfoPersistService.getNextHistoryInfo(
+                "d", "g", "t", "formal", "", 100L);
+        assertEquals(mock.getDataId(), result.getDataId());
+    }
+    
     private ConfigHistoryInfo createMockConfigHistoryInfo(long mockId) {
         ConfigHistoryInfo configAllInfo = new ConfigHistoryInfo();
         configAllInfo.setDataId("test" + mockId + ".yaml");

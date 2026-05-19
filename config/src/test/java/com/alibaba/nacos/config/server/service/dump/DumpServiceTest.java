@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigMigrateService;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -273,6 +274,15 @@ class DumpServiceTest {
             eq(GroupKey.getKeyTenant(configDataChangeEvent.dataId, configDataChangeEvent.group,
                 configDataChangeEvent.tenant)),
             any(DumpTask.class));
+    }
+    
+    @Test
+    void testDumpAll() {
+        ReflectionTestUtils.setField(dumpService, "dumpAllTaskMgr", dumpTaskMgr);
+        Mockito.doNothing().when(dumpTaskMgr).addTask(any(), any());
+        dumpService.dumpAll();
+        Mockito.verify(dumpTaskMgr, times(1)).addTask(
+            eq(DumpAllTask.TASK_ID), any(DumpAllTask.class));
     }
     
 }
