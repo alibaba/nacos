@@ -43,6 +43,7 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,6 +52,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,6 +71,15 @@ class AiResourceImportManagerTest {
         assertEquals(Collections.singletonList("mcp"), result.get(0).getResourceTypes());
         assertEquals(Arrays.asList("search", "validate", "execute"),
             result.get(0).getCapabilities());
+        try (
+            AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.register(AiResourceImportPluginManager.class,
+                AiResourceImportSourceManager.class,
+                AiResourceOperatorRegistry.class, AiResourceImportSecurityGuard.class,
+                AiResourceImportManager.class);
+            context.refresh();
+            assertNotNull(context.getBean(AiResourceImportManager.class));
+        }
     }
     
     @Test

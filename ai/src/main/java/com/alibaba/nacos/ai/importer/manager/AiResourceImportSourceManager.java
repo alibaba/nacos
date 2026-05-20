@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ public class AiResourceImportSourceManager {
     
     private final Supplier<AiResourceImportProperties> propertiesSupplier;
     
+    @Autowired
     public AiResourceImportSourceManager(AiResourceImportPluginManager pluginManager) {
         this(pluginManager, AiResourceImportProperties::loadFromEnvironment);
     }
