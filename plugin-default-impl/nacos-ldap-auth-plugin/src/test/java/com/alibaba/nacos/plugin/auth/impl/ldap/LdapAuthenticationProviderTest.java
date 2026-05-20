@@ -22,6 +22,7 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
+import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ import org.mockito.stubbing.Answer;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,46 +45,48 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 // todo remove this
 @MockitoSettings(strictness = Strictness.LENIENT)
 class LdapAuthenticationProviderTest {
-    
+
     private static final String LDAP_PREFIX = "LDAP_";
-    
+
     private final String adminUserName = "nacos";
-    
+
     private final String normalUserName = "normal";
-    
+
     private final String filterPrefix = "uid";
-    
+
     private final boolean caseSensitive = true;
-    
+
     Method isAdmin;
-    
+
     Method ldapLogin;
-    
+
     @Mock
     private NacosUserService userDetailsService;
-    
+
     @Mock
     private NacosRoleService nacosRoleService;
-    
+
     @Mock
     private LdapTemplate ldapTemplate;
-    
+
     private LdapAuthenticationProvider ldapAuthenticationProvider;
-    
+
     private LdapAuthenticationProvider ldapAuthenticationProviderForCloseCaseSensitive;
-    
+
     private List<RoleInfo> roleInfos = new ArrayList<>();
-    
+
     private String defaultPassWord = System.getProperty("ldap.default.password", "nacos");
-    
+
     @BeforeEach
     void setUp() throws NoSuchMethodException {
         RoleInfo adminRole = new RoleInfo();
@@ -94,7 +98,7 @@ class LdapAuthenticationProviderTest {
         when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + adminUserName + ")",
             defaultPassWord)).thenAnswer(
                 new Answer<Boolean>() {
-                    
+
                     @Override
                     public Boolean answer(InvocationOnMock invocation) throws Throwable {
                         Object[] args = invocation.getArguments();
@@ -118,7 +122,7 @@ class LdapAuthenticationProviderTest {
             String.class);
         ldapLogin.setAccessible(true);
     }
-    
+
     @Test
     void testIsAdmin() {
         try {
@@ -137,9 +141,9 @@ class LdapAuthenticationProviderTest {
         } catch (InvocationTargetException e) {
             fail();
         }
-        
+
     }
-    
+
     @Test
     void testldapLogin() {
         try {
@@ -161,14 +165,14 @@ class LdapAuthenticationProviderTest {
             fail();
         }
     }
-    
+
     @Test
     void testDefaultCaseSensitive() {
         String userName = StringUtils.upperCase(normalUserName);
         when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + userName + ")",
             defaultPassWord)).thenAnswer(
                 new Answer<Boolean>() {
-                    
+
                     @Override
                     public Boolean answer(InvocationOnMock invocation) throws Throwable {
                         Object[] args = invocation.getArguments();
@@ -191,7 +195,7 @@ class LdapAuthenticationProviderTest {
         NacosUserDetails nacosUserDetails = (NacosUserDetails) result.getPrincipal();
         assertEquals(nacosUserDetails.getUsername(), LDAP_PREFIX + userName);
     }
-    
+
     @Test
     void testCloseCaseSensitive() {
         when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + normalUserName + ")",
@@ -216,5 +220,96 @@ class LdapAuthenticationProviderTest {
             ldapAuthenticationProviderForCloseCaseSensitive.authenticate(authentication);
         NacosUserDetails nacosUserDetails = (NacosUserDetails) result.getPrincipal();
         assertEquals(nacosUserDetails.getUsername(), LDAP_PREFIX + normalUserName);
+    }
+
+    @Test
+    void testAuthenticateAdminWithMatchedPassword() {
+        User user = createUser(adminUserName, PasswordEncoderUtil.encode(defaultPassWord));
+        when(userDetailsService.loadUserByUsername(adminUserName)).thenReturn(
+            new NacosUserDetails(user));
+        Authentication authentication =
+            new UsernamePasswordAuthenticationToken(adminUserName, defaultPassWord);
+
+        Authentication result = ldapAuthenticationProvider.authenticate(authentication);
+
+        NacosUserDetails nacosUserDetails = (NacosUserDetails) result.getPrincipal();
+        assertEquals(adminUserName, nacosUserDetails.getUsername());
+    }
+
+    @Test
+    void testAuthenticateAdminWithWrongPassword() {
+        User user = createUser(adminUserName, PasswordEncoderUtil.encode(defaultPassWord));
+        when(userDetailsService.loadUserByUsername(adminUserName)).thenReturn(
+            new NacosUserDetails(user));
+        Authentication authentication =
+            new UsernamePasswordAuthenticationToken(adminUserName, "wrong");
+
+        assertNull(ldapAuthenticationProvider.authenticate(authentication));
+    }
+
+    @Test
+    void testAuthenticateReturnsNullWhenLdapLoginFails() {
+        Authentication authentication =
+            new UsernamePasswordAuthenticationToken(normalUserName, "wrong");
+
+        assertNull(ldapAuthenticationProvider.authenticate(authentication));
+    }
+
+    @Test
+    void testAuthenticateReturnsNullWhenLdapThrowsException() {
+        when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + normalUserName + ")",
+            defaultPassWord)).thenThrow(new IllegalStateException("LDAP unavailable"));
+        Authentication authentication =
+            new UsernamePasswordAuthenticationToken(normalUserName, defaultPassWord);
+
+        assertNull(ldapAuthenticationProvider.authenticate(authentication));
+    }
+
+    @Test
+    void testAuthenticateCreatesMissingLdapUser() {
+        String username = "fresh";
+        String ldapUsername = LDAP_PREFIX + username;
+        when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + username + ")",
+            defaultPassWord)).thenReturn(true);
+        when(userDetailsService.loadUserByUsername(ldapUsername))
+            .thenThrow(new UsernameNotFoundException("missing"));
+        Authentication authentication =
+            new UsernamePasswordAuthenticationToken(username, defaultPassWord);
+
+        Authentication result = ldapAuthenticationProvider.authenticate(authentication);
+
+        NacosUserDetails nacosUserDetails = (NacosUserDetails) result.getPrincipal();
+        assertEquals(ldapUsername, nacosUserDetails.getUsername());
+        verify(userDetailsService).createUser(ldapUsername,
+            AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD, false);
+    }
+
+    @Test
+    void testSupportsOnlyUsernamePasswordAuthenticationToken() {
+        assertTrue(ldapAuthenticationProvider.supports(UsernamePasswordAuthenticationToken.class));
+        assertFalse(ldapAuthenticationProvider.supports(Authentication.class));
+    }
+
+    @Test
+    void testIsAdminReturnsFalseWhenRolesDoNotContainGlobalAdmin()
+        throws InvocationTargetException, IllegalAccessException {
+        String username = "operator";
+        RoleInfo roleInfo = new RoleInfo();
+        roleInfo.setUsername(username);
+        roleInfo.setRole("operator");
+        List<RoleInfo> roles = new ArrayList<>();
+        roles.add(roleInfo);
+        when(nacosRoleService.getRoles(username)).thenReturn(roles);
+
+        Boolean result = (Boolean) isAdmin.invoke(ldapAuthenticationProvider, username);
+
+        assertFalse(result);
+    }
+
+    private User createUser(String username, String password) {
+        User result = new User();
+        result.setUsername(username);
+        result.setPassword(password);
+        return result;
     }
 }
