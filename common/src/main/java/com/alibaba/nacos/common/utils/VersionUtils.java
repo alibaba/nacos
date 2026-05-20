@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.common.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.Properties;
@@ -28,6 +31,8 @@ import java.util.regex.Pattern;
  * @author xingxuechao on:2019/2/27 12:32 PM
  */
 public class VersionUtils {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(VersionUtils.class);
     
     private VersionUtils() {
     }
@@ -54,7 +59,8 @@ public class VersionUtils {
                 clientVersion = "Nacos-Java-Client:v" + VersionUtils.version;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn("Failed to load nacos version from {}; version fields will remain unset",
+                NACOS_VERSION_FILE, e);
         }
     }
     
