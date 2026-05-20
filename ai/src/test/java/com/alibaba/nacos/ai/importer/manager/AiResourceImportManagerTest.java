@@ -44,12 +44,14 @@ import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -225,7 +227,9 @@ class AiResourceImportManagerTest {
         AiResourceImportPluginManager pluginManager =
             new AiResourceImportPluginManager(Collections.singletonList(builder));
         AiResourceImportSourceManager sourceManager =
-            new AiResourceImportSourceManager(pluginManager, () -> properties);
+            new AiResourceImportSourceManager(pluginManager);
+        ReflectionTestUtils.setField(sourceManager, "propertiesSupplier",
+            (Supplier<AiResourceImportProperties>) () -> properties);
         return new AiResourceImportManager(sourceManager, pluginManager,
             new AiResourceOperatorRegistry(operators), new AiResourceImportSecurityGuard());
     }
@@ -234,7 +238,11 @@ class AiResourceImportManagerTest {
         AiResourceImportPluginManager pluginManager =
             new AiResourceImportPluginManager(Collections.singletonList(
                 new FakeImportServiceBuilder()));
-        return new AiResourceImportSourceManager(pluginManager, () -> properties);
+        AiResourceImportSourceManager result =
+            new AiResourceImportSourceManager(pluginManager);
+        ReflectionTestUtils.setField(result, "propertiesSupplier",
+            (Supplier<AiResourceImportProperties>) () -> properties);
+        return result;
     }
     
     private AiResourceImportProperties enabledProperties() {
