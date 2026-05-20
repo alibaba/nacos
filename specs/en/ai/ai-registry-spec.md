@@ -32,7 +32,7 @@ AI Registry owns:
   AgentSpec;
 - runtime query and subscription behavior for supported AI resources;
 - management workflows such as draft creation, review, publish, force publish,
-  online/offline, delete, upload, and download;
+  online/offline, delete, upload, import, and download;
 - domain usage of publish pipelines, storage plugins, visibility, auth, and
   trace hooks.
 
@@ -44,8 +44,8 @@ AI Registry does not own:
   Naming services and instances;
 - community registry protocol definitions exposed by the
   [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md);
-- plugin extension contracts. Pipeline, storage, visibility, and trace
-  extension rules are defined by their plugin specs.
+- plugin extension contracts. Pipeline, storage, resource import, visibility,
+  and trace extension rules are defined by their plugin specs.
 
 ## 2. Design Principles
 
@@ -60,8 +60,10 @@ AI Registry does not own:
   AI resources should not introduce Config-style `groupName` identity unless a
   compatibility path requires it.
 - **Plugin composition**: visibility, storage, trace, and publish pipeline
-  behavior should be composed through plugins and linked from this domain spec,
-  not redefined as hidden AI-only extension mechanisms.
+  behavior should be composed through plugins and linked from this domain spec.
+  External resource import should use the same plugin model and route imported
+  artifacts back through resource operators, not be redefined as a hidden
+  AI-only extension mechanism.
 - **Fast evolution tolerance**: AI protocols and resource formats change
   quickly. Specs may need incompatible or major revisions when MCP, A2A, agent
   packaging, or model-tool ecosystems change. Such revisions must state
@@ -109,7 +111,7 @@ AI Registry is exposed through multiple surfaces:
 | Surface | Audience | Rules |
 | --- | --- | --- |
 | `/v3/client/ai/...` | Runtime clients and agent frameworks. | Query known resources, download runtime artifacts, subscribe, and register client-owned endpoints. |
-| `/v3/admin/ai/...` | Management tools and Maintainer SDK. | Create, update, list, publish, delete, upload, and operate versions. |
+| `/v3/admin/ai/...` | Management tools and Maintainer SDK. | Create, update, list, publish, delete, upload, import, and operate versions. |
 | `/v3/console/ai/...` | Nacos console UI. | UI orchestration over the same domain semantics. |
 | gRPC AI requests | Java Client SDK runtime traffic. | Query and release MCP/A2A/Prompt resources and register endpoints where supported. |
 | Java SDK | Runtime application integration. | See the [Java SDK Implementation Spec](../sdk/sdk-java-impl-spec.md). |
@@ -128,6 +130,11 @@ AI Registry is exposed through multiple surfaces:
   [AI Publish Pipeline Plugin Spec](../plugin/ai-pipeline-plugin-spec.md).
 - Resource storage extension behavior must use the
   [AI Storage Plugin Spec](../plugin/ai-storage-plugin-spec.md).
+- External AI resource import behavior must use the
+  [AI Resource Import Plugin Spec](../plugin/ai-resource-import-plugin-spec.md).
+  Import plugins convert operator-configured external sources into import
+  artifacts; resource operators apply those artifacts to the current storage and
+  lifecycle model.
 - Trace and audit events should use the [Trace Plugin Spec](../plugin/trace-plugin-spec.md)
   and the shared observability rules.
 

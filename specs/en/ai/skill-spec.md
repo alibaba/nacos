@@ -79,6 +79,13 @@ endpoints, is defined by the
 optional compatibility surface and does not replace the canonical Skill resource
 lifecycle.
 
+External Skill import from marketplaces or registries is defined by the
+[AI Resource Import Plugin Spec](../plugin/ai-resource-import-plugin-spec.md).
+Import plugins must produce standard Skill package artifacts, and the Skill
+resource operator must apply those artifacts through the normal Skill upload or
+draft lifecycle. Import plugins must not bypass package validation, visibility,
+storage, or publish governance.
+
 Nacos registry paths must not execute package scripts during upload, query, or
 download. Script execution, static analysis, or security scanning belongs to
 publish pipeline plugins or to clients that explicitly activate a Skill. The AI
@@ -108,6 +115,11 @@ Skill follows the shared [AI Resource Lifecycle Spec](ai-resource-lifecycle-spec
 - submit may run publish pipeline and then publish or return to draft;
 - labels, online/offline, scope, business tags, and delete operations update
   metadata through CAS where required.
+
+Imported Skills follow the upload and draft rules unless the operation is an
+explicit bootstrap flow owned by the server. Dependency handling, such as a
+Skill referencing MCP tools, is previewed through the unified import flow and
+must not recursively import dependencies by default.
 
 ## 6. Runtime Behavior
 

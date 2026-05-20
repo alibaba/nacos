@@ -90,7 +90,25 @@ This is compatibility storage, not the target canonical model. New MCP
 semantics should be specified as AI Registry semantics, then mapped to current
 storage until migration is complete.
 
-## 6. Pending Migration Issues
+## 6. External Import
+
+MCP import from external registries or marketplaces should use the
+[AI Resource Import Plugin Spec](../plugin/ai-resource-import-plugin-spec.md).
+Import plugins convert operator-configured external MCP registry data into MCP
+import artifacts. They must not write MCP storage directly.
+
+The MCP resource operator applies imported artifacts through the MCP domain
+operation service. In the current implementation this may use the Config-backed
+`McpServerOperationService`. After MCP metadata and versions migrate to
+`ai_resource`, the MCP resource operator should change to the new storage model
+while import plugins and unified import APIs remain compatible.
+
+Legacy MCP import APIs may remain as compatibility routes, but they should
+delegate to the unified AI resource import flow. User-provided registry URLs or
+MCP endpoint addresses must not be used as direct server-side network targets by
+default.
+
+## 7. Pending Migration Issues
 
 - Migrate MCP metadata and version rows to `ai_resource` and
   `ai_resource_version`.
@@ -101,7 +119,7 @@ storage until migration is complete.
 - Define endpoint ownership and cleanup rules for direct endpoints registered
   by runtime clients.
 
-## 7. Evolution Note
+## 8. Evolution Note
 
 MCP is evolving quickly. Tool schema, resources, transport modes, auth
 metadata, and registry interoperability may change. MCP Server spec changes may

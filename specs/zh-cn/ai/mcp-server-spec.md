@@ -83,14 +83,27 @@ endpoint：
 这是兼容存储，不是目标标准模型。新的 MCP 语义应按 AI Registry 语义定义，然后在迁移
 完成前映射到当前存储。
 
-## 6. 待迁移问题
+## 6. 外部导入
+
+从外部 registry 或市场导入 MCP 应使用
+[AI 资源导入插件规范](../plugin/ai-resource-import-plugin-spec.md)。导入插件负责把运维配置的
+外部 MCP registry 数据转换为 MCP 导入 artifact，不得直接写入 MCP 存储。
+
+MCP Resource Operator 负责通过 MCP 领域操作服务应用导入 artifact。当前实现可以使用
+Config-backed 的 `McpServerOperationService`。未来 MCP 元数据和版本迁移到 `ai_resource`
+后，应替换 MCP Resource Operator 到新的存储模型，同时保持导入插件和统一导入 API 兼容。
+
+旧 MCP 导入 API 可以作为兼容路由保留，但应委托给统一 AI 资源导入流程。默认情况下，不得把用户传入的
+registry URL 或 MCP endpoint 地址作为服务端直接访问的网络目标。
+
+## 7. 待迁移问题
 
 - 将 MCP 元数据和版本行迁移到 `ai_resource` 和 `ai_resource_version`。
 - 定义现有 Config-backed MCP 记录在混合版本集群中的发现、迁移和服务方式。
 - 让 MCP label 和 latest-version 行为与共享 AI 资源 label 模型对齐。
 - 定义运行时客户端注册 direct endpoint 的所有权和清理规则。
 
-## 7. 演进说明
+## 8. 演进说明
 
 MCP 仍在快速演进。Tool schema、resources、transport mode、auth metadata 和 registry
 互操作都可能变化。因此 MCP Server 规范的调整可能大于普通 Nacos 领域变更，但必须

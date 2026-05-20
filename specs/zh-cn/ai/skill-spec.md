@@ -67,6 +67,11 @@ Skill 定义为“一个目录，至少包含一个 `SKILL.md` 文件”。Nacos
 [AI Registry 适配器规范](ai-registry-adaptor-spec.md)定义。适配器是可选兼容面，
 不会替代标准 Skill resource 生命周期。
 
+从外部市场或 registry 导入 Skill 由
+[AI 资源导入插件规范](../plugin/ai-resource-import-plugin-spec.md)定义。导入插件必须产出标准
+Skill 包 artifact，Skill Resource Operator 必须通过普通 Skill upload 或 draft 生命周期应用这些
+artifact。导入插件不得绕过包校验、可见性、存储或发布治理。
+
 Nacos 注册中心路径不得在 upload、query 或 download 过程中执行包内脚本。脚本执行、静态
 分析或安全扫描属于发布流水线插件，或属于显式激活 Skill 的客户端行为。AI 流水线插件契约
 由 [AI 流水线插件规范](../plugin/ai-pipeline-plugin-spec.md)定义。
@@ -89,6 +94,9 @@ Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.m
 - bootstrap 内置 Skill 可以直接创建 online 元数据和版本行；
 - submit 可以运行发布流水线，并发布或退回 draft；
 - labels、online/offline、scope、bizTags 和 delete 操作按需通过 CAS 更新元数据。
+
+导入的 Skill 遵循 upload 和 draft 规则，除非该操作是服务端拥有的显式 bootstrap 流程。
+依赖处理，例如 Skill 引用 MCP tools，应通过统一导入流程 preview，默认不得递归导入依赖。
 
 ## 6. 运行时行为
 
