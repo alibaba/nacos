@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -272,6 +273,63 @@ class ConfigOperationServiceTest {
         assertTrue(bResult);
         configRequestInfo.setCasMd5("");
     }
+
+    @Test
+    void testPublishConfigNormalizesNullNamespaceIdToDefault() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setNamespaceId(null);
+        configForm.setContent("test content");
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        ArgumentCaptor<ConfigInfo> configInfoCaptor = ArgumentCaptor.forClass(ConfigInfo.class);
+        when(configInfoPersistService.insertOrUpdate(any(), any(), configInfoCaptor.capture(), any()))
+            .thenReturn(new ConfigOperateResult());
+
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
+
+        assertTrue(result);
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configInfoCaptor.getValue().getTenant());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configForm.getNamespaceId());
+    }
+
+    @Test
+    void testPublishConfigNormalizesBlankNamespaceIdThroughNamespaceUtil() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setNamespaceId("   ");
+        configForm.setContent("test content");
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        ArgumentCaptor<ConfigInfo> configInfoCaptor = ArgumentCaptor.forClass(ConfigInfo.class);
+        when(configInfoPersistService.insertOrUpdate(any(), any(), configInfoCaptor.capture(), any()))
+            .thenReturn(new ConfigOperateResult());
+
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
+
+        assertTrue(result);
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configInfoCaptor.getValue().getTenant());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configForm.getNamespaceId());
+    }
+
+    @Test
+    void testPublishConfigPreservesExplicitCompatibilityEmptyNamespaceId() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setNamespaceId("");
+        configForm.setContent("test content");
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        ArgumentCaptor<ConfigInfo> configInfoCaptor = ArgumentCaptor.forClass(ConfigInfo.class);
+        when(configInfoPersistService.insertOrUpdate(any(), any(), configInfoCaptor.capture(), any()))
+            .thenReturn(new ConfigOperateResult());
+
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
+
+        assertTrue(result);
+        assertEquals("", configInfoCaptor.getValue().getTenant());
+        assertEquals("", configForm.getNamespaceId());
+    }
     
     @Test
     void testUpdateForExistTrue() throws Exception {
@@ -364,6 +422,17 @@ class ConfigOperationServiceTest {
         Boolean bResult = configOperationService.deleteConfig("test", "test", "", "test", "1.1.1.1",
             "test", "http");
         assertTrue(bResult);
+    }
+
+    @Test
+    void testDeleteConfigNormalizesNullNamespaceIdToDefault() {
+        Boolean result = configOperationService.deleteConfig("test", "test", null, "", "1.1.1.1",
+            "test", "http");
+        verify(configInfoPersistService).removeConfigInfo(eq("test"), eq("test"),
+            eq(Constants.DEFAULT_NAMESPACE_ID), any(), any());
+        verify(configMigrateService).removeConfigInfoMigrate(eq("test"), eq("test"),
+            eq(Constants.DEFAULT_NAMESPACE_ID), any(), any());
+        assertTrue(result);
     }
     
     @Test
