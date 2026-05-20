@@ -43,9 +43,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AgentSpecProxyTest {
@@ -250,9 +248,9 @@ class AgentSpecProxyTest {
     }
     
     @Test
-    public void testReedit() throws NacosException {
+    public void testRedraft() throws NacosException {
         AgentSpecPublishForm form = new AgentSpecPublishForm();
-        form.setNamespaceId(NAMESPACE_ID);
+        form.setNamespaceId(NS);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setVersion("v1");
 

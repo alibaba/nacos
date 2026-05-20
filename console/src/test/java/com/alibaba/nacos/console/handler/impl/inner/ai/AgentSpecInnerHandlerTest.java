@@ -310,16 +310,16 @@ class AgentSpecInnerHandlerTest {
     }
     
     @Test
-    void testReedit() throws NacosException {
+    void testRedraft() throws NacosException {
         AgentSpecPublishForm form = new AgentSpecPublishForm();
-        form.setNamespaceId(NAMESPACE_ID);
-        form.setAgentSpecName(AGENTSPEC_NAME);
+        form.setNamespaceId(NS);
+        form.setAgentSpecName(NAME);
         form.setVersion("v1");
-        doNothing().when(agentSpecOperationService).redraft(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME),
+        doNothing().when(agentSpecOperationService).redraft(eq(NS), eq(NAME),
             eq("v1"));
         
-        agentSpecInnerHandler.redraft(form);
+        handler.redraft(form);
         
-        verify(agentSpecOperationService).redraft(NAMESPACE_ID, AGENTSPEC_NAME, "v1");
+        verify(agentSpecOperationService).redraft(NS, NAME, "v1");
     }
 }

@@ -337,7 +337,7 @@ class AgentSpecRemoteHandlerTest {
     }
 
     @Test
-    void testReedit() throws NacosException {
+    void testRedraft() throws NacosException {
         AgentSpecPublishForm form = new AgentSpecPublishForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setAgentSpecName(AGENT_SPEC_NAME);

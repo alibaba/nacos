@@ -321,7 +321,7 @@ class PromptMaintainerServiceImplTest {
     
     @Test
     @DisplayName("redraft should return true on success")
-    void testReedit() throws NacosException {
+    void testRedraft() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))

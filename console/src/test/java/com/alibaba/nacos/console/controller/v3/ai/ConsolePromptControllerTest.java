@@ -390,7 +390,7 @@ class ConsolePromptControllerTest {
     }
     
     @Test
-    void testReeditSuccess() throws Exception {
+    void testRedraftSuccess() throws Exception {
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.post(Constants.Prompt.CONSOLE_PATH + "/redraft")
                 .param("namespaceId", NS)

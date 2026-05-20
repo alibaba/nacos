@@ -356,7 +356,7 @@ class SkillRemoteHandlerTest {
     }
     
     @Test
-    void testReedit() throws NacosException {
+    void testRedraft() throws NacosException {
         SkillPublishForm form = new SkillPublishForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);

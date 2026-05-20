@@ -161,7 +161,7 @@ class SkillMaintainerServiceImplTest {
     
     @Test
     @DisplayName("redraft should return true")
-    void testReeditReturnsTrue() throws NacosException {
+    void testRedraftReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult
             .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));

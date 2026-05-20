@@ -44,9 +44,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SkillProxyTest {
@@ -289,9 +287,9 @@ class SkillProxyTest {
     }
     
     @Test
-    public void testReedit() throws NacosException {
+    public void testRedraft() throws NacosException {
         SkillPublishForm form = new SkillPublishForm();
-        form.setNamespaceId(NAMESPACE_ID);
+        form.setNamespaceId(NS);
         form.setSkillName(SKILL_NAME);
         form.setVersion("v1");
 
