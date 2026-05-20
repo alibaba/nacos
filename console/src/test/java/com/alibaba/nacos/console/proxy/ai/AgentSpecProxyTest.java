@@ -43,7 +43,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AgentSpecProxyTest {
@@ -70,13 +73,13 @@ class AgentSpecProxyTest {
         AgentSpecMeta meta = new AgentSpecMeta();
         meta.setName(AGENT_SPEC_NAME);
         when(agentSpecHandler.getAgentSpec(form)).thenReturn(meta);
-
+        
         AgentSpecMeta result = agentSpecProxy.getAgentSpec(form);
-
+        
         assertEquals(AGENT_SPEC_NAME, result.getName());
         verify(agentSpecHandler).getAgentSpec(form);
     }
-
+    
     @Test
     void testGetAgentSpecVersion() throws NacosException {
         AgentSpecForm form = new AgentSpecForm();
@@ -85,25 +88,25 @@ class AgentSpecProxyTest {
         AgentSpec spec = new AgentSpec();
         spec.setName(AGENT_SPEC_NAME);
         when(agentSpecHandler.getAgentSpecVersion(form)).thenReturn(spec);
-
+        
         AgentSpec result = agentSpecProxy.getAgentSpecVersion(form);
-
+        
         assertEquals(AGENT_SPEC_NAME, result.getName());
         verify(agentSpecHandler).getAgentSpecVersion(form);
     }
-
+    
     @Test
     void testDeleteAgentSpec() throws NacosException {
         AgentSpecForm form = new AgentSpecForm();
         form.setNamespaceId(NS);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         doNothing().when(agentSpecHandler).deleteAgentSpec(form);
-
+        
         agentSpecProxy.deleteAgentSpec(form);
-
+        
         verify(agentSpecHandler).deleteAgentSpec(form);
     }
-
+    
     @Test
     void testListAgentSpecs() throws NacosException {
         AgentSpecListForm listForm = new AgentSpecListForm();
@@ -114,75 +117,75 @@ class AgentSpecProxyTest {
         page.setPageItems(List.of(new AgentSpecSummary(), new AgentSpecSummary()));
         when(agentSpecHandler.listAgentSpecs(listForm, filterForm, pageForm))
             .thenReturn(page);
-
+        
         Page<AgentSpecSummary> result = agentSpecProxy.listAgentSpecs(listForm,
             filterForm, pageForm);
-
+        
         assertEquals(2, result.getTotalCount());
         verify(agentSpecHandler).listAgentSpecs(listForm, filterForm, pageForm);
     }
-
+    
     @Test
     void testUploadAgentSpecFromZipDefaultOverwrite() throws NacosException {
         byte[] zipBytes = new byte[] {1, 2, 3};
         when(agentSpecHandler.uploadAgentSpecFromZip(NS, zipBytes, false))
             .thenReturn(AGENT_SPEC_NAME);
-
+        
         String result = agentSpecProxy.uploadAgentSpecFromZip(NS, zipBytes);
-
+        
         assertEquals(AGENT_SPEC_NAME, result);
         verify(agentSpecHandler).uploadAgentSpecFromZip(NS, zipBytes, false);
     }
-
+    
     @Test
     void testUploadAgentSpecFromZipWithOverwrite() throws NacosException {
         byte[] zipBytes = new byte[] {1, 2, 3};
         when(agentSpecHandler.uploadAgentSpecFromZip(NS, zipBytes, true))
             .thenReturn(AGENT_SPEC_NAME);
-
+        
         String result = agentSpecProxy.uploadAgentSpecFromZip(NS, zipBytes, true);
-
+        
         assertEquals(AGENT_SPEC_NAME, result);
         verify(agentSpecHandler).uploadAgentSpecFromZip(NS, zipBytes, true);
     }
-
+    
     @Test
     void testCreateDraft() throws NacosException {
         AgentSpecDraftCreateForm form = new AgentSpecDraftCreateForm();
         form.setNamespaceId(NS);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         when(agentSpecHandler.createDraft(form)).thenReturn("v1-draft");
-
+        
         String result = agentSpecProxy.createDraft(form);
-
+        
         assertEquals("v1-draft", result);
         verify(agentSpecHandler).createDraft(form);
     }
-
+    
     @Test
     void testUpdateDraft() throws NacosException {
         AgentSpecUpdateForm form = new AgentSpecUpdateForm();
         form.setNamespaceId(NS);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         doNothing().when(agentSpecHandler).updateDraft(form);
-
+        
         agentSpecProxy.updateDraft(form);
-
+        
         verify(agentSpecHandler).updateDraft(form);
     }
-
+    
     @Test
     void testDeleteDraft() throws NacosException {
         AgentSpecForm form = new AgentSpecForm();
         form.setNamespaceId(NS);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         doNothing().when(agentSpecHandler).deleteDraft(form);
-
+        
         agentSpecProxy.deleteDraft(form);
-
+        
         verify(agentSpecHandler).deleteDraft(form);
     }
-
+    
     @Test
     void testSubmit() throws NacosException {
         AgentSpecSubmitForm form = new AgentSpecSubmitForm();
@@ -190,13 +193,13 @@ class AgentSpecProxyTest {
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setVersion("v1");
         when(agentSpecHandler.submit(form)).thenReturn("reviewing");
-
+        
         String result = agentSpecProxy.submit(form);
-
+        
         assertEquals("reviewing", result);
         verify(agentSpecHandler).submit(form);
     }
-
+    
     @Test
     void testPublish() throws NacosException {
         AgentSpecPublishForm form = new AgentSpecPublishForm();
@@ -204,12 +207,12 @@ class AgentSpecProxyTest {
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setVersion("v1");
         doNothing().when(agentSpecHandler).publish(form);
-
+        
         agentSpecProxy.publish(form);
         
         verify(agentSpecHandler).publish(form);
     }
-
+    
     @Test
     void testForcePublish() throws NacosException {
         AgentSpecPublishForm form = new AgentSpecPublishForm();
@@ -229,12 +232,12 @@ class AgentSpecProxyTest {
         form.setNamespaceId(NS);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         doNothing().when(agentSpecHandler).updateLabels(form);
-
+        
         agentSpecProxy.updateLabels(form);
-
+        
         verify(agentSpecHandler).updateLabels(form);
     }
-
+    
     @Test
     void testUpdateBizTags() throws NacosException {
         AgentSpecBizTagsUpdateForm form = new AgentSpecBizTagsUpdateForm();
@@ -253,14 +256,14 @@ class AgentSpecProxyTest {
         form.setNamespaceId(NS);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setVersion("v1");
-
+        
         doNothing().when(agentSpecHandler).redraft(form);
-
+        
         agentSpecProxy.redraft(form);
-
+        
         verify(agentSpecHandler, times(1)).redraft(form);
     }
-
+    
     @Test
     void testChangeOnlineStatus() throws NacosException {
         AgentSpecOnlineForm form = new AgentSpecOnlineForm();
@@ -268,12 +271,12 @@ class AgentSpecProxyTest {
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setVersion("v1");
         doNothing().when(agentSpecHandler).changeOnlineStatus(form, true);
-
+        
         agentSpecProxy.changeOnlineStatus(form, true);
         
         verify(agentSpecHandler).changeOnlineStatus(form, true);
     }
-
+    
     @Test
     void testOnline() throws NacosException {
         AgentSpecOnlineForm form = new AgentSpecOnlineForm();
@@ -283,10 +286,10 @@ class AgentSpecProxyTest {
         doNothing().when(agentSpecHandler).changeOnlineStatus(form, true);
         
         agentSpecProxy.online(form);
-
+        
         verify(agentSpecHandler).changeOnlineStatus(form, true);
     }
-
+    
     @Test
     void testOffline() throws NacosException {
         AgentSpecOnlineForm form = new AgentSpecOnlineForm();
@@ -294,21 +297,21 @@ class AgentSpecProxyTest {
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setVersion("v1");
         doNothing().when(agentSpecHandler).changeOnlineStatus(form, false);
-
+        
         agentSpecProxy.offline(form);
-
+        
         verify(agentSpecHandler).changeOnlineStatus(form, false);
     }
-
+    
     @Test
     void testUpdateScope() throws NacosException {
         AgentSpecScopeForm form = new AgentSpecScopeForm();
         form.setNamespaceId(NS);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         doNothing().when(agentSpecHandler).updateScope(form);
-
+        
         agentSpecProxy.updateScope(form);
-
+        
         verify(agentSpecHandler).updateScope(form);
     }
 }

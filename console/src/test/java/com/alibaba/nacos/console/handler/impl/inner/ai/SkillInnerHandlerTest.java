@@ -342,7 +342,7 @@ class SkillInnerHandlerTest {
         
         verify(skillOperationService).forcePublish(NAMESPACE_ID, SKILL_NAME, "v1", true);
     }
-
+    
     @Test
     void testUpdateDraft() throws NacosException {
         SkillUpdateForm form = new SkillUpdateForm();
@@ -353,12 +353,12 @@ class SkillInnerHandlerTest {
         form.setCommitMsg("update");
         doNothing().when(skillOperationService).updateDraft(eq(NAMESPACE_ID), any(Skill.class),
             eq("update"));
-
+        
         skillInnerHandler.updateDraft(form);
-
+        
         verify(skillOperationService).updateDraft(eq(NAMESPACE_ID), any(Skill.class), eq("update"));
     }
-
+    
     @Test
     void testPublishWithFalseUpdateLatestLabel() throws NacosException {
         SkillPublishForm form = new SkillPublishForm();
@@ -368,12 +368,12 @@ class SkillInnerHandlerTest {
         form.setUpdateLatestLabel(false);
         doNothing().when(skillOperationService).publish(eq(NAMESPACE_ID), eq(SKILL_NAME),
             eq("v1"), eq(false));
-
+        
         skillInnerHandler.publish(form);
-
+        
         verify(skillOperationService).publish(NAMESPACE_ID, SKILL_NAME, "v1", false);
     }
-
+    
     @Test
     void testForcePublishWithFalseUpdateLatestLabel() throws NacosException {
         SkillPublishForm form = new SkillPublishForm();
@@ -383,12 +383,12 @@ class SkillInnerHandlerTest {
         form.setUpdateLatestLabel(false);
         doNothing().when(skillOperationService).forcePublish(eq(NAMESPACE_ID), eq(SKILL_NAME),
             eq("v1"), eq(false));
-
+        
         skillInnerHandler.forcePublish(form);
-
+        
         verify(skillOperationService).forcePublish(NAMESPACE_ID, SKILL_NAME, "v1", false);
     }
-
+    
     @Test
     void testRedraft() throws NacosException {
         SkillPublishForm form = new SkillPublishForm();
@@ -396,9 +396,9 @@ class SkillInnerHandlerTest {
         form.setSkillName(SKILL_NAME);
         form.setVersion("v1");
         doNothing().when(skillOperationService).redraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"));
-
+        
         skillInnerHandler.redraft(form);
-
+        
         verify(skillOperationService).redraft(NAMESPACE_ID, SKILL_NAME, "v1");
     }
 }

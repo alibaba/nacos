@@ -189,7 +189,7 @@ class AgentSpecRemoteHandlerTest {
         
         verify(agentSpecMaintainerService).forcePublish(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", true);
     }
-
+    
     @Test
     void testDeleteAgentSpec() throws NacosException {
         AgentSpecForm form = new AgentSpecForm();
@@ -197,12 +197,12 @@ class AgentSpecRemoteHandlerTest {
         form.setAgentSpecName(AGENT_SPEC_NAME);
         when(agentSpecMaintainerService.deleteAgentSpec(NAMESPACE_ID, AGENT_SPEC_NAME))
             .thenReturn(true);
-
+        
         agentSpecRemoteHandler.deleteAgentSpec(form);
-
+        
         verify(agentSpecMaintainerService).deleteAgentSpec(NAMESPACE_ID, AGENT_SPEC_NAME);
     }
-
+    
     @Test
     void testListAgentSpecsReturnsNullFromService() throws NacosException {
         AgentSpecListForm form = new AgentSpecListForm();
@@ -214,25 +214,25 @@ class AgentSpecRemoteHandlerTest {
         when(agentSpecMaintainerService.listAgentSpecAdminItems(eq(NAMESPACE_ID),
             eq(AGENT_SPEC_NAME), isNull(), isNull(), isNull(), isNull(), eq(1), eq(10)))
             .thenReturn(null);
-
+        
         Page<AgentSpecSummary> result =
             agentSpecRemoteHandler.listAgentSpecs(form, new AiResourceFilterableForm(), pageForm);
-
+        
         assertNotNull(result);
         assertEquals(0, result.getTotalCount());
     }
-
+    
     @Test
     void testUploadAgentSpecFromZip() throws NacosException {
         byte[] zip = new byte[] {1, 2, 3};
         when(agentSpecMaintainerService.uploadAgentSpecFromZip(NAMESPACE_ID, zip, true))
             .thenReturn(AGENT_SPEC_NAME);
-
+        
         String result = agentSpecRemoteHandler.uploadAgentSpecFromZip(NAMESPACE_ID, zip, true);
-
+        
         assertEquals(AGENT_SPEC_NAME, result);
     }
-
+    
     @Test
     void testCreateDraft() throws NacosException {
         AgentSpecDraftCreateForm form = new AgentSpecDraftCreateForm();
@@ -242,12 +242,12 @@ class AgentSpecRemoteHandlerTest {
         form.setTargetVersion("v2");
         when(agentSpecMaintainerService.createDraft(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", "v2"))
             .thenReturn("v2-draft");
-
+        
         String result = agentSpecRemoteHandler.createDraft(form);
-
+        
         assertEquals("v2-draft", result);
     }
-
+    
     @Test
     void testUpdateDraft() throws NacosException {
         AgentSpecUpdateForm form = new AgentSpecUpdateForm();
@@ -257,12 +257,12 @@ class AgentSpecRemoteHandlerTest {
         form.setSetAsLatest(true);
         when(agentSpecMaintainerService.updateDraft(NAMESPACE_ID, "{\"name\":\"test\"}", true))
             .thenReturn(true);
-
+        
         agentSpecRemoteHandler.updateDraft(form);
-
+        
         verify(agentSpecMaintainerService).updateDraft(NAMESPACE_ID, "{\"name\":\"test\"}", true);
     }
-
+    
     @Test
     void testDeleteDraft() throws NacosException {
         AgentSpecForm form = new AgentSpecForm();
@@ -270,12 +270,12 @@ class AgentSpecRemoteHandlerTest {
         form.setAgentSpecName(AGENT_SPEC_NAME);
         when(agentSpecMaintainerService.deleteDraft(NAMESPACE_ID, AGENT_SPEC_NAME))
             .thenReturn(true);
-
+        
         agentSpecRemoteHandler.deleteDraft(form);
-
+        
         verify(agentSpecMaintainerService).deleteDraft(NAMESPACE_ID, AGENT_SPEC_NAME);
     }
-
+    
     @Test
     void testSubmit() throws NacosException {
         AgentSpecSubmitForm form = new AgentSpecSubmitForm();
@@ -284,12 +284,12 @@ class AgentSpecRemoteHandlerTest {
         form.setVersion("v1");
         when(agentSpecMaintainerService.submit(NAMESPACE_ID, AGENT_SPEC_NAME, "v1"))
             .thenReturn("reviewing");
-
+        
         String result = agentSpecRemoteHandler.submit(form);
-
+        
         assertEquals("reviewing", result);
     }
-
+    
     @Test
     void testPublish() throws NacosException {
         AgentSpecPublishForm form = new AgentSpecPublishForm();
@@ -299,12 +299,12 @@ class AgentSpecRemoteHandlerTest {
         form.setUpdateLatestLabel(true);
         when(agentSpecMaintainerService.publish(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", true))
             .thenReturn(true);
-
+        
         agentSpecRemoteHandler.publish(form);
-
+        
         verify(agentSpecMaintainerService).publish(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", true);
     }
-
+    
     @Test
     void testUpdateLabels() throws NacosException {
         AgentSpecLabelsUpdateForm form = new AgentSpecLabelsUpdateForm();
@@ -313,13 +313,13 @@ class AgentSpecRemoteHandlerTest {
         form.setLabels("{\"env\":\"prod\"}");
         when(agentSpecMaintainerService.updateLabels(NAMESPACE_ID, AGENT_SPEC_NAME,
             "{\"env\":\"prod\"}")).thenReturn(true);
-
+        
         agentSpecRemoteHandler.updateLabels(form);
-
+        
         verify(agentSpecMaintainerService).updateLabels(NAMESPACE_ID, AGENT_SPEC_NAME,
             "{\"env\":\"prod\"}");
     }
-
+    
     @Test
     void testChangeOnlineStatus() throws NacosException {
         AgentSpecOnlineForm form = new AgentSpecOnlineForm();
@@ -329,13 +329,13 @@ class AgentSpecRemoteHandlerTest {
         form.setScope("PUBLIC");
         when(agentSpecMaintainerService.changeOnlineStatus(NAMESPACE_ID, AGENT_SPEC_NAME,
             "PUBLIC", "v1", true)).thenReturn(true);
-
+        
         agentSpecRemoteHandler.changeOnlineStatus(form, true);
-
+        
         verify(agentSpecMaintainerService).changeOnlineStatus(NAMESPACE_ID, AGENT_SPEC_NAME,
             "PUBLIC", "v1", true);
     }
-
+    
     @Test
     void testRedraft() throws NacosException {
         AgentSpecPublishForm form = new AgentSpecPublishForm();
@@ -344,9 +344,9 @@ class AgentSpecRemoteHandlerTest {
         form.setVersion("v1");
         when(agentSpecMaintainerService.redraft(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("v1")))
             .thenReturn(true);
-
+        
         agentSpecRemoteHandler.redraft(form);
-
+        
         verify(agentSpecMaintainerService).redraft(NAMESPACE_ID, AGENT_SPEC_NAME, "v1");
     }
 }

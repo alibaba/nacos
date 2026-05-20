@@ -842,7 +842,7 @@ public class AiResourceManager {
         }
         if (!AiResourceConstants.VERSION_STATUS_REVIEWED.equalsIgnoreCase(v.getStatus())
             && !AiResourceConstants.VERSION_STATUS_REVIEWING.equalsIgnoreCase(
-            v.getStatus())) {
+                v.getStatus())) {
             // Allow draft only for legacy data: pipeline rejected → draft (historical is null/false)
             boolean allowDraft = AiResourceConstants.VERSION_STATUS_DRAFT
                 .equalsIgnoreCase(v.getStatus()) && isLegacyRejectedDraft(v);
@@ -1152,7 +1152,8 @@ public class AiResourceManager {
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = requireVersionInfo(meta);
         
-        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, type, version);
+        AiResourceVersion v =
+            aiResourceVersionPersistService.find(namespaceId, name, type, version);
         if (v == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 type + " version not found: " + name + "@" + version);
@@ -1175,7 +1176,8 @@ public class AiResourceManager {
                 aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, type,
                     version, JacksonUtils.toJson(pipelineInfo));
             } catch (Exception ex) {
-                LOGGER.warn("Failed to mark pipeline info as historical for {}@{}", name, version, ex);
+                LOGGER.warn("Failed to mark pipeline info as historical for {}@{}", name, version,
+                    ex);
             }
         }
         
@@ -1220,7 +1222,7 @@ public class AiResourceManager {
             if (rv == null || (!AiResourceConstants.VERSION_STATUS_REVIEWED
                 .equalsIgnoreCase(rv.getStatus())
                 && !AiResourceConstants.VERSION_STATUS_DRAFT
-                .equalsIgnoreCase(rv.getStatus()))) {
+                    .equalsIgnoreCase(rv.getStatus()))) {
                 return;
             }
             info.setReviewingVersion(null);
@@ -1269,7 +1271,8 @@ public class AiResourceManager {
                 version,
                 JacksonUtils.toJson(info));
             
-            boolean approved = result != null && result.getStatus() == PipelineExecutionStatus.APPROVED;
+            boolean approved =
+                result != null && result.getStatus() == PipelineExecutionStatus.APPROVED;
             
             if (ReviewedStatusConfig.getInstance().isEnabled()) {
                 // New behavior: always transition to reviewed regardless of pipeline result.
