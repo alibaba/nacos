@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.importer;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -24,95 +25,87 @@ import java.util.List;
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class AiResourceImportValidationItem {
-
+public class AiResourceImportValidationItem implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     private String externalId;
-
+    
     private String name;
-
+    
     private String version;
-
+    
     private AiResourceImportValidationStatus status;
-
+    
     private boolean exists;
-
+    
     private String conflictType;
-
+    
     private List<String> warnings;
-
+    
     private List<String> errors;
-
-    private List<AiResourceImportDependency> dependencies;
-
+    
     public String getExternalId() {
         return externalId;
     }
-
+    
     public void setExternalId(String externalId) {
         this.externalId = externalId;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public AiResourceImportValidationStatus getStatus() {
         return status;
     }
-
+    
     public void setStatus(AiResourceImportValidationStatus status) {
         this.status = status;
     }
-
+    
     public boolean isExists() {
         return exists;
     }
-
+    
     public void setExists(boolean exists) {
         this.exists = exists;
     }
-
+    
     public String getConflictType() {
         return conflictType;
     }
-
+    
     public void setConflictType(String conflictType) {
         this.conflictType = conflictType;
     }
-
+    
     public List<String> getWarnings() {
         return warnings;
     }
-
+    
     public void setWarnings(List<String> warnings) {
         this.warnings = warnings;
     }
-
+    
     public List<String> getErrors() {
         return errors;
     }
-
+    
     public void setErrors(List<String> errors) {
         this.errors = errors;
-    }
-
-    public List<AiResourceImportDependency> getDependencies() {
-        return dependencies;
-    }
-
-    public void setDependencies(List<AiResourceImportDependency> dependencies) {
-        this.dependencies = dependencies;
     }
 }

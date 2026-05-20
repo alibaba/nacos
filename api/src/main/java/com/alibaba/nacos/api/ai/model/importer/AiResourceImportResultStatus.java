@@ -23,17 +23,17 @@ package com.alibaba.nacos.api.ai.model.importer;
  * @since 3.2.1
  */
 public enum AiResourceImportResultStatus {
-
+    
     /**
      * The item was imported successfully.
      */
     SUCCESS,
-
+    
     /**
      * The item failed to import.
      */
     FAILED,
-
+    
     /**
      * The item was skipped by policy.
      */

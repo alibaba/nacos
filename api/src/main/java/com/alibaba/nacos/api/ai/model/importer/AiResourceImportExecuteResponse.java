@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.importer;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -24,64 +25,66 @@ import java.util.List;
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class AiResourceImportExecuteResponse {
-
+public class AiResourceImportExecuteResponse implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     private boolean success;
-
+    
     private int totalCount;
-
+    
     private int successCount;
-
+    
     private int failedCount;
-
+    
     private int skippedCount;
-
+    
     private List<AiResourceImportResultItem> results;
-
+    
     public boolean isSuccess() {
         return success;
     }
-
+    
     public void setSuccess(boolean success) {
         this.success = success;
     }
-
+    
     public int getTotalCount() {
         return totalCount;
     }
-
+    
     public void setTotalCount(int totalCount) {
         this.totalCount = totalCount;
     }
-
+    
     public int getSuccessCount() {
         return successCount;
     }
-
+    
     public void setSuccessCount(int successCount) {
         this.successCount = successCount;
     }
-
+    
     public int getFailedCount() {
         return failedCount;
     }
-
+    
     public void setFailedCount(int failedCount) {
         this.failedCount = failedCount;
     }
-
+    
     public int getSkippedCount() {
         return skippedCount;
     }
-
+    
     public void setSkippedCount(int skippedCount) {
         this.skippedCount = skippedCount;
     }
-
+    
     public List<AiResourceImportResultItem> getResults() {
         return results;
     }
-
+    
     public void setResults(List<AiResourceImportResultItem> results) {
         this.results = results;
     }

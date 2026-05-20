@@ -33,21 +33,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 class AiResourceImportServiceTest {
-
+    
     @Test
     void testBuilderCreatesImporterWithProperties() {
         Properties properties = new Properties();
         properties.setProperty("endpoint", "https://example.com");
         FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
-
+        
         AiResourceImportService service = builder.build(properties);
-
+        
         assertEquals("fake-importer", builder.importerType());
         assertEquals("fake-importer", service.importerType());
         assertEquals(Collections.singleton("mcp"), service.supportedResourceTypes());
         assertSame(properties, ((FakeImportService) service).properties);
     }
-
+    
     @Test
     void testSearchAndFetchContract() throws NacosException {
         AiResourceImportService service = new FakeImportService(new Properties());
@@ -55,47 +55,47 @@ class AiResourceImportServiceTest {
         context.setResourceType("mcp");
         AiResourceImportItem item = new AiResourceImportItem();
         item.setExternalId("server-1");
-
+        
         AiResourceImportCandidatePage page = service.search(context);
         AiResourceImportArtifact artifact = service.fetch(context, item);
-
+        
         assertEquals(1, page.getItems().size());
         assertEquals("server-1", page.getItems().get(0).getExternalId());
         assertEquals("server-1", artifact.getExternalId());
         assertEquals(AiResourceImportPayloadKind.MCP_DETAIL, artifact.getPayloadKind());
     }
-
+    
     private static class FakeImportServiceBuilder implements AiResourceImportServiceBuilder {
-
+        
         @Override
         public String importerType() {
             return "fake-importer";
         }
-
+        
         @Override
         public AiResourceImportService build(Properties properties) {
             return new FakeImportService(properties);
         }
     }
-
+    
     private static class FakeImportService implements AiResourceImportService {
-
+        
         private final Properties properties;
-
+        
         private FakeImportService(Properties properties) {
             this.properties = properties;
         }
-
+        
         @Override
         public String importerType() {
             return "fake-importer";
         }
-
+        
         @Override
         public Set<String> supportedResourceTypes() {
             return Collections.singleton("mcp");
         }
-
+        
         @Override
         public AiResourceImportCandidatePage search(AiResourceImportContext context) {
             AiResourceImportCandidate candidate = new AiResourceImportCandidate();
@@ -106,10 +106,10 @@ class AiResourceImportServiceTest {
             page.setItems(Collections.singletonList(candidate));
             return page;
         }
-
+        
         @Override
         public AiResourceImportArtifact fetch(AiResourceImportContext context,
-                AiResourceImportItem item) {
+            AiResourceImportItem item) {
             AiResourceImportArtifact artifact = new AiResourceImportArtifact();
             artifact.setResourceType(context.getResourceType());
             artifact.setExternalId(item.getExternalId());

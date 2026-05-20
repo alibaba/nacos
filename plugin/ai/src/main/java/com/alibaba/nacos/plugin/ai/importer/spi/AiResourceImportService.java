@@ -34,21 +34,21 @@ import java.util.Set;
  * @since 3.2.1
  */
 public interface AiResourceImportService {
-
+    
     /**
      * Importer implementation name, for example {@code mcp-registry}.
      *
      * @return importer type
      */
     String importerType();
-
+    
     /**
      * Resource types supported by this importer, for example {@code mcp} or {@code skill}.
      *
      * @return supported resource type set
      */
     Set<String> supportedResourceTypes();
-
+    
     /**
      * Search external candidates from the resolved source.
      *
@@ -60,7 +60,7 @@ public interface AiResourceImportService {
      * @throws NacosException if the source cannot be searched
      */
     AiResourceImportCandidatePage search(AiResourceImportContext context) throws NacosException;
-
+    
     /**
      * Fetch a selected external item as an import artifact.
      *
@@ -70,5 +70,5 @@ public interface AiResourceImportService {
      * @throws NacosException if the artifact cannot be fetched or converted
      */
     AiResourceImportArtifact fetch(AiResourceImportContext context, AiResourceImportItem item)
-            throws NacosException;
+        throws NacosException;
 }

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.ai.importer.model;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,74 +27,65 @@ import java.util.Map;
  * @since 3.2.1
  */
 public class AiResourceImportCandidate {
-
+    
     private String resourceType;
-
+    
     private String externalId;
-
+    
     private String name;
-
+    
     private String version;
-
+    
     private String description;
-
+    
     private Map<String, String> metadata;
-
-    private List<AiResourceImportDependency> dependencies;
-
+    
     public String getResourceType() {
         return resourceType;
     }
-
+    
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-
+    
     public String getExternalId() {
         return externalId;
     }
-
+    
     public void setExternalId(String externalId) {
         this.externalId = externalId;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public String getDescription() {
         return description;
     }
-
+    
     public void setDescription(String description) {
         this.description = description;
     }
-
+    
     public Map<String, String> getMetadata() {
         return metadata;
     }
-
+    
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
-
-    public List<AiResourceImportDependency> getDependencies() {
-        return dependencies;
-    }
-
-    public void setDependencies(List<AiResourceImportDependency> dependencies) {
-        this.dependencies = dependencies;
-    }
+    
 }

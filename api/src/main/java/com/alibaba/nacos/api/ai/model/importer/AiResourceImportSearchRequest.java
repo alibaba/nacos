@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.importer;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -24,74 +25,76 @@ import java.util.Map;
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class AiResourceImportSearchRequest {
-
+public class AiResourceImportSearchRequest implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     private String namespaceId;
-
+    
     private String resourceType;
-
+    
     private String sourceId;
-
+    
     private String query;
-
+    
     private String cursor;
-
+    
     private Integer limit;
-
+    
     private Map<String, String> options;
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getResourceType() {
         return resourceType;
     }
-
+    
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-
+    
     public String getSourceId() {
         return sourceId;
     }
-
+    
     public void setSourceId(String sourceId) {
         this.sourceId = sourceId;
     }
-
+    
     public String getQuery() {
         return query;
     }
-
+    
     public void setQuery(String query) {
         this.query = query;
     }
-
+    
     public String getCursor() {
         return cursor;
     }
-
+    
     public void setCursor(String cursor) {
         this.cursor = cursor;
     }
-
+    
     public Integer getLimit() {
         return limit;
     }
-
+    
     public void setLimit(Integer limit) {
         this.limit = limit;
     }
-
+    
     public Map<String, String> getOptions() {
         return options;
     }
-
+    
     public void setOptions(Map<String, String> options) {
         this.options = options;
     }

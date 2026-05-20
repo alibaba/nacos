@@ -23,22 +23,22 @@ package com.alibaba.nacos.plugin.ai.importer.model;
  * @since 3.2.1
  */
 public enum AiResourceImportPayloadKind {
-
+    
     /**
      * MCP server detail payload.
      */
     MCP_DETAIL,
-
+    
     /**
      * Standard skill zip payload.
      */
     SKILL_ZIP,
-
+    
     /**
      * Generic JSON payload.
      */
     JSON,
-
+    
     /**
      * Generic binary payload.
      */

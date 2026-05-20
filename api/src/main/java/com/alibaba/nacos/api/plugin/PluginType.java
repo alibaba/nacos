@@ -73,7 +73,7 @@ public enum PluginType {
      * AI resource storage plugin.
      */
     AI_STORAGE("ai-storage", "AI resource storage plugin"),
-
+    
     /**
      * AI resource import plugin.
      */

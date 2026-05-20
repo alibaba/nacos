@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.importer;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -25,94 +26,86 @@ import java.util.Map;
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class AiResourceImportExecuteRequest {
-
+public class AiResourceImportExecuteRequest implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     private String namespaceId;
-
+    
     private String resourceType;
-
+    
     private String sourceId;
-
+    
     private List<AiResourceImportItem> selectedItems;
-
+    
     private boolean overwriteExisting;
-
+    
     private boolean skipInvalid;
-
-    private AiResourceImportDependencyPolicy dependencyPolicy;
-
+    
     private String validationToken;
-
+    
     private Map<String, String> options;
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getResourceType() {
         return resourceType;
     }
-
+    
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-
+    
     public String getSourceId() {
         return sourceId;
     }
-
+    
     public void setSourceId(String sourceId) {
         this.sourceId = sourceId;
     }
-
+    
     public List<AiResourceImportItem> getSelectedItems() {
         return selectedItems;
     }
-
+    
     public void setSelectedItems(List<AiResourceImportItem> selectedItems) {
         this.selectedItems = selectedItems;
     }
-
+    
     public boolean isOverwriteExisting() {
         return overwriteExisting;
     }
-
+    
     public void setOverwriteExisting(boolean overwriteExisting) {
         this.overwriteExisting = overwriteExisting;
     }
-
+    
     public boolean isSkipInvalid() {
         return skipInvalid;
     }
-
+    
     public void setSkipInvalid(boolean skipInvalid) {
         this.skipInvalid = skipInvalid;
     }
-
-    public AiResourceImportDependencyPolicy getDependencyPolicy() {
-        return dependencyPolicy;
-    }
-
-    public void setDependencyPolicy(AiResourceImportDependencyPolicy dependencyPolicy) {
-        this.dependencyPolicy = dependencyPolicy;
-    }
-
+    
     public String getValidationToken() {
         return validationToken;
     }
-
+    
     public void setValidationToken(String validationToken) {
         this.validationToken = validationToken;
     }
-
+    
     public Map<String, String> getOptions() {
         return options;
     }
-
+    
     public void setOptions(Map<String, String> options) {
         this.options = options;
     }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.importer;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -24,44 +25,46 @@ import java.util.Map;
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class AiResourceImportItem {
-
+public class AiResourceImportItem implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     private String externalId;
-
+    
     private String name;
-
+    
     private String version;
-
+    
     private Map<String, String> metadata;
-
+    
     public String getExternalId() {
         return externalId;
     }
-
+    
     public void setExternalId(String externalId) {
         this.externalId = externalId;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public Map<String, String> getMetadata() {
         return metadata;
     }
-
+    
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }

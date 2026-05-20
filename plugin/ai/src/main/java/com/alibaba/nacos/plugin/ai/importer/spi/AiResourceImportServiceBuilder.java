@@ -28,7 +28,7 @@ import java.util.Properties;
  * @since 3.2.1
  */
 public interface AiResourceImportServiceBuilder {
-
+    
     /**
      * Importer implementation name.
      *
@@ -36,7 +36,7 @@ public interface AiResourceImportServiceBuilder {
      *         {@link AiResourceImportService#importerType()}
      */
     String importerType();
-
+    
     /**
      * Build an {@link AiResourceImportService} instance with the given properties.
      *

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.ai.importer.model;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,113 +28,103 @@ import java.util.Map;
  * @since 3.2.1
  */
 public class AiResourceImportArtifact {
-
+    
     private String resourceType;
-
+    
     private String externalId;
-
+    
     private String name;
-
+    
     private String version;
-
+    
     private String description;
-
+    
     private AiResourceImportPayloadKind payloadKind;
-
+    
     private byte[] payload;
-
+    
     private String payloadJson;
-
+    
     private String checksum;
-
-    private List<AiResourceImportDependency> dependencies;
-
+    
     private Map<String, String> sourceMetadata;
-
+    
     public String getResourceType() {
         return resourceType;
     }
-
+    
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-
+    
     public String getExternalId() {
         return externalId;
     }
-
+    
     public void setExternalId(String externalId) {
         this.externalId = externalId;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public String getDescription() {
         return description;
     }
-
+    
     public void setDescription(String description) {
         this.description = description;
     }
-
+    
     public AiResourceImportPayloadKind getPayloadKind() {
         return payloadKind;
     }
-
+    
     public void setPayloadKind(AiResourceImportPayloadKind payloadKind) {
         this.payloadKind = payloadKind;
     }
-
+    
     public byte[] getPayload() {
         return payload;
     }
-
+    
     public void setPayload(byte[] payload) {
         this.payload = payload;
     }
-
+    
     public String getPayloadJson() {
         return payloadJson;
     }
-
+    
     public void setPayloadJson(String payloadJson) {
         this.payloadJson = payloadJson;
     }
-
+    
     public String getChecksum() {
         return checksum;
     }
-
+    
     public void setChecksum(String checksum) {
         this.checksum = checksum;
     }
-
-    public List<AiResourceImportDependency> getDependencies() {
-        return dependencies;
-    }
-
-    public void setDependencies(List<AiResourceImportDependency> dependencies) {
-        this.dependencies = dependencies;
-    }
-
+    
     public Map<String, String> getSourceMetadata() {
         return sourceMetadata;
     }
-
+    
     public void setSourceMetadata(Map<String, String> sourceMetadata) {
         this.sourceMetadata = sourceMetadata;
     }

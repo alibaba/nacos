@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.importer;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -24,74 +25,76 @@ import java.util.List;
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class AiResourceImportSourceInfo {
-
+public class AiResourceImportSourceInfo implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     private String sourceId;
-
+    
     private String displayName;
-
+    
     private String description;
-
+    
     private String pluginName;
-
+    
     private List<String> resourceTypes;
-
+    
     private boolean enabled;
-
+    
     private List<String> capabilities;
-
+    
     public String getSourceId() {
         return sourceId;
     }
-
+    
     public void setSourceId(String sourceId) {
         this.sourceId = sourceId;
     }
-
+    
     public String getDisplayName() {
         return displayName;
     }
-
+    
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
-
+    
     public String getDescription() {
         return description;
     }
-
+    
     public void setDescription(String description) {
         this.description = description;
     }
-
+    
     public String getPluginName() {
         return pluginName;
     }
-
+    
     public void setPluginName(String pluginName) {
         this.pluginName = pluginName;
     }
-
+    
     public List<String> getResourceTypes() {
         return resourceTypes;
     }
-
+    
     public void setResourceTypes(List<String> resourceTypes) {
         this.resourceTypes = resourceTypes;
     }
-
+    
     public boolean isEnabled() {
         return enabled;
     }
-
+    
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-
+    
     public List<String> getCapabilities() {
         return capabilities;
     }
-
+    
     public void setCapabilities(List<String> capabilities) {
         this.capabilities = capabilities;
     }

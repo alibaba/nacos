@@ -29,133 +29,133 @@ import java.util.Map;
  * @since 3.2.1
  */
 public class AiResourceImportSource {
-
+    
     private String sourceId;
-
+    
     private String displayName;
-
+    
     private String pluginName;
-
+    
     private List<String> resourceTypes;
-
+    
     private String endpoint;
-
+    
     private boolean enabled;
-
+    
     private String authRef;
-
+    
     private int connectTimeoutMillis;
-
+    
     private int readTimeoutMillis;
-
+    
     private int maxPageCount;
-
+    
     private int maxItemCount;
-
+    
     private long maxArtifactSize;
-
+    
     private Map<String, String> properties;
-
+    
     public String getSourceId() {
         return sourceId;
     }
-
+    
     public void setSourceId(String sourceId) {
         this.sourceId = sourceId;
     }
-
+    
     public String getDisplayName() {
         return displayName;
     }
-
+    
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
-
+    
     public String getPluginName() {
         return pluginName;
     }
-
+    
     public void setPluginName(String pluginName) {
         this.pluginName = pluginName;
     }
-
+    
     public List<String> getResourceTypes() {
         return resourceTypes;
     }
-
+    
     public void setResourceTypes(List<String> resourceTypes) {
         this.resourceTypes = resourceTypes;
     }
-
+    
     public String getEndpoint() {
         return endpoint;
     }
-
+    
     public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
     }
-
+    
     public boolean isEnabled() {
         return enabled;
     }
-
+    
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-
+    
     public String getAuthRef() {
         return authRef;
     }
-
+    
     public void setAuthRef(String authRef) {
         this.authRef = authRef;
     }
-
+    
     public int getConnectTimeoutMillis() {
         return connectTimeoutMillis;
     }
-
+    
     public void setConnectTimeoutMillis(int connectTimeoutMillis) {
         this.connectTimeoutMillis = connectTimeoutMillis;
     }
-
+    
     public int getReadTimeoutMillis() {
         return readTimeoutMillis;
     }
-
+    
     public void setReadTimeoutMillis(int readTimeoutMillis) {
         this.readTimeoutMillis = readTimeoutMillis;
     }
-
+    
     public int getMaxPageCount() {
         return maxPageCount;
     }
-
+    
     public void setMaxPageCount(int maxPageCount) {
         this.maxPageCount = maxPageCount;
     }
-
+    
     public int getMaxItemCount() {
         return maxItemCount;
     }
-
+    
     public void setMaxItemCount(int maxItemCount) {
         this.maxItemCount = maxItemCount;
     }
-
+    
     public long getMaxArtifactSize() {
         return maxArtifactSize;
     }
-
+    
     public void setMaxArtifactSize(long maxArtifactSize) {
         this.maxArtifactSize = maxArtifactSize;
     }
-
+    
     public Map<String, String> getProperties() {
         return properties;
     }
-
+    
     public void setProperties(Map<String, String> properties) {
         this.properties = properties;
     }

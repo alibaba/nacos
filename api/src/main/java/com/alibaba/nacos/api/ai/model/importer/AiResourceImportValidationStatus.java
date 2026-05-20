@@ -23,22 +23,22 @@ package com.alibaba.nacos.api.ai.model.importer;
  * @since 3.2.1
  */
 public enum AiResourceImportValidationStatus {
-
+    
     /**
      * The item can be imported.
      */
     VALID,
-
+    
     /**
      * The item can be imported with warnings.
      */
     WARNING,
-
+    
     /**
      * The item cannot be imported.
      */
     INVALID,
-
+    
     /**
      * The item conflicts with an existing resource.
      */

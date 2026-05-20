@@ -28,103 +28,103 @@ import java.util.Map;
  * @since 3.2.1
  */
 public class AiResourceImportContext {
-
+    
     private String namespaceId;
-
+    
     private String resourceType;
-
+    
     private AiResourceImportSource source;
-
+    
     private String query;
-
+    
     private String cursor;
-
+    
     private int limit;
-
+    
     private Map<String, String> options;
-
+    
     private String requestId;
-
+    
     private String operator;
-
+    
     private String clientIp;
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getResourceType() {
         return resourceType;
     }
-
+    
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-
+    
     public AiResourceImportSource getSource() {
         return source;
     }
-
+    
     public void setSource(AiResourceImportSource source) {
         this.source = source;
     }
-
+    
     public String getQuery() {
         return query;
     }
-
+    
     public void setQuery(String query) {
         this.query = query;
     }
-
+    
     public String getCursor() {
         return cursor;
     }
-
+    
     public void setCursor(String cursor) {
         this.cursor = cursor;
     }
-
+    
     public int getLimit() {
         return limit;
     }
-
+    
     public void setLimit(int limit) {
         this.limit = limit;
     }
-
+    
     public Map<String, String> getOptions() {
         return options;
     }
-
+    
     public void setOptions(Map<String, String> options) {
         this.options = options;
     }
-
+    
     public String getRequestId() {
         return requestId;
     }
-
+    
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
-
+    
     public String getOperator() {
         return operator;
     }
-
+    
     public void setOperator(String operator) {
         this.operator = operator;
     }
-
+    
     public String getClientIp() {
         return clientIp;
     }
-
+    
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
     }

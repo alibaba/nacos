@@ -26,43 +26,43 @@ import java.util.Map;
  * @since 3.2.1
  */
 public class AiResourceImportCandidatePage {
-
+    
     private List<AiResourceImportCandidate> items;
-
+    
     private String nextCursor;
-
+    
     private boolean hasMore;
-
+    
     private Map<String, String> sourceMetadata;
-
+    
     public List<AiResourceImportCandidate> getItems() {
         return items;
     }
-
+    
     public void setItems(List<AiResourceImportCandidate> items) {
         this.items = items;
     }
-
+    
     public String getNextCursor() {
         return nextCursor;
     }
-
+    
     public void setNextCursor(String nextCursor) {
         this.nextCursor = nextCursor;
     }
-
+    
     public boolean isHasMore() {
         return hasMore;
     }
-
+    
     public void setHasMore(boolean hasMore) {
         this.hasMore = hasMore;
     }
-
+    
     public Map<String, String> getSourceMetadata() {
         return sourceMetadata;
     }
-
+    
     public void setSourceMetadata(Map<String, String> sourceMetadata) {
         this.sourceMetadata = sourceMetadata;
     }

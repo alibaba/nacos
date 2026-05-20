@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.importer;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -24,54 +25,56 @@ import java.util.List;
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class AiResourceImportSearchResponse {
-
+public class AiResourceImportSearchResponse implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     private String sourceId;
-
+    
     private String resourceType;
-
+    
     private String nextCursor;
-
+    
     private boolean hasMore;
-
+    
     private List<AiResourceImportCandidateItem> items;
-
+    
     public String getSourceId() {
         return sourceId;
     }
-
+    
     public void setSourceId(String sourceId) {
         this.sourceId = sourceId;
     }
-
+    
     public String getResourceType() {
         return resourceType;
     }
-
+    
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-
+    
     public String getNextCursor() {
         return nextCursor;
     }
-
+    
     public void setNextCursor(String nextCursor) {
         this.nextCursor = nextCursor;
     }
-
+    
     public boolean isHasMore() {
         return hasMore;
     }
-
+    
     public void setHasMore(boolean hasMore) {
         this.hasMore = hasMore;
     }
-
+    
     public List<AiResourceImportCandidateItem> getItems() {
         return items;
     }
-
+    
     public void setItems(List<AiResourceImportCandidateItem> items) {
         this.items = items;
     }

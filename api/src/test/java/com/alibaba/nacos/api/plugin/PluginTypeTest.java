@@ -31,14 +31,14 @@ class PluginTypeTest {
         assertEquals("auth", PluginType.AUTH.getType());
         assertEquals("Authentication plugin", PluginType.AUTH.getDescription());
     }
-
+    
     @Test
     @DisplayName("test DATASOURCE_DIALECT enum values")
     void testDatasourceDialectEnumValues() {
         assertEquals("datasource-dialect", PluginType.DATASOURCE_DIALECT.getType());
         assertEquals("Datasource dialect plugin", PluginType.DATASOURCE_DIALECT.getDescription());
     }
-
+    
     @Test
     @DisplayName("test CONFIG_CHANGE enum values")
     void testConfigChangeEnumValues() {
@@ -101,7 +101,7 @@ class PluginTypeTest {
         assertEquals("ai-resource-import", PluginType.AI_RESOURCE_IMPORT.getType());
         assertEquals("AI resource import plugin", PluginType.AI_RESOURCE_IMPORT.getDescription());
     }
-
+    
     @Test
     @DisplayName("test fromType with valid type")
     void testFromTypeWithValidType() {

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.importer;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -24,64 +25,66 @@ import java.util.List;
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class AiResourceImportResultItem {
-
+public class AiResourceImportResultItem implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     private String externalId;
-
+    
     private String resourceName;
-
+    
     private String version;
-
+    
     private AiResourceImportResultStatus status;
-
+    
     private String errorMessage;
-
+    
     private List<String> warnings;
-
+    
     public String getExternalId() {
         return externalId;
     }
-
+    
     public void setExternalId(String externalId) {
         this.externalId = externalId;
     }
-
+    
     public String getResourceName() {
         return resourceName;
     }
-
+    
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public AiResourceImportResultStatus getStatus() {
         return status;
     }
-
+    
     public void setStatus(AiResourceImportResultStatus status) {
         this.status = status;
     }
-
+    
     public String getErrorMessage() {
         return errorMessage;
     }
-
+    
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
     }
-
+    
     public List<String> getWarnings() {
         return warnings;
     }
-
+    
     public void setWarnings(List<String> warnings) {
         this.warnings = warnings;
     }
