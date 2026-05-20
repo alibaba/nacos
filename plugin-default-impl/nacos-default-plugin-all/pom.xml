@@ -102,6 +102,12 @@
                         <configuration>
                             <target>
                                 <mkdir dir="${project.basedir}/../../distribution/conf"/>
+                                <mkdir dir="${project.basedir}/../../distribution/plugins"/>
+                                <delete>
+                                    <fileset dir="${project.basedir}/../../distribution/plugins">
+                                        <include name="spring-ldap-core-*.jar"/>
+                                    </fileset>
+                                </delete>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/derby-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
@@ -154,6 +160,20 @@
                                 <fail unless="schema.output.pg.exists" message="Missing postgresql schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.pg.grant.exists" message="Missing postgresql grant script in distribution/conf after packaging."/>
                                 <fail unless="schema.output.oracle.exists" message="Missing oracle schema in distribution/conf after packaging."/>
+
+                                <available file="${project.basedir}/../../distribution/plugins/nacos-ldap-auth-plugin-${project.version}.jar"
+                                           property="plugin.output.ldap.exists"/>
+                                <fail unless="plugin.output.ldap.exists" message="Missing nacos-ldap-auth-plugin in distribution/plugins after packaging."/>
+
+                                <condition property="plugin.output.spring.ldap.missing">
+                                    <resourcecount count="0" when="equal">
+                                        <fileset dir="${project.basedir}/../../distribution/plugins">
+                                            <include name="spring-ldap-core-*.jar"/>
+                                        </fileset>
+                                    </resourcecount>
+                                </condition>
+                                <fail unless="plugin.output.spring.ldap.missing"
+                                      message="spring-ldap-core should not exist in distribution/plugins by default."/>
                             </target>
                         </configuration>
                     </execution>
