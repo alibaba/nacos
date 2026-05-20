@@ -26,6 +26,8 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link SkillScannerPipelineService} unit test.
@@ -171,6 +175,22 @@ class SkillScannerPipelineServiceTest {
         assertEquals(SkillScannerPipelineService.DEFAULT_SKILL_SCANNER_CMD, command.get(0));
         assertFalse(command.contains("--use-llm"));
     }
+    
+    @Test
+    void deleteRecursivelyHandlesMissingAndFailedDeleteTest() throws Exception {
+        Method deleteRecursively =
+            SkillScannerPipelineService.class.getDeclaredMethod("deleteRecursively", File.class);
+        deleteRecursively.setAccessible(true);
+        deleteRecursively.invoke(service, new Object[] {null});
+        
+        File file = mock(File.class);
+        when(file.exists()).thenReturn(true);
+        when(file.isDirectory()).thenReturn(false);
+        when(file.delete()).thenReturn(false);
+        when(file.getAbsolutePath()).thenReturn("/tmp/not-deleted");
+        
+        deleteRecursively.invoke(service, file);
+    }
 
     @Test
     void constructorWithNullOptionsAndNotInstalledRejectsTest() {
@@ -272,12 +292,22 @@ class SkillScannerPipelineServiceTest {
 
     @Test
     void executeInterruptedScannerProcessTest() {
-        SkillScannerPipelineService installedService = createStubService(StubScanMode.SLEEP);
+        SkillScannerPipelineService installedService =
+            new StubSkillScannerPipelineService(StubScanMode.PASS_SKILL,
+                SkillScannerScanOptions.none()) {
+                @Override
+                int waitForProcess(Process process) throws InterruptedException {
+                    throw new InterruptedException("test interrupt");
+                }
+            };
+        List<ResourceFileContent> files = Arrays.asList(
+            new ResourceFileContent("SKILL.md",
+                "---\ndescription: 演示用 Skill\n---\n\n这是一个简单的演示 Skill。"),
+            new ResourceFileContent("subdir/helper.py", "# benign script\nprint('hello')"));
 
-        Thread.currentThread().interrupt();
         try {
             PublishPipelineResult result =
-                installedService.execute(createBenignSkillContext("sleepy-skill"));
+                installedService.execute(createSkillContext("sleepy-skill", files));
 
             assertNotNull(result);
             assertFalse(result.isPassed());
@@ -595,7 +625,7 @@ class SkillScannerPipelineServiceTest {
         SLEEP
     }
 
-    private static final class StubSkillScannerPipelineService extends SkillScannerPipelineService {
+    private static class StubSkillScannerPipelineService extends SkillScannerPipelineService {
 
         private final StubScanMode mode;
 

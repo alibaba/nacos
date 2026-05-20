@@ -23,6 +23,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -30,6 +31,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -126,6 +128,28 @@ class SkillScannerPipelineServiceBuilderTest {
         } finally {
             System.setProperty("user.home", oldUserHome);
         }
+    }
+    
+    @Test
+    void resolveBlankCandidateAndBlankPathTest() throws Exception {
+        Method resolveCandidate =
+            SkillScannerPipelineServiceBuilder.class.getDeclaredMethod("resolveCandidate",
+                String.class);
+        resolveCandidate.setAccessible(true);
+        assertNull(resolveCandidate.invoke(builder, " "));
+        
+        SkillScannerPipelineServiceBuilder blankPathBuilder =
+            new SkillScannerPipelineServiceBuilder() {
+                @Override
+                String getPathEnv() {
+                    return "";
+                }
+            };
+        Method findExecutableInPath =
+            SkillScannerPipelineServiceBuilder.class.getDeclaredMethod("findExecutableInPath",
+                String.class);
+        findExecutableInPath.setAccessible(true);
+        assertNull(findExecutableInPath.invoke(blankPathBuilder, "skill-scanner"));
     }
 
     private Path createExecutable(String name) throws Exception {
