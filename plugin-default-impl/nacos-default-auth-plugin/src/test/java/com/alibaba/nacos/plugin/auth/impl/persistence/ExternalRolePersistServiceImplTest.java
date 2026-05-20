@@ -29,13 +29,17 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -120,5 +124,71 @@ class ExternalRolePersistServiceImplTest {
         List<String> role = externalRolePersistService.findRolesLikeRoleName("role");
         
         assertEquals(0, role.size());
+    }
+    
+    @Test
+    void testFindRolesLikeAndGenerateLikeArgument() {
+        assertEquals("ro\\_le%", externalRolePersistService.generateLikeArgument("ro_le*"));
+        assertEquals("plain", externalRolePersistService.generateLikeArgument("plain"));
+        
+        RoleInfo roleInfo = new RoleInfo();
+        roleInfo.setRole("role");
+        roleInfo.setUsername("userName");
+        Page<RoleInfo> page = new Page<>();
+        page.setPageItems(Collections.singletonList(roleInfo));
+        page.setTotalCount(1);
+        AuthPaginationHelper<RoleInfo> helper = Mockito.mock(AuthPaginationHelper.class);
+        ExternalRolePersistServiceImpl service = serviceWithHelper(helper);
+        when(helper.fetchPage(any(), any(), any(), eq(1), eq(10), any())).thenReturn(page);
+        
+        assertSame(page, service.findRolesLike4Page("user*", "ro_le*", 1, 10));
+        assertSame(page, service.findRolesLike4Page("", "", 1, 10));
+    }
+    
+    @Test
+    void testGetRolesReturnsEmptyPageWhenHelperReturnsNull() {
+        AuthPaginationHelper<RoleInfo> helper = Mockito.mock(AuthPaginationHelper.class);
+        ExternalRolePersistServiceImpl service = serviceWithHelper(helper);
+        when(helper.fetchPage(any(), any(), any(), eq(1), eq(10), any())).thenReturn(null);
+        
+        Page<RoleInfo> result = service.getRoles(1, 10);
+        
+        assertEquals(0, result.getTotalCount());
+        assertEquals(Collections.emptyList(), result.getPageItems());
+    }
+    
+    @Test
+    void testConnectionExceptionsAreRethrown() {
+        CannotGetJdbcConnectionException addException =
+            new CannotGetJdbcConnectionException("add");
+        when(jdbcTemplate.update("INSERT INTO roles (role, username) VALUES (?, ?)", "role",
+            "userName")).thenThrow(addException);
+        assertSame(addException, assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalRolePersistService.addRole("role", "userName")));
+        
+        CannotGetJdbcConnectionException deleteRoleException =
+            new CannotGetJdbcConnectionException("deleteRole");
+        when(jdbcTemplate.update("DELETE FROM roles WHERE role=?",
+            "role")).thenThrow(deleteRoleException);
+        assertSame(deleteRoleException, assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalRolePersistService.deleteRole("role")));
+        
+        CannotGetJdbcConnectionException deleteUserRoleException =
+            new CannotGetJdbcConnectionException("deleteUserRole");
+        when(jdbcTemplate.update("DELETE FROM roles WHERE role=? AND username=?", "role",
+            "userName")).thenThrow(deleteUserRoleException);
+        assertSame(deleteUserRoleException, assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalRolePersistService.deleteRole("role", "userName")));
+    }
+    
+    private ExternalRolePersistServiceImpl serviceWithHelper(AuthPaginationHelper<RoleInfo> helper) {
+        return new ExternalRolePersistServiceImpl() {
+            
+            @Override
+            @SuppressWarnings("unchecked")
+            public <E> AuthPaginationHelper<E> createPaginationHelper() {
+                return (AuthPaginationHelper<E>) helper;
+            }
+        };
     }
 }

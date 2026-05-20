@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,9 +30,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.Collections;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -52,6 +56,11 @@ class EmbeddedPermissionPersistServiceImplTest {
             .thenReturn(0);
         embeddedPermissionPersistService =
             new EmbeddedPermissionPersistServiceImpl(databaseOperate);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EmbeddedStorageContextHolder.cleanAllContext();
     }
     
     @Test
@@ -77,5 +86,50 @@ class EmbeddedPermissionPersistServiceImplTest {
         List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
         Mockito.verify(databaseOperate).blockUpdate();
+    }
+    
+    @Test
+    void testBlankRoleAndFindLikeReturnEmptyPageWhenHelperReturnsNull() {
+        AuthPaginationHelper<PermissionInfo> helper = Mockito.mock(AuthPaginationHelper.class);
+        EmbeddedPermissionPersistServiceImpl service = serviceWithHelper(helper);
+        when(helper.fetchPage(any(), any(), any(), eq(1), eq(10), any())).thenReturn(null);
+        
+        Page<PermissionInfo> permissions = service.getPermissions("", 1, 10);
+        Page<PermissionInfo> found = service.findPermissionsLike4Page("ro_le*", 1, 10);
+        
+        assertEquals(0, permissions.getTotalCount());
+        assertEquals(Collections.emptyList(), permissions.getPageItems());
+        assertEquals(0, found.getTotalCount());
+        assertEquals(Collections.emptyList(), found.getPageItems());
+        assertEquals("ro\\_le%", service.generateLikeArgument("ro_le*"));
+        assertEquals("plain", service.generateLikeArgument("plain"));
+    }
+    
+    @Test
+    void testFindPermissionsLikeReturnsHelperPage() {
+        PermissionInfo permissionInfo = new PermissionInfo();
+        permissionInfo.setRole("role");
+        permissionInfo.setResource("resource");
+        permissionInfo.setAction("action");
+        Page<PermissionInfo> page = new Page<>();
+        page.setPageItems(Collections.singletonList(permissionInfo));
+        page.setTotalCount(1);
+        AuthPaginationHelper<PermissionInfo> helper = Mockito.mock(AuthPaginationHelper.class);
+        EmbeddedPermissionPersistServiceImpl service = serviceWithHelper(helper);
+        when(helper.fetchPage(any(), any(), any(), eq(1), eq(10), any())).thenReturn(page);
+        
+        assertSame(page, service.findPermissionsLike4Page("", 1, 10));
+    }
+    
+    private EmbeddedPermissionPersistServiceImpl serviceWithHelper(
+        AuthPaginationHelper<PermissionInfo> helper) {
+        return new EmbeddedPermissionPersistServiceImpl(databaseOperate) {
+            
+            @Override
+            @SuppressWarnings("unchecked")
+            public <E> AuthPaginationHelper<E> createPaginationHelper() {
+                return (AuthPaginationHelper<E>) helper;
+            }
+        };
     }
 }

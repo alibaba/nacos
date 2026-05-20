@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +28,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AuthConfigsTest {
     
@@ -65,6 +71,52 @@ class AuthConfigsTest {
         assertEquals(TEST_CACHING_ENABLED, authConfigs.isCachingEnabled());
         assertEquals(TEST_SERVER_IDENTITY_KEY, authConfigs.getServerIdentityKey());
         assertEquals(TEST_SERVER_IDENTITY_VALUE, authConfigs.getServerIdentityValue());
+    }
+    
+    @Test
+    void testUpgradeAllFieldsAndPluginPropertiesFromEvent() {
+        environment.setProperty("nacos.core.auth.enabled", "true");
+        environment.setProperty("nacos.core.auth.console.enabled", "false");
+        environment.setProperty("nacos.core.auth.caching.enabled", "true");
+        environment.setProperty("nacos.core.auth.system.type", "nacos");
+        environment.setProperty("nacos.core.auth.server.identity.key", TEST_SERVER_IDENTITY_KEY);
+        environment.setProperty("nacos.core.auth.server.identity.value",
+            TEST_SERVER_IDENTITY_VALUE);
+        environment.setProperty("nacos.core.auth.plugin.test.secret", "value");
+        environment.setProperty("nacos.core.auth.nacos.anonymous.ai.enabled", "true");
+        
+        authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
+        authConfigs.setHasGlobalAdminRole(true);
+        
+        assertTrue(authConfigs.isAuthEnabled());
+        assertFalse(authConfigs.isConsoleAuthEnabled());
+        assertTrue(authConfigs.isCachingEnabled());
+        assertTrue(authConfigs.isAiAnonymousEnabled());
+        assertTrue(authConfigs.isHasGlobalAdminRole());
+        assertEquals("nacos", authConfigs.getNacosAuthSystemType());
+        assertEquals(TEST_SERVER_IDENTITY_KEY, authConfigs.getServerIdentityKey());
+        assertEquals(TEST_SERVER_IDENTITY_VALUE, authConfigs.getServerIdentityValue());
+        assertEquals("value", authConfigs.getAuthPluginProperties("test").getProperty("secret"));
+        assertSame(ServerConfigChangeEvent.class, authConfigs.subscribeType());
+    }
+    
+    @Test
+    void testValidateSkipsWhenAllAuthDisabled() {
+        environment.setProperty("nacos.core.auth.enabled", "false");
+        environment.setProperty("nacos.core.auth.console.enabled", "false");
+        authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
+        
+        assertDoesNotThrow(() -> authConfigs.validate());
+    }
+    
+    @Test
+    void testValidateRejectsMissingAuthType() {
+        environment.setProperty("nacos.core.auth.enabled", "true");
+        environment.setProperty("nacos.core.auth.console.enabled", "true");
+        environment.setProperty("nacos.core.auth.system.type", "");
+        authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
+        
+        assertThrows(NacosException.class, () -> authConfigs.validate());
     }
     
     @Test
