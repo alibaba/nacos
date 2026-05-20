@@ -156,6 +156,11 @@ Nacos 应暴露统一的 Admin 和 Console 导入 API：
 
 所有统一 API 必须使用标准 v3 `Result<T>` 响应、错误和鉴权约定。
 
+统一导入 API 必须遵循 Nacos v3 表单绑定约定。Controller 方法应暴露 `*Form` 参数，而不是直接以
+request model 作为 `@RequestBody` 契约。标量字段可以通过 query 参数或
+`application/x-www-form-urlencoded` 表单字段提交。`selectedItems`、`options` 等复杂导入字段应
+作为 JSON 字符串表单字段提交，并由 Form 对象转换为内部 request model。
+
 推荐的浏览器流程为：
 
 ```text

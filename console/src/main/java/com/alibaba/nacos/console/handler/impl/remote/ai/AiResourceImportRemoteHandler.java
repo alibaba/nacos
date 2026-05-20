@@ -31,6 +31,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.ai.AiResourceImportHandler;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
@@ -42,14 +43,14 @@ import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Remote implementation of Console AI resource import handler.
@@ -86,7 +87,8 @@ public class AiResourceImportRemoteHandler implements AiResourceImportHandler {
     @Override
     public AiResourceImportSearchResponse search(AiResourceImportSearchRequest request)
         throws NacosException {
-        Result<AiResourceImportSearchResponse> result = executePost("/search", request,
+        Result<AiResourceImportSearchResponse> result = executePost("/search",
+            buildSearchForm(request),
             new TypeReference<>() {
             });
         return unwrap(result);
@@ -95,7 +97,8 @@ public class AiResourceImportRemoteHandler implements AiResourceImportHandler {
     @Override
     public AiResourceImportValidateResponse validate(AiResourceImportValidateRequest request)
         throws NacosException {
-        Result<AiResourceImportValidateResponse> result = executePost("/validate", request,
+        Result<AiResourceImportValidateResponse> result = executePost("/validate",
+            buildValidateForm(request),
             new TypeReference<>() {
             });
         return unwrap(result);
@@ -104,7 +107,8 @@ public class AiResourceImportRemoteHandler implements AiResourceImportHandler {
     @Override
     public AiResourceImportExecuteResponse execute(AiResourceImportExecuteRequest request)
         throws NacosException {
-        Result<AiResourceImportExecuteResponse> result = executePost("/execute", request,
+        Result<AiResourceImportExecuteResponse> result = executePost("/execute",
+            buildExecuteForm(request),
             new TypeReference<>() {
             });
         return unwrap(result);
@@ -125,19 +129,73 @@ public class AiResourceImportRemoteHandler implements AiResourceImportHandler {
         }
     }
     
-    private <T> Result<T> executePost(String subPath, Object request,
+    private <T> Result<T> executePost(String subPath, Map<String, String> form,
         TypeReference<Result<T>> typeReference) throws NacosException {
         Member serverMember = remoteServerConnector.randomOneHealthyMember();
         String url = buildUrl(serverMember, subPath);
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpPost httpPost = new HttpPost(url);
-            httpPost.setEntity(new StringEntity(JacksonUtils.toJson(request),
-                ContentType.APPLICATION_JSON));
+            HttpUtils.initRequestFromEntity(httpPost, form, "UTF-8");
             remoteServerConnector.addAuthIdentity(httpPost);
             String response = httpClient.execute(httpPost, new BasicHttpClientResponseHandler());
             return JacksonUtils.toObj(response, typeReference);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw remoteFailed(serverMember, e);
+        }
+    }
+    
+    private Map<String, String> buildSearchForm(AiResourceImportSearchRequest request) {
+        Map<String, String> result = buildSourceForm(request.getNamespaceId(),
+            request.getResourceType(), request.getSourceId(), request.getOptions());
+        addIfNotBlank(result, "query", request.getQuery());
+        addIfNotBlank(result, "cursor", request.getCursor());
+        addIfNotNull(result, "limit", request.getLimit());
+        return result;
+    }
+    
+    private Map<String, String> buildValidateForm(AiResourceImportValidateRequest request) {
+        Map<String, String> result = buildSourceForm(request.getNamespaceId(),
+            request.getResourceType(), request.getSourceId(), request.getOptions());
+        addIfNotNull(result, "selectedItems", request.getSelectedItems());
+        if (request.isOverwriteExisting()) {
+            result.put("overwriteExisting", Boolean.TRUE.toString());
+        }
+        return result;
+    }
+    
+    private Map<String, String> buildExecuteForm(AiResourceImportExecuteRequest request) {
+        Map<String, String> result = buildSourceForm(request.getNamespaceId(),
+            request.getResourceType(), request.getSourceId(), request.getOptions());
+        addIfNotNull(result, "selectedItems", request.getSelectedItems());
+        if (request.isOverwriteExisting()) {
+            result.put("overwriteExisting", Boolean.TRUE.toString());
+        }
+        if (request.isSkipInvalid()) {
+            result.put("skipInvalid", Boolean.TRUE.toString());
+        }
+        addIfNotBlank(result, "validationToken", request.getValidationToken());
+        return result;
+    }
+    
+    private Map<String, String> buildSourceForm(String namespaceId, String resourceType,
+        String sourceId, Map<String, String> options) {
+        Map<String, String> result = new LinkedHashMap<>();
+        addIfNotBlank(result, "namespaceId", namespaceId);
+        addIfNotBlank(result, "resourceType", resourceType);
+        addIfNotBlank(result, "sourceId", sourceId);
+        addIfNotNull(result, "options", options);
+        return result;
+    }
+    
+    private void addIfNotBlank(Map<String, String> form, String key, String value) {
+        if (StringUtils.isNotBlank(value)) {
+            form.put(key, value);
+        }
+    }
+    
+    private void addIfNotNull(Map<String, String> form, String key, Object value) {
+        if (value != null) {
+            form.put(key, JacksonUtils.toJson(value));
         }
     }
     

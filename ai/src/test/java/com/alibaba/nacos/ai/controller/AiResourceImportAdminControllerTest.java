@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -44,6 +43,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -87,14 +87,14 @@ class AiResourceImportAdminControllerTest {
         searchResponse.setItems(Collections.singletonList(candidate));
         when(importManager.search(any(AiResourceImportSearchRequest.class))).thenReturn(
             searchResponse);
-        AiResourceImportSearchRequest request = new AiResourceImportSearchRequest();
-        request.setResourceType("mcp");
-        request.setSourceId("source-1");
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.post(Constants.AI_RESOURCE_IMPORT_ADMIN_PATH + "/search")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(JacksonUtils.toJson(request)))
+                .param("resourceType", "mcp")
+                .param("sourceId", "source-1")
+                .param("query", "database")
+                .param("limit", "10")
+                .param("options", "{\"stage\":\"dev\"}"))
             .andReturn().getResponse();
         
         Result<AiResourceImportSearchResponse> result = JacksonUtils.toObj(
@@ -102,7 +102,10 @@ class AiResourceImportAdminControllerTest {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("server-1", result.getData().getItems().get(0).getExternalId());
-        verify(importManager).search(any(AiResourceImportSearchRequest.class));
+        verify(importManager).search(argThat(request -> "mcp".equals(request.getResourceType())
+            && "source-1".equals(request.getSourceId())
+            && "database".equals(request.getQuery()) && request.getLimit() == 10
+            && "dev".equals(request.getOptions().get("stage"))));
     }
     
     @Test
@@ -111,15 +114,19 @@ class AiResourceImportAdminControllerTest {
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.post(Constants.AI_RESOURCE_IMPORT_ADMIN_PATH + "/validate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
+                .param("resourceType", "mcp")
+                .param("sourceId", "source-1")
+                .param("selectedItems", selectedItemsJson())
+                .param("overwriteExisting", "true"))
             .andReturn().getResponse();
         
         Result<AiResourceImportValidateResponse> result = JacksonUtils.toObj(
             response.getContentAsString(), new TypeReference<>() {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        verify(importManager).validate(any());
+        verify(importManager).validate(argThat(request -> "mcp".equals(request.getResourceType())
+            && "source-1".equals(request.getSourceId()) && request.isOverwriteExisting()
+            && "server-1".equals(request.getSelectedItems().get(0).getExternalId())));
     }
     
     @Test
@@ -128,14 +135,22 @@ class AiResourceImportAdminControllerTest {
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.post(Constants.AI_RESOURCE_IMPORT_ADMIN_PATH + "/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
+                .param("resourceType", "mcp")
+                .param("sourceId", "source-1")
+                .param("selectedItems", selectedItemsJson())
+                .param("skipInvalid", "true"))
             .andReturn().getResponse();
         
         Result<AiResourceImportExecuteResponse> result = JacksonUtils.toObj(
             response.getContentAsString(), new TypeReference<>() {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        verify(importManager).execute(any());
+        verify(importManager).execute(argThat(request -> "mcp".equals(request.getResourceType())
+            && "source-1".equals(request.getSourceId()) && request.isSkipInvalid()
+            && "server-1".equals(request.getSelectedItems().get(0).getExternalId())));
+    }
+    
+    private String selectedItemsJson() {
+        return "[{\"externalId\":\"server-1\",\"name\":\"server\",\"version\":\"1.0.0\"}]";
     }
 }

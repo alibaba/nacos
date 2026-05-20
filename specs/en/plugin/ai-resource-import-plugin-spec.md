@@ -174,6 +174,13 @@ Nacos should expose unified Admin and Console import APIs:
 All unified APIs must use standard v3 `Result<T>` response, error, and
 authorization conventions.
 
+Unified import APIs must follow the Nacos v3 form binding convention. Controller
+methods should expose `*Form` parameters instead of direct request-model
+`@RequestBody` contracts. Scalar fields may be submitted as query parameters or
+`application/x-www-form-urlencoded` form fields. Complex import fields, such as
+`selectedItems` and `options`, should be submitted as JSON string form fields
+and converted by the form object into the internal request model.
+
 The recommended browser flow is:
 
 ```text

@@ -17,12 +17,13 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.api.ai.model.importer.AiResourceImportExecuteRequest;
+import com.alibaba.nacos.ai.form.importer.AiResourceImportExecuteForm;
+import com.alibaba.nacos.ai.form.importer.AiResourceImportSearchForm;
+import com.alibaba.nacos.ai.form.importer.AiResourceImportSourceListForm;
+import com.alibaba.nacos.ai.form.importer.AiResourceImportValidateForm;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportExecuteResponse;
-import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSearchRequest;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSearchResponse;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSourceInfo;
-import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidateRequest;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidateResponse;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
@@ -34,9 +35,7 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -61,59 +60,60 @@ public class ConsoleAiResourceImportController {
     /**
      * List configured import sources for Console.
      *
-     * @param resourceType optional resource type filter
+     * @param form source list form
      * @return source list
      * @throws NacosException if source configuration is invalid
      */
     @GetMapping("/sources")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<List<AiResourceImportSourceInfo>> listSources(
-        @RequestParam(required = false) String resourceType) throws NacosException {
-        return Result.success(importProxy.listSources(resourceType));
+        AiResourceImportSourceListForm form) throws NacosException {
+        form.validate();
+        return Result.success(importProxy.listSources(form.getResourceType()));
     }
     
     /**
      * Search external import candidates for Console.
      *
-     * @param request search request
+     * @param form search form
      * @return candidate page
      * @throws NacosException if the source cannot be searched
      */
     @PostMapping("/search")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<AiResourceImportSearchResponse> search(
-        @RequestBody(required = false) AiResourceImportSearchRequest request)
+    public Result<AiResourceImportSearchResponse> search(AiResourceImportSearchForm form)
         throws NacosException {
-        return Result.success(importProxy.search(request));
+        form.validate();
+        return Result.success(importProxy.search(form.toRequest()));
     }
     
     /**
      * Validate selected import candidates for Console.
      *
-     * @param request validate request
+     * @param form validate form
      * @return validation result
      * @throws NacosException if validation cannot start
      */
     @PostMapping("/validate")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<AiResourceImportValidateResponse> validate(
-        @RequestBody(required = false) AiResourceImportValidateRequest request)
+    public Result<AiResourceImportValidateResponse> validate(AiResourceImportValidateForm form)
         throws NacosException {
-        return Result.success(importProxy.validate(request));
+        form.validate();
+        return Result.success(importProxy.validate(form.toRequest()));
     }
     
     /**
      * Execute import for selected candidates from Console.
      *
-     * @param request execute request
+     * @param form execute form
      * @return import result
      * @throws NacosException if import cannot start
      */
     @PostMapping("/execute")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<AiResourceImportExecuteResponse> execute(
-        @RequestBody(required = false) AiResourceImportExecuteRequest request)
+    public Result<AiResourceImportExecuteResponse> execute(AiResourceImportExecuteForm form)
         throws NacosException {
-        return Result.success(importProxy.execute(request));
+        form.validate();
+        return Result.success(importProxy.execute(form.toRequest()));
     }
 }

@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -43,6 +42,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -83,21 +83,23 @@ class ConsoleAiResourceImportControllerTest {
     void testSearch() throws Exception {
         when(importProxy.search(any(AiResourceImportSearchRequest.class))).thenReturn(
             new AiResourceImportSearchResponse());
-        AiResourceImportSearchRequest request = new AiResourceImportSearchRequest();
-        request.setResourceType("mcp");
-        request.setSourceId("source-1");
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.post(Constants.AI_RESOURCE_IMPORT_CONSOLE_PATH + "/search")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(JacksonUtils.toJson(request)))
+                .param("resourceType", "mcp")
+                .param("sourceId", "source-1")
+                .param("query", "database")
+                .param("options", "{\"stage\":\"dev\"}"))
             .andReturn().getResponse();
         
         Result<AiResourceImportSearchResponse> result = JacksonUtils.toObj(
             response.getContentAsString(), new TypeReference<>() {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        verify(importProxy).search(any(AiResourceImportSearchRequest.class));
+        verify(importProxy).search(argThat(request -> "mcp".equals(request.getResourceType())
+            && "source-1".equals(request.getSourceId())
+            && "database".equals(request.getQuery())
+            && "dev".equals(request.getOptions().get("stage"))));
     }
     
     @Test
@@ -106,15 +108,18 @@ class ConsoleAiResourceImportControllerTest {
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.post(Constants.AI_RESOURCE_IMPORT_CONSOLE_PATH + "/validate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
+                .param("resourceType", "mcp")
+                .param("sourceId", "source-1")
+                .param("selectedItems", selectedItemsJson()))
             .andReturn().getResponse();
         
         Result<AiResourceImportValidateResponse> result = JacksonUtils.toObj(
             response.getContentAsString(), new TypeReference<>() {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        verify(importProxy).validate(any());
+        verify(importProxy).validate(argThat(request -> "mcp".equals(request.getResourceType())
+            && "source-1".equals(request.getSourceId())
+            && "server-1".equals(request.getSelectedItems().get(0).getExternalId())));
     }
     
     @Test
@@ -123,14 +128,22 @@ class ConsoleAiResourceImportControllerTest {
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.post(Constants.AI_RESOURCE_IMPORT_CONSOLE_PATH + "/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
+                .param("resourceType", "mcp")
+                .param("sourceId", "source-1")
+                .param("selectedItems", selectedItemsJson())
+                .param("overwriteExisting", "true"))
             .andReturn().getResponse();
         
         Result<AiResourceImportExecuteResponse> result = JacksonUtils.toObj(
             response.getContentAsString(), new TypeReference<>() {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        verify(importProxy).execute(any());
+        verify(importProxy).execute(argThat(request -> "mcp".equals(request.getResourceType())
+            && "source-1".equals(request.getSourceId()) && request.isOverwriteExisting()
+            && "server-1".equals(request.getSelectedItems().get(0).getExternalId())));
+    }
+    
+    private String selectedItemsJson() {
+        return "[{\"externalId\":\"server-1\",\"name\":\"server\",\"version\":\"1.0.0\"}]";
     }
 }
