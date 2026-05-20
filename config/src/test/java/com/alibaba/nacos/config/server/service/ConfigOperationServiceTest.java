@@ -315,7 +315,7 @@ class ConfigOperationServiceTest {
     }
     
     @Test
-    void testPublishConfigPreservesExplicitCompatibilityEmptyNamespaceId() throws NacosException {
+    void testPublishConfigNormalizesExplicitEmptyNamespaceIdToDefault() throws NacosException {
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId("test");
         configForm.setGroup("test");
@@ -330,8 +330,8 @@ class ConfigOperationServiceTest {
         Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
         
         assertTrue(result);
-        assertEquals("", configInfoCaptor.getValue().getTenant());
-        assertEquals("", configForm.getNamespaceId());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configInfoCaptor.getValue().getTenant());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configForm.getNamespaceId());
     }
     
     @Test
@@ -418,8 +418,8 @@ class ConfigOperationServiceTest {
         // if tag is blank
         Boolean aResult =
             configOperationService.deleteConfig("test", "test", "", "", "1.1.1.1", "test", "http");
-        verify(configInfoPersistService).removeConfigInfo(eq("test"), eq("test"), eq(""), any(),
-            any());
+        verify(configInfoPersistService).removeConfigInfo(eq("test"), eq("test"),
+            eq(Constants.DEFAULT_NAMESPACE_ID), any(), any());
         assertTrue(aResult);
         // if tag is not blank
         Boolean bResult = configOperationService.deleteConfig("test", "test", "", "test", "1.1.1.1",
@@ -463,7 +463,7 @@ class ConfigOperationServiceTest {
             "test", "test", "", "beta", "1.1.1.1", "user", "http");
         assertTrue(result);
         verify(configInfoGrayPersistService).removeConfigInfoGray(
-            eq("test"), eq("test"), eq(""), eq("beta"), any(), any());
+            eq("test"), eq("test"), eq(Constants.DEFAULT_NAMESPACE_ID), eq("beta"), any(), any());
     }
     
     @Test
