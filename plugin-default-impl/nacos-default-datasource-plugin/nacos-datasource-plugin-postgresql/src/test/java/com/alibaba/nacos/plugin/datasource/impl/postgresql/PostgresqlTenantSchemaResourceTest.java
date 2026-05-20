@@ -28,13 +28,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class PostgresqlTenantSchemaResourceTest {
-
+    
     @Test
     void testTenantColumnsAreHardenedInSchemaResource() throws IOException {
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("META-INF/pg-schema.sql")) {
+        try (InputStream inputStream =
+            getClass().getClassLoader().getResourceAsStream("META-INF/pg-schema.sql")) {
             assertNotNull(inputStream);
             String schema = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            Matcher matcher = Pattern.compile("\"tenant_id\" varchar\\(128\\) NOT NULL DEFAULT ''").matcher(schema);
+            Matcher matcher = Pattern.compile("\"tenant_id\" varchar\\(128\\) NOT NULL DEFAULT ''")
+                .matcher(schema);
             int count = 0;
             while (matcher.find()) {
                 count++;

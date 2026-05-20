@@ -87,7 +87,8 @@ public class ConfigOperationService {
      */
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo,
         String encryptedDataKey) throws NacosException {
-        configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
+        configForm
+            .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
@@ -201,7 +202,8 @@ public class ConfigOperationService {
     private Boolean publishConfigGray(String grayType, ConfigForm configForm,
         ConfigRequestInfo configRequestInfo)
         throws NacosException {
-        configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
+        configForm
+            .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
@@ -327,7 +329,7 @@ public class ConfigOperationService {
             clientIp, persistEvent,
             ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(dataId, group, namespaceId, grayName, time.getTime()));
+            new ConfigDataChangeEvent(dataId, group, namespaceId, grayName, time.getTime()));
         return true;
     }
     

@@ -26,17 +26,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PostgresqlTenantMigrationScriptTest {
-
+    
     @Test
     void testMigrationScriptExistsAndCoversAllTenantTables() throws IOException {
         try (InputStream inputStream =
-                     getClass().getClassLoader().getResourceAsStream("META-INF/pg-upgrade-null-tenant-id.sql")) {
+            getClass().getClassLoader()
+                .getResourceAsStream("META-INF/pg-upgrade-null-tenant-id.sql")) {
             assertNotNull(inputStream);
             String sql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            assertTrue(sql.contains("ALTER TABLE config_info ALTER COLUMN tenant_id SET DEFAULT ''"));
-            assertTrue(sql.contains("ALTER TABLE config_info_gray ALTER COLUMN tenant_id SET DEFAULT ''"));
-            assertTrue(sql.contains("ALTER TABLE config_tags_relation ALTER COLUMN tenant_id SET DEFAULT ''"));
-            assertTrue(sql.contains("ALTER TABLE his_config_info ALTER COLUMN tenant_id SET DEFAULT ''"));
+            assertTrue(
+                sql.contains("ALTER TABLE config_info ALTER COLUMN tenant_id SET DEFAULT ''"));
+            assertTrue(
+                sql.contains("ALTER TABLE config_info_gray ALTER COLUMN tenant_id SET DEFAULT ''"));
+            assertTrue(sql.contains(
+                "ALTER TABLE config_tags_relation ALTER COLUMN tenant_id SET DEFAULT ''"));
+            assertTrue(
+                sql.contains("ALTER TABLE his_config_info ALTER COLUMN tenant_id SET DEFAULT ''"));
         }
     }
 }
