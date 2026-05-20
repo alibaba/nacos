@@ -70,6 +70,9 @@ create/upload draft
 
 - Submit 会解析明确版本或当前 `editingVersion`。
 - 当不存在 draft 目标时，Submit 必须失败。
+- Submit 仅允许目标版本处于 `draft` 状态；对 `reviewing` / `reviewed` / `online`
+  / `offline` 等非 draft 版本调用 Submit 必须返回 `INVALID_PARAM`，且不得修改版本
+  状态或元数据指针，避免污染正式版本。
 - 审核中版本必须在元数据中记录为 `reviewingVersion`。
 - 流水线执行状态可以写入 `publishPipelineInfo` 和 `pipeline_execution`。
 - 流水线拒绝会把版本退回 `draft`，并恢复 editing 指针。

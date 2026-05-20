@@ -1373,6 +1373,11 @@ class AiResourceManagerTest {
         ResourceVersionInfo info = new ResourceVersionInfo();
         info.setEditingVersion("v1");
         info.setLabels(new HashMap<>());
+        AiResourceVersion existing = new AiResourceVersion();
+        existing.setVersion("v1");
+        existing.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(existing);
         when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
             eq(1L), any()))
             .thenReturn(true);
@@ -1382,6 +1387,40 @@ class AiResourceManagerTest {
             AiResourceConstants.VERSION_STATUS_REVIEWING);
         assertNull(info.getEditingVersion());
         assertEquals("v1", info.getReviewingVersion());
+    }
+    
+    @Test
+    void moveToReviewingShouldRejectNonDraftVersion() {
+        AiResource meta = buildMeta("res");
+        ResourceVersionInfo info = new ResourceVersionInfo();
+        info.setReviewingVersion("v1");
+        info.setLabels(new HashMap<>());
+        AiResourceVersion existing = new AiResourceVersion();
+        existing.setVersion("v1");
+        existing.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(existing);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.moveToReviewing(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", meta, info));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+        verify(aiResourceVersionPersistService, never()).updateStatus(NAMESPACE_ID, "res",
+            RESOURCE_TYPE, "v1", AiResourceConstants.VERSION_STATUS_REVIEWING);
+        assertEquals("v1", info.getReviewingVersion());
+    }
+    
+    @Test
+    void moveToReviewingShouldRejectMissingVersion() {
+        AiResource meta = buildMeta("res");
+        ResourceVersionInfo info = new ResourceVersionInfo();
+        info.setEditingVersion("v1");
+        info.setLabels(new HashMap<>());
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(null);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.moveToReviewing(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", meta, info));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+        verify(aiResourceVersionPersistService, never()).updateStatus(NAMESPACE_ID, "res",
+            RESOURCE_TYPE, "v1", AiResourceConstants.VERSION_STATUS_REVIEWING);
     }
     
     // ---- writePipelineInfoInProgress / clearPipelineInfo ----

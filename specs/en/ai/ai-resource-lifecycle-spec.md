@@ -74,6 +74,10 @@ operation.
 
 - Submit resolves an explicit version or the current `editingVersion`.
 - Submit must fail when no draft target exists.
+- Submit only accepts a target version in `draft` status; calling submit on a
+  version in any other status (`reviewing` / `reviewed` / `online` / `offline`)
+  must return `INVALID_PARAM` and must not mutate version status or metadata
+  pointers, to prevent corrupting formal versions.
 - A reviewing version must be recorded in metadata as `reviewingVersion`.
 - Pipeline execution state may be written to `publishPipelineInfo` and
   `pipeline_execution`.
