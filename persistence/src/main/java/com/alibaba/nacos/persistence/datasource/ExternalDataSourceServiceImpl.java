@@ -62,12 +62,12 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     private static final int DB_MASTER_SELECT_THRESHOLD = 1;
     
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
-
+    
     private static final String POSTGRESQL = "postgresql";
-
+    
     private static final String POSTGRESQL_NULL_TENANT_MIGRATION_SCRIPT =
         "META-INF/pg-upgrade-null-tenant-id.sql";
-
+    
     private static final String[] POSTGRESQL_CONFIG_TENANT_TABLES = {"config_info",
         "config_info_gray", "config_tags_relation", "his_config_info"};
     
@@ -247,20 +247,20 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     public String getDataSourceType() {
         return dataSourceType;
     }
-
+    
     void validatePostgresqlTenantSchema() {
         if (!POSTGRESQL.equalsIgnoreCase(dataSourceType) || null == jt.getDataSource()) {
             return;
         }
         validatePostgresqlTenantSchema(jt);
     }
-
+    
     void validatePostgresqlTenantSchema(JdbcTemplate jdbcTemplate) {
         for (String tableName : POSTGRESQL_CONFIG_TENANT_TABLES) {
             validatePostgresqlTenantColumn(jdbcTemplate, tableName);
         }
     }
-
+    
     private void validatePostgresqlTenantColumn(JdbcTemplate jdbcTemplate, String tableName) {
         String sql = "SELECT is_nullable, column_default FROM information_schema.columns "
             + "WHERE table_schema = current_schema() AND table_name = ? AND column_name = 'tenant_id'";
@@ -274,17 +274,20 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 throwIncompatiblePostgresqlTenantSchema(tableName);
             }
         } catch (DataAccessException e) {
-            throw new IllegalStateException(buildIncompatiblePostgresqlTenantSchemaMessage(tableName), e);
+            throw new IllegalStateException(
+                buildIncompatiblePostgresqlTenantSchemaMessage(tableName), e);
         }
     }
-
+    
     private void throwIncompatiblePostgresqlTenantSchema(String tableName) {
         throw new IllegalStateException(buildIncompatiblePostgresqlTenantSchemaMessage(tableName));
     }
-
+    
     private String buildIncompatiblePostgresqlTenantSchemaMessage(String tableName) {
-        return "PostgreSQL schema is incompatible for table '" + tableName + "': column 'tenant_id' must be "
-            + "NOT NULL DEFAULT ''. Apply the migration script " + POSTGRESQL_NULL_TENANT_MIGRATION_SCRIPT
+        return "PostgreSQL schema is incompatible for table '" + tableName
+            + "': column 'tenant_id' must be "
+            + "NOT NULL DEFAULT ''. Apply the migration script "
+            + POSTGRESQL_NULL_TENANT_MIGRATION_SCRIPT
             + " before starting Nacos.";
     }
     

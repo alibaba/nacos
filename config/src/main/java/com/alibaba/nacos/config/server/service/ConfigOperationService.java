@@ -87,7 +87,7 @@ public class ConfigOperationService {
      */
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo,
         String encryptedDataKey) throws NacosException {
-        configForm.setNamespaceId(normalizeNamespaceId(configForm.getNamespaceId()));
+        configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
@@ -201,7 +201,7 @@ public class ConfigOperationService {
     private Boolean publishConfigGray(String grayType, ConfigForm configForm,
         ConfigRequestInfo configRequestInfo)
         throws NacosException {
-        configForm.setNamespaceId(normalizeNamespaceId(configForm.getNamespaceId()));
+        configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
@@ -306,7 +306,7 @@ public class ConfigOperationService {
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String grayName,
         String clientIp,
         String srcUser, String srcType) {
-        namespaceId = normalizeNamespaceId(namespaceId);
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
         if (StringUtils.isBlank(grayName)) {
             configInfoPersistService.removeConfigInfo(dataId, group, namespaceId, clientIp,
@@ -329,16 +329,6 @@ public class ConfigOperationService {
         ConfigChangePublisher.notifyConfigChange(
                 new ConfigDataChangeEvent(dataId, group, namespaceId, grayName, time.getTime()));
         return true;
-    }
-
-    String normalizeNamespaceId(String namespaceId) {
-        if (namespaceId == null) {
-            return NamespaceUtil.processNamespaceParameter(namespaceId);
-        }
-        if (StringUtils.equals(namespaceId, StringUtils.EMPTY)) {
-            return StringUtils.EMPTY;
-        }
-        return NamespaceUtil.processNamespaceParameter(namespaceId);
     }
     
     public Map<String, Object> getConfigAdvanceInfo(ConfigForm configForm) {

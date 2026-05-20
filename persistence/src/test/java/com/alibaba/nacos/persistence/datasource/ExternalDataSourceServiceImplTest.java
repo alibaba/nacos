@@ -157,7 +157,7 @@ class ExternalDataSourceServiceImplTest {
             EnvUtil.setEnvironment(null);
         }
     }
-
+    
     @Test
     void testReloadPropagatesIllegalStateException() {
         try {
@@ -327,24 +327,24 @@ class ExternalDataSourceServiceImplTest {
                 new NJdbcException("test"));
         assertDoesNotThrow(() -> service.new SelectMasterTask().run());
     }
-
+    
     @Test
     void testValidatePostgresqlTenantSchemaSuccess() {
         Map<String, Object> columnInfo = new HashMap<>();
         columnInfo.put("is_nullable", "NO");
         columnInfo.put("column_default", "''::character varying");
         when(jt.queryForMap(anyString(), any())).thenReturn(columnInfo);
-
+        
         assertDoesNotThrow(() -> service.validatePostgresqlTenantSchema(jt));
     }
-
+    
     @Test
     void testValidatePostgresqlTenantSchemaFailWhenNullable() {
         Map<String, Object> columnInfo = new HashMap<>();
         columnInfo.put("is_nullable", "YES");
         columnInfo.put("column_default", null);
         when(jt.queryForMap(anyString(), any())).thenReturn(columnInfo);
-
+        
         assertThrows(IllegalStateException.class, () -> service.validatePostgresqlTenantSchema(jt));
     }
 }
