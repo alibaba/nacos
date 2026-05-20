@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class InitUtilsTest {
     
@@ -145,5 +146,10 @@ class InitUtilsTest {
         assertEquals("/nacos", UtilAndComs.webContext);
         assertEquals("/nacos/v1/ns", UtilAndComs.nacosUrlBase);
         assertEquals("/nacos/v1/ns/instance", UtilAndComs.nacosUrlInstance);
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new InitUtils());
     }
 }

@@ -27,8 +27,13 @@ import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 
+import com.alibaba.nacos.config.server.model.SubscriberStatus;
+
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
@@ -74,4 +79,46 @@ class ClientTrackServiceTest {
         assertFalse(ClientTrackService.isClientUptodate(clientIp).get(groupKey));
     }
     
+    @Test
+    void testListSubStatus() {
+        String clientIp = "2.2.2.2";
+        String dataId = "com.taobao.session.xml";
+        String group = "online";
+        String groupKey = GroupKey2.getKey(dataId, group);
+        String md5 = "aabbcc";
+        String content = "data";
+        
+        ConfigCacheService.updateMd5(groupKey, md5, content,
+            System.currentTimeMillis(), "");
+        ClientTrackService.trackClientMd5(clientIp, groupKey, md5);
+        
+        Map<String, SubscriberStatus> status =
+            ClientTrackService.listSubStatus(clientIp);
+        assertNotNull(status);
+        assertEquals(1, status.size());
+        SubscriberStatus sub = status.get(groupKey);
+        assertNotNull(sub);
+        assertEquals(groupKey, sub.getGroupKey());
+        assertTrue(sub.getStatus());
+        assertEquals(md5, sub.getMd5());
+    }
+    
+    @Test
+    void testSubscriberCountMultiple() {
+        String ip1 = "3.3.3.3";
+        String ip2 = "4.4.4.4";
+        ClientTrackService.trackClientMd5(ip1, "key1", "m1");
+        ClientTrackService.trackClientMd5(ip1, "key2", "m2");
+        ClientTrackService.trackClientMd5(ip2, "key3", "m3");
+        assertEquals(2, ClientTrackService.subscribeClientCount());
+        assertEquals(3, ClientTrackService.subscriberCount());
+    }
+    
+    @Test
+    void testRefreshClientRecord() {
+        ClientTrackService.trackClientMd5("5.5.5.5", "key1", "m1");
+        assertEquals(1, ClientTrackService.subscribeClientCount());
+        ClientTrackService.refreshClientRecord();
+        assertEquals(0, ClientTrackService.subscribeClientCount());
+    }
 }

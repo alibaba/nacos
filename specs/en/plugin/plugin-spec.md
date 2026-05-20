@@ -22,7 +22,7 @@ Nacos uses plugins and SPI extensions to keep cross-cutting infrastructure and
 replaceable domain capabilities outside the fixed core. A plugin may provide
 authentication, resource visibility, data source dialects, encryption, tracing,
 flow control, environment adaptation, AI pipeline behavior, AI storage behavior,
-or Java client-side request adaptation.
+AI resource import behavior, or Java client-side request adaptation.
 
 The plugin mechanism must let Nacos keep a stable core model while allowing
 deployments to choose an implementation that matches their identity system,
@@ -55,6 +55,7 @@ The current plugin type registry is defined by `PluginType`.
 | `control` | Traffic and control extension. | [Control Plugin Spec](control-plugin-spec.md) |
 | `ai-pipeline` | AI registry pipeline extension. | [AI Publish Pipeline Plugin Spec](ai-pipeline-plugin-spec.md) |
 | `ai-storage` | AI registry storage extension. | [AI Storage Plugin Spec](ai-storage-plugin-spec.md) |
+| `ai-resource-import` | AI registry external import extension. | [AI Resource Import Plugin Spec](ai-resource-import-plugin-spec.md) |
 
 Domain-specific plugin contracts are defined by their own specs. This document
 defines the common runtime contract shared by all plugin categories.
@@ -86,7 +87,7 @@ define its execution mode explicitly.
 | Mode | Meaning | Examples |
 |------|---------|----------|
 | Exclusive selection | One implementation is selected for the process or request scope. Other loaded implementations remain inactive for that decision. | `auth`, `datasource-dialect` |
-| Configured single service | Multiple implementations may be loaded, while a domain chooses one service by configuration or request context. | `visibility` |
+| Configured single service | Multiple implementations may be loaded, while a domain chooses one service by configuration or request context. | `visibility`, `ai-resource-import` |
 | Ordered chain | Multiple matching plugins are invoked in a stable order. Each node may contribute a result, and the domain defines whether failure stops the chain. | `ai-pipeline`, `config-change` |
 | Subscriber or broadcast | Multiple subscribers observe the same event or trace point without owning the primary decision. | `trace`, event-style extensions |
 

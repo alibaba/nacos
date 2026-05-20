@@ -19,19 +19,29 @@
 package com.alibaba.nacos.client.logging;
 
 import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
+import com.alibaba.nacos.common.logging.NacosLoggingAdapterBuilder;
 import com.alibaba.nacos.common.logging.NacosLoggingProperties;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class NacosLoggingTest {
@@ -82,6 +92,66 @@ class NacosLoggingTest {
             // without exception thrown
         } finally {
             nacosLoggingField.set(instance, cachedLogging);
+        }
+    }
+    
+    @Test
+    void testInitLoggingAdapterMatchesBuilder() throws Exception {
+        NacosLoggingAdapter mockAdapter = mock(NacosLoggingAdapter.class);
+        when(mockAdapter.isEnabled()).thenReturn(true);
+        when(mockAdapter.isAdaptedLogger(any())).thenReturn(true);
+        when(mockAdapter.getDefaultConfigLocation()).thenReturn("test.xml");
+        NacosLoggingAdapterBuilder builder = mock(NacosLoggingAdapterBuilder.class);
+        when(builder.build()).thenReturn(mockAdapter);
+        try (MockedStatic<NacosServiceLoader> mocked =
+            Mockito.mockStatic(NacosServiceLoader.class)) {
+            mocked.when(() -> NacosServiceLoader.load(NacosLoggingAdapterBuilder.class))
+                .thenReturn(Collections.singletonList(builder));
+            Constructor<NacosLogging> ctor = NacosLogging.class.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            NacosLogging fresh = ctor.newInstance();
+            Field adapterField = NacosLogging.class.getDeclaredField("loggingAdapter");
+            adapterField.setAccessible(true);
+            assertSame(mockAdapter, adapterField.get(fresh));
+            Field propsField = NacosLogging.class.getDeclaredField("loggingProperties");
+            propsField.setAccessible(true);
+            assertNotNull(propsField.get(fresh));
+        }
+    }
+    
+    @Test
+    void testInitLoggingAdapterDisabledAdapterIgnored() throws Exception {
+        NacosLoggingAdapter mockAdapter = mock(NacosLoggingAdapter.class);
+        when(mockAdapter.isEnabled()).thenReturn(false);
+        NacosLoggingAdapterBuilder builder = mock(NacosLoggingAdapterBuilder.class);
+        when(builder.build()).thenReturn(mockAdapter);
+        try (MockedStatic<NacosServiceLoader> mocked =
+            Mockito.mockStatic(NacosServiceLoader.class)) {
+            mocked.when(() -> NacosServiceLoader.load(NacosLoggingAdapterBuilder.class))
+                .thenReturn(Collections.singletonList(builder));
+            Constructor<NacosLogging> ctor = NacosLogging.class.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            NacosLogging fresh = ctor.newInstance();
+            Field adapterField = NacosLogging.class.getDeclaredField("loggingAdapter");
+            adapterField.setAccessible(true);
+            assertNull(adapterField.get(fresh));
+        }
+    }
+    
+    @Test
+    void testInitLoggingAdapterBuilderThrows() throws Exception {
+        NacosLoggingAdapterBuilder builder = mock(NacosLoggingAdapterBuilder.class);
+        when(builder.build()).thenThrow(new RuntimeException("forced"));
+        try (MockedStatic<NacosServiceLoader> mocked =
+            Mockito.mockStatic(NacosServiceLoader.class)) {
+            mocked.when(() -> NacosServiceLoader.load(NacosLoggingAdapterBuilder.class))
+                .thenReturn(Collections.singletonList(builder));
+            Constructor<NacosLogging> ctor = NacosLogging.class.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            NacosLogging fresh = ctor.newInstance();
+            Field adapterField = NacosLogging.class.getDeclaredField("loggingAdapter");
+            adapterField.setAccessible(true);
+            assertNull(adapterField.get(fresh));
         }
     }
 }

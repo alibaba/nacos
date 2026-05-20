@@ -18,66 +18,56 @@ package com.alibaba.nacos.config.server.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.config.server.controller.v3.HistoryControllerV3;
-import com.alibaba.nacos.core.listener.startup.NacosStartUp;
-import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.http.ResponseEntity;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@WebMvcTest(GlobalExceptionHandlerTest.class)
+@ExtendWith(MockitoExtension.class)
 class GlobalExceptionHandlerTest {
     
-    private MockMvc mockMvc;
-    
-    @Autowired
-    private WebApplicationContext context;
-    
-    @MockitoBean
-    private HistoryControllerV3 historyControllerV3;
-    
-    @BeforeAll
-    static void beforeAll() {
-        NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
-    }
+    private GlobalExceptionHandler handler;
     
     @BeforeEach
-    void before() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    void setUp() {
+        handler = new GlobalExceptionHandler();
     }
     
     @Test
-    void testNacosRunTimeExceptionHandler() throws Exception {
-        // 设置HistoryControllerV3的行为，使其抛出NacosRuntimeException并被GlobalExceptionHandler捕获处理
-        when(historyControllerV3.getConfigsByNamespace(any())).thenThrow(
-            new NacosRuntimeException(NacosException.INVALID_PARAM))
-            .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
-            .thenThrow(new NacosRuntimeException(503));
-        
-        // 执行请求并验证响应码 (v3 history path)
-        ResultActions resultActions =
-            mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
-        resultActions.andExpect(MockMvcResultMatchers.status().is(NacosException.INVALID_PARAM));
-        
-        ResultActions resultActions1 =
-            mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
-        resultActions1.andExpect(MockMvcResultMatchers.status().is(NacosException.SERVER_ERROR));
-        
-        ResultActions resultActions2 =
-            mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
-        resultActions2.andExpect(MockMvcResultMatchers.status().is(503));
+    void testHandleIllegalArgumentException() throws Exception {
+        IllegalArgumentException ex = new IllegalArgumentException("bad arg");
+        ResponseEntity<String> response = handler.handleIllegalArgumentException(ex);
+        assertEquals(400, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("bad arg"));
     }
     
+    @Test
+    void testHandleNacosRuntimeException() throws Exception {
+        NacosRuntimeException ex = new NacosRuntimeException(503, "service down");
+        ResponseEntity<String> response = handler.handleNacosRunTimeException(ex);
+        assertEquals(503, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("service down"));
+    }
+    
+    @Test
+    void testHandleNacosException() throws Exception {
+        NacosException ex = new NacosException(500, "internal error");
+        ResponseEntity<String> response = handler.handleNacosException(ex);
+        assertEquals(500, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("internal error"));
+    }
+    
+    @Test
+    void testHandleDataAccessException() {
+        DataAccessResourceFailureException ex =
+            new DataAccessResourceFailureException("db error");
+        ResponseEntity<String> response = handler.handleDataAccessException(ex);
+        assertEquals(500, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("db error"));
+    }
 }

@@ -183,6 +183,35 @@ class MetricControllerV3Test {
     }
     
     @Test
+    void testGetClusterMetricTimeoutShouldSetCompleteFalse() throws Exception {
+        List<Member> members = new ArrayList<>();
+        Member member = new Member();
+        member.setIp("127.0.0.1");
+        member.setPort(8848);
+        members.add(member);
+        when(memberManager.allMembers()).thenReturn(members);
+        
+        NacosAsyncRestTemplate nacosAsyncRestTemplate = Mockito.mock(NacosAsyncRestTemplate.class);
+        try (MockedStatic<HttpClientBeanHolder> mockedStatic =
+            Mockito.mockStatic(HttpClientBeanHolder.class)) {
+            mockedStatic
+                .when(() -> HttpClientBeanHolder.getNacosAsyncRestTemplate(any(Logger.class)))
+                .thenReturn(nacosAsyncRestTemplate);
+            MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .get(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH + "/cluster")
+                .param("ip", "127.0.0.1")
+                .param("namespaceId", "test").param("dataId", "test").param("groupName", "test");
+            
+            String actualValue =
+                mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+            JsonNode data = JacksonUtils.toObj(actualValue).get("data");
+            
+            assertNotNull(data);
+            assertFalse(data.get("complete").asBoolean());
+        }
+    }
+    
+    @Test
     void testClusterMetricsCallBack() {
         
         Member m1 = new Member();

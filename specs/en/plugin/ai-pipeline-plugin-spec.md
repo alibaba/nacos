@@ -29,7 +29,9 @@ and state rules are defined by the [Nacos Plugin Spec](plugin-spec.md).
 
 Pipeline is AI resource governance. It is allowed to approve or reject a publish
 operation, but it must not change the canonical identity of the
-[AI resource](../design/resource-model-spec.md) being published.
+[AI resource](../ai/ai-resource-model-spec.md) being published. Domain lifecycle
+reaction to pipeline results is defined by the
+[AI Resource Lifecycle Spec](../ai/ai-resource-lifecycle-spec.md).
 
 ## Concepts
 

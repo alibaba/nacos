@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,5 +67,17 @@ class McpNoopHandlerTest {
     void deleteMcpServer() {
         assertThrows(NacosApiException.class, () -> mcpNoopHandler.deleteMcpServer("", "", "", ""),
             "Nacos AI MCP module and API required both `naming` and `config` module.");
+    }
+    
+    @Test
+    void validateImport() {
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.validateImport("ns", new McpServerImportRequest()));
+    }
+    
+    @Test
+    void executeImport() {
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.executeImport("ns", new McpServerImportRequest()));
     }
 }

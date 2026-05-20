@@ -76,8 +76,8 @@ public class ServiceStorage {
     }
     
     public ServiceInfo getData(Service service) {
-        return serviceDataIndexes.containsKey(service) ? serviceDataIndexes.get(service)
-            : getPushData(service);
+        ServiceInfo data = serviceDataIndexes.get(service);
+        return data != null ? data : getPushData(service);
     }
     
     public ServiceInfo getPushData(Service service) {

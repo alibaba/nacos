@@ -29,7 +29,7 @@ error_exit ()
 
 validate_base64() {
     decode_cmd=""
-    if command -v base64 &> /dev/null; then
+    if command -v base64 > /dev/null 2>&1; then
         decode_cmd="base64 -d"
     else
         return 0;
@@ -67,14 +67,16 @@ process_required_config() {
             echo "The initial key used to generate JWT tokens (the original string must be over 32 characters and Base64 encoded)."
             echo "用于密码生成JWT Token的初始密钥（原串长度32位以上做Base64格式化）。"
         fi
-        read -p "${hint_message}" input_val
+        printf "%s" "${hint_message}"
+        read input_val
         inputCheckPass=1
         if [ "$isBase64" = "true" ]; then
             while [ $inputCheckPass -ne 0 ]; do
                 validate_base64 "${input_val}"
                 inputCheckPass=$?
                 if [ $inputCheckPass -ne 0 ]; then
-                  read -p "${hint_message}" input_val
+                  printf "%s" "${hint_message}"
+                  read input_val
                 fi
             done
         fi
@@ -169,11 +171,11 @@ process_required_config "nacos.core.auth.server.identity.value" ${BASE_DIR}/conf
 #===========================================================================================
 # JVM Configuration
 #===========================================================================================
-if [[ "${MODE}" == "standalone" ]]; then
+if [ "${MODE}" = "standalone" ]; then
     JAVA_OPT="${JAVA_OPT} ${CUSTOM_NACOS_MEMORY:- -Xms512m -Xmx512m -Xmn256m}"
     JAVA_OPT="${JAVA_OPT} -Dnacos.standalone=true"
 else
-    if [[ "${EMBEDDED_STORAGE}" == "embedded" ]]; then
+    if [ "${EMBEDDED_STORAGE}" = "embedded" ]; then
         JAVA_OPT="${JAVA_OPT} -DembeddedStorage=true"
     fi
     JAVA_OPT="${JAVA_OPT} -server ${CUSTOM_NACOS_MEMORY:- -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m}"
@@ -181,20 +183,20 @@ else
     JAVA_OPT="${JAVA_OPT} -XX:-UseLargePages"
 fi
 
-if [[ "${FUNCTION_MODE}" == "config" ]]; then
+if [ "${FUNCTION_MODE}" = "config" ]; then
     JAVA_OPT="${JAVA_OPT} -Dnacos.functionMode=config"
-elif [[ "${FUNCTION_MODE}" == "naming" ]]; then
+elif [ "${FUNCTION_MODE}" = "naming" ]; then
     JAVA_OPT="${JAVA_OPT} -Dnacos.functionMode=naming"
-elif [[ "${FUNCTION_MODE}" == "microservice" ]]; then
+elif [ "${FUNCTION_MODE}" = "microservice" ]; then
     JAVA_OPT="${JAVA_OPT} -Dnacos.functionMode=microservice"
-elif [[ "${FUNCTION_MODE}" == "ai" ]]; then
+elif [ "${FUNCTION_MODE}" = "ai" ]; then
     JAVA_OPT="${JAVA_OPT} -Dnacos.functionMode=ai"
 fi
 
 JAVA_OPT="${JAVA_OPT} -Dnacos.member.list=${MEMBER_LIST}"
 
 JAVA_MAJOR_VERSION=$($JAVA -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
-if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]] ; then
+if [ "$JAVA_MAJOR_VERSION" -ge "9" ] ; then
   JAVA_OPT="${JAVA_OPT} -Xlog:gc*:file=${BASE_DIR}/logs/nacos_gc.log:time,tags:filecount=10,filesize=100m"
   JAVA_OPT="${JAVA_OPT} --add-opens=java.base/java.lang=ALL-UNNAMED"
   JAVA_OPT="${JAVA_OPT} --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
@@ -220,7 +222,7 @@ fi
 
 echo "$JAVA $JAVA_OPT_EXT_FIX ${JAVA_OPT}"
 
-if [[ "${MODE}" == "standalone" ]]; then
+if [ "${MODE}" = "standalone" ]; then
     echo "nacos is starting with standalone"
 else
     echo "nacos is starting with cluster"
@@ -233,7 +235,7 @@ fi
 
 echo "$JAVA $JAVA_OPT_EXT_FIX ${JAVA_OPT}" > "$logfile"
 
-if [[ "$JAVA_OPT_EXT_FIX" == "" ]]; then
+if [ "$JAVA_OPT_EXT_FIX" = "" ]; then
   nohup "$JAVA" ${JAVA_OPT} nacos.nacos >> "$logfile" 2>&1 &
 else
   nohup "$JAVA" "$JAVA_OPT_EXT_FIX" ${JAVA_OPT} nacos.nacos >> "$logfile" 2>&1 &

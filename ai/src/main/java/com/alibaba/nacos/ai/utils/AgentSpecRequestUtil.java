@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.utils;
 
-import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDetailForm;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -98,11 +97,12 @@ public class AgentSpecRequestUtil {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.DATA_EMPTY,
                 "File is required");
         }
-        if (file.getSize() > Constants.AgentSpecs.MAX_UPLOAD_ZIP_BYTES) {
+        long maxUploadBytes = AgentSpecZipParser.resolveMaxUploadBytes();
+        if (file.getSize() > maxUploadBytes) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "AgentSpec zip size must not exceed "
-                    + (Constants.AgentSpecs.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
+                    + (maxUploadBytes / 1024 / 1024)
                     + "MB, current: " + (file.getSize() / 1024 / 1024) + "MB");
         }
         try {

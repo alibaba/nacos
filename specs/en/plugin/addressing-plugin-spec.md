@@ -35,7 +35,7 @@ plugin type. It is kept in the plugin spec tree because official extension
 documentation has historically described address-server based lookup as an
 extension point. The shared extension rules are defined by the
 [Nacos Plugin Spec](plugin-spec.md), while cluster membership remains part of
-the [Nacos Design Spec](../design/nacos-design-spec.md).
+the [Cluster Membership Spec](../design/foundation-cluster-membership-spec.md).
 
 ## Concepts
 
@@ -134,8 +134,10 @@ not invent new members when the address server is unavailable.
 
 ## Compatibility Expectations
 
-Addressing extensions must preserve member identity format, cluster membership
-update semantics, listener notification behavior, and shutdown behavior.
+Addressing extensions must preserve the member identity format and update
+semantics defined by the
+[Cluster Membership Spec](../design/foundation-cluster-membership-spec.md),
+including listener notification behavior and shutdown behavior.
 Extensions must not bypass cluster membership validation or inject members with
 ambiguous addresses.
 

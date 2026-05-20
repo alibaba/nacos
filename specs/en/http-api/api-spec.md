@@ -46,7 +46,7 @@ Every HTTP API must first declare its audience:
 | --- | --- | --- |
 | Open API | `/v3/client` | SDKs and custom runtime clients |
 | Admin API | `/v3/admin` | operators and maintainer tooling |
-| Console API | `/v3/console` | Nacos console UI |
+| Console API | `/v3/console` | [Nacos console UI](../console/console-spec.md) |
 | Auth API | `/v3/auth` | plugin-provided auth APIs and bootstrap flows |
 
 An endpoint should not be documented as an Open API only because it is reachable
@@ -105,6 +105,8 @@ explicitly public, bootstrap-only, or health-oriented. Authorization must reflec
 the API audience, resource domain, and action.
 
 Detailed rules are defined in [Authorization Spec](authorization-spec.md).
+The shared HTTP filter and runtime request context model is defined by the
+[Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md).
 
 ### 2.6 Compatibility Is Part Of The API
 
@@ -154,6 +156,7 @@ Additional detail specs:
 
 - [Authorization Spec](authorization-spec.md)
 - [Response And Error Spec](response-error-spec.md)
+- [Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md)
 
 ## 4. Rules For Adding Or Changing HTTP APIs
 

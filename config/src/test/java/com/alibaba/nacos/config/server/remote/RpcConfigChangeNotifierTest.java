@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -218,4 +219,145 @@ class RpcConfigChangeNotifierTest {
         
     }
     
+    @Test
+    void testOnDataEventWithNamespaceTransfer() throws InterruptedException {
+        final String groupKey =
+            GroupKey2.getKey("dataId1", "group1", "tenant1");
+        
+        Set<String> mockConnectionIds = new HashSet<>();
+        mockConnectionIds.add("con1");
+        GrpcConnection mockConn1 = Mockito.mock(GrpcConnection.class);
+        Mockito.when(connectionManager.getConnection(eq("con1"))).thenReturn(mockConn1);
+        Mockito.when(mockConn1.getMetaInfo())
+            .thenReturn(new ConnectionMeta("con1", "192.168.0.1", "192.168.0.2", 34567, 9848,
+                "GRPC", "2.2.0", null, new HashMap<>()));
+        Mockito.when(configChangeListenContext.getListeners(eq(groupKey)))
+            .thenReturn(mockConnectionIds);
+        ConfigListenState state = new ConfigListenState("md5");
+        state.setNamespaceTransfer(true);
+        Mockito.when(configChangeListenContext.getConfigListenState(eq("con1"), eq(groupKey)))
+            .thenReturn(state);
+        Mockito.when(tpsControlManager.check(any(TpsCheckRequest.class)))
+            .thenReturn(new TpsCheckResponse(true, 200, "success"));
+        
+        rpcConfigChangeNotifier.onEvent(new LocalDataChangeEvent(groupKey));
+        Thread.sleep(50L);
+        Mockito.verify(rpcPushService, times(1))
+            .pushWithCallback(eq("con1"), any(ConfigChangeNotifyRequest.class),
+                any(RpcConfigChangeNotifier.RpcPushCallback.class),
+                any(Executor.class));
+    }
+    
+    @Test
+    void testOnDataEventEmptyListeners() {
+        final String groupKey = GroupKey2.getKey("d", "g", "t");
+        Mockito.when(configChangeListenContext.getListeners(eq(groupKey)))
+            .thenReturn(new HashSet<>());
+        
+        rpcConfigChangeNotifier.onEvent(new LocalDataChangeEvent(groupKey));
+        Mockito.verify(connectionManager, Mockito.never()).getConnection(anyString());
+    }
+    
+    @Test
+    void testRpcPushTaskTpsRejected() {
+        MockedStatic<ConfigExecutor> configExecutorMockedStatic =
+            Mockito.mockStatic(ConfigExecutor.class);
+        try {
+            ConfigChangeNotifyRequest request = new ConfigChangeNotifyRequest();
+            request.setDataId("d1");
+            request.setGroup("g1");
+            RpcConfigChangeNotifier.RpcPushTask task =
+                rpcConfigChangeNotifier.new RpcPushTask(request, 3, "conn1", "1.1.1.1", "app1");
+            
+            Mockito.when(tpsControlManager.check(any(TpsCheckRequest.class)))
+                .thenReturn(new TpsCheckResponse(false, 503, "rejected"));
+            Mockito.when(connectionManager.getConnection(eq("conn1")))
+                .thenReturn(Mockito.mock(GrpcConnection.class));
+            
+            task.run();
+            configExecutorMockedStatic.verify(
+                () -> ConfigExecutor.scheduleClientConfigNotifier(
+                    any(RpcConfigChangeNotifier.RpcPushTask.class), eq(1 * 2L),
+                    eq(TimeUnit.SECONDS)));
+        } finally {
+            configExecutorMockedStatic.close();
+        }
+    }
+    
+    @Test
+    void testRpcPushTaskGetters() {
+        ConfigChangeNotifyRequest request = new ConfigChangeNotifyRequest();
+        request.setDataId("d1");
+        request.setGroup("g1");
+        RpcConfigChangeNotifier.RpcPushTask task =
+            rpcConfigChangeNotifier.new RpcPushTask(request, 5, "conn1", "1.1.1.1", "myApp");
+        
+        assertEquals("conn1", task.getConnectionId());
+        assertEquals("1.1.1.1", task.getClientIp());
+        assertEquals("myApp", task.getAppName());
+        assertEquals(5, task.getMaxRetryTimes());
+        assertEquals(0, task.getTryTimes());
+        assertEquals(request, task.getNotifyRequest());
+    }
+    
+    @Test
+    void testSubscribeType() {
+        assertEquals(LocalDataChangeEvent.class, rpcConfigChangeNotifier.subscribeType());
+    }
+    
+    @Test
+    void testRpcPushCallbackOnFailConnectionGone() {
+        MockedStatic<ConfigExecutor> configExecutorMockedStatic =
+            Mockito.mockStatic(ConfigExecutor.class);
+        try {
+            RpcConfigChangeNotifier.RpcPushTask task =
+                Mockito.mock(RpcConfigChangeNotifier.RpcPushTask.class);
+            Mockito.when(task.getConnectionId()).thenReturn("gone_conn");
+            Mockito.when(connectionManager.getConnection(eq("gone_conn")))
+                .thenReturn(null);
+            ConfigChangeNotifyRequest notifyRequest = new ConfigChangeNotifyRequest();
+            notifyRequest.setDataId("d1");
+            notifyRequest.setGroup("g1");
+            Mockito.when(task.getNotifyRequest()).thenReturn(notifyRequest);
+            Mockito.when(task.isOverTimes()).thenReturn(false);
+            
+            RpcConfigChangeNotifier.RpcPushCallback callback =
+                new RpcConfigChangeNotifier.RpcPushCallback(task, tpsControlManager,
+                    connectionManager);
+            callback.onFail(new RuntimeException("timeout"));
+            
+            Mockito.verify(connectionManager, times(0)).unregister(anyString());
+            configExecutorMockedStatic.verifyNoInteractions();
+        } finally {
+            configExecutorMockedStatic.close();
+        }
+    }
+    
+    @Test
+    void testRpcPushTaskRunConnectionNull() {
+        MockedStatic<ConfigExecutor> configExecutorMockedStatic =
+            Mockito.mockStatic(ConfigExecutor.class);
+        try {
+            ConfigChangeNotifyRequest request = new ConfigChangeNotifyRequest();
+            request.setDataId("d1");
+            request.setGroup("g1");
+            RpcConfigChangeNotifier.RpcPushTask task =
+                rpcConfigChangeNotifier.new RpcPushTask(request, 3, "conn_gone",
+                    "1.1.1.1", "app1");
+            
+            Mockito.when(tpsControlManager.check(any(TpsCheckRequest.class)))
+                .thenReturn(new TpsCheckResponse(false, 503, "rejected"));
+            Mockito.when(connectionManager.getConnection(eq("conn_gone")))
+                .thenReturn(null);
+            
+            task.run();
+            Mockito.verify(rpcPushService, times(0))
+                .pushWithCallback(anyString(), any(ConfigChangeNotifyRequest.class),
+                    any(RpcConfigChangeNotifier.RpcPushCallback.class),
+                    any(Executor.class));
+            Mockito.verify(connectionManager, times(0)).unregister(anyString());
+        } finally {
+            configExecutorMockedStatic.close();
+        }
+    }
 }

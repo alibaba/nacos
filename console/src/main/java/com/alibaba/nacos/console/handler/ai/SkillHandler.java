@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -127,6 +128,19 @@ public interface SkillHandler {
      */
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
         String targetVersion)
+        throws NacosException;
+    
+    /**
+     * Batch upload multiple skills from a single zip file containing multiple skill subdirectories.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes    zip file bytes
+     * @param overwrite   whether to overwrite existing drafts
+     * @return batch upload result with succeeded and failed lists
+     * @throws NacosException if zip parsing fails entirely
+     */
+    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+        boolean overwrite)
         throws NacosException;
     
     /**

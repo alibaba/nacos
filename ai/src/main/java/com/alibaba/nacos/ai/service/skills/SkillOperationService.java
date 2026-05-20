@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -105,6 +106,21 @@ public interface SkillOperationService {
      */
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
         String targetVersion)
+        throws NacosException;
+    
+    /**
+     * Batch upload multiple skills from a single zip archive. The zip must contain one-level subdirectories,
+     * each with its own SKILL.md. Uses best-effort strategy: processes all skills individually, returning
+     * succeeded and failed lists.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes containing multiple skill subdirectories
+     * @param overwrite whether to overwrite existing drafts
+     * @return batch upload result with succeeded and failed skill names
+     * @throws NacosException if zip parsing fails entirely (e.g. invalid format, no SKILL.md found)
+     */
+    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+        boolean overwrite)
         throws NacosException;
     
     /**

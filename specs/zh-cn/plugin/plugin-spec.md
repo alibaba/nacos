@@ -20,7 +20,7 @@
 
 Nacos 使用插件机制和 SPI 扩展，将横切基础能力和可替换的领域能力从固定核心中拆出。
 插件可以提供鉴权、资源可见性、数据源方言、加解密、链路追踪、流量控制、环境适配、
-AI pipeline、AI 存储或 Java 客户端侧请求适配等能力。
+AI pipeline、AI 存储、AI 资源导入或 Java 客户端侧请求适配等能力。
 
 插件机制的目标，是在保持 Nacos 核心模型稳定的同时，让不同部署环境可以选择符合自身
 身份系统、数据库、观测体系或扩展场景的实现。
@@ -51,6 +51,7 @@ AI pipeline、AI 存储或 Java 客户端侧请求适配等能力。
 | `control` | 流量与控制扩展。 | [Control 插件规范](control-plugin-spec.md) |
 | `ai-pipeline` | AI 注册中心 pipeline 扩展。 | [AI 发布 Pipeline 插件规范](ai-pipeline-plugin-spec.md) |
 | `ai-storage` | AI 注册中心存储扩展。 | [AI 存储插件规范](ai-storage-plugin-spec.md) |
+| `ai-resource-import` | AI 注册中心外部资源导入扩展。 | [AI 资源导入插件规范](ai-resource-import-plugin-spec.md) |
 
 各插件类别的领域契约由对应规范定义。本文档定义所有插件类别共享的运行时契约。
 
@@ -78,7 +79,7 @@ Nacos 资源身份、鉴权和 payload 语义，因为它们会影响 SDK 发出
 | 形态 | 含义 | 示例 |
 |------|------|------|
 | 互斥选择 | 在进程或请求范围内选择一个实现，其他已加载实现不参与该次判断。 | `auth`、`datasource-dialect` |
-| 配置选择的单服务 | 可以加载多个实现，但领域根据配置或请求上下文选择一个服务。 | `visibility` |
+| 配置选择的单服务 | 可以加载多个实现，但领域根据配置或请求上下文选择一个服务。 | `visibility`、`ai-resource-import` |
 | 有序链式执行 | 多个匹配插件按稳定顺序执行。每个节点可以贡献结果，失败是否中断由领域定义。 | `ai-pipeline`、`config-change` |
 | 订阅或广播 | 多个订阅者观察同一个事件或 trace 点，不拥有主决策权。 | `trace`、事件型扩展 |
 

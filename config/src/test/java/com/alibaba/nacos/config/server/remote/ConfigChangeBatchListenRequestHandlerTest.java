@@ -93,4 +93,16 @@ class ConfigChangeBatchListenRequestHandlerTest {
         }
     }
     
+    @Test
+    void testHandleRemoveListen() throws NacosException {
+        ConfigBatchListenRequest configChangeListenRequest = new ConfigBatchListenRequest();
+        configChangeListenRequest.setListen(false);
+        configChangeListenRequest.addConfigListenContext("group", "dataId", "tenant", "md5");
+        
+        ConfigChangeBatchListenResponse response =
+            configQueryRequestHandler.handle(configChangeListenRequest, requestMeta);
+        
+        assertTrue(response.getChangedConfigs().isEmpty());
+    }
+    
 }

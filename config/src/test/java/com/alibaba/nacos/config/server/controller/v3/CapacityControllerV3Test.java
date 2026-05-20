@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -177,5 +178,38 @@ class CapacityControllerV3Test {
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         assertEquals("30000", code);
         assertEquals("null", data);
+    }
+    
+    @Test
+    void testGetCapacityNullTriggersInit() throws Exception {
+        Capacity capacity = new Capacity();
+        capacity.setId(2L);
+        when(capacityService.getCapacityWithDefault(eq("g1"), eq("ns1")))
+            .thenReturn(null)
+            .thenReturn(capacity);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+            .get(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH)
+            .param("groupName", "g1").param("namespaceId", "ns1");
+        String actualValue =
+            mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String data = JacksonUtils.toObj(actualValue).get("data").toString();
+        assertNotNull(data);
+        verify(capacityService).initCapacity("g1", "ns1");
+    }
+    
+    @Test
+    void testUpdateCapacityException() throws Exception {
+        when(capacityService.insertOrUpdateCapacity("test", "test", 1, 1, 1, 1))
+            .thenThrow(new RuntimeException("db error"));
+        
+        MockHttpServletRequestBuilder builder =
+            post(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("groupName", "test")
+                .param("namespaceId", "test").param("quota", "1").param("maxSize", "1")
+                .param("maxAggrCount", "1").param("maxAggrSize", "1");
+        String actualValue =
+            mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String code = JacksonUtils.toObj(actualValue).get("code").toString();
+        assertEquals("30000", code);
     }
 }

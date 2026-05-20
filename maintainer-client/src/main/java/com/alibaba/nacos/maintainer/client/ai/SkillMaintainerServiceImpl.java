@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -160,6 +161,25 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
             JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            });
+        return result.getData();
+    }
+    
+    @Override
+    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+        boolean overwrite)
+        throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("overwrite", String.valueOf(overwrite));
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, null))
+            .setHttpMethod(HttpMethod.POST)
+            .setPath(Constants.AdminApiPath.AI_SKILL_BATCH_UPLOAD_ADMIN_PATH)
+            .setParamValue(params).setFileUpload(zipBytes, "skills.zip", "file").build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<BatchUploadResult> result = JacksonUtils.toObj(restResult.getData(),
+            new TypeReference<Result<BatchUploadResult>>() {
             });
         return result.getData();
     }

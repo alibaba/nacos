@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository.extrnal;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -26,7 +27,6 @@ import com.alibaba.nacos.config.server.service.sql.ExternalStorageUtils;
 import com.alibaba.nacos.config.server.utils.TestCaseUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +39,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Timestamp;
@@ -49,7 +50,9 @@ import java.util.List;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -258,6 +261,46 @@ class ExternalConfigInfoTagPersistServiceImplTest {
     }
     
     @Test
+    void testInsertOrUpdateTagCasReturnsFalseWhenUpdateAffectsNoRows() {
+        String dataId = "dataId111222";
+        String group = "group";
+        String tenant = "tenant";
+        String appName = "appname1234";
+        String content = "c12345";
+        String tag = "tag123";
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
+        configInfo.setMd5("casMd5");
+        Mockito
+            .when(jdbcTemplate.queryForObject(anyString(),
+                eq(new Object[] {dataId, group, tenant, tag}),
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(new ConfigInfoStateWrapper());
+        Mockito.when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()),
+            eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), anyString(),
+            anyString(), any(Timestamp.class), eq(appName), eq(dataId), eq(group), eq(tenant),
+            eq(tag), eq(configInfo.getMd5()))).thenReturn(0);
+        
+        ConfigOperateResult result = externalConfigInfoTagPersistService.insertOrUpdateTagCas(
+            configInfo, tag, "srcIp", "srcUser");
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testGetTagOperateResultReturnsFalseWhenStateMissing() {
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", "tenant", "tag"}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1));
+        
+        ConfigOperateResult result = ReflectionTestUtils.invokeMethod(
+            externalConfigInfoTagPersistService, "getTagOperateResult", "dataId", "group",
+            "tenant", "tag");
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
     void testInsertOrUpdateTagCasOfException() {
         String dataId = "dataId111222";
         String group = "group";
@@ -324,6 +367,19 @@ class ExternalConfigInfoTagPersistServiceImplTest {
         } catch (Exception e) {
             assertEquals("throw exception update config tag", e.getMessage());
         }
+    }
+    
+    @Test
+    void testUpdateConfigInfo4TagRethrowsConnectionException() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        Mockito.when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()),
+            eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE)), eq("srcIp"),
+            eq("srcUser"), any(Timestamp.class), eq("app"), eq("dataId"), eq("group"), eq(""),
+            eq("tag"))).thenThrow(new CannotGetJdbcConnectionException("update fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoTagPersistService.updateConfigInfo4Tag(configInfo, "tag",
+                "srcIp", "srcUser"));
     }
     
     @Test

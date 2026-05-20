@@ -34,6 +34,10 @@ monitoring requests when access to a control point exceeds configured rules.
 Control plugins must not change resource semantics; they only decide whether the
 current connection or request may continue.
 
+HTTP and gRPC TPS control hooks are connected through the shared request
+filtering model defined by the
+[Request Filtering And Runtime Context Spec](../design/foundation-request-context-spec.md).
+
 ## Concepts
 
 | Concept | Meaning |
@@ -123,7 +127,10 @@ Local rules are always available as the safe baseline. External rule storage
 must fail closed only when the selected control plugin explicitly requires it.
 
 Rule reloads are published through control rule change events and applied by the
-active managers.
+active managers. Local event dispatch follows the
+[Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md).
+Control metrics and denied observations follow the
+[Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
 
 External rule storage is selected by:
 

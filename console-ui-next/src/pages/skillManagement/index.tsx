@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -60,6 +60,8 @@ export default function SkillManagementPage() {
   const [bizTagInput, setBizTagInput] = useState(filterBizTag);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const dragCounter = useRef(0);
 
   const namespaceId = currentNamespace || 'public';
 
@@ -125,11 +127,100 @@ export default function SkillManagementPage() {
     }
   };
 
+  const handlePageDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  }, []);
+
+  const handlePageDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    setIsDragOver(true);
+  }, []);
+
+  const handlePageDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handlePageDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragOver(false);
+    const droppedFile = e.dataTransfer?.files?.[0];
+    if (!droppedFile) return;
+    if (!droppedFile.name.toLowerCase().endsWith('.zip') && droppedFile.type !== 'application/zip') {
+      toast.error(t('skill.invalidZipFile'));
+      return;
+    }
+    try {
+      const res = await skillApi.batchUpload(namespaceId, droppedFile);
+      const data = (res as any)?.data;
+      if (data && (data.succeeded || data.failed)) {
+        const succeededList: string[] = data.succeeded ?? [];
+        const failedList: { name: string; reason: string }[] = data.failed ?? [];
+        if (failedList.length === 0) {
+          toast.success(t('skill.batchUploadAllSuccess', { count: succeededList.length }), { duration: 5000 });
+        } else {
+          const title = succeededList.length > 0
+            ? t('skill.batchUploadResult', { succeeded: succeededList.length, failed: failedList.length })
+            : t('skill.batchUploadAllFailed', { count: failedList.length });
+          const description = (
+            <div className="flex flex-col gap-0.5 text-xs">
+              {succeededList.map((name) => (
+                <div key={name} style={{ color: '#16a34a' }}>✓ {name}</div>
+              ))}
+              {failedList.map((item) => (
+                <div key={item.name} style={{ color: '#dc2626' }}>
+                  ✗ {item.name}<span style={{ opacity: 0.8 }}> — {item.reason}</span>
+                </div>
+              ))}
+            </div>
+          );
+          const toastFn = succeededList.length > 0 ? toast.warning : toast.error;
+          toastFn(title, { description, duration: 8000 });
+        }
+      } else {
+        toast.success(t('skill.uploadSuccess'));
+      }
+      loadData();
+    } catch {
+      toast.error(t('skill.uploadFailed'));
+    }
+  }, [namespaceId, t, loadData]);
+
   const totalPages = Math.ceil(total / pageSize);
   const allSelected = items.length > 0 && items.every((a) => selectedNames.has(a.name));
 
   return (
-    <div className="space-y-5">
+    <div
+      className="space-y-5 relative"
+      onDragOver={handlePageDragOver}
+      onDragEnter={handlePageDragEnter}
+      onDragLeave={handlePageDragLeave}
+      onDrop={handlePageDrop}
+    >
+      {/* Drag overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/5 pointer-events-none">
+          <div className="text-center">
+            <Upload className="h-12 w-12 text-primary mx-auto mb-2" />
+            <p className="text-sm font-medium text-primary">{t('skill.dropFileHere')}</p>
+          </div>
+        </div>
+      )}
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
@@ -139,6 +230,9 @@ export default function SkillManagementPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
+            {t('skill.dragDropHint')}
+          </span>
           <Button size="sm" variant="outline" onClick={() => setUploadOpen(true)}>
             <Upload className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.upload')}

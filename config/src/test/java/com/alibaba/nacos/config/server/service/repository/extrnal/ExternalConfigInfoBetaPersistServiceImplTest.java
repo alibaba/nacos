@@ -47,6 +47,7 @@ import java.util.List;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -408,6 +409,30 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
             assertEquals("get c fail", exception.getMessage());
         }
         
+    }
+    
+    @Test
+    void testUpdateConfigInfo4BetaReturnsFalseWhenStateMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {"dataId", "group", ""}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1));
+        
+        ConfigOperateResult result = externalConfigInfoBetaPersistService.updateConfigInfo4Beta(
+            configInfo, "1.1.1.1", "srcIp", "srcUser");
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4BetaCasReturnsFalseWhenUpdateMisses() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        configInfo.setMd5("oldMd5");
+        
+        ConfigOperateResult result = externalConfigInfoBetaPersistService.updateConfigInfo4BetaCas(
+            configInfo, "1.1.1.1", "srcIp", "srcUser");
+        
+        assertFalse(result.isSuccess());
     }
     
     @Test

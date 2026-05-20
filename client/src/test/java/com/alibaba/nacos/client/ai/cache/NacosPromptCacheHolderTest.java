@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -111,15 +112,18 @@ class NacosPromptCacheHolderTest {
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, "m1"))
             .thenThrow(new NacosException(NacosException.NOT_MODIFIED, "up to date"));
-        cacheHolder.subscribePrompt("p1", "1.0.0", null);
         MockPromptEventSubscriber subscriber = registerMockSubscriber();
+        cacheHolder.subscribePrompt("p1", "1.0.0", null);
+        assertTrue(subscriber.await(5000),
+            "Initial event should be received by subscriber within 5 seconds");
+        subscriber.reset();
         
         Runnable updater = getOnlyUpdater();
         updater.run();
-        TimeUnit.MILLISECONDS.sleep(50);
         
         assertEquals("v1", getPromptCache().get("p1::version:1.0.0").getTemplate());
-        assertTrue(!subscriber.invokedMark.get());
+        assertFalse(subscriber.await(200), "Not modified prompt should not publish event");
+        assertFalse(subscriber.invokedMark.get(), "Subscriber should not be invoked");
     }
     
     @Test
@@ -208,7 +212,7 @@ class NacosPromptCacheHolderTest {
     private static class MockPromptEventSubscriber extends Subscriber<PromptChangedEvent> {
         
         private final AtomicBoolean invokedMark = new AtomicBoolean(false);
-        private final CountDownLatch latch = new CountDownLatch(1);
+        private volatile CountDownLatch latch = new CountDownLatch(1);
         
         @Override
         public void onEvent(PromptChangedEvent event) {
@@ -223,6 +227,11 @@ class NacosPromptCacheHolderTest {
         
         boolean await(long timeoutMs) throws InterruptedException {
             return latch.await(timeoutMs, TimeUnit.MILLISECONDS);
+        }
+        
+        void reset() {
+            invokedMark.set(false);
+            latch = new CountDownLatch(1);
         }
     }
 }

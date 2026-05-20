@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai.utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class CacheKeyUtilsTest {
     
@@ -44,5 +45,36 @@ class CacheKeyUtilsTest {
     void buildAgentSpecKeyShouldReturnNameItself() {
         String key = CacheKeyUtils.buildAgentSpecKey("my-agent-spec");
         assertEquals("my-agent-spec", key);
+    }
+    
+    @Test
+    void buildSkillKeyShouldReturnNameItself() {
+        String key = CacheKeyUtils.buildSkillKey("my-skill");
+        assertEquals("my-skill", key);
+    }
+    
+    @Test
+    void buildPromptKeySingleArgShouldReturnKeyItself() {
+        String key = CacheKeyUtils.buildPromptKey("p1");
+        assertEquals("p1", key);
+    }
+    
+    @Test
+    void buildMcpServerKeyWithBlankVersion() {
+        assertEquals("mcp::latest", CacheKeyUtils.buildMcpServerKey("mcp", null));
+        assertEquals("mcp::latest", CacheKeyUtils.buildMcpServerKey("mcp", ""));
+        assertEquals("mcp::1.0.0", CacheKeyUtils.buildMcpServerKey("mcp", "1.0.0"));
+    }
+    
+    @Test
+    void buildAgentCardKeyWithBlankVersion() {
+        assertEquals("a1::latest", CacheKeyUtils.buildAgentCardKey("a1", null));
+        assertEquals("a1::1.0.0", CacheKeyUtils.buildAgentCardKey("a1", "1.0.0"));
+    }
+    
+    @Test
+    void constructorIsAccessible() {
+        // Ensure default constructor counts toward class coverage.
+        assertNotNull(new CacheKeyUtils());
     }
 }

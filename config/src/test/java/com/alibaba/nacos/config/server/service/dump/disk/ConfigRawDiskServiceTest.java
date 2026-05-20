@@ -17,19 +17,30 @@
 package com.alibaba.nacos.config.server.service.dump.disk;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigRawDiskServiceTest {
+    
+    @TempDir
+    File tempDir;
     
     private String cachedOsName;
     
@@ -74,6 +85,155 @@ class ConfigRawDiskServiceTest {
             () -> ConfigRawDiskService.targetFile("testD", "../aaa", "testNS"));
         assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile("testD", "testG", "../aaa"));
+    }
+    
+    @Test
+    void testTargetGrayFileWithInvalidParam() throws Exception {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetGrayFile", String.class,
+            String.class, String.class, String.class);
+        method.setAccessible(true);
+        
+        InvocationTargetException exception =
+            assertThrows(InvocationTargetException.class,
+                () -> method.invoke(null, "dataId", "group", "tenant", "../gray"));
+        
+        assertTrue(exception.getCause() instanceof NacosRuntimeException);
+    }
+    
+    @Test
+    void testSaveToDiskAndGetContent() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            service.saveToDisk("dataId", "group", "", "hello content");
+            String content = service.getContent("dataId", "group", "");
+            assertEquals("hello content", content);
+        }
+    }
+    
+    @Test
+    void testGetContentNonExistentFile() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            assertNull(service.getContent("noexist", "group", ""));
+        }
+    }
+    
+    @Test
+    void testGetContentReturnsNullWhenTargetIsDirectory() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            File target = ConfigRawDiskService.targetFile("dirData", "group", "");
+            FileUtils.forceMkdir(target);
+            
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            
+            assertNull(service.getContent("dirData", "group", ""));
+        }
+    }
+    
+    @Test
+    void testSaveAndGetGrayContent() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            service.saveGrayToDisk("dataId", "group", "tenant", "gray1", "gray content");
+            String content = service.getGrayContent("dataId", "group", "tenant", "gray1");
+            assertEquals("gray content", content);
+        }
+    }
+    
+    @Test
+    void testRemoveConfigInfo() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            service.saveToDisk("dataId", "group", "", "content");
+            service.removeConfigInfo("dataId", "group", "");
+            assertNull(service.getContent("dataId", "group", ""));
+        }
+    }
+    
+    @Test
+    void testRemoveConfigInfo4Gray() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            service.saveGrayToDisk("d", "g", "", "gn", "gray");
+            service.removeConfigInfo4Gray("d", "g", "", "gn");
+            assertNull(service.getGrayContent("d", "g", "", "gn"));
+        }
+    }
+    
+    @Test
+    void testClearAll() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            service.saveToDisk("d1", "g1", "", "content1");
+            service.saveToDisk("d2", "g2", "t1", "content2");
+            service.clearAll();
+            assertNull(service.getContent("d1", "g1", ""));
+            assertNull(service.getContent("d2", "g2", "t1"));
+        }
+    }
+    
+    @Test
+    void testClearAllGray() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            service.saveGrayToDisk("d1", "g1", "", "gn", "gc");
+            service.saveGrayToDisk("d2", "g2", "t1", "gn2", "gc2");
+            service.clearAllGray();
+            assertNull(service.getGrayContent("d1", "g1", "", "gn"));
+            assertNull(service.getGrayContent("d2", "g2", "t1", "gn2"));
+        }
+    }
+    
+    @Test
+    void testClearAllWhenDeleteFails() {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<FileUtils> fileUtilsMock = Mockito.mockStatic(FileUtils.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            assertTrue(new File(tempDir, "data/config-data").mkdirs());
+            assertTrue(new File(tempDir, "data/tenant-config-data").mkdirs());
+            fileUtilsMock.when(() -> FileUtils.deleteQuietly(Mockito.any(File.class)))
+                .thenReturn(false);
+            
+            new ConfigRawDiskService().clearAll();
+            
+            fileUtilsMock.verify(() -> FileUtils.deleteQuietly(Mockito.any(File.class)),
+                Mockito.times(2));
+        }
+    }
+    
+    @Test
+    void testClearAllGrayWhenDeleteFails() {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<FileUtils> fileUtilsMock = Mockito.mockStatic(FileUtils.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            assertTrue(new File(tempDir, "data/gray-data").mkdirs());
+            assertTrue(new File(tempDir, "data/tenant-gray-data").mkdirs());
+            fileUtilsMock.when(() -> FileUtils.deleteQuietly(Mockito.any(File.class)))
+                .thenReturn(false);
+            
+            new ConfigRawDiskService().clearAllGray();
+            
+            fileUtilsMock.verify(() -> FileUtils.deleteQuietly(Mockito.any(File.class)),
+                Mockito.times(2));
+        }
+    }
+    
+    @Test
+    void testSaveToDiskWithTenant() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            service.saveToDisk("d", "g", "myTenant", "tenant content");
+            assertEquals("tenant content", service.getContent("d", "g", "myTenant"));
+        }
     }
     
     /**

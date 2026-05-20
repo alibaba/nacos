@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -313,6 +314,32 @@ class HistoryControllerV3Test {
         ConfigBasicInfo actualConfigInfoWrapper = actualList.get(0);
         assertEquals(configInfoWrapper.getDataId(), actualConfigInfoWrapper.getDataId());
         assertEquals(configInfoWrapper.getGroup(), actualConfigInfoWrapper.getGroupName());
+    }
+    
+    @Test
+    void testGetConfigHistoryInfoDataAccessException() throws Exception {
+        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+            TEST_NAMESPACE_ID_PUBLIC, 999L)).thenThrow(
+                new org.springframework.dao.EmptyResultDataAccessException(1));
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroupName(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID);
+        assertThrows(NacosApiException.class,
+            () -> historyControllerV3.getConfigHistoryInfo(configForm, 999L));
+    }
+    
+    @Test
+    void testGetPreviousConfigHistoryInfoDataAccessException() throws Exception {
+        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+            TEST_NAMESPACE_ID_PUBLIC, 999L)).thenThrow(
+                new org.springframework.dao.EmptyResultDataAccessException(1));
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroupName(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID);
+        assertThrows(NacosApiException.class,
+            () -> historyControllerV3.getPreviousConfigHistoryInfo(configForm, 999L));
     }
     
     @Test

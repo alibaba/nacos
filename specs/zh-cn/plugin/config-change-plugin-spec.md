@@ -99,7 +99,7 @@ Nacos 还会通过 request arguments 传递 `ConfigChangeConstants.ORIGINAL_ARGS
 不得破坏已提交的配置状态。
 
 执行顺序在过滤禁用插件后计算。前置插件在变更前同步运行。后置插件通过 config executor
-调度，应被视为异步执行。
+调度，应被视为异步执行。该调度遵循[任务执行规范](../design/foundation-task-execution-spec.md)。
 
 前置插件替换参数时必须保持参数顺序和类型。后置插件不得假设自己的副作用可以回滚已经提交的
 配置变更。

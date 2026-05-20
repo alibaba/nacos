@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
@@ -31,6 +32,8 @@ import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -42,6 +45,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 
@@ -51,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -388,6 +393,76 @@ class ConfigQueryRequestHandlerTest {
         assertFalse(responseConflict.isBeta());
         assertNull(responseConflict.getTag());
         
+    }
+    
+    @Test
+    void testHandleWhenChainResponseFailed() throws Exception {
+        ConfigQueryChainService chainService = Mockito.mock(ConfigQueryChainService.class);
+        ConfigQueryChainResponse chainResponse = new ConfigQueryChainResponse();
+        chainResponse.setResultCode(ResponseCode.FAIL.getCode());
+        chainResponse.setMessage("chain failed");
+        when(chainService.handle(any())).thenReturn(chainResponse);
+        ConfigQueryRequestHandler requestHandler = new ConfigQueryRequestHandler(chainService);
+        
+        ConfigQueryResponse response = requestHandler.handle(newConfigQueryRequest(),
+            newRequestMeta());
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals("chain failed", response.getMessage());
+    }
+    
+    @Test
+    void testHandleGrayResponseWithoutMatchedGray() throws Exception {
+        ConfigQueryChainService chainService = Mockito.mock(ConfigQueryChainService.class);
+        ConfigQueryChainResponse chainResponse = new ConfigQueryChainResponse();
+        chainResponse.setResultCode(ResponseCode.SUCCESS.getCode());
+        chainResponse.setContent("content");
+        chainResponse.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY);
+        when(chainService.handle(any())).thenReturn(chainResponse);
+        ConfigQueryRequestHandler requestHandler = new ConfigQueryRequestHandler(chainService);
+        
+        ConfigQueryResponse response = requestHandler.handle(newConfigQueryRequest(),
+            newRequestMeta());
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+    }
+    
+    @Test
+    void testResolvePullEventTypeWithGrayStatusButNoMatchedGray() {
+        ConfigQueryChainResponse chainResponse = new ConfigQueryChainResponse();
+        chainResponse.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY);
+        
+        String pullEvent = ReflectionTestUtils.invokeMethod(configQueryRequestHandler,
+            "resolvePullEventType", chainResponse, "tag");
+        
+        assertEquals(ConfigTraceService.PULL_EVENT, pullEvent);
+    }
+    
+    @Test
+    void testHandleWhenChainServiceThrowsException() throws Exception {
+        ConfigQueryChainService chainService = Mockito.mock(ConfigQueryChainService.class);
+        when(chainService.handle(any())).thenThrow(new RuntimeException("chain boom"));
+        ConfigQueryRequestHandler requestHandler = new ConfigQueryRequestHandler(chainService);
+        
+        ConfigQueryResponse response = requestHandler.handle(newConfigQueryRequest(),
+            newRequestMeta());
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals("chain boom", response.getMessage());
+    }
+    
+    private ConfigQueryRequest newConfigQueryRequest() {
+        ConfigQueryRequest request = new ConfigQueryRequest();
+        request.setDataId(dataId);
+        request.setGroup(group);
+        request.setTenant(tenant);
+        return request;
+    }
+    
+    private RequestMeta newRequestMeta() {
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp("127.0.0.1");
+        return requestMeta;
     }
     
 }

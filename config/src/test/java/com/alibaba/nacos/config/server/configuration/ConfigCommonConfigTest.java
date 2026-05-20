@@ -80,6 +80,24 @@ class ConfigCommonConfigTest {
     }
     
     @Test
+    void testGetPushTimeout() {
+        long timeout = commonConfig.getPushTimeout();
+        assertTrue(timeout > 0);
+    }
+    
+    @Test
+    void testGetMaxPatternCount() {
+        int count = commonConfig.getMaxPatternCount();
+        assertTrue(count > 0);
+    }
+    
+    @Test
+    void testGetMaxMatchedConfigCount() {
+        int count = commonConfig.getMaxMatchedConfigCount();
+        assertTrue(count > 0);
+    }
+    
+    @Test
     void testInitConfigFormEnv() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);

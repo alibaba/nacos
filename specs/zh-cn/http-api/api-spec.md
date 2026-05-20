@@ -44,7 +44,7 @@ API 和控制台 API 可能操作相似的领域对象，但它们的兼容性�
 | --- | --- | --- |
 | Open API | `/v3/client` | SDK 和自定义运行时客户端 |
 | Admin API | `/v3/admin` | 运维人员和维护工具 |
-| Console API | `/v3/console` | Nacos 控制台 UI |
+| Console API | `/v3/console` | [Nacos 控制台 UI](../console/console-spec.md) |
 | Auth API | `/v3/auth` | 插件提供的鉴权 API 和初始化流程 |
 
 不能仅因为某个端点可以通过 HTTP 访问，就把它记录为 Open API。Open API
@@ -98,6 +98,8 @@ HTTP API 应通过 `@Secured` 声明鉴权，除非端点被明确设计为公�
 端点或健康检查端点。鉴权声明必须反映 API 受众、资源领域和操作动作。
 
 详细规则见 [鉴权规范](authorization-spec.md)。
+共享 HTTP filter 和运行时请求上下文模型由
+[请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义。
 
 ### 2.6 兼容性是 API 的一部分
 
@@ -141,6 +143,7 @@ Agent 指南文件、AI skill、Controller 模板和 API 合规校验工具，�
 
 - [鉴权规范](authorization-spec.md)
 - [响应与错误规范](response-error-spec.md)
+- [请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)
 
 ## 4. 新增或变更 HTTP API 的规则
 

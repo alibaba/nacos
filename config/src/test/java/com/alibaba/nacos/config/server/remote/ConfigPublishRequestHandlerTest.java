@@ -142,7 +142,7 @@ class ConfigPublishRequestHandlerTest {
             configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(500L);
+        waitForEvent(reference);
         assertTrue(reference.get() != null);
         assertEquals(dataId, reference.get().dataId);
         assertEquals(group, reference.get().group);
@@ -206,7 +206,7 @@ class ConfigPublishRequestHandlerTest {
             configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(500L);
+        waitForEvent(reference);
         assertTrue(reference.get() != null);
         assertEquals(dataId, reference.get().dataId);
         assertEquals(group, reference.get().group);
@@ -282,6 +282,36 @@ class ConfigPublishRequestHandlerTest {
     }
     
     @Test
+    void testPublishConfigAlreadyExistsWithEncryptedDataKey() throws Exception {
+        String dataId = "testPublishConfigWithEncryptedDataKey";
+        String group = "group";
+        String tenant = "tenant";
+        
+        ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
+        configPublishRequest.setDataId(dataId);
+        configPublishRequest.setGroup(group);
+        configPublishRequest.setTenant(tenant);
+        configPublishRequest.setContent("content");
+        Map<String, String> keyMap = new HashMap<>();
+        String srcUser = "src_user111";
+        keyMap.put("src_user", srcUser);
+        keyMap.put("encryptedDataKey", "cipherKey");
+        configPublishRequest.setAdditionMap(keyMap);
+        
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp("127.0.0.1");
+        
+        when(configInfoPersistService.insertOrUpdate(eq(requestMeta.getClientIp()), eq(srcUser),
+            any(ConfigInfo.class), any(Map.class))).thenReturn(new ConfigOperateResult(false));
+        
+        ConfigPublishResponse response =
+            configPublishRequestHandler.handle(configPublishRequest, requestMeta);
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertTrue(response.getMessage().contains("already exist"));
+    }
+    
+    @Test
     void testBetaPublishNotCas() throws NacosException, InterruptedException {
         String dataId = "testBetaPublish";
         String group = "group";
@@ -334,7 +364,7 @@ class ConfigPublishRequestHandlerTest {
             configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(500L);
+        waitForEvent(reference);
         assertTrue(reference.get() != null);
         assertEquals(dataId, reference.get().dataId);
         assertEquals(group, reference.get().group);
@@ -399,7 +429,7 @@ class ConfigPublishRequestHandlerTest {
             configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(500L);
+        waitForEvent(reference);
         assertTrue(reference.get() != null);
         assertEquals(dataId, reference.get().dataId);
         assertEquals(group, reference.get().group);
@@ -465,7 +495,7 @@ class ConfigPublishRequestHandlerTest {
             configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(500L);
+        waitForEvent(reference);
         assertTrue(reference.get() != null);
         assertEquals(dataId, reference.get().dataId);
         assertEquals(group, reference.get().group);
@@ -525,13 +555,20 @@ class ConfigPublishRequestHandlerTest {
             configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(500L);
+        waitForEvent(reference);
         assertTrue(reference.get() != null);
         assertEquals(dataId, reference.get().dataId);
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
         assertEquals("tag_" + tag, reference.get().grayName);
+    }
+    
+    private void waitForEvent(AtomicReference<ConfigDataChangeEvent> reference)
+        throws InterruptedException {
+        for (int i = 0; i < 30 && reference.get() == null; i++) {
+            Thread.sleep(100L);
+        }
     }
     
 }

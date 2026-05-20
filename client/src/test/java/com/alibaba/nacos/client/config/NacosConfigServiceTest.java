@@ -551,4 +551,114 @@ class NacosConfigServiceTest {
             nacosConfigService.shutDown();
         });
     }
+    
+    @Test
+    void testGetConfigWithResultFromServer() throws NacosException {
+        ConfigResponse response = new ConfigResponse();
+        response.setContent("server-content");
+        response.setMd5("md5val");
+        response.setConfigType("yaml");
+        response.setEncryptedDataKey("ek");
+        Mockito.when(mockWoker.getServerConfig("d", "g", "public", 3000, false))
+            .thenReturn(response);
+        com.alibaba.nacos.api.config.ConfigQueryResult result =
+            nacosConfigService.getConfigWithResult("d", "g", 3000);
+        assertEquals("server-content", result.getContent());
+        assertEquals("md5val", result.getMd5());
+        assertEquals("yaml", result.getConfigType());
+        assertEquals("ek", result.getEncryptedDataKey());
+    }
+    
+    @Test
+    void testGetConfigWithResultFromFailover() throws NacosException {
+        try (MockedStatic<LocalConfigInfoProcessor> processor =
+            Mockito.mockStatic(LocalConfigInfoProcessor.class)) {
+            processor.when(() -> LocalConfigInfoProcessor.getFailover(any(),
+                eq("dfo"), eq("g"), eq("public"))).thenReturn("failover-content");
+            com.alibaba.nacos.api.config.ConfigQueryResult result =
+                nacosConfigService.getConfigWithResult("dfo", "g", 3000);
+            assertEquals("failover-content", result.getContent());
+        }
+    }
+    
+    @Test
+    void testGetConfigWithResultFromSnapshot() throws NacosException {
+        try (MockedStatic<LocalConfigInfoProcessor> processor =
+            Mockito.mockStatic(LocalConfigInfoProcessor.class)) {
+            processor.when(() -> LocalConfigInfoProcessor.getFailover(any(),
+                eq("dsnap"), eq("g"), eq("public"))).thenReturn(null);
+            processor.when(() -> LocalConfigInfoProcessor.getSnapshot(any(),
+                eq("dsnap"), eq("g"), eq("public"))).thenReturn("snapshot-content");
+            Mockito.when(mockWoker.getServerConfig("dsnap", "g", "public", 3000, false))
+                .thenThrow(new NacosException(500, "down"));
+            com.alibaba.nacos.api.config.ConfigQueryResult result =
+                nacosConfigService.getConfigWithResult("dsnap", "g", 3000);
+            assertEquals("snapshot-content", result.getContent());
+        }
+    }
+    
+    @Test
+    void testGetConfigWithResultThrowsOnNoRight() throws NacosException {
+        try (MockedStatic<LocalConfigInfoProcessor> processor =
+            Mockito.mockStatic(LocalConfigInfoProcessor.class)) {
+            processor.when(() -> LocalConfigInfoProcessor.getFailover(any(),
+                eq("dnr"), eq("g"), eq("public"))).thenReturn(null);
+            Mockito.when(mockWoker.getServerConfig("dnr", "g", "public", 3000, false))
+                .thenThrow(new NacosException(NacosException.NO_RIGHT, "no right"));
+            NacosException ex = Assertions.assertThrows(NacosException.class,
+                () -> nacosConfigService.getConfigWithResult("dnr", "g", 3000));
+            assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+        }
+    }
+    
+    @Test
+    void testCancelFuzzyWatchWithNullWatcher() throws NacosException {
+        // null watcher → early return; should not call worker
+        nacosConfigService.cancelFuzzyWatch("g*", (FuzzyWatchEventWatcher) null);
+        Mockito.verify(mockWoker, Mockito.never())
+            .removeFuzzyListenListener(anyString(), anyString(), any());
+    }
+    
+    @Test
+    void testCancelFuzzyWatchWithWatcherDelegates() throws NacosException {
+        FuzzyWatchEventWatcher watcher = new FuzzyWatchEventWatcher() {
+            
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+            }
+            
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+        };
+        nacosConfigService.cancelFuzzyWatch("g*", watcher);
+        Mockito.verify(mockWoker, Mockito.times(1))
+            .removeFuzzyListenListener(ALL_PATTERN, "g*", watcher);
+    }
+    
+    @Test
+    void testCancelFuzzyWatchWithDataIdPattern() throws NacosException {
+        FuzzyWatchEventWatcher watcher = new FuzzyWatchEventWatcher() {
+            
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+            }
+            
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+        };
+        nacosConfigService.cancelFuzzyWatch("d*", "g*", watcher);
+        Mockito.verify(mockWoker, Mockito.times(1))
+            .removeFuzzyListenListener("d*", "g*", watcher);
+    }
+    
+    @Test
+    void testAddConfigFilterDelegates() {
+        com.alibaba.nacos.api.config.filter.IConfigFilter filter =
+            Mockito.mock(com.alibaba.nacos.api.config.filter.IConfigFilter.class);
+        Assertions.assertDoesNotThrow(() -> nacosConfigService.addConfigFilter(filter));
+    }
 }

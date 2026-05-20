@@ -45,6 +45,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -316,6 +318,40 @@ class DumpChangeConfigWorkerTest {
                 .getConfigCache()
                 .getMd5());
         
+    }
+    
+    @Test
+    void testDumpChangeWithBlankTenantReadsNextPage() {
+        PropertyUtil.setDumpChangeOn(true);
+        dumpChangeConfigWorker.setPageSize(1);
+        Timestamp startTime = dumpChangeConfigWorker.startTime;
+        ConfigInfoStateWrapper blankTenant =
+            createConfigInfoStateWrapper("blankTenantData", 1, startTime.getTime() + 1);
+        blankTenant.setTenant("");
+        when(configInfoPersistService.findChangeConfig(eq(startTime), eq(0L), eq(1)))
+            .thenReturn(Collections.singletonList(blankTenant));
+        when(configInfoPersistService.findChangeConfig(eq(startTime), eq(1L), eq(1)))
+            .thenReturn(Collections.emptyList());
+        
+        dumpChangeConfigWorker.run();
+        
+        Mockito.verify(configInfoPersistService, times(1))
+            .findChangeConfig(eq(startTime), eq(1L), eq(1));
+        Mockito.verify(configInfoPersistService, times(0))
+            .findConfigInfo(anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testDumpChangeHandlesException() {
+        PropertyUtil.setDumpChangeOn(true);
+        Timestamp startTime = dumpChangeConfigWorker.startTime;
+        when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L),
+            anyInt(), eq("formal"))).thenThrow(new RuntimeException("broken"));
+        
+        dumpChangeConfigWorker.run();
+        
+        Mockito.verify(configInfoPersistService, times(0))
+            .findChangeConfig(any(), anyLong(), anyInt());
     }
     
     @Test

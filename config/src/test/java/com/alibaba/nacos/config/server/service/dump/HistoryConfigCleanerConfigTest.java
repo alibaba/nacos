@@ -53,6 +53,16 @@ class HistoryConfigCleanerConfigTest {
         assertEquals("nacos", historyConfigCleanerConfig.getActiveHistoryConfigCleaner());
     }
     
+    @Test
+    public void testSetActiveHistoryConfigCleaner() {
+        HistoryConfigCleanerConfig historyConfigCleanerConfig =
+            HistoryConfigCleanerConfig.getInstance();
+        
+        historyConfigCleanerConfig.setActiveHistoryConfigCleaner("custom");
+        
+        assertEquals("custom", historyConfigCleanerConfig.getActiveHistoryConfigCleaner());
+    }
+    
     @AfterEach
     public void after() {
         envUtilMockedStatic.close();

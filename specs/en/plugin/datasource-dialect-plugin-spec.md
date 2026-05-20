@@ -32,7 +32,14 @@ database families are defined by the
 The plugin exists because Nacos persistence should keep one logical schema and
 one repository contract while allowing different database dialects. A dialect
 plugin is not a persistence domain owner; it translates the repository contract
-into database-specific SQL.
+into database-specific SQL. The persistence and dump boundary is defined by the
+[Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
+
+Domain modules may still own concrete persistence implementations because stored
+records usually carry domain semantics. For example, Config repository services
+own Config publish, history, gray release, and capacity semantics, while this
+plugin only supplies the database-specific SQL dialect and mapper layer used by
+those repositories.
 
 ## Concepts
 
@@ -42,6 +49,10 @@ into database-specific SQL.
 | Dialect | Database-level SQL behavior such as pagination, generated keys, and functions. |
 | Mapper | Table-level SQL provider for one logical Nacos table and one database type. |
 | Logical schema | Nacos table and column semantics shared by all databases. |
+
+Repository implementations choose logical operations and invoke mappers where
+needed. Mappers must not decide resource identity, authorization, compatibility
+policy, or user-visible domain behavior.
 
 The SQL platform must select both a `DatabaseDialect` and the mapper set for the
 same database family. Mixing a dialect from one database with mappers from

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.utils;
 
-import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
@@ -181,7 +180,12 @@ public class SkillRequestUtil {
         for (String line : lines) {
             int colonIdx = line.indexOf(':');
             if (colonIdx > 0 && line.substring(0, colonIdx).trim().equals(field)) {
-                sb.append(field).append(": ").append(value);
+                int indentLen = 0;
+                while (indentLen < line.length() && Character.isWhitespace(
+                    line.charAt(indentLen))) {
+                    indentLen++;
+                }
+                sb.append(line, 0, indentLen).append(field).append(": ").append(value);
                 found = true;
             } else {
                 sb.append(line);
@@ -324,11 +328,12 @@ public class SkillRequestUtil {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.DATA_EMPTY,
                 "File is required");
         }
-        if (file.getSize() > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
+        long maxUploadBytes = SkillZipParser.resolveMaxUploadBytes();
+        if (file.getSize() > maxUploadBytes) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip size must not exceed "
-                    + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
+                    + (maxUploadBytes / 1024 / 1024)
                     + "MB, current: " + (file.getSize() / 1024 / 1024) + "MB");
         }
         try {

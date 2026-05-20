@@ -21,10 +21,12 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.packagescan.DefaultPackageScan;
 import com.alibaba.nacos.common.utils.ArrayUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.RequestMappingInfo.RequestMappingInfoComparator;
 import com.alibaba.nacos.core.code.condition.ParamRequestCondition;
 import com.alibaba.nacos.core.code.condition.PathRequestCondition;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -36,7 +38,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -70,8 +71,8 @@ public class ControllerMethodsCache {
     public Method getMethod(HttpServletRequest request) {
         String path = getPath(request);
         String httpMethod = request.getMethod();
-        String urlKey =
-            httpMethod + REQUEST_PATH_SEPARATOR + path.replaceFirst(EnvUtil.getContextPath(), "");
+        String urlKey = httpMethod + REQUEST_PATH_SEPARATOR
+            + stripContextPath(path, resolveContextPath(request));
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
         if (CollectionUtils.isEmpty(requestMappingInfos)) {
             return null;
@@ -94,6 +95,23 @@ public class ControllerMethodsCache {
             }
         }
         return methods.get(bestMatch);
+    }
+    
+    private String resolveContextPath(HttpServletRequest request) {
+        String requestContextPath = request.getContextPath();
+        return StringUtils.isEmpty(requestContextPath) ? EnvUtil.getContextPath()
+            : requestContextPath;
+    }
+    
+    private String stripContextPath(String path, String contextPath) {
+        if (StringUtils.isEmpty(path) || StringUtils.isEmpty(contextPath)) {
+            return path;
+        }
+        if (path.startsWith(contextPath)) {
+            String stripped = path.substring(contextPath.length());
+            return StringUtils.isEmpty(stripped) ? StringUtils.EMPTY : stripped;
+        }
+        return path;
     }
     
     private String getPath(HttpServletRequest request) {

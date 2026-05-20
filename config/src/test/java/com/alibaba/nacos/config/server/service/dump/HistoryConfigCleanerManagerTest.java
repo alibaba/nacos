@@ -29,4 +29,12 @@ class HistoryConfigCleanerManagerTest {
         assertEquals(cleaner.getName(), "nacos");
     }
     
+    @Test
+    public void testUnknownHistoryConfigCleanerReturnsDefaultCleaner() {
+        HistoryConfigCleaner cleaner =
+            HistoryConfigCleanerManager.getHistoryConfigCleaner("unknown");
+        
+        assertEquals("nacos", cleaner.getName());
+    }
+    
 }
