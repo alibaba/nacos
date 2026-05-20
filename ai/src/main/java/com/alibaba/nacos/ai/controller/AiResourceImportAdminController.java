@@ -1,0 +1,119 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.ai.controller;
+
+import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.importer.manager.AiResourceImportManager;
+import com.alibaba.nacos.api.ai.model.importer.AiResourceImportExecuteRequest;
+import com.alibaba.nacos.api.ai.model.importer.AiResourceImportExecuteResponse;
+import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSearchRequest;
+import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSearchResponse;
+import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSourceInfo;
+import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidateRequest;
+import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidateResponse;
+import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+/**
+ * Admin API controller for AI resource import.
+ *
+ * @author xiweng.yy
+ * @since 3.2.1
+ */
+@NacosApi
+@RestController
+@RequestMapping(Constants.AI_RESOURCE_IMPORT_ADMIN_PATH)
+public class AiResourceImportAdminController {
+    
+    private final AiResourceImportManager importManager;
+    
+    public AiResourceImportAdminController(AiResourceImportManager importManager) {
+        this.importManager = importManager;
+    }
+    
+    /**
+     * List configured import sources.
+     *
+     * @param resourceType optional resource type filter
+     * @return source list
+     * @throws NacosException if source configuration is invalid
+     */
+    @GetMapping("/sources")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<List<AiResourceImportSourceInfo>> listSources(
+        @RequestParam(required = false) String resourceType) throws NacosException {
+        return Result.success(importManager.listSources(resourceType));
+    }
+    
+    /**
+     * Search external import candidates.
+     *
+     * @param request search request
+     * @return candidate page
+     * @throws NacosException if the source cannot be searched
+     */
+    @PostMapping("/search")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<AiResourceImportSearchResponse> search(
+        @RequestBody(required = false) AiResourceImportSearchRequest request)
+        throws NacosException {
+        return Result.success(importManager.search(request));
+    }
+    
+    /**
+     * Validate selected import candidates.
+     *
+     * @param request validate request
+     * @return validation result
+     * @throws NacosException if validation cannot start
+     */
+    @PostMapping("/validate")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<AiResourceImportValidateResponse> validate(
+        @RequestBody(required = false) AiResourceImportValidateRequest request)
+        throws NacosException {
+        return Result.success(importManager.validate(request));
+    }
+    
+    /**
+     * Execute import for selected candidates.
+     *
+     * @param request execute request
+     * @return import result
+     * @throws NacosException if import cannot start
+     */
+    @PostMapping("/execute")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<AiResourceImportExecuteResponse> execute(
+        @RequestBody(required = false) AiResourceImportExecuteRequest request)
+        throws NacosException {
+        return Result.success(importManager.execute(request));
+    }
+}
