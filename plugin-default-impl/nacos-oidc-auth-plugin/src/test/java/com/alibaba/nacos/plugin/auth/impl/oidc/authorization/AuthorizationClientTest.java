@@ -17,10 +17,14 @@
 package com.alibaba.nacos.plugin.auth.impl.oidc.authorization;
 
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,6 +60,26 @@ class AuthorizationClientTest {
         assertFalse(response.isAllowed());
         assertTrue(response.getReason().contains("Authorization error"));
     }
+    
+    @Test
+    void testAuthorizeHandlesIdpHttpResponses() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/allow", exchange -> writeResponse(exchange, 200,
+            "{\"allowed\":true}"));
+        server.createContext("/deny", exchange -> writeResponse(exchange, 403,
+            "{\"allowed\":false}"));
+        server.createContext("/error", exchange -> writeResponse(exchange, 500,
+            "{\"message\":\"error\"}"));
+        server.start();
+        try {
+            String base = "http://127.0.0.1:" + server.getAddress().getPort();
+            assertTrue(newClient(mockConfig(base + "/allow")).authorize(request()).isAllowed());
+            assertFalse(newClient(mockConfig(base + "/deny")).authorize(request()).isAllowed());
+            assertFalse(newClient(mockConfig(base + "/error")).authorize(request()).isAllowed());
+        } finally {
+            server.stop(0);
+        }
+    }
 
     private AuthorizationClient newClient(OidcAuthConfig config) {
         ReflectionTestUtils.setField(AuthorizationClient.class, "instance", null);
@@ -78,5 +102,13 @@ class AuthorizationClientTest {
             .resource("nacos:config")
             .action("read")
             .build();
+    }
+    
+    private void writeResponse(com.sun.net.httpserver.HttpExchange exchange, int status,
+        String body) throws java.io.IOException {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(status, bytes.length);
+        exchange.getResponseBody().write(bytes);
+        exchange.close();
     }
 }

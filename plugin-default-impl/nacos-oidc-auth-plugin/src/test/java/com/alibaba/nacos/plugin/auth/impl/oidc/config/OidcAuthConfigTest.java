@@ -16,14 +16,19 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.config;
 
+import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -108,12 +113,19 @@ class OidcAuthConfigTest {
         config.setIssuerUri("http://issuer");
         config.setClientId("client");
         config.setClientSecret("secret");
+        config.setScope("openid profile");
         config.setTokenValidationMethod("jwt");
+        config.setJwksCacheTtlSeconds(321L);
+        config.setUsernameClaim("preferred_username");
+        config.setRolesClaim("groups");
+        config.setAdminRole("nacos-admin");
+        config.setAutoCreateUser(false);
         config.setJwksUri("http://issuer/jwks");
         config.setAuthorizationEndpoint("http://issuer/auth");
         config.setTokenEndpoint("http://issuer/token");
         config.setUserinfoEndpoint("http://issuer/userinfo");
         config.setEndSessionEndpoint("http://issuer/logout");
+        config.setAuthorizationEvaluateEndpoint("http://issuer/evaluate");
         config.setAuthorizationTimeoutMs(123L);
         config.setStrictNonceValidation(false);
         config.setStrictAudienceValidation(false);
@@ -121,14 +133,59 @@ class OidcAuthConfigTest {
         assertTrue(config.isValid());
         assertTrue(config.isJwtValidation());
         assertEquals("http://issuer", config.getIssuerUri());
+        assertEquals("openid profile", config.getScope());
+        assertEquals(321L, config.getJwksCacheTtlSeconds());
+        assertEquals("preferred_username", config.getUsernameClaim());
+        assertEquals("groups", config.getRolesClaim());
+        assertEquals("nacos-admin", config.getAdminRole());
+        assertFalse(config.isAutoCreateUser());
         assertEquals("http://issuer/jwks", config.getJwksUri());
         assertEquals("http://issuer/auth", config.getAuthorizationEndpoint());
         assertEquals("http://issuer/token", config.getTokenEndpoint());
         assertEquals("http://issuer/userinfo", config.getUserinfoEndpoint());
         assertEquals("http://issuer/logout", config.getEndSessionEndpoint());
+        assertEquals("http://issuer/evaluate", config.getAuthorizationEvaluateEndpoint());
         assertEquals(123L, config.getAuthorizationTimeoutMs());
         assertFalse(config.isStrictNonceValidation());
         assertFalse(config.isStrictAudienceValidation());
         assertNotNull(new OidcPluginAutoConfiguration().oidcLoginController());
+    }
+    
+    @Test
+    void testDiscoveryLoadsProviderEndpoints() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext(OidcProtocolConstants.WELL_KNOWN_PATH, exchange -> {
+            String base = "http://127.0.0.1:" + server.getAddress().getPort();
+            String body = "{"
+                + "\"authorization_endpoint\":\"" + base + "/auth\","
+                + "\"token_endpoint\":\"" + base + "/token\","
+                + "\"userinfo_endpoint\":\"" + base + "/userinfo\","
+                + "\"end_session_endpoint\":\"" + base + "/logout\","
+                + "\"jwks_uri\":\"" + base + "/jwks\""
+                + "}";
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        });
+        server.start();
+        try {
+            String issuer = "http://127.0.0.1:" + server.getAddress().getPort();
+            EnvUtil.setEnvironment(new MockEnvironment()
+                .withProperty(OidcConstants.CONFIG_ISSUER_URI, issuer)
+                .withProperty(OidcConstants.CONFIG_CLIENT_ID, "client"));
+            ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
+            
+            OidcAuthConfig config = OidcAuthConfig.getInstance();
+            
+            assertTrue(config.isValid());
+            assertEquals(issuer + "/auth", config.getAuthorizationEndpoint());
+            assertEquals(issuer + "/token", config.getTokenEndpoint());
+            assertEquals(issuer + "/userinfo", config.getUserinfoEndpoint());
+            assertEquals(issuer + "/logout", config.getEndSessionEndpoint());
+            assertEquals(issuer + "/jwks", config.getJwksUri());
+        } finally {
+            server.stop(0);
+        }
     }
 }

@@ -22,7 +22,14 @@ import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
+import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.OidcAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +40,23 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class OidcAuthPluginServiceTest {
+    
+    private ConfigurableEnvironment originalEnvironment;
+    
+    @BeforeEach
+    void setUp() {
+        originalEnvironment = EnvUtil.getEnvironment();
+        EnvUtil.setEnvironment(new MockEnvironment());
+        ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
+        ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(originalEnvironment);
+        ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
+        ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
+    }
 
     @Test
     void testBasicPluginMetadata() {
@@ -76,5 +100,15 @@ class OidcAuthPluginServiceTest {
         AuthResult<?> actual = service.validateAuthority(identityContext, permission);
 
         assertSame(expected, actual);
+    }
+    
+    @Test
+    void testValidateIdentityInitializesProviders() {
+        OidcAuthPluginService service = new OidcAuthPluginService();
+        
+        AuthResult<?> result = service.validateIdentity(new IdentityContext(),
+            Resource.EMPTY_RESOURCE);
+        
+        assertFalse(result.isSuccess());
     }
 }

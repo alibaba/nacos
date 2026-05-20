@@ -32,6 +32,29 @@ class AuthorizationModelTest {
         assertEquals("nacos:config", request.buildResourceUri());
         assertEquals("read", request.getAction());
         assertEquals("token", request.getToken());
+        assertEquals("nacos:config", request.getResource());
+    }
+    
+    @Test
+    void testRequestSettersAndMinimalResourceUri() {
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setToken("token");
+        request.setAction("write");
+        request.setResourceType("config");
+        request.setNamespace("public");
+        request.setGroup("DEFAULT_GROUP");
+        request.setResourceName("data.yaml");
+        
+        assertEquals("token", request.getToken());
+        assertEquals("write", request.getAction());
+        assertEquals("config", request.getResourceType());
+        assertEquals("public", request.getNamespace());
+        assertEquals("DEFAULT_GROUP", request.getGroup());
+        assertEquals("data.yaml", request.getResourceName());
+        assertEquals("nacos:config:public:DEFAULT_GROUP:data.yaml", request.buildResourceUri());
+        request.setResource("nacos:explicit");
+        assertEquals("nacos:explicit", request.getResource());
+        assertEquals("nacos:explicit", request.buildResourceUri());
     }
 
     @Test
@@ -67,6 +90,7 @@ class AuthorizationModelTest {
     void testResponseFactoryMethodsAndSetters() {
         AuthorizationResponse allowed = AuthorizationResponse.allowed();
         AuthorizationResponse denied = AuthorizationResponse.denied("blocked");
+        AuthorizationResponse constructed = new AuthorizationResponse(false);
         AuthorizationResponse custom = new AuthorizationResponse();
         custom.setAllowed(true);
         custom.setReason("ok");
@@ -74,6 +98,7 @@ class AuthorizationModelTest {
 
         assertTrue(allowed.isAllowed());
         assertFalse(denied.isAllowed());
+        assertFalse(constructed.isAllowed());
         assertEquals("blocked", denied.getReason());
         assertEquals("ok", custom.getReason());
         assertEquals("none", custom.getErrorCode());
@@ -92,6 +117,13 @@ class AuthorizationModelTest {
         assertFalse(denied.isAllowed());
         assertEquals("no", denied.getReason());
         assertEquals("E403", denied.getErrorCode());
+        
+        AuthorizationResponse errorDescription =
+            AuthorizationResponse.fromJson("{\"allowed\":false,\"error_description\":\"bad\","
+                + "\"error\":\"E_BAD\"}");
+        assertFalse(errorDescription.isAllowed());
+        assertEquals("bad", errorDescription.getReason());
+        assertEquals("E_BAD", errorDescription.getErrorCode());
     }
 
     @Test
@@ -99,10 +131,12 @@ class AuthorizationModelTest {
         AuthorizationResponse empty = AuthorizationResponse.fromJson(" ");
         AuthorizationResponse missingColon = AuthorizationResponse.fromJson("{\"allowed\" true}");
         AuthorizationResponse missingQuote = AuthorizationResponse.fromJson("{\"error\": true}");
+        AuthorizationResponse missingEndQuote = AuthorizationResponse.fromJson("{\"error\":\"E403}");
 
         assertFalse(empty.isAllowed());
         assertEquals("Empty response from IdP", empty.getReason());
         assertNull(missingColon.getReason());
         assertNull(missingQuote.getErrorCode());
+        assertNull(missingEndQuote.getErrorCode());
     }
 }
