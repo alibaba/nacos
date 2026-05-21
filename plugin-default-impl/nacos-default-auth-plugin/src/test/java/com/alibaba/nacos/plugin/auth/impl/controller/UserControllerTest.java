@@ -139,7 +139,8 @@ class UserControllerTest {
     @Test
     void testLoginWithLegacySpringAuthentication() throws Exception {
         when(authConfigs.getNacosAuthSystemType()).thenReturn("custom");
-        when(legacyAuthenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+        when(legacyAuthenticationManager
+            .authenticate(any(UsernamePasswordAuthenticationToken.class)))
             .thenReturn(legacyAuthentication);
         when(tokenManagerDelegate.createToken(legacyAuthentication)).thenReturn("legacy-token");
         
@@ -155,7 +156,8 @@ class UserControllerTest {
     @Test
     void testLoginWithLegacySpringAuthenticationFailure() throws Exception {
         when(authConfigs.getNacosAuthSystemType()).thenReturn("custom");
-        when(legacyAuthenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+        when(legacyAuthenticationManager
+            .authenticate(any(UsernamePasswordAuthenticationToken.class)))
             .thenThrow(new BadCredentialsException("bad"));
         
         Object actual = userController.login("nacos", "bad", response, request);

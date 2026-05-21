@@ -35,7 +35,7 @@ class AbstractDatabaseDialectTest {
         assertEquals("SELECT  LIMIT 20 , 10", dialect.getLimitPageSql("SELECT", 3, 10));
         assertEquals("SELECT  LIMIT 5 , 10", dialect.getLimitPageSqlWithOffset("SELECT", 5, 10));
         assertArrayEquals(PrimaryKeyConstant.LOWER_RETURN_PRIMARY_KEYS,
-                dialect.getReturnPrimaryKeys());
+            dialect.getReturnPrimaryKeys());
         assertEquals("test", dialect.getType());
         assertEquals("NOW()", dialect.getFunction("NOW()"));
     }

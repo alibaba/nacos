@@ -38,18 +38,18 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class NacosLdapContextSourceTest {
-
+    
     private static final String DISABLE_ENDPOINT_IDENTIFICATION =
         "com.sun.jndi.ldap.object.disableEndpointIdentification";
-
+    
     @Test
     void testInitPlainLdapEnvironment() {
         TestableNacosLdapContextSource source = new TestableNacosLdapContextSource(
             "ldap://localhost:389", "dc=example,dc=org", "cn=admin,dc=example,dc=org",
             "password", "1234");
-
+        
         Hashtable<String, Object> environment = source.anonymousEnvironment();
-
+        
         assertArrayEquals(new String[] {"ldap://localhost:389"}, source.getUrls());
         assertEquals("dc=example,dc=org", source.getBaseLdapPathAsString());
         assertEquals("cn=admin,dc=example,dc=org", source.getUserDn());
@@ -58,7 +58,7 @@ class NacosLdapContextSourceTest {
         assertEquals("objectGUID", environment.get("java.naming.ldap.attributes.binary"));
         assertEquals("1234", environment.get("com.sun.jndi.ldap.connect.timeout"));
     }
-
+    
     @Test
     void testInitLdapsEnvironment() {
         String previous = System.getProperty(DISABLE_ENDPOINT_IDENTIFICATION);
@@ -66,9 +66,9 @@ class NacosLdapContextSourceTest {
             TestableNacosLdapContextSource source = new TestableNacosLdapContextSource(
                 "ldaps://localhost:636", "dc=example,dc=org", "cn=admin,dc=example,dc=org",
                 "password", "2000");
-
+            
             Hashtable<String, Object> environment = source.anonymousEnvironment();
-
+            
             assertEquals("true", System.getProperty(DISABLE_ENDPOINT_IDENTIFICATION));
             assertEquals("ssl", environment.get("java.naming.security.protocol"));
             assertEquals(NacosLdapContextSource.LdapSslSocketFactory.class.getName(),
@@ -83,7 +83,7 @@ class NacosLdapContextSourceTest {
             }
         }
     }
-
+    
     @Test
     void testSslSocketFactoryDelegatesToConfiguredFactory() throws Exception {
         NacosLdapContextSource.LdapSslSocketFactory factory =
@@ -101,7 +101,7 @@ class NacosLdapContextSourceTest {
         when(delegate.createSocket("localhost", 636, address, 0)).thenReturn(createdSocket);
         when(delegate.createSocket(address, 636)).thenReturn(createdSocket);
         when(delegate.createSocket(address, 636, address, 0)).thenReturn(createdSocket);
-
+        
         assertArrayEquals(new String[] {"TLS_AES_128_GCM_SHA256"},
             factory.getDefaultCipherSuites());
         assertArrayEquals(new String[] {"TLS_AES_256_GCM_SHA384"},
@@ -112,27 +112,27 @@ class NacosLdapContextSourceTest {
         assertSame(createdSocket, factory.createSocket(address, 636));
         assertSame(createdSocket, factory.createSocket(address, 636, address, 0));
     }
-
+    
     @Test
     void testSslSocketFactoryKeepsNullDelegateWhenTlsHelperFails() {
         try (MockedStatic<TlsHelper> tlsHelper = mockStatic(TlsHelper.class)) {
             tlsHelper.when(() -> TlsHelper.buildSslContext(true))
                 .thenThrow(new NoSuchAlgorithmException("missing"));
-
+            
             NacosLdapContextSource.LdapSslSocketFactory factory =
                 new NacosLdapContextSource.LdapSslSocketFactory();
-
+            
             assertNull(ReflectionTestUtils.getField(factory, "socketFactory"));
         }
     }
-
+    
     private static class TestableNacosLdapContextSource extends NacosLdapContextSource {
-
+        
         TestableNacosLdapContextSource(String ldapUrl, String ldapBaseDc, String userDn,
             String password, String ldapTimeOut) {
             super(ldapUrl, ldapBaseDc, userDn, password, ldapTimeOut);
         }
-
+        
         Hashtable<String, Object> anonymousEnvironment() {
             return getAnonymousEnv();
         }

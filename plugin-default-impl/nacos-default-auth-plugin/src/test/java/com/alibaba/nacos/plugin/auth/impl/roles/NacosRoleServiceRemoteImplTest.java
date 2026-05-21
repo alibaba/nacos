@@ -75,14 +75,14 @@ class NacosRoleServiceRemoteImplTest {
     
     @Mock
     private NacosRestTemplate restTemplate;
-
+    
     @BeforeEach
     void setUp() {
         if (EnvUtil.getEnvironment() == null) {
             EnvUtil.setEnvironment(new MockEnvironment());
         }
     }
-
+    
     @Test
     void testGetPermissionsReadsCachedMapOnceOnHit() throws Exception {
         // Reproduces the same TOCTOU pattern as getUser/getRoles: previously

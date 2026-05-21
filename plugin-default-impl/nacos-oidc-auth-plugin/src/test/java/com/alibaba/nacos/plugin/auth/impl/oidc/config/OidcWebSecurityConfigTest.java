@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class OidcWebSecurityConfigTest {
-
+    
     @Test
     void testOidcSecurityFilterChainBuildsHttpSecurity() throws Exception {
         HttpSecurity http = mock(HttpSecurity.class);
@@ -39,23 +39,21 @@ class OidcWebSecurityConfigTest {
         when(http.authorizeHttpRequests(any())).thenReturn(http);
         when(http.csrf(any())).thenReturn(http);
         when(http.build()).thenReturn(chain);
-
+        
         SecurityFilterChain actual = new OidcWebSecurityConfig().oidcSecurityFilterChain(http);
-
+        
         assertSame(chain, actual);
     }
-
+    
     @Test
     @SuppressWarnings({"rawtypes", "unchecked"})
     void testAuthorizeCustomizerPermitsAllRequests() throws Exception {
         HttpSecurity http = mock(HttpSecurity.class);
         DefaultSecurityFilterChain chain = mock(DefaultSecurityFilterChain.class);
-        ArgumentCaptor<Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>
-            .AuthorizationManagerRequestMatcherRegistry>> customizerCaptor =
+        ArgumentCaptor<Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry>> customizerCaptor =
             ArgumentCaptor.forClass(Customizer.class);
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
-            registry = mock(AuthorizeHttpRequestsConfigurer
-                .AuthorizationManagerRequestMatcherRegistry.class);
+        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry registry =
+            mock(AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry.class);
         AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizedUrl authorizedUrl =
             mock(AuthorizeHttpRequestsConfigurer.AuthorizedUrl.class);
         when(http.authorizeHttpRequests(customizerCaptor.capture())).thenReturn(http);
@@ -63,10 +61,10 @@ class OidcWebSecurityConfigTest {
         when(http.build()).thenReturn(chain);
         when(registry.requestMatchers("/**")).thenReturn(authorizedUrl);
         when(authorizedUrl.permitAll()).thenReturn(registry);
-
+        
         new OidcWebSecurityConfig().oidcSecurityFilterChain(http);
         customizerCaptor.getValue().customize(registry);
-
+        
         verify(registry).requestMatchers("/**");
         verify(authorizedUrl).permitAll();
     }

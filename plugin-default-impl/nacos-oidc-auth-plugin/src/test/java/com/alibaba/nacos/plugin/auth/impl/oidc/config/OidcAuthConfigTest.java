@@ -36,26 +36,26 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OidcAuthConfigTest {
-
+    
     private ConfigurableEnvironment originalEnvironment;
-
+    
     @BeforeEach
     void setUp() {
         originalEnvironment = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new MockEnvironment());
         ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(originalEnvironment);
         ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
     }
-
+    
     @Test
     void testLoadDefaultConfiguration() {
         OidcAuthConfig config = OidcAuthConfig.getInstance();
-
+        
         assertFalse(config.isValid());
         assertTrue(config.isJwtValidation());
         assertFalse(config.isIntrospectionValidation());
@@ -71,7 +71,7 @@ class OidcAuthConfigTest {
         assertEquals(OidcConstants.DEFAULT_AUTHORIZATION_TIMEOUT_MS,
             config.getAuthorizationTimeoutMs());
     }
-
+    
     @Test
     void testReloadReadsEnvironmentProperties() {
         MockEnvironment environment = new MockEnvironment()
@@ -89,9 +89,9 @@ class OidcAuthConfigTest {
             .withProperty(OidcConstants.CONFIG_AUTHORIZATION_ENDPOINT, "http://idp/authz")
             .withProperty(OidcConstants.CONFIG_AUTHORIZATION_TIMEOUT_MS, "99");
         EnvUtil.setEnvironment(environment);
-
+        
         OidcAuthConfig config = OidcAuthConfig.getInstance();
-
+        
         assertEquals("client", config.getClientId());
         assertEquals("secret", config.getClientSecret());
         assertEquals("openid", config.getScope());
@@ -106,7 +106,7 @@ class OidcAuthConfigTest {
         assertEquals("http://idp/authz", config.getAuthorizationEvaluateEndpoint());
         assertEquals(99L, config.getAuthorizationTimeoutMs());
     }
-
+    
     @Test
     void testReloadRefreshesConfiguration() {
         MockEnvironment firstEnvironment = new MockEnvironment()
@@ -114,21 +114,21 @@ class OidcAuthConfigTest {
             .withProperty(OidcConstants.CONFIG_CLIENT_SECRET, "secret-one");
         EnvUtil.setEnvironment(firstEnvironment);
         OidcAuthConfig config = OidcAuthConfig.getInstance();
-
+        
         MockEnvironment secondEnvironment = new MockEnvironment()
             .withProperty(OidcConstants.CONFIG_CLIENT_ID, "client-two")
             .withProperty(OidcConstants.CONFIG_CLIENT_SECRET, "secret-two")
             .withProperty(OidcConstants.CONFIG_TOKEN_VALIDATION_METHOD, "introspection");
         EnvUtil.setEnvironment(secondEnvironment);
-
+        
         config.reload();
-
+        
         assertEquals("client-two", config.getClientId());
         assertEquals("secret-two", config.getClientSecret());
         assertTrue(config.isIntrospectionValidation());
         assertEquals("introspection", config.getTokenValidationMethod());
     }
-
+    
     @Test
     void testSettersAndAutoConfigurationBean() {
         OidcAuthConfig config = OidcAuthConfig.getInstance();
@@ -151,7 +151,7 @@ class OidcAuthConfigTest {
         config.setAuthorizationTimeoutMs(123L);
         config.setStrictNonceValidation(false);
         config.setStrictAudienceValidation(false);
-
+        
         assertTrue(config.isValid());
         assertTrue(config.isJwtValidation());
         assertEquals("http://issuer", config.getIssuerUri());
@@ -172,7 +172,7 @@ class OidcAuthConfigTest {
         assertFalse(config.isStrictAudienceValidation());
         assertNotNull(new OidcPluginAutoConfiguration().oidcLoginController());
     }
-
+    
     @Test
     void testDiscoveryLoadsProviderEndpoints() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -197,9 +197,9 @@ class OidcAuthConfigTest {
                 .withProperty(OidcConstants.CONFIG_ISSUER_URI, issuer)
                 .withProperty(OidcConstants.CONFIG_CLIENT_ID, "client"));
             ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
-
+            
             OidcAuthConfig config = OidcAuthConfig.getInstance();
-
+            
             assertTrue(config.isValid());
             assertEquals(issuer + "/auth", config.getAuthorizationEndpoint());
             assertEquals(issuer + "/token", config.getTokenEndpoint());
@@ -210,7 +210,7 @@ class OidcAuthConfigTest {
             server.stop(0);
         }
     }
-
+    
     @Test
     void testDiscoveryFailureKeepsConfiguredValues() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -229,24 +229,24 @@ class OidcAuthConfigTest {
                 .withProperty(OidcConstants.CONFIG_AUTHORIZATION_ENDPOINT,
                     "http://configured/auth"));
             ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
-
+            
             OidcAuthConfig config = OidcAuthConfig.getInstance();
-
+            
             assertEquals("http://configured/auth", config.getAuthorizationEvaluateEndpoint());
         } finally {
             server.stop(0);
         }
     }
-
+    
     @Test
     void testDiscoveryIgnoresInvalidIssuerUri() {
         EnvUtil.setEnvironment(new MockEnvironment()
             .withProperty(OidcConstants.CONFIG_ISSUER_URI, "://bad")
             .withProperty(OidcConstants.CONFIG_CLIENT_ID, "client"));
         ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
-
+        
         OidcAuthConfig config = OidcAuthConfig.getInstance();
-
+        
         assertEquals("://bad", config.getIssuerUri());
         assertEquals("client", config.getClientId());
     }

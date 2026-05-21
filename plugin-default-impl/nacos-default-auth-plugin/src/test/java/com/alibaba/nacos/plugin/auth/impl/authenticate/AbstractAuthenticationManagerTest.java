@@ -45,189 +45,189 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class AbstractAuthenticationManagerTest {
-
+    
     @InjectMocks
     private AbstractAuthenticationManager abstractAuthenticationManager;
-
+    
     @Mock
     private NacosUserService userDetailsService;
-
+    
     @Mock
     private TokenManagerDelegate jwtTokenManager;
-
+    
     @Mock
     private NacosRoleService roleService;
-
+    
     private User user;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         user = new User();
         user.setUsername("nacos");
         user.setPassword(PasswordEncoderUtil.encode("test"));
     }
-
+    
     @Test
     void testAuthenticate1() {
         assertThrows(AccessException.class, () -> {
             abstractAuthenticationManager.authenticate(null, "pwd");
         });
     }
-
+    
     @Test
     void testAuthenticate2() {
         assertThrows(AccessException.class, () -> {
             abstractAuthenticationManager.authenticate("nacos", null);
         });
     }
-
+    
     @Test
     void testAuthenticate3() throws AccessException {
         NacosUserDetails nacosUserDetails = new NacosUserDetails(user);
-
+        
         when(userDetailsService.loadUserByUsername(anyString())).thenReturn(nacosUserDetails);
-
+        
         when(jwtTokenManager.createToken(anyString())).thenReturn("token");
-
+        
         NacosUser nacosUser = abstractAuthenticationManager.authenticate("nacos", "test");
-
+        
         assertEquals("token", nacosUser.getToken());
         assertEquals(user.getUsername(), nacosUser.getUserName());
     }
-
+    
     @Test
     void testAuthenticate4() {
         when(userDetailsService.loadUserByUsername(anyString())).thenReturn(null);
-
+        
         assertThrows(AccessException.class, () -> {
             abstractAuthenticationManager.authenticate("nacos", "test");
         });
     }
-
+    
     @Test
     void testAuthenticate5() {
         assertThrows(AccessException.class, () -> {
             abstractAuthenticationManager.authenticate("");
         });
     }
-
+    
     @Test
     void testAuthenticate6() throws AccessException {
         NacosUser nacosUser = new NacosUser();
-
+        
         when(jwtTokenManager.parseToken(anyString())).thenReturn(nacosUser);
         NacosUser authenticate = abstractAuthenticationManager.authenticate("token");
-
+        
         assertEquals(nacosUser, authenticate);
     }
-
+    
     @Test
     void testAuthenticate7() throws AccessException {
         NacosUser nacosUser = new NacosUser();
         when(jwtTokenManager.parseToken(anyString())).thenReturn(nacosUser);
-
+        
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         mockHttpServletRequest.addHeader(AuthConstants.AUTHORIZATION_HEADER,
             AuthConstants.TOKEN_PREFIX + "-token");
         NacosUser authenticate = abstractAuthenticationManager.authenticate(mockHttpServletRequest);
-
+        
         assertEquals(nacosUser, authenticate);
     }
-
+    
     @Test
     void testAuthenticate8() throws AccessException {
         NacosUser nacosUser = new NacosUser();
         when(jwtTokenManager.parseToken(anyString())).thenReturn(nacosUser);
-
+        
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         mockHttpServletRequest.addHeader(AuthConstants.AUTHORIZATION_HEADER, "token");
         mockHttpServletRequest.addParameter(Constants.ACCESS_TOKEN, "token");
         NacosUser authenticate = abstractAuthenticationManager.authenticate(mockHttpServletRequest);
-
+        
         assertEquals(nacosUser, authenticate);
     }
-
+    
     @Test
     void testAuthenticate9() throws AccessException {
         NacosUserDetails nacosUserDetails = new NacosUserDetails(user);
         when(userDetailsService.loadUserByUsername(anyString())).thenReturn(nacosUserDetails);
-
+        
         when(jwtTokenManager.createToken(anyString())).thenReturn("token");
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         mockHttpServletRequest.addHeader(AuthConstants.AUTHORIZATION_HEADER, "token");
         mockHttpServletRequest.addParameter(AuthConstants.PARAM_USERNAME, "nacos");
         mockHttpServletRequest.addParameter(AuthConstants.PARAM_PASSWORD, "test");
         NacosUser authenticate = abstractAuthenticationManager.authenticate(mockHttpServletRequest);
-
+        
         assertEquals("token", authenticate.getToken());
         assertEquals(user.getUsername(), authenticate.getUserName());
     }
-
+    
     @Test
     void testAuthorize() {
         Permission permission = new Permission();
         NacosUser nacosUser = new NacosUser();
         when(roleService.hasPermission(nacosUser, permission)).thenReturn(false);
-
+        
         assertThrows(AccessException.class, () -> {
             abstractAuthenticationManager.authorize(permission, nacosUser);
         });
     }
-
+    
     @Test
     void testAuthorizeAllowsGlobalAdminUser() {
         Permission permission = new Permission();
         NacosUser nacosUser = new NacosUser("nacos");
         nacosUser.setGlobalAdmin(true);
-
+        
         assertDoesNotThrow(() -> abstractAuthenticationManager.authorize(permission, nacosUser));
     }
-
+    
     @Test
     void testAuthorizeAllowsGlobalAdminRole() {
         Permission permission = new Permission();
         NacosUser nacosUser = new NacosUser("nacos");
         when(roleService.hasGlobalAdminRole("nacos")).thenReturn(true);
-
+        
         assertDoesNotThrow(() -> abstractAuthenticationManager.authorize(permission, nacosUser));
         verify(roleService).hasGlobalAdminRole("nacos");
     }
-
+    
     @Test
     void testHasGlobalAdminRole() {
         when(roleService.hasGlobalAdminRole(anyString())).thenReturn(true);
-
+        
         boolean hasGlobalAdminRole = abstractAuthenticationManager.hasGlobalAdminRole("nacos");
-
+        
         assertTrue(hasGlobalAdminRole);
     }
-
+    
     @Test
     void testHasGlobalAdminRole2() {
         when(roleService.hasGlobalAdminRole()).thenReturn(true);
-
+        
         boolean hasGlobalAdminRole = abstractAuthenticationManager.hasGlobalAdminRole();
-
+        
         assertTrue(hasGlobalAdminRole);
     }
-
+    
     @Test
     void testHasGlobalAdminRole3() {
         NacosUser nacosUser = new NacosUser("nacos");
         nacosUser.setGlobalAdmin(true);
-
+        
         boolean hasGlobalAdminRole = abstractAuthenticationManager.hasGlobalAdminRole(nacosUser);
-
+        
         assertTrue(hasGlobalAdminRole);
     }
-
+    
     @Test
     void testHasGlobalAdminRole4() {
         NacosUser nacosUser = new NacosUser("nacos");
         nacosUser.setGlobalAdmin(false);
         when(roleService.hasGlobalAdminRole(anyString())).thenReturn(true);
         boolean hasGlobalAdminRole = abstractAuthenticationManager.hasGlobalAdminRole(nacosUser);
-
+        
         assertTrue(hasGlobalAdminRole);
     }
 }

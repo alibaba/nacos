@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PasswordGeneratorUtilTest {
-
+    
     /**
      * generatePwd test.
      */
@@ -36,10 +36,10 @@ class PasswordGeneratorUtilTest {
         assertTrue(pwd.chars().anyMatch(Character::isDigit));
         assertTrue(pwd.chars().anyMatch(each -> "!@#$%&".indexOf(each) >= 0));
     }
-
+    
     @Test
     void testConstructor() {
         assertNotNull(new PasswordGeneratorUtil());
     }
-
+    
 }

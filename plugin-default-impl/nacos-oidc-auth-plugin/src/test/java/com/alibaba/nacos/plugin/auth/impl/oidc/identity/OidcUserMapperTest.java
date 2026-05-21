@@ -34,12 +34,12 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class OidcUserMapperTest {
-
+    
     @AfterEach
     void tearDown() {
         ReflectionTestUtils.setField(OidcUserMapper.class, "instance", null);
     }
-
+    
     @Test
     void testMapToUserCopiesClaimsAndValidatorAttributes() {
         JwtTokenValidator tokenValidator = mock(JwtTokenValidator.class);
@@ -53,9 +53,9 @@ class OidcUserMapperTest {
         when(tokenValidator.extractUsername(claims)).thenReturn("nacos");
         when(tokenValidator.extractRoles(claims)).thenReturn(Arrays.asList("reader", "admin"));
         when(tokenValidator.isAdmin(claims)).thenReturn(true);
-
+        
         OidcUser user = mapper.mapToUser(claims);
-
+        
         assertEquals("nacos", user.getUsername());
         assertEquals("subject", user.getSubject());
         assertEquals("issuer", user.getIssuer());
@@ -65,7 +65,7 @@ class OidcUserMapperTest {
         assertTrue(user.isGlobalAdmin());
         assertTrue(user.toString().contains("nacos"));
     }
-
+    
     @Test
     void testOidcUserAccessors() {
         OidcUser user = new OidcUser();
@@ -77,7 +77,7 @@ class OidcUserMapperTest {
         user.setRoles(Arrays.asList("reader"));
         user.setGlobalAdmin(true);
         user.setToken("token");
-
+        
         assertEquals("nacos", user.getUsername());
         assertEquals("subject", user.getSubject());
         assertEquals("nacos@nacos.io", user.getEmail());
@@ -87,12 +87,12 @@ class OidcUserMapperTest {
         assertTrue(user.isGlobalAdmin());
         assertEquals("token", user.getToken());
     }
-
+    
     private OidcUserMapper newMapper(JwtTokenValidator tokenValidator) {
         ReflectionTestUtils.setField(OidcUserMapper.class, "instance", null);
         try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class);
-                MockedStatic<JwtTokenValidator> validatorStatic =
-                    mockStatic(JwtTokenValidator.class)) {
+            MockedStatic<JwtTokenValidator> validatorStatic =
+                mockStatic(JwtTokenValidator.class)) {
             configStatic.when(OidcAuthConfig::getInstance).thenReturn(mock(OidcAuthConfig.class));
             validatorStatic.when(JwtTokenValidator::getInstance).thenReturn(tokenValidator);
             return OidcUserMapper.getInstance();

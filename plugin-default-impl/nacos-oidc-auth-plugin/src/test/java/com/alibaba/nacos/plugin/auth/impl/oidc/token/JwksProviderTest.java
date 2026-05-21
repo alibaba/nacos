@@ -42,20 +42,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JwksProviderTest {
-
+    
     @AfterEach
     void tearDown() {
         ReflectionTestUtils.setField(JwksProvider.class, "instance", null);
     }
-
+    
     @Test
     void testGetJwkSetRejectsMissingIssuerAndJwksUri() {
         OidcAuthConfig config = mockConfig("", "");
         JwksProvider provider = newProvider(config);
-
+        
         assertThrows(IOException.class, provider::getJwkSet);
     }
-
+    
     @Test
     void testGetJwkSetFetchesConfiguredUriUsesCacheAndRefreshes() throws Exception {
         AtomicInteger requests = new AtomicInteger();
@@ -68,18 +68,18 @@ class JwksProviderTest {
         try {
             String jwksUri = "http://127.0.0.1:" + server.getAddress().getPort() + "/jwks";
             JwksProvider provider = newProvider(mockConfig(jwksUri, ""));
-
+            
             assertEquals(0, provider.getJwkSet().getKeys().size());
             assertEquals(0, provider.getJwkSet().getKeys().size());
             assertEquals(1, requests.get());
-
+            
             assertEquals(0, provider.refreshJwkSet().getKeys().size());
             assertEquals(2, requests.get());
         } finally {
             server.stop(0);
         }
     }
-
+    
     @Test
     void testGetJwkSetRejectsHttpAndParseFailures() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -96,7 +96,7 @@ class JwksProviderTest {
             server.stop(0);
         }
     }
-
+    
     @Test
     void testGetJwkSetDiscoversProviderConfiguration() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -117,25 +117,25 @@ class JwksProviderTest {
             String issuerUri = "http://127.0.0.1:" + server.getAddress().getPort();
             OidcAuthConfig config = mockConfig("", issuerUri);
             JwksProvider provider = newProvider(config);
-
+            
             assertEquals(0, provider.getJwkSet().getKeys().size());
-
+            
             verify(config).setJwksUri(issuerUri + "/jwks");
             verify(config).setAuthorizationEndpoint(issuerUri + "/authorize");
             verify(config).setTokenEndpoint(issuerUri + "/token");
             verify(config).setUserinfoEndpoint(issuerUri + "/userinfo");
             verify(config).setEndSessionEndpoint(issuerUri + "/logout");
-
+            
             OidcAuthConfig trailingSlashConfig = mockConfig("", issuerUri + "/");
             JwksProvider trailingSlashProvider = newProvider(trailingSlashConfig);
-
+            
             assertEquals(0, trailingSlashProvider.getJwkSet().getKeys().size());
             verify(trailingSlashConfig).setJwksUri(issuerUri + "/jwks");
         } finally {
             server.stop(0);
         }
     }
-
+    
     @Test
     void testGetJwkSetRejectsDiscoveryFailures() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -158,7 +158,7 @@ class JwksProviderTest {
             server.stop(0);
         }
     }
-
+    
     @Test
     void testGetJwkSetWrapsInterruptedFetchAndDiscovery() throws Exception {
         JwksProvider fetchProvider = newProvider(mockConfig("http://idp/jwks", ""));
@@ -166,36 +166,36 @@ class JwksProviderTest {
         when(fetchClient.<String>send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
             .thenThrow(new InterruptedException("stop"));
         ReflectionTestUtils.setField(fetchProvider, "httpClient", fetchClient);
-
+        
         IOException fetchException = assertThrows(IOException.class, fetchProvider::getJwkSet);
-
+        
         assertTrue(fetchException.getMessage().contains("interrupted"));
         assertTrue(Thread.interrupted());
-
+        
         JwksProvider discoveryProvider = newProvider(mockConfig("", "http://idp"));
         HttpClient discoveryClient = mock(HttpClient.class);
         when(discoveryClient.<String>send(any(HttpRequest.class),
             any(HttpResponse.BodyHandler.class))).thenThrow(new InterruptedException("stop"));
         ReflectionTestUtils.setField(discoveryProvider, "httpClient", discoveryClient);
-
+        
         IOException discoveryException =
             assertThrows(IOException.class, discoveryProvider::getJwkSet);
-
+        
         assertTrue(discoveryException.getMessage().contains("interrupted"));
         assertTrue(Thread.interrupted());
     }
-
+    
     @Test
     void testClearCacheClearsCachedJwksUri() {
         OidcAuthConfig config = mockConfig("http://issuer/jwks", "");
         JwksProvider provider = newProvider(config);
         ReflectionTestUtils.setField(provider, "jwksUri", "http://issuer/jwks");
-
+        
         provider.clearCache();
-
+        
         assertNull(ReflectionTestUtils.getField(provider, "jwksUri"));
     }
-
+    
     private JwksProvider newProvider(OidcAuthConfig config) {
         ReflectionTestUtils.setField(JwksProvider.class, "instance", null);
         try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class)) {
@@ -203,7 +203,7 @@ class JwksProviderTest {
             return JwksProvider.getInstance();
         }
     }
-
+    
     private OidcAuthConfig mockConfig(String jwksUri, String issuerUri) {
         OidcAuthConfig config = mock(OidcAuthConfig.class);
         when(config.getJwksCacheTtlSeconds()).thenReturn(60L);
@@ -211,9 +211,9 @@ class JwksProviderTest {
         when(config.getIssuerUri()).thenReturn(issuerUri);
         return config;
     }
-
+    
     private void writeResponse(com.sun.net.httpserver.HttpExchange exchange, int status,
-            String body) throws IOException {
+        String body) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(status, bytes.length);
         exchange.getResponseBody().write(bytes);

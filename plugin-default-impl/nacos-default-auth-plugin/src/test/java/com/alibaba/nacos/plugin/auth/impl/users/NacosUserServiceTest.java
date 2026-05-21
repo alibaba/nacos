@@ -27,61 +27,61 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NacosUserServiceTest {
-
+    
     @Test
     void testDefaultCreateUserEncodesPassword() {
         TestNacosUserService userService = new TestNacosUserService();
-
+        
         userService.createUser("nacos", "password");
-
+        
         assertEquals("nacos", userService.username);
         assertEquals("password", userService.password);
         assertTrue(userService.encode);
     }
-
+    
     private static class TestNacosUserService implements NacosUserService {
-
+        
         private String username;
-
+        
         private String password;
-
+        
         private boolean encode;
-
+        
         @Override
         public void updateUserPassword(String username, String password) {
         }
-
+        
         @Override
         public Page<User> getUsers(int pageNo, int pageSize, String username) {
             return null;
         }
-
+        
         @Override
         public Page<User> findUsers(String username, int pageNo, int pageSize) {
             return null;
         }
-
+        
         @Override
         public User getUser(String username) {
             return null;
         }
-
+        
         @Override
         public List<String> findUserNames(String username) {
             return null;
         }
-
+        
         @Override
         public void createUser(String username, String password, boolean encode) {
             this.username = username;
             this.password = password;
             this.encode = encode;
         }
-
+        
         @Override
         public void deleteUser(String username) {
         }
-
+        
         @Override
         public UserDetails loadUserByUsername(String username) {
             return null;

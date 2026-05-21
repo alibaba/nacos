@@ -43,43 +43,43 @@ import static org.mockito.Mockito.mockStatic;
 
 @SuppressWarnings("deprecation")
 class LdapPluginConfigurationTest {
-
+    
     @Test
     void testSelectImportsWithPresentDependency() {
         String[] imports = new LdapPluginImportSelector().selectImports(null);
-
+        
         assertArrayEquals(new String[] {LdapAuthPluginConfig.class.getName()}, imports);
     }
-
+    
     @Test
     void testSelectImportsWithMissingDependency() {
         try (MockedStatic<LdapPluginDependencyChecker> checker =
-                mockStatic(LdapPluginDependencyChecker.class)) {
+            mockStatic(LdapPluginDependencyChecker.class)) {
             checker.when(LdapPluginDependencyChecker::hasRequiredDependency).thenReturn(false);
-
+            
             String[] imports = new LdapPluginImportSelector().selectImports(null);
-
+            
             assertArrayEquals(new String[] {LdapDependencyMissingConfiguration.class.getName()},
                 imports);
         }
     }
-
+    
     @Test
     void testMissingDependencyConfigurationCreatesFallbackManager() {
         IAuthenticationManager manager =
             new LdapDependencyMissingConfiguration().ldapAuthenticatoinManager();
-
+        
         AccessException exception =
             assertThrows(AccessException.class, () -> manager.authenticate("nacos", "nacos"));
-
+        
         assertTrue(exception.getErrMsg().contains("spring-ldap-core"));
     }
-
+    
     @Test
     void testAutoConfigurationCanBeCreated() {
         assertNotNull(new LdapPluginAutoConfiguration());
     }
-
+    
     @Test
     void testAuthPluginConfigCreatesBeans() throws Exception {
         LdapAuthPluginConfig config = new LdapAuthPluginConfig();
@@ -89,7 +89,7 @@ class LdapPluginConfigurationTest {
         NacosUserService userService = mock(NacosUserService.class);
         NacosRoleService roleService = mock(NacosRoleService.class);
         TokenManagerDelegate tokenManager = mock(TokenManagerDelegate.class);
-
+        
         LdapAuthenticationProvider provider =
             config.ldapAuthenticationProvider(ldapTemplate, userService, roleService);
         IAuthenticationManager manager =
@@ -97,9 +97,9 @@ class LdapPluginConfigurationTest {
         GlobalAuthenticationConfigurerAdapter adapter = config.authenticationConfigurer(provider);
         AuthenticationManagerBuilder builder =
             new AuthenticationManagerBuilder(new NoOpObjectPostProcessor());
-
+        
         adapter.init(builder);
-
+        
         assertArrayEquals(new String[] {"ldap://localhost:389"}, contextSource.getUrls());
         assertEquals(Boolean.TRUE,
             ReflectionTestUtils.getField(ldapTemplate, "ignorePartialResultException"));
@@ -107,7 +107,7 @@ class LdapPluginConfigurationTest {
         assertInstanceOf(LdapAuthenticationManager.class, manager);
         assertTrue(builder.isConfigured());
     }
-
+    
     private void configureLdapProperties(LdapAuthPluginConfig config) {
         ReflectionTestUtils.setField(config, "ldapUrl", "ldap://localhost:389");
         ReflectionTestUtils.setField(config, "ldapBaseDc", "dc=example,dc=org");
@@ -118,9 +118,9 @@ class LdapPluginConfigurationTest {
         ReflectionTestUtils.setField(config, "caseSensitive", false);
         ReflectionTestUtils.setField(config, "ignorePartialResultException", true);
     }
-
+    
     private static class NoOpObjectPostProcessor implements ObjectPostProcessor<Object> {
-
+        
         @Override
         public <O> O postProcess(O object) {
             return object;

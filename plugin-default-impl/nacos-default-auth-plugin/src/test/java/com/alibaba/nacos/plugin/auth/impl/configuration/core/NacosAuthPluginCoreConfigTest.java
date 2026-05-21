@@ -56,21 +56,21 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class NacosAuthPluginCoreConfigTest {
-
+    
     @Mock
     private NacosUserService userDetailsService;
-
+    
     @Mock
     private ControllerMethodsCache methodsCache;
-
+    
     @Mock
     private AuthConfigs authConfigs;
-
+    
     @Mock
     private NacosRoleService roleService;
-
+    
     private Map<String, NacosAuthConfig> cachedConfigMap;
-
+    
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() {
@@ -78,24 +78,24 @@ class NacosAuthPluginCoreConfigTest {
         cachedConfigMap = (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
             NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
         ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
             cachedConfigMap);
     }
-
+    
     @Test
     void testInitRegistersControllerPackage() {
         NacosAuthPluginCoreConfig config =
             new NacosAuthPluginCoreConfig(userDetailsService, methodsCache);
-
+        
         config.init();
-
+        
         verify(methodsCache).initClassMethod("com.alibaba.nacos.plugin.auth.impl.controller");
     }
-
+    
     @Test
     void testAuthenticationConfigurerUsesNacosUserService() throws Exception {
         NacosAuthPluginCoreConfig config =
@@ -105,28 +105,28 @@ class NacosAuthPluginCoreConfigTest {
             mock(DaoAuthenticationConfigurer.class);
         setValidAuthEnvironment(AuthSystemTypes.NACOS.name());
         when(builder.userDetailsService(userDetailsService)).thenReturn(daoConfig);
-
+        
         GlobalAuthenticationConfigurerAdapter adapter = config.authenticationConfigurer();
         adapter.init(builder);
-
+        
         verify(daoConfig).passwordEncoder(any(PasswordEncoder.class));
     }
-
+    
     @Test
     void testBeanFactories() {
         NacosAuthPluginCoreConfig config =
             new NacosAuthPluginCoreConfig(userDetailsService, methodsCache);
         TokenManager tokenManager = config.tokenManager(authConfigs);
         TokenManagerDelegate delegate = config.tokenManagerDelegate(tokenManager);
-
+        
         assertTrue(config.passwordEncoder() instanceof PasswordEncoder);
-        assertTrue(config.defaultAuthenticationManager(userDetailsService, delegate, roleService)
-            instanceof DefaultAuthenticationManager);
+        assertTrue(config.defaultAuthenticationManager(userDetailsService, delegate,
+            roleService) instanceof DefaultAuthenticationManager);
         assertTrue(tokenManager instanceof JwtTokenManager);
         assertTrue(config.cachedTokenManager(authConfigs) instanceof CachedJwtTokenManager);
         assertNotNull(delegate);
     }
-
+    
     private static void setValidAuthEnvironment(String systemType) {
         setValidEnvironment(systemType);
         Map<String, NacosAuthConfig> configMap = new HashMap<>();
@@ -135,7 +135,7 @@ class NacosAuthPluginCoreConfigTest {
         ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
             configMap);
     }
-
+    
     private static void setValidEnvironment(String systemType) {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, "true");
@@ -145,43 +145,43 @@ class NacosAuthPluginCoreConfigTest {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "true");
         EnvUtil.setEnvironment(environment);
     }
-
+    
     private static final class TestNacosAuthConfig implements NacosAuthConfig {
-
+        
         private final boolean authEnabled;
-
+        
         private final String systemType;
-
+        
         private TestNacosAuthConfig(boolean authEnabled, String systemType) {
             this.authEnabled = authEnabled;
             this.systemType = systemType;
         }
-
+        
         @Override
         public String getAuthScope() {
             return NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE;
         }
-
+        
         @Override
         public boolean isAuthEnabled() {
             return authEnabled;
         }
-
+        
         @Override
         public String getNacosAuthSystemType() {
             return systemType;
         }
-
+        
         @Override
         public boolean isSupportServerIdentity() {
             return true;
         }
-
+        
         @Override
         public String getServerIdentityKey() {
             return "identity";
         }
-
+        
         @Override
         public String getServerIdentityValue() {
             return "value";

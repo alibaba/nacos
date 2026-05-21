@@ -27,23 +27,23 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class LdapPluginDependencyCheckerTest {
-
+    
     @Test
     void testHasRequiredDependencyWithKnownPresentClass() {
         assertTrue(LdapPluginDependencyChecker.hasRequiredDependency("java.lang.String"));
     }
-
+    
     @Test
     void testHasRequiredDependencyWithMissingClass() {
         String missingClassName = "com.alibaba.nacos.test.MissingClass";
         assertFalse(LdapPluginDependencyChecker.hasRequiredDependency(missingClassName));
     }
-
+    
     @Test
     void testHasRequiredDependencyWithDefaultDependency() {
         assertTrue(LdapPluginDependencyChecker.hasRequiredDependency());
     }
-
+    
     @Test
     void testHasRequiredDependencyWithoutContextClassLoader() {
         ClassLoader original = Thread.currentThread().getContextClassLoader();
@@ -54,7 +54,7 @@ class LdapPluginDependencyCheckerTest {
             Thread.currentThread().setContextClassLoader(original);
         }
     }
-
+    
     @Test
     void testHasRequiredDependencyWithApplicationClassLoader() {
         ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
@@ -66,7 +66,7 @@ class LdapPluginDependencyCheckerTest {
         try {
             Thread.currentThread().setContextClassLoader(null);
             ApplicationUtils.injectContext(applicationContext);
-
+            
             assertTrue(LdapPluginDependencyChecker.hasRequiredDependency("java.lang.String"));
         } finally {
             Thread.currentThread().setContextClassLoader(originalClassLoader);
@@ -74,11 +74,11 @@ class LdapPluginDependencyCheckerTest {
                 originalApplicationContext);
         }
     }
-
+    
     @Test
     void testBuildMissingDependencyMessage() {
         String message = LdapPluginDependencyChecker.buildMissingDependencyMessage();
-
+        
         assertTrue(message.contains("spring-ldap-core"));
         assertTrue(message.contains("nacos.core.auth.system.type=ldap"));
     }

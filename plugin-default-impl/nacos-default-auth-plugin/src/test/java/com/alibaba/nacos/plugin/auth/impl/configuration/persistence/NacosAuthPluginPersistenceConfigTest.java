@@ -41,17 +41,20 @@ class NacosAuthPluginPersistenceConfigTest {
         NacosAuthPluginEmbeddedStorageConfig config = new NacosAuthPluginEmbeddedStorageConfig();
         DatabaseOperate databaseOperate = mock(DatabaseOperate.class);
         
-        assertTrue(config.permissionPersistService(databaseOperate)
-            instanceof EmbeddedPermissionPersistServiceImpl);
-        assertTrue(config.rolePersistService(databaseOperate) instanceof EmbeddedRolePersistServiceImpl);
-        assertTrue(config.userPersistService(databaseOperate) instanceof EmbeddedUserPersistServiceImpl);
+        assertTrue(config.permissionPersistService(
+            databaseOperate) instanceof EmbeddedPermissionPersistServiceImpl);
+        assertTrue(
+            config.rolePersistService(databaseOperate) instanceof EmbeddedRolePersistServiceImpl);
+        assertTrue(
+            config.userPersistService(databaseOperate) instanceof EmbeddedUserPersistServiceImpl);
     }
     
     @Test
     void testExternalStorageBeans() {
         NacosAuthPluginExternalStorageConfig config = new NacosAuthPluginExternalStorageConfig();
         
-        assertTrue(config.permissionPersistService() instanceof ExternalPermissionPersistServiceImpl);
+        assertTrue(
+            config.permissionPersistService() instanceof ExternalPermissionPersistServiceImpl);
         assertTrue(config.rolePersistService() instanceof ExternalRolePersistServiceImpl);
         assertTrue(config.userPersistService() instanceof ExternalUserPersistServiceImpl);
     }

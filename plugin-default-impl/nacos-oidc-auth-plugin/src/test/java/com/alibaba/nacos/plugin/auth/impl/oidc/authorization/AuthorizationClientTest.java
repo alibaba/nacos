@@ -38,34 +38,34 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class AuthorizationClientTest {
-
+    
     @AfterEach
     void tearDown() {
         ReflectionTestUtils.setField(AuthorizationClient.class, "instance", null);
     }
-
+    
     @Test
     void testAuthorizeAllowsWhenEndpointIsMissing() {
         OidcAuthConfig config = mockConfig("");
         AuthorizationClient client = newClient(config);
-
+        
         AuthorizationResponse response = client.authorize(request());
-
+        
         assertTrue(response.isAllowed());
         assertTrue(client.isAuthorized("token", "nacos:config", "read"));
     }
-
+    
     @Test
     void testAuthorizeDeniesWhenEndpointIsInvalid() {
         OidcAuthConfig config = mockConfig("://bad-endpoint");
         AuthorizationClient client = newClient(config);
-
+        
         AuthorizationResponse response = client.authorize(request());
-
+        
         assertFalse(response.isAllowed());
         assertTrue(response.getReason().contains("Authorization error"));
     }
-
+    
     @Test
     void testAuthorizeHandlesIdpHttpResponses() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -85,7 +85,7 @@ class AuthorizationClientTest {
             server.stop(0);
         }
     }
-
+    
     @Test
     void testAuthorizeHandlesTransportExceptions() throws Exception {
         AuthorizationClient ioClient = newClient(mockConfig("http://idp/evaluate"));
@@ -93,25 +93,25 @@ class AuthorizationClientTest {
         when(ioHttpClient.<String>send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
             .thenThrow(new IOException("down"));
         ReflectionTestUtils.setField(ioClient, "httpClient", ioHttpClient);
-
+        
         AuthorizationResponse ioResponse = ioClient.authorize(request());
-
+        
         assertFalse(ioResponse.isAllowed());
         assertTrue(ioResponse.getReason().contains("unavailable"));
-
+        
         AuthorizationClient interruptedClient = newClient(mockConfig("http://idp/evaluate"));
         HttpClient interruptedHttpClient = mock(HttpClient.class);
         when(interruptedHttpClient.<String>send(any(HttpRequest.class),
             any(HttpResponse.BodyHandler.class))).thenThrow(new InterruptedException("stop"));
         ReflectionTestUtils.setField(interruptedClient, "httpClient", interruptedHttpClient);
-
+        
         AuthorizationResponse interruptedResponse = interruptedClient.authorize(request());
-
+        
         assertFalse(interruptedResponse.isAllowed());
         assertTrue(interruptedResponse.getReason().contains("interrupted"));
         assertTrue(Thread.interrupted());
     }
-
+    
     private AuthorizationClient newClient(OidcAuthConfig config) {
         ReflectionTestUtils.setField(AuthorizationClient.class, "instance", null);
         try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class)) {
@@ -119,14 +119,14 @@ class AuthorizationClientTest {
             return AuthorizationClient.getInstance();
         }
     }
-
+    
     private OidcAuthConfig mockConfig(String endpoint) {
         OidcAuthConfig config = mock(OidcAuthConfig.class);
         when(config.getAuthorizationTimeoutMs()).thenReturn(1000L);
         when(config.getAuthorizationEvaluateEndpoint()).thenReturn(endpoint);
         return config;
     }
-
+    
     private AuthorizationRequest request() {
         return AuthorizationRequest.builder()
             .token("token")
@@ -134,7 +134,7 @@ class AuthorizationClientTest {
             .action("read")
             .build();
     }
-
+    
     private void writeResponse(com.sun.net.httpserver.HttpExchange exchange, int status,
         String body) throws java.io.IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);

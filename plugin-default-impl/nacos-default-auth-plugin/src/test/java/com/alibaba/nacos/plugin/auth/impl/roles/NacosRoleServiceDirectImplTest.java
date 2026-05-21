@@ -219,8 +219,9 @@ class NacosRoleServiceDirectImplTest {
         PermissionInfo permissionInfo = permissionInfo("role-admin", "resource", "rw");
         when(authConfigs.isCachingEnabled()).thenReturn(true);
         when(permissionPersistService.getPermissions("role-admin", 1,
-            Integer.MAX_VALUE)).thenReturn(permissionPage(Collections.singletonList(
-            permissionInfo)));
+            Integer.MAX_VALUE)).thenReturn(permissionPage(
+                Collections.singletonList(
+                    permissionInfo)));
         
         List<PermissionInfo> firstResult = nacosRoleService.getPermissions("role-admin");
         List<PermissionInfo> cachedResult = nacosRoleService.getPermissions("role-admin");
@@ -412,8 +413,9 @@ class NacosRoleServiceDirectImplTest {
         when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
             Integer.MAX_VALUE)).thenReturn(rolePage(Collections.singletonList(roleInfo)));
         when(permissionPersistService.getPermissions("reader", 1,
-            Integer.MAX_VALUE)).thenReturn(permissionPage(Collections.singletonList(
-            permissionInfo)));
+            Integer.MAX_VALUE)).thenReturn(permissionPage(
+                Collections.singletonList(
+                    permissionInfo)));
         Permission permission = new Permission();
         permission.setAction("r");
         permission.setResource(new Resource("public", "group", "service", "naming",
@@ -447,8 +449,9 @@ class NacosRoleServiceDirectImplTest {
         when(permissionPersistService.getPermissions("empty", 1,
             Integer.MAX_VALUE)).thenReturn(permissionPage(Collections.emptyList()));
         when(permissionPersistService.getPermissions("reader", 1,
-            Integer.MAX_VALUE)).thenReturn(permissionPage(Collections.singletonList(
-            permissionInfo)));
+            Integer.MAX_VALUE)).thenReturn(permissionPage(
+                Collections.singletonList(
+                    permissionInfo)));
         Permission permission = new Permission();
         permission.setAction("r");
         permission.setResource(new Resource("", "group", "service", "naming", new Properties()));

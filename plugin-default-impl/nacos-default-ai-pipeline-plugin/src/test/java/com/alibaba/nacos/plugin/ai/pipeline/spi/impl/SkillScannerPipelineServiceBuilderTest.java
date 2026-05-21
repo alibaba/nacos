@@ -40,23 +40,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author qiacheng.cxy
  */
 class SkillScannerPipelineServiceBuilderTest {
-
+    
     private SkillScannerPipelineServiceBuilder builder;
-
+    
     @BeforeEach
     void setUp() {
         builder = new SkillScannerPipelineServiceBuilder();
     }
-
+    
     @Test
     void pipelineIdTest() {
         assertEquals("skill-scanner", builder.pipelineId());
     }
-
+    
     @Test
     void buildTest() {
         PublishPipelineService service = builder.build(new Properties());
-
+        
         assertNotNull(service);
         assertEquals("skill-scanner", service.pipelineId());
         assertTrue(Arrays.asList(service.pipelineResourceTypes())
@@ -67,51 +67,51 @@ class SkillScannerPipelineServiceBuilderTest {
             .contains(PublishPipelineResourceType.PROMPT));
         assertEquals(100, service.getPreferOrder());
     }
-
+    
     @Test
     void buildWithConfiguredExecutablePathTest() throws Exception {
         Path scanner = createExecutable("skill-scanner-path");
         Properties properties = new Properties();
         properties.setProperty("command", " " + scanner + " ");
-
+        
         PublishPipelineService service = builder.build(properties);
-
+        
         assertServiceAvailable(service);
     }
-
+    
     @Test
     void buildWithConfiguredCommandFromPathTest() {
         Properties properties = new Properties();
         properties.setProperty("command", "java");
-
+        
         PublishPipelineService service = builder.build(properties);
-
+        
         assertServiceAvailable(service);
     }
-
+    
     @Test
     void buildWithMissingConfiguredPathTest() {
         Properties properties = new Properties();
         properties.setProperty("command", "/path/to/missing-skill-scanner");
-
+        
         PublishPipelineService service = builder.build(properties);
-
+        
         assertNotNull(service);
         assertEquals("skill-scanner", service.pipelineId());
     }
-
+    
     @Test
     void buildWithLlmConfiguredExecutablePathTest() throws Exception {
         Path scanner = createExecutable("skill-scanner-llm");
         Properties properties = new Properties();
         properties.setProperty("command", scanner.toString());
         properties.setProperty(SkillScannerScanOptions.PROP_USE_LLM, "true");
-
+        
         PublishPipelineService service = builder.build(properties);
-
+        
         assertServiceAvailable(service);
     }
-
+    
     @Test
     void buildWithHomeExpandedExecutablePathTest() throws Exception {
         Path home = Files.createTempDirectory("nacos-skill-scanner-home");
@@ -121,9 +121,9 @@ class SkillScannerPipelineServiceBuilderTest {
         try {
             Properties properties = new Properties();
             properties.setProperty("command", "~/" + scanner.getFileName());
-
+            
             PublishPipelineService service = builder.build(properties);
-
+            
             assertServiceAvailable(service);
         } finally {
             System.setProperty("user.home", oldUserHome);
@@ -140,6 +140,7 @@ class SkillScannerPipelineServiceBuilderTest {
         
         SkillScannerPipelineServiceBuilder blankPathBuilder =
             new SkillScannerPipelineServiceBuilder() {
+                
                 @Override
                 String getPathEnv() {
                     return "";
@@ -151,18 +152,18 @@ class SkillScannerPipelineServiceBuilderTest {
         findExecutableInPath.setAccessible(true);
         assertNull(findExecutableInPath.invoke(blankPathBuilder, "skill-scanner"));
     }
-
+    
     private Path createExecutable(String name) throws Exception {
         return createExecutable(Files.createTempDirectory("nacos-skill-scanner"), name);
     }
-
+    
     private Path createExecutable(Path dir, String name) throws Exception {
         Path scanner = dir.resolve(name);
         Files.write(scanner, Arrays.asList("#!/bin/sh", "exit 0"));
         assertTrue(scanner.toFile().setExecutable(true));
         return scanner;
     }
-
+    
     private void assertServiceAvailable(PublishPipelineService service) {
         assertNotNull(service);
         PublishPipelineResult result = service.execute(new PublishPipelineContext());

@@ -96,9 +96,9 @@ class DerbyMapperCoverageTest {
         assertEquals(DatabaseTypeConstant.DERBY, dialect.getType());
         assertEquals("CURRENT_TIMESTAMP", dialect.getFunction("NOW()"));
         assertEquals("CURRENT_TIMESTAMP",
-                TrustedDerbyFunctionEnum.getFunctionByName("CURRENT_TIMESTAMP()"));
+            TrustedDerbyFunctionEnum.getFunctionByName("CURRENT_TIMESTAMP()"));
         assertThrows(IllegalArgumentException.class,
-                () -> TrustedDerbyFunctionEnum.getFunctionByName("UNKNOWN"));
+            () -> TrustedDerbyFunctionEnum.getFunctionByName("UNKNOWN"));
     }
     
     @Test
@@ -106,26 +106,26 @@ class DerbyMapperCoverageTest {
         ConfigInfoMapperByDerby mapper = new ConfigInfoMapperByDerby();
         assertEquals(DataSourceConstant.DERBY, mapper.getDataSource());
         assertResult(mapper.findChangeConfigFetchRows(context),
-                dataId, groupId, tenantId, appName, startTime, context.getWhereParameter(
-                        FieldConstant.END_TIME));
+            dataId, groupId, tenantId, appName, startTime, context.getWhereParameter(
+                FieldConstant.END_TIME));
         assertSqlContains(mapper.findChangeConfigFetchRows(context),
-                "AND data_id LIKE ? ESCAPE '\\'", "AND group_id LIKE ? ESCAPE '\\'",
-                "AND tenant_id = ?", "AND app_name = ?", "AND gmt_modified >=?",
-                "AND gmt_modified <=?");
+            "AND data_id LIKE ? ESCAPE '\\'", "AND group_id LIKE ? ESCAPE '\\'",
+            "AND tenant_id = ?", "AND app_name = ?", "AND gmt_modified >=?",
+            "AND gmt_modified <=?");
         assertResult(mapper.findConfigInfoBaseLikeFetchRows(context), dataId, groupId, tenantId);
         assertSqlContains(mapper.findConfigInfoBaseLikeFetchRows(context),
-                "AND data_id LIKE ? ESCAPE '\\'", "AND group_id LIKE ? ESCAPE '\\'",
-                "AND content LIKE ? ESCAPE '\\'");
+            "AND data_id LIKE ? ESCAPE '\\'", "AND group_id LIKE ? ESCAPE '\\'",
+            "AND content LIKE ? ESCAPE '\\'");
         
         context.putWhereParameter(FieldConstant.TYPE, new String[] {"yaml", "properties"});
         assertResult(mapper.findConfigInfo4PageFetchRows(context),
-                tenantId, dataId, groupId, appName, content);
+            tenantId, dataId, groupId, appName, content);
         assertResult(mapper.findConfigInfoLike4PageCountRows(context),
-                tenantId, dataId, groupId, appName, content, "yaml", "properties");
+            tenantId, dataId, groupId, appName, content, "yaml", "properties");
         assertResult(mapper.findConfigInfoLike4PageFetchRows(context),
-                tenantId, dataId, groupId, appName, content, "yaml", "properties");
+            tenantId, dataId, groupId, appName, content, "yaml", "properties");
         assertSqlContains(mapper.findConfigInfoLike4PageFetchRows(context),
-                "type IN (?, ?)", "ORDER BY id OFFSET 3 ROWS FETCH NEXT 7 ROWS ONLY");
+            "type IN (?, ?)", "ORDER BY id OFFSET 3 ROWS FETCH NEXT 7 ROWS ONLY");
         assertResult(mapper.findChangeConfig(context), startTime, 8L, pageSize);
     }
     
@@ -136,11 +136,11 @@ class DerbyMapperCoverageTest {
         context.putWhereParameter(FieldConstant.TAG_ARR, new String[] {"tag"});
         context.putWhereParameter(FieldConstant.TYPE, new String[] {"yaml", "properties"});
         assertResult(mapper.findConfigInfo4PageFetchRows(context),
-                tenantId, dataId, groupId, appName, content, "tag");
+            tenantId, dataId, groupId, appName, content, "tag");
         assertResult(mapper.findConfigInfoLike4PageCountRows(context),
-                tenantId, dataId, groupId, appName, content, "tag");
+            tenantId, dataId, groupId, appName, content, "tag");
         assertResult(mapper.findConfigInfoLike4PageFetchRows(context),
-                tenantId, dataId, groupId, appName, content, "tag", "yaml", "properties");
+            tenantId, dataId, groupId, appName, content, "tag", "yaml", "properties");
         assertSqlContains(mapper.findConfigInfoLike4PageFetchRows(context), "a.type IN (?, ?)");
     }
     
@@ -150,10 +150,10 @@ class DerbyMapperCoverageTest {
         assertEquals(DataSourceConstant.DERBY, mapper.getDataSource());
         assertResult(mapper.findConfigIdNeedInsertMigrate(context), 12L, pageSize);
         assertResult(mapper.findConfigNeedUpdateMigrate(context),
-                "srcTenant", "srcUser", "targetTenant", "srcUser", 12L, pageSize);
+            "srcTenant", "srcUser", "targetTenant", "srcUser", 12L, pageSize);
         assertResult(mapper.findConfigGrayIdNeedInsertMigrate(context), 12L, pageSize);
         assertResult(mapper.findConfigGrayNeedUpdateMigrate(context),
-                "srcTenant", "srcUser", "targetTenant", "srcUser", 12L, pageSize);
+            "srcTenant", "srcUser", "targetTenant", "srcUser", 12L, pageSize);
         assertResult(mapper.migrateConfigInsertByIds(context), 12L, "srcUser", 100L);
         assertResult(mapper.migrateConfigGrayInsertByIds(context), 12L, "srcUser", 100L);
         assertSqlContains(mapper.migrateConfigGrayInsertByIds(context), "config_info_gray");
@@ -170,7 +170,7 @@ class DerbyMapperCoverageTest {
         assertEquals(DataSourceConstant.DERBY, historyMapper.getDataSource());
         assertResult(historyMapper.removeConfigHistory(context), startTime, 20);
         assertResult(historyMapper.pageFindConfigHistoryFetchRows(context), dataId, groupId,
-                tenantId);
+            tenantId);
         assertResult(historyMapper.findDeletedConfig(context), "formal", startTime, 8L, pageSize);
     }
     
@@ -190,25 +190,25 @@ class DerbyMapperCoverageTest {
         AiResourceMapperByDerby mapper = new AiResourceMapperByDerby();
         assertEquals(DataSourceConstant.DERBY, mapper.getDataSource());
         mapper.appendSingleAndCondition(new WhereBuilder("SELECT * FROM t"), null, "value",
-                true);
+            true);
         mapper.appendSingleAndCondition(new WhereBuilder("SELECT * FROM t"), "type",
-                Collections.emptyList(), false);
+            Collections.emptyList(), false);
         mapper.appendSingleAndCondition(new WhereBuilder("SELECT * FROM t"), "type",
-                Arrays.asList("mcp", "a2a"), false);
+            Arrays.asList("mcp", "a2a"), false);
         mapper.appendSingleAndCondition(new WhereBuilder("SELECT * FROM t"), "name",
-                "nacos", true);
+            "nacos", true);
         mapper.appendSingleAndCondition(new WhereBuilder("SELECT * FROM t"), "scope",
-                "public", false);
+            "public", false);
         
         context.putWhereParameter(FieldConstant.BIZ_TAGS, "tag");
         context.putWhereParameter(FieldConstant.SCOPE, "public");
         context.putWhereParameter(FieldConstant.OWNER, "owner");
         context.putWhereParameter(FieldConstant.ORDER_BY, FieldConstant.ORDER_BY_DOWNLOAD_COUNT);
         assertResult(mapper.findAiResourceFetchRows(context),
-                namespaceId, "nacos", "tag", "mcp", "public", "owner");
+            namespaceId, "nacos", "tag", "mcp", "public", "owner");
         assertSqlContains(mapper.findAiResourceFetchRows(context),
-                "name LIKE ? ESCAPE '\\'", "biz_tags LIKE ? ESCAPE '\\'",
-                "ORDER BY download_count DESC OFFSET 3 ROWS FETCH NEXT 7 ROWS ONLY");
+            "name LIKE ? ESCAPE '\\'", "biz_tags LIKE ? ESCAPE '\\'",
+            "ORDER BY download_count DESC OFFSET 3 ROWS FETCH NEXT 7 ROWS ONLY");
         
         MapperContext orContext = new MapperContext(startRow, pageSize);
         orContext.putWhereParameter(FieldConstant.NAMESPACE_ID, namespaceId);
@@ -217,7 +217,7 @@ class DerbyMapperCoverageTest {
         orGroup.put(FieldConstant.TYPE, Arrays.asList("mcp", "a2a"));
         orContext.putWhereParameter(AiResourceMapper.QUERY_CONDITION_OR_GROUP, orGroup);
         assertResult(mapper.findAiResourceFetchRows(orContext),
-                namespaceId, "stable", "mcp", "a2a");
+            namespaceId, "stable", "mcp", "a2a");
     }
     
     @Test
@@ -225,7 +225,7 @@ class DerbyMapperCoverageTest {
         AiResourceVersionMapperByDerby mapper = new AiResourceVersionMapperByDerby();
         assertEquals(DataSourceConstant.DERBY, mapper.getDataSource());
         assertResult(mapper.findAiResourceVersionFetchRows(context),
-                namespaceId, "nacos", "mcp", "stable", "1.0.0");
+            namespaceId, "nacos", "mcp", "stable", "1.0.0");
         
         MapperContext minimalContext = new MapperContext(startRow, pageSize);
         minimalContext.putWhereParameter(FieldConstant.NAMESPACE_ID, namespaceId);

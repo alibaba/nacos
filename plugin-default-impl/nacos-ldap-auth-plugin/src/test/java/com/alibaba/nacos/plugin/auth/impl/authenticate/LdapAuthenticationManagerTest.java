@@ -41,23 +41,23 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class LdapAuthenticationManagerTest {
-
+    
     @Mock
     private NacosUserService userDetailsService;
-
+    
     @Mock
     private TokenManagerDelegate jwtTokenManager;
-
+    
     @Mock
     private NacosRoleService roleService;
-
+    
     @Mock
     private LdapTemplate ldapTemplate;
-
+    
     private LdapAuthenticationManager ldapAuthenticationManager;
-
+    
     private User user;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         user = new User();
@@ -67,7 +67,7 @@ public class LdapAuthenticationManagerTest {
             new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager,
                 roleService, "uid", true);
     }
-
+    
     @Test
     void testLdapAuthenticate() throws AccessException {
         NacosUserDetails nacosUserDetails = new NacosUserDetails(user);
@@ -75,25 +75,25 @@ public class LdapAuthenticationManagerTest {
         NacosUser authenticate = ldapAuthenticationManager.authenticate("nacos", "test");
         assertEquals(user.getUsername(), authenticate.getUserName());
     }
-
+    
     @Test
     void testAuthenticateWithLdapPrefixRejected() {
         assertThrows(AccessException.class,
             () -> ldapAuthenticationManager.authenticate("LDAP_admin", "nacos"));
     }
-
+    
     @Test
     void testAuthenticateWithLdapPrefixLowercaseRejected() {
         assertThrows(AccessException.class,
             () -> ldapAuthenticationManager.authenticate("ldap_admin", "nacos"));
     }
-
+    
     @Test
     void testAuthenticateWithLdapPrefixMixedCaseRejected() {
         assertThrows(AccessException.class,
             () -> ldapAuthenticationManager.authenticate("Ldap_admin", "nacos"));
     }
-
+    
     @Test
     void testAuthenticateWithLdapPrefixCaseInsensitiveRejected() {
         LdapAuthenticationManager caseInsensitiveManager =
@@ -102,12 +102,13 @@ public class LdapAuthenticationManagerTest {
         assertThrows(AccessException.class,
             () -> caseInsensitiveManager.authenticate("LDAP_admin", "nacos"));
     }
-
+    
     @Test
     void testAuthenticateWithBlankUsername() {
-        assertThrows(AccessException.class, () -> ldapAuthenticationManager.authenticate(" ", "test"));
+        assertThrows(AccessException.class,
+            () -> ldapAuthenticationManager.authenticate(" ", "test"));
     }
-
+    
     @Test
     void testAuthenticateWithExistingLdapUser() throws AccessException {
         String username = "ldap";
@@ -120,13 +121,13 @@ public class LdapAuthenticationManagerTest {
         when(userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username))
             .thenReturn(new NacosUserDetails(ldapUser));
         when(jwtTokenManager.createToken(AuthConstants.LDAP_PREFIX + username)).thenReturn("token");
-
+        
         NacosUser actual = ldapAuthenticationManager.authenticate(username, password);
-
+        
         assertEquals(AuthConstants.LDAP_PREFIX + username, actual.getUserName());
         assertEquals("token", actual.getToken());
     }
-
+    
     @Test
     void testAuthenticateCreatesMissingLdapUser() throws AccessException {
         String username = "newUser";
@@ -137,15 +138,15 @@ public class LdapAuthenticationManagerTest {
         when(userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username))
             .thenThrow(new UsernameNotFoundException("missing"));
         when(jwtTokenManager.createToken(AuthConstants.LDAP_PREFIX + username)).thenReturn("token");
-
+        
         NacosUser actual = ldapAuthenticationManager.authenticate(username, password);
-
+        
         assertEquals(AuthConstants.LDAP_PREFIX + username, actual.getUserName());
         assertEquals("token", actual.getToken());
         verify(userDetailsService).createUser(AuthConstants.LDAP_PREFIX + username,
             AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD, false);
     }
-
+    
     @Test
     void testAuthenticateWithFailedLdapLogin() {
         String username = "ldap";
@@ -153,11 +154,11 @@ public class LdapAuthenticationManagerTest {
         when(userDetailsService.loadUserByUsername(username))
             .thenThrow(new UsernameNotFoundException("missing"));
         when(ldapTemplate.authenticate("", "(uid=" + username + ")", password)).thenReturn(false);
-
+        
         assertThrows(AccessException.class,
             () -> ldapAuthenticationManager.authenticate(username, password));
     }
-
+    
     private User createUser(String username, String password) {
         User result = new User();
         result.setUsername(username);

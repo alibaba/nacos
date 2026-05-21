@@ -51,12 +51,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class OidcAuthenticationManagerTest {
-
+    
     @AfterEach
     void tearDown() {
         ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
     }
-
+    
     @Test
     void testAuthenticateTokenMapsClaimsToUser() throws AccessException {
         JwtTokenValidator tokenValidator = mock(JwtTokenValidator.class);
@@ -67,21 +67,21 @@ class OidcAuthenticationManagerTest {
         user.setUsername("nacos");
         when(tokenValidator.validate("token")).thenReturn(claims);
         when(userMapper.mapToUser(claims)).thenReturn(user);
-
+        
         OidcUser actual = manager.authenticate("token");
-
+        
         assertSame(user, actual);
         assertEquals("token", actual.getToken());
     }
-
+    
     @Test
     void testAuthenticateTokenRejectsBlankToken() {
         OidcAuthenticationManager manager =
             newManager(mock(JwtTokenValidator.class), mock(OidcUserMapper.class));
-
+        
         assertThrows(AccessException.class, () -> manager.authenticate(" "));
     }
-
+    
     @Test
     void testAuthenticateIdentityContextUsesBearerToken() throws AccessException {
         JwtTokenValidator tokenValidator = mock(JwtTokenValidator.class);
@@ -95,13 +95,13 @@ class OidcAuthenticationManagerTest {
         user.setUsername("nacos");
         when(tokenValidator.validate("bearer-token")).thenReturn(claims);
         when(userMapper.mapToUser(claims)).thenReturn(user);
-
+        
         OidcUser actual = manager.authenticate(identityContext);
-
+        
         assertSame(user, actual);
         assertEquals("bearer-token", actual.getToken());
     }
-
+    
     @Test
     void testAuthenticateIdentityContextFallsBackToAccessTokenParameter() throws AccessException {
         JwtTokenValidator tokenValidator = mock(JwtTokenValidator.class);
@@ -114,21 +114,21 @@ class OidcAuthenticationManagerTest {
         user.setUsername("nacos");
         when(tokenValidator.validate("param-token")).thenReturn(claims);
         when(userMapper.mapToUser(claims)).thenReturn(user);
-
+        
         OidcUser actual = manager.authenticate(identityContext);
-
+        
         assertSame(user, actual);
         assertEquals("param-token", actual.getToken());
     }
-
+    
     @Test
     void testAuthenticateIdentityContextRejectsMissingToken() {
         OidcAuthenticationManager manager =
             newManager(mock(JwtTokenValidator.class), mock(OidcUserMapper.class));
-
+        
         assertThrows(AccessException.class, () -> manager.authenticate(new IdentityContext()));
     }
-
+    
     @Test
     void testUserContextHelpersAndGlobalAdminCheck() {
         OidcAuthenticationManager manager =
@@ -136,24 +136,24 @@ class OidcAuthenticationManagerTest {
         IdentityContext identityContext = new IdentityContext();
         OidcUser user = new OidcUser();
         user.setGlobalAdmin(true);
-
+        
         manager.setUserInContext(identityContext, user);
-
+        
         assertSame(user, manager.getUserFromContext(identityContext));
         assertTrue(manager.isGlobalAdmin(user));
         assertFalse(manager.isGlobalAdmin(null));
         identityContext.setParameter(OidcConstants.OAUTH2_USER_KEY, "not-user");
         assertNull(manager.getUserFromContext(identityContext));
     }
-
+    
     @Test
     void testHasPermissionReturnsFalseForMissingUser() {
         OidcAuthenticationManager manager =
             newManager(mock(JwtTokenValidator.class), mock(OidcUserMapper.class));
-
+        
         assertFalse(manager.hasPermission(null, permission()));
     }
-
+    
     @Test
     void testHasPermissionDelegatesToAuthorizationClientForAllowedResponse() {
         OidcAuthenticationManager manager =
@@ -163,14 +163,14 @@ class OidcAuthenticationManagerTest {
         Permission permission = permission();
         when(client.authorize(any(AuthorizationRequest.class))).thenReturn(
             AuthorizationResponse.allowed());
-
+        
         try (MockedStatic<AuthorizationClient> clientStatic =
-                mockStatic(AuthorizationClient.class)) {
+            mockStatic(AuthorizationClient.class)) {
             clientStatic.when(AuthorizationClient::getInstance).thenReturn(client);
-
+            
             assertTrue(manager.hasPermission(user, permission));
         }
-
+        
         ArgumentCaptor<AuthorizationRequest> captor =
             ArgumentCaptor.forClass(AuthorizationRequest.class);
         verify(client).authorize(captor.capture());
@@ -178,7 +178,7 @@ class OidcAuthenticationManagerTest {
         assertEquals("nacos:config:public:DEFAULT_GROUP:data.yaml",
             captor.getValue().buildResourceUri());
     }
-
+    
     @Test
     void testHasPermissionReturnsFalseForDeniedResponse() {
         OidcAuthenticationManager manager =
@@ -186,30 +186,30 @@ class OidcAuthenticationManagerTest {
         AuthorizationClient client = mock(AuthorizationClient.class);
         when(client.authorize(any(AuthorizationRequest.class))).thenReturn(
             AuthorizationResponse.denied("blocked"));
-
+        
         try (MockedStatic<AuthorizationClient> clientStatic =
-                mockStatic(AuthorizationClient.class)) {
+            mockStatic(AuthorizationClient.class)) {
             clientStatic.when(AuthorizationClient::getInstance).thenReturn(client);
-
+            
             assertFalse(manager.hasPermission(user(), permission()));
         }
     }
-
+    
     private OidcAuthenticationManager newManager(JwtTokenValidator tokenValidator,
         OidcUserMapper userMapper) {
         ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
         OidcAuthConfig config = mock(OidcAuthConfig.class);
         try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class);
-                MockedStatic<JwtTokenValidator> validatorStatic =
-                    mockStatic(JwtTokenValidator.class);
-                MockedStatic<OidcUserMapper> mapperStatic = mockStatic(OidcUserMapper.class)) {
+            MockedStatic<JwtTokenValidator> validatorStatic =
+                mockStatic(JwtTokenValidator.class);
+            MockedStatic<OidcUserMapper> mapperStatic = mockStatic(OidcUserMapper.class)) {
             configStatic.when(OidcAuthConfig::getInstance).thenReturn(config);
             validatorStatic.when(JwtTokenValidator::getInstance).thenReturn(tokenValidator);
             mapperStatic.when(OidcUserMapper::getInstance).thenReturn(userMapper);
             return OidcAuthenticationManager.getInstance();
         }
     }
-
+    
     private JWTClaimsSet claims() {
         return new JWTClaimsSet.Builder()
             .subject("subject")
@@ -218,14 +218,14 @@ class OidcAuthenticationManagerTest {
             .issueTime(new Date())
             .build();
     }
-
+    
     private OidcUser user() {
         OidcUser user = new OidcUser();
         user.setUsername("nacos");
         user.setToken("token");
         return user;
     }
-
+    
     private Permission permission() {
         Resource resource = new Resource("public", "DEFAULT_GROUP", "data.yaml", "config", null);
         return new Permission(resource, "read");

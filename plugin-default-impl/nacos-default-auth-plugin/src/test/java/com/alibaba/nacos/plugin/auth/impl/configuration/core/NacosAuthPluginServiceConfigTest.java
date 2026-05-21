@@ -44,8 +44,8 @@ class NacosAuthPluginServiceConfigTest {
         
         assertTrue(config.nacosRoleService(authConfigs, rolePersistService, userService,
             permissionPersistService) instanceof NacosRoleServiceDirectImpl);
-        assertTrue(config.nacosUserService(authConfigs, userPersistService)
-            instanceof NacosUserServiceDirectImpl);
+        assertTrue(config.nacosUserService(authConfigs,
+            userPersistService) instanceof NacosUserServiceDirectImpl);
         assertTrue(config.anonymousAccessInitializer(authConfigs, userPersistService,
             rolePersistService, permissionPersistService) instanceof AnonymousAccessInitializer);
     }

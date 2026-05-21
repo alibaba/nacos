@@ -145,9 +145,12 @@ class NacosUserServiceRemoteImplTest {
         when(restTemplate.<String>get(anyString(), any(Header.class), any(Query.class),
             eq(String.class))).thenReturn(okJson(page), okJson(page),
                 okJson(Arrays.asList("alice", "admin")));
-        when(restTemplate.<String>putForm(anyString(), any(Header.class), any(Query.class), anyMap(),
-            eq(String.class))).thenReturn(okText());
-        when(restTemplate.<String>postForm(anyString(), any(Header.class), any(Query.class), anyMap(),
+        when(
+            restTemplate.<String>putForm(anyString(), any(Header.class), any(Query.class), anyMap(),
+                eq(String.class)))
+            .thenReturn(okText());
+        when(restTemplate.<String>postForm(anyString(), any(Header.class), any(Query.class),
+            anyMap(),
             eq(String.class))).thenReturn(okText());
         when(restTemplate.<String>delete(anyString(), any(Header.class), any(Query.class),
             eq(String.class))).thenReturn(okText());

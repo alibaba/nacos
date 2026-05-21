@@ -55,7 +55,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class DefaultAiVisibilityServiceTest {
-
+    
     static {
         try {
             MockEnvironment environment = new MockEnvironment();
@@ -68,7 +68,7 @@ class DefaultAiVisibilityServiceTest {
             // Ignore exception during static initialization
         }
     }
-
+    
     @BeforeEach
     void setUp() {
         MockEnvironment environment = new MockEnvironment();
@@ -78,13 +78,13 @@ class DefaultAiVisibilityServiceTest {
         environment.setProperty("nacos.core.auth.admin.enabled", "true");
         com.alibaba.nacos.sys.env.EnvUtil.setEnvironment(environment);
     }
-
+    
     @AfterEach
     void tearDown() {
         RequestContextHolder.removeContext();
         com.alibaba.nacos.sys.env.EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     @SuppressWarnings("unchecked")
     void validateVisibilityShouldAllowWhenAuthDisabled() {
@@ -107,7 +107,7 @@ class DefaultAiVisibilityServiceTest {
                 cachedConfigMap);
         }
     }
-
+    
     @Test
     @SuppressWarnings("unchecked")
     void validateVisibilityShouldDenyWhenNoPermission() throws Exception {
@@ -119,7 +119,7 @@ class DefaultAiVisibilityServiceTest {
         when(authConfig.getAuthScope()).thenReturn("ADMIN_API");
         when(authConfig.isAuthEnabled()).thenReturn(true);
         when(authConfig.getNacosAuthSystemType()).thenReturn("nacos");
-
+        
         AuthPluginManager manager = mock(AuthPluginManager.class);
         AuthPluginService authService = mock(AuthPluginService.class);
         AuthResult denied = new AuthResult();
@@ -127,7 +127,7 @@ class DefaultAiVisibilityServiceTest {
         when(authService.validateAuthority(any(IdentityContext.class), any(Permission.class)))
             .thenReturn(denied);
         when(manager.findAuthServiceSpiImpl(anyString())).thenReturn(Optional.of(authService));
-
+        
         try (MockedStatic<AuthPluginManager> managerStatic = mockStatic(AuthPluginManager.class)) {
             managerStatic.when(AuthPluginManager::getInstance).thenReturn(manager);
             Map<String, NacosAuthConfig> map = new HashMap<>();
@@ -146,11 +146,11 @@ class DefaultAiVisibilityServiceTest {
                 cachedConfigMap);
         }
     }
-
+    
     @Test
     @SuppressWarnings("unchecked")
     void validateVisibilityShouldAllowWhenAuthPluginAllowsDefaultNamespaceResource()
-            throws Exception {
+        throws Exception {
         DefaultAiVisibilityService service = new DefaultAiVisibilityService();
         Map<String, NacosAuthConfig> cachedConfigMap =
             (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
@@ -159,7 +159,7 @@ class DefaultAiVisibilityServiceTest {
         when(authConfig.getAuthScope()).thenReturn("ADMIN_API");
         when(authConfig.isAuthEnabled()).thenReturn(true);
         when(authConfig.getNacosAuthSystemType()).thenReturn("nacos");
-
+        
         AuthPluginManager manager = mock(AuthPluginManager.class);
         AuthPluginService authService = mock(AuthPluginService.class);
         AuthResult allowed = new AuthResult();
@@ -169,7 +169,7 @@ class DefaultAiVisibilityServiceTest {
         when(authService.validateAuthority(any(IdentityContext.class), any(Permission.class)))
             .thenReturn(allowed);
         when(manager.findAuthServiceSpiImpl(anyString())).thenReturn(Optional.of(authService));
-
+        
         try (MockedStatic<AuthPluginManager> managerStatic = mockStatic(AuthPluginManager.class)) {
             managerStatic.when(AuthPluginManager::getInstance).thenReturn(manager);
             Map<String, NacosAuthConfig> map = new HashMap<>();
@@ -179,11 +179,11 @@ class DefaultAiVisibilityServiceTest {
             TestResource resource =
                 new TestResource("", "skillE", "skill", VisibilityConstants.SCOPE_PRIVATE,
                     "alice");
-
+            
             ValidationResult result =
                 service.validateVisibility("bob", VisibilityConstants.ACTION_READ, "ADMIN_API",
                     resource);
-
+            
             assertTrue(result.isAllowed());
         } finally {
             ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
@@ -191,7 +191,7 @@ class DefaultAiVisibilityServiceTest {
             RequestContextHolder.removeContext();
         }
     }
-
+    
     @Test
     @SuppressWarnings("unchecked")
     void adviseQueryShouldReturnPublicAndOwnerForRead() {
@@ -214,7 +214,7 @@ class DefaultAiVisibilityServiceTest {
                 service.adviseQuery("userA", VisibilityConstants.ACTION_READ, "ADMIN_API", context);
             assertEquals(BaseVisibilityPredicate.PUBLIC_AND_OWNER, advisor.getBasePredicate());
             assertEquals("skill", advisor.getAuthorizedPredicate().getResourceType());
-
+            
             IdentityContext identityContext = new IdentityContext();
             identityContext.setParameter(AuthConstants.NACOS_USER_KEY, "notNacosUser");
             RequestContextHolder.getContext().getAuthContext().setIdentityContext(identityContext);
@@ -222,7 +222,7 @@ class DefaultAiVisibilityServiceTest {
                 service.adviseQuery("userA", VisibilityConstants.ACTION_READ, "ADMIN_API", context);
             assertEquals(BaseVisibilityPredicate.PUBLIC_AND_OWNER,
                 nonNacosUserAdvisor.getBasePredicate());
-
+            
             QueryAdvisor blankIdentityAdvisor =
                 service.adviseQuery("", VisibilityConstants.ACTION_READ, "ADMIN_API", context);
             assertEquals(BaseVisibilityPredicate.PUBLIC_AND_OWNER,
@@ -233,7 +233,7 @@ class DefaultAiVisibilityServiceTest {
             RequestContextHolder.removeContext();
         }
     }
-
+    
     @Test
     @SuppressWarnings("unchecked")
     void adviseQueryShouldReturnAllForGlobalAdmin() {
@@ -263,7 +263,7 @@ class DefaultAiVisibilityServiceTest {
                 cachedConfigMap);
         }
     }
-
+    
     @Test
     @SuppressWarnings("unchecked")
     void validateVisibilityShouldAllowForGlobalAdminOwnerAndPublicResource() {
@@ -290,14 +290,14 @@ class DefaultAiVisibilityServiceTest {
                     "alice");
             assertTrue(service.validateVisibility("adminUser", VisibilityConstants.ACTION_READ,
                 "ADMIN_API", privateResource).isAllowed());
-
+            
             RequestContextHolder.removeContext();
             TestResource ownedResource =
                 new TestResource("public", "skillB", "skill", VisibilityConstants.SCOPE_PRIVATE,
                     "bob");
             assertTrue(service.validateVisibility("bob", VisibilityConstants.ACTION_WRITE,
                 "ADMIN_API", ownedResource).isAllowed());
-
+            
             TestResource publicResource =
                 new TestResource("public", "skillC", "skill", VisibilityConstants.SCOPE_PUBLIC,
                     "alice");
@@ -309,7 +309,7 @@ class DefaultAiVisibilityServiceTest {
             RequestContextHolder.removeContext();
         }
     }
-
+    
     @Test
     @SuppressWarnings("unchecked")
     void adviseQueryShouldReturnOwnerForWriteAndPublicForAnonymous() {
@@ -325,11 +325,11 @@ class DefaultAiVisibilityServiceTest {
             map.put("ADMIN_API", authConfig);
             ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
                 map);
-
+            
             QueryAdvisor writeAdvisor = service.adviseQuery("userA",
                 VisibilityConstants.ACTION_WRITE, "ADMIN_API", null);
             assertEquals(BaseVisibilityPredicate.OWNER, writeAdvisor.getBasePredicate());
-
+            
             QueryAdvisor anonymousReadAdvisor = service.adviseQuery(AuthConstants.ANONYMOUS_USER,
                 VisibilityConstants.ACTION_READ, "ADMIN_API", null);
             assertEquals(BaseVisibilityPredicate.PUBLIC, anonymousReadAdvisor.getBasePredicate());
@@ -340,7 +340,7 @@ class DefaultAiVisibilityServiceTest {
                 cachedConfigMap);
         }
     }
-
+    
     @Test
     @SuppressWarnings("unchecked")
     void validateVisibilityShouldDenyWhenAuthPluginMissingOrFails() {
@@ -364,7 +364,7 @@ class DefaultAiVisibilityServiceTest {
                 map);
             when(manager.findAuthServiceSpiImpl("nacos")).thenReturn(Optional.empty())
                 .thenThrow(new IllegalStateException("boom"));
-
+            
             assertFalse(service.validateVisibility("bob", VisibilityConstants.ACTION_WRITE,
                 "ADMIN_API", resource).isAllowed());
             assertFalse(service.validateVisibility("bob", VisibilityConstants.ACTION_WRITE,
@@ -374,28 +374,28 @@ class DefaultAiVisibilityServiceTest {
                 cachedConfigMap);
         }
     }
-
+    
     @Test
     void resolveDefaultScopeForCreateShouldReturnPrivate() {
         DefaultAiVisibilityService service = new DefaultAiVisibilityService();
         String actual = service.resolveDefaultScopeForCreate("userA", "ADMIN_API", "skill");
         assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual);
     }
-
+    
     @Test
     void getVisibilityServiceNameShouldReturnAuthPluginType() {
         assertEquals(AuthConstants.AUTH_PLUGIN_TYPE,
             new DefaultAiVisibilityService().getVisibilityServiceName());
     }
-
+    
     static class TestResource extends VisibilityResource {
-
+        
         private final String namespaceId;
-
+        
         private final String resourceName;
-
+        
         private final String resourceType;
-
+        
         TestResource(String namespaceId, String resourceName, String resourceType, String scope,
             String owner) {
             this.namespaceId = namespaceId;
@@ -404,17 +404,17 @@ class DefaultAiVisibilityServiceTest {
             setScope(scope);
             setOwner(owner);
         }
-
+        
         @Override
         public String getNamespaceId() {
             return namespaceId;
         }
-
+        
         @Override
         public String getResourceName() {
             return resourceName;
         }
-
+        
         @Override
         public String getResourceType() {
             return resourceType;

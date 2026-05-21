@@ -40,100 +40,100 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthEmbeddedPaginationHelperImplTest {
-
+    
     @Mock
     private DatabaseOperate databaseOperate;
-
+    
     @Mock
     private RowMapper<String> rowMapper;
-
+    
     private AuthEmbeddedPaginationHelperImpl<String> helper;
-
+    
     @BeforeEach
     void setUp() {
         helper = new AuthEmbeddedPaginationHelperImpl<>(databaseOperate);
     }
-
+    
     @Test
     void testFetchPageAddsOffsetAndReturnsItems() {
         when(databaseOperate.queryOne(eq("countSql"), any(Object[].class), eq(Integer.class)))
             .thenReturn(3);
         when(databaseOperate.queryMany(anyString(), any(Object[].class), same(rowMapper)))
             .thenReturn(Collections.singletonList("one"));
-
+        
         Page<String> page =
             helper.fetchPage("countSql", "selectSql", new Object[] {"tenant"}, 1, 2,
                 rowMapper);
-
+        
         assertEquals(1, page.getPageNumber());
         assertEquals(2, page.getPagesAvailable());
         assertEquals(3, page.getTotalCount());
         assertEquals(Collections.singletonList("one"), page.getPageItems());
     }
-
+    
     @Test
     void testFetchPageRejectsInvalidInputAndNullCount() {
         assertThrows(IllegalArgumentException.class,
             () -> helper.fetchPage("countSql", "selectSql", new Object[0], 1, 0, rowMapper));
         when(databaseOperate.queryOne(eq("countSql"), any(Object[].class), eq(Integer.class)))
             .thenReturn(null);
-
+        
         assertThrows(IllegalArgumentException.class,
             () -> helper.fetchPage("countSql", "selectSql", new Object[0], 1, 10, rowMapper));
     }
-
+    
     @Test
     void testFetchPageLimitWithoutCountArgs() {
         when(databaseOperate.queryOne("countSql", Integer.class)).thenReturn(1);
         when(databaseOperate.queryMany(anyString(), any(Object[].class), same(rowMapper)))
             .thenReturn(Collections.singletonList("one"));
-
+        
         Page<String> page =
             helper.fetchPageLimit("countSql", "selectSql", new Object[0], 1, 10, rowMapper);
-
+        
         assertEquals(1, page.getTotalCount());
         assertEquals(Collections.singletonList("one"), page.getPageItems());
     }
-
+    
     @Test
     void testFetchPageLimitWithoutCountArgsRejectsInvalidAndNullCount() {
         assertThrows(IllegalArgumentException.class,
             () -> helper.fetchPageLimit("countSql", "selectSql", new Object[0], 0, 10,
                 rowMapper));
         when(databaseOperate.queryOne("countSql", Integer.class)).thenReturn(null);
-
+        
         assertThrows(IllegalArgumentException.class,
             () -> helper.fetchPageLimit("countSql", "selectSql", new Object[0], 1, 10,
                 rowMapper));
     }
-
+    
     @Test
     void testFetchPageLimitWithoutCountArgsReturnsEmptyWhenPageBeyondCount() {
         when(databaseOperate.queryOne("countSql", Integer.class)).thenReturn(1);
-
+        
         Page<String> page =
             helper.fetchPageLimit("countSql", "selectSql", new Object[0], 2, 10, rowMapper);
-
+        
         assertEquals(2, page.getPageNumber());
         assertEquals(1, page.getPagesAvailable());
         assertEquals(1, page.getTotalCount());
         assertEquals(Collections.emptyList(), page.getPageItems());
     }
-
+    
     @Test
     void testFetchPageLimitWithSeparateCountAndFetchArgs() {
         when(databaseOperate.queryOne(eq("countSql"), any(Object[].class), eq(Integer.class)))
             .thenReturn(1);
         when(databaseOperate.queryMany(anyString(), any(Object[].class), same(rowMapper)))
             .thenReturn(Collections.singletonList("one"));
-
+        
         Page<String> page = helper.fetchPageLimit("countSql", new Object[] {"tenant"},
             "selectSql", new Object[] {"user"}, 1, 10, rowMapper);
-
+        
         assertEquals(1, page.getTotalCount());
         assertEquals(Collections.singletonList("one"), page.getPageItems());
     }
-
+    
     @Test
     void testFetchPageLimitWithSeparateCountArgsRejectsInvalidAndNullCount() {
         assertThrows(IllegalArgumentException.class,
@@ -141,26 +141,26 @@ class AuthEmbeddedPaginationHelperImplTest {
                 1, 0, rowMapper));
         when(databaseOperate.queryOne(eq("countSql"), any(Object[].class), eq(Integer.class)))
             .thenReturn(null);
-
+        
         assertThrows(IllegalArgumentException.class,
             () -> helper.fetchPageLimit("countSql", new Object[0], "selectSql", new Object[0],
                 1, 10, rowMapper));
     }
-
+    
     @Test
     void testFetchPageLimitWithSeparateCountArgsReturnsEmptyWhenPageBeyondCount() {
         when(databaseOperate.queryOne(eq("countSql"), any(Object[].class), eq(Integer.class)))
             .thenReturn(1);
-
+        
         Page<String> page = helper.fetchPageLimit("countSql", new Object[0], "selectSql",
             new Object[0], 2, 10, rowMapper);
-
+        
         assertEquals(2, page.getPageNumber());
         assertEquals(1, page.getPagesAvailable());
         assertEquals(1, page.getTotalCount());
         assertEquals(Collections.emptyList(), page.getPageItems());
     }
-
+    
     @Test
     void testFetchPageLimitWithMapperResult() {
         when(databaseOperate.queryOne(eq("countSql"), any(Object[].class), eq(Integer.class)))
@@ -169,36 +169,36 @@ class AuthEmbeddedPaginationHelperImplTest {
             .thenReturn(Collections.singletonList("one"));
         MapperResult count = new MapperResult("countSql", Collections.singletonList("tenant"));
         MapperResult fetch = new MapperResult("selectSql", Collections.singletonList("user"));
-
+        
         Page page = helper.fetchPageLimit(count, fetch, 1, 10, rowMapper);
-
+        
         assertEquals(1, page.getTotalCount());
         assertEquals(Collections.singletonList("one"), page.getPageItems());
     }
-
+    
     @Test
     void testFetchPageLimitFetchOnly() {
         when(databaseOperate.queryMany(anyString(), any(Object[].class), same(rowMapper)))
             .thenReturn(Collections.singletonList("one"));
-
+        
         Page<String> page =
             helper.fetchPageLimit("selectSql", new Object[] {"user"}, 1, 10, rowMapper);
-
+        
         assertEquals(Collections.singletonList("one"), page.getPageItems());
     }
-
+    
     @Test
     void testFetchPageLimitFetchOnlyRejectsInvalidInput() {
         assertThrows(IllegalArgumentException.class,
             () -> helper.fetchPageLimit("selectSql", new Object[0], 1, 0, rowMapper));
     }
-
+    
     @Test
     void testUpdateLimit() {
         when(databaseOperate.update(anyList())).thenReturn(Boolean.TRUE);
-
+        
         helper.updateLimit("updateSql", new Object[] {"user"});
-
+        
         verify(databaseOperate).update(anyList());
     }
 }

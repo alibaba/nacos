@@ -57,11 +57,11 @@ class OidcAuthPluginServiceTest {
         ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
         ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
     }
-
+    
     @Test
     void testBasicPluginMetadata() {
         OidcAuthPluginService service = new OidcAuthPluginService();
-
+        
         assertTrue(service.identityNames().contains(OidcProtocolConstants.AUTHORIZATION_HEADER));
         assertTrue(service.identityNames().contains(OidcProtocolConstants.ACCESS_TOKEN_PARAM));
         assertTrue(service.enableAuth(ActionTypes.READ, "config"));
@@ -69,7 +69,7 @@ class OidcAuthPluginServiceTest {
         assertTrue(service.isLoginEnabled());
         assertFalse(service.isAdminRequest());
     }
-
+    
     @Test
     void testValidateIdentityDelegatesToProvider() {
         OidcAuthPluginService service = new OidcAuthPluginService();
@@ -80,12 +80,12 @@ class OidcAuthPluginServiceTest {
         ReflectionTestUtils.setField(service, "identityProvider", identityProvider);
         ReflectionTestUtils.setField(service, "authorityProvider", mock(AuthorityProvider.class));
         when(identityProvider.validateIdentity(identityContext, resource)).thenReturn(expected);
-
+        
         AuthResult<?> actual = service.validateIdentity(identityContext, resource);
-
+        
         assertSame(expected, actual);
     }
-
+    
     @Test
     void testValidateAuthorityDelegatesToProvider() {
         OidcAuthPluginService service = new OidcAuthPluginService();
@@ -96,9 +96,9 @@ class OidcAuthPluginServiceTest {
         ReflectionTestUtils.setField(service, "identityProvider", mock(IdentityProvider.class));
         ReflectionTestUtils.setField(service, "authorityProvider", authorityProvider);
         when(authorityProvider.validateAuthority(identityContext, permission)).thenReturn(expected);
-
+        
         AuthResult<?> actual = service.validateAuthority(identityContext, permission);
-
+        
         assertSame(expected, actual);
     }
     

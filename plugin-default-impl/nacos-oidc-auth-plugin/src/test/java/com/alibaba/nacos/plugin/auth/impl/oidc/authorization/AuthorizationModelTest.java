@@ -24,17 +24,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AuthorizationModelTest {
-
+    
     @Test
     void testRequestBuildsResourceUriFromExplicitResource() {
         AuthorizationRequest request = new AuthorizationRequest("token", "nacos:config", "read");
-
+        
         assertEquals("nacos:config", request.buildResourceUri());
         assertEquals("read", request.getAction());
         assertEquals("token", request.getToken());
         assertEquals("nacos:config", request.getResource());
     }
-
+    
     @Test
     void testRequestSettersAndMinimalResourceUri() {
         AuthorizationRequest request = new AuthorizationRequest();
@@ -44,7 +44,7 @@ class AuthorizationModelTest {
         request.setNamespace("public");
         request.setGroup("DEFAULT_GROUP");
         request.setResourceName("data.yaml");
-
+        
         assertEquals("token", request.getToken());
         assertEquals("write", request.getAction());
         assertEquals("config", request.getResourceType());
@@ -56,7 +56,7 @@ class AuthorizationModelTest {
         assertEquals("nacos:explicit", request.getResource());
         assertEquals("nacos:explicit", request.buildResourceUri());
     }
-
+    
     @Test
     void testRequestBuildsResourceUriFromComponents() {
         AuthorizationRequest request = AuthorizationRequest.builder()
@@ -67,13 +67,15 @@ class AuthorizationModelTest {
             .resourceName("data.yaml")
             .action("write")
             .build();
-
+        
         assertEquals("nacos:config:public:DEFAULT_GROUP:data.yaml", request.buildResourceUri());
-        assertEquals("{\"token\":\"token\",\"resource\":\"nacos:config:public:DEFAULT_GROUP:data.yaml\","
-            + "\"action\":\"write\",\"resourceType\":\"config\",\"namespace\":\"public\","
-            + "\"group\":\"DEFAULT_GROUP\",\"resourceName\":\"data.yaml\"}", request.toJson());
+        assertEquals(
+            "{\"token\":\"token\",\"resource\":\"nacos:config:public:DEFAULT_GROUP:data.yaml\","
+                + "\"action\":\"write\",\"resourceType\":\"config\",\"namespace\":\"public\","
+                + "\"group\":\"DEFAULT_GROUP\",\"resourceName\":\"data.yaml\"}",
+            request.toJson());
     }
-
+    
     @Test
     void testRequestEscapesJsonValues() {
         AuthorizationRequest request = AuthorizationRequest.builder()
@@ -81,19 +83,19 @@ class AuthorizationModelTest {
             .resource("nacos\\config\nname")
             .action("read\twrite")
             .build();
-
+        
         assertEquals("{\"token\":\"tok\\\"en\",\"resource\":\"nacos\\\\config\\nname\","
             + "\"action\":\"read\\twrite\"}", request.toJson());
     }
-
+    
     @Test
     void testRequestSerializesNullJsonValues() {
         AuthorizationRequest request = new AuthorizationRequest();
-
+        
         assertEquals("{\"token\":\"\",\"resource\":\"nacos\",\"action\":\"\"}",
             request.toJson());
     }
-
+    
     @Test
     void testResponseFactoryMethodsAndSetters() {
         AuthorizationResponse allowed = AuthorizationResponse.allowed();
@@ -103,7 +105,7 @@ class AuthorizationModelTest {
         custom.setAllowed(true);
         custom.setReason("ok");
         custom.setErrorCode("none");
-
+        
         assertTrue(allowed.isAllowed());
         assertFalse(denied.isAllowed());
         assertFalse(constructed.isAllowed());
@@ -112,7 +114,7 @@ class AuthorizationModelTest {
         assertEquals("none", custom.getErrorCode());
         assertEquals("AuthorizationResponse{allowed=true, reason='ok'}", custom.toString());
     }
-
+    
     @Test
     void testResponseParsesSupportedJsonShapes() {
         assertTrue(AuthorizationResponse.fromJson("{\"allowed\":true}").isAllowed());
@@ -120,14 +122,14 @@ class AuthorizationModelTest {
         assertTrue(AuthorizationResponse.fromJson("{\"result\": \"permit\"}").isAllowed());
         assertTrue(AuthorizationResponse.fromJson("{\"decision\":\"permit\"}").isAllowed());
         assertTrue(AuthorizationResponse.fromJson("{\"decision\": \"Permit\"}").isAllowed());
-
+        
         AuthorizationResponse denied =
             AuthorizationResponse.fromJson("{\"allowed\": false, \"message\":\"no\","
                 + "\"errorCode\":\"E403\"}");
         assertFalse(denied.isAllowed());
         assertEquals("no", denied.getReason());
         assertEquals("E403", denied.getErrorCode());
-
+        
         AuthorizationResponse errorDescription =
             AuthorizationResponse.fromJson("{\"allowed\":false,\"error_description\":\"bad\","
                 + "\"error\":\"E_BAD\"}");
@@ -135,16 +137,17 @@ class AuthorizationModelTest {
         assertEquals("bad", errorDescription.getReason());
         assertEquals("E_BAD", errorDescription.getErrorCode());
     }
-
+    
     @Test
     void testResponseHandlesEmptyAndMalformedJsonValues() {
         AuthorizationResponse empty = AuthorizationResponse.fromJson(" ");
         AuthorizationResponse missingColon = AuthorizationResponse.fromJson("{\"allowed\" true}");
         AuthorizationResponse missingQuote = AuthorizationResponse.fromJson("{\"error\": true}");
-        AuthorizationResponse missingEndQuote = AuthorizationResponse.fromJson("{\"error\":\"E403}");
+        AuthorizationResponse missingEndQuote =
+            AuthorizationResponse.fromJson("{\"error\":\"E403}");
         AuthorizationResponse reasonMissingColon =
             AuthorizationResponse.fromJson("{\"reason\" \"bad\"}");
-
+        
         assertFalse(empty.isAllowed());
         assertEquals("Empty response from IdP", empty.getReason());
         assertNull(missingColon.getReason());

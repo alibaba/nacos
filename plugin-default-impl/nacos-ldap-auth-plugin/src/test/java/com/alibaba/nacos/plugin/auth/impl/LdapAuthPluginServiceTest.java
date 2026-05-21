@@ -38,16 +38,16 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LdapAuthPluginServiceTest {
-
+    
     @Mock
     private IAuthenticationManager authenticationManager;
-
+    
     @Test
     void testGetAuthServiceName() {
         assertEquals(AuthConstants.LDAP_AUTH_PLUGIN_TYPE,
             new LdapAuthPluginService().getAuthServiceName());
     }
-
+    
     @Test
     void testValidateIdentityLoadsLdapAuthenticationManager() throws AccessException {
         LdapAuthPluginService service = new LdapAuthPluginService();
@@ -56,13 +56,13 @@ class LdapAuthPluginServiceTest {
         identityContext.setParameter(AuthConstants.PARAM_PASSWORD, "password");
         NacosUser user = new NacosUser("nacos", "token");
         when(authenticationManager.authenticate("nacos", "password")).thenReturn(user);
-
+        
         try (MockedStatic<ApplicationUtils> applicationUtils = mockStatic(ApplicationUtils.class)) {
             applicationUtils.when(() -> ApplicationUtils.getBean(
                 LdapPluginDependencyChecker.LDAP_AUTHENTICATION_MANAGER_BEAN_NAME,
                 IAuthenticationManager.class)).thenReturn(authenticationManager);
             AuthResult<?> result = service.validateIdentity(identityContext, null);
-
+            
             assertTrue(result.isSuccess());
             assertSame(user, result.getData());
             assertSame(user, identityContext.getParameter(AuthConstants.NACOS_USER_KEY));

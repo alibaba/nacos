@@ -27,7 +27,7 @@ class TrustedPostgresqFunctionEnumTest {
     void testGetFunctionByName() {
         assertEquals("NOW()", TrustedPostgresqFunctionEnum.getFunctionByName("NOW()"));
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> TrustedPostgresqFunctionEnum.getFunctionByName("BAD()"));
+            () -> TrustedPostgresqFunctionEnum.getFunctionByName("BAD()"));
         assertEquals("Invalid function name: BAD()", exception.getMessage());
     }
 }

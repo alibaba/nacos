@@ -31,18 +31,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author qiacheng.cxy
  */
 class SkillScannerMarkdownFindingParserTest {
-
+    
     @Test
     void extractFindingTitlesEmptyInput() {
         assertTrue(SkillScannerMarkdownFindingParser.extractFindingTitles(null).isEmpty());
         assertTrue(SkillScannerMarkdownFindingParser.extractFindingTitles("").isEmpty());
     }
-
+    
     @Test
     void extractFindingTitlesWithoutSectionBody() {
         assertTrue(SkillScannerMarkdownFindingParser.extractFindingTitles("## Findings").isEmpty());
     }
-
+    
     @Test
     void extractFindingTitlesSingleHeading() {
         String md = ""
@@ -54,7 +54,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals(1, titles.size());
         assertEquals("HIGH — Prompt injection", titles.get(0));
     }
-
+    
     @Test
     void extractFindingTitlesMultipleHeadings() {
         String md = ""
@@ -68,7 +68,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals("HIGH — Rule A", titles.get(0));
         assertEquals("MEDIUM — Rule B", titles.get(1));
     }
-
+    
     @Test
     void extractFindingTitlesStopsAtNextH2() {
         String md = ""
@@ -80,7 +80,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals(1, titles.size());
         assertEquals("HIGH — Only this", titles.get(0));
     }
-
+    
     @Test
     void extractFindingTitlesCaseInsensitiveSection() {
         String md = "## FINDINGS\n\n### CRITICAL — X\n";
@@ -88,7 +88,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals(1, titles.size());
         assertEquals("CRITICAL — X", titles.get(0));
     }
-
+    
     @Test
     void buildRejectCheckpointsUsesParsedTitles() {
         String md = "## Findings\n\n### HIGH — A\n\n### HIGH — B\n";
@@ -99,7 +99,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals("HIGH — B", cps.get(1).getTitle());
         assertFalse(cps.get(1).getPassed());
     }
-
+    
     @Test
     void buildRejectCheckpointsFallbackWhenNoFindings() {
         List<Checkpoint> cps =
@@ -108,7 +108,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals("HIGH/CRITICAL 风险检测", cps.get(0).getTitle());
         assertFalse(cps.get(0).getPassed());
     }
-
+    
     @Test
     void buildPassCheckpointsBaseChecks() {
         List<Checkpoint> cps =
@@ -119,7 +119,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals("Data exfiltration 检查", cps.get(1).getTitle());
         assertTrue(cps.get(1).getPassed());
     }
-
+    
     @Test
     void buildPassCheckpointsIncludesLlmAndMetaWhenEnabled() {
         java.util.Properties properties = new java.util.Properties();

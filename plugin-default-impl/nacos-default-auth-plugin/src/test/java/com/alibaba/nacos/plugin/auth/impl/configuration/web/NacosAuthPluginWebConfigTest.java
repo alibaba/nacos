@@ -49,23 +49,23 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class NacosAuthPluginWebConfigTest {
-
+    
     private Map<String, NacosAuthConfig> cachedConfigMap;
-
+    
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() {
         cachedConfigMap = (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
             NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
         ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
             cachedConfigMap);
     }
-
+    
     @Test
     void testSecurityFilterChainBuildsIgnoredUrlChain() throws Exception {
         setValidAuthEnvironment("nacos");
@@ -74,12 +74,12 @@ class NacosAuthPluginWebConfigTest {
         when(http.authorizeHttpRequests(any())).thenReturn(http);
         when(http.csrf(any())).thenReturn(http);
         when(http.build()).thenReturn(chain);
-
+        
         SecurityFilterChain actual = new NacosAuthPluginWebConfig().securityFilterChain(http);
-
+        
         assertSame(chain, actual);
     }
-
+    
     @Test
     void testSecurityFilterChainBuildsIgnoredUrlChainForLdap() throws Exception {
         setValidAuthEnvironment("ldap");
@@ -88,12 +88,12 @@ class NacosAuthPluginWebConfigTest {
         when(http.authorizeHttpRequests(any())).thenReturn(http);
         when(http.csrf(any())).thenReturn(http);
         when(http.build()).thenReturn(chain);
-
+        
         SecurityFilterChain actual = new NacosAuthPluginWebConfig().securityFilterChain(http);
-
+        
         assertSame(chain, actual);
     }
-
+    
     @Test
     void testSecurityFilterChainUsesConfiguredIgnoreUrlsWhenAuthTypeBlank() throws Exception {
         MockEnvironment environment = setValidAuthEnvironment("");
@@ -103,12 +103,12 @@ class NacosAuthPluginWebConfigTest {
         when(http.authorizeHttpRequests(any())).thenReturn(http);
         when(http.csrf(any())).thenReturn(http);
         when(http.build()).thenReturn(chain);
-
+        
         SecurityFilterChain actual = new NacosAuthPluginWebConfig().securityFilterChain(http);
-
+        
         assertSame(chain, actual);
     }
-
+    
     @Test
     @SuppressWarnings({"rawtypes", "unchecked"})
     void testSecurityFilterChainCustomizerPermitsConfiguredIgnoreUrls() throws Exception {
@@ -116,13 +116,11 @@ class NacosAuthPluginWebConfigTest {
         environment.setProperty("nacos.security.ignore.urls", "/v1/**,/v3/**");
         HttpSecurity http = mock(HttpSecurity.class);
         DefaultSecurityFilterChain chain = mock(DefaultSecurityFilterChain.class);
-        ArgumentCaptor<Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>
-            .AuthorizationManagerRequestMatcherRegistry>> customizerCaptor =
+        ArgumentCaptor<Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry>> customizerCaptor =
             ArgumentCaptor.forClass(Customizer.class);
         ArgumentCaptor<String[]> matchersCaptor = ArgumentCaptor.forClass(String[].class);
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
-            registry = mock(AuthorizeHttpRequestsConfigurer
-                .AuthorizationManagerRequestMatcherRegistry.class);
+        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry registry =
+            mock(AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry.class);
         AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizedUrl authorizedUrl =
             mock(AuthorizeHttpRequestsConfigurer.AuthorizedUrl.class);
         when(http.authorizeHttpRequests(customizerCaptor.capture())).thenReturn(http);
@@ -130,44 +128,45 @@ class NacosAuthPluginWebConfigTest {
         when(http.build()).thenReturn(chain);
         when(registry.requestMatchers(any(String[].class))).thenReturn(authorizedUrl);
         when(authorizedUrl.permitAll()).thenReturn(registry);
-
+        
         new NacosAuthPluginWebConfig().securityFilterChain(http);
         customizerCaptor.getValue().customize(registry);
-
+        
         verify(registry).requestMatchers(matchersCaptor.capture());
         assertArrayEquals(new String[] {"/v1/**", "/v3/**"},
             matchersCaptor.getValue());
         verify(authorizedUrl).permitAll();
     }
-
+    
     @Test
     void testSecurityFilterChainBuildsDirectlyWhenIgnoreUrlsBlank() throws Exception {
         setValidAuthEnvironment("custom");
         HttpSecurity http = mock(HttpSecurity.class);
         DefaultSecurityFilterChain chain = mock(DefaultSecurityFilterChain.class);
         when(http.build()).thenReturn(chain);
-
+        
         SecurityFilterChain actual = new NacosAuthPluginWebConfig().securityFilterChain(http);
-
+        
         assertSame(chain, actual);
     }
-
+    
     @Test
     void testAuthenticationManagerBean() throws Exception {
         AuthenticationConfiguration authenticationConfiguration =
             mock(AuthenticationConfiguration.class);
         AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
-        when(authenticationConfiguration.getAuthenticationManager()).thenReturn(authenticationManager);
-
+        when(authenticationConfiguration.getAuthenticationManager())
+            .thenReturn(authenticationManager);
+        
         try (MockedStatic<ApplicationUtils> mocked = mockStatic(ApplicationUtils.class)) {
             mocked.when(() -> ApplicationUtils.getBean(AuthenticationConfiguration.class))
                 .thenReturn(authenticationConfiguration);
-
+            
             assertSame(authenticationManager,
                 new NacosAuthPluginWebConfig().authenticationManagerBean());
         }
     }
-
+    
     private static MockEnvironment setValidAuthEnvironment(String systemType) {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, systemType);
@@ -178,7 +177,7 @@ class NacosAuthPluginWebConfigTest {
         setAuthSystemType(systemType);
         return environment;
     }
-
+    
     private static void setAuthSystemType(String systemType) {
         NacosAuthConfig authConfig = mock(NacosAuthConfig.class);
         when(authConfig.getNacosAuthSystemType()).thenReturn(systemType);

@@ -128,7 +128,8 @@ class EmbeddedRolePersistServiceImplTest {
         assertEquals(Collections.emptyList(), result.getPageItems());
     }
     
-    private EmbeddedRolePersistServiceImpl serviceWithHelper(AuthPaginationHelper<RoleInfo> helper) {
+    private EmbeddedRolePersistServiceImpl serviceWithHelper(
+        AuthPaginationHelper<RoleInfo> helper) {
         return new EmbeddedRolePersistServiceImpl(databaseOperate) {
             
             @Override

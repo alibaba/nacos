@@ -44,15 +44,15 @@ import static org.mockito.Mockito.when;
 class OidcProviderTest {
     
     private ConfigurableEnvironment originalEnvironment;
-
+    
     private OidcAuthenticationManager authManager;
-
+    
     private OidcAuthConfig config;
-
+    
     private IdentityContext identityContext;
-
+    
     private OidcUser user;
-
+    
     @BeforeEach
     void setUp() {
         originalEnvironment = EnvUtil.getEnvironment();
@@ -73,39 +73,40 @@ class OidcProviderTest {
         ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
         ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
     }
-
+    
     @Test
     void testIdentityProviderStoresAuthenticatedUser() throws AccessException {
         OidcIdentityProvider provider = newIdentityProvider();
         when(authManager.authenticate(identityContext)).thenReturn(user);
-
+        
         AuthResult<?> result = provider.validateIdentity(identityContext, Resource.EMPTY_RESOURCE);
-
+        
         assertTrue(result.isSuccess());
         assertSame(user, result.getData());
         assertEquals("nacos", identityContext.getParameter(Constants.Identity.IDENTITY_ID));
         verify(authManager).setUserInContext(identityContext, user);
     }
-
+    
     @Test
     void testIdentityProviderReturnsUnauthorizedForAccessException() throws AccessException {
         OidcIdentityProvider provider = newIdentityProvider();
         when(authManager.authenticate(identityContext)).thenThrow(new AccessException("bad token"));
-
+        
         AuthResult<?> result = provider.validateIdentity(identityContext, Resource.EMPTY_RESOURCE);
-
+        
         assertFalse(result.isSuccess());
         assertEquals(401, result.getErrorCode());
         assertEquals("bad token", result.getErrorMessage());
     }
-
+    
     @Test
     void testIdentityProviderReturnsUnauthorizedForUnexpectedException() throws AccessException {
         OidcIdentityProvider provider = newIdentityProvider();
-        when(authManager.authenticate(identityContext)).thenThrow(new IllegalStateException("boom"));
-
+        when(authManager.authenticate(identityContext))
+            .thenThrow(new IllegalStateException("boom"));
+        
         AuthResult<?> result = provider.validateIdentity(identityContext, Resource.EMPTY_RESOURCE);
-
+        
         assertFalse(result.isSuccess());
         assertEquals(401, result.getErrorCode());
         assertEquals("Authentication failed", result.getErrorMessage());
@@ -121,64 +122,65 @@ class OidcProviderTest {
         assertFalse(result.isSuccess());
         assertEquals(401, result.getErrorCode());
     }
-
+    
     @Test
     void testAuthorityProviderRejectsMissingUser() {
         OidcAuthorityProvider provider = newAuthorityProvider();
-
+        
         AuthResult<?> result = provider.validateAuthority(identityContext, permission());
-
+        
         assertFalse(result.isSuccess());
         assertEquals(403, result.getErrorCode());
         assertEquals("User not authenticated", result.getErrorMessage());
     }
-
+    
     @Test
     void testAuthorityProviderAllowsGlobalAdmin() {
         OidcAuthorityProvider provider = newAuthorityProvider();
         when(authManager.getUserFromContext(identityContext)).thenReturn(user);
         when(authManager.isGlobalAdmin(user)).thenReturn(true);
-
+        
         AuthResult<?> result = provider.validateAuthority(identityContext, permission());
-
+        
         assertTrue(result.isSuccess());
         assertSame(user, result.getData());
     }
-
+    
     @Test
     void testAuthorityProviderAllowsPermittedUser() {
         Permission permission = permission();
         OidcAuthorityProvider provider = newAuthorityProvider();
         when(authManager.getUserFromContext(identityContext)).thenReturn(user);
         when(authManager.hasPermission(user, permission)).thenReturn(true);
-
+        
         AuthResult<?> result = provider.validateAuthority(identityContext, permission);
-
+        
         assertTrue(result.isSuccess());
         assertSame(user, result.getData());
     }
-
+    
     @Test
     void testAuthorityProviderDeniesWhenPermissionRejected() {
         Permission permission = permission();
         OidcAuthorityProvider provider = newAuthorityProvider();
         when(authManager.getUserFromContext(identityContext)).thenReturn(user);
         when(authManager.hasPermission(user, permission)).thenReturn(false);
-
+        
         AuthResult<?> result = provider.validateAuthority(identityContext, permission);
-
+        
         assertFalse(result.isSuccess());
         assertEquals(403, result.getErrorCode());
         assertEquals("Access denied", result.getErrorMessage());
     }
-
+    
     @Test
     void testAuthorityProviderReturnsFailureForException() {
         OidcAuthorityProvider provider = newAuthorityProvider();
-        when(authManager.getUserFromContext(identityContext)).thenThrow(new RuntimeException("boom"));
-
+        when(authManager.getUserFromContext(identityContext))
+            .thenThrow(new RuntimeException("boom"));
+        
         AuthResult<?> result = provider.validateAuthority(identityContext, permission());
-
+        
         assertFalse(result.isSuccess());
         assertEquals(403, result.getErrorCode());
         assertEquals("Authorization failed", result.getErrorMessage());
@@ -193,21 +195,21 @@ class OidcProviderTest {
         assertFalse(result.isSuccess());
         assertEquals(403, result.getErrorCode());
     }
-
+    
     private OidcIdentityProvider newIdentityProvider() {
         OidcIdentityProvider provider = new OidcIdentityProvider();
         ReflectionTestUtils.setField(provider, "config", config);
         ReflectionTestUtils.setField(provider, "authManager", authManager);
         return provider;
     }
-
+    
     private OidcAuthorityProvider newAuthorityProvider() {
         OidcAuthorityProvider provider = new OidcAuthorityProvider();
         ReflectionTestUtils.setField(provider, "config", config);
         ReflectionTestUtils.setField(provider, "authManager", authManager);
         return provider;
     }
-
+    
     private Permission permission() {
         Resource resource = new Resource("public", "DEFAULT_GROUP", "data.yaml", "config", null);
         return new Permission(resource, "read");

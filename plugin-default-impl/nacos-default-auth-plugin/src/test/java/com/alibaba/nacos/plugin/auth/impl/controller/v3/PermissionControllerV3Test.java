@@ -44,75 +44,75 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 public class PermissionControllerV3Test {
-
+    
     @InjectMocks
     private PermissionControllerV3 permissionController;
-
+    
     @Mock
     private NacosRoleService nacosRoleService;
-
+    
     private MockMvc mockMvc;
-
+    
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(permissionController).build();
     }
-
+    
     @Test
     void testGetPermissionListAccurateSearch() {
         Page<PermissionInfo> permissionInfoPage = new Page<>();
         when(nacosRoleService.getPermissions(anyString(), anyInt(), anyInt()))
             .thenReturn(permissionInfoPage);
-
+        
         Result<Page<PermissionInfo>> result =
             permissionController.getPermissionList(1, 10, "admin", "accurate");
-
+        
         assertEquals(permissionInfoPage, result.getData());
         verify(nacosRoleService, times(1)).getPermissions("admin", 1, 10);
     }
-
+    
     @Test
     void testGetPermissionListBlurSearch() {
         Page<PermissionInfo> permissionInfoPage = new Page<>();
         when(nacosRoleService.findPermissions(anyString(), anyInt(), anyInt()))
             .thenReturn(permissionInfoPage);
-
+        
         Result<Page<PermissionInfo>> result =
             permissionController.getPermissionList(1, 10, "admin", "blur");
-
+        
         assertEquals(permissionInfoPage, result.getData());
         verify(nacosRoleService, times(1)).findPermissions("admin", 1, 10);
     }
-
+    
     @Test
     void testCreatePermission() {
         Result<String> result =
             (Result<String>) permissionController.createPermission("admin", "testResource",
                 "write");
-
+        
         verify(nacosRoleService, times(1)).addPermission("admin", "testResource", "write");
         assertEquals("add permission ok!", result.getData());
     }
-
+    
     @Test
     void testDeletePermission() {
         Result<String> result =
             (Result<String>) permissionController.deletePermission("admin", "testResource",
                 "write");
-
+        
         verify(nacosRoleService, times(1)).deletePermission("admin", "testResource", "write");
         assertEquals("delete permission ok!", result.getData());
     }
-
+    
     @Test
     void testIsDuplicatePermission() {
         Result<Boolean> expected = Result.success(true);
         when(nacosRoleService.isDuplicatePermission("admin", "testResource", "write"))
             .thenReturn(expected);
-
+        
         Result<Boolean> result =
             permissionController.isDuplicatePermission("admin", "testResource", "write");
-
+        
         assertEquals(expected, result);
     }
 }
