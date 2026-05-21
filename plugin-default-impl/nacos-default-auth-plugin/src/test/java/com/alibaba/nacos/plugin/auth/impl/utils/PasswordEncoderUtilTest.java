@@ -24,6 +24,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @Date: 2022/8/17 01:25
  */
 class PasswordEncoderUtilTest {
-    
+
     /**
      * encode test.
      */
@@ -45,7 +46,7 @@ class PasswordEncoderUtilTest {
         String str2 = PasswordEncoderUtil.encode("nacos");
         assertNotEquals(str2, str);
     }
-    
+
     @Test
     void matches() {
         Boolean result1 = PasswordEncoderUtil.matches("nacos",
@@ -57,21 +58,26 @@ class PasswordEncoderUtilTest {
         Boolean matches = PasswordEncoderUtil.matches("nacos", PasswordEncoderUtil.encode("nacos"));
         assertTrue(matches);
     }
-    
+
     @Test
     void enforcePasswordLength() {
         String raw72Password = StringUtils.repeat("A", AuthConstants.MAX_PASSWORD_LENGTH);
         String encodedPassword = PasswordEncoderUtil.encode(raw72Password);
-        
+
         assertThrows(IllegalArgumentException.class, () -> PasswordEncoderUtil.encode(null));
-        
+
         String raw73Password = raw72Password.concat("A");
         assertThrows(IllegalArgumentException.class,
             () -> PasswordEncoderUtil.encode(raw73Password));
-        
+
         assertTrue(new BCryptPasswordEncoder().matches(raw73Password, encodedPassword));
         assertFalse(new SafeBcryptPasswordEncoder().matches(raw73Password, encodedPassword));
         assertFalse(PasswordEncoderUtil.matches(raw73Password, encodedPassword));
-        
+
+    }
+
+    @Test
+    void testConstructor() {
+        assertNotNull(new PasswordEncoderUtil());
     }
 }

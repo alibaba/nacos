@@ -108,6 +108,28 @@ class OidcAuthConfigTest {
     }
 
     @Test
+    void testReloadRefreshesConfiguration() {
+        MockEnvironment firstEnvironment = new MockEnvironment()
+            .withProperty(OidcConstants.CONFIG_CLIENT_ID, "client-one")
+            .withProperty(OidcConstants.CONFIG_CLIENT_SECRET, "secret-one");
+        EnvUtil.setEnvironment(firstEnvironment);
+        OidcAuthConfig config = OidcAuthConfig.getInstance();
+
+        MockEnvironment secondEnvironment = new MockEnvironment()
+            .withProperty(OidcConstants.CONFIG_CLIENT_ID, "client-two")
+            .withProperty(OidcConstants.CONFIG_CLIENT_SECRET, "secret-two")
+            .withProperty(OidcConstants.CONFIG_TOKEN_VALIDATION_METHOD, "introspection");
+        EnvUtil.setEnvironment(secondEnvironment);
+
+        config.reload();
+
+        assertEquals("client-two", config.getClientId());
+        assertEquals("secret-two", config.getClientSecret());
+        assertTrue(config.isIntrospectionValidation());
+        assertEquals("introspection", config.getTokenValidationMethod());
+    }
+
+    @Test
     void testSettersAndAutoConfigurationBean() {
         OidcAuthConfig config = OidcAuthConfig.getInstance();
         config.setIssuerUri("http://issuer");
@@ -150,7 +172,7 @@ class OidcAuthConfigTest {
         assertFalse(config.isStrictAudienceValidation());
         assertNotNull(new OidcPluginAutoConfiguration().oidcLoginController());
     }
-    
+
     @Test
     void testDiscoveryLoadsProviderEndpoints() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -175,9 +197,9 @@ class OidcAuthConfigTest {
                 .withProperty(OidcConstants.CONFIG_ISSUER_URI, issuer)
                 .withProperty(OidcConstants.CONFIG_CLIENT_ID, "client"));
             ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
-            
+
             OidcAuthConfig config = OidcAuthConfig.getInstance();
-            
+
             assertTrue(config.isValid());
             assertEquals(issuer + "/auth", config.getAuthorizationEndpoint());
             assertEquals(issuer + "/token", config.getTokenEndpoint());
@@ -187,5 +209,45 @@ class OidcAuthConfigTest {
         } finally {
             server.stop(0);
         }
+    }
+
+    @Test
+    void testDiscoveryFailureKeepsConfiguredValues() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext(OidcProtocolConstants.WELL_KNOWN_PATH, exchange -> {
+            byte[] bytes = "{}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(500, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        });
+        server.start();
+        try {
+            String issuer = "http://127.0.0.1:" + server.getAddress().getPort();
+            EnvUtil.setEnvironment(new MockEnvironment()
+                .withProperty(OidcConstants.CONFIG_ISSUER_URI, issuer)
+                .withProperty(OidcConstants.CONFIG_CLIENT_ID, "client")
+                .withProperty(OidcConstants.CONFIG_AUTHORIZATION_ENDPOINT,
+                    "http://configured/auth"));
+            ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
+
+            OidcAuthConfig config = OidcAuthConfig.getInstance();
+
+            assertEquals("http://configured/auth", config.getAuthorizationEvaluateEndpoint());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void testDiscoveryIgnoresInvalidIssuerUri() {
+        EnvUtil.setEnvironment(new MockEnvironment()
+            .withProperty(OidcConstants.CONFIG_ISSUER_URI, "://bad")
+            .withProperty(OidcConstants.CONFIG_CLIENT_ID, "client"));
+        ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
+
+        OidcAuthConfig config = OidcAuthConfig.getInstance();
+
+        assertEquals("://bad", config.getIssuerUri());
+        assertEquals("client", config.getClientId());
     }
 }

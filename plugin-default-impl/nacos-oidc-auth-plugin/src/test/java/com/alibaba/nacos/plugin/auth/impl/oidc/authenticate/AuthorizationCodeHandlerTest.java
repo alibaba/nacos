@@ -156,6 +156,17 @@ class AuthorizationCodeHandlerTest {
     }
 
     @Test
+    void testVerifyAndDecodeStateCatchesSigningFailure() {
+        OidcAuthConfig config = mockConfig();
+        when(config.getClientSecret()).thenReturn("");
+        AuthorizationCodeHandler handler = newHandler(config);
+        long future = System.currentTimeMillis() + 60_000L;
+
+        assertNull(ReflectionTestUtils.invokeMethod(handler, "verifyAndDecodeState",
+            encodeState("nonce." + future + ".signature")));
+    }
+
+    @Test
     void testBuildSignedStateRequiresClientSecret() {
         OidcAuthConfig config = mockConfig();
         when(config.getClientSecret()).thenReturn("");
@@ -231,6 +242,27 @@ class AuthorizationCodeHandlerTest {
 
             assertThrows(AccessException.class,
                 () -> handler.exchangeCodeForUser("code", state, "http://nacos/callback"));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void testExchangeCodeWrapsUnexpectedTokenValidationFailure() throws Exception {
+        String idToken = plainJwt();
+        HttpServer server = startTokenServer(200, tokenSuccessBody(idToken));
+        try {
+            JwtTokenValidator validator = mock(JwtTokenValidator.class);
+            when(validator.validate(idToken)).thenThrow(new IllegalStateException("broken"));
+            AuthorizationCodeHandler handler = newHandler(tokenConfig(server, true), validator,
+                mock(OidcUserMapper.class));
+            String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
+                System.currentTimeMillis() + 60_000L);
+
+            AccessException exception = assertThrows(AccessException.class,
+                () -> handler.exchangeCodeForUser("code", state, "http://nacos/callback"));
+
+            assertTrue(exception.getErrMsg().contains("Authentication failed"));
         } finally {
             server.stop(0);
         }

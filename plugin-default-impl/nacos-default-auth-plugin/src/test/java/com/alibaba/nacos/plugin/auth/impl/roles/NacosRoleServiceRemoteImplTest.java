@@ -30,12 +30,15 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.utils.RemoteServerUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -72,7 +75,14 @@ class NacosRoleServiceRemoteImplTest {
     
     @Mock
     private NacosRestTemplate restTemplate;
-    
+
+    @BeforeEach
+    void setUp() {
+        if (EnvUtil.getEnvironment() == null) {
+            EnvUtil.setEnvironment(new MockEnvironment());
+        }
+    }
+
     @Test
     void testGetPermissionsReadsCachedMapOnceOnHit() throws Exception {
         // Reproduces the same TOCTOU pattern as getUser/getRoles: previously

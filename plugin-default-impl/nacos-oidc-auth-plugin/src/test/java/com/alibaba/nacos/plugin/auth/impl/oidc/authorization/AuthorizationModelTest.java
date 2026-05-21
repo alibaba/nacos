@@ -34,7 +34,7 @@ class AuthorizationModelTest {
         assertEquals("token", request.getToken());
         assertEquals("nacos:config", request.getResource());
     }
-    
+
     @Test
     void testRequestSettersAndMinimalResourceUri() {
         AuthorizationRequest request = new AuthorizationRequest();
@@ -44,7 +44,7 @@ class AuthorizationModelTest {
         request.setNamespace("public");
         request.setGroup("DEFAULT_GROUP");
         request.setResourceName("data.yaml");
-        
+
         assertEquals("token", request.getToken());
         assertEquals("write", request.getAction());
         assertEquals("config", request.getResourceType());
@@ -87,6 +87,14 @@ class AuthorizationModelTest {
     }
 
     @Test
+    void testRequestSerializesNullJsonValues() {
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        assertEquals("{\"token\":\"\",\"resource\":\"nacos\",\"action\":\"\"}",
+            request.toJson());
+    }
+
+    @Test
     void testResponseFactoryMethodsAndSetters() {
         AuthorizationResponse allowed = AuthorizationResponse.allowed();
         AuthorizationResponse denied = AuthorizationResponse.denied("blocked");
@@ -109,6 +117,8 @@ class AuthorizationModelTest {
     void testResponseParsesSupportedJsonShapes() {
         assertTrue(AuthorizationResponse.fromJson("{\"allowed\":true}").isAllowed());
         assertTrue(AuthorizationResponse.fromJson("{\"result\":\"PERMIT\"}").isAllowed());
+        assertTrue(AuthorizationResponse.fromJson("{\"result\": \"permit\"}").isAllowed());
+        assertTrue(AuthorizationResponse.fromJson("{\"decision\":\"permit\"}").isAllowed());
         assertTrue(AuthorizationResponse.fromJson("{\"decision\": \"Permit\"}").isAllowed());
 
         AuthorizationResponse denied =
@@ -117,7 +127,7 @@ class AuthorizationModelTest {
         assertFalse(denied.isAllowed());
         assertEquals("no", denied.getReason());
         assertEquals("E403", denied.getErrorCode());
-        
+
         AuthorizationResponse errorDescription =
             AuthorizationResponse.fromJson("{\"allowed\":false,\"error_description\":\"bad\","
                 + "\"error\":\"E_BAD\"}");
@@ -132,11 +142,14 @@ class AuthorizationModelTest {
         AuthorizationResponse missingColon = AuthorizationResponse.fromJson("{\"allowed\" true}");
         AuthorizationResponse missingQuote = AuthorizationResponse.fromJson("{\"error\": true}");
         AuthorizationResponse missingEndQuote = AuthorizationResponse.fromJson("{\"error\":\"E403}");
+        AuthorizationResponse reasonMissingColon =
+            AuthorizationResponse.fromJson("{\"reason\" \"bad\"}");
 
         assertFalse(empty.isAllowed());
         assertEquals("Empty response from IdP", empty.getReason());
         assertNull(missingColon.getReason());
         assertNull(missingQuote.getErrorCode());
         assertNull(missingEndQuote.getErrorCode());
+        assertNull(reasonMissingColon.getReason());
     }
 }

@@ -25,12 +25,17 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
@@ -120,6 +125,12 @@ class JwksProviderTest {
             verify(config).setTokenEndpoint(issuerUri + "/token");
             verify(config).setUserinfoEndpoint(issuerUri + "/userinfo");
             verify(config).setEndSessionEndpoint(issuerUri + "/logout");
+
+            OidcAuthConfig trailingSlashConfig = mockConfig("", issuerUri + "/");
+            JwksProvider trailingSlashProvider = newProvider(trailingSlashConfig);
+
+            assertEquals(0, trailingSlashProvider.getJwkSet().getKeys().size());
+            verify(trailingSlashConfig).setJwksUri(issuerUri + "/jwks");
         } finally {
             server.stop(0);
         }
@@ -132,6 +143,8 @@ class JwksProviderTest {
             exchange -> writeResponse(exchange, 500, "{}"));
         server.createContext("/parse/.well-known/openid-configuration",
             exchange -> writeResponse(exchange, 200, "{bad"));
+        server.createContext("/missing-jwks/.well-known/openid-configuration",
+            exchange -> writeResponse(exchange, 200, "{}"));
         server.start();
         try {
             String base = "http://127.0.0.1:" + server.getAddress().getPort();
@@ -139,9 +152,37 @@ class JwksProviderTest {
                 () -> newProvider(mockConfig("", base + "/status")).getJwkSet());
             assertThrows(IOException.class,
                 () -> newProvider(mockConfig("", base + "/parse")).getJwkSet());
+            assertThrows(IOException.class,
+                () -> newProvider(mockConfig("", base + "/missing-jwks")).getJwkSet());
         } finally {
             server.stop(0);
         }
+    }
+
+    @Test
+    void testGetJwkSetWrapsInterruptedFetchAndDiscovery() throws Exception {
+        JwksProvider fetchProvider = newProvider(mockConfig("http://idp/jwks", ""));
+        HttpClient fetchClient = mock(HttpClient.class);
+        when(fetchClient.<String>send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            .thenThrow(new InterruptedException("stop"));
+        ReflectionTestUtils.setField(fetchProvider, "httpClient", fetchClient);
+
+        IOException fetchException = assertThrows(IOException.class, fetchProvider::getJwkSet);
+
+        assertTrue(fetchException.getMessage().contains("interrupted"));
+        assertTrue(Thread.interrupted());
+
+        JwksProvider discoveryProvider = newProvider(mockConfig("", "http://idp"));
+        HttpClient discoveryClient = mock(HttpClient.class);
+        when(discoveryClient.<String>send(any(HttpRequest.class),
+            any(HttpResponse.BodyHandler.class))).thenThrow(new InterruptedException("stop"));
+        ReflectionTestUtils.setField(discoveryProvider, "httpClient", discoveryClient);
+
+        IOException discoveryException =
+            assertThrows(IOException.class, discoveryProvider::getJwkSet);
+
+        assertTrue(discoveryException.getMessage().contains("interrupted"));
+        assertTrue(Thread.interrupted());
     }
 
     @Test

@@ -19,9 +19,11 @@ package com.alibaba.nacos.plugin.auth.impl.utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PasswordGeneratorUtilTest {
-    
+
     /**
      * generatePwd test.
      */
@@ -29,6 +31,15 @@ class PasswordGeneratorUtilTest {
     void generatePwd() {
         String pwd = PasswordGeneratorUtil.generateRandomPassword();
         assertEquals(8, pwd.length());
+        assertTrue(pwd.chars().anyMatch(Character::isLowerCase));
+        assertTrue(pwd.chars().anyMatch(Character::isUpperCase));
+        assertTrue(pwd.chars().anyMatch(Character::isDigit));
+        assertTrue(pwd.chars().anyMatch(each -> "!@#$%&".indexOf(each) >= 0));
     }
-    
+
+    @Test
+    void testConstructor() {
+        assertNotNull(new PasswordGeneratorUtil());
+    }
+
 }

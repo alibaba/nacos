@@ -23,11 +23,16 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -60,7 +65,7 @@ class AuthorizationClientTest {
         assertFalse(response.isAllowed());
         assertTrue(response.getReason().contains("Authorization error"));
     }
-    
+
     @Test
     void testAuthorizeHandlesIdpHttpResponses() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -79,6 +84,32 @@ class AuthorizationClientTest {
         } finally {
             server.stop(0);
         }
+    }
+
+    @Test
+    void testAuthorizeHandlesTransportExceptions() throws Exception {
+        AuthorizationClient ioClient = newClient(mockConfig("http://idp/evaluate"));
+        HttpClient ioHttpClient = mock(HttpClient.class);
+        when(ioHttpClient.<String>send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            .thenThrow(new IOException("down"));
+        ReflectionTestUtils.setField(ioClient, "httpClient", ioHttpClient);
+
+        AuthorizationResponse ioResponse = ioClient.authorize(request());
+
+        assertFalse(ioResponse.isAllowed());
+        assertTrue(ioResponse.getReason().contains("unavailable"));
+
+        AuthorizationClient interruptedClient = newClient(mockConfig("http://idp/evaluate"));
+        HttpClient interruptedHttpClient = mock(HttpClient.class);
+        when(interruptedHttpClient.<String>send(any(HttpRequest.class),
+            any(HttpResponse.BodyHandler.class))).thenThrow(new InterruptedException("stop"));
+        ReflectionTestUtils.setField(interruptedClient, "httpClient", interruptedHttpClient);
+
+        AuthorizationResponse interruptedResponse = interruptedClient.authorize(request());
+
+        assertFalse(interruptedResponse.isAllowed());
+        assertTrue(interruptedResponse.getReason().contains("interrupted"));
+        assertTrue(Thread.interrupted());
     }
 
     private AuthorizationClient newClient(OidcAuthConfig config) {
@@ -103,7 +134,7 @@ class AuthorizationClientTest {
             .action("read")
             .build();
     }
-    
+
     private void writeResponse(com.sun.net.httpserver.HttpExchange exchange, int status,
         String body) throws java.io.IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);

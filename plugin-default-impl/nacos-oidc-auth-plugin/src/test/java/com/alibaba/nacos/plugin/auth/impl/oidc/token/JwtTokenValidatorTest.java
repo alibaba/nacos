@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.token;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -29,6 +30,7 @@ import org.mockito.MockedStatic;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +40,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -103,6 +106,16 @@ class JwtTokenValidatorTest {
         assertEquals("subject", validator.validate("slash").getSubject());
         assertEquals("nacos", validator.validate("azp").getStringClaim("azp"));
         assertThrows(AccessException.class, () -> validator.validate("issuer"));
+
+        OidcAuthConfig noSlashConfig = mockConfig();
+        when(noSlashConfig.getIssuerUri()).thenReturn("http://issuer");
+        JwtTokenValidator noSlashValidator = newValidator(noSlashConfig);
+        ConfigurableJWTProcessor<SecurityContext> noSlashProcessor = mockProcessor();
+        ReflectionTestUtils.setField(noSlashValidator, "jwtProcessor", noSlashProcessor);
+        when(noSlashProcessor.process("issuer-slash", null)).thenReturn(validClaims()
+            .issuer("http://issuer/").build());
+
+        assertEquals("subject", noSlashValidator.validate("issuer-slash").getSubject());
     }
 
     @Test
@@ -149,6 +162,49 @@ class JwtTokenValidatorTest {
         when(provider.refreshJwkSet()).thenThrow(new IOException("still down"));
 
         assertThrows(AccessException.class, () -> validator.validate("rotated"));
+    }
+
+    @Test
+    void testValidateRetriesWithRefreshedJwksAfterBadJoseFailure() throws Exception {
+        JwtTokenValidator validator = newValidator(mockConfig());
+        ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
+        JwksProvider provider = mock(JwksProvider.class);
+        ReflectionTestUtils.setField(validator, "jwtProcessor", processor);
+        ReflectionTestUtils.setField(validator, "jwksProvider", provider);
+        when(processor.process("rotated", null)).thenThrow(new BadJOSEException("bad key"));
+        when(provider.refreshJwkSet()).thenReturn(new JWKSet());
+
+        assertThrows(AccessException.class, () -> validator.validate("rotated"));
+        assertNotNull(ReflectionTestUtils.getField(validator, "jwtProcessor"));
+    }
+
+    @Test
+    void testLazyProcessorInitializationBuildsProcessor() throws Exception {
+        OidcAuthConfig config = mockConfig();
+        when(config.getIssuerUri()).thenReturn("http://issuer");
+        JwtTokenValidator validator = newValidator(config);
+        JwksProvider provider = mock(JwksProvider.class);
+        when(provider.getJwkSet()).thenReturn(new JWKSet());
+        ReflectionTestUtils.setField(validator, "jwksProvider", provider);
+
+        Object processor = ReflectionTestUtils.invokeMethod(validator, "getJwtProcessor");
+
+        assertNotNull(processor);
+    }
+
+    @Test
+    void testRetryWithRefreshedJwksRebuildsProcessorBeforeFailure() throws Exception {
+        JwtTokenValidator validator = newValidator(mockConfig());
+        JwksProvider provider = mock(JwksProvider.class);
+        when(provider.refreshJwkSet()).thenReturn(new JWKSet());
+        ReflectionTestUtils.setField(validator, "jwksProvider", provider);
+
+        UndeclaredThrowableException exception = assertThrows(UndeclaredThrowableException.class,
+            () -> ReflectionTestUtils.invokeMethod(validator, "retryWithRefreshedJwks",
+                "not-a-jwt", new BadJOSEException("bad key")));
+
+        assertTrue(exception.getUndeclaredThrowable() instanceof AccessException);
+        assertNotNull(ReflectionTestUtils.getField(validator, "jwtProcessor"));
     }
 
     @Test
