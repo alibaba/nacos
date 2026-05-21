@@ -164,6 +164,22 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
     }
     
     @Override
+    public boolean updateSourceCas(String namespaceId, String name, String type,
+        long expectedMetaVersion,
+        String source) {
+        AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            TableConstant.AI_RESOURCE);
+        
+        String sql = "UPDATE ai_resource SET c_from=?, meta_version=meta_version+1, "
+            + "gmt_modified=" + mapper.getFunction("NOW()")
+            + " WHERE namespace_id=? AND name=? AND type=? AND meta_version=?";
+        
+        int rows = jt.update(sql, source, normalizeNamespaceId(namespaceId), name, type,
+            expectedMetaVersion);
+        return rows == 1;
+    }
+    
+    @Override
     public int delete(String namespaceId, String name, String type) {
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
             TableConstant.AI_RESOURCE);

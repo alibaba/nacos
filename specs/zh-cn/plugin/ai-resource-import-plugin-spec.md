@@ -137,7 +137,9 @@ Resource Operator 位于 AI Registry 领域内，不属于导入插件。它们�
 当前仍由 Config 记录承载。未来 MCP 迁移到 `ai_resource` 后，只应修改 MCP Operator。导入插件和
 统一导入 API 应保持兼容。
 
-对 Skill 而言，Operator 应保持 Skill 包边界，并通过 Skill upload 或 draft 生命周期 API 写入。
+对 Skill 而言，Operator 应保持 Skill 包边界，并通过 Skill upload 或 draft 生命周期 API 写入。导入成功后，
+如果 artifact 包含 `sourceMetadata.artifactUrl`，Skill Operator 应将该 URL 记录为导入后资源的来源
+字段（`ai_resource.c_from`）；如果没有 `artifactUrl`，则回退使用 `sourceMetadata.source`。
 
 ## 内置 Importer
 

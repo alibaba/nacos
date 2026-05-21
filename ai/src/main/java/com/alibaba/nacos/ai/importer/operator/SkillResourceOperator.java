@@ -36,6 +36,7 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * Applies imported Skill ZIP artifacts through the current Skill upload flow.
@@ -49,6 +50,10 @@ public class SkillResourceOperator implements AiResourceOperator {
     private static final String CONFLICT_TYPE_WORKING_VERSION = "working_version";
     
     private static final String CONFLICT_TYPE_EXISTING = "existing";
+    
+    private static final String METADATA_ARTIFACT_URL = "artifactUrl";
+    
+    private static final String METADATA_SOURCE = "source";
     
     private final SkillOperationService skillOperationService;
     
@@ -97,12 +102,35 @@ public class SkillResourceOperator implements AiResourceOperator {
         String version = resolveVersion(artifact);
         String skillName = skillOperationService.uploadSkillFromZip(namespaceId,
             artifact.getPayload(), overwriteExisting, version);
+        syncSource(namespaceId, skillName, artifact);
         AiResourceImportResultItem result = new AiResourceImportResultItem();
         result.setExternalId(artifact.getExternalId());
         result.setResourceName(skillName);
         result.setVersion(version);
         result.setStatus(AiResourceImportResultStatus.SUCCESS);
         return result;
+    }
+    
+    private void syncSource(String namespaceId, String skillName,
+        AiResourceImportArtifact artifact) {
+        String source = resolveSource(artifact);
+        if (StringUtils.isBlank(source)) {
+            return;
+        }
+        AiResource meta = resourceManager.findMeta(namespaceId, skillName, resourceType());
+        resourceManager.syncImportedSource(namespaceId, meta, source);
+    }
+    
+    private String resolveSource(AiResourceImportArtifact artifact) {
+        Map<String, String> metadata = artifact.getSourceMetadata();
+        if (metadata == null || metadata.isEmpty()) {
+            return null;
+        }
+        String artifactUrl = metadata.get(METADATA_ARTIFACT_URL);
+        if (StringUtils.isNotBlank(artifactUrl)) {
+            return artifactUrl;
+        }
+        return metadata.get(METADATA_SOURCE);
     }
     
     private boolean hasWorkingVersion(ResourceVersionInfo info) {
