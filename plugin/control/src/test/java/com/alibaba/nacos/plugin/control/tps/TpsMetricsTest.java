@@ -18,6 +18,8 @@ package com.alibaba.nacos.plugin.control.tps;
 
 import org.junit.jupiter.api.Test;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,8 +33,9 @@ class TpsMetricsTest {
         TpsMetrics.Counter counter = new TpsMetrics.Counter(3, 1);
         metrics.setCounter(counter);
         
-        assertEquals("1970-01-01 08:00:00", metrics.getTimeFormatOfSecond(0L));
-        assertEquals("point|monitor|SECONDS|1970-01-01 08:00:00|3|1", metrics.getMsg());
+        String expectedTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(0L));
+        assertEquals(expectedTime, metrics.getTimeFormatOfSecond(0L));
+        assertEquals("point|monitor|SECONDS|" + expectedTime + "|3|1", metrics.getMsg());
         assertTrue(metrics.toString().contains("pointName='point'"));
         assertEquals("3|1", counter.getSimpleLog());
         assertEquals("{passCount=3, deniedCount=1}", counter.toString());
