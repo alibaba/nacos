@@ -17,7 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.McpServerImportService;
+import com.alibaba.nacos.ai.service.McpLegacyImportAdapter;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -49,13 +49,13 @@ class McpInnerHandlerTest {
     McpServerOperationService mcpServerOperationService;
     
     @Mock
-    McpServerImportService mcpServerImportService;
+    McpLegacyImportAdapter mcpLegacyImportAdapter;
     
     McpInnerHandler mcpInnerHandler;
     
     @BeforeEach
     void setUp() {
-        mcpInnerHandler = new McpInnerHandler(mcpServerOperationService, mcpServerImportService);
+        mcpInnerHandler = new McpInnerHandler(mcpServerOperationService, mcpLegacyImportAdapter);
     }
     
     @Test
@@ -127,7 +127,7 @@ class McpInnerHandlerTest {
     void validateImport() throws NacosException {
         McpServerImportRequest request = new McpServerImportRequest();
         McpServerImportValidationResult expected = new McpServerImportValidationResult();
-        when(mcpServerImportService.validateImport(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, request))
+        when(mcpLegacyImportAdapter.validateImport(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, request))
             .thenReturn(expected);
         
         McpServerImportValidationResult result =
@@ -141,7 +141,7 @@ class McpInnerHandlerTest {
     void executeImport() throws NacosException {
         McpServerImportRequest request = new McpServerImportRequest();
         McpServerImportResponse expected = new McpServerImportResponse();
-        when(mcpServerImportService.executeImport(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, request))
+        when(mcpLegacyImportAdapter.executeImport(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, request))
             .thenReturn(expected);
         
         McpServerImportResponse result =

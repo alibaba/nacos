@@ -139,6 +139,34 @@ public class McpServerImportService {
         }
     }
     
+    /**
+     * Validate transformed MCP server details.
+     *
+     * @param namespaceId namespace ID
+     * @param servers transformed MCP servers
+     * @return validation result
+     * @throws NacosException if validation fails
+     */
+    public McpServerImportValidationResult validateMcpServers(String namespaceId,
+        List<McpServerDetailInfo> servers)
+        throws NacosException {
+        return validationService.validateServers(namespaceId, servers);
+    }
+    
+    /**
+     * Import one validated MCP server item.
+     *
+     * @param namespaceId namespace ID
+     * @param item validated MCP server item
+     * @param overrideExisting whether existing MCP server should be overwritten
+     * @return import result
+     */
+    public McpServerImportResult importValidatedServer(String namespaceId,
+        McpServerValidationItem item,
+        boolean overrideExisting) {
+        return importSingleServer(namespaceId, item, overrideExisting);
+    }
+    
     private static McpServerImportResponse responseError(String msg) {
         McpServerImportResponse response = new McpServerImportResponse();
         response.setSuccess(false);
