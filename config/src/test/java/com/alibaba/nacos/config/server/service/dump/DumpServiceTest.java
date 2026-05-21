@@ -16,9 +16,13 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigMigrateService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -43,6 +47,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -124,6 +130,7 @@ class DumpServiceTest {
         configExecutorMocked.close();
         propertyUtilMockedStatic.close();
         historyConfigCleanerManagerMockedStatic.close();
+        ReflectionTestUtils.setField(ConfigDiskServiceFactory.class, "configDiskService", null);
     }
     
     @Test
@@ -164,7 +171,7 @@ class DumpServiceTest {
         Mockito.when(namespacePersistService.isExistTable(TAG_TABLE_NAME)).thenReturn(true);
         
         Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(300L);
-        dumpService.dumpOperate();
+        dumpService.init();
         
         // expect dump
         Mockito.verify(configInfoPersistService, times(1)).findAllConfigInfoFragment(0, 100, true);
@@ -197,6 +204,34 @@ class DumpServiceTest {
     }
     
     @Test
+    void dumpOperateThrowsNacosExceptionWhenClearAllFails() {
+        ConfigDiskService configDiskService = Mockito.mock(ConfigDiskService.class);
+        Mockito.doThrow(new RuntimeException("clear failed")).when(configDiskService).clearAll();
+        ReflectionTestUtils.setField(ConfigDiskServiceFactory.class, "configDiskService",
+            configDiskService);
+        
+        NacosException exception =
+            assertThrows(NacosException.class, () -> dumpService.dumpOperate());
+        
+        assertTrue(exception.getMessage().contains("bean construction failure"));
+    }
+    
+    @Test
+    void dumpOperateThrowsNacosExceptionWhenClearAllGrayFails() {
+        ConfigDiskService configDiskService = Mockito.mock(ConfigDiskService.class);
+        Mockito.doThrow(new RuntimeException("clear gray failed")).when(configDiskService)
+            .clearAllGray();
+        ReflectionTestUtils.setField(ConfigDiskServiceFactory.class, "configDiskService",
+            configDiskService);
+        Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(0L);
+        
+        NacosException exception =
+            assertThrows(NacosException.class, () -> dumpService.dumpOperate());
+        
+        assertTrue(exception.getMessage().contains("bean construction failure"));
+    }
+    
+    @Test
     void clearHistory() {
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("nacos.config.retention.days")))
             .thenReturn("10");
@@ -205,6 +240,58 @@ class DumpServiceTest {
             defaultHistoryConfigCleaner);
         configHistoryClear.run();
         Mockito.verify(defaultHistoryConfigCleaner, times(1)).cleanHistoryConfig();
+    }
+    
+    @Test
+    void clearHistoryNotFirstIp() {
+        Mockito.when(memberManager.isFirstIp()).thenReturn(false);
+        DumpService.ConfigHistoryClear configHistoryClear = dumpService.new ConfigHistoryClear(
+            defaultHistoryConfigCleaner);
+        configHistoryClear.run();
+        Mockito.verify(defaultHistoryConfigCleaner, times(0)).cleanHistoryConfig();
+    }
+    
+    @Test
+    void clearHistoryThrowsException() {
+        Mockito.when(memberManager.isFirstIp()).thenReturn(true);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("nacos.config.retention.days")))
+            .thenReturn("10");
+        Mockito.doThrow(new RuntimeException("db error")).when(defaultHistoryConfigCleaner)
+            .cleanHistoryConfig();
+        DumpService.ConfigHistoryClear configHistoryClear = dumpService.new ConfigHistoryClear(
+            defaultHistoryConfigCleaner);
+        configHistoryClear.run();
+        Mockito.verify(defaultHistoryConfigCleaner, times(1)).cleanHistoryConfig();
+    }
+    
+    @Test
+    void testDumpAllProcessorRunner() {
+        ReflectionTestUtils.setField(dumpService, "dumpAllTaskMgr", dumpTaskMgr);
+        DumpService.DumpAllProcessorRunner runner = dumpService.new DumpAllProcessorRunner();
+        runner.run();
+        Mockito.verify(dumpTaskMgr, times(1)).addTask(any(), any());
+    }
+    
+    @Test
+    void testDumpAllGrayProcessorRunner() {
+        ReflectionTestUtils.setField(dumpService, "dumpAllTaskMgr", dumpTaskMgr);
+        DumpService.DumpAllGrayProcessorRunner runner =
+            dumpService.new DumpAllGrayProcessorRunner();
+        runner.run();
+        Mockito.verify(dumpTaskMgr, times(1)).addTask(any(), any());
+    }
+    
+    @Test
+    void testHandleConfigDataChangeWithGrayName() {
+        ConfigDataChangeEvent evt = new ConfigDataChangeEvent("dataId", "group",
+            null, "gray1", System.currentTimeMillis());
+        ReflectionTestUtils.setField(dumpService, "dumpTaskMgr", dumpTaskMgr);
+        Mockito.doNothing().when(dumpTaskMgr).addTask(any(), any());
+        dumpService.handleConfigDataChange(evt);
+        Mockito.verify(dumpTaskMgr, times(1)).addTask(
+            eq(com.alibaba.nacos.config.server.utils.GroupKey
+                .getKeyTenant("dataId", "group", null) + "+gray+gray1"),
+            any());
     }
     
     @Test
@@ -220,6 +307,15 @@ class DumpServiceTest {
             eq(GroupKey.getKeyTenant(configDataChangeEvent.dataId, configDataChangeEvent.group,
                 configDataChangeEvent.tenant)),
             any(DumpTask.class));
+    }
+    
+    @Test
+    void testDumpAll() {
+        ReflectionTestUtils.setField(dumpService, "dumpAllTaskMgr", dumpTaskMgr);
+        Mockito.doNothing().when(dumpTaskMgr).addTask(any(), any());
+        dumpService.dumpAll();
+        Mockito.verify(dumpTaskMgr, times(1)).addTask(
+            eq(DumpAllTask.TASK_ID), any(DumpAllTask.class));
     }
     
 }

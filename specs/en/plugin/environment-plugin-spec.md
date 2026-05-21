@@ -26,7 +26,9 @@ This is an ordered override plugin. Multiple plugins may handle different keys
 or the same key. The implementation currently sorts by `order()` ascending and
 applies later values over earlier values, so larger order values have higher
 override priority. Common lifecycle and state rules are defined by the
-[Nacos Plugin Spec](plugin-spec.md).
+[Nacos Plugin Spec](plugin-spec.md). Server startup and `EnvUtil` integration
+rules are defined by the
+[Server Lifecycle And Environment Configuration Spec](../design/foundation-server-lifecycle-env-spec.md).
 
 The plugin is for deployment-time configuration adaptation. It must run before
 Nacos modules consume the final property values, and it must not be used as a

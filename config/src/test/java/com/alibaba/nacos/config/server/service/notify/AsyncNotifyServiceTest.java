@@ -46,6 +46,8 @@ import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.config.server.service.notify.AsyncNotifyService.HEALTHY_CHECK_STATUS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -251,5 +253,23 @@ class AsyncNotifyServiceTest {
                 any(TimeUnit.class)),
             times(2));
         
+    }
+    
+    @Test
+    void testNotifyTaskAccessorsAndCallbackTimeout() {
+        Member member = new Member();
+        member.setIp("testip");
+        AsyncNotifyService.NotifySingleRpcTask task =
+            new AsyncNotifyService.NotifySingleRpcTask("dataId", "group", "tenant", null,
+                System.currentTimeMillis(), member);
+        task.setGrayName("gray");
+        
+        task.merge(task);
+        AsyncRpcNotifyCallBack callback =
+            new AsyncRpcNotifyCallBack(new AsyncNotifyService(serverMemberManager), task);
+        
+        assertEquals("gray", task.getGrayName());
+        assertNull(callback.getExecutor());
+        assertEquals(1000L, callback.getTimeout());
     }
 }

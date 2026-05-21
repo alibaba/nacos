@@ -21,7 +21,6 @@ import com.alibaba.nacos.plugin.auth.impl.configuration.core.NacosAuthPluginCore
 import com.alibaba.nacos.plugin.auth.impl.configuration.core.NacosAuthPluginInnerServiceConfig;
 import com.alibaba.nacos.plugin.auth.impl.configuration.persistence.NacosAuthPluginPersistenceConfig;
 import com.alibaba.nacos.plugin.auth.impl.configuration.web.NacosAuthPluginWebConfig;
-import com.alibaba.nacos.plugin.auth.impl.ldap.LdapAuthPluginConfig;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -34,8 +33,7 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Conditional(ConditionOnInnerDatasource.class)
 @Import({NacosAuthPluginPersistenceConfig.class, NacosAuthPluginInnerServiceConfig.class,
-    NacosAuthPluginCoreConfig.class, NacosAuthPluginWebConfig.class,
-    LdapAuthPluginConfig.class})
+    NacosAuthPluginCoreConfig.class, NacosAuthPluginWebConfig.class})
 public class NacosAuthPluginInnerAutoConfig {
     
 }

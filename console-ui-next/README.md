@@ -7,6 +7,18 @@ The new Nacos console frontend, built with React 19 + TypeScript + Vite 7 + Tail
 - Node.js >= 20.19+
 - npm >= 10
 
+## .npmrc Configuration
+
+本项目配置了 `.npmrc` 文件，设置 `min-release-age=3`，确保 `npm install` 时不安装发布时间不足 3 天的包，降低供应链风险。
+
+This project uses `.npmrc` with `min-release-age=3` to ensure `npm install` does not install packages released less than 3 days ago, reducing supply chain risks.
+
+> 注意：`min-release-age` 仅 npm >= 11 生效，单位：天。
+>
+> Note: `min-release-age` only takes effect with npm >= 11. Unit: day.
+>
+> 参考 / Ref: https://docs.npmjs.com/cli/v11/commands/npm-install#min-release-age
+
 ## Install Dependencies
 
 ```bash

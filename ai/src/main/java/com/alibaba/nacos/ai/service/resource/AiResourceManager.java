@@ -691,9 +691,15 @@ public class AiResourceManager {
     
     /**
      * Transition a version to reviewing status and update meta pointers accordingly.
+     *
+     * <p>Only versions in {@code draft} status are allowed to enter the review stage.
+     * Submitting a version in any other status (reviewing / reviewed / online / offline)
+     * is rejected with {@code INVALID_PARAM} to prevent corrupting formal versions.</p>
      */
     public void moveToReviewing(String namespaceId, String name, String type, String version,
         AiResource meta, ResourceVersionInfo info) throws NacosException {
+        // Guard: only draft version can be submitted for review.
+        requireDraftVersion(namespaceId, name, type, version);
         aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
             AiResourceConstants.VERSION_STATUS_REVIEWING);
         info.setEditingVersion(null);

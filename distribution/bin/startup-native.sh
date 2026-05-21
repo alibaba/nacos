@@ -60,11 +60,11 @@ RUN_CMD="${RUN_CMD} -Dnacos.member.list="
 RUN_CMD="${RUN_CMD} -Dnacos.preferHostnameOverIp=true"
 
 ### If use standalone mode:
-if [[ "${MODE}" == "standalone" ]]; then
+if [ "${MODE}" = "standalone" ]; then
   RUN_CMD="${RUN_CMD} -Dnacos.standalone=true"
 fi
 
-if [[ "${NACOS_TYPE}" == "Java" ]]; then
+if [ "${NACOS_TYPE}" = "Java" ]; then
     ### Define JAVA_HOME, JAVA_PATH and JAVA
     [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=$HOME/jdk/java
     [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/usr/java
@@ -99,7 +99,7 @@ if [[ "${NACOS_TYPE}" == "Java" ]]; then
 
     ### Define gc log rule
     JAVA_MAJOR_VERSION=$($JAVA -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
-    if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]]; then
+    if [ "$JAVA_MAJOR_VERSION" -ge "9" ]; then
         RUN_CMD="${RUN_CMD} -Xlog:gc*:file=${BASE_DIR}/logs/nacos_gc.log:time,tags:filecount=10,filesize=102400"
         RUN_CMD="${RUN_CMD} --add-opens=java.base/java.lang=ALL-UNNAMED"
         RUN_CMD="${RUN_CMD} --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
@@ -109,7 +109,7 @@ if [[ "${NACOS_TYPE}" == "Java" ]]; then
         RUN_CMD="${RUN_CMD} -Xloggc:${BASE_DIR}/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
     fi
 
-    if [[ "${MODE}" == "standalone" ]]; then
+    if [ "${MODE}" = "standalone" ]; then
         RUN_CMD="${RUN_CMD} -Xms512m -Xmx512m -Xmn256m"
     else
         RUN_CMD="${RUN_CMD} -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
@@ -121,12 +121,12 @@ if [[ "${NACOS_TYPE}" == "Java" ]]; then
 
     RUN_CMD="${RUN_CMD} --server.max-http-header-size=524288"
 
-    if [[ "$JAVA_OPT_EXT_FIX" == "" ]]; then
+    if [ "$JAVA_OPT_EXT_FIX" = "" ]; then
         RUN_CMD="${JAVA} ${RUN_CMD}"
     else
         RUN_CMD="${JAVA} ${JAVA_OPT_EXT_FIX} ${RUN_CMD}"
     fi
-elif [[ "${NACOS_TYPE}" == "Native" ]]; then
+elif [ "${NACOS_TYPE}" = "Native" ]; then
     RUN_CMD="${NACOS_SERVER} ${RUN_CMD}"
 fi
 

@@ -35,7 +35,8 @@ v3 prefixes after the Nacos web context path:
 
 This document does not cover:
 
-- v1/v2 compatibility APIs;
+- v1/v2 compatibility APIs, which are externalized to
+  [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter);
 - gRPC request and response contracts;
 - internal cluster APIs that are not exposed as v3 HTTP controllers;
 - the AI Registry adaptor API, which has a separate compatibility surface.
@@ -132,6 +133,8 @@ Implemented behavior to document more explicitly:
 Console APIs serve the Nacos web console and are not the same stability surface
 as Open APIs. They default to `ApiType.CONSOLE_API` and often use console-specific
 resource names, `ONLY_IDENTITY`, or UI-oriented response models.
+Console deployment, UI, and handler boundaries are defined by the
+[Console Spec](../console/console-spec.md).
 
 Console API modules mirror Admin modules where the UI needs them:
 
@@ -207,4 +210,5 @@ deprecated compatibility APIs:
 Compatibility endpoints may remain available for a transition period, but the
 user-facing documentation should describe the new APIs as the primary contract.
 Deprecated endpoints should be documented only in compatibility sections with
-migration guidance.
+migration guidance, following the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).

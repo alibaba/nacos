@@ -85,6 +85,8 @@ TPS 规则示例：
 
 默认 barrier 会定期把通过与拒绝计数输出到 TPS 日志。如果某个 point 没有注册 barrier，
 或 TPS 应用过程失败，检查会跳过并允许请求继续。
+TPS 和拒绝观测属于运维指标，必须遵循
+[可观测钩子规范](../design/foundation-observability-hooks-spec.md)。
 
 ## 内置 Point Name
 
@@ -113,3 +115,5 @@ Point name 一旦文档化就必须保持稳定，因为规则文件和外部规
 - 发布 `TpsControlRuleChangeEvent` 或 `ConnectionLimitRuleChangeEvent`。
 
 当配置了外部规则存储插件时，`external` 标记决定是否从外部存储读取规则。
+规则变更事件是进程内本地事件，并遵循
+[事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)。

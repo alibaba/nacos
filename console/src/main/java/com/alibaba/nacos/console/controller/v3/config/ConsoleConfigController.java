@@ -134,6 +134,7 @@ public class ConsoleConfigController {
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setSrcType(Constants.HTTP);
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));

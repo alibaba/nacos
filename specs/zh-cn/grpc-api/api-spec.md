@@ -21,6 +21,8 @@
 业务 API 由 Java payload 类型表达。Payload 身份必须与
 [资源模型规范](../design/resource-model-spec.md)对齐，公开客户端行为必须与
 [SDK 规范](../sdk/sdk-spec.md)对齐。
+服务端请求过滤和运行时上下文模型由
+[请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义。
 
 ## 1. 设计模型
 
@@ -91,16 +93,27 @@ Java 客户端可通过 `nacos.server.grpc.port.offset` 覆盖端口偏移。服
 部分处理器带有 `@InvokeSource` 注解。存在该注解时，只有列出的来源标签可以
 调用对应 payload 类型。
 
+服务端间来源规则、handler 注册、服务端身份和集群请求重试边界由
+[内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)定义。
+
 ## 4. 连接生命周期
 
-1. 客户端打开 `BiRequestStream.requestBiStream`。
-2. 流上的第一个 payload 应为 `ConnectionSetupRequest`。
-3. 服务端根据 connection id、远端地址、客户端版本、命名空间、labels 和
-   ability table 创建 `Connection`。
-4. 如果客户端发送 ability table，服务端返回包含服务端能力的
+服务端连接生命周期细节由
+[远程连接生命周期规范](../design/foundation-remote-connection-spec.md)定义。客户端侧 server
+selection、reconnect、TLS 和能力协商行为由[客户端运行时规范](../client/README.md)定义，
+尤其是[客户端连接与故障切换规范](../client/client-connection-failover-spec.md)和
+[客户端能力协商规范](../client/client-ability-negotiation-spec.md)。本节仅总结公开 gRPC 流程。
+请求上下文初始化、request filter、鉴权/Control 钩子和参数提取由
+[请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义。
+
+1. 客户端通过 unary `ServerCheckRequest` 校验选中服务端可用性，并获取 connection id。
+   服务端返回 `ServerCheckResponse`。
+2. 客户端打开 `BiRequestStream.requestBiStream`。
+3. 流上的第一个 payload 应为 `ConnectionSetupRequest`。
+4. 服务端根据 connection id、远端地址、客户端版本、命名空间、labels 和
+   ability table 创建并注册 `Connection`。
+5. 如果客户端发送 ability table，服务端返回包含服务端能力的
    `SetupAckRequest`。
-5. 客户端通过 unary `ServerCheckRequest` 校验连接可用性，服务端返回
-   `ServerCheckResponse`。
 6. unary 业务请求只有在连接已注册后才会被接受。
 7. 服务端推送请求通过双向流发送，客户端以 `NotifySubscriberResponse`、
    `ConfigChangeNotifyResponse` 或与 `PushAckRequest` 相关的响应返回 ack。
@@ -128,6 +141,7 @@ Java 客户端可通过 `nacos.server.grpc.port.offset` 覆盖端口偏移。服
 
 gRPC 鉴权由 `RemoteRequestAuthFilter` 执行。共享身份、资源和动作语义由
 [鉴权与权限规范](../auth/auth-permission-spec.md)定义。
+filter 执行契约由[请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义。
 
 需要身份、权限或服务端身份校验的处理器，应在 `handle(...)` 上添加
 `@Secured`。该 filter 会：
@@ -139,7 +153,9 @@ gRPC 鉴权由 `RemoteRequestAuthFilter` 执行。共享身份、资源和动作
 - 校验身份和 action 权限。
 
 集群内部 API 应使用 `ApiType.INNER_API`，并通过
-`@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})` 限制调用来源。
+`@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})` 限制调用来源。服务端间
+inner 请求的详细规则由
+[内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)定义。
 
 ## 7. Payload 清单
 
@@ -148,13 +164,13 @@ gRPC 鉴权由 `RemoteRequestAuthFilter` 执行。共享身份、资源和动作
 | Request type | Response type | 方向 | 鉴权/来源 | 契约 |
 | --- | --- | --- | --- | --- |
 | `ConnectionSetupRequest` | `SetupAckRequest` | stream | 建连 | 使用客户端版本、命名空间、labels 和 ability table 注册 gRPC 连接。 |
-| `ServerCheckRequest` | `ServerCheckResponse` | unary | 已注册连接 | 校验当前连接并返回 connection id 和能力协商支持情况。 |
+| `ServerCheckRequest` | `ServerCheckResponse` | unary | 无 | stream setup 前校验选中服务端，并返回 connection id 和能力协商支持情况。 |
 | `HealthCheckRequest` | `HealthCheckResponse` | unary | 无 | keep-alive 健康检查。 |
 | `ClientDetectionRequest` | `ClientDetectionResponse` | stream push | 无 | 服务端发起客户端探测。 |
 | `ConnectResetRequest` | `ConnectResetResponse` | stream push | 无 | 要求客户端重连到目标服务端。 |
-| `ServerReloadRequest` | `ServerReloadResponse` | unary | inner，cluster 来源 | 在对端重新加载远程上下文。 |
-| `ServerLoaderInfoRequest` | `ServerLoaderInfoResponse` | unary | inner，cluster 来源 | 查询对端 server loader 指标。 |
-| `MemberReportRequest` | `MemberReportResponse` | unary | inner，cluster 来源 | 上报成员信息并更新成员状态。 |
+| `ServerReloadRequest` | `ServerReloadResponse` | unary | inner，cluster 来源 | 在对端重新加载远程上下文。参见[内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。 |
+| `ServerLoaderInfoRequest` | `ServerLoaderInfoResponse` | unary | inner，cluster 来源 | 查询对端 server loader 指标。参见[内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。 |
+| `MemberReportRequest` | `MemberReportResponse` | unary | inner，cluster 来源 | 按[集群成员规范](../design/foundation-cluster-membership-spec.md)上报成员信息并更新成员状态。 |
 | `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | 已有 handler | 查询节点上的插件可用性。当前代码已有 handler，但 payload 未列入 core payload SPI 文件；注册前不应视为已生效的 gRPC 契约。 |
 
 ### 7.2 Config
@@ -170,7 +186,7 @@ gRPC 鉴权由 `RemoteRequestAuthFilter` 执行。共享身份、资源和动作
 | `ConfigFuzzyWatchChangeNotifyRequest` | `ConfigFuzzyWatchChangeNotifyResponse` | server push | `groupKey`, `changeType` | 通知客户端模糊订阅资源变化。 |
 | `ConfigFuzzyWatchSyncRequest` | `ConfigFuzzyWatchSyncResponse` | server push | `syncType`, `groupKeyPattern`, `contexts`, `totalBatch`, `currentBatch` | 同步模糊订阅初始化或 diff 状态。 |
 | `ClientConfigMetricRequest` | `ClientConfigMetricResponse` | read | `metricsKeys` | 查询客户端配置指标。 |
-| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `isBeta`, `tag`, `grayName` | 在服务端节点之间同步配置变更事件。 |
+| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `isBeta`, `tag`, `grayName` | 通过[内部 RPC 模型](../design/foundation-internal-rpc-spec.md)在服务端节点之间同步配置变更事件；Config Notify 语义由[AP 一致性规范](../design/foundation-ap-consistency-spec.md)定义。 |
 
 ### 7.3 Naming
 
@@ -186,9 +202,11 @@ gRPC 鉴权由 `RemoteRequestAuthFilter` 执行。共享身份、资源和动作
 | `NamingFuzzyWatchRequest` | `NamingFuzzyWatchResponse` | read | `namespace`, `groupKeyPattern`, `receivedGroupKeys`, `watchType`, `isInitializing` | 添加或取消服务 key 模糊订阅。 |
 | `NamingFuzzyWatchChangeNotifyRequest` | `NamingFuzzyWatchChangeNotifyResponse` | server push | `serviceKey`, `changedType` | 通知客户端模糊订阅服务变化。 |
 | `NamingFuzzyWatchSyncRequest` | `NamingFuzzyWatchSyncResponse` | server push | `groupKeyPattern`, `contexts`, `totalBatch`, `currentBatch` | 同步模糊订阅初始化或 diff 状态。 |
-| `DistroDataRequest` | `DistroDataResponse` | inner | `distroData`, `dataOperation` | 服务端节点之间的 Distro AP 协议数据传输。 |
+| `DistroDataRequest` | `DistroDataResponse` | inner | `distroData`, `dataOperation` | 通过[内部 RPC 模型](../design/foundation-internal-rpc-spec.md)进行服务端节点之间的 Distro AP 协议数据传输；Distro 语义由[AP 一致性规范](../design/foundation-ap-consistency-spec.md)定义。 |
 
 ### 7.4 AI
+
+AI payload 语义由 [AI Registry 规范](../ai/ai-registry-spec.md)和各资源类型规范定义。
 
 | Request type | Response type | 动作 | 主要字段 | 契约 |
 | --- | --- | --- | --- | --- |
@@ -206,6 +224,9 @@ Skill ZIP 下载和 AgentSpec 组装属于 Java SDK interface 能力，但当前
 
 ### 7.5 Lock
 
+Lock 领域语义由[分布式锁规范](../lock/lock-spec.md)定义。当前 gRPC 入口仍为实验性能力，
+可能随该领域一起变化。
+
 | Request type | Response type | 动作 | 主要字段 | 契约 |
 | --- | --- | --- | --- | --- |
 | `LockOperationRequest` | `LockOperationResponse` | handler 未声明 | `lockInstance`, `lockOperationEnum` | 尝试获取或释放 Nacos 分布式锁。 |
@@ -221,3 +242,6 @@ Skill ZIP 下载和 AgentSpec 组装属于 Java SDK interface 能力，但当前
 6. 请求字段保持显式且 JSON 兼容。
 7. 当操作暴露为公开 SDK interface 时，同步更新本规范和
    [SDK interface 规范](../sdk/sdk-spec.md)。
+8. 对于服务端间 payload，还应同步更新
+   [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)，或拥有该集群请求语义的
+   领域规范。

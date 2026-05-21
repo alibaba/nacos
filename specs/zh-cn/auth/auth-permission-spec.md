@@ -22,6 +22,8 @@
 传输协议相关细节由 [HTTP 鉴权规范](../http-api/authorization-spec.md) 和
 [gRPC API 规范](../grpc-api/api-spec.md) 定义。插件契约由
 [鉴权插件规范](auth-plugin-spec.md) 和 [可见性插件规范](visibility-plugin-spec.md) 定义。
+传输过滤器执行和 `AuthContext` 写入由
+[请求过滤与运行时上下文规范](../design/foundation-request-context-spec.md)定义。
 
 Nacos 授权模型可以表示为：
 
@@ -94,7 +96,7 @@ Nacos 将请求级授权和数据级可见性分开处理。
 | `NAMING` | 服务发现和注册资源。 |
 | `AI` | MCP、Prompt、Agent、Tool 等 AI 注册中心资源。 |
 | `CONSOLE` | 用户、角色、权限等控制台管理资源。 |
-| `LOCK` | 锁资源。 |
+| `LOCK` | [锁资源](../lock/lock-spec.md)。 |
 | `SPECIFIED` | 由受保护端点显式提供的资源字符串。 |
 
 ### `ActionTypes`

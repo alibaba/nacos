@@ -101,18 +101,19 @@ NamespaceId -> Group/resourceType -> resourceName
 
 配置领域管理由 namespace、group 和 dataId 标识的动态配置资源。它负责配置内容、
 type、md5、元数据、监听、模糊订阅、灰度/beta 发布、历史、回滚、dump 和
-failover 相关行为。
+failover 相关行为。详细规则由 [Config 规范](../config/config-spec.md)定义。
 
 ### 4.2 注册中心领域
 
 注册中心领域管理由 namespace、group 和 service name 标识的服务发现资源。它负责
-服务元数据、实例、集群、健康状态、临时和持久化语义、订阅者、客户端视图和
-服务变化推送。
+服务元数据、实例、集群、健康状态、临时服务和持久服务语义、订阅者、客户端视图和
+服务变化推送。详细规则由 [Naming 规范](../naming/naming-spec.md)定义。
 
 ### 4.3 AI Registry 领域
 
-AI Registry 领域管理 MCP Server、A2A AgentCard、Prompt、Skill 和 AgentSpec 等
-AI 资源。AI 资源使用 `NamespaceId -> resourceType -> resourceName` 作为顶层身份。
+[AI Registry 领域](../ai/ai-registry-spec.md)管理 MCP Server、A2A AgentCard、
+Prompt、Skill 和 AgentSpec 等 AI 资源。AI 资源使用
+`NamespaceId -> resourceType -> resourceName` 作为顶层身份。
 它负责 AI 资源元数据、版本、标签、可见性、端点、工具或 Skill 描述、发布流水线
 状态、下载分发和面向审计的追踪信息。
 
@@ -121,8 +122,12 @@ namespace、API、SDK、鉴权、插件和资源治理原则。
 
 ### 4.4 Core 和运维领域
 
-Core 领域负责 namespace 管理、集群成员、服务端状态、readiness/liveness、连接
-管理、日志级别操作、插件状态和其他服务端控制面资源。
+[Core 运维领域](../core/core-operations-spec.md)负责 namespace 管理、
+[集群成员](foundation-cluster-membership-spec.md)、服务端状态、
+readiness/liveness、[服务端生命周期与环境](foundation-server-lifecycle-env-spec.md)、
+[连接管理](foundation-remote-connection-spec.md)、
+[请求过滤与运行时上下文](foundation-request-context-spec.md)、
+[内部 RPC](foundation-internal-rpc-spec.md)、日志级别操作、插件状态和其他服务端控制面资源。
 
 这些能力天然属于管理能力，应通过 Admin API、Console API 或 Maintainer SDK 暴露，
 而不是通过运行时 Client SDK 暴露。
@@ -152,6 +157,19 @@ Nacos 模块应遵循以下职责边界：
 - `api`、`client` 和 `client-basic` 定义公开客户端模型、SDK interface 和传输契约。
 - `config`、`naming` 和 `ai` 负责各自领域资源行为。
 - `core` 负责集群、namespace、服务端、插件和运维基础能力。
+- `common`、`consistency` 和 `persistence` 提供事件、任务、AP/CP 协议和存储等共享基础能力。
+  Core member 和连接边界进一步由[集群成员规范](foundation-cluster-membership-spec.md)和
+  [远程连接生命周期规范](foundation-remote-connection-spec.md)定义，服务端生命周期和请求上下文边界由
+  [服务端生命周期与环境配置规范](foundation-server-lifecycle-env-spec.md)和
+  [请求过滤与运行时上下文规范](foundation-request-context-spec.md)定义，服务端间请求边界由
+  [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)定义，AP/CP 一致性边界由
+  [AP 一致性规范](foundation-ap-consistency-spec.md)和
+  [CP 一致性规范](foundation-cp-consistency-spec.md)定义，持久化与 dump 边界由
+  [持久化与 Dump 规范](foundation-persistence-dump-spec.md)定义，任务和事件边界由
+  [任务执行规范](foundation-task-execution-spec.md)和
+  [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)定义，可观测边界由
+  [可观测钩子规范](foundation-observability-hooks-spec.md)定义，其他基础能力边界由
+  [基础能力规范](foundation-capabilities-spec.md)定义。
 - `auth` 和 plugin 模块负责可扩展的安全与策略行为。
 - `maintainer-client` 基于 Admin API 语义暴露类型化 Java 管理入口。
 - `console` 暴露面向 UI 的后端 API，不应独立重新定义领域语义。
@@ -170,7 +188,16 @@ Nacos 模块应遵循以下职责边界：
 - 服务端和集群资源需要显式管理控制和运维安全。
 
 实现可以使用数据库持久化、本地缓存、Distro、Raft 或其他机制，但公开语义必须
-通过领域规范表达，而不是通过存储实现细节表达。
+通过领域规范表达，而不是通过存储实现细节表达。[服务端生命周期](foundation-server-lifecycle-env-spec.md)、
+[member](foundation-cluster-membership-spec.md)、[连接生命周期](foundation-remote-connection-spec.md)、
+[请求过滤](foundation-request-context-spec.md)、[内部 RPC](foundation-internal-rpc-spec.md)、
+[AP 一致性](foundation-ap-consistency-spec.md)、
+[CP 一致性](foundation-cp-consistency-spec.md)、
+[持久化与 dump](foundation-persistence-dump-spec.md)、
+[任务执行](foundation-task-execution-spec.md)和
+[事件分发](foundation-event-dispatch-spec.md)，以及
+[可观测钩子](foundation-observability-hooks-spec.md)的通用基础要求由
+[基础能力规范](foundation-capabilities-spec.md)及其子规范定义。
 
 ## 8. 新功能设计规则
 

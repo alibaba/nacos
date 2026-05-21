@@ -107,7 +107,8 @@ not corrupt the committed config state.
 
 Execution order is evaluated after filtering disabled plugins. Before plugins
 run synchronously before the mutation. After plugins are scheduled through the
-config executor and must be treated as asynchronous.
+config executor and must be treated as asynchronous. That scheduling follows
+the [Task Execution Spec](../design/foundation-task-execution-spec.md).
 
 Before plugins must preserve argument order and type when replacing arguments.
 After plugins must not assume that their side effects can roll back the already

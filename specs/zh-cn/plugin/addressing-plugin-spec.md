@@ -30,7 +30,7 @@ Java 客户端 server list 发现面。
 寻址是扩展相邻机制，而不是当前统一插件类型。它仍放在插件规范树中，是因为官方扩展文档
 历史上将基于 address-server 的 lookup 描述为扩展点。共享扩展规则由
 [Nacos 插件化规范](plugin-spec.md) 定义，集群成员关系仍属于
-[Nacos 设计规范](../design/nacos-design-spec.md)。
+[集群成员规范](../design/foundation-cluster-membership-spec.md)。
 
 ## 概念
 
@@ -125,8 +125,9 @@ nacos.core.member.lookup.type=address-server
 
 ## 兼容性预期
 
-寻址扩展必须保持 member 身份格式、集群成员更新语义、监听器通知行为和关闭行为。扩展不得
-绕过集群成员校验，也不得注入地址含义不明确的成员。
+寻址扩展必须保持[集群成员规范](../design/foundation-cluster-membership-spec.md)定义的 member
+身份格式和更新语义，包括 listener 通知行为和关闭行为。扩展不得绕过集群成员校验，也不得注入地址
+含义不明确的成员。
 
 如果某个部署使用外部寻址 SPI，它应表现为单个被选择的 member lookup 服务，并必须记录自身
 配置 key。

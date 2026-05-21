@@ -319,13 +319,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 "No draft version to submit for prompt: " + promptKey);
         }
         
-        AiResourceVersion v =
-            resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
-                target);
-        if (v == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "Prompt version not found: " + promptKey + "@" + target);
-        }
+        // Guard: only draft version can be submitted for review (throws on missing / non-draft).
+        resourceManager.requireDraftVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, target);
         
         final String finalTarget = target;
         

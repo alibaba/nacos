@@ -113,7 +113,9 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
                 }
             }
         } catch (Throwable throwable) {
-            throwable.printStackTrace();
+            Loggers.SRV_LOG.error(
+                "[fuzzy-watch] scheduled fuzzy-watch context trim failed",
+                throwable);
         }
     }
     

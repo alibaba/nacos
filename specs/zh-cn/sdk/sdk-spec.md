@@ -41,8 +41,8 @@ Client SDK 面向应用运行时访问，应只暴露运行时应用通常需要
 - 查询和订阅应用已知依赖的服务；
 - 注册、解析和订阅运行时 AI 资源，例如 MCP endpoint、A2A agent endpoint、
   Prompt、Skill 和 AgentSpec；
-- 在语言 SDK 支持时，提供分布式锁等可选运行时原语；
-- 管理自身生命周期、本地缓存、监听器和连接。
+- 在语言 SDK 支持时，提供[分布式锁](../lock/lock-spec.md)等可选运行时原语；
+- 按[客户端运行时规范](../client/README.md)管理自身生命周期、本地缓存、监听器和连接。
 
 Client SDK 应避免暴露大范围管理能力，包括：
 
@@ -87,6 +87,8 @@ SDK 契约是语义契约，而不是传输契约：
 - Client SDK 可以使用 [gRPC](../grpc-api/api-spec.md)、
   [HTTP Open API](../http-api/api-spec.md)、本地缓存文件或多种传输组合，只要
   公开 SDK 行为保持稳定。
+- Client SDK 的连接、server list、能力协商、本地缓存和 redo 行为由
+  [客户端运行时规范](../client/client-runtime-spec.md)定义。
 - Maintainer SDK 应与 Nacos Admin API 的语义和结果模型对齐，即使实现细节未来
   更换传输方式。
 - SDK 模型对象应与 HTTP 和 gRPC 的语义对象对齐，避免同一个业务含义在不同
@@ -103,7 +105,8 @@ Java 目前是定义共享 SDK 语义的基准实现。其他语言 SDK 应对�
 - Maintainer SDK 的 Core、配置、注册中心和 AI 管理能力；
 - namespace、group、dataId、service name、cluster、version、label 等一致的
   数据标识规则；
-- 在语言运行时支持时，保持一致的监听、订阅、重试、超时和本地缓存行为。
+- 在语言运行时支持时，按照[客户端本地缓存与 Redo 规范](../client/client-local-cache-redo-spec.md)
+  保持一致的监听、订阅、重试、超时和本地缓存行为。
 
 语言 SDK 可以按照语言习惯暴露 future、promise、stream、coroutine、callback
 或 context cancellation。这些差异应记录在语言实现规范中，而不是改变共享 SDK

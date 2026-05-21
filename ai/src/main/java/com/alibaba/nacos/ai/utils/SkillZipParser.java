@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -67,39 +67,56 @@ public class SkillZipParser {
     private static final String ESCAPED_DOUBLE_QUOTE = "\\\"";
     private static final String SLASH = "/";
     private static final String DOT = ".";
-    /** Metadata key for binary resources: value "base64" means content is Base64-encoded. */
-    public static final String METADATA_ENCODING = "encoding";
-    public static final String METADATA_ENCODING_BASE64 = "base64";
+    /**
+     * Metadata key for binary resources: value "base64" means content is Base64-encoded.
+     * Kept as constants on this class for backward compatibility with existing callers
+     * (e.g. {@code SkillOperationServiceImpl}); the canonical definition lives on
+     * {@link ResourceContentEncoder}.
+     */
+    public static final String METADATA_ENCODING = ResourceContentEncoder.METADATA_ENCODING;
     
-    /** File extensions treated as binary; content will be stored as Base64. */
-    private static final Set<String> BINARY_EXTENSIONS = new HashSet<>();
+    public static final String METADATA_ENCODING_BASE64 =
+        ResourceContentEncoder.METADATA_ENCODING_BASE64;
     
     /**
-     * Maximum total decompressed size allowed (50MB). Prevents Zip Bomb attacks.
+     * Default maximum compressed (upload) size in MB for a skill ZIP. Derived from the historical
+     * {@link Constants.Skills#MAX_UPLOAD_ZIP_BYTES} so the public constant remains the single
+     * source of truth; runtime callers should consult {@link #resolveMaxUploadBytes()} which
+     * honors the {@value #CONFIG_MAX_UPLOAD_SIZE_MB} override.
      */
-    private static final long MAX_TOTAL_UNCOMPRESSED_BYTES = 50L * 1024 * 1024;
+    static final int DEFAULT_MAX_UPLOAD_SIZE_MB =
+        (int) (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024L / 1024L);
     
     /**
-     * Maximum number of entries allowed in a ZIP file.
+     * Default maximum number of entries allowed in a skill ZIP. Overridable via the
+     * {@value #CONFIG_MAX_ZIP_ENTRIES} property when users legitimately upload larger skills.
      */
-    private static final int MAX_ZIP_ENTRIES = 500;
+    static final int DEFAULT_MAX_ZIP_ENTRIES = 500;
     
-    static {
-        BINARY_EXTENSIONS.add("ttf");
-        BINARY_EXTENSIONS.add("otf");
-        BINARY_EXTENSIONS.add("woff");
-        BINARY_EXTENSIONS.add("woff2");
-        BINARY_EXTENSIONS.add("eot");
-        BINARY_EXTENSIONS.add("png");
-        BINARY_EXTENSIONS.add("jpg");
-        BINARY_EXTENSIONS.add("jpeg");
-        BINARY_EXTENSIONS.add("gif");
-        BINARY_EXTENSIONS.add("webp");
-        BINARY_EXTENSIONS.add("ico");
-        BINARY_EXTENSIONS.add("cur");
-        BINARY_EXTENSIONS.add("pdf");
-        BINARY_EXTENSIONS.add("bin");
-    }
+    /**
+     * Default maximum total decompressed size (in MB) for a skill ZIP. Prevents Zip Bomb attacks
+     * while still permitting legitimate uploads. Overridable via the
+     * {@value #CONFIG_MAX_UNCOMPRESSED_SIZE_MB} property.
+     */
+    static final int DEFAULT_MAX_UNCOMPRESSED_SIZE_MB = 50;
+    
+    /**
+     * Property key for overriding {@link #DEFAULT_MAX_UPLOAD_SIZE_MB}. The value is in megabytes
+     * and applies to the raw compressed skill ZIP before parsing. Non-positive values are ignored.
+     */
+    static final String CONFIG_MAX_UPLOAD_SIZE_MB = "nacos.ai.skill.zip.max-upload-size-mb";
+    
+    /**
+     * Property key for overriding {@link #DEFAULT_MAX_ZIP_ENTRIES}. Non-positive values are ignored.
+     */
+    static final String CONFIG_MAX_ZIP_ENTRIES = "nacos.ai.skill.zip.max-entries";
+    
+    /**
+     * Property key for overriding {@link #DEFAULT_MAX_UNCOMPRESSED_SIZE_MB}. The value is in megabytes.
+     * Non-positive values are ignored.
+     */
+    static final String CONFIG_MAX_UNCOMPRESSED_SIZE_MB =
+        "nacos.ai.skill.zip.max-uncompressed-size-mb";
     
     private static final Pattern YAML_FRONT_MATTER = Pattern.compile(
         "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
@@ -175,7 +192,8 @@ public class SkillZipParser {
     }
     
     /**
-     * Parse skill from zip file bytes. Zip size must not exceed {@link Constants.Skills#MAX_UPLOAD_ZIP_BYTES}.
+     * Parse skill from zip file bytes. Zip size must not exceed the limit returned by
+     * {@link #resolveMaxUploadBytes()} (configurable via {@value #CONFIG_MAX_UPLOAD_SIZE_MB}).
      * Text files are decoded as UTF-8; binary files (by extension) are stored as Base64 with metadata encoding=base64.
      *
      * @param zipBytes zip file bytes
@@ -190,11 +208,12 @@ public class SkillZipParser {
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip file is empty");
         }
-        if (zipBytes.length > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
+        long maxUploadBytes = resolveMaxUploadBytes();
+        if (zipBytes.length > maxUploadBytes) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip size must not exceed "
-                    + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024) + "MB, current: "
+                    + (maxUploadBytes / 1024 / 1024) + "MB, current: "
                     + (zipBytes.length / 1024 / 1024) + "MB");
         }
         try {
@@ -263,11 +282,12 @@ public class SkillZipParser {
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip file is empty");
         }
-        if (zipBytes.length > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
+        long maxUploadBytes = resolveMaxUploadBytes();
+        if (zipBytes.length > maxUploadBytes) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip size must not exceed "
-                    + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024) + "MB, current: "
+                    + (maxUploadBytes / 1024 / 1024) + "MB, current: "
                     + (zipBytes.length / 1024 / 1024) + "MB");
         }
         try {
@@ -424,8 +444,11 @@ public class SkillZipParser {
      * <p>Security hardening:
      * <ul>
      *   <li>Rejects entries with path traversal sequences (..) or absolute paths</li>
-     *   <li>Enforces maximum total decompressed size ({@link #MAX_TOTAL_UNCOMPRESSED_BYTES})</li>
-     *   <li>Enforces maximum number of entries ({@link #MAX_ZIP_ENTRIES})</li>
+     *   <li>Enforces maximum total decompressed size (configurable via
+     *       {@value #CONFIG_MAX_UNCOMPRESSED_SIZE_MB}, default
+     *       {@link #DEFAULT_MAX_UNCOMPRESSED_SIZE_MB} MB)</li>
+     *   <li>Enforces maximum number of entries (configurable via
+     *       {@value #CONFIG_MAX_ZIP_ENTRIES}, default {@link #DEFAULT_MAX_ZIP_ENTRIES})</li>
      * </ul>
      *
      * <p>Security-limit violations are reported as {@link NacosRuntimeException} (not {@link IOException})
@@ -434,6 +457,8 @@ public class SkillZipParser {
      * for the HTTP layer.
      */
     private static List<ZipEntryData> unzipToEntries(byte[] zipBytes) throws IOException {
+        final int maxEntries = resolveMaxZipEntries();
+        final long maxUncompressedBytes = resolveMaxUncompressedBytes();
         List<ZipEntryData> result = new ArrayList<>();
         long totalSize = 0;
         try (ZipArchiveInputStream zis =
@@ -453,19 +478,19 @@ public class SkillZipParser {
                 if (isMacOsxEntry) {
                     continue;
                 }
-                if (result.size() >= MAX_ZIP_ENTRIES) {
+                if (result.size() >= maxEntries) {
                     throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
-                        "ZIP file contains too many entries (max " + MAX_ZIP_ENTRIES + ")");
+                        "ZIP file contains too many entries (max " + maxEntries + ")");
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 int n;
                 while ((n = zis.read(buffer)) != -1) {
                     totalSize += n;
-                    if (totalSize > MAX_TOTAL_UNCOMPRESSED_BYTES) {
+                    if (totalSize > maxUncompressedBytes) {
                         throw new NacosRuntimeException(
                             ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
                             "ZIP decompressed size exceeds limit ("
-                                + (MAX_TOTAL_UNCOMPRESSED_BYTES / 1024 / 1024) + "MB)");
+                                + (maxUncompressedBytes / 1024 / 1024) + "MB)");
                     }
                     out.write(buffer, 0, n);
                 }
@@ -473,6 +498,54 @@ public class SkillZipParser {
             }
         }
         return result;
+    }
+    
+    /**
+     * Resolve the maximum compressed (upload) size in bytes, honoring the
+     * {@value #CONFIG_MAX_UPLOAD_SIZE_MB} override (interpreted in megabytes) when present and
+     * positive. Returns {@link #DEFAULT_MAX_UPLOAD_SIZE_MB} MB otherwise. Keep this in sync with
+     * the Spring multipart cap ({@code spring.servlet.multipart.max-file-size}); the multipart
+     * filter rejects oversize uploads first, but operators raising the multipart cap also need
+     * to raise this property for the change to take effect on the skill upload pipeline.
+     */
+    static long resolveMaxUploadBytes() {
+        int mb = resolvePositiveIntProperty(CONFIG_MAX_UPLOAD_SIZE_MB, DEFAULT_MAX_UPLOAD_SIZE_MB);
+        return (long) mb * 1024L * 1024L;
+    }
+    
+    /**
+     * Resolve the maximum number of ZIP entries allowed, honoring the
+     * {@value #CONFIG_MAX_ZIP_ENTRIES} override when present and positive.
+     * Returns {@link #DEFAULT_MAX_ZIP_ENTRIES} when no override is configured or when the
+     * Nacos environment has not been initialized (e.g. in unit tests that bypass Spring boot-up).
+     */
+    static int resolveMaxZipEntries() {
+        return resolvePositiveIntProperty(CONFIG_MAX_ZIP_ENTRIES, DEFAULT_MAX_ZIP_ENTRIES);
+    }
+    
+    /**
+     * Resolve the maximum total decompressed size in bytes, honoring the
+     * {@value #CONFIG_MAX_UNCOMPRESSED_SIZE_MB} override (interpreted in megabytes) when present
+     * and positive. Returns {@link #DEFAULT_MAX_UNCOMPRESSED_SIZE_MB} MB otherwise.
+     */
+    static long resolveMaxUncompressedBytes() {
+        int mb = resolvePositiveIntProperty(
+            CONFIG_MAX_UNCOMPRESSED_SIZE_MB, DEFAULT_MAX_UNCOMPRESSED_SIZE_MB);
+        return (long) mb * 1024L * 1024L;
+    }
+    
+    /**
+     * Read an int-valued property from {@link EnvUtil}, returning {@code defaultValue} whenever
+     * the override is missing, non-positive, or the environment has not yet been initialized.
+     * Non-positive overrides are deliberately rejected so misconfiguration cannot silently
+     * disable the underlying security guards.
+     */
+    private static int resolvePositiveIntProperty(String key, int defaultValue) {
+        if (EnvUtil.getEnvironment() == null) {
+            return defaultValue;
+        }
+        Integer configured = EnvUtil.getProperty(key, Integer.class);
+        return configured != null && configured > 0 ? configured : defaultValue;
     }
     
     private static ZipEntryData findSkillMdEntry(List<ZipEntryData> entries) {
@@ -568,21 +641,14 @@ public class SkillZipParser {
                 continue;
             }
             
-            boolean isBinary = isBinaryResource(resourceName);
-            String content;
-            Map<String, Object> metadata = new HashMap<>(4);
-            if (isBinary) {
-                content = Base64.getEncoder().encodeToString(entry.data);
-                metadata.put(METADATA_ENCODING, METADATA_ENCODING_BASE64);
-            } else {
-                content = new String(entry.data, StandardCharsets.UTF_8);
-            }
+            ResourceContentEncoder.EncodedContent encoded =
+                ResourceContentEncoder.encode(entry.data, resourceName);
             
             SkillResource resource = new SkillResource();
             resource.setName(resourceName);
             resource.setType(type);
-            resource.setContent(content);
-            resource.setMetadata(metadata.isEmpty() ? null : metadata);
+            resource.setContent(encoded.getContent());
+            resource.setMetadata(encoded.getMetadata());
             // Use same key as getSkillDetail so resource map is consistent when skill is read back
             String key = SkillUtils.generateResourceId(type, resourceName);
             resources.put(key, resource);
@@ -592,17 +658,14 @@ public class SkillZipParser {
     }
     
     /**
-     * check is binary
-     * @param fileName file name
-     * @return
+     * Check whether a resource should be persisted as Base64-encoded binary content.
+     * Backward-compatible facade over {@link ResourceContentEncoder#isBinary(String)}.
+     *
+     * @param fileName resource file name (with extension)
+     * @return {@code true} when the file is not in the text whitelist
      */
     public static boolean isBinaryResource(String fileName) {
-        if (StringUtils.isBlank(fileName) || !fileName.contains(DOT)) {
-            return false;
-        }
-        String ext =
-            fileName.substring(fileName.lastIndexOf(DOT.charAt(0)) + 1).trim().toLowerCase();
-        return BINARY_EXTENSIONS.contains(ext);
+        return ResourceContentEncoder.isBinary(fileName);
     }
     
     private static final class ZipEntryData {

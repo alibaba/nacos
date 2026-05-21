@@ -45,6 +45,8 @@ import java.util.List;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -305,6 +307,35 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         //execute & verify
         int count = embeddedConfigInfoTagPersistService.configInfoTagCount();
         assertEquals(308, count);
+    }
+    
+    @Test
+    void testConfigInfoTagCountThrowsWhenResultNull() {
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(Integer.class))).thenReturn(null);
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> embeddedConfigInfoTagPersistService.configInfoTagCount());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4TagReturnsFalseWhenStateMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        
+        ConfigOperateResult result = embeddedConfigInfoTagPersistService.updateConfigInfo4Tag(
+            configInfo, "tag", "srcIp", "srcUser");
+        
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4TagCasReturnsFalseWhenBlockUpdateFails() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", "app", "content");
+        Mockito.when(databaseOperate.blockUpdate()).thenReturn(false);
+        
+        ConfigOperateResult result = embeddedConfigInfoTagPersistService.updateConfigInfo4TagCas(
+            configInfo, "tag", "srcIp", "srcUser");
+        
+        assertFalse(result.isSuccess());
     }
     
     @Test

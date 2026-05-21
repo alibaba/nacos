@@ -30,8 +30,10 @@ The Java SDK has two public families:
   interfaces under the `maintainer-client` module.
 
 The Java Client SDK is the baseline for existing runtime application behavior.
-The Java Maintainer SDK is the preferred Java entry point for management, UI,
-gateway, and operation scenarios.
+Its connection, server list, ability negotiation, local cache, and redo behavior
+is defined by the [Client Runtime Specs](../client/README.md). The Java
+Maintainer SDK is the preferred Java entry point for management, UI, gateway,
+and operation scenarios.
 
 ## 2. Java Client SDK Factories and Lifecycle
 
@@ -163,6 +165,8 @@ a compatibility surface.
 ### 5.3 AiService and A2aService
 
 `AiService` extends `A2aService`.
+Resource semantics are defined by the [AI Registry Spec](../ai/ai-registry-spec.md)
+and the individual AI resource type specs.
 
 | Capability | Methods | Contract |
 | --- | --- | --- |
@@ -183,6 +187,9 @@ interface. The public interface contract should stay independent from transport
 details.
 
 ### 5.4 LockService
+
+`LockService` is an experimental runtime primitive. Its domain semantics are
+defined by the [Distributed Lock Spec](../lock/lock-spec.md).
 
 | Capability | Methods | Contract |
 | --- | --- | --- |

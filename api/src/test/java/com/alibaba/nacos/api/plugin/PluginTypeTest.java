@@ -96,12 +96,20 @@ class PluginTypeTest {
     }
     
     @Test
+    @DisplayName("test AI_RESOURCE_IMPORT enum values")
+    void testAiResourceImportEnumValues() {
+        assertEquals("ai-resource-import", PluginType.AI_RESOURCE_IMPORT.getType());
+        assertEquals("AI resource import plugin", PluginType.AI_RESOURCE_IMPORT.getDescription());
+    }
+    
+    @Test
     @DisplayName("test fromType with valid type")
     void testFromTypeWithValidType() {
         assertEquals(PluginType.AUTH, PluginType.fromType("auth"));
         assertEquals(PluginType.ENCRYPTION, PluginType.fromType("encryption"));
         assertEquals(PluginType.AI_PIPELINE, PluginType.fromType("ai-pipeline"));
         assertEquals(PluginType.AI_STORAGE, PluginType.fromType("ai-storage"));
+        assertEquals(PluginType.AI_RESOURCE_IMPORT, PluginType.fromType("ai-resource-import"));
     }
     
     @Test
@@ -118,7 +126,7 @@ class PluginTypeTest {
     @DisplayName("test all enum values count")
     void testAllEnumValuesCount() {
         PluginType[] values = PluginType.values();
-        assertEquals(10, values.length);
+        assertEquals(11, values.length);
     }
     
     @Test
@@ -127,5 +135,6 @@ class PluginTypeTest {
         assertEquals(PluginType.AUTH, PluginType.valueOf("AUTH"));
         assertEquals(PluginType.ENCRYPTION, PluginType.valueOf("ENCRYPTION"));
         assertEquals(PluginType.AI_PIPELINE, PluginType.valueOf("AI_PIPELINE"));
+        assertEquals(PluginType.AI_RESOURCE_IMPORT, PluginType.valueOf("AI_RESOURCE_IMPORT"));
     }
 }

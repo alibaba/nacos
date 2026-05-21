@@ -102,6 +102,24 @@ class ConfigOpenApiControllerTest {
     }
     
     @Test
+    void testGetConfigNonExistGrayWithoutMatchedGray()
+        throws NacosApiException, UnsupportedEncodingException {
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setContent(null);
+        response.setEncryptedDataKey(null);
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId("test");
+        configForm.setGroupName("test");
+        
+        Result<ConfigQueryResponse> actual = configOpenApiController.getConfig(configForm);
+        
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode(), actual.getCode());
+    }
+    
+    @Test
     void testGetConfigExistBeta() throws NacosApiException, UnsupportedEncodingException {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         response.setContent("test");

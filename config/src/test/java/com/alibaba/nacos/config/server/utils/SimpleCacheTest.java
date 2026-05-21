@@ -37,4 +37,13 @@ class SimpleCacheTest {
         assertNull(value);
     }
     
+    @Test
+    void testPutIgnoresNullKeyOrValue() {
+        SimpleCache<String> simpleCache = new SimpleCache<>();
+        simpleCache.put(null, "value", 1000);
+        simpleCache.put("key", null, 1000);
+        
+        assertNull(simpleCache.get("key"));
+    }
+    
 }

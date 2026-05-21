@@ -39,7 +39,9 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,7 +52,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -148,6 +152,28 @@ class ExternalDataSourceServiceImplTest {
             verify(jt).setDataSource(any(DataSource.class));
             verify(oldJt).setDataSource(null);
             verify(dataSource).close();
+        } finally {
+            DatasourceConfiguration.setUseExternalDb(false);
+            EnvUtil.setEnvironment(null);
+        }
+    }
+    
+    @Test
+    void testReloadPropagatesIllegalStateException() {
+        try {
+            MockEnvironment environment = new MockEnvironment();
+            EnvUtil.setEnvironment(environment);
+            environment.setProperty("db.num", "1");
+            environment.setProperty("db.user", "user");
+            environment.setProperty("db.password", "password");
+            environment.setProperty("db.url.0", "1.1.1.1");
+            environment.setProperty("db.pool.config.driverClassName",
+                "com.alibaba.nacos.persistence.datasource.mock.MockDriver");
+            DatasourceConfiguration.setUseExternalDb(true);
+            ExternalDataSourceServiceImpl spyService = spy(service);
+            doThrow(new IllegalStateException("invalid postgresql schema")).when(spyService)
+                .validatePostgresqlTenantSchema();
+            assertThrows(IllegalStateException.class, spyService::reload);
         } finally {
             DatasourceConfiguration.setUseExternalDb(false);
             EnvUtil.setEnvironment(null);
@@ -300,5 +326,25 @@ class ExternalDataSourceServiceImplTest {
             .thenThrow(
                 new NJdbcException("test"));
         assertDoesNotThrow(() -> service.new SelectMasterTask().run());
+    }
+    
+    @Test
+    void testValidatePostgresqlTenantSchemaSuccess() {
+        Map<String, Object> columnInfo = new HashMap<>();
+        columnInfo.put("is_nullable", "NO");
+        columnInfo.put("column_default", "''::character varying");
+        when(jt.queryForMap(anyString(), any())).thenReturn(columnInfo);
+        
+        assertDoesNotThrow(() -> service.validatePostgresqlTenantSchema(jt));
+    }
+    
+    @Test
+    void testValidatePostgresqlTenantSchemaFailWhenNullable() {
+        Map<String, Object> columnInfo = new HashMap<>();
+        columnInfo.put("is_nullable", "YES");
+        columnInfo.put("column_default", null);
+        when(jt.queryForMap(anyString(), any())).thenReturn(columnInfo);
+        
+        assertThrows(IllegalStateException.class, () -> service.validatePostgresqlTenantSchema(jt));
     }
 }

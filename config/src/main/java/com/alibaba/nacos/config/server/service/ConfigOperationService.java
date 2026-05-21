@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.MapUtil;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
@@ -86,6 +87,8 @@ public class ConfigOperationService {
      */
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo,
         String encryptedDataKey) throws NacosException {
+        configForm
+            .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
@@ -199,6 +202,8 @@ public class ConfigOperationService {
     private Boolean publishConfigGray(String grayType, ConfigForm configForm,
         ConfigRequestInfo configRequestInfo)
         throws NacosException {
+        configForm
+            .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
@@ -303,6 +308,7 @@ public class ConfigOperationService {
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String grayName,
         String clientIp,
         String srcUser, String srcType) {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
         if (StringUtils.isBlank(grayName)) {
             configInfoPersistService.removeConfigInfo(dataId, group, namespaceId, clientIp,

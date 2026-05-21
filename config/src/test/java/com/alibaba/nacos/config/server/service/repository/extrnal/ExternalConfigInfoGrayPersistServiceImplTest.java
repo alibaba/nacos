@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
@@ -51,6 +52,7 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -501,6 +503,70 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
     }
     
     @Test
+    void testAddConfigInfo4GrayWithBlankOptionalValuesReturnsFalseWhenStateMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1));
+        
+        ConfigOperateResult result = externalConfigInfoGrayPersistService.addConfigInfo4Gray(
+            configInfo, " ", " ", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+        Mockito.verify(jdbcTemplate, times(1)).update(anyString(), eq("dataId"), eq("group"),
+            eq(StringUtils.EMPTY), eq(StringUtils.EMPTY), eq(StringUtils.EMPTY),
+            eq(StringUtils.EMPTY), eq("content"), eq(StringUtils.EMPTY),
+            eq(MD5Utils.md5Hex("content", ENCODE)), eq("srcIp"), eq("srcUser"));
+    }
+    
+    @Test
+    void testUpdateConfigInfo4GrayReturnsFalseWhenOldGrayMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1));
+        
+        ConfigOperateResult result = externalConfigInfoGrayPersistService.updateConfigInfo4Gray(
+            configInfo, " ", " ", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4GrayCasReturnsFalseWhenOldGrayMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1));
+        
+        ConfigOperateResult result = externalConfigInfoGrayPersistService.updateConfigInfo4GrayCas(
+            configInfo, " ", " ", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4GrayCasReturnsFalseWhenRowsNotUpdated() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "", null, "content");
+        configInfo.setMd5("oldMd5");
+        ConfigInfoGrayWrapper oldGray = new ConfigInfoGrayWrapper();
+        oldGray.setGrayName("");
+        oldGray.setGrayRule("");
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(oldGray);
+        when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any())).thenReturn(0);
+        
+        ConfigOperateResult result = externalConfigInfoGrayPersistService.updateConfigInfo4GrayCas(
+            configInfo, "", "", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+    }
+    
+    @Test
     void testRemoveConfigInfo() {
         String dataId = "dataId4567";
         String group = "group3456789";
@@ -536,6 +602,31 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
             .thenThrow(
                 new CannotGetJdbcConnectionException("mock fail11111"));
         
+    }
+    
+    @Test
+    void testRemoveConfigInfoReturnsWhenGrayMissing() {
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new EmptyResultDataAccessException(1));
+        
+        externalConfigInfoGrayPersistService.removeConfigInfoGray("dataId", "group", null, "",
+            "srcIp", "srcUser");
+        
+        Mockito.verify(jdbcTemplate, times(0)).update(anyString(), Mockito.<Object[]>any());
+    }
+    
+    @Test
+    void testRemoveConfigInfoRethrowsConnectionException() {
+        when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER)))
+            .thenThrow(new CannotGetJdbcConnectionException("mock fail"));
+        
+        assertThrows(CannotGetJdbcConnectionException.class,
+            () -> externalConfigInfoGrayPersistService.removeConfigInfoGray("dataId", "group",
+                null, "", "srcIp", "srcUser"));
     }
     
     @Test
@@ -621,6 +712,28 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(101);
         int returnCount = externalConfigInfoGrayPersistService.configInfoGrayCount();
         assertEquals(101, returnCount);
+    }
+    
+    @Test
+    void testConfigInfoGrayCountRejectsNullResult() {
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(null);
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> externalConfigInfoGrayPersistService.configInfoGrayCount());
+    }
+    
+    @Test
+    void testFindConfigInfoGraysUsesEmptyTenant() {
+        List<String> grayNames = new ArrayList<>();
+        grayNames.add("gray");
+        when(jdbcTemplate.queryForList(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY}), eq(String.class)))
+            .thenReturn(grayNames);
+        
+        List<String> result = externalConfigInfoGrayPersistService.findConfigInfoGrays(
+            "dataId", "group", null);
+        
+        assertEquals(grayNames, result);
     }
     
     @Test

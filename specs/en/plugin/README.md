@@ -45,6 +45,7 @@ follow [HTTP API](../http-api/api-spec.md) rules when exposing HTTP endpoints.
 
 - [AI Publish Pipeline Plugin Spec](ai-pipeline-plugin-spec.md)
 - [AI Storage Plugin Spec](ai-storage-plugin-spec.md)
+- [AI Resource Import Plugin Spec](ai-resource-import-plugin-spec.md)
 
 ## Security Extensions
 

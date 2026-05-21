@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Sun,
@@ -31,6 +32,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { ChangePasswordDialog } from '@/components/layout/change-password-dialog';
 
 function getBaseUrl(language: string) {
   return language.toLowerCase() === 'en-us' ? 'https://nacos.io/en/' : 'https://nacos.io/';
@@ -65,6 +67,7 @@ export function Header() {
   const { username, logout, isOidcUser } = useAuthStore();
   const { currentNamespace, namespaces, setNamespace } = useNamespaceStore();
   const { authEnabled } = useServerStore();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const baseUrl = getBaseUrl(language);
 
@@ -164,6 +167,9 @@ export function Header() {
         </Tooltip>
 
         {/* User menu */}
+        {authEnabled && !isOidcUser() && (
+          <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
+        )}
         {authEnabled && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -181,7 +187,13 @@ export function Header() {
             <DropdownMenuSeparator />
             {!isOidcUser() && (
               <>
-                <DropdownMenuItem className="gap-2 text-xs">
+                <DropdownMenuItem
+                  className="gap-2 text-xs"
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setChangePasswordOpen(true);
+                  }}
+                >
                   <KeyRound size={14} />
                   {t('header.changePassword')}
                 </DropdownMenuItem>

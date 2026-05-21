@@ -28,7 +28,7 @@ This is a routed storage plugin. Multiple storage providers may be registered.
 Each `StorageKey.provider` selects one `AiResourceStorage`.
 
 Storage is intentionally separated from
-[AI resource metadata](../design/resource-model-spec.md). The AI domain owns
+[AI resource metadata](../ai/ai-resource-model-spec.md). The AI domain owns
 resource identity, versions, labels, visibility, and lifecycle. Storage plugins
 only own content bytes for an opaque storage key.
 

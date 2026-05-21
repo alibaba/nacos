@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.utils;
 
-import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
@@ -329,11 +328,12 @@ public class SkillRequestUtil {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.DATA_EMPTY,
                 "File is required");
         }
-        if (file.getSize() > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
+        long maxUploadBytes = SkillZipParser.resolveMaxUploadBytes();
+        if (file.getSize() > maxUploadBytes) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Skill zip size must not exceed "
-                    + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
+                    + (maxUploadBytes / 1024 / 1024)
                     + "MB, current: " + (file.getSize() / 1024 / 1024) + "MB");
         }
         try {

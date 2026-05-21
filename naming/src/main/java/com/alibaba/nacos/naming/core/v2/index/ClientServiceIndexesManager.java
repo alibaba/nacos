@@ -55,13 +55,13 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     public Collection<String> getAllClientsRegisteredService(Service service) {
-        return publisherIndexes.containsKey(service) ? publisherIndexes.get(service)
-            : new ConcurrentHashSet<>();
+        Set<String> publishers = publisherIndexes.get(service);
+        return publishers != null ? publishers : new ConcurrentHashSet<>();
     }
     
     public Collection<String> getAllClientsSubscribeService(Service service) {
-        return subscriberIndexes.containsKey(service) ? subscriberIndexes.get(service)
-            : new ConcurrentHashSet<>();
+        Set<String> subscribers = subscriberIndexes.get(service);
+        return subscribers != null ? subscribers : new ConcurrentHashSet<>();
     }
     
     public Collection<Service> getSubscribedService() {

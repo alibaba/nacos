@@ -30,6 +30,8 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslHandler;
 import io.grpc.netty.shaded.io.netty.util.AsciiString;
 import io.grpc.netty.shaded.io.netty.util.Attribute;
 import io.grpc.netty.shaded.io.netty.util.AttributeKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -40,6 +42,9 @@ import java.util.List;
  * @author githubcheng2978.
  */
 public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiator {
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(OptionalTlsProtocolNegotiator.class);
     
     private static final int MAGIC_VALUE = 5;
     
@@ -91,7 +96,8 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
             aDefault.setAccessible(true);
             return (ProtocolNegotiationEvent) aDefault.get(null);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn("Failed to access ProtocolNegotiationEvent.DEFAULT via reflection; "
+                + "the negotiation event will be null, which may break gRPC TLS negotiation", e);
         }
         return null;
     }

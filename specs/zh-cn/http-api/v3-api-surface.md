@@ -34,7 +34,8 @@
 
 本文档不覆盖：
 
-- v1/v2 兼容 API；
+- v1/v2 兼容 API，它们已经外置到
+  [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)；
 - gRPC 请求和响应契约；
 - 未作为 v3 HTTP Controller 暴露的内部集群 API；
 - AI Registry adaptor API，它有独立的兼容性边界。
@@ -127,6 +128,7 @@ Admin API 不兼容 v1/v2 Admin API；如果必须使用 v1/v2 Admin API 兼容�
 Console API 服务于 Nacos Web 控制台，它不是 Open API 的同一稳定性边界。
 它默认使用 `ApiType.CONSOLE_API`，并经常使用控制台专用资源名、
 `ONLY_IDENTITY` 或面向 UI 的响应模型。
+Console 部署、UI 和 handler 边界由 [Console 规范](../console/console-spec.md)定义。
 
 Console API 模块在 UI 需要时会镜像 Admin 模块：
 
@@ -192,4 +194,5 @@ REST 风格 API 替代。这些旧端点应视为废弃兼容 API：
 - Pipeline 中不符合当前 `/list` 和 `/detail` 形态的 legacy REST 风格端点。
 
 兼容端点可以在过渡期内继续保留，但面向用户的文档应以新 API 作为主要契约。
-废弃端点只应出现在兼容章节中，并提供迁移说明。
+废弃端点只应出现在兼容章节中，并按照
+[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)提供迁移说明。

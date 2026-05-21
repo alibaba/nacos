@@ -396,6 +396,23 @@ class PromptOperationServiceImplTest {
         assertThrows(NacosApiException.class, () -> service.submit(NS, PROMPT_KEY, null));
     }
     
+    @Test
+    void testSubmitShouldRejectNonDraftVersion() {
+        AiResource meta =
+            createMeta(PROMPT_KEY, 1L, "{\"labels\":{},\"editingVersion\":\"0.0.1\"}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        // Target version exists but is already online (formal version).
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(createVersionRow("0.0.1", "online"));
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> service.submit(NS, PROMPT_KEY, "0.0.1"));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+        // Status must NOT be flipped to reviewing.
+        verify(aiResourceVersionPersistService, never()).updateStatus(NS, PROMPT_KEY, PROMPT_TYPE,
+            "0.0.1", "reviewing");
+    }
+    
     // ========== publish ==========
     
     @Test

@@ -32,6 +32,10 @@ public enum ConfigChangePointCutTypes {
      */
     PUBLISH_BY_RPC("publishOrUpdateByRpc"),
     /**
+     * Publish config with unknown source type.
+     */
+    PUBLISH_BY_UNKNOWN("publishOrUpdateByUnknown"),
+    /**
      * Remove by id through http.
      */
     REMOVE_BY_HTTP("removeSingleByHttp"),
@@ -39,6 +43,10 @@ public enum ConfigChangePointCutTypes {
      * Remove through rpc.
      */
     REMOVE_BY_RPC("removeSingleByRpc"),
+    /**
+     * Remove with unknown source type.
+     */
+    REMOVE_BY_UNKNOWN("removeSingleByUnknown"),
     /**
      * Import config file through http/console.
      */

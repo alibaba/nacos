@@ -17,6 +17,8 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -44,6 +46,8 @@ import java.util.zip.GZIPOutputStream;
  * @author nacos
  */
 public class IoUtils {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(IoUtils.class);
     
     private IoUtils() {
     }
@@ -91,7 +95,8 @@ public class IoUtils {
         try (GZIPOutputStream gzip = new GZIPOutputStream(out)) {
             gzip.write(str.getBytes(encoding));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn("Failed to compress string with GZIP (encoding={}, length={}); "
+                + "callers will receive a possibly-incomplete byte[]", encoding, str.length(), e);
         }
         return out.toByteArray();
     }

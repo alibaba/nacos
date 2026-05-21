@@ -21,9 +21,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -72,6 +75,28 @@ class ConfigChangeListenContextTest {
         Map<String, String> connectionIdAfter =
             configChangeListenContext.getListenKeys("connectionId");
         assertNull(connectionIdAfter);
+    }
+    
+    @Test
+    void testClearContextForMissingConnectionId() {
+        configChangeListenContext.clearContextForConnectionId("missingConnectionId");
+        
+        assertEquals(0, configChangeListenContext.getConnectionCount());
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void testClearContextRemovesMissingGroupKeyContext() {
+        ConcurrentHashMap<String, HashMap<String, ConfigListenState>> connectionIdContext =
+            (ConcurrentHashMap<String, HashMap<String, ConfigListenState>>) ReflectionTestUtils
+                .getField(configChangeListenContext, "connectionIdContext");
+        HashMap<String, ConfigListenState> listenStates = new HashMap<>(1);
+        listenStates.put("groupKey", new ConfigListenState("md5"));
+        connectionIdContext.put("connectionId", listenStates);
+        
+        configChangeListenContext.clearContextForConnectionId("connectionId");
+        
+        assertNull(configChangeListenContext.getListenKeys("connectionId"));
     }
     
     @Test

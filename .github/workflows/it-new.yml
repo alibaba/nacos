@@ -45,7 +45,32 @@ jobs:
       - name: Wait for Server Startup
         run: |
           echo "Waiting for server to launch on port 8080..."
-          timeout 60s bash -c 'until curl -s localhost:8080 > /dev/null; do sleep 2; done' || (echo "Server failed to start" && exit 1)
+          if ! timeout 60s bash -c 'until curl -s localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Server failed to start"
+            LOG_DIR=$(ls -d distribution/target/nacos-server-*/nacos/logs 2>/dev/null | head -n 1 || true)
+            if [ -n "$LOG_DIR" ]; then
+              echo "::group::Nacos startup.log"
+              if [ -f "$LOG_DIR/startup.log" ]; then
+                tail -300 "$LOG_DIR/startup.log"
+              else
+                echo "startup.log not found"
+              fi
+              echo "::endgroup::"
+              echo "::group::Nacos nacos.log"
+              if [ -f "$LOG_DIR/nacos.log" ]; then
+                tail -300 "$LOG_DIR/nacos.log"
+              else
+                echo "nacos.log not found"
+              fi
+              echo "::endgroup::"
+              echo "::group::Nacos log directory"
+              ls -la "$LOG_DIR"
+              echo "::endgroup::"
+            else
+              echo "Nacos log directory not found"
+            fi
+            exit 1
+          fi
           echo "Server is up"
 
       - name: Run IT Tests

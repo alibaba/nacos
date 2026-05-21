@@ -34,12 +34,12 @@ The layers mean:
 | Layer | Meaning | Scope |
 | --- | --- | --- |
 | `NamespaceId` | Isolation boundary for tenants, teams, environments, or management domains. | All tenant-scoped resources. |
-| `Group/resourceType` | The second-level classifier. Microservice resources use `group`; AI resources use `resourceType`. | Domain-specific. |
+| `Group/resourceType` | The second-level classifier. Microservice resources use conceptual `Group`; AI resources use `resourceType`. | Domain-specific. |
 | `resourceName` | Stable name that identifies a concrete resource within the parent scope. | All named resources. |
 
-`group` and `resourceType` must not be treated as the same field:
+`Group` and `resourceType` must not be treated as the same field:
 
-- `group` is a business grouping for microservice resources, mainly used by
+- `Group` is a business grouping for microservice resources, mainly used by
   configuration and naming resources.
 - `resourceType` is a type classifier for resources that share a governance
   model, mainly used by AI Registry resources.
@@ -85,7 +85,12 @@ by supported interfaces.
 Group is suitable for business isolation inside the same resource family, such
 as application, business line, environment-local grouping, or user-defined
 grouping. Group does not express resource type, so a config and a service may
-exist under the same group.
+exist under the same Group.
+
+When the Group layer is expressed as a concrete public field in new specs,
+HTTP APIs, SDKs, or user-facing documents, the field name should be
+`groupName`. The shorter `group` name is a conceptual term, internal model
+field, or compatibility field.
 
 ### 3.2 resourceType
 
@@ -94,7 +99,7 @@ that contain multiple resource types, such as AI Registry resource types:
 `mcp`, `a2a`, `prompt`, `skill`, and `agentspec`.
 
 resourceType is not a business grouping. AI resources should not introduce a
-group identity field unless a domain spec explicitly defines additional
+Group identity field unless a domain spec explicitly defines additional
 semantics.
 
 ## 4. Third Layer: resourceName
@@ -133,7 +138,7 @@ It covers the traditional Nacos configuration and naming capabilities.
 Config resource identity is:
 
 ```text
-namespaceId -> group -> dataId
+namespaceId -> groupName -> dataId
 ```
 
 Config owns:
@@ -149,6 +154,9 @@ Config owns:
 `dataId` is the resourceName for Config. Config metadata such as `appName`,
 `type`, `desc`, and `configTags` does not change identity.
 
+See the [Config Resource Spec](../config/config-resource-spec.md) for detailed
+rules.
+
 Prompt has a legacy compatibility mapping to config storage with fixed group
 `nacos-ai-prompt` and dataId `{promptKey}.json`. This mapping is a compatibility
 storage shape and must not make Prompt a normal Config resource in new specs.
@@ -158,19 +166,20 @@ storage shape and must not make Prompt a normal Config resource in new specs.
 Naming service resource identity is:
 
 ```text
-namespaceId -> group -> serviceName
+namespaceId -> groupName -> serviceName
 ```
 
 Naming service owns:
 
-- service metadata and selector information;
-- ephemeral or persistent service semantics;
+- service metadata and internal filtering information;
+- ephemeral-service or persistent-service semantics;
 - clusters and health-check configuration;
 - subscribers, publishers, and client connection views;
 - service and instance change events.
 
 Internal grouped names may use `group@@serviceName`, but public APIs and specs
-should prefer separate `group` and `serviceName` fields.
+should prefer separate `groupName` and `serviceName` fields. See the
+[Naming Resource Spec](../naming/naming-resource-spec.md) for detailed rules.
 
 ### 5.3 Cluster And Instance
 
@@ -178,7 +187,7 @@ Cluster and Instance are subordinate resources of a service. They do not change
 the top-level three-layer model.
 
 ```text
-namespaceId -> group -> serviceName -> clusterName -> instance
+namespaceId -> groupName -> serviceName -> clusterName -> instance
 ```
 
 Instance identity is usually determined by service scope, `clusterName`, `ip`,
@@ -188,8 +197,9 @@ Instance contains `ip`, `port`, `clusterName`, `weight`, `healthy`, `enabled`,
 `ephemeral`, `metadata`, and optional `instanceId`. An instance must not be
 interpreted without its service scope.
 
-Ephemeral and persistent semantics affect lifecycle and consistency behavior.
-They must be preserved across HTTP, gRPC, SDK, and storage models.
+Ephemeral-service and persistent-service semantics affect lifecycle and
+consistency behavior. They must be preserved across HTTP, gRPC, SDK, and
+storage models.
 
 ## 6. AI Resource Model
 
@@ -199,8 +209,12 @@ The AI resource model uses:
 NamespaceId -> resourceType -> resourceName
 ```
 
-It covers AI Registry resources such as MCP Server, A2A AgentCard, Prompt,
-Skill, and AgentSpec.
+It covers AI Registry resources such as
+[MCP Server](../ai/mcp-server-spec.md), [A2A AgentCard](../ai/a2a-agent-spec.md),
+[Prompt](../ai/prompt-spec.md), [Skill](../ai/skill-spec.md), and
+[AgentSpec](../ai/agentspec-spec.md). The shared AI model is defined by the
+[AI Registry Spec](../ai/ai-registry-spec.md) and the
+[AI Resource Model Spec](../ai/ai-resource-model-spec.md).
 
 AI resources share governance attributes:
 
@@ -322,11 +336,13 @@ semantics are defined by the
 Status values are domain-specific but must be explicit and documented.
 
 - Config resources use publication, gray/beta, history, and listener state.
-- Naming resources use service, instance, health, enabled, and ephemeral state.
+- Naming resources use service type, instance, health, enabled, and lifecycle
+  state.
 - AI resources use metadata status, version status, labels, pipeline state, and
   visibility state.
-- Core resources use server, member, readiness, liveness, plugin, and connection
-  state.
+- Core resources use server, [member](foundation-cluster-membership-spec.md),
+  readiness, liveness, plugin, and
+  [connection](foundation-remote-connection-spec.md) state.
 
 Runtime APIs should return only states intended for runtime consumers.
 Management APIs may return draft, review, offline, internal, or operational

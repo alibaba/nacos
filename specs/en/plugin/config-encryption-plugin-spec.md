@@ -83,7 +83,9 @@ enabled by the server plugin Admin API, and their order is controlled by
 
 Encrypted configs must store the encrypted content and the protected data key.
 The config persistence schema contains `encrypted_data_key` for this purpose.
-Plain config data keeps `encrypted_data_key` empty.
+Plain config data keeps `encrypted_data_key` empty. Persistence and dump
+boundaries are defined by the
+[Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
 
 The dataId prefix is part of the user-visible contract:
 

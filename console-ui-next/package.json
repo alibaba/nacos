@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "min-release-age": "npm install --legacy-peer-deps $(node -e \"const p=require('./package-lock.json'); const root=p.packages['']; const all={...root.dependencies,...root.devDependencies}; console.log(Object.entries(all).map(([k])=>k+'@'+((p.packages['node_modules/'+k]||{}).version||'?')).join(' '))\")",
     "dev": "vite",
     "build": "tsc -b && vite build && rm -rf ../console/src/main/resources/static/next && cp -r dist ../console/src/main/resources/static/next",
     "lint": "eslint .",

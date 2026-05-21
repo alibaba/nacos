@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.constant.Constants;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,5 +35,13 @@ class UrlAnalysisUtilsTest {
         
         String url3 = "";
         assertNull(UrlAnalysisUtils.getContentIdentity(url3));
+    }
+    
+    @Test
+    void testGetContentIdentityRejectsInvalidContent() {
+        assertNull(UrlAnalysisUtils.getContentIdentity(null));
+        assertNull(UrlAnalysisUtils.getContentIdentity("127.0.0.1:8080\npath"));
+        assertNull(UrlAnalysisUtils.getContentIdentity("127.0.0.1:8080"
+            + Constants.WORD_SEPARATOR + "path"));
     }
 }

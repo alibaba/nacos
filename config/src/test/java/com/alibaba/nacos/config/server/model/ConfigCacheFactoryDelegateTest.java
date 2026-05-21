@@ -29,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Constructor;
 import java.util.Collections;
 
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -92,5 +93,24 @@ class ConfigCacheFactoryDelegateTest {
         configCacheFactoryDelegate.createConfigCacheGray();
         verify(nacosConfigCacheFactory, times(2)).createConfigCache();
         verify(nacosConfigCacheFactory, times(2)).createConfigCacheGray();
+    }
+    
+    @Test
+    public void testConstructorSkipsFactoryWithEmptyName() throws Exception {
+        when(nacosConfigCacheFactory.getName()).thenReturn("");
+        nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheFactory.class))
+            .thenReturn(Collections.singletonList(nacosConfigCacheFactory));
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos"))
+            .thenReturn("nacos");
+        Constructor constructor = ConfigCacheFactoryDelegate.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        
+        ConfigCacheFactoryDelegate configCacheFactoryDelegate =
+            (ConfigCacheFactoryDelegate) constructor.newInstance();
+        configCacheFactoryDelegate.createConfigCache();
+        configCacheFactoryDelegate.createConfigCacheGray();
+        
+        verify(nacosConfigCacheFactory, never()).createConfigCache();
+        verify(nacosConfigCacheFactory, never()).createConfigCacheGray();
     }
 }
