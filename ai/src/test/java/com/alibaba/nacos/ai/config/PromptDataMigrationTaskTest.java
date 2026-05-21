@@ -587,9 +587,6 @@ class PromptDataMigrationTaskTest {
         when(aiResourcePersistService.find(
             eq(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID),
             eq(PROMPT_KEY), eq(RESOURCE_TYPE_PROMPT))).thenReturn(null);
-        when(aiResourceVersionPersistService.find(
-            eq(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID),
-            eq(PROMPT_KEY), eq(RESOURCE_TYPE_PROMPT), eq("0.0.1"))).thenReturn(null);
         
         when(configQueryChainService.handle(any())).thenAnswer(invocation -> {
             com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest req =
