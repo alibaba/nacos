@@ -154,7 +154,10 @@ records. When MCP later migrates to `ai_resource`, only the MCP operator should
 change. Import plugins and unified import APIs must remain compatible.
 
 For Skill, the operator should preserve the Skill package boundary and write
-through the Skill upload or draft lifecycle APIs.
+through the Skill upload or draft lifecycle APIs. After a successful import, if
+the artifact contains `sourceMetadata.artifactUrl`, the Skill operator should
+record that URL as the imported resource source (`ai_resource.c_from`). If
+`artifactUrl` is absent, it should fall back to `sourceMetadata.source`.
 
 ## Built-in Importers
 

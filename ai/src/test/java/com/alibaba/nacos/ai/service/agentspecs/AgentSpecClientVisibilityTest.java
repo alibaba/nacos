@@ -331,6 +331,13 @@ class AgentSpecClientVisibilityTest {
         }
         
         @Override
+        public boolean updateSourceCas(String namespaceId, String name, String type,
+            long expectedMetaVersion,
+            String source) {
+            return false;
+        }
+        
+        @Override
         public int delete(String namespaceId, String name, String type) {
             store.removeIf(r -> namespaceId.equals(r.getNamespaceId()) && name.equals(r.getName())
                 && type.equals(

@@ -903,6 +903,49 @@ class AiResourceManagerTest {
             .updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
     }
     
+    // ---- syncImportedSource ----
+    
+    @Test
+    void syncImportedSourceShouldDoNothingForBlankSource() {
+        manager.syncImportedSource(NAMESPACE_ID, buildMeta("res"), "");
+        
+        verify(aiResourcePersistService, never()).updateSourceCas(anyString(), anyString(),
+            anyString(), anyLong(), anyString());
+    }
+    
+    @Test
+    void syncImportedSourceShouldUpdateSource() {
+        AiResource meta = buildMeta("res");
+        String source =
+            "https://developers.cloudflare.com/.well-known/agent-skills/cloudflare.tar.gz";
+        when(aiResourcePersistService.updateSourceCas(NAMESPACE_ID, "res", RESOURCE_TYPE, 1L,
+            source)).thenReturn(true);
+        
+        manager.syncImportedSource(NAMESPACE_ID, meta, source);
+        
+        verify(aiResourcePersistService).updateSourceCas(NAMESPACE_ID, "res", RESOURCE_TYPE, 1L,
+            source);
+    }
+    
+    @Test
+    void syncImportedSourceShouldRetryOnCasConflict() {
+        AiResource meta = buildMeta("res");
+        AiResource latestMeta = buildMeta("res");
+        latestMeta.setMetaVersion(2L);
+        String source = "https://example.com/skill.tar.gz";
+        when(aiResourcePersistService.updateSourceCas(NAMESPACE_ID, "res", RESOURCE_TYPE, 1L,
+            source)).thenReturn(false);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(latestMeta);
+        when(aiResourcePersistService.updateSourceCas(NAMESPACE_ID, "res", RESOURCE_TYPE, 2L,
+            source)).thenReturn(true);
+        
+        manager.syncImportedSource(NAMESPACE_ID, meta, source);
+        
+        verify(aiResourcePersistService).updateSourceCas(NAMESPACE_ID, "res", RESOURCE_TYPE, 2L,
+            source);
+    }
+    
     // ---- ensureReadableOrNotFound ----
     
     @Test

@@ -36,6 +36,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -114,6 +116,25 @@ class SkillResourceOperatorTest {
         assertEquals("demo-skill", result.getResourceName());
         verify(skillOperationService).uploadSkillFromZip(eq("public"), any(), eq(true),
             eq("1.2.3"));
+    }
+    
+    @Test
+    void testImportSyncsSourceMetadata() throws Exception {
+        AiResource meta = metaWithEditingVersion();
+        when(skillOperationService.uploadSkillFromZip(eq("public"), any(), eq(true),
+            eq("1.2.3"))).thenReturn("demo-skill");
+        when(resourceManager.findMeta("public", "demo-skill", "skill")).thenReturn(meta);
+        AiResourceImportArtifact artifact = artifact();
+        Map<String, String> metadata = new HashMap<>(2);
+        metadata.put("source", "https://developers.cloudflare.com/.well-known/agent-skills");
+        metadata.put("artifactUrl",
+            "https://developers.cloudflare.com/.well-known/agent-skills/cloudflare.tar.gz");
+        artifact.setSourceMetadata(metadata);
+        
+        operator.importResource("public", artifact, true);
+        
+        verify(resourceManager).syncImportedSource("public", meta,
+            "https://developers.cloudflare.com/.well-known/agent-skills/cloudflare.tar.gz");
     }
     
     @Test
