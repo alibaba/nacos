@@ -156,6 +156,41 @@ change. Import plugins and unified import APIs must remain compatible.
 For Skill, the operator should preserve the Skill package boundary and write
 through the Skill upload or draft lifecycle APIs.
 
+## Built-in Importers
+
+The `mcp-registry` importer connects to an operator-configured MCP registry
+endpoint. Search returns MCP Server summaries only, and fetch returns an
+`MCP_DETAIL` artifact that can be written by the MCP resource operator.
+
+The `skills-well-known` importer connects to an operator-configured Skill
+marketplace or registry root. If the source endpoint is not already a
+well-known path, the importer should append `/.well-known/agent-skills`. If the
+endpoint already ends with `/.well-known/agent-skills` or `/.well-known/skills`,
+the importer should use that path directly.
+
+A Skill well-known source should expose `index.json` with this minimum shape:
+
+```json
+{
+  "skills": [
+    {
+      "name": "demo-skill",
+      "description": "Demo skill",
+      "files": [
+        "SKILL.md",
+        "docs/guide.md"
+      ]
+    }
+  ]
+}
+```
+
+Search may return only `name`, `description`, and non-secret metadata. Fetch
+downloads the selected Skill files from `{wellKnownBase}/{skillName}/{file}`,
+validates path safety, assembles a standard Skill ZIP artifact, and passes it to
+the Skill resource operator so it is applied through the normal Skill upload or
+draft lifecycle.
+
 ## API Flow
 
 Nacos should expose unified Admin and Console import APIs:
