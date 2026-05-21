@@ -72,6 +72,20 @@ mvn spotless:apply
 mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -DskipTests
 ```
 
+### Mandatory Formatting Before Commit
+
+Before committing Java code or tests, AI agents MUST run Spotless for the
+affected module or nearest aggregator:
+
+1. Run `mvn spotless:apply` first.
+2. Run `mvn spotless:check` for the same scope.
+3. Then run the relevant compile/check/test command.
+4. Commit only after Spotless and the relevant validation pass.
+
+Do not rely on `checkstyle:check`, `spotbugs:check`, or `git diff --check` as a
+substitute for Spotless. Spotless uses the project formatter and may accept
+formatting that generic whitespace checks report differently.
+
 ## Code Style
 
 Follows **Alibaba Java Coding Guidelines**.
