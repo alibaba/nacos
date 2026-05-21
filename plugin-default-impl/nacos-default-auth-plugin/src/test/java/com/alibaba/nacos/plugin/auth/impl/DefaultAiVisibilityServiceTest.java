@@ -46,6 +46,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -198,6 +199,117 @@ class DefaultAiVisibilityServiceTest {
             QueryAdvisor advisor = service.adviseQuery("adminUser", VisibilityConstants.ACTION_READ,
                 "ADMIN_API", null);
             assertEquals(BaseVisibilityPredicate.ALL, advisor.getBasePredicate());
+        } finally {
+            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+                cachedConfigMap);
+        }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void validateVisibilityShouldAllowForGlobalAdminOwnerAndPublicResource() {
+        DefaultAiVisibilityService service = new DefaultAiVisibilityService();
+        Map<String, NacosAuthConfig> cachedConfigMap =
+            (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
+                NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
+        try {
+            NacosAuthConfig authConfig = mock(NacosAuthConfig.class);
+            when(authConfig.getAuthScope()).thenReturn("ADMIN_API");
+            when(authConfig.isAuthEnabled()).thenReturn(true);
+            Map<String, NacosAuthConfig> map = new HashMap<>();
+            map.put("ADMIN_API", authConfig);
+            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+                map);
+            RequestContext requestContext = RequestContextHolder.getContext();
+            IdentityContext identityContext = new IdentityContext();
+            NacosUser admin = new NacosUser("adminUser");
+            admin.setGlobalAdmin(true);
+            identityContext.setParameter(AuthConstants.NACOS_USER_KEY, admin);
+            requestContext.getAuthContext().setIdentityContext(identityContext);
+            TestResource privateResource =
+                new TestResource("public", "skillA", "skill", VisibilityConstants.SCOPE_PRIVATE,
+                    "alice");
+            assertTrue(service.validateVisibility("adminUser", VisibilityConstants.ACTION_READ,
+                "ADMIN_API", privateResource).isAllowed());
+            
+            RequestContextHolder.removeContext();
+            TestResource ownedResource =
+                new TestResource("public", "skillB", "skill", VisibilityConstants.SCOPE_PRIVATE,
+                    "bob");
+            assertTrue(service.validateVisibility("bob", VisibilityConstants.ACTION_WRITE,
+                "ADMIN_API", ownedResource).isAllowed());
+            
+            TestResource publicResource =
+                new TestResource("public", "skillC", "skill", VisibilityConstants.SCOPE_PUBLIC,
+                    "alice");
+            assertTrue(service.validateVisibility("bob", VisibilityConstants.ACTION_READ,
+                "ADMIN_API", publicResource).isAllowed());
+        } finally {
+            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+                cachedConfigMap);
+            RequestContextHolder.removeContext();
+        }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void adviseQueryShouldReturnOwnerForWriteAndPublicForAnonymous() {
+        DefaultAiVisibilityService service = new DefaultAiVisibilityService();
+        Map<String, NacosAuthConfig> cachedConfigMap =
+            (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
+                NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
+        try {
+            NacosAuthConfig authConfig = mock(NacosAuthConfig.class);
+            when(authConfig.getAuthScope()).thenReturn("ADMIN_API");
+            when(authConfig.isAuthEnabled()).thenReturn(true);
+            Map<String, NacosAuthConfig> map = new HashMap<>();
+            map.put("ADMIN_API", authConfig);
+            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+                map);
+            
+            QueryAdvisor writeAdvisor = service.adviseQuery("userA",
+                VisibilityConstants.ACTION_WRITE, "ADMIN_API", null);
+            assertEquals(BaseVisibilityPredicate.OWNER, writeAdvisor.getBasePredicate());
+            
+            QueryAdvisor anonymousReadAdvisor = service.adviseQuery(AuthConstants.ANONYMOUS_USER,
+                VisibilityConstants.ACTION_READ, "ADMIN_API", null);
+            assertEquals(BaseVisibilityPredicate.PUBLIC, anonymousReadAdvisor.getBasePredicate());
+            assertNull(anonymousReadAdvisor.getAuthorizedPredicate().getResourceType());
+            assertTrue(anonymousReadAdvisor.getAuthorizedPredicate().getResources().isEmpty());
+        } finally {
+            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+                cachedConfigMap);
+        }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void validateVisibilityShouldDenyWhenAuthPluginMissingOrFails() {
+        DefaultAiVisibilityService service = new DefaultAiVisibilityService();
+        Map<String, NacosAuthConfig> cachedConfigMap =
+            (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
+                NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
+        NacosAuthConfig authConfig = mock(NacosAuthConfig.class);
+        when(authConfig.getAuthScope()).thenReturn("ADMIN_API");
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getNacosAuthSystemType()).thenReturn("nacos");
+        AuthPluginManager manager = mock(AuthPluginManager.class);
+        TestResource resource =
+            new TestResource("public", "skillD", "skill", VisibilityConstants.SCOPE_PRIVATE,
+                "alice");
+        try (MockedStatic<AuthPluginManager> managerStatic = mockStatic(AuthPluginManager.class)) {
+            managerStatic.when(AuthPluginManager::getInstance).thenReturn(manager);
+            Map<String, NacosAuthConfig> map = new HashMap<>();
+            map.put("ADMIN_API", authConfig);
+            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+                map);
+            when(manager.findAuthServiceSpiImpl("nacos")).thenReturn(Optional.empty())
+                .thenThrow(new IllegalStateException("boom"));
+            
+            assertFalse(service.validateVisibility("bob", VisibilityConstants.ACTION_WRITE,
+                "ADMIN_API", resource).isAllowed());
+            assertFalse(service.validateVisibility("bob", VisibilityConstants.ACTION_WRITE,
+                "ADMIN_API", resource).isAllowed());
         } finally {
             ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
                 cachedConfigMap);

@@ -17,14 +17,15 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -54,6 +55,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -159,6 +161,16 @@ class UserControllerV3Test {
     }
     
     @Test
+    void testDeleteUserSuccessWhenRolesAreNull() {
+        when(roleService.getRoles("nacos")).thenReturn(null);
+        
+        Result<String> result = userControllerV3.deleteUser("nacos");
+        
+        verify(userDetailsService, times(1)).deleteUser("nacos");
+        assertEquals("delete user ok!", result.getData());
+    }
+    
+    @Test
     void testDeleteUserCannotDeleteAdmin() {
         List<RoleInfo> roleInfoList = new ArrayList<>();
         RoleInfo adminRole = new RoleInfo();
@@ -219,6 +231,21 @@ class UserControllerV3Test {
     }
     
     @Test
+    void testUpdateUserRejectsMissingUserAfterPermissionPassed() throws IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("nacos", "nacos");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
+        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
+        when(userDetailsService.getUser("missing")).thenReturn(null);
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> userControllerV3.updateUser("missing", "newPass", response, request));
+        
+        assertEquals("user missing not exist!", exception.getMessage());
+    }
+    
+    @Test
     void testUpdateUserFromServerIdentityFailure() throws IOException {
         // 测试服务器身份验证失败的情况
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -235,6 +262,107 @@ class UserControllerV3Test {
         
         assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
         assertEquals(null, result);
+    }
+    
+    @Test
+    void testUpdateUserSuccessForSameNonAdminUser() throws IOException {
+        RequestContext requestContext = RequestContextHolder.getContext();
+        IdentityContext identityContext = new IdentityContext();
+        NacosUser sameUser = new NacosUser("nacos");
+        sameUser.setGlobalAdmin(false);
+        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, sameUser);
+        requestContext.getAuthContext().setIdentityContext(identityContext);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("nacos", "invalid");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
+        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
+        when(userDetailsService.getUser("nacos")).thenReturn(new User());
+        
+        Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
+        
+        assertEquals("update user ok!", result.getData());
+        verify(userDetailsService).updateUserPassword("nacos", "newPass");
+        verify(iAuthenticationManager).hasGlobalAdminRole(sameUser);
+    }
+    
+    @Test
+    void testUpdateUserForbiddenForDifferentNonAdminUser() throws IOException {
+        RequestContext requestContext = RequestContextHolder.getContext();
+        IdentityContext identityContext = new IdentityContext();
+        NacosUser otherUser = new NacosUser("other");
+        otherUser.setGlobalAdmin(false);
+        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, otherUser);
+        requestContext.getAuthContext().setIdentityContext(identityContext);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("nacos", "invalid");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
+        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
+        
+        Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
+        
+        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        assertEquals(null, result);
+        verify(iAuthenticationManager).hasGlobalAdminRole(otherUser);
+    }
+    
+    @Test
+    void testUpdateUserSessionExpiredWhenAuthenticationReturnsNull()
+        throws AccessException, IOException {
+        RequestContext requestContext = RequestContextHolder.getContext();
+        requestContext.getAuthContext().setIdentityContext(new IdentityContext());
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("nacos", "invalid");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
+        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
+        when(iAuthenticationManager.authenticate(request)).thenReturn(null);
+        
+        Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
+        
+        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+        assertEquals(null, result);
+    }
+    
+    @Test
+    void testUpdateUserForbiddenWhenAuthenticationThrowsAccessException()
+        throws AccessException, IOException {
+        RequestContext requestContext = RequestContextHolder.getContext();
+        requestContext.getAuthContext().setIdentityContext(new IdentityContext());
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("nacos", "invalid");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
+        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
+        when(iAuthenticationManager.authenticate(request)).thenThrow(new AccessException("denied"));
+        
+        Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
+        
+        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        assertEquals(null, result);
+    }
+    
+    @Test
+    void testGetUserListAccurateAndBlur() {
+        Page<User> accuratePage = new Page<>();
+        accuratePage.setPageNumber(1);
+        Page<User> blurPage = new Page<>();
+        blurPage.setPageNumber(2);
+        when(userDetailsService.getUsers(1, 10, "nacos")).thenReturn(accuratePage);
+        when(userDetailsService.findUsers("nacos", 2, 20)).thenReturn(blurPage);
+        
+        assertEquals(accuratePage, userControllerV3.getUserList(1, 10, "nacos", "accurate")
+            .getData());
+        assertEquals(blurPage, userControllerV3.getUserList(2, 20, "nacos", "blur").getData());
+    }
+    
+    @Test
+    void testGetUserListByUsername() {
+        List<String> users = List.of("nacos", "nacos-dev");
+        when(userDetailsService.findUserNames("nacos")).thenReturn(users);
+        
+        assertEquals(users, userControllerV3.getUserListByUsername("nacos").getData());
     }
     
     @Test
@@ -264,6 +392,41 @@ class UserControllerV3Test {
     }
     
     @Test
+    void testLoginForLdapAuthSystem() throws AccessException, IOException {
+        NacosUser ldapUser = new NacosUser();
+        ldapUser.setUserName("ldapUser");
+        ldapUser.setToken("ldap-token");
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.LDAP.name());
+        when(iAuthenticationManager.authenticate(request)).thenReturn(ldapUser);
+        when(iAuthenticationManager.hasGlobalAdminRole(ldapUser)).thenReturn(false);
+        when(jwtTokenManager.getTokenTtlInSeconds("ldap-token")).thenReturn(60L);
+        
+        Object actual = userControllerV3.login(response, request);
+        
+        assertTrue(actual instanceof ObjectNode);
+        String actualString = actual.toString();
+        assertTrue(actualString.contains("\"accessToken\":\"ldap-token\""));
+        assertTrue(actualString.contains("\"globalAdmin\":false"));
+        assertEquals(AuthConstants.TOKEN_PREFIX + "ldap-token",
+            response.getHeader(AuthConstants.AUTHORIZATION_HEADER));
+    }
+    
+    @Test
+    void testLoginRejectsUnsupportedAuthSystem() throws AccessException, IOException {
+        when(authConfigs.getNacosAuthSystemType()).thenReturn("oidc");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        Object actual = userControllerV3.login(response, new MockHttpServletRequest());
+        
+        assertTrue(actual instanceof Result);
+        Result<?> result = (Result<?>) actual;
+        assertEquals(com.alibaba.nacos.api.model.v2.ErrorCode.ILLEGAL_STATE.getCode(),
+            result.getCode());
+    }
+    
+    @Test
     void testCreateAdminUserSuccess() {
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(iAuthenticationManager.hasGlobalAdminRole()).thenReturn(false);
@@ -286,6 +449,18 @@ class UserControllerV3Test {
     }
     
     @Test
+    void testCreateAdminUserGeneratesPasswordWhenBlank() {
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
+        when(iAuthenticationManager.hasGlobalAdminRole()).thenReturn(false);
+        
+        Result<User> result = userControllerV3.createAdminUser("");
+        
+        assertEquals(AuthConstants.DEFAULT_USER, result.getData().getUsername());
+        assertFalse(result.getData().getPassword().isEmpty());
+        verify(roleService).addAdminRole(AuthConstants.DEFAULT_USER);
+    }
+    
+    @Test
     void testCreateAdminUserConflict() {
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(iAuthenticationManager.hasGlobalAdminRole()).thenReturn(true);
@@ -293,5 +468,14 @@ class UserControllerV3Test {
         Result<User> result = userControllerV3.createAdminUser("adminPass");
         
         assertEquals(HttpStatus.CONFLICT.value(), result.getCode());
+    }
+    
+    @Test
+    void testCreateAdminUserRejectsUnsupportedAuthSystem() {
+        when(authConfigs.getNacosAuthSystemType()).thenReturn("oidc");
+        
+        Result<User> result = userControllerV3.createAdminUser("adminPass");
+        
+        assertEquals(HttpStatus.NOT_IMPLEMENTED.value(), result.getCode());
     }
 }

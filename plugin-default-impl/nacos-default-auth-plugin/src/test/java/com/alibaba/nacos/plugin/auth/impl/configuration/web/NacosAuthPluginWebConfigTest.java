@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.mock.env.MockEnvironment;
@@ -36,6 +37,11 @@ import static org.mockito.Mockito.when;
 
 class NacosAuthPluginWebConfigTest {
     
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(null);
+    }
+    
     @Test
     void testSecurityFilterChainBuildsIgnoredUrlChain() throws Exception {
         setValidAuthEnvironment("nacos");
@@ -43,6 +49,47 @@ class NacosAuthPluginWebConfigTest {
         DefaultSecurityFilterChain chain = mock(DefaultSecurityFilterChain.class);
         when(http.authorizeHttpRequests(any())).thenReturn(http);
         when(http.csrf(any())).thenReturn(http);
+        when(http.build()).thenReturn(chain);
+        
+        SecurityFilterChain actual = new NacosAuthPluginWebConfig().securityFilterChain(http);
+        
+        assertSame(chain, actual);
+    }
+    
+    @Test
+    void testSecurityFilterChainBuildsIgnoredUrlChainForLdap() throws Exception {
+        setValidAuthEnvironment("ldap");
+        HttpSecurity http = mock(HttpSecurity.class);
+        DefaultSecurityFilterChain chain = mock(DefaultSecurityFilterChain.class);
+        when(http.authorizeHttpRequests(any())).thenReturn(http);
+        when(http.csrf(any())).thenReturn(http);
+        when(http.build()).thenReturn(chain);
+        
+        SecurityFilterChain actual = new NacosAuthPluginWebConfig().securityFilterChain(http);
+        
+        assertSame(chain, actual);
+    }
+    
+    @Test
+    void testSecurityFilterChainUsesConfiguredIgnoreUrlsWhenAuthTypeBlank() throws Exception {
+        MockEnvironment environment = setValidAuthEnvironment("");
+        environment.setProperty("nacos.security.ignore.urls", "/v1/**,/v3/**");
+        HttpSecurity http = mock(HttpSecurity.class);
+        DefaultSecurityFilterChain chain = mock(DefaultSecurityFilterChain.class);
+        when(http.authorizeHttpRequests(any())).thenReturn(http);
+        when(http.csrf(any())).thenReturn(http);
+        when(http.build()).thenReturn(chain);
+        
+        SecurityFilterChain actual = new NacosAuthPluginWebConfig().securityFilterChain(http);
+        
+        assertSame(chain, actual);
+    }
+    
+    @Test
+    void testSecurityFilterChainBuildsDirectlyWhenIgnoreUrlsBlank() throws Exception {
+        setValidAuthEnvironment("custom");
+        HttpSecurity http = mock(HttpSecurity.class);
+        DefaultSecurityFilterChain chain = mock(DefaultSecurityFilterChain.class);
         when(http.build()).thenReturn(chain);
         
         SecurityFilterChain actual = new NacosAuthPluginWebConfig().securityFilterChain(http);
@@ -66,12 +113,13 @@ class NacosAuthPluginWebConfigTest {
         }
     }
     
-    private static void setValidAuthEnvironment(String systemType) {
+    private static MockEnvironment setValidAuthEnvironment(String systemType) {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, systemType);
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "identity");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "value");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "true");
         EnvUtil.setEnvironment(environment);
+        return environment;
     }
 }

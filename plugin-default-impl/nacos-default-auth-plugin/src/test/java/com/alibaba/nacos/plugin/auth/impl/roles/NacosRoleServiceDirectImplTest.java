@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -346,6 +347,21 @@ class NacosRoleServiceDirectImplTest {
     }
     
     @Test
+    void joinResourceHandlesSpecifiedAndBlankFields() throws Exception {
+        Method method =
+            AbstractCheckedRoleService.class.getDeclaredMethod("joinResource", Resource.class);
+        method.setAccessible(true);
+        
+        Object specified = method.invoke(nacosRoleService,
+            new Resource[] {new Resource("public", "", "raw-resource", "specified", null)});
+        Object defaulted = method.invoke(nacosRoleService,
+            new Resource[] {new Resource("", "", "", "naming", null)});
+        
+        assertEquals("raw-resource", specified);
+        assertEquals("public:*:naming/*", defaulted);
+    }
+    
+    @Test
     void duplicatePermission() {
         List<PermissionInfo> permissionInfos = new ArrayList<>();
         PermissionInfo permissionInfo = new PermissionInfo();
@@ -355,6 +371,21 @@ class NacosRoleServiceDirectImplTest {
         NacosRoleServiceDirectImpl spy = spy(nacosRoleService);
         when(spy.getPermissions("admin")).thenReturn(permissionInfos);
         spy.isDuplicatePermission("admin", "test", "r");
+    }
+    
+    @Test
+    void duplicatePermissionReturnsExpectedResult() {
+        PermissionInfo readWritePermission = permissionInfo("admin", "test", "rw");
+        PermissionInfo readPermission = permissionInfo("admin", "data", "r");
+        NacosRoleServiceDirectImpl spy = spy(nacosRoleService);
+        doReturn(Collections.emptyList()).when(spy).getPermissions("empty");
+        doReturn(java.util.Arrays.asList(readWritePermission, readPermission)).when(spy)
+            .getPermissions("admin");
+        
+        assertFalse(spy.isDuplicatePermission("empty", "test", "r").getData());
+        assertTrue(spy.isDuplicatePermission("admin", "test", "r").getData());
+        assertTrue(spy.isDuplicatePermission("admin", "data", "r").getData());
+        assertFalse(spy.isDuplicatePermission("admin", "data", "w").getData());
     }
     
     @Test
@@ -389,6 +420,53 @@ class NacosRoleServiceDirectImplTest {
             new Properties()));
         
         assertTrue(nacosRoleService.hasPermission(new NacosUser("nacos"), permission));
+    }
+    
+    @Test
+    void hasPermissionReturnsFalseForConsoleResourceWithoutGlobalAdmin() {
+        RoleInfo roleInfo = roleInfo("reader", "nacos");
+        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
+            Integer.MAX_VALUE)).thenReturn(rolePage(Collections.singletonList(roleInfo)));
+        Permission permission = new Permission();
+        permission.setAction("r");
+        permission.setResource(new Resource("public", "group", "console/users", "console",
+            new Properties()));
+        
+        assertFalse(nacosRoleService.hasPermission(new NacosUser("nacos"), permission));
+    }
+    
+    @Test
+    void hasPermissionSkipsEmptyPermissionsThenMatchesDefaultNamespacePattern() {
+        RoleInfo emptyRole = roleInfo("empty", "nacos");
+        RoleInfo reader = roleInfo("reader", "nacos");
+        PermissionInfo permissionInfo = permissionInfo("reader", ":group:naming/service", "rw");
+        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
+            Integer.MAX_VALUE)).thenReturn(rolePage(java.util.Arrays.asList(emptyRole, reader)));
+        when(permissionPersistService.getPermissions("empty", 1,
+            Integer.MAX_VALUE)).thenReturn(permissionPage(Collections.emptyList()));
+        when(permissionPersistService.getPermissions("reader", 1,
+            Integer.MAX_VALUE)).thenReturn(permissionPage(Collections.singletonList(
+            permissionInfo)));
+        Permission permission = new Permission();
+        permission.setAction("r");
+        permission.setResource(new Resource("", "group", "service", "naming", new Properties()));
+        
+        assertTrue(nacosRoleService.hasPermission(new NacosUser("nacos"), permission));
+    }
+    
+    @Test
+    void hasGlobalAdminRoleChecksUserAndCachedAllRoles() {
+        RoleInfo adminRole = roleInfo(AuthConstants.GLOBAL_ADMIN_ROLE, "nacos");
+        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
+            Integer.MAX_VALUE)).thenReturn(rolePage(Collections.singletonList(adminRole)));
+        
+        assertTrue(nacosRoleService.hasGlobalAdminRole("nacos"));
+        
+        when(authConfigs.isHasGlobalAdminRole()).thenReturn(true);
+        assertTrue(nacosRoleService.hasGlobalAdminRole());
     }
     
     @Test

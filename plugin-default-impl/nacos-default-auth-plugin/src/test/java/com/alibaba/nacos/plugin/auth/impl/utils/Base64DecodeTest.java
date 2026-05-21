@@ -19,6 +19,8 @@ package com.alibaba.nacos.plugin.auth.impl.utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Base64Decoder test.
@@ -45,5 +47,19 @@ class Base64DecodeTest {
             "SecretKey01234567890123456789012345678901234567890123456789012345678";
         byte[] decodeTruncationOrigin = Base64Decode.decode(truncationOrigin);
         assertArrayEquals(decodeNotStandardOrigin, decodeTruncationOrigin);
+    }
+    
+    @Test
+    void testDecodeEmptyAndTrimmedInput() {
+        assertEquals(0, Base64Decode.decode(null).length);
+        assertEquals(0, Base64Decode.decode("").length);
+        assertArrayEquals("hello".getBytes(), Base64Decode.decode("$aGVsbG8=$"));
+    }
+    
+    @Test
+    void testDecodeRejectsIllegalCharacters() {
+        assertThrows(IllegalArgumentException.class, () -> Base64Decode.decode("AA$A"));
+        assertThrows(IllegalArgumentException.class,
+            () -> Base64Decode.decode("AA" + (char) 256 + "A"));
     }
 }

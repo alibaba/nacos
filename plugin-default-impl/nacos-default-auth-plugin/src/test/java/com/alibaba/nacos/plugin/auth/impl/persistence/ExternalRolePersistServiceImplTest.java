@@ -31,8 +31,11 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
 import java.util.Collections;
 import java.util.List;
 
@@ -181,7 +184,57 @@ class ExternalRolePersistServiceImplTest {
             () -> externalRolePersistService.deleteRole("role", "userName")));
     }
     
-    private ExternalRolePersistServiceImpl serviceWithHelper(AuthPaginationHelper<RoleInfo> helper) {
+    @Test
+    void testPaginationConnectionExceptionsAreRethrown() {
+        AuthPaginationHelper<RoleInfo> getRolesHelper = Mockito.mock(AuthPaginationHelper.class);
+        ExternalRolePersistServiceImpl getRolesService = serviceWithHelper(getRolesHelper);
+        CannotGetJdbcConnectionException getRolesException =
+            new CannotGetJdbcConnectionException("getRoles");
+        when(getRolesHelper.fetchPage(any(), any(), any(), eq(1), eq(10), any()))
+            .thenThrow(getRolesException);
+        assertSame(getRolesException, assertThrows(CannotGetJdbcConnectionException.class,
+            () -> getRolesService.getRoles(1, 10)));
+        
+        AuthPaginationHelper<RoleInfo> byUserHelper = Mockito.mock(AuthPaginationHelper.class);
+        ExternalRolePersistServiceImpl byUserService = serviceWithHelper(byUserHelper);
+        CannotGetJdbcConnectionException byUserException =
+            new CannotGetJdbcConnectionException("byUser");
+        when(byUserHelper.fetchPage(any(), any(), any(), eq(1), eq(10), any()))
+            .thenThrow(byUserException);
+        assertSame(byUserException, assertThrows(CannotGetJdbcConnectionException.class,
+            () -> byUserService.getRolesByUserNameAndRoleName("userName", "roleName", 1, 10)));
+        
+        AuthPaginationHelper<RoleInfo> findHelper = Mockito.mock(AuthPaginationHelper.class);
+        ExternalRolePersistServiceImpl findService = serviceWithHelper(findHelper);
+        CannotGetJdbcConnectionException findException =
+            new CannotGetJdbcConnectionException("find");
+        when(findHelper.fetchPage(any(), any(), any(), eq(1), eq(10), any()))
+            .thenThrow(findException);
+        assertSame(findException, assertThrows(CannotGetJdbcConnectionException.class,
+            () -> findService.findRolesLike4Page("userName", "roleName", 1, 10)));
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void testRoleInfoRowMapperByReflection() throws Exception {
+        String rowMapperName = ExternalRolePersistServiceImpl.class.getName()
+            + "$RoleInfoRowMapper";
+        Class<?> rowMapperClass = Class.forName(rowMapperName);
+        Constructor<?> constructor = rowMapperClass.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        RowMapper<RoleInfo> rowMapper = (RowMapper<RoleInfo>) constructor.newInstance();
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
+        when(resultSet.getString("role")).thenReturn("role");
+        when(resultSet.getString("username")).thenReturn("userName");
+        
+        RoleInfo roleInfo = rowMapper.mapRow(resultSet, 0);
+        
+        assertEquals("role", roleInfo.getRole());
+        assertEquals("userName", roleInfo.getUsername());
+    }
+    
+    private ExternalRolePersistServiceImpl serviceWithHelper(
+        AuthPaginationHelper<RoleInfo> helper) {
         return new ExternalRolePersistServiceImpl() {
             
             @Override

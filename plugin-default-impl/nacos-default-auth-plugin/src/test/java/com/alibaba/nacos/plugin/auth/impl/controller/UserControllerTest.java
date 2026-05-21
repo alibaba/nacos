@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
@@ -34,12 +35,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -59,6 +68,12 @@ class UserControllerTest {
     
     @Mock
     private IAuthenticationManager authenticationManager;
+    
+    @Mock
+    private AuthenticationManager legacyAuthenticationManager;
+    
+    @Mock
+    private Authentication legacyAuthentication;
     
     @Mock
     private TokenManagerDelegate tokenManagerDelegate;
@@ -89,6 +104,7 @@ class UserControllerTest {
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
+        SecurityContextHolder.clearContext();
     }
     
     @Test
@@ -103,5 +119,50 @@ class UserControllerTest {
         assertTrue(actualString.contains("\"accessToken\":\"1234567890\""));
         assertTrue(actualString.contains("\"tokenTtl\":18000"));
         assertTrue(actualString.contains("\"globalAdmin\":true"));
+    }
+    
+    @Test
+    void testLoginWithLdapAuthedUser() throws Exception {
+        when(authenticationManager.authenticate(request)).thenReturn(user);
+        when(authenticationManager.hasGlobalAdminRole(user)).thenReturn(false);
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.LDAP.name());
+        when(tokenManagerDelegate.getTokenTtlInSeconds(anyString())).thenReturn(60L);
+        
+        Object actual = userController.login("nacos", "nacos", response, request);
+        
+        assertTrue(actual instanceof JsonNode);
+        String actualString = actual.toString();
+        assertTrue(actualString.contains("\"accessToken\":\"1234567890\""));
+        assertTrue(actualString.contains("\"globalAdmin\":false"));
+    }
+    
+    @Test
+    void testLoginWithLegacySpringAuthentication() throws Exception {
+        when(authConfigs.getNacosAuthSystemType()).thenReturn("custom");
+        when(legacyAuthenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+            .thenReturn(legacyAuthentication);
+        when(tokenManagerDelegate.createToken(legacyAuthentication)).thenReturn("legacy-token");
+        
+        Object actual = userController.login("nacos", "password", response, request);
+        
+        assertTrue(actual instanceof RestResult);
+        RestResult<?> result = (RestResult<?>) actual;
+        assertTrue(result.ok());
+        assertEquals("Bearer legacy-token", result.getData());
+        verify(response).addHeader(AuthConstants.AUTHORIZATION_HEADER, "Bearer legacy-token");
+    }
+    
+    @Test
+    void testLoginWithLegacySpringAuthenticationFailure() throws Exception {
+        when(authConfigs.getNacosAuthSystemType()).thenReturn("custom");
+        when(legacyAuthenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+            .thenThrow(new BadCredentialsException("bad"));
+        
+        Object actual = userController.login("nacos", "bad", response, request);
+        
+        assertTrue(actual instanceof RestResult);
+        RestResult<?> result = (RestResult<?>) actual;
+        assertEquals(401, result.getCode());
+        assertEquals("Login failed", result.getMessage());
     }
 }

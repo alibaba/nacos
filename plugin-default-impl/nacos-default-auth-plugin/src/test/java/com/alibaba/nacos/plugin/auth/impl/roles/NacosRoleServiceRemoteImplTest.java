@@ -326,6 +326,58 @@ class NacosRoleServiceRemoteImplTest {
             () -> deleteRoleService.deleteRole("developer")).getErrCode());
     }
     
+    @Test
+    void testRemoteRoleOperationsWrapAdditionalExceptionBranches() throws Exception {
+        prepareRemoteServer();
+        prepareServerIdentity();
+        NacosRoleServiceRemoteImpl findNamesService = newServiceWithRestTemplate();
+        when(restTemplate.<String>get(anyString(), any(Header.class), any(Query.class),
+            eq(String.class))).thenThrow(new IllegalStateException("boom"));
+        
+        assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosRuntimeException.class,
+            () -> findNamesService.findRoleNames("admin")).getErrCode());
+        
+        reset(restTemplate);
+        NacosRoleServiceRemoteImpl addRoleService = newServiceWithRestTemplate();
+        when(restTemplate.<String>postForm(anyString(), any(Header.class), anyMap(),
+            eq(String.class))).thenThrow(new IllegalStateException("boom"));
+        
+        assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosRuntimeException.class,
+            () -> addRoleService.addRole("developer", "alice")).getErrCode());
+        
+        reset(restTemplate);
+        NacosRoleServiceRemoteImpl deleteUserRoleService = newServiceWithRestTemplate();
+        when(restTemplate.<String>delete(anyString(), any(Header.class), any(Query.class),
+            eq(String.class))).thenThrow(new IllegalStateException("boom"));
+        
+        assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosRuntimeException.class,
+            () -> deleteUserRoleService.deleteRole("developer", "alice")).getErrCode());
+        
+        reset(restTemplate);
+        NacosRoleServiceRemoteImpl deleteRoleService = newServiceWithRestTemplate();
+        when(restTemplate.<String>delete(anyString(), any(Header.class), any(Query.class),
+            eq(String.class))).thenThrow(new NacosException(500, "denied"));
+        
+        assertEquals(500, assertThrows(NacosRuntimeException.class,
+            () -> deleteRoleService.deleteRole("developer")).getErrCode());
+        
+        reset(restTemplate);
+        NacosRoleServiceRemoteImpl permissionPageService = newServiceWithRestTemplate();
+        when(restTemplate.<String>get(anyString(), any(Header.class), any(Query.class),
+            eq(String.class))).thenThrow(new IllegalStateException("boom"));
+        
+        assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosRuntimeException.class,
+            () -> permissionPageService.getPermissions("admin", 1, 10)).getErrCode());
+        
+        reset(restTemplate);
+        NacosRoleServiceRemoteImpl rolePageService = newServiceWithRestTemplate();
+        when(restTemplate.<String>get(anyString(), any(Header.class), any(Query.class),
+            eq(String.class))).thenThrow(new NacosException(500, "denied"));
+        
+        assertEquals(500, assertThrows(NacosRuntimeException.class,
+            () -> rolePageService.getRoles("alice", "admin", 1, 10)).getErrCode());
+    }
+    
     private NacosRoleServiceRemoteImpl newServiceWithRestTemplate() throws Exception {
         NacosRoleServiceRemoteImpl service = new NacosRoleServiceRemoteImpl(authConfigs);
         Field field = NacosRoleServiceRemoteImpl.class.getDeclaredField("nacosRestTemplate");
