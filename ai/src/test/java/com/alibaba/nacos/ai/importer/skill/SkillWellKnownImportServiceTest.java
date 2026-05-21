@@ -31,14 +31,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import javax.net.ssl.SSLSession;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -55,6 +63,15 @@ import static org.mockito.Mockito.lenient;
 class SkillWellKnownImportServiceTest {
     
     private static final String ENDPOINT = "https://registry.example.com/registry/public";
+    
+    private static final String LEGACY_ENDPOINT = "https://registry.example.com/legacy";
+    
+    private static final String VERSION_020_ENDPOINT = "https://registry.example.com/v2";
+    
+    private static final String BAD_VERSION_020_ENDPOINT = "https://registry.example.com/bad-v2";
+    
+    private static final String SCHEMA_0_2 =
+        "https://schemas.agentskills.io/discovery/0.2.0/schema.json";
     
     @Mock
     private HttpClient httpClient;
@@ -81,6 +98,7 @@ class SkillWellKnownImportServiceTest {
         assertEquals("demo-skill", result.getItems().get(0).getExternalId());
         assertEquals(SkillWellKnownImportService.RESOURCE_TYPE_SKILL,
             result.getItems().get(0).getResourceType());
+        assertEquals("0.1.0", result.getItems().get(0).getMetadata().get("schemaVersion"));
         assertEquals("2", result.getItems().get(0).getMetadata().get("fileCount"));
         assertFalse(result.isHasMore());
     }
@@ -97,6 +115,51 @@ class SkillWellKnownImportServiceTest {
         assertEquals("demo-skill", skill.getName());
         assertEquals("Demo skill", skill.getDescription());
         assertEquals(1, skill.getResource().size());
+    }
+    
+    @Test
+    void testSearchFallsBackToLegacyWellKnownSkillsPath() throws Exception {
+        AiResourceImportContext context = newContext(LEGACY_ENDPOINT);
+        
+        AiResourceImportCandidatePage result = importService.search(context);
+        
+        assertEquals(1, result.getItems().size());
+        assertEquals("legacy-skill", result.getItems().get(0).getExternalId());
+        assertEquals("https://registry.example.com/legacy/.well-known/skills",
+            result.getItems().get(0).getMetadata().get("source"));
+    }
+    
+    @Test
+    void testFetchVersion020SkillMdReturnsSkillZipArtifact() throws Exception {
+        AiResourceImportArtifact result = importService.fetch(newContext(VERSION_020_ENDPOINT),
+            item("md-skill"));
+        
+        assertEquals(SkillWellKnownImportService.RESOURCE_TYPE_SKILL, result.getResourceType());
+        assertEquals(AiResourceImportPayloadKind.SKILL_ZIP, result.getPayloadKind());
+        assertEquals("md-skill", result.getName());
+        assertEquals("skill-md", result.getSourceMetadata().get("distributionType"));
+        Skill skill = SkillZipParser.parseSkillFromZip(result.getPayload(), "public");
+        assertEquals("md-skill", skill.getName());
+        assertEquals("Markdown skill", skill.getDescription());
+    }
+    
+    @Test
+    void testFetchVersion020TarGzArchiveReturnsSkillZipArtifact() throws Exception {
+        AiResourceImportArtifact result = importService.fetch(newContext(VERSION_020_ENDPOINT),
+            item("archive-skill"));
+        
+        assertEquals("archive-skill", result.getName());
+        assertEquals("archive", result.getSourceMetadata().get("distributionType"));
+        Skill skill = SkillZipParser.parseSkillFromZip(result.getPayload(), "public");
+        assertEquals("archive-skill", skill.getName());
+        assertEquals("Archive skill", skill.getDescription());
+        assertEquals(1, skill.getResource().size());
+    }
+    
+    @Test
+    void testFetchVersion020RejectsDigestMismatch() {
+        assertThrows(NacosException.class,
+            () -> importService.fetch(newContext(BAD_VERSION_020_ENDPOINT), item("md-skill")));
     }
     
     @Test
@@ -121,10 +184,15 @@ class SkillWellKnownImportServiceTest {
     }
     
     private AiResourceImportContext newContext() {
+        return newContext(ENDPOINT);
+    }
+    
+    private AiResourceImportContext newContext(String endpoint) {
         AiResourceImportContext context = new AiResourceImportContext();
         context.setNamespaceId("public");
         AiResourceImportSource source = new AiResourceImportSource();
-        source.setEndpoint(ENDPOINT);
+        source.setEndpoint(endpoint);
+        source.setMaxArtifactSize(10L * 1024L * 1024L);
         context.setSource(source);
         return context;
     }
@@ -145,13 +213,53 @@ class SkillWellKnownImportServiceTest {
             + "]}";
     }
     
+    private String legacyIndexJson() {
+        return "{\"skills\":["
+            + "{\"name\":\"legacy-skill\",\"description\":\"Legacy skill\","
+            + "\"files\":[\"SKILL.md\"]}"
+            + "]}";
+    }
+    
+    private String version020IndexJson() throws Exception {
+        byte[] markdown = skillMarkdown("md-skill").getBytes(StandardCharsets.UTF_8);
+        byte[] archive = tarGzSkillArchive();
+        return "{\"$schema\":\"" + SCHEMA_0_2 + "\",\"skills\":["
+            + "{\"name\":\"md-skill\",\"type\":\"skill-md\","
+            + "\"description\":\"Markdown skill\","
+            + "\"url\":\"md-skill/SKILL.md\","
+            + "\"digest\":\"sha256:" + sha256Hex(markdown) + "\"},"
+            + "{\"name\":\"archive-skill\",\"type\":\"archive\","
+            + "\"description\":\"Archive skill\","
+            + "\"url\":\"archive-skill.tar.gz\","
+            + "\"digest\":\"sha256:" + sha256Hex(archive) + "\"}"
+            + "]}";
+    }
+    
+    private String badVersion020IndexJson() {
+        return "{\"$schema\":\"" + SCHEMA_0_2 + "\",\"skills\":["
+            + "{\"name\":\"md-skill\",\"type\":\"skill-md\","
+            + "\"description\":\"Markdown skill\","
+            + "\"url\":\"md-skill/SKILL.md\","
+            + "\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\"}"
+            + "]}";
+    }
+    
     private String skillMarkdown(String name) {
-        String description = "demo-skill".equals(name) ? "Demo skill" : "Other skill";
+        String description = "Demo skill";
+        if ("other-skill".equals(name)) {
+            description = "Other skill";
+        } else if ("legacy-skill".equals(name)) {
+            description = "Legacy skill";
+        } else if ("md-skill".equals(name)) {
+            description = "Markdown skill";
+        } else if ("archive-skill".equals(name)) {
+            description = "Archive skill";
+        }
         return "---\nname: " + name + "\ndescription: " + description
             + "\nversion: 1.2.3\n---\n\nUse this skill.";
     }
     
-    private HttpResponse<byte[]> responseFor(HttpRequest request) {
+    private HttpResponse<byte[]> responseFor(HttpRequest request) throws Exception {
         String path = request.uri().getPath();
         if ("/registry/public/.well-known/agent-skills/index.json".equals(path)) {
             return response(200, indexJson());
@@ -166,11 +274,40 @@ class SkillWellKnownImportServiceTest {
         if ("/registry/public/.well-known/agent-skills/other-skill/SKILL.md".equals(path)) {
             return response(200, skillMarkdown("other-skill"));
         }
+        if ("/legacy/.well-known/agent-skills/index.json".equals(path)) {
+            return response(404, "");
+        }
+        if ("/legacy/.well-known/skills/index.json".equals(path)) {
+            return response(200, legacyIndexJson());
+        }
+        if ("/legacy/.well-known/skills/legacy-skill/SKILL.md".equals(path)) {
+            return response(200, skillMarkdown("legacy-skill"));
+        }
+        if ("/v2/.well-known/agent-skills/index.json".equals(path)) {
+            return response(200, version020IndexJson());
+        }
+        if ("/v2/.well-known/agent-skills/md-skill/SKILL.md".equals(path)) {
+            return response(200, skillMarkdown("md-skill"));
+        }
+        if ("/v2/.well-known/agent-skills/archive-skill.tar.gz".equals(path)) {
+            return response(200, tarGzSkillArchive(), "application/gzip");
+        }
+        if ("/bad-v2/.well-known/agent-skills/index.json".equals(path)) {
+            return response(200, badVersion020IndexJson());
+        }
+        if ("/bad-v2/.well-known/agent-skills/md-skill/SKILL.md".equals(path)) {
+            return response(200, skillMarkdown("md-skill"));
+        }
         return response(404, "");
     }
     
     private HttpResponse<byte[]> response(int status, String body) {
-        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        return response(status, body.getBytes(StandardCharsets.UTF_8), "application/json");
+    }
+    
+    private HttpResponse<byte[]> response(int status, byte[] bytes, String contentType) {
+        Map<String, java.util.List<String>> headers = new HashMap<>(1);
+        headers.put("Content-Type", Collections.singletonList(contentType));
         return new HttpResponse<>() {
             
             @Override
@@ -190,7 +327,7 @@ class SkillWellKnownImportServiceTest {
             
             @Override
             public HttpHeaders headers() {
-                return HttpHeaders.of(Collections.emptyMap(), (key, value) -> true);
+                return HttpHeaders.of(headers, (key, value) -> true);
             }
             
             @Override
@@ -213,5 +350,38 @@ class SkillWellKnownImportServiceTest {
                 return HttpClient.Version.HTTP_1_1;
             }
         };
+    }
+    
+    private byte[] tarGzSkillArchive() throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (GzipCompressorOutputStream gzip = new GzipCompressorOutputStream(output);
+            TarArchiveOutputStream tar = new TarArchiveOutputStream(gzip)) {
+            addTarEntry(tar, "archive-skill/SKILL.md",
+                skillMarkdown("archive-skill").getBytes(StandardCharsets.UTF_8));
+            addTarEntry(tar, "archive-skill/docs/guide.md",
+                "# Guide".getBytes(StandardCharsets.UTF_8));
+        }
+        return output.toByteArray();
+    }
+    
+    private void addTarEntry(TarArchiveOutputStream tar, String name, byte[] bytes)
+        throws Exception {
+        TarArchiveEntry entry = new TarArchiveEntry(name);
+        entry.setSize(bytes.length);
+        tar.putArchiveEntry(entry);
+        try (ByteArrayInputStream input = new ByteArrayInputStream(bytes)) {
+            input.transferTo(tar);
+        }
+        tar.closeArchiveEntry();
+    }
+    
+    private String sha256Hex(byte[] bytes) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(bytes);
+        StringBuilder result = new StringBuilder(hash.length * 2);
+        for (byte each : hash) {
+            result.append(String.format("%02x", each & 0xff));
+        }
+        return result.toString();
     }
 }

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.importer.skill;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
@@ -35,15 +37,19 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 
 import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,6 +57,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 /**
  * Importer for Skill well-known registry endpoints.
@@ -68,17 +77,51 @@ public class SkillWellKnownImportService implements AiResourceImportService {
     
     private static final String INDEX_JSON = "/index.json";
     
+    private static final String INDEX_JSON_FILE = "index.json";
+    
+    private static final String SCHEMA_0_1 =
+        "https://schemas.agentskills.io/discovery/0.1.0/schema.json";
+    
+    private static final String SCHEMA_0_2 =
+        "https://schemas.agentskills.io/discovery/0.2.0/schema.json";
+    
     private static final String MARKDOWN_FILE = "SKILL.md";
     
     private static final String METADATA_FILE_COUNT = "fileCount";
     
     private static final String METADATA_SOURCE = "source";
     
+    private static final String METADATA_SCHEMA_VERSION = "schemaVersion";
+    
+    private static final String METADATA_DISTRIBUTION_TYPE = "distributionType";
+    
+    private static final String METADATA_ARTIFACT_URL = "artifactUrl";
+    
+    private static final String METADATA_DIGEST = "digest";
+    
+    private static final String TYPE_SKILL_MD = "skill-md";
+    
+    private static final String TYPE_ARCHIVE = "archive";
+    
+    private static final String DIGEST_SHA256_PREFIX = "sha256:";
+    
+    private static final String ZIP_SUFFIX = ".zip";
+    
+    private static final String TAR_SUFFIX = ".tar";
+    
+    private static final String TAR_GZ_SUFFIX = ".tar.gz";
+    
+    private static final String TGZ_SUFFIX = ".tgz";
+    
     private static final int DEFAULT_LIMIT = 30;
     
     private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
     
     private static final int DEFAULT_READ_TIMEOUT_SECONDS = 20;
+    
+    private static final int DEFAULT_MAX_ARCHIVE_ENTRIES = 500;
+    
+    private static final long DEFAULT_MAX_ARCHIVE_UNCOMPRESSED_BYTES = 50L * 1024L * 1024L;
     
     private final HttpClient httpClient;
     
@@ -107,14 +150,15 @@ public class SkillWellKnownImportService implements AiResourceImportService {
     public AiResourceImportCandidatePage search(AiResourceImportContext context)
         throws NacosException {
         try {
-            List<WellKnownSkillEntry> matched = filterSkills(fetchIndex(context).getSkills(),
-                context.getQuery());
+            ResolvedWellKnownIndex resolvedIndex = fetchIndex(context);
+            List<WellKnownSkillEntry> matched = filterSkills(resolvedIndex.getIndex().getSkills(),
+                resolvedIndex.getVersion(), context.getQuery());
             int offset = parseCursor(context.getCursor());
             int limit = resolveLimit(context.getLimit());
             int toIndex = Math.min(offset + limit, matched.size());
             List<AiResourceImportCandidate> items = new ArrayList<>();
             for (int i = offset; i < toIndex; i++) {
-                items.add(toCandidate(matched.get(i)));
+                items.add(toCandidate(matched.get(i), resolvedIndex));
             }
             AiResourceImportCandidatePage result = new AiResourceImportCandidatePage();
             result.setItems(items);
@@ -133,8 +177,10 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         AiResourceImportItem item) throws NacosException {
         try {
             String skillName = resolveExternalId(item);
-            WellKnownSkillEntry entry = findSkillEntry(fetchIndex(context).getSkills(), skillName);
-            byte[] zipBytes = fetchSkillZip(context, entry);
+            ResolvedWellKnownIndex resolvedIndex = fetchIndex(context);
+            WellKnownSkillEntry entry = findSkillEntry(resolvedIndex.getIndex().getSkills(),
+                skillName);
+            byte[] zipBytes = fetchSkillZip(context, resolvedIndex, entry);
             Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, context.getNamespaceId());
             AiResourceImportArtifact result = new AiResourceImportArtifact();
             result.setResourceType(RESOURCE_TYPE_SKILL);
@@ -144,7 +190,7 @@ public class SkillWellKnownImportService implements AiResourceImportService {
             result.setDescription(skill.getDescription());
             result.setPayloadKind(AiResourceImportPayloadKind.SKILL_ZIP);
             result.setPayload(zipBytes);
-            result.setSourceMetadata(buildMetadata(entry));
+            result.setSourceMetadata(buildMetadata(entry, resolvedIndex));
             return result;
         } catch (NacosException e) {
             throw e;
@@ -153,13 +199,31 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         }
     }
     
-    private WellKnownSkillsIndex fetchIndex(AiResourceImportContext context) throws Exception {
-        String body = fetchString(indexUrl(requireSource(context)));
-        WellKnownSkillsIndex result = JacksonUtils.toObj(body, WellKnownSkillsIndex.class);
+    private ResolvedWellKnownIndex fetchIndex(AiResourceImportContext context) throws Exception {
+        List<String> indexUrls = indexUrls(requireSource(context));
+        Exception lastFailure = null;
+        for (String each : indexUrls) {
+            FetchResult response = fetchUrl(each);
+            if (!response.isSuccess()) {
+                lastFailure = new IllegalStateException(
+                    "HTTP " + response.getStatusCode() + " when fetching " + each);
+                continue;
+            }
+            return parseIndex(each, response.getBody());
+        }
+        throw dataAccess("Fetch Skill well-known index failed: "
+            + (lastFailure == null ? "No index URL available." : lastFailure.getMessage()),
+            lastFailure);
+    }
+    
+    private ResolvedWellKnownIndex parseIndex(String indexUrl, byte[] body) throws NacosException {
+        String content = new String(body, StandardCharsets.UTF_8);
+        WellKnownSkillsIndex result = JacksonUtils.toObj(content, WellKnownSkillsIndex.class);
         if (result == null) {
             throw invalid("Skill well-known index cannot be parsed.");
         }
-        return result;
+        WellKnownIndexVersion version = resolveVersion(result);
+        return new ResolvedWellKnownIndex(result, version, indexUrl, wellKnownBase(indexUrl));
     }
     
     private AiResourceImportSource requireSource(AiResourceImportContext context)
@@ -172,7 +236,7 @@ public class SkillWellKnownImportService implements AiResourceImportService {
     }
     
     private List<WellKnownSkillEntry> filterSkills(List<WellKnownSkillEntry> skills,
-        String query) {
+        WellKnownIndexVersion version, String query) {
         if (CollectionUtils.isEmpty(skills)) {
             return Collections.emptyList();
         }
@@ -180,7 +244,7 @@ public class SkillWellKnownImportService implements AiResourceImportService {
             StringUtils.isBlank(query) ? null : query.toLowerCase(Locale.ENGLISH);
         List<WellKnownSkillEntry> result = new ArrayList<>(skills.size());
         for (WellKnownSkillEntry each : skills) {
-            if (each == null || StringUtils.isBlank(each.getName())) {
+            if (!isSupportedEntry(each, version)) {
                 continue;
             }
             if (normalizedQuery == null || contains(each.getName(), normalizedQuery)
@@ -189,6 +253,17 @@ public class SkillWellKnownImportService implements AiResourceImportService {
             }
         }
         return result;
+    }
+    
+    private boolean isSupportedEntry(WellKnownSkillEntry entry, WellKnownIndexVersion version) {
+        if (entry == null || StringUtils.isBlank(entry.getName())) {
+            return false;
+        }
+        if (version == WellKnownIndexVersion.V0_1_0) {
+            return true;
+        }
+        String type = normalizeType(entry.getType());
+        return TYPE_SKILL_MD.equals(type) || TYPE_ARCHIVE.equals(type);
     }
     
     private boolean contains(String value, String normalizedQuery) {
@@ -211,13 +286,14 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         return limit == null || limit <= 0 ? DEFAULT_LIMIT : limit;
     }
     
-    private AiResourceImportCandidate toCandidate(WellKnownSkillEntry entry) {
+    private AiResourceImportCandidate toCandidate(WellKnownSkillEntry entry,
+        ResolvedWellKnownIndex resolvedIndex) {
         AiResourceImportCandidate result = new AiResourceImportCandidate();
         result.setResourceType(RESOURCE_TYPE_SKILL);
         result.setExternalId(entry.getName());
         result.setName(entry.getName());
         result.setDescription(entry.getDescription());
-        result.setMetadata(buildMetadata(entry));
+        result.setMetadata(buildMetadata(entry, resolvedIndex));
         return result;
     }
     
@@ -234,17 +310,117 @@ public class SkillWellKnownImportService implements AiResourceImportService {
             "Skill not found in well-known index: " + skillName);
     }
     
-    private byte[] fetchSkillZip(AiResourceImportContext context, WellKnownSkillEntry entry)
-        throws Exception {
-        String base = wellKnownBase(requireSource(context));
+    private byte[] fetchSkillZip(AiResourceImportContext context,
+        ResolvedWellKnownIndex resolvedIndex, WellKnownSkillEntry entry) throws Exception {
+        if (resolvedIndex.getVersion() == WellKnownIndexVersion.V0_2_0) {
+            return fetchVersion020SkillZip(context, resolvedIndex, entry);
+        }
+        return fetchVersion010SkillZip(context, resolvedIndex, entry);
+    }
+    
+    private byte[] fetchVersion010SkillZip(AiResourceImportContext context,
+        ResolvedWellKnownIndex resolvedIndex, WellKnownSkillEntry entry) throws Exception {
+        String base = resolvedIndex.getWellKnownBase();
         List<String> files = normalizeFiles(entry.getFiles());
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(output, StandardCharsets.UTF_8)) {
             for (String each : files) {
                 SkillUtils.validatePathSafety(each);
                 byte[] bytes = fetchBytes(fileUrl(base, entry.getName(), each));
+                checkDownloadedSize(requireSource(context), bytes);
                 zip.putNextEntry(new ZipEntry(entry.getName() + "/" + each));
                 zip.write(bytes);
+                zip.closeEntry();
+            }
+        }
+        return output.toByteArray();
+    }
+    
+    private byte[] fetchVersion020SkillZip(AiResourceImportContext context,
+        ResolvedWellKnownIndex resolvedIndex, WellKnownSkillEntry entry) throws Exception {
+        String type = normalizeType(entry.getType());
+        FetchResult artifact = fetchVersion020Artifact(context, resolvedIndex, entry);
+        if (TYPE_SKILL_MD.equals(type)) {
+            return toSingleMarkdownSkillZip(entry.getName(), artifact.getBody());
+        }
+        if (TYPE_ARCHIVE.equals(type)) {
+            return toSkillZipFromArchive(artifact);
+        }
+        throw invalid("Unsupported Skill well-known distribution type: " + entry.getType());
+    }
+    
+    private FetchResult fetchVersion020Artifact(AiResourceImportContext context,
+        ResolvedWellKnownIndex resolvedIndex, WellKnownSkillEntry entry) throws Exception {
+        if (StringUtils.isBlank(entry.getUrl())) {
+            throw invalid("Skill well-known 0.2.0 entry url must not be empty.");
+        }
+        FetchResult result =
+            fetchUrl(resolveArtifactUrl(resolvedIndex.getIndexUrl(), entry.getUrl()));
+        if (!result.isSuccess()) {
+            throw new IllegalStateException(
+                "HTTP " + result.getStatusCode() + " when fetching " + result.getUrl());
+        }
+        checkDownloadedSize(requireSource(context), result.getBody());
+        verifySha256Digest(entry.getDigest(), result.getBody());
+        return result;
+    }
+    
+    private byte[] toSingleMarkdownSkillZip(String skillName, byte[] markdown) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(output, StandardCharsets.UTF_8)) {
+            zip.putNextEntry(new ZipEntry(skillName + "/" + MARKDOWN_FILE));
+            zip.write(markdown);
+            zip.closeEntry();
+        }
+        return output.toByteArray();
+    }
+    
+    private byte[] toSkillZipFromArchive(FetchResult artifact) throws Exception {
+        ArchiveFormat format = resolveArchiveFormat(artifact);
+        if (format == ArchiveFormat.ZIP) {
+            return artifact.getBody();
+        }
+        if (format == ArchiveFormat.TAR || format == ArchiveFormat.TAR_GZ) {
+            return convertTarToZip(artifact.getBody(), format == ArchiveFormat.TAR_GZ);
+        }
+        throw invalid("Unsupported Skill well-known archive format: " + artifact.getUrl());
+    }
+    
+    private byte[] convertTarToZip(byte[] bytes, boolean gzip) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Set<String> entryNames = new HashSet<>();
+        try (TarArchiveInputStream tar = new TarArchiveInputStream(
+            gzip ? new GzipCompressorInputStream(new ByteArrayInputStream(bytes))
+                : new ByteArrayInputStream(bytes));
+            ZipOutputStream zip = new ZipOutputStream(output, StandardCharsets.UTF_8)) {
+            TarArchiveEntry entry;
+            byte[] buffer = new byte[8192];
+            int entryCount = 0;
+            long totalSize = 0;
+            while ((entry = tar.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                String name = normalizeArchiveEntryName(entry.getName());
+                if (StringUtils.isBlank(name)) {
+                    continue;
+                }
+                SkillUtils.validatePathSafety(name);
+                if (!entryNames.add(name)) {
+                    continue;
+                }
+                if (++entryCount > DEFAULT_MAX_ARCHIVE_ENTRIES) {
+                    throw invalid("Skill well-known archive contains too many entries.");
+                }
+                zip.putNextEntry(new ZipEntry(name));
+                int n;
+                while ((n = tar.read(buffer)) != -1) {
+                    totalSize += n;
+                    if (totalSize > DEFAULT_MAX_ARCHIVE_UNCOMPRESSED_BYTES) {
+                        throw invalid("Skill well-known archive decompressed size exceeds limit.");
+                    }
+                    zip.write(buffer, 0, n);
+                }
                 zip.closeEntry();
             }
         }
@@ -278,23 +454,55 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         return externalId;
     }
     
-    private Map<String, String> buildMetadata(WellKnownSkillEntry entry) {
+    private Map<String, String> buildMetadata(WellKnownSkillEntry entry,
+        ResolvedWellKnownIndex resolvedIndex) {
         Map<String, String> metadata = new LinkedHashMap<>();
-        metadata.put(METADATA_FILE_COUNT, String.valueOf(normalizeFiles(entry.getFiles()).size()));
-        metadata.put(METADATA_SOURCE, WELL_KNOWN_AGENT_SKILLS);
+        metadata.put(METADATA_SCHEMA_VERSION, resolvedIndex.getVersion().getVersion());
+        metadata.put(METADATA_SOURCE, resolvedIndex.getWellKnownBase());
+        if (resolvedIndex.getVersion() == WellKnownIndexVersion.V0_1_0) {
+            metadata.put(METADATA_FILE_COUNT,
+                String.valueOf(normalizeFiles(entry.getFiles()).size()));
+            return metadata;
+        }
+        metadata.put(METADATA_DISTRIBUTION_TYPE, normalizeType(entry.getType()));
+        if (StringUtils.isNotBlank(entry.getUrl())) {
+            metadata.put(METADATA_ARTIFACT_URL,
+                resolveArtifactUrl(resolvedIndex.getIndexUrl(), entry.getUrl()));
+        }
+        if (StringUtils.isNotBlank(entry.getDigest())) {
+            metadata.put(METADATA_DIGEST, entry.getDigest());
+        }
         return metadata;
     }
     
-    private String indexUrl(AiResourceImportSource source) throws NacosException {
-        return wellKnownBase(source) + INDEX_JSON;
+    private List<String> indexUrls(AiResourceImportSource source) throws NacosException {
+        String endpoint = trimTrailingSlash(source.getEndpoint());
+        if (endpoint.endsWith(INDEX_JSON)) {
+            return Collections.singletonList(endpoint);
+        }
+        if (isWellKnownBase(endpoint)) {
+            return Collections.singletonList(endpoint + INDEX_JSON);
+        }
+        List<String> result = new ArrayList<>(2);
+        result.add(endpoint + WELL_KNOWN_AGENT_SKILLS + INDEX_JSON);
+        result.add(endpoint + WELL_KNOWN_SKILLS + INDEX_JSON);
+        return result;
     }
     
-    private String wellKnownBase(AiResourceImportSource source) throws NacosException {
-        String endpoint = trimTrailingSlash(source.getEndpoint());
-        if (endpoint.endsWith(WELL_KNOWN_AGENT_SKILLS) || endpoint.endsWith(WELL_KNOWN_SKILLS)) {
-            return endpoint;
+    private boolean isWellKnownBase(String endpoint) {
+        return endpoint.endsWith(WELL_KNOWN_AGENT_SKILLS)
+            || endpoint.endsWith(WELL_KNOWN_SKILLS);
+    }
+    
+    private String wellKnownBase(String indexUrl) {
+        String normalized = trimTrailingSlashUnchecked(indexUrl);
+        if (normalized.endsWith(INDEX_JSON)) {
+            return normalized.substring(0, normalized.length() - INDEX_JSON.length());
         }
-        return endpoint + WELL_KNOWN_AGENT_SKILLS;
+        if (normalized.endsWith(INDEX_JSON_FILE)) {
+            return normalized.substring(0, normalized.length() - INDEX_JSON_FILE.length() - 1);
+        }
+        return normalized;
     }
     
     private String fileUrl(String base, String skillName, String file) {
@@ -321,6 +529,10 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         if (StringUtils.isBlank(value)) {
             throw invalid("Skill well-known import source endpoint must not be empty.");
         }
+        return trimTrailingSlashUnchecked(value);
+    }
+    
+    private String trimTrailingSlashUnchecked(String value) {
         String result = value.trim();
         while (result.endsWith("/")) {
             result = result.substring(0, result.length() - 1);
@@ -328,12 +540,16 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         return result;
     }
     
-    private String fetchString(String url) throws Exception {
-        byte[] bytes = fetchBytes(url);
-        return new String(bytes, StandardCharsets.UTF_8);
+    private byte[] fetchBytes(String url) throws Exception {
+        FetchResult result = fetchUrl(url);
+        if (!result.isSuccess()) {
+            throw new IllegalStateException(
+                "HTTP " + result.getStatusCode() + " when fetching " + url);
+        }
+        return result.getBody();
     }
     
-    private byte[] fetchBytes(String url) throws Exception {
+    private FetchResult fetchUrl(String url) throws Exception {
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
             .timeout(Duration.ofSeconds(DEFAULT_READ_TIMEOUT_SECONDS))
             .header("Accept", "*/*")
@@ -341,11 +557,89 @@ public class SkillWellKnownImportService implements AiResourceImportService {
             .build();
         HttpResponse<byte[]> response = httpClient.send(request,
             HttpResponse.BodyHandlers.ofByteArray());
-        int code = response.statusCode();
-        if (code < 200 || code >= 300) {
-            throw new IllegalStateException("HTTP " + code + " when fetching " + url);
+        return new FetchResult(url, response.statusCode(), response.headers(), response.body());
+    }
+    
+    private WellKnownIndexVersion resolveVersion(WellKnownSkillsIndex index)
+        throws NacosException {
+        String schema = index.getSchema();
+        if (StringUtils.isBlank(schema) || StringUtils.equals(schema, SCHEMA_0_1)
+            || schema.contains("/0.1.0/")) {
+            return WellKnownIndexVersion.V0_1_0;
         }
-        return response.body();
+        if (StringUtils.equals(schema, SCHEMA_0_2) || schema.contains("/0.2.0/")) {
+            return WellKnownIndexVersion.V0_2_0;
+        }
+        throw invalid("Unsupported Skill well-known schema: " + schema);
+    }
+    
+    private String normalizeType(String type) {
+        return StringUtils.isBlank(type) ? "" : type.trim().toLowerCase(Locale.ENGLISH);
+    }
+    
+    private String resolveArtifactUrl(String indexUrl, String artifactUrl) {
+        return URI.create(indexUrl).resolve(artifactUrl).toString();
+    }
+    
+    private void checkDownloadedSize(AiResourceImportSource source, byte[] bytes)
+        throws NacosException {
+        if (source.getMaxArtifactSize() > 0 && bytes != null
+            && bytes.length > source.getMaxArtifactSize()) {
+            throw invalid("Skill well-known artifact size exceeds source limit.");
+        }
+    }
+    
+    private void verifySha256Digest(String digest, byte[] bytes) throws Exception {
+        if (StringUtils.isBlank(digest)) {
+            throw invalid("Skill well-known 0.2.0 entry digest must not be empty.");
+        }
+        String normalizedDigest = digest.trim().toLowerCase(Locale.ENGLISH);
+        if (!normalizedDigest.startsWith(DIGEST_SHA256_PREFIX)) {
+            throw invalid("Skill well-known digest must use sha256.");
+        }
+        String expected = normalizedDigest.substring(DIGEST_SHA256_PREFIX.length());
+        String actual = sha256Hex(bytes);
+        if (!StringUtils.equals(expected, actual)) {
+            throw invalid("Skill well-known artifact digest mismatch.");
+        }
+    }
+    
+    private String sha256Hex(byte[] bytes) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(bytes);
+        StringBuilder result = new StringBuilder(hash.length * 2);
+        for (byte each : hash) {
+            result.append(String.format("%02x", each & 0xff));
+        }
+        return result.toString();
+    }
+    
+    private ArchiveFormat resolveArchiveFormat(FetchResult artifact) throws NacosException {
+        String contentType = artifact.getContentType().toLowerCase(Locale.ENGLISH);
+        String url = artifact.getUrl().toLowerCase(Locale.ENGLISH);
+        if (contentType.contains("gzip") || url.endsWith(TAR_GZ_SUFFIX)
+            || url.endsWith(TGZ_SUFFIX)) {
+            return ArchiveFormat.TAR_GZ;
+        }
+        if (contentType.contains("zip") || url.endsWith(ZIP_SUFFIX)) {
+            return ArchiveFormat.ZIP;
+        }
+        if (contentType.contains("tar") || url.endsWith(TAR_SUFFIX)) {
+            return ArchiveFormat.TAR;
+        }
+        throw invalid("Unsupported Skill well-known archive content type: "
+            + artifact.getContentType());
+    }
+    
+    private String normalizeArchiveEntryName(String name) {
+        if (StringUtils.isBlank(name)) {
+            return null;
+        }
+        String result = name.trim().replace('\\', '/');
+        while (result.startsWith("./")) {
+            result = result.substring(2);
+        }
+        return result;
     }
     
     private NacosException invalid(String message) {
@@ -358,9 +652,119 @@ public class SkillWellKnownImportService implements AiResourceImportService {
             cause, message);
     }
     
+    private enum WellKnownIndexVersion {
+        
+        V0_1_0("0.1.0"),
+        
+        V0_2_0("0.2.0");
+        
+        private final String version;
+        
+        WellKnownIndexVersion(String version) {
+            this.version = version;
+        }
+        
+        public String getVersion() {
+            return version;
+        }
+    }
+    
+    private enum ArchiveFormat {
+        
+        ZIP,
+        
+        TAR,
+        
+        TAR_GZ
+    }
+    
+    private static class ResolvedWellKnownIndex {
+        
+        private final WellKnownSkillsIndex index;
+        
+        private final WellKnownIndexVersion version;
+        
+        private final String indexUrl;
+        
+        private final String wellKnownBase;
+        
+        ResolvedWellKnownIndex(WellKnownSkillsIndex index, WellKnownIndexVersion version,
+            String indexUrl, String wellKnownBase) {
+            this.index = index;
+            this.version = version;
+            this.indexUrl = indexUrl;
+            this.wellKnownBase = wellKnownBase;
+        }
+        
+        public WellKnownSkillsIndex getIndex() {
+            return index;
+        }
+        
+        public WellKnownIndexVersion getVersion() {
+            return version;
+        }
+        
+        public String getIndexUrl() {
+            return indexUrl;
+        }
+        
+        public String getWellKnownBase() {
+            return wellKnownBase;
+        }
+    }
+    
+    private static class FetchResult {
+        
+        private final String url;
+        
+        private final int statusCode;
+        
+        private final HttpHeaders headers;
+        
+        private final byte[] body;
+        
+        FetchResult(String url, int statusCode, HttpHeaders headers, byte[] body) {
+            this.url = url;
+            this.statusCode = statusCode;
+            this.headers = headers;
+            this.body = body == null ? new byte[0] : body;
+        }
+        
+        public boolean isSuccess() {
+            return statusCode >= 200 && statusCode < 300;
+        }
+        
+        public String getUrl() {
+            return url;
+        }
+        
+        public int getStatusCode() {
+            return statusCode;
+        }
+        
+        public byte[] getBody() {
+            return body;
+        }
+        
+        public String getContentType() {
+            return headers.firstValue("Content-Type").orElse("");
+        }
+    }
+    
     static class WellKnownSkillsIndex {
         
+        @JsonProperty("$schema")
+        private String schema;
+        
         private List<WellKnownSkillEntry> skills;
+        
+        public String getSchema() {
+            return schema;
+        }
+        
+        public void setSchema(String schema) {
+            this.schema = schema;
+        }
         
         public List<WellKnownSkillEntry> getSkills() {
             return skills;
@@ -378,6 +782,12 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         private String description;
         
         private List<String> files;
+        
+        private String type;
+        
+        private String url;
+        
+        private String digest;
         
         public String getName() {
             return name;
@@ -401,6 +811,30 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         
         public void setFiles(List<String> files) {
             this.files = files;
+        }
+        
+        public String getType() {
+            return type;
+        }
+        
+        public void setType(String type) {
+            this.type = type;
+        }
+        
+        public String getUrl() {
+            return url;
+        }
+        
+        public void setUrl(String url) {
+            this.url = url;
+        }
+        
+        public String getDigest() {
+            return digest;
+        }
+        
+        public void setDigest(String digest) {
+            this.digest = digest;
         }
     }
 }

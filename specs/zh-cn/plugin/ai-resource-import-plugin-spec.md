@@ -145,10 +145,18 @@ Resource Operator 位于 AI Registry 领域内，不属于导入插件。它们�
 摘要，fetch 阶段返回可由 MCP Resource Operator 写入的 `MCP_DETAIL` artifact。
 
 `skills-well-known` importer 对接运维配置的 Skill 市场或 registry root。若 source endpoint
-不是 well-known 路径，importer 应在 endpoint 后追加 `/.well-known/agent-skills`；若 endpoint
-已以 `/.well-known/agent-skills` 或 `/.well-known/skills` 结尾，则直接使用该路径。
+不是 well-known 路径，importer 应先尝试 `/.well-known/agent-skills`，再 fallback 到
+`/.well-known/skills` 以兼容 v0.1 来源；若 endpoint 已以 `/.well-known/agent-skills` 或
+`/.well-known/skills` 结尾，则直接使用该路径。
 
-Skill well-known 来源应提供 `index.json`，其最小结构为：
+Importer 必须同时支持两类 Skill well-known discovery 版本：
+
+- v0.1.0 或 legacy 来源，通过缺失 `$schema` 字段，或
+  `https://schemas.agentskills.io/discovery/0.1.0/schema.json` schema URI 识别；
+- v0.2.0 来源，通过
+  `https://schemas.agentskills.io/discovery/0.2.0/schema.json` schema URI 识别。
+
+v0.1.0 或 legacy 来源的 `index.json` 使用每个 Skill 的文件列表：
 
 ```json
 {
@@ -168,6 +176,37 @@ Skill well-known 来源应提供 `index.json`，其最小结构为：
 Search 阶段只能返回 `name`、`description` 和非 secret metadata。Fetch 阶段按
 `{wellKnownBase}/{skillName}/{file}` 拉取被选择 Skill 的文件，校验文件路径安全性，组装为标准
 Skill ZIP artifact，并交给 Skill Resource Operator 通过普通 Skill upload 或 draft 生命周期写入。
+
+v0.2.0 来源的 `index.json` 使用 artifact 引用：
+
+```json
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "demo-skill",
+      "type": "skill-md",
+      "description": "Demo skill",
+      "url": "/.well-known/agent-skills/demo-skill/SKILL.md",
+      "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    },
+    {
+      "name": "archive-skill",
+      "type": "archive",
+      "description": "Demo archive skill",
+      "url": "/.well-known/agent-skills/archive-skill.tar.gz",
+      "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ]
+}
+```
+
+Search 阶段不得下载 artifact 内容，只能暴露 `name`、`description`、`type`、`url`、`digest`、
+schema version 和其他 Console 所需的非 secret metadata。Fetch 阶段必须以 index URL 为基准解析
+`url`，在服务端下载被选择的 artifact，校验 `sha256` digest，并将 artifact 转换为标准 Nacos
+Skill ZIP 边界。内置 importer 必须支持 `skill-md` 单文件 artifact，以及 ZIP、TAR、TAR.GZ、
+TGZ 形式的 `archive` artifact。Archive 解包必须校验路径安全性，限制文件数量和解压后总大小，
+并在交给 Skill Resource Operator 前拒绝不支持的 archive 格式。
 
 ## API 流程
 
