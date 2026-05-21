@@ -2,7 +2,18 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Trash2, Search, X, ChevronLeft, ChevronRight, Wand2, Upload, Plus, Tag } from 'lucide-react';
+import {
+  Trash2,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Wand2,
+  Upload,
+  Plus,
+  Tag,
+  Download,
+} from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,10 +30,18 @@ import {
 import { SkillCard } from './components/SkillCard';
 import { UploadSkillDialog } from './components/UploadSkillDialog';
 import { CreateSkillDialog } from './components/CreateSkillDialog';
+import { ImportSkillDialog } from '@/components/ai/skill/ImportSkillDialog';
 import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { skillApi } from '@/api/skill';
+
+interface SkillBatchUploadResponse {
+  data?: {
+    succeeded?: string[];
+    failed?: { name: string; reason: string }[];
+  };
+}
 
 export default function SkillManagementPage() {
   const { t } = useTranslation();
@@ -59,6 +78,7 @@ export default function SkillManagementPage() {
   const [ownerInput, setOwnerInput] = useState(filterOwner);
   const [bizTagInput, setBizTagInput] = useState(filterBizTag);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounter = useRef(0);
@@ -167,7 +187,7 @@ export default function SkillManagementPage() {
     }
     try {
       const res = await skillApi.batchUpload(namespaceId, droppedFile);
-      const data = (res as any)?.data;
+      const data = (res as SkillBatchUploadResponse)?.data;
       if (data && (data.succeeded || data.failed)) {
         const succeededList: string[] = data.succeeded ?? [];
         const failedList: { name: string; reason: string }[] = data.failed ?? [];
@@ -236,6 +256,10 @@ export default function SkillManagementPage() {
           <Button size="sm" variant="outline" onClick={() => setUploadOpen(true)}>
             <Upload className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.upload')}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            {t('skill.importFromRegistry')}
           </Button>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -475,6 +499,14 @@ export default function SkillManagementPage() {
       <UploadSkillDialog
         open={uploadOpen}
         onOpenChange={setUploadOpen}
+        namespaceId={namespaceId}
+        onSuccess={loadData}
+      />
+
+      {/* Import dialog */}
+      <ImportSkillDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
         namespaceId={namespaceId}
         onSuccess={loadData}
       />
