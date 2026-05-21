@@ -19,12 +19,23 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.authenticate;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper;
+import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
 import com.alibaba.nacos.plugin.auth.impl.oidc.token.JwtTokenValidator;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.PlainJWT;
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,6 +53,16 @@ class AuthorizationCodeHandlerTest {
     @Test
     void testBuildAuthorizationUrlRejectsMissingEndpoint() {
         OidcAuthConfig config = mock(OidcAuthConfig.class);
+        AuthorizationCodeHandler handler = newHandler(config);
+
+        assertThrows(AccessException.class,
+            () -> handler.buildAuthorizationUrl("http://nacos/callback"));
+    }
+
+    @Test
+    void testBuildAuthorizationUrlWrapsInvalidEndpoint() {
+        OidcAuthConfig config = mockConfig();
+        when(config.getAuthorizationEndpoint()).thenReturn("://bad-endpoint");
         AuthorizationCodeHandler handler = newHandler(config);
 
         assertThrows(AccessException.class,
@@ -96,16 +117,139 @@ class AuthorizationCodeHandlerTest {
         assertTrue(logoutUrl.endsWith("&client_id=client"));
     }
 
+    @Test
+    void testBuildLogoutUrlWithRedirectOnly() {
+        OidcAuthConfig config = mockConfig();
+        AuthorizationCodeHandler handler = newHandler(config);
+
+        String logoutUrl = handler.buildLogoutUrl("", "http://nacos");
+
+        assertEquals("http://idp/logout?post_logout_redirect_uri=http://nacos&client_id=client",
+            logoutUrl);
+    }
+
+    @Test
+    void testSignedStateRoundTripAndInvalidBranches() {
+        AuthorizationCodeHandler handler = newHandler(mockConfig());
+        long future = System.currentTimeMillis() + 60_000L;
+        long past = System.currentTimeMillis() - 1_000L;
+
+        String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
+            future);
+        Object stateData = ReflectionTestUtils.invokeMethod(handler, "verifyAndDecodeState",
+            state);
+
+        assertNotNull(stateData);
+        assertEquals("nonce", ReflectionTestUtils.getField(stateData, "nonce"));
+        assertEquals(future, ReflectionTestUtils.getField(stateData, "expirationTime"));
+        assertNull(ReflectionTestUtils.invokeMethod(handler, "verifyAndDecodeState",
+            encodeState("only.two")));
+        assertNull(ReflectionTestUtils.invokeMethod(handler, "verifyAndDecodeState",
+            encodeState("nonce.not-number.signature")));
+        assertNull(ReflectionTestUtils.invokeMethod(handler, "verifyAndDecodeState",
+            encodeState("nonce." + future + ".bad-signature")));
+        String expiredState = ReflectionTestUtils.invokeMethod(handler, "buildSignedState",
+            "nonce", past);
+        assertNull(ReflectionTestUtils.invokeMethod(handler, "verifyAndDecodeState",
+            expiredState));
+        assertNull(ReflectionTestUtils.invokeMethod(handler, "verifyAndDecodeState", "%%"));
+    }
+
+    @Test
+    void testBuildSignedStateRequiresClientSecret() {
+        OidcAuthConfig config = mockConfig();
+        when(config.getClientSecret()).thenReturn("");
+        AuthorizationCodeHandler handler = newHandler(config);
+
+        assertThrows(RuntimeException.class,
+            () -> ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
+                System.currentTimeMillis() + 60_000L));
+    }
+
+    @Test
+    void testExchangeCodeRejectsInvalidStateAndMissingTokenEndpoint() {
+        AuthorizationCodeHandler handler = newHandler(mockConfig());
+        assertThrows(AccessException.class,
+            () -> handler.exchangeCodeForUser("code", "bad-state", "http://nacos/callback"));
+
+        String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
+            System.currentTimeMillis() + 60_000L);
+        assertThrows(AccessException.class,
+            () -> handler.exchangeCodeForUser("code", state, "http://nacos/callback"));
+    }
+
+    @Test
+    void testExchangeCodeMapsUserAndAccessToken() throws Exception {
+        String idToken = plainJwt();
+        HttpServer server = startTokenServer(200, tokenSuccessBody(idToken));
+        try {
+            JwtTokenValidator validator = mock(JwtTokenValidator.class);
+            OidcUserMapper mapper = mock(OidcUserMapper.class);
+            JWTClaimsSet claims = new JWTClaimsSet.Builder().subject("subject")
+                .claim("nonce", "nonce").build();
+            OidcUser user = new OidcUser();
+            user.setUsername("nacos");
+            when(validator.validate(idToken)).thenReturn(claims);
+            when(mapper.mapToUser(claims)).thenReturn(user);
+            AuthorizationCodeHandler handler = newHandler(tokenConfig(server, true), validator,
+                mapper);
+            String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
+                System.currentTimeMillis() + 60_000L);
+
+            OidcUser result = handler.exchangeCodeForUser("code", state, "http://nacos/callback");
+
+            assertEquals("nacos", result.getUsername());
+            assertEquals("access-token", result.getToken());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void testExchangeCodeHandlesNonceValidationBranches() throws Exception {
+        String idToken = plainJwt();
+        JWTClaimsSet claimsWithoutNonce = new JWTClaimsSet.Builder().subject("subject").build();
+        JWTClaimsSet mismatchClaims = new JWTClaimsSet.Builder().subject("subject")
+            .claim("nonce", "other").build();
+
+        assertThrows(AccessException.class,
+            () -> exchangeWithClaims(idToken, claimsWithoutNonce, true));
+        assertEquals("access-token", exchangeWithClaims(idToken, claimsWithoutNonce, false)
+            .getToken());
+        assertThrows(AccessException.class,
+            () -> exchangeWithClaims(idToken, mismatchClaims, true));
+    }
+
+    @Test
+    void testExchangeCodeRejectsTokenEndpointErrorResponse() throws Exception {
+        HttpServer server = startTokenServer(400,
+            "{\"error\":\"invalid_grant\",\"error_description\":\"bad code\"}");
+        try {
+            AuthorizationCodeHandler handler = newHandler(tokenConfig(server, true));
+            String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
+                System.currentTimeMillis() + 60_000L);
+
+            assertThrows(AccessException.class,
+                () -> handler.exchangeCodeForUser("code", state, "http://nacos/callback"));
+        } finally {
+            server.stop(0);
+        }
+    }
+
     private AuthorizationCodeHandler newHandler(OidcAuthConfig config) {
+        return newHandler(config, mock(JwtTokenValidator.class), mock(OidcUserMapper.class));
+    }
+
+    private AuthorizationCodeHandler newHandler(OidcAuthConfig config,
+            JwtTokenValidator validator, OidcUserMapper mapper) {
         ReflectionTestUtils.setField(AuthorizationCodeHandler.class, "instance", null);
         try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class);
                 MockedStatic<JwtTokenValidator> validatorStatic =
                     mockStatic(JwtTokenValidator.class);
                 MockedStatic<OidcUserMapper> mapperStatic = mockStatic(OidcUserMapper.class)) {
             configStatic.when(OidcAuthConfig::getInstance).thenReturn(config);
-            validatorStatic.when(JwtTokenValidator::getInstance)
-                .thenReturn(mock(JwtTokenValidator.class));
-            mapperStatic.when(OidcUserMapper::getInstance).thenReturn(mock(OidcUserMapper.class));
+            validatorStatic.when(JwtTokenValidator::getInstance).thenReturn(validator);
+            mapperStatic.when(OidcUserMapper::getInstance).thenReturn(mapper);
             return AuthorizationCodeHandler.getInstance();
         }
     }
@@ -118,5 +262,61 @@ class AuthorizationCodeHandlerTest {
         when(config.getScope()).thenReturn("openid profile");
         when(config.getEndSessionEndpoint()).thenReturn("http://idp/logout");
         return config;
+    }
+
+    private String encodeState(String stateContent) {
+        return Base64.getUrlEncoder().withoutPadding()
+            .encodeToString(stateContent.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private OidcUser exchangeWithClaims(String idToken, JWTClaimsSet claims, boolean strictNonce)
+            throws Exception {
+        HttpServer server = startTokenServer(200, tokenSuccessBody(idToken));
+        try {
+            JwtTokenValidator validator = mock(JwtTokenValidator.class);
+            OidcUserMapper mapper = mock(OidcUserMapper.class);
+            OidcUser user = new OidcUser();
+            user.setUsername("nacos");
+            when(validator.validate(idToken)).thenReturn(claims);
+            when(mapper.mapToUser(claims)).thenReturn(user);
+            AuthorizationCodeHandler handler = newHandler(tokenConfig(server, strictNonce),
+                validator, mapper);
+            String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
+                System.currentTimeMillis() + 60_000L);
+            return handler.exchangeCodeForUser("code", state, "http://nacos/callback");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    private OidcAuthConfig tokenConfig(HttpServer server, boolean strictNonce) {
+        OidcAuthConfig config = mockConfig();
+        when(config.getTokenEndpoint())
+            .thenReturn("http://127.0.0.1:" + server.getAddress().getPort() + "/token");
+        when(config.isStrictNonceValidation()).thenReturn(strictNonce);
+        return config;
+    }
+
+    private HttpServer startTokenServer(int status, String body) throws IOException {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/token", exchange -> {
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(status, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        });
+        server.start();
+        return server;
+    }
+
+    private String tokenSuccessBody(String idToken) {
+        return "{\"access_token\":\"access-token\",\"token_type\":\"Bearer\",\"id_token\":\""
+            + idToken + "\"}";
+    }
+
+    private String plainJwt() {
+        JWTClaimsSet claims = new JWTClaimsSet.Builder().subject("subject").build();
+        return new PlainJWT(claims).serialize();
     }
 }

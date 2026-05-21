@@ -16,19 +16,29 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.token;
 
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.proc.BadJOSEException;
+import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -39,6 +49,106 @@ class JwtTokenValidatorTest {
     @AfterEach
     void tearDown() {
         ReflectionTestUtils.setField(JwtTokenValidator.class, "instance", null);
+    }
+
+    @Test
+    void testValidateRejectsBlankToken() {
+        JwtTokenValidator validator = newValidator(mockConfig());
+
+        assertThrows(AccessException.class, () -> validator.validate(" "));
+    }
+
+    @Test
+    void testValidateReturnsClaimsWhenClaimsAreValid() throws Exception {
+        OidcAuthConfig config = mockConfig();
+        when(config.getIssuerUri()).thenReturn("http://issuer");
+        JwtTokenValidator validator = newValidator(config);
+        ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
+        JWTClaimsSet claims = validClaims().build();
+        when(processor.process("token", null)).thenReturn(claims);
+        ReflectionTestUtils.setField(validator, "jwtProcessor", processor);
+
+        assertEquals(claims, validator.validate("token"));
+    }
+
+    @Test
+    void testValidateRejectsExpiredOrFutureTokens() throws Exception {
+        JwtTokenValidator validator = newValidator(mockConfig());
+        ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
+        ReflectionTestUtils.setField(validator, "jwtProcessor", processor);
+        when(processor.process("expired", null)).thenReturn(validClaims()
+            .expirationTime(new Date(System.currentTimeMillis() - 1_000L)).build());
+        when(processor.process("future", null)).thenReturn(validClaims()
+            .notBeforeTime(new Date(System.currentTimeMillis() + 60_000L)).build());
+
+        assertThrows(AccessException.class, () -> validator.validate("expired"));
+        assertThrows(AccessException.class, () -> validator.validate("future"));
+    }
+
+    @Test
+    void testValidateAudienceAndIssuerBranches() throws Exception {
+        OidcAuthConfig config = mockConfig();
+        when(config.getIssuerUri()).thenReturn("http://issuer/");
+        when(config.isStrictAudienceValidation()).thenReturn(false);
+        JwtTokenValidator validator = newValidator(config);
+        ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
+        ReflectionTestUtils.setField(validator, "jwtProcessor", processor);
+        when(processor.process("slash", null)).thenReturn(validClaims()
+            .issuer("http://issuer").audience("other").build());
+        when(processor.process("azp", null)).thenReturn(validClaims()
+            .audience("other").claim("azp", "nacos").build());
+        when(processor.process("issuer", null)).thenReturn(validClaims()
+            .issuer("http://other").build());
+
+        assertEquals("subject", validator.validate("slash").getSubject());
+        assertEquals("nacos", validator.validate("azp").getStringClaim("azp"));
+        assertThrows(AccessException.class, () -> validator.validate("issuer"));
+    }
+
+    @Test
+    void testValidateRejectsStrictAudienceMismatch() throws Exception {
+        OidcAuthConfig config = mockConfig();
+        when(config.isStrictAudienceValidation()).thenReturn(true);
+        JwtTokenValidator validator = newValidator(config);
+        ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
+        ReflectionTestUtils.setField(validator, "jwtProcessor", processor);
+        when(processor.process("token", null)).thenReturn(validClaims().audience("other").build());
+
+        assertThrows(AccessException.class, () -> validator.validate("token"));
+    }
+
+    @Test
+    void testValidateWrapsProcessorFailures() throws Exception {
+        JwtTokenValidator validator = newValidator(mockConfig());
+        ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
+        ReflectionTestUtils.setField(validator, "jwtProcessor", processor);
+        when(processor.process("parse", null)).thenThrow(new ParseException("bad", 0));
+        when(processor.process("jose", null)).thenThrow(new JOSEException("broken"));
+        when(processor.process("argument", null))
+            .thenThrow(new IllegalArgumentException("broken"));
+        when(processor.process("runtime", null)).thenThrow(new IllegalStateException("broken"));
+
+        assertThrows(AccessException.class, () -> validator.validate("parse"));
+        assertThrows(AccessException.class, () -> validator.validate("jose"));
+        assertThrows(AccessException.class, () -> validator.validate("argument"));
+        assertThrows(AccessException.class, () -> validator.validate("runtime"));
+    }
+
+    @Test
+    void testValidateWrapsJwksInitializationAndRefreshFailures() throws Exception {
+        JwtTokenValidator validator = newValidator(mockConfig());
+        JwksProvider provider = mock(JwksProvider.class);
+        when(provider.getJwkSet()).thenThrow(new IOException("down"));
+        ReflectionTestUtils.setField(validator, "jwksProvider", provider);
+
+        assertThrows(AccessException.class, () -> validator.validate("token"));
+
+        ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
+        ReflectionTestUtils.setField(validator, "jwtProcessor", processor);
+        when(processor.process("rotated", null)).thenThrow(new BadJOSEException("bad key"));
+        when(provider.refreshJwkSet()).thenThrow(new IOException("still down"));
+
+        assertThrows(AccessException.class, () -> validator.validate("rotated"));
     }
 
     @Test
@@ -114,6 +224,22 @@ class JwtTokenValidatorTest {
             .build();
 
         assertTrue(validator.isAdmin(claims));
+        assertFalse(validator.isAdmin(new JWTClaimsSet.Builder()
+            .claim("roles", Collections.singletonList("reader")).build()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private ConfigurableJWTProcessor<SecurityContext> mockProcessor() {
+        return mock(ConfigurableJWTProcessor.class);
+    }
+
+    private JWTClaimsSet.Builder validClaims() {
+        return new JWTClaimsSet.Builder()
+            .subject("subject")
+            .issuer("http://issuer")
+            .expirationTime(new Date(System.currentTimeMillis() + 60_000L))
+            .issueTime(new Date(System.currentTimeMillis() - 1_000L))
+            .audience("nacos");
     }
 
     private JwtTokenValidator newValidator(OidcAuthConfig config) {
