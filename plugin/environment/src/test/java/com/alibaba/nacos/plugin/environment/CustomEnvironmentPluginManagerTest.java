@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.plugin.environment;
 
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
+import com.alibaba.nacos.plugin.environment.spi.EnvironmentPluginProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -82,5 +85,13 @@ class CustomEnvironmentPluginManagerTest {
         // [issue 13367] check property remove
         assertFalse(customValues.containsKey("db.password.1"));
         assertFalse(customValues.containsKey("db.password.2"));
+    }
+    
+    @Test
+    void testEnvironmentPluginProvider() {
+        EnvironmentPluginProvider provider = new EnvironmentPluginProvider();
+        
+        assertEquals(PluginType.ENVIRONMENT, provider.getPluginType());
+        assertNotNull(provider.getAllPlugins());
     }
 }

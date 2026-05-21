@@ -18,7 +18,10 @@ package com.alibaba.nacos.plugin.auth.constant;
 
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Constructor;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ConstantsTest {
     
@@ -55,5 +58,19 @@ class ConstantsTest {
         assertEquals("config", SignType.CONFIG);
         assertEquals("console", SignType.CONSOLE);
         assertEquals("specified", SignType.SPECIFIED);
+    }
+    
+    @Test
+    void testConstantClassesConstructors() throws Exception {
+        assertNotNull(new Constants());
+        assertNotNull(new Constants.Auth());
+        assertNotNull(new Constants.Resource());
+        assertNotNull(new Constants.Identity());
+        assertNotNull(new Constants.Tag());
+        assertNotNull(new SignType());
+        Constructor<OidcProtocolConstants> constructor =
+            OidcProtocolConstants.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        assertNotNull(constructor.newInstance());
     }
 }
