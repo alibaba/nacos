@@ -49,6 +49,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
@@ -231,7 +232,7 @@ class ConfigOpsControllerV3Test {
         MockMultipartFile file =
             new MockMultipartFile("file", "test.zip", "application/zip",
                 "test".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders
             .multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
             .file(file);
         int actualValue =
@@ -247,7 +248,7 @@ class ConfigOpsControllerV3Test {
         MockMultipartFile file =
             new MockMultipartFile("file", "test.zip", "application/zip",
                 "test".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders
             .multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
             .file(file);
         int actualValue =
@@ -340,7 +341,7 @@ class ConfigOpsControllerV3Test {
         MockMultipartFile file =
             new MockMultipartFile("file", "test.sql", "text/plain",
                 "INSERT INTO test VALUES(1)".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders
             .multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
             .file(file);
         int status = mockMvc.perform(builder).andReturn().getResponse().getStatus();
@@ -365,7 +366,7 @@ class ConfigOpsControllerV3Test {
         MockMultipartFile file =
             new MockMultipartFile("file", "test.sql", "text/plain",
                 "INSERT INTO test VALUES(1)".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders
             .multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
             .file(file);
         int status = mockMvc.perform(builder).andReturn().getResponse().getStatus();
