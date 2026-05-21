@@ -57,6 +57,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -377,6 +378,43 @@ class SkillOperationServiceImplTest {
         assertEquals("test-skill", result);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
             && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())));
+    }
+    
+    @Test
+    void testUploadSkillFromZipShouldSyncMetaDescriptionForExistingSkill()
+        throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        final byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setDesc("Old description");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"3.0.5\"},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("3.0.5");
+        versions.setPageItems(List.of(v1));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(),
+            isNull(), anyInt(), anyInt()))
+            .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(),
+            eq(2L), any()))
+            .thenReturn(true);
+        
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+        
+        assertEquals("test-skill", result);
+        ArgumentCaptor<AiResource> metaCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq("test-skill"),
+            anyString(),
+            eq(2L), metaCaptor.capture());
+        assertEquals("Test skill description", metaCaptor.getValue().getDesc());
     }
     
     @Test

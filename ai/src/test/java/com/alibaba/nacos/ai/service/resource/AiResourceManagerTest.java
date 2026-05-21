@@ -1833,6 +1833,33 @@ class AiResourceManagerTest {
             eq(RESOURCE_TYPE), eq(1L), any());
     }
     
+    @Test
+    void initOrUpdateMetaForDraftShouldPreserveLatestDescriptionWhenDescriptionBlankOnRetry()
+        throws NacosException {
+        AiResource existedMeta = buildMeta("res");
+        existedMeta.setDesc("old-desc");
+        AiResource latestMeta = buildMeta("res");
+        latestMeta.setDesc("new-desc");
+        latestMeta.setMetaVersion(2L);
+        latestMeta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any()))
+            .thenReturn(false);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(latestMeta);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(2L), any()))
+            .thenReturn(true);
+        
+        manager.initOrUpdateMetaForDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "", null, "v2",
+            existedMeta, false);
+        
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(2L), captor.capture());
+        assertEquals("new-desc", captor.getValue().getDesc());
+    }
+    
     // ---- deleteResourceWithVersions ----
     
     @Test

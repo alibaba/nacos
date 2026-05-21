@@ -983,9 +983,30 @@ public class AiResourceManager {
             meta.setMetaVersion(1L);
             aiResourcePersistService.insert(meta);
         } else if (existedMeta != null) {
+            if (existedMeta.getMetaVersion() == null) {
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                    "Meta version missing");
+            }
             ResourceVersionInfo info = requireVersionInfo(existedMeta);
             info.setEditingVersion(version);
-            updateVersionInfoCas(namespaceId, existedMeta, info);
+            boolean syncDescription = StringUtils.isNotBlank(description);
+            AiResource newValue = new AiResource();
+            newValue.setStatus(existedMeta.getStatus());
+            newValue.setDesc(syncDescription ? description : existedMeta.getDesc());
+            newValue.setBizTags(existedMeta.getBizTags());
+            newValue.setExt(existedMeta.getExt());
+            newValue.setVersionInfo(JacksonUtils.toJson(info));
+            CasResult result = doCasLoop(namespaceId, existedMeta.getName(), existedMeta.getType(),
+                existedMeta.getMetaVersion(), newValue,
+                (nv, latest) -> {
+                    nv.setStatus(latest.getStatus());
+                    if (!syncDescription) {
+                        nv.setDesc(latest.getDesc());
+                    }
+                    nv.setBizTags(latest.getBizTags());
+                    nv.setExt(latest.getExt());
+                });
+            handleStrictCasResult(result);
         }
     }
     
