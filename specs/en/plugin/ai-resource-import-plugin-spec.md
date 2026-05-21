@@ -164,11 +164,19 @@ endpoint. Search returns MCP Server summaries only, and fetch returns an
 
 The `skills-well-known` importer connects to an operator-configured Skill
 marketplace or registry root. If the source endpoint is not already a
-well-known path, the importer should append `/.well-known/agent-skills`. If the
+well-known path, the importer should first try `/.well-known/agent-skills` and
+then fall back to `/.well-known/skills` for v0.1-compatible sources. If the
 endpoint already ends with `/.well-known/agent-skills` or `/.well-known/skills`,
 the importer should use that path directly.
 
-A Skill well-known source should expose `index.json` with this minimum shape:
+The importer must support both Skill well-known discovery versions:
+
+- v0.1.0 or legacy sources, identified by an absent `$schema` field or the
+  `https://schemas.agentskills.io/discovery/0.1.0/schema.json` schema URI;
+- v0.2.0 sources, identified by the
+  `https://schemas.agentskills.io/discovery/0.2.0/schema.json` schema URI.
+
+For v0.1.0 or legacy sources, `index.json` uses a file list for each Skill:
 
 ```json
 {
@@ -190,6 +198,40 @@ downloads the selected Skill files from `{wellKnownBase}/{skillName}/{file}`,
 validates path safety, assembles a standard Skill ZIP artifact, and passes it to
 the Skill resource operator so it is applied through the normal Skill upload or
 draft lifecycle.
+
+For v0.2.0 sources, `index.json` uses artifact references:
+
+```json
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "demo-skill",
+      "type": "skill-md",
+      "description": "Demo skill",
+      "url": "/.well-known/agent-skills/demo-skill/SKILL.md",
+      "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    },
+    {
+      "name": "archive-skill",
+      "type": "archive",
+      "description": "Demo archive skill",
+      "url": "/.well-known/agent-skills/archive-skill.tar.gz",
+      "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ]
+}
+```
+
+Search must not download artifact content. It may expose only `name`,
+`description`, `type`, `url`, `digest`, schema version, and other non-secret
+metadata needed by the console. Fetch must resolve `url` against the index URL,
+download the selected artifact server-side, verify the `sha256` digest, and
+convert the artifact into the standard Nacos Skill ZIP boundary. The built-in
+importer must support `skill-md` single-file artifacts and `archive` artifacts
+packaged as ZIP, TAR, TAR.GZ, or TGZ. Archive extraction must validate path
+safety, limit file count and decompressed size, and reject unsupported archive
+formats before the artifact is handed to the Skill resource operator.
 
 ## API Flow
 
