@@ -59,6 +59,11 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-default-ai-trace-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-datasource-plugin-mysql</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -169,6 +174,10 @@
                                 <available file="${project.basedir}/../../distribution/plugins/nacos-ldap-auth-plugin-${project.version}.jar"
                                            property="plugin.output.ldap.exists"/>
                                 <fail unless="plugin.output.ldap.exists" message="Missing nacos-ldap-auth-plugin in distribution/plugins after packaging."/>
+                                <available file="${project.basedir}/../../distribution/plugins/nacos-default-ai-trace-plugin-${project.version}.jar"
+                                           property="plugin.output.ai.trace.exists"/>
+                                <fail unless="plugin.output.ai.trace.exists"
+                                      message="Missing nacos-default-ai-trace-plugin in distribution/plugins after packaging."/>
 
                                 <condition property="plugin.output.spring.ldap.missing">
                                     <resourcecount count="0" when="equal">
@@ -196,7 +205,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.basedir}/../../distribution/plugins</outputDirectory>
-                            <includeArtifactIds>default-auth-plugin,nacos-ldap-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-default-ai-pipeline-plugin,nacos-default-ai-importer-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,mysql-connector-j,derby,postgresql</includeArtifactIds>
+                            <includeArtifactIds>default-auth-plugin,nacos-ldap-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-default-ai-pipeline-plugin,nacos-default-ai-importer-plugin,nacos-default-ai-trace-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,mysql-connector-j,derby,postgresql</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>

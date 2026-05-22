@@ -34,10 +34,6 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-common</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-trace-plugin</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>com.alibaba.nacos</groupId>

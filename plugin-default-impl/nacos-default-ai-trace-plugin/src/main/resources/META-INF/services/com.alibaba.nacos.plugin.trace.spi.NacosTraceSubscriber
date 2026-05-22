@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.ai.service.trace.AiResourceTraceLogSubscriber
+com.alibaba.nacos.plugin.trace.ai.AiResourceTraceLogSubscriber

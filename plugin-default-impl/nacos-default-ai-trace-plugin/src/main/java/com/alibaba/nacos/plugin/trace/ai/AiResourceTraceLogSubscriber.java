@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.trace;
+package com.alibaba.nacos.plugin.trace.ai;
 
-import com.alibaba.nacos.ai.utils.AiLogUtil;
 import com.alibaba.nacos.common.trace.event.TraceEvent;
 import com.alibaba.nacos.common.trace.event.ai.AiResourceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -39,6 +40,9 @@ public class AiResourceTraceLogSubscriber implements NacosTraceSubscriber {
     
     public static final String NAME = "ai-resource-trace-log";
     
+    private static final Logger TRACE_LOG =
+        LoggerFactory.getLogger("com.alibaba.nacos.ai.resource.trace");
+    
     @Override
     public String getName() {
         return NAME;
@@ -46,11 +50,10 @@ public class AiResourceTraceLogSubscriber implements NacosTraceSubscriber {
     
     @Override
     public void onEvent(TraceEvent event) {
-        if (!(event instanceof AiResourceTraceEvent) || !AiLogUtil.TRACE_LOG.isInfoEnabled()) {
+        if (!(event instanceof AiResourceTraceEvent) || !TRACE_LOG.isInfoEnabled()) {
             return;
         }
-        AiLogUtil.TRACE_LOG.info(
-            JacksonUtils.toJson(buildLogEntry((AiResourceTraceEvent) event)));
+        TRACE_LOG.info(JacksonUtils.toJson(buildLogEntry((AiResourceTraceEvent) event)));
     }
     
     @Override

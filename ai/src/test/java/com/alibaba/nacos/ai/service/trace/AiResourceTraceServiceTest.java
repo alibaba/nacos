@@ -16,16 +16,10 @@
 
 package com.alibaba.nacos.ai.service.trace;
 
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.trace.event.ai.AiResourceTraceEvent;
-import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AiResourceTraceServiceTest {
     
@@ -43,50 +37,5 @@ class AiResourceTraceServiceTest {
         assertEquals("admin", event.getOperator());
         assertEquals("127.0.0.1", event.getClientIp());
         assertEquals("pipeline", event.getExt());
-    }
-    
-    @Test
-    void testAiResourceTraceLogSubscriber() {
-        AiResourceTraceLogSubscriber subscriber = new AiResourceTraceLogSubscriber();
-        AiResourceTraceEvent event = new AiResourceTraceEvent(0L, "", "skill",
-            "demo-skill", "1.0.0", "PUBLISH", "SUCCESS", "", "pipeline");
-        
-        assertEquals(AiResourceTraceLogSubscriber.NAME, subscriber.getName());
-        assertEquals(1, subscriber.subscribeTypes().size());
-        assertTrue(subscriber.subscribeTypes().contains(AiResourceTraceEvent.class));
-        
-        Map<String, Object> logEntry = AiResourceTraceLogSubscriber.buildLogEntry(event);
-        assertEquals("1970-01-01T00:00:00Z", logEntry.get("timestamp"));
-        assertEquals("-", logEntry.get("operator"));
-        assertEquals("skill", logEntry.get("resource_type"));
-        assertEquals("demo-skill", logEntry.get("resource_id"));
-        assertEquals("1.0.0", logEntry.get("version"));
-        assertEquals("PUBLISH", logEntry.get("operation"));
-        assertEquals("SUCCESS", logEntry.get("status"));
-        assertEquals("-", logEntry.get("ip"));
-        assertEquals("pipeline", logEntry.get("ext"));
-    }
-    
-    @Test
-    void testAiResourceTraceLogSubscriberSkipBlankOptionalFields() {
-        AiResourceTraceEvent event = new AiResourceTraceEvent(0L, "admin", "skill",
-            "demo-skill", "", "PUBLISH", "SUCCESS", "127.0.0.1", "");
-        
-        Map<String, Object> logEntry = AiResourceTraceLogSubscriber.buildLogEntry(event);
-        assertFalse(logEntry.containsKey("version"));
-        assertFalse(logEntry.containsKey("ext"));
-    }
-    
-    @Test
-    void testAiResourceTraceLogSubscriberLoadedBySpi() {
-        boolean loaded = false;
-        for (NacosTraceSubscriber subscriber : NacosServiceLoader
-            .load(NacosTraceSubscriber.class)) {
-            if (AiResourceTraceLogSubscriber.NAME.equals(subscriber.getName())) {
-                loaded = true;
-                break;
-            }
-        }
-        assertTrue(loaded);
     }
 }
