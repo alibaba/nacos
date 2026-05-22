@@ -23,6 +23,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -198,6 +199,197 @@ class DatasourceMapperDefaultMethodTest {
         assertNull(mapper.castToMap("not-map"));
     }
     
+    @Test
+    void testWhereBuilderFluentBranches() {
+        MapperResult result = new WhereBuilder("SELECT * FROM config_info")
+            .startParentheses()
+            .eq("data_id", "data")
+            .or()
+            .likeWithEscape("content", "%value\\_%")
+            .endParentheses()
+            .and()
+            .exists("SELECT 1 FROM config_tags_relation b WHERE ",
+                sub -> sub.eqColumn("b.id", "a.id").and().in("b.tag_name",
+                    new String[] {"tagA", "tagB"}))
+            .groupBy("data_id")
+            .orderBy("id DESC")
+            .limit(0, 10)
+            .offset(10, 20)
+            .build();
+        
+        assertTrue(result.getSql().contains("content LIKE ? ESCAPE '\\'"));
+        assertTrue(result.getSql().contains("EXISTS ( SELECT 1 FROM config_tags_relation"));
+        assertTrue(result.getSql().contains("b.id = a.id"));
+        assertTrue(result.getSql().contains("GROUP BY data_id"));
+        assertTrue(result.getSql().contains("LIMIT 0,10"));
+        assertTrue(result.getSql().contains("OFFSET 10 ROWS FETCH NEXT 20 ROWS ONLY"));
+        assertEquals(Arrays.asList("data", "%value\\_%", "tagA", "tagB"),
+            result.getParamList());
+    }
+    
+    @Test
+    void testConfigInfoSimpleDefaultSql() {
+        ConfigInfoMapper mapper = new TestConfigInfoMapper();
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.TENANT_ID, "tenant");
+        context.putWhereParameter(FieldConstant.APP_NAME, "app");
+        context.putWhereParameter(FieldConstant.START_TIME, 100L);
+        context.putWhereParameter(FieldConstant.LAST_MAX_ID, 10L);
+        context.putWhereParameter(FieldConstant.PAGE_SIZE, 50);
+        
+        assertEquals("SELECT MAX(id) FROM config_info", mapper.findConfigMaxId(context).getSql());
+        assertEquals("SELECT DISTINCT data_id, group_id FROM config_info",
+            mapper.findAllDataIdAndGroup(context).getSql());
+        assertEquals(Arrays.asList("tenant", "app"),
+            mapper.findConfigInfoByAppCountRows(context).getParamList());
+        assertEquals(Collections.singletonList("tenant"),
+            mapper.configInfoLikeTenantCount(context).getParamList());
+        
+        MapperResult changeConfig = mapper.findChangeConfig(context);
+        assertTrue(changeConfig.getSql().contains("gmt_modified >= ?"));
+        assertEquals(Arrays.asList(100L, 10L, 50), changeConfig.getParamList());
+        assertEquals("config_info", mapper.getTableName());
+    }
+    
+    @Test
+    void testConfigInfoChangeCountAndExportBranches() {
+        ConfigInfoMapper mapper = new TestConfigInfoMapper();
+        MapperContext context = createQueryContext();
+        Timestamp startTime = Timestamp.valueOf("2026-05-22 00:00:00");
+        Timestamp endTime = Timestamp.valueOf("2026-05-22 01:00:00");
+        context.putWhereParameter(FieldConstant.TENANT, "tenant");
+        context.putWhereParameter(FieldConstant.START_TIME, startTime);
+        context.putWhereParameter(FieldConstant.END_TIME, endTime);
+        
+        MapperResult changeCount = mapper.findChangeConfigCountRows(context);
+        assertTrue(changeCount.getSql().contains("data_id LIKE ?"));
+        assertTrue(changeCount.getSql().contains("gmt_modified <=?"));
+        assertEquals(Arrays.asList("data", "group", "tenant", "app", startTime, endTime),
+            changeCount.getParamList());
+        
+        MapperContext idsContext = new MapperContext();
+        idsContext.putWhereParameter(FieldConstant.IDS, Arrays.asList(1L, 2L));
+        MapperResult idsExport = mapper.findAllConfigInfo4Export(idsContext);
+        assertTrue(idsExport.getSql().contains("id IN (?, ?)"));
+        assertEquals(Arrays.asList(1L, 2L), idsExport.getParamList());
+        
+        MapperResult filteredExport = mapper.findAllConfigInfo4Export(context);
+        assertTrue(filteredExport.getSql().contains("tenant_id = ?"));
+        assertTrue(filteredExport.getSql().contains("app_name= ?"));
+        assertEquals(Arrays.asList("tenantId", "data", "group", "app"),
+            filteredExport.getParamList());
+    }
+    
+    @Test
+    void testConfigInfoCountAndIdListDefaults() {
+        ConfigInfoMapper mapper = new TestConfigInfoMapper();
+        MapperContext context = createQueryContext();
+        context.putWhereParameter(FieldConstant.CONTENT, "content");
+        context.putWhereParameter(FieldConstant.TYPE, new String[] {"yaml", "json"});
+        context.putWhereParameter(FieldConstant.IDS, Arrays.asList(1L, 2L, 3L));
+        
+        MapperResult baseLike = mapper.findConfigInfoBaseLikeCountRows(context);
+        assertTrue(baseLike.getSql().contains("content LIKE ?"));
+        assertEquals(Arrays.asList("data", "group", "content"), baseLike.getParamList());
+        
+        MapperResult pageCount = mapper.findConfigInfo4PageCountRows(context);
+        assertTrue(pageCount.getSql().contains("tenant_id=?"));
+        assertEquals(Arrays.asList("tenantId", "data", "group", "app", "content"),
+            pageCount.getParamList());
+        
+        MapperResult likeCount = mapper.findConfigInfoLike4PageCountRows(context);
+        assertTrue(likeCount.getSql().contains("type IN (?"));
+        assertEquals(Arrays.asList("tenantId", "data", "group", "app", "content", "yaml",
+            "json"), likeCount.getParamList());
+        
+        assertEquals(Arrays.asList(1L, 2L, 3L),
+            mapper.findConfigInfosByIds(context).getParamList());
+        assertTrue(mapper.findConfigInfosByIds(context).getSql().contains("id IN (?, ?, ?)"));
+        assertEquals(Arrays.asList(1L, 2L, 3L),
+            mapper.removeConfigInfoByIdsAtomic(context).getParamList());
+    }
+    
+    @Test
+    void testConfigInfoAtomicCasWithOptionalDescription() {
+        ConfigInfoMapper mapper = new TestConfigInfoMapper();
+        MapperContext context = createUpdateContext();
+        context.putUpdateParameter(FieldConstant.C_DESC, "description");
+        context.putUpdateParameter(FieldConstant.C_USE, "use");
+        context.putUpdateParameter(FieldConstant.EFFECT, "effect");
+        context.putUpdateParameter(FieldConstant.TYPE, "type");
+        context.putUpdateParameter(FieldConstant.C_SCHEMA, "schema");
+        context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY, "key");
+        
+        MapperResult result = mapper.updateConfigInfoAtomicCas(context);
+        
+        assertTrue(result.getSql().contains("gmt_modified=NOW()"));
+        assertTrue(result.getSql().contains("c_desc=?"));
+        assertEquals(Arrays.asList("content", "md5-new", "127.0.0.1", "nacos", "app",
+            "description", "use", "effect", "type", "schema", "key", "data", "group",
+            "tenant", "md5-old"), result.getParamList());
+        
+        context.putUpdateParameter(FieldConstant.C_DESC, null);
+        assertTrue(!mapper.updateConfigInfoAtomicCas(context).getSql().contains("c_desc=?"));
+    }
+    
+    @Test
+    void testConfigMigrateDefaults() {
+        ConfigMigrateMapper mapper = new TestConfigMigrateMapper();
+        MapperContext context = new MapperContext();
+        context.setPageSize(100);
+        context.putWhereParameter(FieldConstant.ID, 10L);
+        context.putWhereParameter(FieldConstant.IDS, Arrays.asList(1L, 2L));
+        context.putWhereParameter(FieldConstant.SRC_USER, "nacos");
+        context.putWhereParameter(FieldConstant.SRC_TENANT, "");
+        context.putWhereParameter(FieldConstant.TARGET_TENANT, "public");
+        
+        assertEquals(Arrays.asList("nacos", "nacos"),
+            mapper.getConfigConflictCount(context).getParamList());
+        assertEquals(Arrays.asList(10L, 100),
+            mapper.findConfigIdNeedInsertMigrate(context).getParamList());
+        assertEquals(Arrays.asList("", "nacos", "public", "nacos", 10L, 100),
+            mapper.findConfigNeedUpdateMigrate(context).getParamList());
+        assertEquals(Arrays.asList("", "nacos", "public", "nacos", 10L, 100),
+            mapper.findConfigGrayNeedUpdateMigrate(context).getParamList());
+        assertEquals(Arrays.asList("nacos", 1L, 2L),
+            mapper.migrateConfigInsertByIds(context).getParamList());
+        assertEquals(Arrays.asList("nacos", "nacos"),
+            mapper.getConfigGrayConflictCount(context).getParamList());
+        assertEquals(Arrays.asList(10L, 100),
+            mapper.findConfigGrayIdNeedInsertMigrate(context).getParamList());
+        assertEquals(Arrays.asList("nacos", 1L, 2L),
+            mapper.migrateConfigGrayInsertByIds(context).getParamList());
+        assertEquals("migrate_config", mapper.getTableName());
+    }
+    
+    @Test
+    void testHistoryConfigInfoDefaults() {
+        HistoryConfigInfoMapper mapper = new TestHistoryConfigInfoMapper();
+        MapperContext context = createHistoryContext();
+        
+        assertEquals(Collections.singletonList(100L),
+            mapper.findConfigHistoryCountByTime(context).getParamList());
+        assertEquals(Arrays.asList("formal", 100L, 10L, 50),
+            mapper.findDeletedConfig(context).getParamList());
+        assertEquals(Arrays.asList("data", "group", "tenant"),
+            mapper.findConfigHistoryFetchRows(context).getParamList());
+        assertEquals(Collections.singletonList(1L),
+            mapper.detailPreviousConfigHistory(context).getParamList());
+        assertEquals("his_config_info", mapper.getTableName());
+        
+        MapperResult blankGray = mapper.getNextHistoryInfo(context);
+        assertTrue(!blankGray.getSql().contains("gray_name = ?"));
+        assertEquals(Arrays.asList("data", "group", "tenant", "formal", 5L),
+            blankGray.getParamList());
+        
+        context.putWhereParameter(FieldConstant.GRAY_NAME, "gray");
+        context.putContextParameter(FieldConstant.GRAY_NAME, "gray");
+        MapperResult withGray = mapper.getNextHistoryInfo(context);
+        assertTrue(withGray.getSql().contains("gray_name = ?"));
+        assertEquals(Arrays.asList("data", "group", "tenant", "formal", "gray", 5L),
+            withGray.getParamList());
+    }
+    
     private MapperResult buildEmptyOrConditionResult(AiResourceMapper mapper) {
         WhereBuilder where = new WhereBuilder("SELECT * FROM ai_resource");
         Map<String, Object> emptyOr = new LinkedHashMap<>();
@@ -219,6 +411,29 @@ class DatasourceMapperDefaultMethodTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, "group");
         context.putWhereParameter(FieldConstant.TENANT_ID, "tenant");
         context.putWhereParameter(FieldConstant.MD5, "md5-old");
+        return context;
+    }
+    
+    private MapperContext createQueryContext() {
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.TENANT_ID, "tenantId");
+        context.putWhereParameter(FieldConstant.DATA_ID, "data");
+        context.putWhereParameter(FieldConstant.GROUP_ID, "group");
+        context.putWhereParameter(FieldConstant.APP_NAME, "app");
+        return context;
+    }
+    
+    private MapperContext createHistoryContext() {
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.START_TIME, 100L);
+        context.putWhereParameter(FieldConstant.LAST_MAX_ID, 10L);
+        context.putWhereParameter(FieldConstant.PAGE_SIZE, 50);
+        context.putWhereParameter(FieldConstant.PUBLISH_TYPE, "formal");
+        context.putWhereParameter(FieldConstant.DATA_ID, "data");
+        context.putWhereParameter(FieldConstant.GROUP_ID, "group");
+        context.putWhereParameter(FieldConstant.TENANT_ID, "tenant");
+        context.putWhereParameter(FieldConstant.ID, 1L);
+        context.putWhereParameter(FieldConstant.NID, 5L);
         return context;
     }
     
@@ -307,6 +522,108 @@ class DatasourceMapperDefaultMethodTest {
         
         @Override
         public MapperResult findAiResourceFetchRows(MapperContext context) {
+            return null;
+        }
+    }
+    
+    private static class TestConfigInfoMapper extends TestAbstractMapper
+        implements ConfigInfoMapper {
+        
+        @Override
+        public String getTableName() {
+            return ConfigInfoMapper.super.getTableName();
+        }
+        
+        @Override
+        public MapperResult findConfigInfoByAppFetchRows(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult getTenantIdList(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult getGroupIdList(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult findAllConfigKey(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult findAllConfigInfoBaseFetchRows(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult findAllConfigInfoFragment(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult findChangeConfigFetchRows(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult listGroupKeyMd5ByPageFetchRows(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult findConfigInfoBaseLikeFetchRows(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult findConfigInfoBaseByGroupFetchRows(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult findAllConfigInfoFetchRows(MapperContext context) {
+            return null;
+        }
+    }
+    
+    private static class TestConfigMigrateMapper extends TestAbstractMapper
+        implements ConfigMigrateMapper {
+        
+        @Override
+        public String getTableName() {
+            return ConfigMigrateMapper.super.getTableName();
+        }
+    }
+    
+    private static class TestHistoryConfigInfoMapper extends TestAbstractMapper
+        implements HistoryConfigInfoMapper {
+        
+        @Override
+        public String getTableName() {
+            return HistoryConfigInfoMapper.super.getTableName();
+        }
+        
+        @Override
+        public MapperResult removeConfigHistory(MapperContext context) {
+            return null;
+        }
+        
+        @Override
+        public MapperResult pageFindConfigHistoryFetchRows(MapperContext context) {
             return null;
         }
     }

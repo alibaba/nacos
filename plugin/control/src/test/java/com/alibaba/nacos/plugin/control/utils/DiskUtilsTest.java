@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiskUtilsTest {
@@ -59,6 +60,7 @@ class DiskUtilsTest {
     @Test
     void testReadFile() {
         assertNotNull(DiskUtils.readFile(testFile));
+        assertNull(DiskUtils.readFile(new File("missing-file")));
     }
     
     @Test
@@ -66,6 +68,8 @@ class DiskUtilsTest {
         assertTrue(
             DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
         assertEquals("unit test", DiskUtils.readFile(testFile));
+        assertFalse(DiskUtils.writeFile(testFile.getParentFile(), "unit test".getBytes(
+            StandardCharsets.UTF_8), false));
     }
     
     @Test

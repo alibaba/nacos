@@ -19,6 +19,8 @@ package com.alibaba.nacos.plugin.control;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
+import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.spi.ControlPluginProvider;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
@@ -100,6 +102,20 @@ class ControlRequestResponseModelTest {
     void testRuleModelValues() {
         assertEquals(RuleModel.FUZZY, RuleModel.valueOf("FUZZY"));
         assertEquals(RuleModel.PROTO, RuleModel.values()[1]);
+    }
+    
+    @Test
+    void testRuleChangeEvents() {
+        TpsControlRuleChangeEvent tpsEvent = new TpsControlRuleChangeEvent("point", false);
+        ConnectionLimitRuleChangeEvent connectionEvent = new ConnectionLimitRuleChangeEvent(false);
+        
+        tpsEvent.setPointName("newPoint");
+        tpsEvent.setExternal(true);
+        connectionEvent.setExternal(true);
+        
+        assertEquals("newPoint", tpsEvent.getPointName());
+        assertTrue(tpsEvent.isExternal());
+        assertTrue(connectionEvent.isExternal());
     }
     
     @Test

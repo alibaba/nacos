@@ -21,6 +21,7 @@ import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
 import com.alibaba.nacos.plugin.environment.spi.EnvironmentPluginProvider;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -54,6 +55,7 @@ class CustomEnvironmentPluginManagerTest {
                 // [issue 13367] check property remove
                 property.put("db.password.1", null);
                 property.put("db.password.2", null);
+                property.put("db.password.extra", "extra");
                 return property;
             }
             
@@ -85,6 +87,42 @@ class CustomEnvironmentPluginManagerTest {
         // [issue 13367] check property remove
         assertFalse(customValues.containsKey("db.password.1"));
         assertFalse(customValues.containsKey("db.password.2"));
+        assertFalse(customValues.containsKey("db.password.extra"));
+        
+        CustomEnvironmentPluginManager.join(null);
+    }
+    
+    @Test
+    void testCustomEnvironmentPluginServiceMethods() {
+        CustomEnvironmentPluginService service = new CustomEnvironmentPluginService() {
+            
+            @Override
+            public Map<String, Object> customValue(Map<String, Object> property) {
+                property.put("key", "value");
+                return property;
+            }
+            
+            @Override
+            public Set<String> propertyKey() {
+                return Collections.singleton("key");
+            }
+            
+            @Override
+            public Integer order() {
+                return 1;
+            }
+            
+            @Override
+            public String pluginName() {
+                return "test";
+            }
+        };
+        
+        Map<String, Object> property = new HashMap<>();
+        assertEquals(property, service.customValue(property));
+        assertEquals(Collections.singleton("key"), service.propertyKey());
+        assertEquals(1, service.order());
+        assertEquals("test", service.pluginName());
     }
     
     @Test

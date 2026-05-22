@@ -47,4 +47,21 @@ class RequestResourceTest {
         assertEquals("G", actual.getGroup());
         assertEquals("dataId", actual.getResource());
     }
+    
+    @Test
+    void testBuildLockAndAiRequestResource() {
+        RequestResource lock = RequestResource.lockBuilder().setNamespace("lockNs")
+            .setGroup("lockGroup").setResource("lock").build();
+        RequestResource ai = RequestResource.aiBuilder().setNamespace("aiNs").setGroup("aiGroup")
+            .setResource("skill").build();
+        
+        assertEquals(SignType.LOCK, lock.getType());
+        assertEquals("lockNs", lock.getNamespace());
+        assertEquals("lockGroup", lock.getGroup());
+        assertEquals("lock", lock.getResource());
+        assertEquals(SignType.AI, ai.getType());
+        assertEquals("aiNs", ai.getNamespace());
+        assertEquals("aiGroup", ai.getGroup());
+        assertEquals("skill", ai.getResource());
+    }
 }
