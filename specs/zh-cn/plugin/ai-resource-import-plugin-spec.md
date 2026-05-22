@@ -250,9 +250,10 @@ TGZ 形式的 `archive` artifact。Archive 解包必须校验路径安全性，�
 
 `skills-sh` importer 对接运维配置的 skills.sh API root。它遵循 skills.sh CLI 的发现流程：
 Search 阶段调用 `GET {endpoint}/api/search?q={query}&limit={limit}`，并且只返回候选摘要；
-Fetch 阶段根据被选择候选的 `source` 和 `skillId` 调用
-`GET {endpoint}/api/download/{owner}/{repo}/{skillId}`，校验返回文件路径，组装标准 Skill ZIP
-artifact，并交给 Skill Resource Operator 写入。
+如果用户 query 为空，importer 应默认使用 `skill` 作为查询词；如果 trim 后的用户 query 只有 1
+个字符，importer 应在本地拒绝请求，因为 skills.sh 要求 query 至少 2 个字符。Fetch 阶段根据被选择候选的
+`source` 和 `skillId` 调用 `GET {endpoint}/api/download/{owner}/{repo}/{skillId}`，校验返回文件路径，
+组装标准 Skill ZIP artifact，并交给 Skill Resource Operator 写入。
 
 skills.sh 预置来源可以通过如下配置启用：
 

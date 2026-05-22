@@ -82,6 +82,10 @@ public class SkillsShImportService implements AiResourceImportService {
     
     private static final String SKILL_MARKDOWN_FILE = "SKILL.md";
     
+    private static final String DEFAULT_SEARCH_QUERY = "skill";
+    
+    private static final int MIN_SEARCH_QUERY_LENGTH = 2;
+    
     private static final int DEFAULT_LIMIT = 30;
     
     private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
@@ -118,7 +122,7 @@ public class SkillsShImportService implements AiResourceImportService {
         throws NacosException {
         try {
             String apiRoot = resolveApiRoot(requireSource(context));
-            FetchResult response = fetchUrl(searchUrl(apiRoot, context.getQuery(),
+            FetchResult response = fetchUrl(searchUrl(apiRoot, resolveQuery(context.getQuery()),
                 resolveLimit(context.getLimit())));
             if (!response.isSuccess()) {
                 throw new IllegalStateException(
@@ -179,6 +183,17 @@ public class SkillsShImportService implements AiResourceImportService {
     
     private int resolveLimit(int limit) {
         return limit <= 0 ? DEFAULT_LIMIT : limit;
+    }
+    
+    private String resolveQuery(String query) throws NacosException {
+        if (StringUtils.isBlank(query)) {
+            return DEFAULT_SEARCH_QUERY;
+        }
+        String result = query.trim();
+        if (result.length() < MIN_SEARCH_QUERY_LENGTH) {
+            throw invalid("skills.sh search query must be at least 2 characters.");
+        }
+        return result;
     }
     
     private List<AiResourceImportCandidate> toCandidates(String apiRoot,

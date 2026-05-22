@@ -285,10 +285,13 @@ formats before the artifact is handed to the Skill resource operator.
 The `skills-sh` importer connects to the operator-configured skills.sh API root.
 It follows the skills.sh CLI discovery flow: search uses
 `GET {endpoint}/api/search?q={query}&limit={limit}` and returns candidate
-summaries only. Fetch resolves the selected candidate's `source` and `skillId`
-to `GET {endpoint}/api/download/{owner}/{repo}/{skillId}`, validates the
-returned file paths, assembles a standard Skill ZIP artifact, and passes that
-artifact to the Skill resource operator.
+summaries only. If the user query is blank, the importer should use `skill` as
+the default query. If the trimmed user query is one character, the importer
+should reject the request locally because skills.sh requires at least two query
+characters. Fetch resolves the selected candidate's `source` and `skillId` to
+`GET {endpoint}/api/download/{owner}/{repo}/{skillId}`, validates the returned
+file paths, assembles a standard Skill ZIP artifact, and passes that artifact
+to the Skill resource operator.
 
 The skills.sh preset may be enabled with:
 

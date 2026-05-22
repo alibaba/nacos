@@ -50,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * Unit tests for {@link SkillsShImportService}.
@@ -93,6 +94,26 @@ class SkillsShImportServiceTest {
         assertEquals("https://github.com/openai/skills",
             result.getItems().get(0).getMetadata().get("repository"));
         assertEquals("3330", result.getItems().get(0).getMetadata().get("installs"));
+    }
+    
+    @Test
+    void testSearchUsesDefaultQueryWhenQueryIsBlank() throws Exception {
+        AiResourceImportContext context = newContext();
+        context.setLimit(12);
+        
+        AiResourceImportCandidatePage result = importService.search(context);
+        
+        assertEquals(1, result.getItems().size());
+        assertEquals("openai/skills/pdf", result.getItems().get(0).getExternalId());
+    }
+    
+    @Test
+    void testSearchRejectsOneCharacterQuery() {
+        AiResourceImportContext context = newContext();
+        context.setQuery("p");
+        
+        assertThrows(NacosException.class, () -> importService.search(context));
+        verifyNoInteractions(httpClient);
     }
     
     @Test
@@ -195,7 +216,8 @@ class SkillsShImportServiceTest {
     private HttpResponse<byte[]> responseFor(HttpRequest request) {
         URI uri = request.uri();
         if ("/api/search".equals(uri.getPath())) {
-            assertEquals("q=pdf&limit=2", uri.getQuery());
+            assertTrue("q=pdf&limit=2".equals(uri.getQuery())
+                || "q=skill&limit=12".equals(uri.getQuery()));
             return response(200, searchJson());
         }
         if ("/api/download/openai/skills/pdf".equals(uri.getPath())) {
