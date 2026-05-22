@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.importer.mcp;
+package com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp;
 
-import com.alibaba.nacos.ai.model.mcp.UrlPageResult;
-import com.alibaba.nacos.ai.service.McpExternalDataAdaptor;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Repository;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -27,6 +25,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidate;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
@@ -51,7 +50,7 @@ import java.util.Set;
  */
 public class McpRegistryImportService implements AiResourceImportService {
     
-    public static final String RESOURCE_TYPE_MCP = "mcp";
+    public static final String RESOURCE_TYPE_MCP = AiResourceImportConstants.RESOURCE_TYPE_MCP;
     
     private static final int DEFAULT_FETCH_LIMIT = 30;
     
@@ -63,10 +62,14 @@ public class McpRegistryImportService implements AiResourceImportService {
     
     private static final String METADATA_REPOSITORY = "repository";
     
-    private final McpExternalDataAdaptor adaptor;
+    private final McpRegistryClient client;
     
-    public McpRegistryImportService(McpExternalDataAdaptor adaptor) {
-        this.adaptor = adaptor;
+    public McpRegistryImportService() {
+        this(new McpRegistryClient());
+    }
+    
+    McpRegistryImportService(McpRegistryClient client) {
+        this.client = client;
     }
     
     @Override
@@ -83,7 +86,7 @@ public class McpRegistryImportService implements AiResourceImportService {
     public AiResourceImportCandidatePage search(AiResourceImportContext context)
         throws NacosException {
         try {
-            UrlPageResult registryPage = adaptor.fetchOfficialRegistryPage(
+            McpRegistryClient.Page registryPage = client.fetchOfficialRegistryPage(
                 requireEndpoint(context.getSource()), context.getCursor(), context.getLimit(),
                 context.getQuery());
             AiResourceImportCandidatePage result = new AiResourceImportCandidatePage();
@@ -103,7 +106,7 @@ public class McpRegistryImportService implements AiResourceImportService {
         AiResourceImportItem item) throws NacosException {
         try {
             String externalId = resolveExternalId(item);
-            McpServerDetailInfo server = adaptor.fetchOfficialRegistryServer(
+            McpServerDetailInfo server = client.fetchOfficialRegistryServer(
                 requireEndpoint(context.getSource()), externalId, resolveFetchLimit(context));
             return toArtifact(externalId, server);
         } catch (NacosException e) {

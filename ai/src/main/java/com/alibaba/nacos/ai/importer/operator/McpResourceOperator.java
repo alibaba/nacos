@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.importer.operator;
 
 import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
 import com.alibaba.nacos.ai.enums.McpImportResultStatusEnum;
-import com.alibaba.nacos.ai.importer.mcp.McpRegistryImportService;
 import com.alibaba.nacos.ai.service.McpServerImportService;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultItem;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultStatus;
@@ -34,6 +33,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import org.springframework.stereotype.Service;
@@ -61,7 +61,7 @@ public class McpResourceOperator implements AiResourceOperator {
     
     @Override
     public String resourceType() {
-        return McpRegistryImportService.RESOURCE_TYPE_MCP;
+        return AiResourceImportConstants.RESOURCE_TYPE_MCP;
     }
     
     @Override

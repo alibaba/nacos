@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.importer.skill;
+package com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill;
 
-import com.alibaba.nacos.ai.utils.SkillZipParser;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
@@ -43,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.zip.ZipInputStream;
 import javax.net.ssl.SSLSession;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -50,7 +49,9 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 
@@ -110,11 +111,9 @@ class SkillWellKnownImportServiceTest {
         assertEquals(SkillWellKnownImportService.RESOURCE_TYPE_SKILL, result.getResourceType());
         assertEquals(AiResourceImportPayloadKind.SKILL_ZIP, result.getPayloadKind());
         assertEquals("demo-skill", result.getName());
-        assertEquals("1.2.3", result.getVersion());
-        Skill skill = SkillZipParser.parseSkillFromZip(result.getPayload(), "public");
-        assertEquals("demo-skill", skill.getName());
-        assertEquals("Demo skill", skill.getDescription());
-        assertEquals(1, skill.getResource().size());
+        assertNull(result.getVersion());
+        assertZipEntryContains(result.getPayload(), "demo-skill/SKILL.md", "name: demo-skill");
+        assertZipEntryContains(result.getPayload(), "demo-skill/docs/guide.md", "# Guide");
     }
     
     @Test
@@ -138,9 +137,7 @@ class SkillWellKnownImportServiceTest {
         assertEquals(AiResourceImportPayloadKind.SKILL_ZIP, result.getPayloadKind());
         assertEquals("md-skill", result.getName());
         assertEquals("skill-md", result.getSourceMetadata().get("distributionType"));
-        Skill skill = SkillZipParser.parseSkillFromZip(result.getPayload(), "public");
-        assertEquals("md-skill", skill.getName());
-        assertEquals("Markdown skill", skill.getDescription());
+        assertZipEntryContains(result.getPayload(), "md-skill/SKILL.md", "name: md-skill");
     }
     
     @Test
@@ -150,10 +147,9 @@ class SkillWellKnownImportServiceTest {
         
         assertEquals("archive-skill", result.getName());
         assertEquals("archive", result.getSourceMetadata().get("distributionType"));
-        Skill skill = SkillZipParser.parseSkillFromZip(result.getPayload(), "public");
-        assertEquals("archive-skill", skill.getName());
-        assertEquals("Archive skill", skill.getDescription());
-        assertEquals(1, skill.getResource().size());
+        assertZipEntryContains(result.getPayload(), "archive-skill/SKILL.md",
+            "name: archive-skill");
+        assertZipEntryContains(result.getPayload(), "archive-skill/docs/guide.md", "# Guide");
     }
     
     @Test
@@ -383,5 +379,22 @@ class SkillWellKnownImportServiceTest {
             result.append(String.format("%02x", each & 0xff));
         }
         return result.toString();
+    }
+    
+    private void assertZipEntryContains(byte[] zipBytes, String entryName, String expected)
+        throws Exception {
+        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(zipBytes),
+            StandardCharsets.UTF_8)) {
+            java.util.zip.ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if (entryName.equals(entry.getName())) {
+                    ByteArrayOutputStream output = new ByteArrayOutputStream();
+                    zip.transferTo(output);
+                    assertTrue(output.toString(StandardCharsets.UTF_8).contains(expected));
+                    return;
+                }
+            }
+        }
+        throw new AssertionError("Zip entry not found: " + entryName);
     }
 }

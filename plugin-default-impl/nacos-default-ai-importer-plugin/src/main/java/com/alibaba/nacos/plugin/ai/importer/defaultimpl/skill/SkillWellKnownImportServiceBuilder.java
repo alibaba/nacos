@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.importer.skill;
+package com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill;
 
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
@@ -29,7 +29,7 @@ import java.util.Properties;
  */
 public class SkillWellKnownImportServiceBuilder implements AiResourceImportServiceBuilder {
     
-    static final String IMPORTER_TYPE = "skills-well-known";
+    public static final String IMPORTER_TYPE = "skills-well-known";
     
     @Override
     public String importerType() {

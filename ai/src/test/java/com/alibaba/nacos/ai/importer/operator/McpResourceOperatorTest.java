@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.importer.operator;
 
 import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
 import com.alibaba.nacos.ai.enums.McpImportResultStatusEnum;
-import com.alibaba.nacos.ai.importer.mcp.McpRegistryImportService;
 import com.alibaba.nacos.ai.service.McpServerImportService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultItem;
@@ -31,6 +30,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerValidationItem;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import org.junit.jupiter.api.BeforeEach;
@@ -120,7 +120,7 @@ class McpResourceOperatorTest {
     
     @Test
     void testResourceType() {
-        assertEquals(McpRegistryImportService.RESOURCE_TYPE_MCP, operator.resourceType());
+        assertEquals(AiResourceImportConstants.RESOURCE_TYPE_MCP, operator.resourceType());
     }
     
     private McpServerImportValidationResult validationResult(String status, boolean exists) {
@@ -138,7 +138,7 @@ class McpResourceOperatorTest {
     
     private AiResourceImportArtifact artifact() {
         AiResourceImportArtifact artifact = new AiResourceImportArtifact();
-        artifact.setResourceType(McpRegistryImportService.RESOURCE_TYPE_MCP);
+        artifact.setResourceType(AiResourceImportConstants.RESOURCE_TYPE_MCP);
         artifact.setExternalId("io.nacos/test-server");
         artifact.setName("io.nacos/test-server");
         artifact.setVersion("1.0.0");

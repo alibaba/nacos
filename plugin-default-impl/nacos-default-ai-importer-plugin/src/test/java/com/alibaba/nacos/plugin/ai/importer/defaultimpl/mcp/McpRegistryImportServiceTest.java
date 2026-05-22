@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.importer.mcp;
+package com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp;
 
-import com.alibaba.nacos.ai.model.mcp.UrlPageResult;
-import com.alibaba.nacos.ai.service.McpExternalDataAdaptor;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -53,20 +51,21 @@ class McpRegistryImportServiceTest {
     private static final String ENDPOINT = "https://registry.example.com/v0/servers";
     
     @Mock
-    private McpExternalDataAdaptor adaptor;
+    private McpRegistryClient client;
     
     private McpRegistryImportService importService;
     
     @BeforeEach
     void setUp() {
-        importService = new McpRegistryImportService(adaptor);
+        importService = new McpRegistryImportService(client);
     }
     
     @Test
     void testSearchReturnsCandidateMetadata() throws Exception {
         McpServerDetailInfo server = newMcpServer();
-        when(adaptor.fetchOfficialRegistryPage(ENDPOINT, "cursor-1", 20, "redis"))
-            .thenReturn(new UrlPageResult(Collections.singletonList(server), "cursor-2"));
+        when(client.fetchOfficialRegistryPage(ENDPOINT, "cursor-1", 20, "redis"))
+            .thenReturn(new McpRegistryClient.Page(Collections.singletonList(server),
+                "cursor-2"));
         
         AiResourceImportCandidatePage result = importService.search(newContext());
         
@@ -81,7 +80,7 @@ class McpRegistryImportServiceTest {
     @Test
     void testFetchReturnsMcpDetailArtifact() throws Exception {
         McpServerDetailInfo server = newMcpServer();
-        when(adaptor.fetchOfficialRegistryServer(ENDPOINT, "io.nacos/test-server", 30))
+        when(client.fetchOfficialRegistryServer(ENDPOINT, "io.nacos/test-server", 30))
             .thenReturn(server);
         AiResourceImportItem item = new AiResourceImportItem();
         item.setExternalId("io.nacos/test-server");

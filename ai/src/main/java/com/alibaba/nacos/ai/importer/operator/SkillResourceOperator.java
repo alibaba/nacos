@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.importer.operator;
 
-import com.alibaba.nacos.ai.importer.skill.SkillWellKnownImportService;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
@@ -31,6 +30,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import org.springframework.stereotype.Service;
@@ -67,7 +67,7 @@ public class SkillResourceOperator implements AiResourceOperator {
     
     @Override
     public String resourceType() {
-        return SkillWellKnownImportService.RESOURCE_TYPE_SKILL;
+        return AiResourceImportConstants.RESOURCE_TYPE_SKILL;
     }
     
     @Override

@@ -16,18 +16,18 @@
 
 package com.alibaba.nacos.ai.importer.operator;
 
-import com.alibaba.nacos.ai.importer.skill.SkillWellKnownImportService;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultItem;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultStatus;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidationItem;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidationStatus;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
+import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
+import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -147,7 +147,7 @@ class SkillResourceOperatorTest {
     
     @Test
     void testResourceType() {
-        assertEquals(SkillWellKnownImportService.RESOURCE_TYPE_SKILL, operator.resourceType());
+        assertEquals(AiResourceImportConstants.RESOURCE_TYPE_SKILL, operator.resourceType());
     }
     
     private AiResource metaWithEditingVersion() {
@@ -160,7 +160,7 @@ class SkillResourceOperatorTest {
     
     private AiResourceImportArtifact artifact() {
         AiResourceImportArtifact artifact = new AiResourceImportArtifact();
-        artifact.setResourceType(SkillWellKnownImportService.RESOURCE_TYPE_SKILL);
+        artifact.setResourceType(AiResourceImportConstants.RESOURCE_TYPE_SKILL);
         artifact.setExternalId("demo-skill");
         artifact.setName("demo-skill");
         artifact.setVersion("1.2.3");

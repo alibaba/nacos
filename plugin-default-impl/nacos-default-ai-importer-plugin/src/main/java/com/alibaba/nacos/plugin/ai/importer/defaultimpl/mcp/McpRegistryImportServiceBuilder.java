@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.importer.mcp;
+package com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp;
 
-import com.alibaba.nacos.ai.service.McpExternalDataAdaptor;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
 
@@ -30,7 +29,7 @@ import java.util.Properties;
  */
 public class McpRegistryImportServiceBuilder implements AiResourceImportServiceBuilder {
     
-    static final String IMPORTER_TYPE = "mcp-registry";
+    public static final String IMPORTER_TYPE = "mcp-registry";
     
     @Override
     public String importerType() {
@@ -39,6 +38,6 @@ public class McpRegistryImportServiceBuilder implements AiResourceImportServiceB
     
     @Override
     public AiResourceImportService build(Properties properties) {
-        return new McpRegistryImportService(new McpExternalDataAdaptor());
+        return new McpRegistryImportService();
     }
 }

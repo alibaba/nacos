@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.enums.ExternalDataTypeEnum;
 import com.alibaba.nacos.ai.importer.config.AiResourceImportProperties;
-import com.alibaba.nacos.ai.importer.mcp.McpRegistryImportService;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportCandidateItem;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportExecuteRequest;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportExecuteResponse;
@@ -39,6 +38,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerValidationItem;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -148,7 +148,7 @@ public class McpLegacyImportAdapter {
         McpServerImportRequest request) throws NacosException {
         AiResourceImportValidateRequest result = new AiResourceImportValidateRequest();
         result.setNamespaceId(namespaceId);
-        result.setResourceType(McpRegistryImportService.RESOURCE_TYPE_MCP);
+        result.setResourceType(AiResourceImportConstants.RESOURCE_TYPE_MCP);
         result.setSourceId(request.getData());
         result.setOverwriteExisting(request.isOverrideExisting());
         result.setSelectedItems(resolveSelectedItems(namespaceId, request));
@@ -159,7 +159,7 @@ public class McpLegacyImportAdapter {
         McpServerImportRequest request) throws NacosException {
         AiResourceImportExecuteRequest result = new AiResourceImportExecuteRequest();
         result.setNamespaceId(namespaceId);
-        result.setResourceType(McpRegistryImportService.RESOURCE_TYPE_MCP);
+        result.setResourceType(AiResourceImportConstants.RESOURCE_TYPE_MCP);
         result.setSourceId(request.getData());
         result.setOverwriteExisting(request.isOverrideExisting());
         result.setSkipInvalid(request.isSkipInvalid());
@@ -181,7 +181,7 @@ public class McpLegacyImportAdapter {
         }
         AiResourceImportSearchRequest searchRequest = new AiResourceImportSearchRequest();
         searchRequest.setNamespaceId(namespaceId);
-        searchRequest.setResourceType(McpRegistryImportService.RESOURCE_TYPE_MCP);
+        searchRequest.setResourceType(AiResourceImportConstants.RESOURCE_TYPE_MCP);
         searchRequest.setSourceId(request.getData());
         searchRequest.setCursor(request.getCursor());
         searchRequest.setLimit(request.getLimit());

@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.importer.skill;
+package com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.alibaba.nacos.ai.utils.SkillZipParser;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -27,6 +25,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidate;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
@@ -69,7 +68,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
  */
 public class SkillWellKnownImportService implements AiResourceImportService {
     
-    public static final String RESOURCE_TYPE_SKILL = "skill";
+    public static final String RESOURCE_TYPE_SKILL = AiResourceImportConstants.RESOURCE_TYPE_SKILL;
     
     private static final String WELL_KNOWN_AGENT_SKILLS = "/.well-known/agent-skills";
     
@@ -181,13 +180,12 @@ public class SkillWellKnownImportService implements AiResourceImportService {
             WellKnownSkillEntry entry = findSkillEntry(resolvedIndex.getIndex().getSkills(),
                 skillName);
             byte[] zipBytes = fetchSkillZip(context, resolvedIndex, entry);
-            Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, context.getNamespaceId());
             AiResourceImportArtifact result = new AiResourceImportArtifact();
             result.setResourceType(RESOURCE_TYPE_SKILL);
             result.setExternalId(skillName);
-            result.setName(skill.getName());
-            result.setVersion(SkillZipParser.resolveVersionFromZip(zipBytes));
-            result.setDescription(skill.getDescription());
+            result.setName(entry.getName());
+            result.setVersion(entry.getVersion());
+            result.setDescription(entry.getDescription());
             result.setPayloadKind(AiResourceImportPayloadKind.SKILL_ZIP);
             result.setPayload(zipBytes);
             result.setSourceMetadata(buildMetadata(entry, resolvedIndex));
@@ -789,6 +787,8 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         
         private String digest;
         
+        private String version;
+        
         public String getName() {
             return name;
         }
@@ -835,6 +835,14 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         
         public void setDigest(String digest) {
             this.digest = digest;
+        }
+        
+        public String getVersion() {
+            return version;
+        }
+        
+        public void setVersion(String version) {
+            this.version = version;
         }
     }
 }

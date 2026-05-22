@@ -38,6 +38,7 @@ class AiResourceImportModelTest {
         
         source.setSourceId("source");
         source.setDisplayName("Source");
+        source.setDescription("Source description");
         source.setPluginName("plugin");
         source.setResourceTypes(Arrays.asList("mcp", "skill"));
         source.setEndpoint("https://example.com");
@@ -52,6 +53,7 @@ class AiResourceImportModelTest {
         
         assertEquals("source", source.getSourceId());
         assertEquals("Source", source.getDisplayName());
+        assertEquals("Source description", source.getDescription());
         assertEquals("plugin", source.getPluginName());
         assertEquals(Arrays.asList("mcp", "skill"), source.getResourceTypes());
         assertEquals("https://example.com", source.getEndpoint());

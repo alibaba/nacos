@@ -42,6 +42,11 @@ Git indexes. Resource operators are not user extension plugins; in the first
 stage they should be built into the `ai` module and write resources through the
 current Nacos domain services.
 
+Default importer implementations should live in `plugin-default-impl`, not in
+the AI Registry domain module. The `ai` module owns import APIs, source
+resolution, validation, and resource operators; `plugin-default-impl` owns
+default external source adapters and their preset source configuration.
+
 ## Concepts
 
 | Concept | Meaning |
@@ -96,6 +101,12 @@ An import source should include:
 The source manager must reject duplicate `sourceId` values and sources whose
 importer plugin is not loaded or disabled.
 
+For advanced deployments, explicit import sources may still be configured under
+`nacos.ai.resource.import.sources[...]` and guarded by
+`nacos.ai.resource.import.enabled=true`. Default importer presets are configured
+under the plugin namespace and may be enabled independently through
+operator-owned `nacos.plugin.ai.importer.*` properties.
+
 ## SPI
 
 Import implementations are created by a builder.
@@ -113,6 +124,12 @@ The import service implements:
 | `supportedResourceTypes()` | Resource types the importer can produce. |
 | `search(context)` | Return a candidate page from the configured source with necessary metadata only. |
 | `fetch(context, item)` | Fetch one selected artifact from the configured source. |
+
+Source presets may be provided by an optional source provider SPI:
+
+| Provider method | Requirement |
+|-----------------|-------------|
+| `loadSources(properties)` | Return enabled import sources derived from server configuration and trusted defaults. |
 
 `context` contains namespace, resource type, source configuration, query,
 cursor, limit, and importer options. It must not contain a user-provided
@@ -161,9 +178,25 @@ record that URL as the imported resource source (`ai_resource.c_from`). If
 
 ## Built-in Importers
 
+The default built-in importers are delivered by the
+`nacos-default-ai-importer-plugin` module in `plugin-default-impl`.
+
 The `mcp-registry` importer connects to an operator-configured MCP registry
 endpoint. Search returns MCP Server summaries only, and fetch returns an
 `MCP_DETAIL` artifact that can be written by the MCP resource operator.
+
+The official MCP registry preset may be enabled with:
+
+```properties
+nacos.plugin.ai.importer.mcp.official.enabled=true
+```
+
+Unless overridden, this creates source id `mcp-official`, importer
+`mcp-registry`, resource type `mcp`, and endpoint
+`https://registry.modelcontextprotocol.io/v0/servers`. Operators may override
+the preset source id, display name, endpoint, auth reference, timeouts, item
+limits, and artifact size by using the same
+`nacos.plugin.ai.importer.mcp.official.*` prefix.
 
 The `skills-well-known` importer connects to an operator-configured Skill
 marketplace or registry root. If the source endpoint is not already a
@@ -171,6 +204,19 @@ well-known path, the importer should first try `/.well-known/agent-skills` and
 then fall back to `/.well-known/skills` for v0.1-compatible sources. If the
 endpoint already ends with `/.well-known/agent-skills` or `/.well-known/skills`,
 the importer should use that path directly.
+
+The Skill well-known preset may be enabled with:
+
+```properties
+nacos.plugin.ai.importer.skills.well-known.enabled=true
+nacos.plugin.ai.importer.skills.well-known.url=https://developers.cloudflare.com
+```
+
+This creates source id `skills-well-known`, importer `skills-well-known`, and
+resource type `skill`. Operators may override the preset source id, display
+name, auth reference, timeouts, item limits, and artifact size by using the same
+`nacos.plugin.ai.importer.skills.well-known.*` prefix. The `url` property is
+required when this preset is enabled.
 
 The importer must support both Skill well-known discovery versions:
 

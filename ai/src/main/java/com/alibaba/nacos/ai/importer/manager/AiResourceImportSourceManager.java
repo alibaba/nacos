@@ -22,15 +22,21 @@ import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSourceInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
+import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportSourceProvider;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -48,11 +54,18 @@ public class AiResourceImportSourceManager {
     
     private final AiResourceImportPluginManager pluginManager;
     
-    private final Supplier<AiResourceImportProperties> propertiesSupplier;
+    private Supplier<AiResourceImportProperties> propertiesSupplier;
+    
+    private Supplier<Properties> rawPropertiesSupplier;
+    
+    private Supplier<Collection<AiResourceImportSourceProvider>> sourceProvidersSupplier;
     
     public AiResourceImportSourceManager(AiResourceImportPluginManager pluginManager) {
         this.pluginManager = pluginManager;
         this.propertiesSupplier = AiResourceImportProperties::loadFromEnvironment;
+        this.rawPropertiesSupplier = EnvUtil::getProperties;
+        this.sourceProvidersSupplier =
+            () -> NacosServiceLoader.load(AiResourceImportSourceProvider.class);
     }
     
     /**
@@ -65,11 +78,8 @@ public class AiResourceImportSourceManager {
     public List<AiResourceImportSourceInfo> listSourceInfos(String resourceType)
         throws NacosException {
         AiResourceImportProperties properties = propertiesSupplier.get();
-        if (!properties.isEnabled()) {
-            return new ArrayList<>();
-        }
         List<AiResourceImportSourceInfo> result = new ArrayList<>();
-        for (AiResourceImportSourceConfig each : validateAndGetSources(properties)) {
+        for (AiResourceImportSource each : validateAndGetSources(properties)) {
             if (!each.isEnabled() || !supportsResourceType(each, resourceType)) {
                 continue;
             }
@@ -89,11 +99,11 @@ public class AiResourceImportSourceManager {
     public AiResourceImportSource resolveSource(String sourceId, String resourceType)
         throws NacosException {
         AiResourceImportProperties properties = propertiesSupplier.get();
-        if (!properties.isEnabled()) {
-            throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
-                ErrorCode.API_FUNCTION_DISABLED, "AI resource import is disabled.");
+        List<AiResourceImportSource> sources = validateAndGetSources(properties);
+        if (sources.isEmpty() && !properties.isEnabled()) {
+            throwDisabled();
         }
-        for (AiResourceImportSourceConfig each : validateAndGetSources(properties)) {
+        for (AiResourceImportSource each : sources) {
             if (!StringUtils.equals(each.getSourceId(), sourceId)) {
                 continue;
             }
@@ -107,22 +117,56 @@ public class AiResourceImportSourceManager {
                     ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "AI resource import source does not support resource type: " + resourceType);
             }
-            return toRuntimeSource(each);
+            return each;
         }
         throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
             "AI resource import source not found: " + sourceId);
     }
     
-    private List<AiResourceImportSourceConfig> validateAndGetSources(
+    private List<AiResourceImportSource> validateAndGetSources(
         AiResourceImportProperties properties) throws NacosException {
+        List<AiResourceImportSource> result = new ArrayList<>();
+        result.addAll(loadConfiguredSources(properties));
+        result.addAll(loadProviderSources());
         Set<String> sourceIds = new HashSet<>();
-        for (AiResourceImportSourceConfig each : properties.getSources()) {
+        for (AiResourceImportSource each : result) {
             validateSource(each, sourceIds);
         }
-        return properties.getSources();
+        return result;
     }
     
-    private void validateSource(AiResourceImportSourceConfig source, Set<String> sourceIds)
+    private List<AiResourceImportSource> loadConfiguredSources(
+        AiResourceImportProperties properties) {
+        if (!properties.isEnabled() || CollectionUtils.isEmpty(properties.getSources())) {
+            return Collections.emptyList();
+        }
+        List<AiResourceImportSource> result = new ArrayList<>(properties.getSources().size());
+        for (AiResourceImportSourceConfig each : properties.getSources()) {
+            result.add(toRuntimeSource(each));
+        }
+        return result;
+    }
+    
+    private List<AiResourceImportSource> loadProviderSources() throws NacosException {
+        Collection<AiResourceImportSourceProvider> providers = sourceProvidersSupplier.get();
+        if (CollectionUtils.isEmpty(providers)) {
+            return Collections.emptyList();
+        }
+        Properties rawProperties = rawPropertiesSupplier.get();
+        if (rawProperties == null) {
+            rawProperties = new Properties();
+        }
+        List<AiResourceImportSource> result = new ArrayList<>();
+        for (AiResourceImportSourceProvider each : providers) {
+            Collection<AiResourceImportSource> sources = each.loadSources(rawProperties);
+            if (CollectionUtils.isNotEmpty(sources)) {
+                result.addAll(sources);
+            }
+        }
+        return result;
+    }
+    
+    private void validateSource(AiResourceImportSource source, Set<String> sourceIds)
         throws NacosException {
         if (StringUtils.isBlank(source.getSourceId())) {
             throw invalidConfig("AI resource import source id must not be empty.");
@@ -148,12 +192,17 @@ public class AiResourceImportSourceManager {
             ErrorCode.PARAMETER_VALIDATE_ERROR, message);
     }
     
-    private boolean supportsResourceType(AiResourceImportSourceConfig source, String resourceType) {
+    private void throwDisabled() throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED, "AI resource import is disabled.");
+    }
+    
+    private boolean supportsResourceType(AiResourceImportSource source, String resourceType) {
         return StringUtils.isBlank(resourceType)
             || source.getResourceTypes().contains(resourceType);
     }
     
-    private AiResourceImportSourceInfo toSourceInfo(AiResourceImportSourceConfig source) {
+    private AiResourceImportSourceInfo toSourceInfo(AiResourceImportSource source) {
         AiResourceImportSourceInfo result = new AiResourceImportSourceInfo();
         result.setSourceId(source.getSourceId());
         result.setDisplayName(source.getDisplayName());
@@ -169,6 +218,7 @@ public class AiResourceImportSourceManager {
         AiResourceImportSource result = new AiResourceImportSource();
         result.setSourceId(source.getSourceId());
         result.setDisplayName(source.getDisplayName());
+        result.setDescription(source.getDescription());
         result.setPluginName(source.getPluginName());
         result.setResourceTypes(source.getResourceTypes());
         result.setEndpoint(source.getEndpoint());

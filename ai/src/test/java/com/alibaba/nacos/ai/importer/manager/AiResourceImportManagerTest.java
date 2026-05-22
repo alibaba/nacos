@@ -40,8 +40,10 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidate;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportContext;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
+import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
+import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportSourceProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -173,6 +175,22 @@ class AiResourceImportManagerTest {
     }
     
     @Test
+    void testProviderSourceWorksWhenExplicitImportDisabled() throws NacosException {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.setEnabled(false);
+        AiResourceImportSourceManager sourceManager = newProviderSourceManager(properties);
+        
+        List<AiResourceImportSourceInfo> result = sourceManager.listSourceInfos("mcp");
+        
+        assertEquals(1, result.size());
+        assertEquals("provider-source", result.get(0).getSourceId());
+        assertEquals("Provider Source", result.get(0).getDisplayName());
+        assertEquals("provider source", result.get(0).getDescription());
+        assertEquals("fake-importer", result.get(0).getPluginName());
+        assertEquals(Collections.singletonList("mcp"), result.get(0).getResourceTypes());
+    }
+    
+    @Test
     void testDuplicateSourceIdRejected() {
         AiResourceImportProperties properties = enabledProperties();
         properties.setSources(Arrays.asList(sourceConfig(), sourceConfig()));
@@ -245,6 +263,17 @@ class AiResourceImportManagerTest {
         return result;
     }
     
+    private AiResourceImportSourceManager newProviderSourceManager(
+        AiResourceImportProperties properties) {
+        AiResourceImportSourceManager result = newSourceManager(properties);
+        ReflectionTestUtils.setField(result, "rawPropertiesSupplier",
+            (Supplier<Properties>) Properties::new);
+        ReflectionTestUtils.setField(result, "sourceProvidersSupplier",
+            (Supplier<List<AiResourceImportSourceProvider>>) () -> Collections.singletonList(
+                new FakeSourceProvider()));
+        return result;
+    }
+    
     private AiResourceImportProperties enabledProperties() {
         AiResourceImportProperties properties = new AiResourceImportProperties();
         properties.setEnabled(true);
@@ -259,6 +288,20 @@ class AiResourceImportManagerTest {
         source.setPluginName("fake-importer");
         source.setResourceTypes(Collections.singletonList("mcp"));
         source.setEndpoint("https://example.com/registry");
+        source.setEnabled(true);
+        source.setMaxItemCount(10);
+        source.setMaxArtifactSize(1024);
+        return source;
+    }
+    
+    private AiResourceImportSource providerSource() {
+        AiResourceImportSource source = new AiResourceImportSource();
+        source.setSourceId("provider-source");
+        source.setDisplayName("Provider Source");
+        source.setDescription("provider source");
+        source.setPluginName("fake-importer");
+        source.setResourceTypes(Collections.singletonList("mcp"));
+        source.setEndpoint("https://example.com/provider");
         source.setEnabled(true);
         source.setMaxItemCount(10);
         source.setMaxArtifactSize(1024);
@@ -285,6 +328,14 @@ class AiResourceImportManagerTest {
         @Override
         public AiResourceImportService build(Properties properties) {
             return service;
+        }
+    }
+    
+    private class FakeSourceProvider implements AiResourceImportSourceProvider {
+        
+        @Override
+        public List<AiResourceImportSource> loadSources(Properties properties) {
+            return Collections.singletonList(providerSource());
         }
     }
     

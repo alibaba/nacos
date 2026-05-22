@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-com.alibaba.nacos.ai.importer.mcp.McpRegistryImportServiceBuilder
-com.alibaba.nacos.ai.importer.skill.SkillWellKnownImportServiceBuilder
+com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp.McpRegistryImportServiceBuilder
+com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill.SkillWellKnownImportServiceBuilder
