@@ -120,6 +120,10 @@ Trace plugin behavior is defined by the
 [Trace Plugin Spec](../plugin/trace-plugin-spec.md). Counters are diagnostic
 and must not define authorization or lifecycle state.
 
+AI resource trace emission uses `AiResourceTraceEvent`. The default AI resource
+file-log subscriber preserves the JSON line audit log in `ai-resource-trace.log`
+while allowing external trace subscribers to consume the same events.
+
 ## 8. Evolution Note
 
 Lifecycle states may be expanded as AI publishing workflows mature, for example

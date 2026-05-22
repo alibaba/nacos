@@ -93,6 +93,15 @@ Current naming trace event types include:
 `REQUEST`, `NATIVE_DISCONNECTED`, `SYNCED_DISCONNECTED`, and
 `HEARTBEAT_EXPIRE`.
 
+Current AI resource trace event types include:
+
+| Event class | Event type | Meaning |
+|-------------|------------|---------|
+| `AiResourceTraceEvent` | `AI_RESOURCE_TRACE_EVENT` | AI resource lifecycle operation, such as draft creation, review, publish, online/offline, deletion, label update, scope update, or audit-compatible default log output. |
+
+`AiResourceTraceEvent` carries the operator, resource type, resource id,
+optional version, operation, status, client IP, and optional extension text.
+
 ## Execution
 
 `NacosCombinedTraceSubscriber` registers a domain event publisher and dispatches
@@ -120,7 +129,12 @@ their own sink failures.
 
 ## Implementation Note
 
-The Nacos server repository defines the trace SPI and event model, but does not
-ship a default trace sink implementation in `plugin-default-impl`. Reference
-subscriber implementations may live in external plugin repositories and should
-follow this spec.
+The Nacos server repository defines the trace SPI and event model, but generally
+does not ship default trace sink implementations in `plugin-default-impl`.
+Reference subscriber implementations may live in external plugin repositories
+and should follow this spec.
+
+For compatibility with the existing AI resource audit log, the AI module ships a
+default `AiResourceTraceEvent` file-log subscriber. It is a normal trace
+subscriber and writes the existing JSON line format to
+`ai-resource-trace.log`.

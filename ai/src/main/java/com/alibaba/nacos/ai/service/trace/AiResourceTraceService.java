@@ -16,24 +16,20 @@
 
 package com.alibaba.nacos.ai.service.trace;
 
-import com.alibaba.nacos.ai.utils.AiLogUtil;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.ai.AiResourceTraceEvent;
 
 /**
  * AI resource trace service for auditing AI resource version operations.
  *
- * <p>Logs are output in JSON format with ISO 8601 timestamps, designed for ELK/Loki integration.</p>
+ * <p>Trace records are emitted as {@link AiResourceTraceEvent}. The default subscriber keeps
+ * the existing JSON line file output, designed for ELK/Loki integration.</p>
  *
  * <p>Log format example:</p>
  * <pre>
  * {"timestamp":"2026-03-30T10:15:30Z","operator":"admin","resource_type":"skill",
- *  "resource_id":"my-skill","version":"v1.0","operation":"PUBLISH","status":"SUCCESS","ip":"192.168.1.1"}
+ *  "resource_id":"my-skill","version":"v1.0","operation":"PUBLISH",
+ *  "status":"SUCCESS","ip":"192.168.1.1"}
  * </pre>
  *
  * @author nacos
@@ -238,25 +234,14 @@ public class AiResourceTraceService {
     public static void log(String resourceType, String resourceId, String version, String operation,
         String status,
         String operator, String clientIp, String ext) {
-        if (!AiLogUtil.TRACE_LOG.isInfoEnabled()) {
-            return;
-        }
-        
-        Map<String, Object> logEntry = new LinkedHashMap<>(10);
-        logEntry.put("timestamp", DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
-        logEntry.put("operator", StringUtils.defaultIfBlank(operator, "-"));
-        logEntry.put("resource_type", StringUtils.defaultIfBlank(resourceType, "-"));
-        logEntry.put("resource_id", StringUtils.defaultIfBlank(resourceId, "-"));
-        if (StringUtils.isNotBlank(version)) {
-            logEntry.put("version", version);
-        }
-        logEntry.put("operation", StringUtils.defaultIfBlank(operation, "-"));
-        logEntry.put("status", StringUtils.defaultIfBlank(status, "-"));
-        logEntry.put("ip", StringUtils.defaultIfBlank(clientIp, "-"));
-        if (StringUtils.isNotBlank(ext)) {
-            logEntry.put("ext", ext);
-        }
-        
-        AiLogUtil.TRACE_LOG.info(JacksonUtils.toJson(logEntry));
+        NotifyCenter.publishEvent(buildTraceEvent(resourceType, resourceId, version, operation,
+            status, operator, clientIp, ext));
+    }
+    
+    static AiResourceTraceEvent buildTraceEvent(String resourceType, String resourceId,
+        String version, String operation, String status, String operator, String clientIp,
+        String ext) {
+        return new AiResourceTraceEvent(System.currentTimeMillis(), operator, resourceType,
+            resourceId, version, operation, status, clientIp, ext);
     }
 }

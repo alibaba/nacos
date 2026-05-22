@@ -83,6 +83,15 @@ Trace 事件携带事件类型、事件时间、命名空间、分组和资源�
 `DeregisterInstanceTraceEvent` 携带注销原因。当前原因包括 `REQUEST`、
 `NATIVE_DISCONNECTED`、`SYNCED_DISCONNECTED` 和 `HEARTBEAT_EXPIRE`。
 
+当前 AI 资源 Trace 事件类型包括：
+
+| 事件类 | Event type | 含义 |
+|--------|------------|------|
+| `AiResourceTraceEvent` | `AI_RESOURCE_TRACE_EVENT` | AI 资源生命周期操作，例如创建草稿、评审、发布、上线/下线、删除、标签更新、scope 更新，或兼容审计日志的默认文件输出。 |
+
+`AiResourceTraceEvent` 携带操作者、资源类型、资源标识、可选版本、操作、状态、
+客户端 IP 和可选扩展文本。
+
 ## 执行
 
 `NacosCombinedTraceSubscriber` 注册领域事件 publisher，并只把匹配的事件类分发给插件
@@ -103,5 +112,9 @@ sink 故障。
 
 ## 实现说明
 
-Nacos 服务端仓库定义 Trace SPI 和事件模型，但没有在 `plugin-default-impl` 中发布默认
+Nacos 服务端仓库定义 Trace SPI 和事件模型，但通常不在 `plugin-default-impl` 中发布默认
 Trace sink 实现。参考订阅者实现可以位于外部插件仓库，并应遵守本文档。
+
+为了兼容已有 AI 资源审计日志，AI 模块内置一个默认的 `AiResourceTraceEvent`
+文件日志订阅者。它是标准 Trace 订阅者，并将既有 JSON 行格式写入
+`ai-resource-trace.log`。
