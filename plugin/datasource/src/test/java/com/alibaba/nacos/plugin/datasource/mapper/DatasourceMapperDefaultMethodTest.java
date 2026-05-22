@@ -196,6 +196,15 @@ class DatasourceMapperDefaultMethodTest {
         MapperResult emptyOrResult = buildEmptyOrConditionResult(mapper);
         assertTrue(emptyOrResult.getSql().contains("1 = ?"));
         assertEquals(Collections.singletonList(0), emptyOrResult.getParamList());
+        
+        WhereBuilder emptySingleCondition = new WhereBuilder("SELECT * FROM ai_resource");
+        mapper.appendSingleAndCondition(emptySingleCondition, "type", Collections.emptyList(),
+            false);
+        assertTrue(emptySingleCondition.build().getParamList().isEmpty());
+        
+        Map<Object, Object> rawMap = new LinkedHashMap<>();
+        rawMap.put(null, "empty");
+        assertTrue(mapper.castToMap(rawMap).containsKey(null));
         assertNull(mapper.castToMap("not-map"));
     }
     
@@ -394,6 +403,7 @@ class DatasourceMapperDefaultMethodTest {
         WhereBuilder where = new WhereBuilder("SELECT * FROM ai_resource");
         Map<String, Object> emptyOr = new LinkedHashMap<>();
         emptyOr.put("", "blank");
+        emptyOr.put("owner", Collections.emptyList());
         emptyOr.put("type", null);
         mapper.appendOrConditions(where, emptyOr);
         return where.build();

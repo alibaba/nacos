@@ -260,6 +260,24 @@ class ConfigChangePluginManagerTests {
         assertTrue(isSorted(services));
     }
     
+    @Test
+    void testLoadConfigChangeServicesFromSpi() throws Exception {
+        ConfigChangePluginManager.reset();
+        Method method = ConfigChangePluginManager.class.getDeclaredMethod(
+            "loadConfigChangeServices");
+        method.setAccessible(true);
+        
+        method.invoke(null);
+        
+        Optional<ConfigChangePluginService> service =
+            ConfigChangePluginManager.getInstance().findPluginServiceImpl("spi-config");
+        assertTrue(service.isPresent());
+        assertFalse(ConfigChangePluginManager.getInstance().findPluginServiceImpl("").isPresent());
+        assertTrue(ConfigChangePluginManager.findPluginServicesByPointcut(
+            ConfigChangePointCutTypes.PUBLISH_BY_HTTP).stream()
+            .anyMatch(each -> "spi-config".equals(each.getServiceType())));
+    }
+    
     private boolean isSorted(List<ConfigChangePluginService> list) {
         return IntStream.range(0, list.size() - 1)
             .allMatch(i -> list.get(i).getOrder() <= list.get(i + 1).getOrder());

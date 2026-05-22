@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.visibility.spi;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,7 @@ class VisibilityPluginManagerTest {
     
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
+        EnvUtil.reset();
         System.clearProperty(VISIBILITY_ENABLED_KEY);
         PluginStateCheckerHolder.setInstance(null);
         manager = VisibilityPluginManager.getInstance();
@@ -68,6 +70,7 @@ class VisibilityPluginManagerTest {
     
     @AfterEach
     void tearDown() {
+        EnvUtil.reset();
         System.clearProperty(VISIBILITY_ENABLED_KEY);
         PluginStateCheckerHolder.setInstance(null);
         serviceMap.clear();
@@ -143,6 +146,38 @@ class VisibilityPluginManagerTest {
             "custom");
         
         assertTrue(result.isEmpty());
+    }
+    
+    @Test
+    void testResolveInitPropertiesFallsBackWhenEnvUtilThrows() throws Exception {
+        System.setProperty("nacos.plugin.visibility.fallback.timeout", "5000");
+        EnvUtil.setThrowException(true);
+        
+        Method propertiesMethod =
+            VisibilityPluginManager.class.getDeclaredMethod("resolveInitProperties");
+        propertiesMethod.setAccessible(true);
+        
+        Properties result = (Properties) propertiesMethod.invoke(manager);
+        
+        assertEquals("5000", result.getProperty("nacos.plugin.visibility.fallback.timeout"));
+    }
+    
+    @Test
+    void testInitVisibilityServicesLoadsSpiAndSkipsBrokenProvider() throws Exception {
+        System.setProperty("nacos.plugin.visibility.spi-loaded.timeout", "3000");
+        Field initialized = VisibilityPluginManager.class.getDeclaredField("initialized");
+        initialized.setAccessible(true);
+        initialized.set(manager, false);
+        serviceMap.clear();
+        
+        Method initMethod =
+            VisibilityPluginManager.class.getDeclaredMethod("initVisibilityServices");
+        initMethod.setAccessible(true);
+        initMethod.invoke(manager);
+        
+        assertTrue((Boolean) initialized.get(manager));
+        assertTrue(serviceMap.containsKey("spi-loaded"));
+        assertEquals("3000", SpiLoadedVisibilityService.initProperties.getProperty("timeout"));
     }
     
     private void registerVisibilityService(VisibilityService service, Properties properties)

@@ -21,15 +21,20 @@ import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
 import com.alibaba.nacos.plugin.environment.spi.EnvironmentPluginProvider;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * CustomEnvironment Plugin Test.
@@ -126,10 +131,36 @@ class CustomEnvironmentPluginManagerTest {
     }
     
     @Test
+    void testLoadInitialFromSpiSkipsBlankPluginName() throws Exception {
+        List<CustomEnvironmentPluginService> services = getServices();
+        List<CustomEnvironmentPluginService> snapshot = new ArrayList<>(services);
+        services.clear();
+        Method method = CustomEnvironmentPluginManager.class.getDeclaredMethod("loadInitial");
+        method.setAccessible(true);
+        
+        try {
+            method.invoke(CustomEnvironmentPluginManager.getInstance());
+            
+            assertTrue(CustomEnvironmentPluginManager.getInstance().getPropertyKeys()
+                .contains("spi.key"));
+        } finally {
+            services.clear();
+            services.addAll(snapshot);
+        }
+    }
+    
+    @Test
     void testEnvironmentPluginProvider() {
         EnvironmentPluginProvider provider = new EnvironmentPluginProvider();
         
         assertEquals(PluginType.ENVIRONMENT, provider.getPluginType());
         assertNotNull(provider.getAllPlugins());
+    }
+    
+    @SuppressWarnings("unchecked")
+    private List<CustomEnvironmentPluginService> getServices() throws Exception {
+        Field field = CustomEnvironmentPluginManager.class.getDeclaredField("SERVICE_LIST");
+        field.setAccessible(true);
+        return (List<CustomEnvironmentPluginService>) field.get(null);
     }
 }

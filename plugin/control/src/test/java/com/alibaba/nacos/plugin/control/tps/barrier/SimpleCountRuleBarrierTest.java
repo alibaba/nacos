@@ -21,6 +21,7 @@ import com.alibaba.nacos.plugin.control.tps.TpsMetrics;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
+import com.alibaba.nacos.plugin.control.tps.barrier.creator.LocalSimpleCountBarrierCreator;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -105,6 +106,16 @@ class SimpleCountRuleBarrierTest {
         barrier.clearLimitRule();
         assertEquals(-1L, barrier.getMaxCount());
         assertTrue(barrier.isMonitorType());
+    }
+    
+    @Test
+    void testLocalSimpleCountBarrierCreator() {
+        LocalSimpleCountBarrierCreator creator = LocalSimpleCountBarrierCreator.getInstance();
+        
+        RuleBarrier barrier = creator.createRuleBarrier("point", "rule", TimeUnit.SECONDS);
+        
+        assertEquals("localsimplecountor", creator.name());
+        assertEquals("localsimplecount", barrier.getBarrierName());
     }
     
     private static class TestSimpleCountRuleBarrier extends SimpleCountRuleBarrier {

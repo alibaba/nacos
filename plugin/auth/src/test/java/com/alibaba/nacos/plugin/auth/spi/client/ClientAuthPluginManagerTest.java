@@ -19,6 +19,8 @@ package com.alibaba.nacos.plugin.auth.spi.client;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,8 +33,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -88,6 +92,47 @@ class ClientAuthPluginManagerTest {
         Set<ClientAuthService> clientAuthServiceSet =
             clientAuthPluginManager.getAuthServiceSpiImplSet();
         assertTrue(clientAuthServiceSet.isEmpty());
+    }
+    
+    @Test
+    void testRefreshServerListAndShutdown() throws Exception {
+        TestClientAuthService service = new TestClientAuthService();
+        clientAuthPluginManager.getAuthServiceSpiImplSet().add(service);
+        List<String> newServerList = Collections.singletonList("127.0.0.1:8848");
+        
+        clientAuthPluginManager.refreshServerList(newServerList);
+        clientAuthPluginManager.shutdown();
+        
+        assertEquals(newServerList, service.serverList);
+        assertTrue(service.shutdown);
+    }
+    
+    private static class TestClientAuthService extends AbstractClientAuthService {
+        
+        private List<String> serverList;
+        
+        private boolean shutdown;
+        
+        @Override
+        public void setServerList(List<String> serverList) {
+            super.setServerList(serverList);
+            this.serverList = serverList;
+        }
+        
+        @Override
+        public Boolean login(Properties properties) {
+            return true;
+        }
+        
+        @Override
+        public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
+            return null;
+        }
+        
+        @Override
+        public void shutdown() {
+            shutdown = true;
+        }
     }
     
 }

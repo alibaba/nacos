@@ -22,6 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -82,6 +83,18 @@ class MapperManagerTest {
             () -> MapperManager.instance(false).findMapper("derby", "config_info"));
         assertThrows(NacosRuntimeException.class,
             () -> MapperManager.instance(false).findMapper("mysql", "missing_table"));
+    }
+    
+    @Test
+    void testLoadInitialFromSpi() throws Exception {
+        Method method = MapperManager.class.getDeclaredMethod("loadInitial");
+        method.setAccessible(true);
+        
+        method.invoke(MapperManager.instance(false));
+        
+        Mapper mapper = MapperManager.instance(false).findMapper("spi", "spi_table");
+        assertEquals("spi", mapper.getDataSource());
+        assertEquals("spi_table", mapper.getTableName());
     }
     
     private static class TestMapper implements Mapper {
