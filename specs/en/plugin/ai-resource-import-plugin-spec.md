@@ -198,6 +198,15 @@ the preset source id, display name, endpoint, auth reference, timeouts, item
 limits, and artifact size by using the same
 `nacos.plugin.ai.importer.mcp.official.*` prefix.
 
+All built-in source presets accept the following security opt-ins under their
+own prefix. They default to `false` and should be enabled only by operators for
+controlled private deployments:
+
+| Property suffix | Meaning |
+|-----------------|---------|
+| `allow-http` / `allowHttp` | Allows a non-HTTPS source endpoint. |
+| `allow-private-network` / `allowPrivateNetwork` | Allows localhost, loopback, link-local, multicast, or private-network source endpoints. |
+
 The `skills-well-known` importer connects to an operator-configured Skill
 marketplace or registry root. If the source endpoint is not already a
 well-known path, the importer should first try `/.well-known/agent-skills` and
@@ -404,6 +413,11 @@ The import flow must treat external sources as untrusted:
 
 - users cannot submit arbitrary URLs, IPs, registry roots, or credentials;
 - operator-configured HTTP sources should use HTTPS by default;
+- non-HTTPS source endpoints must be rejected unless an operator-owned source
+  configuration explicitly enables `allow-http`;
+- localhost, loopback, link-local, multicast, and private-network source
+  endpoint targets must be rejected unless an operator-owned source
+  configuration explicitly enables `allow-private-network`;
 - redirects must be disabled or revalidated against the same safety policy;
 - loopback, link-local, multicast, and private network targets should be blocked
   by default after DNS resolution;

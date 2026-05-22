@@ -99,6 +99,7 @@ public class AiResourceImportManager {
         requireRequest(request);
         AiResourceImportSource source =
             sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
+        securityGuard.checkSourceEndpoint(source);
         AiResourceImportService importer =
             pluginManager.resolveImporter(source, request.getResourceType());
         AiResourceImportCandidatePage page = importer.search(buildSearchContext(source, request));
@@ -126,6 +127,7 @@ public class AiResourceImportManager {
         requireSelectedItems(request.getSelectedItems());
         AiResourceImportSource source =
             sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
+        securityGuard.checkSourceEndpoint(source);
         AiResourceImportService importer =
             pluginManager.resolveImporter(source, request.getResourceType());
         AiResourceImportContext context = buildItemContext(source, request.getNamespaceId(),
@@ -154,6 +156,7 @@ public class AiResourceImportManager {
         requireSelectedItems(request.getSelectedItems());
         AiResourceImportSource source =
             sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
+        securityGuard.checkSourceEndpoint(source);
         AiResourceImportService importer =
             pluginManager.resolveImporter(source, request.getResourceType());
         AiResourceImportContext context = buildItemContext(source, request.getNamespaceId(),

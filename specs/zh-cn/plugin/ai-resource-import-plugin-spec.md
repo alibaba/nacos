@@ -173,6 +173,14 @@ nacos.plugin.ai.importer.mcp.official.enabled=true
 `nacos.plugin.ai.importer.mcp.official.*` 前缀覆盖 source id、展示名、endpoint、auth 引用、
 超时、条目限制和 artifact 大小。
 
+所有内置 source 预置都支持在自身前缀下配置如下安全 opt-in。默认值均为 `false`，只应由运维在受控私网
+部署中显式开启：
+
+| 配置后缀 | 含义 |
+|----------|------|
+| `allow-http` / `allowHttp` | 允许非 HTTPS source endpoint。 |
+| `allow-private-network` / `allowPrivateNetwork` | 允许 localhost、loopback、link-local、multicast 或私网 source endpoint。 |
+
 `skills-well-known` importer 对接运维配置的 Skill 市场或 registry root。若 source endpoint
 不是 well-known 路径，importer 应先尝试 `/.well-known/agent-skills`，再 fallback 到
 `/.well-known/skills` 以兼容 v0.1 来源；若 endpoint 已以 `/.well-known/agent-skills` 或
@@ -350,6 +358,9 @@ source 时，可以按 `sourceId` 解释；否则应失败并提示迁移到
 
 - 用户不能提交任意 URL、IP、registry root 或凭证；
 - 运维配置的 HTTP source 默认应使用 HTTPS；
+- 非 HTTPS source endpoint 必须被拒绝，除非运维在 source 配置中显式开启 `allow-http`；
+- localhost、loopback、link-local、multicast 和私网 source endpoint 必须被拒绝，除非运维在
+  source 配置中显式开启 `allow-private-network`；
 - redirect 必须禁用或按同一安全策略重新校验；
 - DNS 解析后默认阻断 loopback、link-local、multicast 和私网目标；
 - 来源请求必须强制连接超时、读超时、响应大小、页数和 artifact 大小限制；

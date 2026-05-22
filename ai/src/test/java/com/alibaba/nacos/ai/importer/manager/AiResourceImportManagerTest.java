@@ -50,7 +50,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -105,6 +107,63 @@ class AiResourceImportManagerTest {
         assertEquals("server-1", response.getItems().get(0).getExternalId());
         assertEquals(10, builder.service.lastContext.getLimit());
         assertEquals("database", builder.service.lastContext.getQuery());
+    }
+    
+    @Test
+    void testSearchRejectsHttpEndpointByDefault() {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.getSources().get(0).setEndpoint("http://example.com/registry");
+        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
+            Collections.singletonList(new FakeOperator()));
+        AiResourceImportSearchRequest request = searchRequest();
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.search(request));
+        
+        assertTrue(exception.getErrMsg().contains("must use https"));
+    }
+    
+    @Test
+    void testSearchAllowsHttpEndpointWhenConfigured() throws NacosException {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.getSources().get(0).setEndpoint("http://example.com/registry");
+        properties.getSources().get(0).setProperties(
+            Collections.singletonMap("allow-http", "true"));
+        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
+            Collections.singletonList(new FakeOperator()));
+        
+        AiResourceImportSearchResponse response = manager.search(searchRequest());
+        
+        assertEquals(1, response.getItems().size());
+    }
+    
+    @Test
+    void testSearchRejectsPrivateEndpointByDefault() {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.getSources().get(0).setEndpoint("https://127.0.0.1/registry");
+        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
+            Collections.singletonList(new FakeOperator()));
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.search(searchRequest()));
+        
+        assertTrue(exception.getErrMsg().contains("private or local target"));
+    }
+    
+    @Test
+    void testSearchAllowsPrivateEndpointWhenConfigured() throws NacosException {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.getSources().get(0).setEndpoint("http://127.0.0.1/registry");
+        Map<String, String> sourceProperties = new HashMap<>(2);
+        sourceProperties.put("allow-http", "true");
+        sourceProperties.put("allow-private-network", "true");
+        properties.getSources().get(0).setProperties(sourceProperties);
+        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
+            Collections.singletonList(new FakeOperator()));
+        
+        AiResourceImportSearchResponse response = manager.search(searchRequest());
+        
+        assertEquals(1, response.getItems().size());
     }
     
     @Test
@@ -292,6 +351,15 @@ class AiResourceImportManagerTest {
         source.setMaxItemCount(10);
         source.setMaxArtifactSize(1024);
         return source;
+    }
+    
+    private AiResourceImportSearchRequest searchRequest() {
+        AiResourceImportSearchRequest request = new AiResourceImportSearchRequest();
+        request.setResourceType("mcp");
+        request.setSourceId("source-1");
+        request.setQuery("database");
+        request.setLimit(50);
+        return request;
     }
     
     private AiResourceImportSource providerSource() {

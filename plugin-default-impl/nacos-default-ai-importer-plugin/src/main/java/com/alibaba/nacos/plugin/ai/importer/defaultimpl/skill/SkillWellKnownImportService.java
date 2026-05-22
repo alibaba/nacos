@@ -126,7 +126,7 @@ public class SkillWellKnownImportService implements AiResourceImportService {
     
     public SkillWellKnownImportService() {
         this(HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
+            .followRedirects(HttpClient.Redirect.NEVER)
             .connectTimeout(Duration.ofSeconds(DEFAULT_CONNECT_TIMEOUT_SECONDS))
             .build());
     }

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -99,6 +100,23 @@ class DefaultAiResourceImportSourceProviderTest {
             source.getEndpoint());
         assertEquals(AiResourceImportConstants.RESOURCE_TYPE_SKILL,
             source.getResourceTypes().get(0));
+    }
+    
+    @Test
+    void testLoadSourceSecurityOptions() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "true");
+        properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.allow-http", "true");
+        properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.allow-private-network",
+            "true");
+        
+        List<AiResourceImportSource> sources = toList(provider.loadSources(properties));
+        
+        assertEquals(1, sources.size());
+        AiResourceImportSource source = sources.get(0);
+        assertNotNull(source.getProperties());
+        assertEquals("true", source.getProperties().get("allow-http"));
+        assertEquals("true", source.getProperties().get("allow-private-network"));
     }
     
     private List<AiResourceImportSource> toList(Collection<AiResourceImportSource> sources) {

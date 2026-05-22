@@ -98,7 +98,7 @@ public class SkillsShImportService implements AiResourceImportService {
     
     public SkillsShImportService() {
         this(HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
+            .followRedirects(HttpClient.Redirect.NEVER)
             .connectTimeout(Duration.ofSeconds(DEFAULT_CONNECT_TIMEOUT_SECONDS))
             .build());
     }
