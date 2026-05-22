@@ -121,8 +121,8 @@ Trace plugin behavior is defined by the
 and must not define authorization or lifecycle state.
 
 AI resource trace emission uses `AiResourceTraceEvent`. The default AI resource
-file-log subscriber preserves the JSON line audit log in `ai-resource-trace.log`
-while allowing external trace subscribers to consume the same events.
+trace plugin preserves the JSON line audit log in `ai-resource-trace.log` while
+allowing external trace subscribers to consume the same events.
 
 ## 8. Evolution Note
 

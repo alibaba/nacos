@@ -106,7 +106,7 @@ download 发出 Trace/审计事件。
 Trace 插件行为由 [Trace 插件规范](../plugin/trace-plugin-spec.md)定义。计数只用于诊断，
 不得定义鉴权或生命周期状态。
 
-AI 资源 Trace 通过 `AiResourceTraceEvent` 发出。默认 AI 资源文件日志订阅者保留
+AI 资源 Trace 通过 `AiResourceTraceEvent` 发出。默认 AI 资源 Trace 插件保留
 `ai-resource-trace.log` 中的 JSON 行审计日志，同时允许外部 Trace 订阅者消费同一批事件。
 
 ## 8. 演进说明

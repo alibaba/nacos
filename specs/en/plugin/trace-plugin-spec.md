@@ -129,12 +129,11 @@ their own sink failures.
 
 ## Implementation Note
 
-The Nacos server repository defines the trace SPI and event model, but generally
-does not ship default trace sink implementations in `plugin-default-impl`.
-Reference subscriber implementations may live in external plugin repositories
-and should follow this spec.
+The Nacos server repository defines the trace SPI and event model. Reference
+subscriber implementations may live in external plugin repositories and should
+follow this spec.
 
-For compatibility with the existing AI resource audit log, the AI module ships a
-default `AiResourceTraceEvent` file-log subscriber. It is a normal trace
-subscriber and writes the existing JSON line format to
-`ai-resource-trace.log`.
+For compatibility with the existing AI resource audit log, Nacos ships a
+default `AiResourceTraceEvent` file-log subscriber in `plugin-default-impl` and
+packages it with the default plugins. It is a normal trace subscriber and
+writes the existing JSON line format to `ai-resource-trace.log`.

@@ -112,9 +112,9 @@ sink 故障。
 
 ## 实现说明
 
-Nacos 服务端仓库定义 Trace SPI 和事件模型，但通常不在 `plugin-default-impl` 中发布默认
-Trace sink 实现。参考订阅者实现可以位于外部插件仓库，并应遵守本文档。
+Nacos 服务端仓库定义 Trace SPI 和事件模型。参考订阅者实现可以位于外部插件仓库，并应遵守
+本文档。
 
-为了兼容已有 AI 资源审计日志，AI 模块内置一个默认的 `AiResourceTraceEvent`
-文件日志订阅者。它是标准 Trace 订阅者，并将既有 JSON 行格式写入
-`ai-resource-trace.log`。
+为了兼容已有 AI 资源审计日志，Nacos 在 `plugin-default-impl` 中提供默认的
+`AiResourceTraceEvent` 文件日志订阅者，并随默认插件包发布。它是标准 Trace 订阅者，
+并将既有 JSON 行格式写入 `ai-resource-trace.log`。
