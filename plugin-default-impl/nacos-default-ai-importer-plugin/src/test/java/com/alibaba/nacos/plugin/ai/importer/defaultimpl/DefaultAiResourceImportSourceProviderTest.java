@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.ai.importer.defaultimpl;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp.McpRegistryImportServiceBuilder;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill.SkillsShImportServiceBuilder;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill.SkillWellKnownImportServiceBuilder;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import org.junit.jupiter.api.Test;
@@ -81,6 +82,23 @@ class DefaultAiResourceImportSourceProviderTest {
         properties.setProperty("nacos.plugin.ai.importer.skills.well-known.enabled", "true");
         
         assertThrows(NacosException.class, () -> provider.loadSources(properties));
+    }
+    
+    @Test
+    void testLoadSkillsShSourceWithDefaultEndpoint() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "true");
+        
+        List<AiResourceImportSource> sources = toList(provider.loadSources(properties));
+        
+        assertEquals(1, sources.size());
+        AiResourceImportSource source = sources.get(0);
+        assertEquals("skills-sh", source.getSourceId());
+        assertEquals(SkillsShImportServiceBuilder.IMPORTER_TYPE, source.getPluginName());
+        assertEquals(DefaultAiResourceImportSourceProvider.SKILLS_SH_ENDPOINT,
+            source.getEndpoint());
+        assertEquals(AiResourceImportConstants.RESOURCE_TYPE_SKILL,
+            source.getResourceTypes().get(0));
     }
     
     private List<AiResourceImportSource> toList(Collection<AiResourceImportSource> sources) {

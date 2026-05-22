@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp.McpRegistryImportServiceBuilder;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill.SkillsShImportServiceBuilder;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill.SkillWellKnownImportServiceBuilder;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportSourceProvider;
@@ -46,8 +47,12 @@ public class DefaultAiResourceImportSourceProvider implements AiResourceImportSo
     
     public static final String SKILL_WELL_KNOWN_PREFIX = PREFIX + "skills.well-known.";
     
+    public static final String SKILLS_SH_PREFIX = PREFIX + "skills.skills-sh.";
+    
     public static final String OFFICIAL_MCP_ENDPOINT =
         "https://registry.modelcontextprotocol.io/v0/servers";
+    
+    public static final String SKILLS_SH_ENDPOINT = "https://skills.sh";
     
     private static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 3000;
     
@@ -62,7 +67,7 @@ public class DefaultAiResourceImportSourceProvider implements AiResourceImportSo
     @Override
     public Collection<AiResourceImportSource> loadSources(Properties properties)
         throws NacosException {
-        List<AiResourceImportSource> result = new ArrayList<>(2);
+        List<AiResourceImportSource> result = new ArrayList<>(3);
         AiResourceImportSource officialMcp = loadOfficialMcpSource(properties);
         if (officialMcp != null) {
             result.add(officialMcp);
@@ -70,6 +75,10 @@ public class DefaultAiResourceImportSourceProvider implements AiResourceImportSo
         AiResourceImportSource wellKnownSkill = loadSkillWellKnownSource(properties);
         if (wellKnownSkill != null) {
             result.add(wellKnownSkill);
+        }
+        AiResourceImportSource skillsSh = loadSkillsShSource(properties);
+        if (skillsSh != null) {
+            result.add(skillsSh);
         }
         return result;
     }
@@ -116,6 +125,26 @@ public class DefaultAiResourceImportSourceProvider implements AiResourceImportSo
             Collections.singletonList(AiResourceImportConstants.RESOURCE_TYPE_SKILL));
         result.setEndpoint(endpoint);
         applyCommonSourceOptions(properties, SKILL_WELL_KNOWN_PREFIX, result);
+        return result;
+    }
+    
+    private AiResourceImportSource loadSkillsShSource(Properties properties) {
+        if (!getBoolean(properties, SKILLS_SH_PREFIX + "enabled", false)) {
+            return null;
+        }
+        AiResourceImportSource result = new AiResourceImportSource();
+        result.setSourceId(getString(properties, SKILLS_SH_PREFIX, "source-id", "sourceId",
+            "skills-sh"));
+        result.setDisplayName(getString(properties, SKILLS_SH_PREFIX, "display-name",
+            "displayName", "skills.sh"));
+        result.setDescription(getString(properties, SKILLS_SH_PREFIX, "description",
+            "description", "Import Skills from skills.sh."));
+        result.setPluginName(SkillsShImportServiceBuilder.IMPORTER_TYPE);
+        result.setResourceTypes(
+            Collections.singletonList(AiResourceImportConstants.RESOURCE_TYPE_SKILL));
+        result.setEndpoint(getString(properties, SKILLS_SH_PREFIX, "endpoint", "url",
+            SKILLS_SH_ENDPOINT));
+        applyCommonSourceOptions(properties, SKILLS_SH_PREFIX, result);
         return result;
     }
     

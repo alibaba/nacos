@@ -248,6 +248,28 @@ Skill ZIP 边界。内置 importer 必须支持 `skill-md` 单文件 artifact，
 TGZ 形式的 `archive` artifact。Archive 解包必须校验路径安全性，限制文件数量和解压后总大小，
 并在交给 Skill Resource Operator 前拒绝不支持的 archive 格式。
 
+`skills-sh` importer 对接运维配置的 skills.sh API root。它遵循 skills.sh CLI 的发现流程：
+Search 阶段调用 `GET {endpoint}/api/search?q={query}&limit={limit}`，并且只返回候选摘要；
+Fetch 阶段根据被选择候选的 `source` 和 `skillId` 调用
+`GET {endpoint}/api/download/{owner}/{repo}/{skillId}`，校验返回文件路径，组装标准 Skill ZIP
+artifact，并交给 Skill Resource Operator 写入。
+
+skills.sh 预置来源可以通过如下配置启用：
+
+```properties
+nacos.plugin.ai.importer.skills.skills-sh.enabled=true
+```
+
+未覆盖时，该配置创建 source id `skills-sh`、importer `skills-sh`、资源类型 `skill`，endpoint
+为 `https://skills.sh`。运维可以使用同一
+`nacos.plugin.ai.importer.skills.skills-sh.*` 前缀覆盖 source id、展示名、endpoint、auth 引用、
+超时、条目限制和 artifact 大小。
+
+Search metadata 只能暴露 skills.sh 页面 URL、GitHub repository URL、repository source、skill id、
+安装次数等非 secret 信息；Fetch source metadata 可以额外包含 download snapshot hash。Fetch 必须将
+`sourceMetadata.artifactUrl` 设置为对应的 skills.sh 页面 URL，使导入后的 Skill 资源记录具体外部来源，
+而不是 `local`。
+
 ## API 流程
 
 Nacos 应暴露统一的 Admin 和 Console 导入 API：
