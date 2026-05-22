@@ -176,6 +176,19 @@ class SkillProxyTest {
     }
     
     @Test
+    void testUploadSkillFromZipWithCommitMsg() throws NacosException {
+        byte[] zipBytes = new byte[] {1, 2, 3};
+        when(skillHandler.uploadSkillFromZip(NS, zipBytes, true, "v2", "upload commit"))
+            .thenReturn(SKILL_NAME);
+        
+        String result =
+            skillProxy.uploadSkillFromZip(NS, zipBytes, true, "v2", "upload commit");
+        
+        assertEquals(SKILL_NAME, result);
+        verify(skillHandler).uploadSkillFromZip(NS, zipBytes, true, "v2", "upload commit");
+    }
+    
+    @Test
     void testCreateDraft() throws NacosException {
         SkillDraftCreateForm form = new SkillDraftCreateForm();
         form.setNamespaceId(NS);

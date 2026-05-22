@@ -42,7 +42,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Remote implementation of Skill handler.
- * 
+ *
  * <p>Calls remote Nacos server through maintainer client for Skill operations.</p>
  *
  * @author nacos
@@ -114,8 +114,15 @@ public class SkillRemoteHandler implements SkillHandler {
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
         String targetVersion)
         throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion, null);
+    }
+    
+    @Override
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion, String commitMsg)
+        throws NacosException {
         return clientHolder.getAiMaintainerService().skill().uploadSkillFromZip(namespaceId,
-            zipBytes, overwrite);
+            zipBytes, overwrite, targetVersion, commitMsg);
     }
     
     @Override

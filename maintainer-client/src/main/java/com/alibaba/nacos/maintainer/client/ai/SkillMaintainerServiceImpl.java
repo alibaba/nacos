@@ -150,10 +150,19 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     @Override
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
         throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, null, null);
+    }
+    
+    @Override
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion, String commitMsg)
+        throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(4);
         params.put("namespaceId", namespaceId);
         params.put("overwrite", String.valueOf(overwrite));
+        putIfNotBlank(params, "targetVersion", targetVersion);
+        putIfNotBlank(params, "commitMsg", commitMsg);
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, null))
             .setHttpMethod(HttpMethod.POST)
             .setPath(Constants.AdminApiPath.AI_SKILL_UPLOAD_ADMIN_PATH)

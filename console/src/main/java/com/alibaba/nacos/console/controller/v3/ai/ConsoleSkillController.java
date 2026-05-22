@@ -157,6 +157,7 @@ public class ConsoleSkillController {
      *
      * @param request     HTTP servlet request
      * @param namespaceId namespace ID
+     * @param commitMsg   version-level commit message
      * @param file        zip file containing skill
      * @return result of the upload operation
      * @throws NacosException if the upload fails
@@ -169,11 +170,13 @@ public class ConsoleSkillController {
         @RequestParam(value = "overwrite", required = false,
             defaultValue = "false") boolean overwrite,
         @RequestParam(value = "targetVersion", required = false) String targetVersion,
+        @RequestParam(value = "commitMsg", required = false) String commitMsg,
         @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
         String skillName =
-            skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
+            skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion,
+                commitMsg);
         return Result.success(skillName);
     }
     

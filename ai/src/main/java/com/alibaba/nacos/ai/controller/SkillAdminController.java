@@ -172,6 +172,7 @@ public class SkillAdminController {
      *
      * @param request     HTTP servlet request
      * @param namespaceId namespace ID
+     * @param commitMsg   version-level commit message
      * @param file        zip file containing skill
      * @return result of the upload operation
      * @throws NacosException if the upload fails
@@ -184,12 +185,13 @@ public class SkillAdminController {
         @RequestParam(value = "overwrite", required = false,
             defaultValue = "false") boolean overwrite,
         @RequestParam(value = "targetVersion", required = false) String targetVersion,
+        @RequestParam(value = "commitMsg", required = false) String commitMsg,
         @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
         String skillName = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes,
             file.getOriginalFilename(),
-            overwrite, targetVersion);
+            overwrite, targetVersion, commitMsg);
         return Result.success(skillName);
     }
     

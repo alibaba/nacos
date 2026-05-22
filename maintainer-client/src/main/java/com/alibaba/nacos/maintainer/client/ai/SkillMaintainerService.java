@@ -211,6 +211,39 @@ public interface SkillMaintainerService {
         throws NacosException;
     
     /**
+     * Upload skill from zip file with optional target version.
+     *
+     * @param namespaceId   namespace ID
+     * @param zipBytes      zip file bytes
+     * @param overwrite     whether to overwrite the current editable draft when the skill already exists
+     * @param targetVersion user-specified version (optional, used as fallback when ZIP content has no version)
+     * @return skill name
+     * @throws NacosException if fail to upload skill
+     */
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion)
+        throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion, null);
+    }
+    
+    /**
+     * Upload skill from zip file with optional target version and commit message.
+     *
+     * @param namespaceId   namespace ID
+     * @param zipBytes      zip file bytes
+     * @param overwrite     whether to overwrite the current editable draft when the skill already exists
+     * @param targetVersion user-specified version (optional, used as fallback when ZIP content has no version)
+     * @param commitMsg     version-level commit message (optional)
+     * @return skill name
+     * @throws NacosException if fail to upload skill
+     */
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion, String commitMsg)
+        throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite);
+    }
+    
+    /**
      * Batch upload skills from a multi-skill zip archive with default namespace.
      *
      * @param zipBytes zip file bytes containing multiple skill directories

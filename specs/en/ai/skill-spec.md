@@ -110,6 +110,8 @@ Storage extension rules are defined by the
 Skill follows the shared [AI Resource Lifecycle Spec](ai-resource-lifecycle-spec.md):
 
 - upload creates or overwrites a draft according to request options;
+- upload may accept an optional commit message and must store it as the draft
+  version description when a draft version is created or overwritten;
 - bootstrap built-in Skill may directly create online metadata and version
   rows;
 - submit may run publish pipeline and then publish or return to draft;

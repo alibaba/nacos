@@ -49,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
@@ -206,7 +207,7 @@ class ConsoleSkillControllerTest {
     @Test
     void testUploadSkill() throws Exception {
         when(skillProxy.uploadSkillFromZip(anyString(), any(byte[].class),
-            anyBoolean(), isNull())).thenReturn(SKILL_NAME);
+            anyBoolean(), isNull(), eq("upload commit"))).thenReturn(SKILL_NAME);
         
         MockMultipartFile file = new MockMultipartFile("file", "skill.zip",
             "application/zip", new byte[] {0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0,
@@ -214,7 +215,8 @@ class ConsoleSkillControllerTest {
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.multipart(BASE_PATH + "/upload").file(file)
-                .param("namespaceId", NS).param("overwrite", "false"))
+                .param("namespaceId", NS).param("overwrite", "false")
+                .param("commitMsg", "upload commit"))
             .andReturn().getResponse();
         
         assertEquals(200, response.getStatus());

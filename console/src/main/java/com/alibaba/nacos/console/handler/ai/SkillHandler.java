@@ -131,6 +131,23 @@ public interface SkillHandler {
         throws NacosException;
     
     /**
+     * Upload skill from zip file with optional target version and commit message.
+     *
+     * @param namespaceId   namespace ID
+     * @param zipBytes      zip file bytes
+     * @param overwrite     whether to overwrite the current editable draft when the skill already exists
+     * @param targetVersion user-specified version (optional, used as fallback when ZIP content has no version)
+     * @param commitMsg     version-level commit message (optional)
+     * @return skill name
+     * @throws NacosException if upload failed
+     */
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion, String commitMsg)
+        throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
+    }
+    
+    /**
      * Batch upload multiple skills from a single zip file containing multiple skill subdirectories.
      *
      * @param namespaceId namespace ID

@@ -91,6 +91,7 @@ Skill 还维护一个轻量 manifest 以支持客户端发现。Manifest 是从 
 Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.md)：
 
 - upload 根据请求选项创建或覆盖 draft；
+- upload 可以接收可选 commit message，创建或覆盖 draft 版本时必须保存为该版本描述；
 - bootstrap 内置 Skill 可以直接创建 online 元数据和版本行；
 - submit 可以运行发布流水线，并发布或退回 draft；
 - labels、online/offline、scope、bizTags 和 delete 操作按需通过 CAS 更新元数据。
