@@ -349,6 +349,12 @@ list sources(resourceType)
   -> execute selected candidates
 ```
 
+The browser must not select searched candidates by default. It may provide an
+explicit select-all control, and users must still be able to deselect individual
+candidates after selecting all. Import-all-valid actions, if present, must only
+operate on candidates that the user explicitly selected and validated, including
+candidates accumulated across multiple validation batches in the same source.
+
 The browser must not receive full artifacts. MCP tools/specification, Skill zip
 content, and other importable payloads may flow only among the server-side
 Importer, Import Manager, and Resource Operator.

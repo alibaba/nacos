@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { CheckSquare, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,16 @@ function isImportable(item?: AiResourceImportValidationItem, overwriteExisting?:
   return false;
 }
 
+function mergeValidationItems(
+  previous: AiResourceImportValidationItem[] | null,
+  nextItems: AiResourceImportValidationItem[]
+): AiResourceImportValidationItem[] {
+  const merged = new Map<string, AiResourceImportValidationItem>();
+  previous?.forEach(item => merged.set(itemKey(item), item));
+  nextItems.forEach(item => merged.set(itemKey(item), item));
+  return Array.from(merged.values());
+}
+
 export function ImportAiResourceDialog({
   open,
   onOpenChange,
@@ -87,8 +98,13 @@ export function ImportAiResourceDialog({
   const [candidates, setCandidates] = useState<AiResourceImportCandidateItem[]>([]);
   const [nextCursor, setNextCursor] = useState('');
   const [hasMore, setHasMore] = useState(false);
-  const [validationItems, setValidationItems] = useState<AiResourceImportValidationItem[] | null>(null);
+  const [validationItems, setValidationItems] = useState<AiResourceImportValidationItem[] | null>(
+    null
+  );
   const [validationToken, setValidationToken] = useState('');
+  const [validatedImportItems, setValidatedImportItems] = useState<
+    Map<string, AiResourceImportItem>
+  >(new Map());
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
   const text = useCallback(
@@ -108,6 +124,36 @@ export function ImportAiResourceDialog({
     return result;
   }, [validationItems]);
 
+  const isSelectableCandidate = useCallback(
+    (candidate: AiResourceImportCandidateItem) => {
+      if (!validationItems) return true;
+      const validation = validationMap.get(itemKey(candidate));
+      return !validation || isImportable(validation, overwriteExisting);
+    },
+    [overwriteExisting, validationItems, validationMap]
+  );
+
+  const selectableCandidateKeys = useMemo(
+    () => candidates.filter(isSelectableCandidate).map(itemKey),
+    [candidates, isSelectableCandidate]
+  );
+
+  const allSelectableSelected = useMemo(
+    () =>
+      selectableCandidateKeys.length > 0 &&
+      selectableCandidateKeys.every(key => selectedKeys.has(key)),
+    [selectableCandidateKeys, selectedKeys]
+  );
+
+  const importableValidatedItems = useMemo(
+    () =>
+      Array.from(validatedImportItems.entries())
+        .filter(([key]) => validationMap.has(key))
+        .filter(([key]) => isImportable(validationMap.get(key), overwriteExisting))
+        .map(([, item]) => item),
+    [overwriteExisting, validatedImportItems, validationMap]
+  );
+
   const resetForm = useCallback(() => {
     setSources([]);
     setSourceId('');
@@ -119,6 +165,7 @@ export function ImportAiResourceDialog({
     setHasMore(false);
     setValidationItems(null);
     setValidationToken('');
+    setValidatedImportItems(new Map());
     setSelectedKeys(new Set());
   }, []);
 
@@ -146,13 +193,13 @@ export function ImportAiResourceDialog({
               next.push(item);
             }
           });
-          setSelectedKeys(new Set(next.map(itemKey)));
           return next;
         });
+        if (!append) {
+          setSelectedKeys(new Set());
+        }
         setNextCursor(response.data?.nextCursor || '');
         setHasMore(!!response.data?.hasMore);
-        setValidationItems(null);
-        setValidationToken('');
       } catch {
         // Error handled by interceptor
       } finally {
@@ -212,6 +259,7 @@ export function ImportAiResourceDialog({
     setSelectedKeys(new Set());
     setValidationItems(null);
     setValidationToken('');
+    setValidatedImportItems(new Map());
     setNextCursor('');
     setHasMore(false);
     searchCandidates(value, false, '', query);
@@ -220,8 +268,6 @@ export function ImportAiResourceDialog({
   const handleSearch = () => {
     setCandidates([]);
     setSelectedKeys(new Set());
-    setValidationItems(null);
-    setValidationToken('');
     setNextCursor('');
     setHasMore(false);
     searchCandidates(sourceId, false, '', query);
@@ -232,7 +278,8 @@ export function ImportAiResourceDialog({
       .filter(candidate => selectedKeys.has(itemKey(candidate)))
       .filter(candidate => {
         if (!onlyImportable) return true;
-        return isImportable(validationMap.get(itemKey(candidate)), overwriteExisting);
+        const validation = validationMap.get(itemKey(candidate));
+        return !!validation && isImportable(validation, overwriteExisting);
       })
       .map(toImportItem);
 
@@ -250,12 +297,18 @@ export function ImportAiResourceDialog({
       });
       const nextValidationItems = response.data?.items || [];
       const nextValidationMap = new Map(nextValidationItems.map(item => [itemKey(item), item]));
-      setValidationItems(nextValidationItems);
+      setValidationItems(prev => mergeValidationItems(prev, nextValidationItems));
       setValidationToken(response.data?.validationToken || '');
+      setValidatedImportItems(prev => {
+        const next = new Map(prev);
+        items.forEach(item => next.set(itemKey(item), item));
+        return next;
+      });
       setSelectedKeys(prev => {
         const next = new Set<string>();
         prev.forEach(key => {
-          if (isImportable(nextValidationMap.get(key), overwriteExisting)) next.add(key);
+          const validation = nextValidationMap.get(key);
+          if (!validation || isImportable(validation, overwriteExisting)) next.add(key);
         });
         return next;
       });
@@ -269,9 +322,7 @@ export function ImportAiResourceDialog({
   const executeImport = async (allImportable = false) => {
     if (!validationItems) return;
     const items = allImportable
-      ? candidates
-        .filter(candidate => isImportable(validationMap.get(itemKey(candidate)), overwriteExisting))
-        .map(toImportItem)
+      ? importableValidatedItems
       : selectedImportItems(true);
     if (!items.length) return;
     setExecuting(true);
@@ -310,13 +361,21 @@ export function ImportAiResourceDialog({
   const toggleCandidate = (candidate: AiResourceImportCandidateItem) => {
     const key = itemKey(candidate);
     const validation = validationMap.get(key);
-    if (validationItems && !isImportable(validation, overwriteExisting)) return;
+    if (validationItems && validation && !isImportable(validation, overwriteExisting)) return;
     setSelectedKeys(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
       return next;
     });
+  };
+
+  const selectAllCandidates = () => {
+    setSelectedKeys(new Set(selectableCandidateKeys));
+  };
+
+  const clearSelection = () => {
+    setSelectedKeys(new Set());
   };
 
   const statusBadge = (item?: AiResourceImportValidationItem) => {
@@ -377,10 +436,7 @@ export function ImportAiResourceDialog({
               <Label>{t('common.search')}</Label>
               <Input
                 value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setValidationItems(null);
-                }}
+                onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') handleSearch();
                 }}
@@ -409,6 +465,8 @@ export function ImportAiResourceDialog({
                 onCheckedChange={(checked) => {
                   setOverwriteExisting(checked);
                   setValidationItems(null);
+                  setValidatedImportItems(new Map());
+                  setValidationToken('');
                 }}
               />
               <Label className="text-sm font-normal">{text('importOverride', 'Override Existing')}</Label>
@@ -416,6 +474,39 @@ export function ImportAiResourceDialog({
             <div className="flex items-center gap-2">
               <Switch checked={skipInvalid} onCheckedChange={setSkipInvalid} />
               <Label className="text-sm font-normal">{text('importSkipInvalid', 'Skip Invalid')}</Label>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <span>{text('importSelectedCount', '{{count}} selected', { count: selectedKeys.size })}</span>
+              <span>
+                {text('importValidatedCount', '{{count}} valid after validation', {
+                  count: importableValidatedItems.length,
+                })}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={selectAllCandidates}
+                disabled={!selectableCandidateKeys.length || allSelectableSelected || loading}
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                {text('importSelectAll', 'Select all')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                disabled={!selectedKeys.size || loading}
+              >
+                <X className="h-3.5 w-3.5" />
+                {text('importClearSelection', 'Clear')}
+              </Button>
             </div>
           </div>
 
@@ -429,7 +520,7 @@ export function ImportAiResourceDialog({
                 {candidates.map(candidate => {
                   const key = itemKey(candidate);
                   const validation = validationMap.get(key);
-                  const disabled = validationItems && !isImportable(validation, overwriteExisting);
+                  const disabled = validationItems && !isSelectableCandidate(candidate);
                   const checked = selectedKeys.has(key);
                   return (
                     <button
@@ -508,14 +599,20 @@ export function ImportAiResourceDialog({
           </Button>
           <Button
             onClick={() => executeImport(false)}
-            disabled={!validationItems || !selectedKeys.size || loading || executing}
+            disabled={
+              !validationItems ||
+              !selectedKeys.size ||
+              selectedImportItems(true).length !== selectedKeys.size ||
+              loading ||
+              executing
+            }
           >
             {executing ? t('common.loading') : text('importExecute', 'Execute Import')}
           </Button>
           <Button
             variant="secondary"
             onClick={() => executeImport(true)}
-            disabled={!validationItems || loading || executing}
+            disabled={!validationItems || !importableValidatedItems.length || loading || executing}
           >
             {text('importAll', 'Import all valid')}
           </Button>

@@ -305,6 +305,10 @@ list sources(resourceType)
   -> execute selected candidates
 ```
 
+浏览器 search 后不应默认选中候选项。可以提供显式全选控件，并且用户全选后仍必须能够逐项反选。
+如果提供导入全部有效项动作，该动作只能作用于用户显式选择并已完成校验的候选项，且应包含同一
+source 下多次校验批次累积出的有效候选项。
+
 浏览器不得接收完整 artifact。MCP 的 tools/specification、Skill zip 或其他可导入内容只允许在
 服务端 Importer、Import Manager 和 Resource Operator 之间流转。
 
