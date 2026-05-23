@@ -595,9 +595,6 @@ class ClientWorkerTest {
         Map<String, CacheData> cacheDataMapMocked = Mockito.mock(Map.class);
         Mockito.when(cacheDataMapMocked.get(GroupKey.getKeyTenant(dataIdNormal, group, tenant)))
             .thenReturn(cacheNormal);
-        Mockito.when(
-            cacheDataMapMocked.containsKey(GroupKey.getKeyTenant(dataIdNormal, group, tenant)))
-            .thenReturn(true);
         
         Mockito.when(cacheDataMapMocked.values()).thenReturn(cacheDatas);
         AtomicReference<Map<String, CacheData>> cacheMapMocked =
