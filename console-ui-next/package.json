@@ -44,7 +44,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^0.577.0",
     "monaco-editor": "^0.55.1",
-    "qs": "^6.15.0",
+    "qs": "^6.15.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.71.2",
