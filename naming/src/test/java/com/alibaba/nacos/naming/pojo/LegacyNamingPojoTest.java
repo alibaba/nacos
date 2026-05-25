@@ -106,6 +106,17 @@ class LegacyNamingPojoTest {
         assertEquals(metadata, info.getMetadata());
     }
     
+    @Test
+    void testServiceNameViewAccessors() {
+        ServiceNameView view = new ServiceNameView();
+        
+        view.setCount(2);
+        view.setServices(Collections.singletonList("group@@service"));
+        
+        assertEquals(2, view.getCount());
+        assertEquals(Collections.singletonList("group@@service"), view.getServices());
+    }
+    
     private Instance createInstance() {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
