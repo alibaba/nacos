@@ -23,8 +23,10 @@ import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -38,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * {@link SelectorManager} unit test.
@@ -93,6 +96,21 @@ class SelectorManagerTest {
         
         assertEquals(3, contextBuilders.size());
         assertEquals(3, selectorTypes.size());
+    }
+    
+    @Test
+    void testInitSkipsSelectorWithoutDefaultConstructor() {
+        Map<String, Class<? extends Selector>> selectorTypes = new HashMap<>();
+        ReflectionTestUtils.setField(selectorManager, "selectorTypes", selectorTypes);
+        try (MockedStatic<NacosServiceLoader> mockedLoader =
+            mockStatic(NacosServiceLoader.class)) {
+            mockedLoader.when(() -> NacosServiceLoader.load(Selector.class))
+                .thenReturn(Collections.singletonList(new NoDefaultConstructorSelector("broken")));
+            
+            ReflectionTestUtils.invokeMethod(selectorManager, "initSelectorTypes");
+        }
+        
+        assertTrue(selectorTypes.isEmpty());
     }
     
     @Test
@@ -167,5 +185,36 @@ class SelectorManagerTest {
         List<Instance> result = selectorManager.select(selector, "1.1.1.1", providers);
         
         assertSame(providers, result);
+    }
+    
+    private static class NoDefaultConstructorSelector implements Selector<Object, Object, Object> {
+        
+        private static final long serialVersionUID = -240945908940366348L;
+        
+        private final String type;
+        
+        NoDefaultConstructorSelector(String type) {
+            this.type = type;
+        }
+        
+        @Override
+        public Selector<Object, Object, Object> parse(Object expression) {
+            return this;
+        }
+        
+        @Override
+        public Object select(Object context) {
+            return context;
+        }
+        
+        @Override
+        public String getType() {
+            return type;
+        }
+        
+        @Override
+        public String getContextType() {
+            return "broken";
+        }
     }
 }
