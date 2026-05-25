@@ -386,12 +386,16 @@ Existing MCP import APIs may remain during a compatibility window:
 ```text
 POST /v3/console/ai/mcp/import/validate
 POST /v3/console/ai/mcp/import/execute
-GET  /v3/console/ai/mcp/importToolsFromMcp
 ```
 
 The validate and execute endpoints should be routed through a compatibility
 adapter into the unified import manager. They must not continue to grow as an
 independent implementation.
+
+`GET /v3/console/ai/mcp/importToolsFromMcp` is not part of external registry
+import compatibility. It is a Console helper for building an MCP Server schema
+from a user-owned MCP runtime endpoint and remains outside the AI resource
+marketplace or registry import flow.
 
 The compatibility endpoints are disabled by default. Operators may reopen them
 temporarily with `nacos.ai.resource.import.legacy-mcp-api-enabled=true` while

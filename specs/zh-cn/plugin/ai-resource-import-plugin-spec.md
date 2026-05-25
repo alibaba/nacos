@@ -334,10 +334,13 @@ source 下多次校验批次累积出的有效候选项。
 ```text
 POST /v3/console/ai/mcp/import/validate
 POST /v3/console/ai/mcp/import/execute
-GET  /v3/console/ai/mcp/importToolsFromMcp
 ```
 
 validate 和 execute 端点应通过兼容 adapter 路由到统一导入管理器，不应继续作为独立导入实现扩展。
+
+`GET /v3/console/ai/mcp/importToolsFromMcp` 不属于外部 registry 导入兼容范围。它是 Console
+在构建 MCP Server schema 时，从用户自有 MCP runtime endpoint 拉取 tools 的辅助能力，不属于
+AI 资源市场或 registry 导入流程。
 
 兼容端点默认关闭。运维可以在迁移窗口期通过
 `nacos.ai.resource.import.legacy-mcp-api-enabled=true` 临时重新开启，客户端应迁移到
