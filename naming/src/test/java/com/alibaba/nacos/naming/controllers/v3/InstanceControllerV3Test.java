@@ -28,15 +28,18 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.CatalogService;
+import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
+import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -217,10 +220,60 @@ class InstanceControllerV3Test extends BaseTest {
     }
     
     @Test
+    void batchDeleteInstanceMetadata() throws Exception {
+        
+        InstanceMetadataBatchOperationForm form = new InstanceMetadataBatchOperationForm();
+        form.setNamespaceId(TEST_NAMESPACE);
+        form.setGroupName("DEFAULT_GROUP");
+        form.setServiceName("test-service");
+        form.setConsistencyType("ephemeral");
+        form.setInstances("[{\"ip\":\"1.1.1.1\",\"port\":9870}]");
+        form.setMetadata(TEST_METADATA);
+        
+        ArrayList<String> ipList = new ArrayList<>();
+        ipList.add(TEST_IP);
+        ArgumentCaptor<InstanceOperationInfo> operationInfoCaptor =
+            ArgumentCaptor.forClass(InstanceOperationInfo.class);
+        when(instanceService.batchDeleteMetadata(eq(TEST_NAMESPACE), any(), any()))
+            .thenReturn(ipList);
+        
+        Result<InstanceMetadataBatchResult> result =
+            instanceControllerV3.batchDeleteInstanceMetadata(form);
+        
+        verify(instanceService).batchDeleteMetadata(eq(TEST_NAMESPACE),
+            operationInfoCaptor.capture(), any());
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(TEST_IP, result.getData().getUpdated().get(0));
+        assertEquals(Constants.DEFAULT_CLUSTER_NAME,
+            operationInfoCaptor.getValue().getInstances().get(0).getClusterName());
+    }
+    
+    @Test
+    void batchDeleteInstanceMetadataIgnoresInvalidInstances() throws Exception {
+        InstanceMetadataBatchOperationForm form = new InstanceMetadataBatchOperationForm();
+        form.setNamespaceId(TEST_NAMESPACE);
+        form.setGroupName("DEFAULT_GROUP");
+        form.setServiceName("test-service");
+        form.setConsistencyType("ephemeral");
+        form.setInstances("invalid");
+        form.setMetadata(TEST_METADATA);
+        when(instanceService.batchDeleteMetadata(eq(TEST_NAMESPACE), any(), any()))
+            .thenReturn(new ArrayList<>());
+        
+        Result<InstanceMetadataBatchResult> result =
+            instanceControllerV3.batchDeleteInstanceMetadata(form);
+        
+        verify(instanceService).batchDeleteMetadata(eq(TEST_NAMESPACE), any(), any());
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(0, result.getData().getUpdated().size());
+    }
+    
+    @Test
     void partialUpdateInstance() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(
-            UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH).param("namespaceId", TEST_NAMESPACE)
-            .param("serviceName", TEST_SERVICE_NAME).param("ip", TEST_IP)
+            UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH + "/partial")
+            .param("namespaceId", TEST_NAMESPACE).param("serviceName", TEST_SERVICE_NAME)
+            .param("ip", TEST_IP)
             .param("cluster", TEST_CLUSTER_NAME)
             .param("port", "9999").param("healthy", "true").param("weight", "2.0")
             .param("enabled", "true")
@@ -228,6 +281,35 @@ class InstanceControllerV3Test extends BaseTest {
         String actualValue =
             mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("ok", JacksonUtils.toObj(actualValue).get("data").asText());
+    }
+    
+    @Test
+    void partialUpdateInstanceByControllerMethod() throws Exception {
+        InstanceForm instanceForm = new InstanceForm();
+        instanceForm.setNamespaceId(TEST_NAMESPACE);
+        instanceForm.setGroupName("DEFAULT_GROUP");
+        instanceForm.setServiceName("test-service");
+        instanceForm.setIp(TEST_IP);
+        instanceForm.setClusterName(TEST_CLUSTER_NAME);
+        instanceForm.setPort(9999);
+        instanceForm.setWeight(2.0);
+        instanceForm.setEnabled(true);
+        instanceForm.setMetadata(TEST_METADATA);
+        ArgumentCaptor<InstancePatchObject> patchObjectCaptor =
+            ArgumentCaptor.forClass(InstancePatchObject.class);
+        
+        Result<String> result = instanceControllerV3.partialUpdateInstance(instanceForm);
+        
+        verify(instanceService).patchInstance(eq(TEST_NAMESPACE), eq("DEFAULT_GROUP"),
+            eq("test-service"), patchObjectCaptor.capture());
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+        assertEquals(TEST_CLUSTER_NAME, patchObjectCaptor.getValue().getCluster());
+        assertEquals(TEST_IP, patchObjectCaptor.getValue().getIp());
+        assertEquals(9999, patchObjectCaptor.getValue().getPort());
+        assertEquals(2.0, patchObjectCaptor.getValue().getWeight());
+        assertEquals(true, patchObjectCaptor.getValue().getEnabled());
+        assertEquals("123", patchObjectCaptor.getValue().getMetadata().get("label"));
     }
     
     @Test
@@ -249,6 +331,34 @@ class InstanceControllerV3Test extends BaseTest {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(instance, result.getData().get(0));
+    }
+    
+    @Test
+    void listInstanceFiltersUnhealthyInstances() throws Exception {
+        Instance healthyInstance = new Instance();
+        healthyInstance.setIp("1.1.1.1");
+        healthyInstance.setHealthy(true);
+        Instance unhealthyInstance = new Instance();
+        unhealthyInstance.setIp("2.2.2.2");
+        unhealthyInstance.setHealthy(false);
+        List<Instance> expected = new LinkedList<>();
+        expected.add(healthyInstance);
+        expected.add(unhealthyInstance);
+        doReturn(expected).when(catalogService)
+            .listInstances(eq(TEST_NAMESPACE), eq(TEST_GROUP_NAME), eq("test-service"),
+                eq(TEST_CLUSTER_NAME));
+        InstanceListForm instanceForm = new InstanceListForm();
+        instanceForm.setNamespaceId(TEST_NAMESPACE);
+        instanceForm.setGroupName(TEST_GROUP_NAME);
+        instanceForm.setServiceName("test-service");
+        instanceForm.setClusterName(TEST_CLUSTER_NAME);
+        instanceForm.setHealthyOnly(true);
+        
+        Result<List<? extends Instance>> result = instanceControllerV3.list(instanceForm);
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(1, result.getData().size());
+        assertEquals(healthyInstance, result.getData().get(0));
     }
     
     @Test
