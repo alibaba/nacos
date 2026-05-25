@@ -50,6 +50,8 @@ public class AiResourceImportProperties {
     
     private boolean enabled;
     
+    private boolean legacyMcpImportApiEnabled;
+    
     private boolean allowUserUrl;
     
     private int defaultConnectTimeoutMillis = DEFAULT_CONNECT_TIMEOUT_MILLIS;
@@ -84,6 +86,8 @@ public class AiResourceImportProperties {
     public static AiResourceImportProperties load(Properties properties) {
         AiResourceImportProperties result = new AiResourceImportProperties();
         result.setEnabled(getBoolean(properties, PREFIX + "enabled", false));
+        result.setLegacyMcpImportApiEnabled(getBoolean(properties,
+            PREFIX + "legacy-mcp-api-enabled", false));
         result.setAllowUserUrl(getBoolean(properties, PREFIX + "allow-user-url", false));
         result.setDefaultConnectTimeoutMillis(getInt(properties,
             PREFIX + "default-connect-timeout-ms", DEFAULT_CONNECT_TIMEOUT_MILLIS));
@@ -199,6 +203,14 @@ public class AiResourceImportProperties {
     
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+    
+    public boolean isLegacyMcpImportApiEnabled() {
+        return legacyMcpImportApiEnabled;
+    }
+    
+    public void setLegacyMcpImportApiEnabled(boolean legacyMcpImportApiEnabled) {
+        this.legacyMcpImportApiEnabled = legacyMcpImportApiEnabled;
     }
     
     public boolean isAllowUserUrl() {

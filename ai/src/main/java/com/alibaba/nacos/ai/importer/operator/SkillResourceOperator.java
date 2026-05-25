@@ -55,6 +55,9 @@ public class SkillResourceOperator implements AiResourceOperator {
     
     private static final String METADATA_SOURCE = "source";
     
+    private static final String WORKING_VERSION_SKIP_MESSAGE =
+        "Skipped because a working version (editing/reviewing) already exists.";
+    
     private final SkillOperationService skillOperationService;
     
     private final AiResourceManager resourceManager;
@@ -99,6 +102,10 @@ public class SkillResourceOperator implements AiResourceOperator {
     public AiResourceImportResultItem importResource(String namespaceId,
         AiResourceImportArtifact artifact, boolean overwriteExisting) throws NacosException {
         Skill skill = parseSkill(namespaceId, artifact);
+        AiResource meta = resourceManager.findMeta(namespaceId, skill.getName(), resourceType());
+        if (!overwriteExisting && hasWorkingVersion(AiResourceManager.requireVersionInfo(meta))) {
+            return skippedWorkingVersionItem(artifact, skill);
+        }
         String version = resolveVersion(artifact);
         String skillName = skillOperationService.uploadSkillFromZip(namespaceId,
             artifact.getPayload(), overwriteExisting, version);
@@ -108,6 +115,17 @@ public class SkillResourceOperator implements AiResourceOperator {
         result.setResourceName(skillName);
         result.setVersion(version);
         result.setStatus(AiResourceImportResultStatus.SUCCESS);
+        return result;
+    }
+    
+    private AiResourceImportResultItem skippedWorkingVersionItem(
+        AiResourceImportArtifact artifact, Skill skill) {
+        AiResourceImportResultItem result = new AiResourceImportResultItem();
+        result.setExternalId(artifact.getExternalId());
+        result.setResourceName(skill.getName());
+        result.setVersion(resolveVersion(artifact));
+        result.setStatus(AiResourceImportResultStatus.SKIPPED);
+        result.setWarnings(Collections.singletonList(WORKING_VERSION_SKIP_MESSAGE));
         return result;
     }
     

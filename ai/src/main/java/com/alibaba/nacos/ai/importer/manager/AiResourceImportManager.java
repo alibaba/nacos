@@ -19,6 +19,8 @@ package com.alibaba.nacos.ai.importer.manager;
 import com.alibaba.nacos.ai.importer.operator.AiResourceOperator;
 import com.alibaba.nacos.ai.importer.operator.AiResourceOperatorRegistry;
 import com.alibaba.nacos.ai.importer.security.AiResourceImportSecurityGuard;
+import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportCandidateItem;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportExecuteRequest;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportExecuteResponse;
@@ -36,6 +38,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidate;
@@ -47,7 +50,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Orchestrates AI resource import search, validation, and execution.
@@ -97,21 +102,32 @@ public class AiResourceImportManager {
     public AiResourceImportSearchResponse search(AiResourceImportSearchRequest request)
         throws NacosException {
         requireRequest(request);
-        AiResourceImportSource source =
-            sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
-        securityGuard.checkSourceEndpoint(source);
-        AiResourceImportService importer =
-            pluginManager.resolveImporter(source, request.getResourceType());
-        AiResourceImportCandidatePage page = importer.search(buildSearchContext(source, request));
-        AiResourceImportSearchResponse response = new AiResourceImportSearchResponse();
-        response.setSourceId(source.getSourceId());
-        response.setResourceType(request.getResourceType());
-        response.setItems(toCandidateItems(page == null ? null : page.getItems()));
-        if (page != null) {
-            response.setNextCursor(page.getNextCursor());
-            response.setHasMore(page.isHasMore());
+        AiResourceImportSource source = null;
+        try {
+            source = sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
+            securityGuard.checkSourceEndpoint(source);
+            AiResourceImportService importer =
+                pluginManager.resolveImporter(source, request.getResourceType());
+            AiResourceImportCandidatePage page =
+                importer.search(buildSearchContext(source, request));
+            AiResourceImportSearchResponse response = new AiResourceImportSearchResponse();
+            response.setSourceId(source.getSourceId());
+            response.setResourceType(request.getResourceType());
+            response.setItems(toCandidateItems(page == null ? null : page.getItems()));
+            if (page != null) {
+                response.setNextCursor(page.getNextCursor());
+                response.setHasMore(page.isHasMore());
+            }
+            traceSourceOperation(source, request.getResourceType(),
+                AiResourceTraceService.OP_IMPORT_SEARCH, AiResourceTraceService.STATUS_SUCCESS,
+                searchTraceExt(source, response));
+            return response;
+        } catch (NacosException e) {
+            traceSourceOperation(source, request.getResourceType(),
+                AiResourceTraceService.OP_IMPORT_SEARCH, AiResourceTraceService.STATUS_FAILURE,
+                failureTraceExt(source, request.getSourceId(), e.getErrMsg()));
+            throw e;
         }
-        return response;
     }
     
     /**
@@ -125,22 +141,33 @@ public class AiResourceImportManager {
         throws NacosException {
         requireRequest(request);
         requireSelectedItems(request.getSelectedItems());
-        AiResourceImportSource source =
-            sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
-        securityGuard.checkSourceEndpoint(source);
-        AiResourceImportService importer =
-            pluginManager.resolveImporter(source, request.getResourceType());
-        AiResourceImportContext context = buildItemContext(source, request.getNamespaceId(),
-            request.getResourceType(), request.getOptions());
-        List<AiResourceImportValidationItem> items = new ArrayList<>();
-        for (AiResourceImportItem each : request.getSelectedItems()) {
-            items.add(validateItem(source, importer, context, each, request.isOverwriteExisting()));
+        AiResourceImportSource source = null;
+        try {
+            source = sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
+            securityGuard.checkSourceEndpoint(source);
+            AiResourceImportService importer =
+                pluginManager.resolveImporter(source, request.getResourceType());
+            AiResourceImportContext context = buildItemContext(source, request.getNamespaceId(),
+                request.getResourceType(), request.getOptions());
+            List<AiResourceImportValidationItem> items = new ArrayList<>();
+            for (AiResourceImportItem each : request.getSelectedItems()) {
+                items.add(validateItem(source, importer, context, each,
+                    request.isOverwriteExisting()));
+            }
+            AiResourceImportValidateResponse response = new AiResourceImportValidateResponse();
+            response.setSourceId(source.getSourceId());
+            response.setResourceType(request.getResourceType());
+            response.setItems(items);
+            traceSourceOperation(source, request.getResourceType(),
+                AiResourceTraceService.OP_IMPORT_VALIDATE,
+                validationTraceStatus(items), validationTraceExt(source, request, items));
+            return response;
+        } catch (NacosException e) {
+            traceSourceOperation(source, request.getResourceType(),
+                AiResourceTraceService.OP_IMPORT_VALIDATE, AiResourceTraceService.STATUS_FAILURE,
+                failureTraceExt(source, request.getSourceId(), e.getErrMsg()));
+            throw e;
         }
-        AiResourceImportValidateResponse response = new AiResourceImportValidateResponse();
-        response.setSourceId(source.getSourceId());
-        response.setResourceType(request.getResourceType());
-        response.setItems(items);
-        return response;
     }
     
     /**
@@ -154,19 +181,32 @@ public class AiResourceImportManager {
         throws NacosException {
         requireRequest(request);
         requireSelectedItems(request.getSelectedItems());
-        AiResourceImportSource source =
-            sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
-        securityGuard.checkSourceEndpoint(source);
-        AiResourceImportService importer =
-            pluginManager.resolveImporter(source, request.getResourceType());
-        AiResourceImportContext context = buildItemContext(source, request.getNamespaceId(),
-            request.getResourceType(), request.getOptions());
-        List<AiResourceImportResultItem> results = new ArrayList<>();
-        for (AiResourceImportItem each : request.getSelectedItems()) {
-            results.add(executeItem(source, importer, context, each, request.isOverwriteExisting(),
-                request.isSkipInvalid()));
+        AiResourceImportSource source = null;
+        try {
+            source = sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
+            securityGuard.checkSourceEndpoint(source);
+            AiResourceImportService importer =
+                pluginManager.resolveImporter(source, request.getResourceType());
+            AiResourceImportContext context = buildItemContext(source, request.getNamespaceId(),
+                request.getResourceType(), request.getOptions());
+            List<AiResourceImportResultItem> results = new ArrayList<>();
+            for (AiResourceImportItem each : request.getSelectedItems()) {
+                AiResourceImportResultItem result = executeItem(source, importer, context, each,
+                    request.isOverwriteExisting(), request.isSkipInvalid());
+                traceExecuteResult(source, context.getResourceType(), each, result);
+                results.add(result);
+            }
+            AiResourceImportExecuteResponse response = buildExecuteResponse(results);
+            traceSourceOperation(source, request.getResourceType(),
+                AiResourceTraceService.OP_IMPORT_EXECUTE, executeTraceStatus(response),
+                executeTraceExt(source, request, response));
+            return response;
+        } catch (NacosException e) {
+            traceSourceOperation(source, request.getResourceType(),
+                AiResourceTraceService.OP_IMPORT_EXECUTE, AiResourceTraceService.STATUS_FAILURE,
+                failureTraceExt(source, request.getSourceId(), e.getErrMsg()));
+            throw e;
         }
-        return buildExecuteResponse(results);
     }
     
     private void requireRequest(AiResourceImportSearchRequest request) throws NacosException {
@@ -230,6 +270,8 @@ public class AiResourceImportManager {
         context.setResourceType(resourceType);
         context.setSource(source);
         context.setOptions(options);
+        context.setOperator(VisibilityHelper.resolveCurrentIdentity());
+        context.setClientIp(VisibilityHelper.resolveClientIp());
         return context;
     }
     
@@ -366,6 +408,130 @@ public class AiResourceImportManager {
         response.setSkippedCount(skippedCount);
         response.setSuccess(failedCount == 0);
         return response;
+    }
+    
+    private void traceExecuteResult(AiResourceImportSource source, String resourceType,
+        AiResourceImportItem item, AiResourceImportResultItem result) {
+        Map<String, Object> ext = baseTraceExt(source);
+        ext.put("external_id", item.getExternalId());
+        ext.put("result_status", result.getStatus());
+        if (StringUtils.isNotBlank(result.getErrorMessage())) {
+            ext.put("error", result.getErrorMessage());
+        }
+        AiResourceTraceService.log(resourceType,
+            StringUtils.defaultIfBlank(result.getResourceName(), item.getName()),
+            result.getVersion(), AiResourceTraceService.OP_IMPORT_EXECUTE,
+            traceStatus(result.getStatus()), VisibilityHelper.resolveCurrentIdentity(),
+            VisibilityHelper.resolveClientIp(), JacksonUtils.toJson(ext));
+    }
+    
+    private void traceSourceOperation(AiResourceImportSource source, String resourceType,
+        String operation, String status, Map<String, Object> ext) {
+        AiResourceTraceService.log(resourceType, resolveTraceSourceId(source, ext), null,
+            operation, status, VisibilityHelper.resolveCurrentIdentity(),
+            VisibilityHelper.resolveClientIp(), JacksonUtils.toJson(ext));
+    }
+    
+    private Map<String, Object> searchTraceExt(AiResourceImportSource source,
+        AiResourceImportSearchResponse response) {
+        Map<String, Object> ext = baseTraceExt(source);
+        ext.put("candidate_count", response.getItems() == null ? 0 : response.getItems().size());
+        ext.put("has_more", response.isHasMore());
+        return ext;
+    }
+    
+    private Map<String, Object> validationTraceExt(AiResourceImportSource source,
+        AiResourceImportValidateRequest request, List<AiResourceImportValidationItem> items) {
+        Map<String, Object> ext = baseTraceExt(source);
+        ext.put("selected_count", request.getSelectedItems().size());
+        ext.put("valid_count", countValidationStatus(items,
+            AiResourceImportValidationStatus.VALID));
+        ext.put("warning_count", countValidationStatus(items,
+            AiResourceImportValidationStatus.WARNING));
+        ext.put("conflict_count", countValidationStatus(items,
+            AiResourceImportValidationStatus.CONFLICT));
+        ext.put("invalid_count", countValidationStatus(items,
+            AiResourceImportValidationStatus.INVALID));
+        ext.put("overwrite_existing", request.isOverwriteExisting());
+        return ext;
+    }
+    
+    private Map<String, Object> executeTraceExt(AiResourceImportSource source,
+        AiResourceImportExecuteRequest request, AiResourceImportExecuteResponse response) {
+        Map<String, Object> ext = baseTraceExt(source);
+        ext.put("selected_count", request.getSelectedItems().size());
+        ext.put("success_count", response.getSuccessCount());
+        ext.put("failed_count", response.getFailedCount());
+        ext.put("skipped_count", response.getSkippedCount());
+        ext.put("overwrite_existing", request.isOverwriteExisting());
+        ext.put("skip_invalid", request.isSkipInvalid());
+        return ext;
+    }
+    
+    private Map<String, Object> failureTraceExt(AiResourceImportSource source, String sourceId,
+        String errorMessage) {
+        Map<String, Object> ext = baseTraceExt(source);
+        if (source == null && StringUtils.isNotBlank(sourceId)) {
+            ext.put("source_id", sourceId);
+        }
+        ext.put("error", errorMessage);
+        return ext;
+    }
+    
+    private Map<String, Object> baseTraceExt(AiResourceImportSource source) {
+        Map<String, Object> ext = new LinkedHashMap<>(6);
+        if (source == null) {
+            return ext;
+        }
+        ext.put("source_id", source.getSourceId());
+        ext.put("importer", source.getPluginName());
+        ext.put("endpoint", source.getEndpoint());
+        ext.put("resource_types", source.getResourceTypes());
+        return ext;
+    }
+    
+    private String validationTraceStatus(List<AiResourceImportValidationItem> items) {
+        return countValidationStatus(items, AiResourceImportValidationStatus.INVALID) > 0
+            ? AiResourceTraceService.STATUS_FAILURE : AiResourceTraceService.STATUS_SUCCESS;
+    }
+    
+    private int countValidationStatus(List<AiResourceImportValidationItem> items,
+        AiResourceImportValidationStatus status) {
+        int count = 0;
+        for (AiResourceImportValidationItem each : items) {
+            if (status == each.getStatus()) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    private String executeTraceStatus(AiResourceImportExecuteResponse response) {
+        if (response.getFailedCount() > 0) {
+            return AiResourceTraceService.STATUS_FAILURE;
+        }
+        if (response.getSuccessCount() == 0 && response.getSkippedCount() > 0) {
+            return AiResourceTraceService.STATUS_SKIPPED;
+        }
+        return AiResourceTraceService.STATUS_SUCCESS;
+    }
+    
+    private String traceStatus(AiResourceImportResultStatus status) {
+        if (AiResourceImportResultStatus.FAILED == status) {
+            return AiResourceTraceService.STATUS_FAILURE;
+        }
+        if (AiResourceImportResultStatus.SKIPPED == status) {
+            return AiResourceTraceService.STATUS_SKIPPED;
+        }
+        return AiResourceTraceService.STATUS_SUCCESS;
+    }
+    
+    private String resolveTraceSourceId(AiResourceImportSource source, Map<String, Object> ext) {
+        if (source != null && StringUtils.isNotBlank(source.getSourceId())) {
+            return source.getSourceId();
+        }
+        Object sourceId = ext.get("source_id");
+        return sourceId == null ? null : sourceId.toString();
     }
     
     private NacosException invalid(String message) {

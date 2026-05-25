@@ -154,6 +154,21 @@ public class AiResourceTraceService {
      */
     public static final String OP_DISABLE = "DISABLE";
     
+    /**
+     * Search external AI resource import candidates.
+     */
+    public static final String OP_IMPORT_SEARCH = "IMPORT_SEARCH";
+    
+    /**
+     * Validate selected external AI resource import candidates.
+     */
+    public static final String OP_IMPORT_VALIDATE = "IMPORT_VALIDATE";
+    
+    /**
+     * Execute external AI resource import.
+     */
+    public static final String OP_IMPORT_EXECUTE = "IMPORT_EXECUTE";
+    
     // ==================== Status Constants ====================
     
     /**
@@ -165,6 +180,11 @@ public class AiResourceTraceService {
      * Operation failed.
      */
     public static final String STATUS_FAILURE = "FAILURE";
+    
+    /**
+     * Operation skipped by request policy.
+     */
+    public static final String STATUS_SKIPPED = "SKIPPED";
     
     // ==================== Logging Methods ====================
     

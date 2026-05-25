@@ -176,6 +176,17 @@ the artifact contains `sourceMetadata.artifactUrl`, the Skill operator should
 record that URL as the imported resource source (`ai_resource.c_from`). If
 `artifactUrl` is absent, it should fall back to `sourceMetadata.source`.
 
+Skill conflict handling follows the AI resource working-version lifecycle:
+
+- If the Skill does not exist, import creates a new draft.
+- If the Skill exists and has no editing or reviewing version, import creates
+  the next draft version.
+- If the Skill has an editing or reviewing version, validation returns a
+  working-version conflict. Execute must skip the item unless
+  `overwriteExisting=true`; with overwrite enabled, the current editable draft
+  may be replaced or a new draft may be created according to the Skill service
+  lifecycle.
+
 ## Built-in Importers
 
 The default built-in importers are delivered by the
@@ -382,11 +393,17 @@ The validate and execute endpoints should be routed through a compatibility
 adapter into the unified import manager. They must not continue to grow as an
 independent implementation.
 
+The compatibility endpoints are disabled by default. Operators may reopen them
+temporarily with `nacos.ai.resource.import.legacy-mcp-api-enabled=true` while
+clients migrate to `/v3/{admin|console}/ai/import/*`.
+
 For legacy `importType=url`, the request must not use a user-provided URL as a
 network target by default. It may be interpreted as a `sourceId` when it matches
 an enabled source. Otherwise the request should fail with a migration message.
 Legacy direct URL import may only be enabled by explicit operator configuration
-for controlled deployments.
+for controlled deployments by setting
+`nacos.ai.resource.import.allow-user-url=true` together with the legacy API
+switch.
 
 Legacy `importType=json` and `importType=file` may be mapped to built-in local
 importers because they do not require server-side network access.
@@ -404,7 +421,9 @@ dependency policies:
 | `LINK_EXISTING` | Link to existing matching resources when possible. |
 | `IMPORT_SELECTED` | Import only dependencies explicitly selected by the user. |
 
-The default should be `VALIDATE_ONLY`. Automatic recursive import must not be
+The default should be `VALIDATE_ONLY`. Until a resource type exposes concrete
+dependency descriptors, built-in importers may report no dependencies and must
+not infer or install hidden dependencies. Automatic recursive import must not be
 the default because it expands the supply-chain and authorization boundary.
 
 ## Security Requirements

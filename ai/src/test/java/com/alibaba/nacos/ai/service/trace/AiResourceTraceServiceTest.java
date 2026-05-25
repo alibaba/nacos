@@ -38,4 +38,16 @@ class AiResourceTraceServiceTest {
         assertEquals("127.0.0.1", event.getClientIp());
         assertEquals("pipeline", event.getExt());
     }
+    
+    @Test
+    void testBuildImportTraceEvent() {
+        AiResourceTraceEvent event = AiResourceTraceService.buildTraceEvent("skill",
+            "demo-skill", "1.0.0", AiResourceTraceService.OP_IMPORT_EXECUTE,
+            AiResourceTraceService.STATUS_SKIPPED, "admin", "127.0.0.1",
+            "{\"source_id\":\"skills-sh\"}");
+        
+        assertEquals(AiResourceTraceService.OP_IMPORT_EXECUTE, event.getOperation());
+        assertEquals(AiResourceTraceService.STATUS_SKIPPED, event.getStatus());
+        assertEquals("{\"source_id\":\"skills-sh\"}", event.getExt());
+    }
 }

@@ -71,8 +71,23 @@ class McpLegacyImportAdapterTest {
     void setUp() {
         adapter = new McpLegacyImportAdapter(mcpServerImportService, importManager);
         AiResourceImportProperties properties = new AiResourceImportProperties();
+        properties.setLegacyMcpImportApiEnabled(true);
         ReflectionTestUtils.setField(adapter, "propertiesSupplier",
             (Supplier<AiResourceImportProperties>) () -> properties);
+    }
+    
+    @Test
+    void testLegacyApiDisabledByDefault() throws Exception {
+        AiResourceImportProperties properties = new AiResourceImportProperties();
+        ReflectionTestUtils.setField(adapter, "propertiesSupplier",
+            (Supplier<AiResourceImportProperties>) () -> properties);
+        McpServerImportRequest request = request("source-1");
+        
+        McpServerImportValidationResult result = adapter.validateImport("public", request);
+        
+        assertFalse(result.isValid());
+        assertTrue(result.getErrors().get(0).contains("Legacy MCP import API is disabled"));
+        verifyNoInteractions(mcpServerImportService, importManager);
     }
     
     @Test
@@ -122,6 +137,7 @@ class McpLegacyImportAdapterTest {
     @Test
     void testUserUrlFallbackWhenExplicitlyAllowed() throws Exception {
         AiResourceImportProperties properties = new AiResourceImportProperties();
+        properties.setLegacyMcpImportApiEnabled(true);
         properties.setAllowUserUrl(true);
         ReflectionTestUtils.setField(adapter, "propertiesSupplier",
             (Supplier<AiResourceImportProperties>) () -> properties);
