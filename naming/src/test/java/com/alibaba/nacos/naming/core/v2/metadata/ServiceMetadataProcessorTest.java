@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.metadata;
 
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
@@ -30,27 +31,42 @@ import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.protobuf.ByteString;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class ServiceMetadataProcessorTest {
+    
+    private static final String NAMESPACE = "namespace";
+    
+    private static final String GROUP = "group";
+    
+    private static final String SERVICE_NAME = "nacos";
+    
+    private static final Service SERVICE = Service.newService(NAMESPACE, GROUP, SERVICE_NAME);
     
     @Mock
     private NamingMetadataManager namingMetadataManager;
@@ -69,6 +85,8 @@ class ServiceMetadataProcessorTest {
     
     private ServiceMetadataProcessor serviceMetadataProcessor;
     
+    private final Serializer serializer = SerializeFactory.getDefault();
+    
     @BeforeEach
     void setUp() throws Exception {
         Mockito.when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
@@ -76,6 +94,11 @@ class ServiceMetadataProcessorTest {
         
         serviceMetadataProcessor =
             new ServiceMetadataProcessor(namingMetadataManager, protocolManager, serviceStorage);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        ServiceManager.getInstance().removeSingleton(SERVICE);
     }
     
     @Test
@@ -151,9 +174,99 @@ class ServiceMetadataProcessorTest {
     }
     
     @Test
+    void testOnApplyAddMergesClusterIntoExistingMetadata() {
+        ServiceMetadata currentMetadata = new ServiceMetadata();
+        ClusterMetadata currentClusterMetadata = new ClusterMetadata();
+        currentMetadata.getClusters().put("old", currentClusterMetadata);
+        ClusterMetadata newClusterMetadata = new ClusterMetadata();
+        newClusterMetadata.setHealthyCheckPort(8080);
+        ServiceMetadata addedMetadata = new ServiceMetadata();
+        addedMetadata.getClusters().put("new", newClusterMetadata);
+        Mockito.when(namingMetadataManager.getServiceMetadata(SERVICE))
+            .thenReturn(Optional.of(currentMetadata));
+        
+        Response response = serviceMetadataProcessor.onApply(
+            buildWriteRequest(DataOperation.ADD, buildMetadataOperation(addedMetadata)));
+        
+        assertTrue(response.getSuccess());
+        assertSame(currentClusterMetadata, currentMetadata.getClusters().get("old"));
+        assertEquals(8080, currentMetadata.getClusters().get("new").getHealthyCheckPort());
+        verify(namingMetadataManager, never()).updateServiceMetadata(any(Service.class),
+            any(ServiceMetadata.class));
+    }
+    
+    @Test
+    void testOnApplyChangeMergesExistingMetadata() {
+        ServiceMetadata currentMetadata = new ServiceMetadata();
+        currentMetadata.setEphemeral(false);
+        ClusterMetadata currentClusterMetadata = new ClusterMetadata();
+        currentMetadata.getClusters().put("old", currentClusterMetadata);
+        ServiceMetadata changedMetadata = new ServiceMetadata();
+        changedMetadata.setEphemeral(true);
+        changedMetadata.setProtectThreshold(0.7F);
+        changedMetadata.setExtendData(Collections.singletonMap("k", "v"));
+        Mockito.when(namingMetadataManager.getServiceMetadata(SERVICE))
+            .thenReturn(Optional.of(currentMetadata));
+        
+        Response response = serviceMetadataProcessor.onApply(
+            buildWriteRequest(DataOperation.CHANGE, buildMetadataOperation(changedMetadata)));
+        
+        ArgumentCaptor<ServiceMetadata> metadataCaptor =
+            ArgumentCaptor.forClass(ServiceMetadata.class);
+        assertTrue(response.getSuccess());
+        verify(namingMetadataManager).updateServiceMetadata(any(Service.class),
+            metadataCaptor.capture());
+        ServiceMetadata mergedMetadata = metadataCaptor.getValue();
+        assertFalse(mergedMetadata.isEphemeral());
+        assertEquals(0.7F, mergedMetadata.getProtectThreshold());
+        assertEquals(Collections.singletonMap("k", "v"), mergedMetadata.getExtendData());
+        assertSame(currentClusterMetadata, mergedMetadata.getClusters().get("old"));
+    }
+    
+    @Test
+    void testOnApplyDeleteWithoutSingletonRemovesRequestedService() {
+        MetadataOperation<ServiceMetadata> metadataOperation =
+            buildMetadataOperation(new ServiceMetadata());
+        
+        Response response = serviceMetadataProcessor.onApply(
+            buildWriteRequest(DataOperation.DELETE, metadataOperation));
+        
+        assertTrue(response.getSuccess());
+        verify(namingMetadataManager).removeServiceMetadata(SERVICE);
+        verify(serviceStorage).removeData(SERVICE);
+    }
+    
+    @Test
+    void testOnApplyDeserializeFailureReturnsFailedResponse() {
+        WriteRequest request = WriteRequest.newBuilder().setOperation(DataOperation.ADD.name())
+            .setData(ByteString.copyFromUtf8("invalid")).build();
+        
+        Response response = serviceMetadataProcessor.onApply(request);
+        
+        assertFalse(response.getSuccess());
+        assertNotNull(response.getErrMsg());
+    }
+    
+    @Test
     void testGroup() {
         String group = serviceMetadataProcessor.group();
         
         assertEquals(Constants.SERVICE_METADATA, group);
+    }
+    
+    private MetadataOperation<ServiceMetadata> buildMetadataOperation(
+        ServiceMetadata serviceMetadata) {
+        MetadataOperation<ServiceMetadata> result = new MetadataOperation<>();
+        result.setMetadata(serviceMetadata);
+        result.setServiceName(SERVICE_NAME);
+        result.setNamespace(NAMESPACE);
+        result.setGroup(GROUP);
+        return result;
+    }
+    
+    private WriteRequest buildWriteRequest(DataOperation operation,
+        MetadataOperation<ServiceMetadata> metadataOperation) {
+        return WriteRequest.newBuilder().setOperation(operation.name())
+            .setData(ByteString.copyFrom(serializer.serialize(metadataOperation))).build();
     }
 }
