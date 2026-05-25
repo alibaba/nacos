@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.index;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class ClientServiceIndexesManagerTest {
@@ -92,6 +95,15 @@ class ClientServiceIndexesManagerTest {
     }
     
     @Test
+    void testGetAllClientsRegisteredServiceWithoutIndex() {
+        Collection<String> actual =
+            clientServiceIndexesManager.getAllClientsRegisteredService(Mockito.mock(Service.class));
+        
+        assertNotNull(actual);
+        assertTrue(actual.isEmpty());
+    }
+    
+    @Test
     void testGetAllClientsSubscribeService() {
         
         Collection<String> allClientsSubscribeService =
@@ -99,6 +111,15 @@ class ClientServiceIndexesManagerTest {
         
         assertNotNull(allClientsSubscribeService);
         assertEquals(1, allClientsSubscribeService.size());
+    }
+    
+    @Test
+    void testGetAllClientsSubscribeServiceWithoutIndex() {
+        Collection<String> actual =
+            clientServiceIndexesManager.getAllClientsSubscribeService(Mockito.mock(Service.class));
+        
+        assertNotNull(actual);
+        assertTrue(actual.isEmpty());
     }
     
     @Test
@@ -127,6 +148,25 @@ class ClientServiceIndexesManagerTest {
     }
     
     @Test
+    void testRemovePublisherIndexesByEmptyServiceRemovesEmptyIndex()
+        throws NoSuchFieldException, IllegalAccessException {
+        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass =
+            ClientServiceIndexesManager.class;
+        Field publisherIndexesField =
+            clientServiceIndexesManagerClass.getDeclaredField("publisherIndexes");
+        publisherIndexesField.setAccessible(true);
+        ConcurrentMap<Service, Set<String>> publisherIndexes =
+            (ConcurrentMap<Service, Set<String>>) publisherIndexesField.get(
+                clientServiceIndexesManager);
+        Service emptyService = Mockito.mock(Service.class);
+        publisherIndexes.put(emptyService, new HashSet<>());
+        
+        clientServiceIndexesManager.removePublisherIndexesByEmptyService(emptyService);
+        
+        assertFalse(publisherIndexes.containsKey(emptyService));
+    }
+    
+    @Test
     void testSubscribeTypes() {
         List<Class<? extends Event>> classes = clientServiceIndexesManager.subscribeTypes();
         
@@ -145,6 +185,24 @@ class ClientServiceIndexesManagerTest {
         
         Mockito.verify(clientOperationEvent).getService();
         Mockito.verify(clientOperationEvent).getClientId();
+    }
+    
+    @Test
+    void testOnClientReleaseEventRemovesIndexes() {
+        Mockito.when(client.getClientId()).thenReturn(NACOS);
+        Mockito.when(client.getAllSubscribeService()).thenReturn(Collections.singleton(service));
+        Mockito.when(client.getAllPublishedService()).thenReturn(Collections.singleton(service));
+        Mockito.when(client.getInstancePublishInfo(service))
+            .thenReturn(new InstancePublishInfo("1.1.1.1", 8848));
+        Mockito.when(service.getNamespace()).thenReturn("public");
+        Mockito.when(service.getGroup()).thenReturn("group");
+        Mockito.when(service.getName()).thenReturn("service");
+        
+        clientServiceIndexesManager
+            .onEvent(new ClientOperationEvent.ClientReleaseEvent(client, true));
+        
+        assertTrue(clientServiceIndexesManager.getAllClientsSubscribeService(service).isEmpty());
+        assertTrue(clientServiceIndexesManager.getAllClientsRegisteredService(service).isEmpty());
     }
     
     @Test
