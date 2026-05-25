@@ -25,11 +25,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,17 +61,46 @@ class ExpiredMetadataCleanerTest {
         
         set.add(expiredMetadataInfoMock);
         
-        when(metadataManagerMock.getExpiredMetadataInfos()).thenReturn(set);
-        when(expiredMetadataInfoMock.getCreateTime()).thenReturn(0L);
-        when(metadataManagerMock.containServiceMetadata(expiredMetadataInfoMock.getService()))
-            .thenReturn(true);
+        Mockito.lenient().when(metadataManagerMock.getExpiredMetadataInfos()).thenReturn(set);
+        Mockito.lenient().when(expiredMetadataInfoMock.getCreateTime()).thenReturn(0L);
+    }
+    
+    @Test
+    void testGetType() {
+        assertEquals("expiredMetadata", expiredMetadataCleaner.getType());
     }
     
     @Test
     void testDoClean() {
+        when(metadataManagerMock.containServiceMetadata(expiredMetadataInfoMock.getService()))
+            .thenReturn(true);
+        
         expiredMetadataCleaner.doClean();
+        
         verify(metadataManagerMock).getExpiredMetadataInfos();
         verify(metadataOperateServiceMock)
             .deleteServiceMetadata(expiredMetadataInfoMock.getService());
+    }
+    
+    @Test
+    void testDoCleanSkipsUnexpiredMetadata() {
+        when(expiredMetadataInfoMock.getCreateTime()).thenReturn(System.currentTimeMillis());
+        
+        expiredMetadataCleaner.doClean();
+        
+        verify(metadataOperateServiceMock, never()).deleteServiceMetadata(any());
+        verify(metadataOperateServiceMock, never()).deleteInstanceMetadata(any(), any());
+    }
+    
+    @Test
+    void testDoCleanRemovesInstanceMetadata() {
+        when(expiredMetadataInfoMock.getMetadataId()).thenReturn("1.1.1.1:8848");
+        when(metadataManagerMock.containInstanceMetadata(expiredMetadataInfoMock.getService(),
+            "1.1.1.1:8848")).thenReturn(true);
+        
+        expiredMetadataCleaner.doClean();
+        
+        verify(metadataOperateServiceMock)
+            .deleteInstanceMetadata(expiredMetadataInfoMock.getService(), "1.1.1.1:8848");
     }
 }
