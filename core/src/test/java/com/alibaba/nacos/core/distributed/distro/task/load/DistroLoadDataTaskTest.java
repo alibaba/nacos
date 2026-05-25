@@ -43,6 +43,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -253,5 +258,71 @@ class DistroLoadDataTaskTest {
             new DistroLoadDataTask(memberManager, mockHolder, distroConfig, loadCallback);
         taskWithMockHolder.run();
         verify(loadCallback).onSuccess();
+    }
+    
+    @Test
+    void testConcurrentLoadWithMultipleResourceTypes() throws InterruptedException {
+        String type1 = "com.alibaba.nacos.naming.iplist.1";
+        String type2 = "com.alibaba.nacos.naming.iplist.2";
+        String type3 = "com.alibaba.nacos.naming.iplist.3";
+        
+        DistroComponentHolder holder = new DistroComponentHolder();
+        holder.registerDataStorage(type1, distroDataStorage);
+        holder.registerDataStorage(type2, distroDataStorage);
+        holder.registerDataStorage(type3, distroDataStorage);
+        holder.registerTransportAgent(type1, distroTransportAgent);
+        holder.registerTransportAgent(type2, distroTransportAgent);
+        holder.registerTransportAgent(type3, distroTransportAgent);
+        
+        DistroDataProcessor processor1 = org.mockito.Mockito.mock(DistroDataProcessor.class);
+        DistroDataProcessor processor2 = org.mockito.Mockito.mock(DistroDataProcessor.class);
+        DistroDataProcessor processor3 = org.mockito.Mockito.mock(DistroDataProcessor.class);
+        when(processor1.processType()).thenReturn(type1);
+        when(processor2.processType()).thenReturn(type2);
+        when(processor3.processType()).thenReturn(type3);
+        holder.registerDataProcessor(processor1);
+        holder.registerDataProcessor(processor2);
+        holder.registerDataProcessor(processor3);
+        
+        when(distroTransportAgent.getDatumSnapshot(any(String.class))).thenReturn(distroData);
+        when(processor1.processSnapshot(any(DistroData.class))).thenReturn(false);
+        when(processor2.processSnapshot(any(DistroData.class))).thenReturn(false);
+        when(processor3.processSnapshot(any(DistroData.class))).thenReturn(false);
+        
+        DistroLoadDataTask task =
+            new DistroLoadDataTask(memberManager, holder, distroConfig, loadCallback);
+        
+        int threadCount = 10;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        AtomicInteger exceptionCount = new AtomicInteger(0);
+        
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    task.run();
+                } catch (Exception e) {
+                    exceptionCount.incrementAndGet();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+        
+        startLatch.countDown();
+        assertTrue(doneLatch.await(10, TimeUnit.SECONDS), "Concurrent execution timed out");
+        executor.shutdown();
+        
+        Map<String, Boolean> loadCompletedMap = (Map<String, Boolean>) ReflectionTestUtils
+            .getField(task, "loadCompletedMap");
+        assertNotNull(loadCompletedMap);
+        assertTrue(loadCompletedMap.containsKey(type1));
+        assertTrue(loadCompletedMap.containsKey(type2));
+        assertTrue(loadCompletedMap.containsKey(type3));
+        
+        assertTrue(exceptionCount.get() == 0,
+            "Expected no exceptions from concurrent access, but got " + exceptionCount.get());
     }
 }

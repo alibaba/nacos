@@ -27,8 +27,8 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -55,7 +55,7 @@ public class DistroLoadDataTask implements Runnable {
         this.distroComponentHolder = distroComponentHolder;
         this.distroConfig = distroConfig;
         this.loadCallback = loadCallback;
-        loadCompletedMap = new HashMap<>(1);
+        loadCompletedMap = new ConcurrentHashMap<>(1);
     }
     
     @Override
@@ -84,7 +84,8 @@ public class DistroLoadDataTask implements Runnable {
             TimeUnit.SECONDS.sleep(1);
         }
         for (String each : distroComponentHolder.getDataStorageTypes()) {
-            if (!loadCompletedMap.containsKey(each) || !loadCompletedMap.get(each)) {
+            Boolean completed = loadCompletedMap.get(each);
+            if (completed == null || !completed) {
                 loadCompletedMap.put(each, loadAllDataSnapshotFromRemote(each));
             }
         }
