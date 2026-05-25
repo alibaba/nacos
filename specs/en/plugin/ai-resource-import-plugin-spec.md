@@ -411,8 +411,17 @@ importers because they do not require server-side network access.
 ## Dependency Handling
 
 Imported artifacts may reference other AI resources. A Skill may require MCP
-tools or servers, for example. The unified import flow should support these
-dependency policies:
+tools or servers, for example.
+
+Dependency handling is a reserved extension point and is not required for the
+initial unified import implementation. Until resource types expose concrete,
+versioned dependency descriptors, importers may leave `dependencies` empty and
+the import manager should not require a `dependencyPolicy` request parameter.
+Built-in importers must not infer, install, or recursively import hidden
+dependencies.
+
+When Nacos adds explicit AI resource dependency descriptors, the unified import
+flow may introduce these dependency policies:
 
 | Policy | Meaning |
 |--------|---------|
@@ -421,10 +430,9 @@ dependency policies:
 | `LINK_EXISTING` | Link to existing matching resources when possible. |
 | `IMPORT_SELECTED` | Import only dependencies explicitly selected by the user. |
 
-The default should be `VALIDATE_ONLY`. Until a resource type exposes concrete
-dependency descriptors, built-in importers may report no dependencies and must
-not infer or install hidden dependencies. Automatic recursive import must not be
-the default because it expands the supply-chain and authorization boundary.
+The default should be `VALIDATE_ONLY` after dependency descriptors are
+available. Automatic recursive import must not be the default because it expands
+the supply-chain and authorization boundary.
 
 ## Security Requirements
 

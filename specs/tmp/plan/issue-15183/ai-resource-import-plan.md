@@ -650,8 +650,9 @@ This route should be marked deprecated. Replacement options:
 - [ ] Add Skill registry importer.
 - [ ] Add Skill artifact conversion to standard zip.
 - [ ] Add `SkillResourceOperator`.
-- [ ] Add dependency validation for MCP references.
-- [ ] Add dependency policy tests.
+- [ ] Defer dependency validation for MCP references until resource dependency
+      descriptors are defined.
+- [ ] Add dependency policy tests when dependency descriptors are implemented.
 
 ### Security
 
@@ -688,6 +689,7 @@ This route should be marked deprecated. Replacement options:
   `file` cases.
 - Direct user-provided URL import is rejected by default.
 - Users can search and validate Skill candidates from a configured source.
-- Skill dependency warnings identify missing MCP resources.
+- Skill dependency handling is documented as a future extension point until
+  resource dependency descriptors are implemented.
 - Import plugins do not depend on MCP Config storage or Skill storage internals.
 - Unit tests cover routing, compatibility, and security guards.
