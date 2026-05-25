@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClie
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.naming.push.v2.NamingSubscriberServiceV2Impl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,6 +54,8 @@ class NamingMetricsCollectorTest {
     
     private ScheduledExecutorService originalServiceEventQueueExecutor;
     
+    private ScheduledExecutorService originalPushPendingTaskExecutor;
+    
     private EventPublisher originalSubscribedPublisher;
     
     private EventPublisher originalChangedPublisher;
@@ -68,6 +71,11 @@ class NamingMetricsCollectorTest {
                 "executorService",
                 originalServiceEventQueueExecutor);
         }
+        if (originalPushPendingTaskExecutor != null) {
+            ReflectionTestUtils.setField(PushPendingTaskCountMetricsCollector.class,
+                "executorService",
+                originalPushPendingTaskExecutor);
+        }
         restorePublisher(ServiceEvent.ServiceSubscribedEvent.class, originalSubscribedPublisher);
         restorePublisher(ServiceEvent.ServiceChangedEvent.class, originalChangedPublisher);
         MetricsMonitor.getNamingSubscriber("v1").set(0);
@@ -76,6 +84,7 @@ class NamingMetricsCollectorTest {
         MetricsMonitor.getNamingPublisher("v2").set(0);
         MetricsMonitor.getServiceSubscribedEventQueueSize().set(0);
         MetricsMonitor.getServiceChangedEventQueueSize().set(0);
+        MetricsMonitor.getPushPendingTaskCount().set(0);
     }
     
     @Test
@@ -146,6 +155,32 @@ class NamingMetricsCollectorTest {
         
         assertEquals(7, MetricsMonitor.getServiceSubscribedEventQueueSize().get());
         assertEquals(11, MetricsMonitor.getServiceChangedEventQueueSize().get());
+        Mockito.verify(executorService)
+            .scheduleWithFixedDelay(Mockito.any(Runnable.class), Mockito.eq(2L), Mockito.eq(2L),
+                Mockito.eq(TimeUnit.SECONDS));
+    }
+    
+    @Test
+    void testPushPendingTaskCountMetricsCollectorCollectsPendingTaskCount() throws Exception {
+        ScheduledExecutorService executorService = Mockito.mock(ScheduledExecutorService.class);
+        AtomicReference<Runnable> scheduledTask = mockScheduleWithFixedDelay(executorService);
+        originalPushPendingTaskExecutor =
+            (ScheduledExecutorService) ReflectionTestUtils.getField(
+                PushPendingTaskCountMetricsCollector.class,
+                "executorService");
+        runNoopOnOriginalExecutor(originalPushPendingTaskExecutor);
+        ReflectionTestUtils.setField(PushPendingTaskCountMetricsCollector.class,
+            "executorService",
+            executorService);
+        NamingSubscriberServiceV2Impl namingSubscriberService =
+            Mockito.mock(NamingSubscriberServiceV2Impl.class);
+        Mockito.when(namingSubscriberService.getPushPendingTaskCount()).thenReturn(17);
+        
+        new PushPendingTaskCountMetricsCollector(namingSubscriberService);
+        assertNotNull(scheduledTask.get());
+        scheduledTask.get().run();
+        
+        assertEquals(17, MetricsMonitor.getPushPendingTaskCount().get());
         Mockito.verify(executorService)
             .scheduleWithFixedDelay(Mockito.any(Runnable.class), Mockito.eq(2L), Mockito.eq(2L),
                 Mockito.eq(TimeUnit.SECONDS));
