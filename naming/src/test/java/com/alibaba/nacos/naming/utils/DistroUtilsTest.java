@@ -23,11 +23,13 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.HashMap;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Tests for {@link DistroUtils}.
@@ -142,6 +144,17 @@ class DistroUtilsTest {
             DistroUtils.buildUniqueString(client));
         assertEquals(775352583L, DistroUtils.stringHash(client));
         assertEquals("82d8e086a880f088320349b895b22948", DistroUtils.checksum(client));
+    }
+    
+    @Test
+    void testNonIpPortBasedClientReturnsDefaultValues() {
+        Client client = Mockito.mock(Client.class);
+        
+        assertEquals(DistroUtils.class, new DistroUtils().getClass());
+        assertEquals(0, DistroUtils.hash(client));
+        assertEquals(0, DistroUtils.stringHash(client));
+        assertEquals("0", DistroUtils.checksum(client));
+        assertNull(DistroUtils.buildUniqueString(client));
     }
     
     @Test
