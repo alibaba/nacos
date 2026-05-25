@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -460,16 +461,26 @@ export function ImportAiResourceDialog({
 
           <div className="flex flex-wrap gap-6">
             <div className="flex items-center gap-2">
-              <Switch
-                checked={overwriteExisting}
-                onCheckedChange={(checked) => {
-                  setOverwriteExisting(checked);
+              <Label className="text-sm font-normal">{text('importConflictPolicy', 'Conflict Policy')}</Label>
+              <ToggleGroup
+                type="single"
+                value={overwriteExisting ? 'overwrite' : 'skip'}
+                onValueChange={(value) => {
+                  if (!value) return;
+                  setOverwriteExisting(value === 'overwrite');
                   setValidationItems(null);
                   setValidatedImportItems(new Map());
                   setValidationToken('');
                 }}
-              />
-              <Label className="text-sm font-normal">{text('importOverride', 'Override Existing')}</Label>
+                className="rounded-md border bg-background p-0.5"
+              >
+                <ToggleGroupItem value="skip" size="sm" className="h-7 px-3">
+                  {text('importConflictSkip', 'Skip')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="overwrite" size="sm" className="h-7 px-3">
+                  {text('importConflictOverwrite', 'Overwrite')}
+                </ToggleGroupItem>
+              </ToggleGroup>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={skipInvalid} onCheckedChange={setSkipInvalid} />
