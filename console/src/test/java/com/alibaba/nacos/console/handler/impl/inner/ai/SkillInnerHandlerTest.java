@@ -28,6 +28,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -169,15 +170,14 @@ class SkillInnerHandlerTest {
     @Test
     void testUploadSkillFromZip() throws NacosException {
         byte[] zipBytes = "test-zip".getBytes();
-        boolean overwrite = false;
-        String targetVersion = null;
-        when(skillOperationService.uploadSkillFromZip(NAMESPACE_ID, zipBytes, overwrite,
-            targetVersion)).thenReturn(SKILL_NAME);
+        SkillUploadRequest request = SkillUploadRequest.builder().namespaceId(NAMESPACE_ID)
+            .zipBytes(zipBytes).overwrite(false).build();
+        when(skillOperationService.uploadSkillFromZip(request)).thenReturn(SKILL_NAME);
         
-        String result =
-            skillInnerHandler.uploadSkillFromZip(NAMESPACE_ID, zipBytes, false, null);
+        String result = skillInnerHandler.uploadSkillFromZip(request);
         
         assertEquals(SKILL_NAME, result);
+        verify(skillOperationService).uploadSkillFromZip(request);
     }
     
     @Test

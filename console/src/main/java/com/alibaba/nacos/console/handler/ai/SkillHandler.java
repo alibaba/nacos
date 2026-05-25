@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -93,59 +94,11 @@ public interface SkillHandler {
     /**
      * Upload skill from zip file.
      *
-     * @param namespaceId namespace ID
-     * @param zipBytes    zip file bytes
+     * @param request upload request
      * @return skill name
      * @throws NacosException if upload failed
      */
-    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, false, null);
-    }
-    
-    /**
-     * Upload skill from zip file.
-     *
-     * @param namespaceId namespace ID
-     * @param zipBytes    zip file bytes
-     * @param overwrite   whether to overwrite the current editable draft when the skill already exists
-     * @return skill name
-     * @throws NacosException if upload failed
-     */
-    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-        throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, null);
-    }
-    
-    /**
-     * Upload skill from zip file with optional target version.
-     *
-     * @param namespaceId   namespace ID
-     * @param zipBytes      zip file bytes
-     * @param overwrite     whether to overwrite the current editable draft when the skill already exists
-     * @param targetVersion user-specified version (optional, used as fallback when ZIP content has no version)
-     * @return skill name
-     * @throws NacosException if upload failed
-     */
-    String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion)
-        throws NacosException;
-    
-    /**
-     * Upload skill from zip file with optional target version and commit message.
-     *
-     * @param namespaceId   namespace ID
-     * @param zipBytes      zip file bytes
-     * @param overwrite     whether to overwrite the current editable draft when the skill already exists
-     * @param targetVersion user-specified version (optional, used as fallback when ZIP content has no version)
-     * @param commitMsg     version-level commit message (optional)
-     * @return skill name
-     * @throws NacosException if upload failed
-     */
-    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion, String commitMsg)
-        throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
-    }
+    String uploadSkillFromZip(SkillUploadRequest request) throws NacosException;
     
     /**
      * Batch upload multiple skills from a single zip file containing multiple skill subdirectories.

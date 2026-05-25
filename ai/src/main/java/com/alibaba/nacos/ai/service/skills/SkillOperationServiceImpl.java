@@ -149,21 +149,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         this.resourceManager = resourceManager;
     }
     
-    @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion)
-        throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion, null);
-    }
-    
-    @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion, String commitMsg)
-        throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, null, overwrite, targetVersion,
-            commitMsg);
-    }
-    
     /**
      * Upload a skill from a ZIP archive.
      *
@@ -172,23 +157,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * If overwrite=false, fails when a working version (editing/reviewing) already exists.</p>
      */
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, String zipFileName,
-        boolean overwrite,
-        String targetVersion) throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, zipFileName, overwrite, targetVersion,
-            null);
-    }
-    
-    @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, String zipFileName,
-        boolean overwrite, String targetVersion, String commitMsg) throws NacosException {
-        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
+    public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {
+        Skill skill = SkillZipParser.parseSkillFromZip(request.getZipBytes(),
+            request.getNamespaceId());
         if (skill == null || StringUtils.isBlank(skill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Skill name is required");
         }
-        String uploadVersion = resolveUploadVersion(skill.getSkillMd(), zipBytes, targetVersion);
-        return doUploadSingleSkill(namespaceId, skill, uploadVersion, overwrite, commitMsg);
+        String uploadVersion = resolveUploadVersion(skill.getSkillMd(), request.getZipBytes(),
+            request.getTargetVersion());
+        return doUploadSingleSkill(request.getNamespaceId(), skill, uploadVersion,
+            request.isOverwrite(), request.getCommitMsg());
     }
     
     /**

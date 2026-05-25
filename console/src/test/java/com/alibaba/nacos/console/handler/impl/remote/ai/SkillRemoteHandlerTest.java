@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -197,25 +198,32 @@ class SkillRemoteHandlerTest {
     @Test
     void testUploadSkillFromZip() throws NacosException {
         byte[] zipBytes = "test".getBytes();
+        SkillUploadRequest request = SkillUploadRequest.builder().namespaceId(NAMESPACE_ID)
+            .zipBytes(zipBytes).overwrite(false).build();
         when(skillMaintainerService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(false),
             isNull(), isNull())).thenReturn(SKILL_NAME);
         
-        String result = skillRemoteHandler.uploadSkillFromZip(NAMESPACE_ID, zipBytes, false);
+        String result = skillRemoteHandler.uploadSkillFromZip(request);
         
         assertEquals(SKILL_NAME, result);
+        verify(skillMaintainerService).uploadSkillFromZip(NAMESPACE_ID, zipBytes, false, null,
+            null);
     }
     
     @Test
     void testUploadSkillFromZipWithTargetVersionAndCommitMsg() throws NacosException {
         byte[] zipBytes = "test".getBytes();
+        SkillUploadRequest request = SkillUploadRequest.builder().namespaceId(NAMESPACE_ID)
+            .zipBytes(zipBytes).overwrite(true).targetVersion("v2").commitMsg("upload commit")
+            .build();
         when(skillMaintainerService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(true),
             eq("v2"), eq("upload commit"))).thenReturn(SKILL_NAME);
         
-        String result =
-            skillRemoteHandler.uploadSkillFromZip(NAMESPACE_ID, zipBytes, true, "v2",
-                "upload commit");
+        String result = skillRemoteHandler.uploadSkillFromZip(request);
         
         assertEquals(SKILL_NAME, result);
+        verify(skillMaintainerService).uploadSkillFromZip(NAMESPACE_ID, zipBytes, true, "v2",
+            "upload commit");
     }
     
     @Test

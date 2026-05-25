@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultItem;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultStatus;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidationItem;
@@ -44,6 +45,7 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -108,36 +110,38 @@ class SkillResourceOperatorTest {
     
     @Test
     void testImportUsesSkillUploadService() throws Exception {
-        when(skillOperationService.uploadSkillFromZip(eq("public"), any(), eq(true),
-            eq("1.2.3"))).thenReturn("demo-skill");
+        when(skillOperationService.uploadSkillFromZip(any(SkillUploadRequest.class)))
+            .thenReturn("demo-skill");
         
         AiResourceImportResultItem result = operator.importResource("public", artifact(), true);
         
         assertEquals(AiResourceImportResultStatus.SUCCESS, result.getStatus());
         assertEquals("demo-skill", result.getResourceName());
-        verify(skillOperationService).uploadSkillFromZip(eq("public"), any(), eq(true),
-            eq("1.2.3"));
+        verify(skillOperationService).uploadSkillFromZip(
+            argThat(request -> "public".equals(request.getNamespaceId()) && request.isOverwrite()
+                && "1.2.3".equals(request.getTargetVersion())
+                && request.getCommitMsg() == null && request.getZipBytes() != null));
     }
     
     @Test
     void testImportSkipsWorkingVersionWithoutOverwrite() throws Exception {
         when(resourceManager.findMeta("public", "demo-skill", "skill"))
             .thenReturn(metaWithEditingVersion());
-        
+
         AiResourceImportResultItem result = operator.importResource("public", artifact(), false);
-        
+
         assertEquals(AiResourceImportResultStatus.SKIPPED, result.getStatus());
         assertEquals("demo-skill", result.getResourceName());
         assertEquals(1, result.getWarnings().size());
         verify(skillOperationService, never()).uploadSkillFromZip(eq("public"), any(),
             eq(false), eq("1.2.3"));
     }
-    
+
     @Test
     void testImportSyncsSourceMetadata() throws Exception {
         AiResource meta = metaWithEditingVersion();
-        when(skillOperationService.uploadSkillFromZip(eq("public"), any(), eq(true),
-            eq("1.2.3"))).thenReturn("demo-skill");
+        when(skillOperationService.uploadSkillFromZip(any(SkillUploadRequest.class)))
+            .thenReturn("demo-skill");
         when(resourceManager.findMeta("public", "demo-skill", "skill")).thenReturn(meta);
         AiResourceImportArtifact artifact = artifact();
         Map<String, String> metadata = new HashMap<>(2);

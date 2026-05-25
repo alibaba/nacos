@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -73,26 +74,8 @@ public class SkillProxy {
         return skillHandler.listSkills(skillListForm, filterableForm, pageForm);
     }
     
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, false, null);
-    }
-    
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-        throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, null);
-    }
-    
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion)
-        throws NacosException {
-        return skillHandler.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
-    }
-    
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion, String commitMsg)
-        throws NacosException {
-        return skillHandler.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion,
-            commitMsg);
+    public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {
+        return skillHandler.uploadSkillFromZip(request);
     }
     
     public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,

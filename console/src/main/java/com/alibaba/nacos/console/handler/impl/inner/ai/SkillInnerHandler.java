@@ -29,6 +29,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -94,19 +95,8 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion)
-        throws NacosException {
-        return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, overwrite,
-            targetVersion);
-    }
-    
-    @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion, String commitMsg)
-        throws NacosException {
-        return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, overwrite,
-            targetVersion, commitMsg);
+    public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {
+        return skillOperationService.uploadSkillFromZip(request);
     }
     
     @Override

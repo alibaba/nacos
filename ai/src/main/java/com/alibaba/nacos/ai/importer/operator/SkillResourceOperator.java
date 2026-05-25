@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultItem;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultStatus;
@@ -107,8 +108,13 @@ public class SkillResourceOperator implements AiResourceOperator {
             return skippedWorkingVersionItem(artifact, skill);
         }
         String version = resolveVersion(artifact);
-        String skillName = skillOperationService.uploadSkillFromZip(namespaceId,
-            artifact.getPayload(), overwriteExisting, version);
+        SkillUploadRequest request = SkillUploadRequest.builder()
+            .namespaceId(namespaceId)
+            .zipBytes(artifact.getPayload())
+            .overwrite(overwriteExisting)
+            .targetVersion(version)
+            .build();
+        String skillName = skillOperationService.uploadSkillFromZip(request);
         syncSource(namespaceId, skillName, artifact);
         AiResourceImportResultItem result = new AiResourceImportResultItem();
         result.setExternalId(artifact.getExternalId());

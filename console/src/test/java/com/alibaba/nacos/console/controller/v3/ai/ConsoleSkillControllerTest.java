@@ -47,10 +47,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -206,8 +203,11 @@ class ConsoleSkillControllerTest {
     
     @Test
     void testUploadSkill() throws Exception {
-        when(skillProxy.uploadSkillFromZip(anyString(), any(byte[].class),
-            anyBoolean(), isNull(), eq("upload commit"))).thenReturn(SKILL_NAME);
+        when(skillProxy.uploadSkillFromZip(argThat(request -> request != null
+            && NS.equals(request.getNamespaceId()) && !request.isOverwrite()
+            && request.getTargetVersion() == null
+            && "upload commit".equals(request.getCommitMsg())
+            && request.getZipBytes() != null))).thenReturn(SKILL_NAME);
         
         MockMultipartFile file = new MockMultipartFile("file", "skill.zip",
             "application/zip", new byte[] {0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0,

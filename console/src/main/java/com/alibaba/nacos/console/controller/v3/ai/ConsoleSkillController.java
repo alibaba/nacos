@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -174,9 +175,14 @@ public class ConsoleSkillController {
         @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        String skillName =
-            skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion,
-                commitMsg);
+        SkillUploadRequest uploadRequest = SkillUploadRequest.builder()
+            .namespaceId(namespaceId)
+            .zipBytes(zipBytes)
+            .overwrite(overwrite)
+            .targetVersion(targetVersion)
+            .commitMsg(commitMsg)
+            .build();
+        String skillName = skillProxy.uploadSkillFromZip(uploadRequest);
         return Result.success(skillName);
     }
     
