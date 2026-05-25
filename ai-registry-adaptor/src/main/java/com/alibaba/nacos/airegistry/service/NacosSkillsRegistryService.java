@@ -36,6 +36,10 @@ import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -44,6 +48,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Service for exposing Nacos skills through the well-known protocol expected by the skills CLI.
@@ -54,11 +60,24 @@ import java.util.Set;
 @ConditionalOnProperty(name = "nacos.ai.skill.registry.enabled", havingValue = "true")
 public class NacosSkillsRegistryService {
     
+    private static final String SCHEMA_0_2 =
+        "https://schemas.agentskills.io/discovery/0.2.0/schema.json";
+    
     private static final int LIST_PAGE_SIZE = 100;
     
     private static final Set<String> BINARY_EXTENSIONS = new HashSet<>();
     
     private static final String MARKDOWN_FILE = "SKILL.md";
+    
+    private static final String ARCHIVE_TYPE = "archive";
+    
+    private static final String SKILL_MD_TYPE = "skill-md";
+    
+    private static final String ZIP_SUFFIX = ".zip";
+    
+    private static final String DIGEST_SHA256_PREFIX = "sha256:";
+    
+    private static final long STABLE_ZIP_ENTRY_TIME = 0L;
     
     private static final String METADATA_ENCODING = "encoding";
     
@@ -86,15 +105,34 @@ public class NacosSkillsRegistryService {
      * @return well-known index response
      * @throws NacosException if query fails
      */
-    public WellKnownSkillsIndex buildIndex(String namespaceId) throws NacosException {
+    public WellKnownSkillsIndex buildAgentSkillsIndex(String namespaceId) throws NacosException {
+        return buildIndex(namespaceId, WellKnownIndexVersion.V0_2_0);
+    }
+    
+    /**
+     * Build the legacy well-known skill index for a namespace.
+     *
+     * @param namespaceId namespace to query
+     * @return legacy well-known index response
+     * @throws NacosException if query fails
+     */
+    public WellKnownSkillsIndex buildLegacySkillsIndex(String namespaceId) throws NacosException {
+        return buildIndex(namespaceId, WellKnownIndexVersion.V0_1_0);
+    }
+    
+    private WellKnownSkillsIndex buildIndex(String namespaceId, WellKnownIndexVersion version)
+        throws NacosException {
         List<ExportableSkill> skills =
             collectExportableSkills(namespaceId, null, Integer.MAX_VALUE);
         skills.sort(Comparator.comparing(each -> each.summary().getName()));
         List<WellKnownSkillEntry> entries = new ArrayList<>(skills.size());
         for (ExportableSkill each : skills) {
-            entries.add(toWellKnownEntry(each));
+            entries.add(toWellKnownEntry(each, version));
         }
         WellKnownSkillsIndex result = new WellKnownSkillsIndex();
+        if (version == WellKnownIndexVersion.V0_2_0) {
+            result.setSchema(SCHEMA_0_2);
+        }
         result.setSkills(entries);
         return result;
     }
@@ -133,7 +171,7 @@ public class NacosSkillsRegistryService {
     
     public String getSkillFileContent(String namespaceId, String skillName, String relativePath)
         throws NacosException {
-        ExportableSkill skill = loadExportableSkill(namespaceId, skillName);
+        ExportableSkill skill = loadExportableSkill(namespaceId, skillName, false);
         if (skill == null) {
             return null;
         }
@@ -154,6 +192,12 @@ public class NacosSkillsRegistryService {
         return null;
     }
     
+    public byte[] getSkillArchiveContent(String namespaceId, String skillName)
+        throws NacosException {
+        ExportableSkill skill = loadExportableSkill(namespaceId, skillName, true);
+        return skill == null ? null : toArchiveBytes(skill.skill());
+    }
+    
     private List<ExportableSkill> collectExportableSkills(String namespaceId, String query,
         int limit)
         throws NacosException {
@@ -172,7 +216,8 @@ public class NacosSkillsRegistryService {
                 if (!isEligibleSummary(each)) {
                     continue;
                 }
-                ExportableSkill exportable = loadExportableSkill(namespaceId, each.getName(), each);
+                ExportableSkill exportable =
+                    loadExportableSkill(namespaceId, each.getName(), each, false);
                 if (exportable == null) {
                     continue;
                 }
@@ -186,7 +231,8 @@ public class NacosSkillsRegistryService {
         return result;
     }
     
-    private ExportableSkill loadExportableSkill(String namespaceId, String skillName)
+    private ExportableSkill loadExportableSkill(String namespaceId, String skillName,
+        boolean download)
         throws NacosException {
         Page<SkillSummary> page = skillOperationService.listSkills(namespaceId, skillName,
             Constants.Skills.SEARCH_ACCURATE,
@@ -198,11 +244,11 @@ public class NacosSkillsRegistryService {
         if (!isEligibleSummary(summary)) {
             return null;
         }
-        return loadExportableSkill(namespaceId, skillName, summary);
+        return loadExportableSkill(namespaceId, skillName, summary, download);
     }
     
     private ExportableSkill loadExportableSkill(String namespaceId, String skillName,
-        SkillSummary summary)
+        SkillSummary summary, boolean download)
         throws NacosException {
         SkillIndexManifest manifest = skillIndexManifestService.query(namespaceId, skillName);
         String resolvedVersion = SkillIndexManifestService.resolveVersion(manifest, null,
@@ -212,8 +258,10 @@ public class NacosSkillsRegistryService {
         }
         Skill skill;
         try {
-            skill = skillOperationService.getSkillVersionDetail(namespaceId, skillName,
-                resolvedVersion);
+            skill = download ? skillOperationService.downloadSkillVersion(namespaceId, skillName,
+                resolvedVersion)
+                : skillOperationService.getSkillVersionDetail(namespaceId, skillName,
+                    resolvedVersion);
         } catch (NacosException e) {
             if (e.getErrCode() == NacosException.NOT_FOUND
                 || e.getErrCode() == NacosException.NO_RIGHT) {
@@ -229,7 +277,7 @@ public class NacosSkillsRegistryService {
         if (files == null) {
             return null;
         }
-        return new ExportableSkill(summary, skill, files);
+        return new ExportableSkill(summary, skill, resolvedVersion, files);
     }
     
     private boolean isEligibleSummary(SkillSummary summary) {
@@ -287,18 +335,122 @@ public class NacosSkillsRegistryService {
         return resource.getType() + "/" + resource.getName();
     }
     
-    private WellKnownSkillEntry toWellKnownEntry(ExportableSkill each) {
+    private WellKnownSkillEntry toWellKnownEntry(ExportableSkill each,
+        WellKnownIndexVersion version)
+        throws NacosException {
         WellKnownSkillEntry entry = new WellKnownSkillEntry();
         entry.setName(each.skill().getName());
         entry.setDescription(each.skill().getDescription());
-        entry.setFiles(each.files());
+        if (version == WellKnownIndexVersion.V0_1_0) {
+            entry.setFiles(each.files());
+            return entry;
+        }
+        entry.setVersion(each.version());
+        if (isSingleMarkdownSkill(each)) {
+            entry.setType(SKILL_MD_TYPE);
+            entry.setUrl(fileUrl(each.skill().getName(), MARKDOWN_FILE));
+            entry.setDigest(
+                sha256Digest(SkillUtils.toMarkdown(each.skill()).getBytes(StandardCharsets.UTF_8)));
+            return entry;
+        }
+        entry.setType(ARCHIVE_TYPE);
+        entry.setUrl(archiveUrl(each.skill().getName()));
+        entry.setDigest(sha256Digest(toArchiveBytes(each.skill())));
         return entry;
+    }
+    
+    private boolean isSingleMarkdownSkill(ExportableSkill skill) {
+        return skill.files().size() == 1 && MARKDOWN_FILE.equals(skill.files().get(0));
+    }
+    
+    private byte[] toArchiveBytes(Skill skill) throws NacosException {
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            try (ZipOutputStream zip = new ZipOutputStream(output, StandardCharsets.UTF_8)) {
+                addZipEntry(zip, MARKDOWN_FILE,
+                    SkillUtils.toMarkdown(skill).getBytes(StandardCharsets.UTF_8));
+                if (skill.getResource() != null && !skill.getResource().isEmpty()) {
+                    List<SkillResource> resources = new ArrayList<>();
+                    for (SkillResource each : skill.getResource().values()) {
+                        if (each != null && StringUtils.isNotBlank(each.getName())) {
+                            resources.add(each);
+                        }
+                    }
+                    resources.sort(Comparator.comparing(this::buildRelativePath));
+                    for (SkillResource each : resources) {
+                        addZipEntry(zip, buildRelativePath(each),
+                            each.getContent() == null ? new byte[0]
+                                : each.getContent().getBytes(StandardCharsets.UTF_8));
+                    }
+                }
+            }
+            return output.toByteArray();
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Failed to create skill well-known archive: " + e.getMessage(), e);
+        }
+    }
+    
+    private void addZipEntry(ZipOutputStream zip, String path, byte[] bytes) throws Exception {
+        SkillUtils.validatePathSafety(path);
+        ZipEntry entry = new ZipEntry(path);
+        entry.setTime(STABLE_ZIP_ENTRY_TIME);
+        zip.putNextEntry(entry);
+        zip.write(bytes);
+        zip.closeEntry();
+    }
+    
+    private String fileUrl(String skillName, String file) {
+        return encodePathSegment(skillName) + "/" + encodePath(file);
+    }
+    
+    private String archiveUrl(String skillName) {
+        return encodePathSegment(skillName) + ZIP_SUFFIX;
+    }
+    
+    private String encodePath(String path) {
+        String[] segments = path.split("/");
+        StringBuilder result = new StringBuilder();
+        for (String each : segments) {
+            if (result.length() > 0) {
+                result.append('/');
+            }
+            result.append(encodePathSegment(each));
+        }
+        return result.toString();
+    }
+    
+    private String encodePathSegment(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+    
+    private String sha256Digest(byte[] bytes) throws NacosException {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(bytes);
+            StringBuilder result = new StringBuilder(DIGEST_SHA256_PREFIX);
+            for (byte each : hash) {
+                result.append(String.format("%02x", each & 0xff));
+            }
+            return result.toString();
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Failed to calculate skill well-known digest: " + e.getMessage(), e);
+        }
     }
     
     private long safeDownloadCount(SkillSummary summary) {
         return summary.getDownloadCount() == null ? 0L : summary.getDownloadCount();
     }
     
-    private record ExportableSkill(SkillSummary summary, Skill skill, List<String> files) {
+    private enum WellKnownIndexVersion {
+        
+        V0_1_0,
+        
+        V0_2_0
+    }
+    
+    private record ExportableSkill(SkillSummary summary, Skill skill, String version,
+        List<String> files) {
     }
 }

@@ -113,13 +113,32 @@ discovery endpoints compatible with skills CLI and well-known registry usage:
 
 | Method | Path | Behavior |
 | --- | --- | --- |
-| `GET` | `/registry/{namespaceId}/.well-known/agent-skills/index.json` | Returns the namespace skill index. |
-| `GET` | `/registry/{namespaceId}/.well-known/skills/index.json` | Alias for the namespace skill index. |
+| `GET` | `/registry/{namespaceId}/.well-known/agent-skills/index.json` | Returns the namespace Skill index in Agent Skills discovery v0.2.0 shape. |
+| `GET` | `/registry/{namespaceId}/.well-known/skills/index.json` | Returns the namespace Skill index in legacy v0.1-compatible shape. |
 | `GET` | `/registry/{namespaceId}/api/search` | Searches exportable skills and returns CLI-compatible search results. |
 | `GET` | `/registry/{namespaceId}/.well-known/agent-skills/{skillName}/SKILL.md` | Returns the exported `SKILL.md`. |
 | `GET` | `/registry/{namespaceId}/.well-known/skills/{skillName}/SKILL.md` | Alias for the exported `SKILL.md`. |
+| `GET` | `/registry/{namespaceId}/.well-known/agent-skills/{skillName}.zip` | Returns an exported Skill archive for v0.2.0 `archive` entries. |
+| `GET` | `/registry/{namespaceId}/.well-known/skills/{skillName}.zip` | Archive alias for clients that already resolved the legacy base path. |
 | `GET` | `/registry/{namespaceId}/.well-known/agent-skills/{skillName}/**` | Returns exported text resources. |
 | `GET` | `/registry/{namespaceId}/.well-known/skills/{skillName}/**` | Alias for exported text resources. |
+
+The `/.well-known/agent-skills/index.json` endpoint is the primary Skill
+well-known discovery surface. It must return a top-level `$schema` value of
+`https://schemas.agentskills.io/discovery/0.2.0/schema.json`. Each entry must
+include `name`, `description`, `type`, `url`, and `digest`. Nacos should use
+`type=skill-md` when the Skill contains only `SKILL.md`, with `url` pointing to
+`{skillName}/SKILL.md`. If the Skill has exported supporting text resources,
+Nacos should use `type=archive`, with `url` pointing to `{skillName}.zip`.
+`digest` is the SHA-256 digest of the raw artifact bytes in the
+`sha256:{hex}` format. Nacos may include non-standard extension fields such as
+the resolved latest `version`; clients must ignore unknown fields according to
+the discovery protocol.
+
+The `/.well-known/skills/index.json` endpoint remains a legacy compatibility
+surface. It omits `$schema` and returns each Skill with a `files` array so
+v0.1-compatible clients can continue to fetch `SKILL.md` and text resources
+from `/{skillName}/{file}` paths.
 
 The adaptor exports only skills that are suitable for public-style discovery:
 

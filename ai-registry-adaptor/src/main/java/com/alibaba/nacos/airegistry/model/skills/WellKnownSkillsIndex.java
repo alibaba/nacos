@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.airegistry.model.skills;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 /**
@@ -23,9 +26,21 @@ import java.util.List;
  *
  * @author nacos
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class WellKnownSkillsIndex {
     
+    @JsonProperty("$schema")
+    private String schema;
+    
     private List<WellKnownSkillEntry> skills;
+    
+    public String getSchema() {
+        return schema;
+    }
+    
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
     
     public List<WellKnownSkillEntry> getSkills() {
         return skills;
