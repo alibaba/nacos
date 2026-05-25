@@ -38,6 +38,8 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
@@ -63,7 +65,8 @@ class McpRegistryImportServiceTest {
     @Test
     void testSearchReturnsCandidateMetadata() throws Exception {
         McpServerDetailInfo server = newMcpServer();
-        when(client.fetchOfficialRegistryPage(ENDPOINT, "cursor-1", 20, "redis"))
+        when(client.fetchOfficialRegistryPage(any(AiResourceImportSource.class), eq("cursor-1"),
+            eq(20), eq("redis")))
             .thenReturn(new McpRegistryClient.Page(Collections.singletonList(server),
                 "cursor-2"));
         
@@ -80,7 +83,8 @@ class McpRegistryImportServiceTest {
     @Test
     void testFetchReturnsMcpDetailArtifact() throws Exception {
         McpServerDetailInfo server = newMcpServer();
-        when(client.fetchOfficialRegistryServer(ENDPOINT, "io.nacos/test-server", 30))
+        when(client.fetchOfficialRegistryServer(any(AiResourceImportSource.class),
+            eq("io.nacos/test-server"), eq(30)))
             .thenReturn(server);
         AiResourceImportItem item = new AiResourceImportItem();
         item.setExternalId("io.nacos/test-server");

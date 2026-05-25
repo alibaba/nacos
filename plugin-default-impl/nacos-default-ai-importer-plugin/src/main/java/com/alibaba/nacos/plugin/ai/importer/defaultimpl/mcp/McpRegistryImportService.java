@@ -86,9 +86,9 @@ public class McpRegistryImportService implements AiResourceImportService {
     public AiResourceImportCandidatePage search(AiResourceImportContext context)
         throws NacosException {
         try {
+            AiResourceImportSource source = requireSource(context.getSource());
             McpRegistryClient.Page registryPage = client.fetchOfficialRegistryPage(
-                requireEndpoint(context.getSource()), context.getCursor(), context.getLimit(),
-                context.getQuery());
+                source, context.getCursor(), context.getLimit(), context.getQuery());
             AiResourceImportCandidatePage result = new AiResourceImportCandidatePage();
             result.setItems(toCandidates(registryPage.getServers()));
             result.setNextCursor(registryPage.getNextCursor());
@@ -105,9 +105,10 @@ public class McpRegistryImportService implements AiResourceImportService {
     public AiResourceImportArtifact fetch(AiResourceImportContext context,
         AiResourceImportItem item) throws NacosException {
         try {
+            AiResourceImportSource source = requireSource(context.getSource());
             String externalId = resolveExternalId(item);
             McpServerDetailInfo server = client.fetchOfficialRegistryServer(
-                requireEndpoint(context.getSource()), externalId, resolveFetchLimit(context));
+                source, externalId, resolveFetchLimit(context));
             return toArtifact(externalId, server);
         } catch (NacosException e) {
             throw e;
@@ -116,11 +117,12 @@ public class McpRegistryImportService implements AiResourceImportService {
         }
     }
     
-    private String requireEndpoint(AiResourceImportSource source) throws NacosException {
+    private AiResourceImportSource requireSource(AiResourceImportSource source)
+        throws NacosException {
         if (source == null || StringUtils.isBlank(source.getEndpoint())) {
             throw invalid("MCP registry import source endpoint must not be empty.");
         }
-        return source.getEndpoint();
+        return source;
     }
     
     private String resolveExternalId(AiResourceImportItem item) throws NacosException {

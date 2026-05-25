@@ -26,6 +26,8 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.DefaultImportHttpClient;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.ImportHttpResponse;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidate;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
@@ -40,12 +42,8 @@ import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -114,24 +112,23 @@ public class SkillWellKnownImportService implements AiResourceImportService {
     
     private static final int DEFAULT_LIMIT = 30;
     
-    private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
-    
     private static final int DEFAULT_READ_TIMEOUT_SECONDS = 20;
     
     private static final int DEFAULT_MAX_ARCHIVE_ENTRIES = 500;
     
     private static final long DEFAULT_MAX_ARCHIVE_UNCOMPRESSED_BYTES = 50L * 1024L * 1024L;
     
-    private final HttpClient httpClient;
+    private final DefaultImportHttpClient httpClient;
     
     public SkillWellKnownImportService() {
-        this(HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .connectTimeout(Duration.ofSeconds(DEFAULT_CONNECT_TIMEOUT_SECONDS))
-            .build());
+        this(new DefaultImportHttpClient());
     }
     
     SkillWellKnownImportService(HttpClient httpClient) {
+        this(new DefaultImportHttpClient(httpClient));
+    }
+    
+    SkillWellKnownImportService(DefaultImportHttpClient httpClient) {
         this.httpClient = httpClient;
     }
     
@@ -198,10 +195,11 @@ public class SkillWellKnownImportService implements AiResourceImportService {
     }
     
     private ResolvedWellKnownIndex fetchIndex(AiResourceImportContext context) throws Exception {
-        List<String> indexUrls = indexUrls(requireSource(context));
+        AiResourceImportSource source = requireSource(context);
+        List<String> indexUrls = indexUrls(source);
         Exception lastFailure = null;
         for (String each : indexUrls) {
-            FetchResult response = fetchUrl(each);
+            ImportHttpResponse response = fetchUrl(source, each);
             if (!response.isSuccess()) {
                 lastFailure = new IllegalStateException(
                     "HTTP " + response.getStatusCode() + " when fetching " + each);
@@ -319,13 +317,14 @@ public class SkillWellKnownImportService implements AiResourceImportService {
     private byte[] fetchVersion010SkillZip(AiResourceImportContext context,
         ResolvedWellKnownIndex resolvedIndex, WellKnownSkillEntry entry) throws Exception {
         String base = resolvedIndex.getWellKnownBase();
+        AiResourceImportSource source = requireSource(context);
         List<String> files = normalizeFiles(entry.getFiles());
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(output, StandardCharsets.UTF_8)) {
             for (String each : files) {
                 SkillUtils.validatePathSafety(each);
-                byte[] bytes = fetchBytes(fileUrl(base, entry.getName(), each));
-                checkDownloadedSize(requireSource(context), bytes);
+                byte[] bytes = fetchBytes(source, fileUrl(base, entry.getName(), each));
+                checkDownloadedSize(source, bytes);
                 zip.putNextEntry(new ZipEntry(entry.getName() + "/" + each));
                 zip.write(bytes);
                 zip.closeEntry();
@@ -337,7 +336,7 @@ public class SkillWellKnownImportService implements AiResourceImportService {
     private byte[] fetchVersion020SkillZip(AiResourceImportContext context,
         ResolvedWellKnownIndex resolvedIndex, WellKnownSkillEntry entry) throws Exception {
         String type = normalizeType(entry.getType());
-        FetchResult artifact = fetchVersion020Artifact(context, resolvedIndex, entry);
+        ImportHttpResponse artifact = fetchVersion020Artifact(context, resolvedIndex, entry);
         if (TYPE_SKILL_MD.equals(type)) {
             return toSingleMarkdownSkillZip(entry.getName(), artifact.getBody());
         }
@@ -347,18 +346,19 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         throw invalid("Unsupported Skill well-known distribution type: " + entry.getType());
     }
     
-    private FetchResult fetchVersion020Artifact(AiResourceImportContext context,
+    private ImportHttpResponse fetchVersion020Artifact(AiResourceImportContext context,
         ResolvedWellKnownIndex resolvedIndex, WellKnownSkillEntry entry) throws Exception {
         if (StringUtils.isBlank(entry.getUrl())) {
             throw invalid("Skill well-known 0.2.0 entry url must not be empty.");
         }
-        FetchResult result =
-            fetchUrl(resolveArtifactUrl(resolvedIndex.getIndexUrl(), entry.getUrl()));
+        AiResourceImportSource source = requireSource(context);
+        ImportHttpResponse result = fetchUrl(source,
+            resolveArtifactUrl(resolvedIndex.getIndexUrl(), entry.getUrl()));
         if (!result.isSuccess()) {
             throw new IllegalStateException(
                 "HTTP " + result.getStatusCode() + " when fetching " + result.getUrl());
         }
-        checkDownloadedSize(requireSource(context), result.getBody());
+        checkDownloadedSize(source, result.getBody());
         verifySha256Digest(entry.getDigest(), result.getBody());
         return result;
     }
@@ -373,7 +373,7 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         return output.toByteArray();
     }
     
-    private byte[] toSkillZipFromArchive(FetchResult artifact) throws Exception {
+    private byte[] toSkillZipFromArchive(ImportHttpResponse artifact) throws Exception {
         ArchiveFormat format = resolveArchiveFormat(artifact);
         if (format == ArchiveFormat.ZIP) {
             return artifact.getBody();
@@ -538,8 +538,8 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         return result;
     }
     
-    private byte[] fetchBytes(String url) throws Exception {
-        FetchResult result = fetchUrl(url);
+    private byte[] fetchBytes(AiResourceImportSource source, String url) throws Exception {
+        ImportHttpResponse result = fetchUrl(source, url);
         if (!result.isSuccess()) {
             throw new IllegalStateException(
                 "HTTP " + result.getStatusCode() + " when fetching " + url);
@@ -547,15 +547,9 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         return result.getBody();
     }
     
-    private FetchResult fetchUrl(String url) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-            .timeout(Duration.ofSeconds(DEFAULT_READ_TIMEOUT_SECONDS))
-            .header("Accept", "*/*")
-            .GET()
-            .build();
-        HttpResponse<byte[]> response = httpClient.send(request,
-            HttpResponse.BodyHandlers.ofByteArray());
-        return new FetchResult(url, response.statusCode(), response.headers(), response.body());
+    private ImportHttpResponse fetchUrl(AiResourceImportSource source, String url)
+        throws Exception {
+        return httpClient.get(source, url, DEFAULT_READ_TIMEOUT_SECONDS, "*/*");
     }
     
     private WellKnownIndexVersion resolveVersion(WellKnownSkillsIndex index)
@@ -612,7 +606,7 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         return result.toString();
     }
     
-    private ArchiveFormat resolveArchiveFormat(FetchResult artifact) throws NacosException {
+    private ArchiveFormat resolveArchiveFormat(ImportHttpResponse artifact) throws NacosException {
         String contentType = artifact.getContentType().toLowerCase(Locale.ENGLISH);
         String url = artifact.getUrl().toLowerCase(Locale.ENGLISH);
         if (contentType.contains("gzip") || url.endsWith(TAR_GZ_SUFFIX)
@@ -708,44 +702,6 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         
         public String getWellKnownBase() {
             return wellKnownBase;
-        }
-    }
-    
-    private static class FetchResult {
-        
-        private final String url;
-        
-        private final int statusCode;
-        
-        private final HttpHeaders headers;
-        
-        private final byte[] body;
-        
-        FetchResult(String url, int statusCode, HttpHeaders headers, byte[] body) {
-            this.url = url;
-            this.statusCode = statusCode;
-            this.headers = headers;
-            this.body = body == null ? new byte[0] : body;
-        }
-        
-        public boolean isSuccess() {
-            return statusCode >= 200 && statusCode < 300;
-        }
-        
-        public String getUrl() {
-            return url;
-        }
-        
-        public int getStatusCode() {
-            return statusCode;
-        }
-        
-        public byte[] getBody() {
-            return body;
-        }
-        
-        public String getContentType() {
-            return headers.firstValue("Content-Type").orElse("");
         }
     }
     

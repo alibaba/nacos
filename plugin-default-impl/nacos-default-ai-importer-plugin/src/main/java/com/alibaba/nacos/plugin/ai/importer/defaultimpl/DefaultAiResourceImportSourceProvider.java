@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.DefaultImportHttpClient;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp.McpRegistryImportServiceBuilder;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill.SkillsShImportServiceBuilder;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill.SkillWellKnownImportServiceBuilder;
@@ -65,14 +66,6 @@ public class DefaultAiResourceImportSourceProvider implements AiResourceImportSo
     private static final int DEFAULT_MAX_ITEM_COUNT = 500;
     
     private static final long DEFAULT_MAX_ARTIFACT_SIZE = 10L * 1024L * 1024L;
-    
-    private static final String PROPERTY_ALLOW_HTTP = "allow-http";
-    
-    private static final String PROPERTY_ALLOW_HTTP_CAMEL = "allowHttp";
-    
-    private static final String PROPERTY_ALLOW_PRIVATE_NETWORK = "allow-private-network";
-    
-    private static final String PROPERTY_ALLOW_PRIVATE_NETWORK_CAMEL = "allowPrivateNetwork";
     
     @Override
     public Collection<AiResourceImportSource> loadSources(Properties properties)
@@ -179,10 +172,11 @@ public class DefaultAiResourceImportSourceProvider implements AiResourceImportSo
     private void applySecurityOptions(Properties properties, String prefix,
         AiResourceImportSource source) {
         Map<String, String> sourceProperties = new LinkedHashMap<>(2);
-        putConfiguredProperty(properties, prefix, PROPERTY_ALLOW_HTTP, PROPERTY_ALLOW_HTTP_CAMEL,
-            sourceProperties);
-        putConfiguredProperty(properties, prefix, PROPERTY_ALLOW_PRIVATE_NETWORK,
-            PROPERTY_ALLOW_PRIVATE_NETWORK_CAMEL, sourceProperties);
+        putConfiguredProperty(properties, prefix, DefaultImportHttpClient.PROPERTY_ALLOW_HTTP,
+            DefaultImportHttpClient.PROPERTY_ALLOW_HTTP_CAMEL, sourceProperties);
+        putConfiguredProperty(properties, prefix,
+            DefaultImportHttpClient.PROPERTY_ALLOW_PRIVATE_NETWORK,
+            DefaultImportHttpClient.PROPERTY_ALLOW_PRIVATE_NETWORK_CAMEL, sourceProperties);
         if (!sourceProperties.isEmpty()) {
             source.setProperties(sourceProperties);
         }

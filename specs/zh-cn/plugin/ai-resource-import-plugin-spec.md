@@ -361,9 +361,15 @@ source 时，可以按 `sourceId` 解释；否则应失败并提示迁移到
 - 非 HTTPS source endpoint 必须被拒绝，除非运维在 source 配置中显式开启 `allow-http`；
 - localhost、loopback、link-local、multicast 和私网 source endpoint 必须被拒绝，除非运维在
   source 配置中显式开启 `allow-private-network`；
+- 内置 importer 的 HTTP 请求必须对每个派生出来的请求 URL 重新执行同一套 scheme 和网络策略校验，
+  包括从 index 或 search response 中发现的 URL；
+- 内置 importer 的 HTTP 请求必须在发送前解析目标 host，并在 DNS 结果为 loopback、link-local、
+  multicast 或私网地址时默认拒绝，除非 source 显式开启 `allow-private-network`；
 - redirect 必须禁用或按同一安全策略重新校验；
 - DNS 解析后默认阻断 loopback、link-local、multicast 和私网目标；
 - 来源请求必须强制连接超时、读超时、响应大小、页数和 artifact 大小限制；
+  内置 importer 应默认使用 source `max-artifact-size` 限制单次 HTTP 响应大小，除非具体协议定义了
+  更严格的限制；
 - 导入、查询或下载 Skill 包时不得执行包内脚本；
 - importer 插件不得在 API 响应、Trace 事件或日志中泄露 secret。
 

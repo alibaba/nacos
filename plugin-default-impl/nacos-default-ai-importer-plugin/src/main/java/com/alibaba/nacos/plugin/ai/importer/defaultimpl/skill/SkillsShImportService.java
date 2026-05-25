@@ -24,6 +24,8 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.DefaultImportHttpClient;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.ImportHttpResponse;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidate;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
@@ -34,13 +36,9 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -88,22 +86,21 @@ public class SkillsShImportService implements AiResourceImportService {
     
     private static final int DEFAULT_LIMIT = 30;
     
-    private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
-    
     private static final int DEFAULT_READ_TIMEOUT_SECONDS = 20;
     
     private static final int DEFAULT_MAX_FILE_COUNT = 500;
     
-    private final HttpClient httpClient;
+    private final DefaultImportHttpClient httpClient;
     
     public SkillsShImportService() {
-        this(HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .connectTimeout(Duration.ofSeconds(DEFAULT_CONNECT_TIMEOUT_SECONDS))
-            .build());
+        this(new DefaultImportHttpClient());
     }
     
     SkillsShImportService(HttpClient httpClient) {
+        this(new DefaultImportHttpClient(httpClient));
+    }
+    
+    SkillsShImportService(DefaultImportHttpClient httpClient) {
         this.httpClient = httpClient;
     }
     
@@ -121,9 +118,10 @@ public class SkillsShImportService implements AiResourceImportService {
     public AiResourceImportCandidatePage search(AiResourceImportContext context)
         throws NacosException {
         try {
-            String apiRoot = resolveApiRoot(requireSource(context));
-            FetchResult response = fetchUrl(searchUrl(apiRoot, resolveQuery(context.getQuery()),
-                resolveLimit(context.getLimit())));
+            AiResourceImportSource source = requireSource(context);
+            String apiRoot = resolveApiRoot(source);
+            ImportHttpResponse response = fetchUrl(source, searchUrl(apiRoot,
+                resolveQuery(context.getQuery()), resolveLimit(context.getLimit())));
             if (!response.isSuccess()) {
                 throw new IllegalStateException(
                     "HTTP " + response.getStatusCode() + " when fetching " + response.getUrl());
@@ -149,7 +147,7 @@ public class SkillsShImportService implements AiResourceImportService {
             AiResourceImportSource source = requireSource(context);
             String apiRoot = resolveApiRoot(source);
             SkillsShSkillRef skillRef = resolveSkillRef(item);
-            FetchResult response = fetchUrl(downloadUrl(apiRoot, skillRef));
+            ImportHttpResponse response = fetchUrl(source, downloadUrl(apiRoot, skillRef));
             if (!response.isSuccess()) {
                 throw new IllegalStateException(
                     "HTTP " + response.getStatusCode() + " when fetching " + response.getUrl());
@@ -451,15 +449,9 @@ public class SkillsShImportService implements AiResourceImportService {
         return value == null ? "" : value;
     }
     
-    private FetchResult fetchUrl(String url) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-            .timeout(Duration.ofSeconds(DEFAULT_READ_TIMEOUT_SECONDS))
-            .header("Accept", "application/json")
-            .GET()
-            .build();
-        HttpResponse<byte[]> response = httpClient.send(request,
-            HttpResponse.BodyHandlers.ofByteArray());
-        return new FetchResult(url, response.statusCode(), response.body());
+    private ImportHttpResponse fetchUrl(AiResourceImportSource source, String url)
+        throws Exception {
+        return httpClient.get(source, url, DEFAULT_READ_TIMEOUT_SECONDS, "application/json");
     }
     
     private NacosException invalid(String message) {
@@ -470,37 +462,6 @@ public class SkillsShImportService implements AiResourceImportService {
     private NacosException dataAccess(String message, Throwable cause) {
         return new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.DATA_ACCESS_ERROR,
             cause, message);
-    }
-    
-    private static class FetchResult {
-        
-        private final String url;
-        
-        private final int statusCode;
-        
-        private final byte[] body;
-        
-        FetchResult(String url, int statusCode, byte[] body) {
-            this.url = url;
-            this.statusCode = statusCode;
-            this.body = body == null ? new byte[0] : body;
-        }
-        
-        public boolean isSuccess() {
-            return statusCode >= 200 && statusCode < 300;
-        }
-        
-        public String getUrl() {
-            return url;
-        }
-        
-        public int getStatusCode() {
-            return statusCode;
-        }
-        
-        public byte[] getBody() {
-            return body;
-        }
     }
     
     static class SkillsShSearchResponse {

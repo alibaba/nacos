@@ -418,11 +418,19 @@ The import flow must treat external sources as untrusted:
 - localhost, loopback, link-local, multicast, and private-network source
   endpoint targets must be rejected unless an operator-owned source
   configuration explicitly enables `allow-private-network`;
+- built-in importer HTTP requests must re-apply the same scheme and network
+  policy to every derived request URL, including URLs discovered from indexes
+  or search responses;
+- built-in importer HTTP requests must resolve request hosts before sending and
+  reject loopback, link-local, multicast, and private-network DNS results unless
+  the source explicitly enables `allow-private-network`;
 - redirects must be disabled or revalidated against the same safety policy;
 - loopback, link-local, multicast, and private network targets should be blocked
   by default after DNS resolution;
 - source requests must enforce connect timeout, read timeout, response size,
-  page count, and artifact size limits;
+  page count, and artifact size limits. Built-in importers should cap each HTTP
+  response by the source `max-artifact-size` unless a stricter per-protocol
+  limit applies;
 - fetched Skill packages must not execute scripts during import, query, or
   download;
 - importer plugins must not leak secrets in API responses, trace events, or

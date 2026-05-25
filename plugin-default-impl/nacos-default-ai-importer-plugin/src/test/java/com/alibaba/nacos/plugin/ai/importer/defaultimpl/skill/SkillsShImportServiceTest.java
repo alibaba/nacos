@@ -23,6 +23,7 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportContext;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportItem;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.DefaultImportHttpClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -72,7 +74,8 @@ class SkillsShImportServiceTest {
         lenient().when(httpClient.send(any(HttpRequest.class),
             any(HttpResponse.BodyHandler.class)))
             .thenAnswer(invocation -> responseFor(invocation.getArgument(0)));
-        importService = new SkillsShImportService(httpClient);
+        importService = new SkillsShImportService(new DefaultImportHttpClient(httpClient,
+            host -> new InetAddress[] {InetAddress.getByName("93.184.216.34")}));
     }
     
     @Test
