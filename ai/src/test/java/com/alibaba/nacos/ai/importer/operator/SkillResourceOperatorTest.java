@@ -46,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -127,16 +126,15 @@ class SkillResourceOperatorTest {
     void testImportSkipsWorkingVersionWithoutOverwrite() throws Exception {
         when(resourceManager.findMeta("public", "demo-skill", "skill"))
             .thenReturn(metaWithEditingVersion());
-
+        
         AiResourceImportResultItem result = operator.importResource("public", artifact(), false);
-
+        
         assertEquals(AiResourceImportResultStatus.SKIPPED, result.getStatus());
         assertEquals("demo-skill", result.getResourceName());
         assertEquals(1, result.getWarnings().size());
-        verify(skillOperationService, never()).uploadSkillFromZip(eq("public"), any(),
-            eq(false), eq("1.2.3"));
+        verify(skillOperationService, never()).uploadSkillFromZip(any(SkillUploadRequest.class));
     }
-
+    
     @Test
     void testImportSyncsSourceMetadata() throws Exception {
         AiResource meta = metaWithEditingVersion();
