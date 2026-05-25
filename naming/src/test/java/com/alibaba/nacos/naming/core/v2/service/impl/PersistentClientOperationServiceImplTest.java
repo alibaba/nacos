@@ -24,30 +24,47 @@ import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
+import com.alibaba.nacos.consistency.snapshot.Reader;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
+import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
+import java.nio.file.Path;
+import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -104,6 +121,16 @@ class PersistentClientOperationServiceImplTest {
             new PersistentClientOperationServiceImpl(clientManager);
         serializerField.set(persistentClientOperationServiceImpl, serializer);
         
+    }
+    
+    @AfterEach
+    void tearDown() {
+        ApplicationUtils.injectContext(null);
+        ServiceManager.getInstance().removeSingleton(Service.newService("A", "B", "C"));
+        removeSnapshotSingleton("changed");
+        removeSnapshotSingleton("added");
+        removeSnapshotSingleton("removed");
+        removeSnapshotSingleton("dead");
     }
     
     @Test
@@ -216,5 +243,127 @@ class PersistentClientOperationServiceImplTest {
         response = persistentClientOperationServiceImpl.onApply(writeRequest);
         assertTrue(response.getSuccess());
         assertTrue(ServiceManager.getInstance().containSingleton(service1));
+    }
+    
+    @Test
+    void testPersistentInstanceSnapshotOperationWriteAndReadSnapshot(@TempDir Path snapshotDir) {
+        SnapshotOperation snapshotOperation =
+            persistentClientOperationServiceImpl.loadSnapshotOperate().iterator().next();
+        byte[] snapshotBytes = new byte[] {1, 2, 3};
+        IpPortBasedClient dumpClient = Mockito.mock(IpPortBasedClient.class);
+        ClientSyncData dumpData = buildSyncData("alive-client", "changed",
+            instanceInfo("10.0.0.1", 8848));
+        Map<String, IpPortBasedClient> clients = new HashMap<>();
+        clients.put("alive-client", dumpClient);
+        when(clientManager.showClients()).thenReturn(clients);
+        when(dumpClient.generateSyncData()).thenReturn(dumpData);
+        when(serializer.serialize(any(ConcurrentHashMap.class))).thenReturn(snapshotBytes);
+        Writer writer = new Writer(snapshotDir.toString());
+        
+        Boolean writeResult =
+            ReflectionTestUtils.invokeMethod(snapshotOperation, "writeSnapshot", writer);
+        
+        assertTrue(writeResult);
+        assertTrue(writer.listFiles().containsKey("persistent_instance.zip"));
+        
+        ConcurrentHashMap<String, ClientSyncData> snapshotData = new ConcurrentHashMap<>();
+        InstancePublishInfo changedInfo = instanceInfo("10.0.0.2", 8848);
+        InstancePublishInfo addedInfo = instanceInfo("10.0.0.3", 8848);
+        snapshotData.put("alive-client",
+            buildSyncData("alive-client", new String[] {"changed", "added"},
+                new InstancePublishInfo[] {changedInfo, addedInfo}));
+        mockSnapshotLoadClients();
+        when(serializer.deserialize(any(byte[].class))).thenReturn(snapshotData);
+        Reader reader = new Reader(snapshotDir.toString(), writer.listFiles());
+        
+        boolean readResult = snapshotOperation.onSnapshotLoad(reader);
+        
+        assertTrue(readResult);
+        verify(clientManager).showClients();
+        verify(clientManager).removeAndRelease("dead-client");
+        verify(clientManager, times(0)).removeAndRelease("missing-client");
+        IpPortBasedClient aliveClient =
+            (IpPortBasedClient) clientManager.getClient("alive-client");
+        verify(aliveClient, times(2)).putServiceInstance(any(Service.class),
+            any(InstancePublishInfo.class));
+        verify(aliveClient)
+            .removeServiceInstance(argThat(service -> "removed".equals(service.getName())));
+        verify(aliveClient).getAllPublishedService();
+    }
+    
+    @Test
+    void testPersistentInstanceSnapshotOperationAddSyncDataAndTags() {
+        SnapshotOperation snapshotOperation =
+            persistentClientOperationServiceImpl.loadSnapshotOperate().iterator().next();
+        IpPortBasedClient newClient = Mockito.mock(IpPortBasedClient.class);
+        when(newClient.getClientId()).thenReturn("new-client");
+        ClientSyncData syncData = buildSyncData("new-client", new String[] {"added", "changed"},
+            new InstancePublishInfo[] {instanceInfo("10.0.0.5", 8848),
+                instanceInfo("10.0.0.6", 8848)});
+        Map.Entry<String, ClientSyncData> entry =
+            new AbstractMap.SimpleEntry<>("new-client", syncData);
+        
+        ReflectionTestUtils.invokeMethod(snapshotOperation, "addSyncDataToClient", entry,
+            newClient);
+        ReflectionTestUtils.invokeMethod(snapshotOperation, "removeDeadClient",
+            Collections.singleton("new-client"), Collections.emptyList());
+        String saveTag = ReflectionTestUtils.invokeMethod(snapshotOperation, "getSnapshotSaveTag");
+        String loadTag = ReflectionTestUtils.invokeMethod(snapshotOperation, "getSnapshotLoadTag");
+        
+        verify(newClient, times(2)).putServiceInstance(any(Service.class),
+            any(InstancePublishInfo.class));
+        verify(clientManager).addSyncClient(newClient);
+        assertTrue(saveTag.endsWith(".SAVE"));
+        assertTrue(loadTag.endsWith(".LOAD"));
+    }
+    
+    private void mockSnapshotLoadClients() {
+        IpPortBasedClient aliveClient = Mockito.mock(IpPortBasedClient.class);
+        Service changedService = snapshotService("changed");
+        Service removedService = snapshotService("removed");
+        when(aliveClient.getAllPublishedService())
+            .thenReturn(Arrays.asList(changedService, removedService));
+        when(aliveClient.getInstancePublishInfo(any(Service.class)))
+            .thenReturn(instanceInfo("10.0.0.9", 8848));
+        when(aliveClient.getClientId()).thenReturn("alive-client");
+        Client deadClient = Mockito.mock(Client.class);
+        Service deadService = snapshotService("dead");
+        when(deadClient.getAllPublishedService()).thenReturn(Collections.singleton(deadService));
+        when(deadClient.getInstancePublishInfo(eq(deadService)))
+            .thenReturn(instanceInfo("10.0.0.4", 8848));
+        when(deadClient.getClientId()).thenReturn("dead-client");
+        when(clientManager.allClientId())
+            .thenReturn(Arrays.asList("alive-client", "dead-client", "missing-client"));
+        when(clientManager.getClient("alive-client")).thenReturn(aliveClient);
+        when(clientManager.getClient("dead-client")).thenReturn(deadClient);
+        when(clientManager.getClient("missing-client")).thenReturn(null);
+    }
+    
+    private ClientSyncData buildSyncData(String clientId, String serviceName,
+        InstancePublishInfo instancePublishInfo) {
+        return buildSyncData(clientId, new String[] {serviceName},
+            new InstancePublishInfo[] {instancePublishInfo});
+    }
+    
+    private ClientSyncData buildSyncData(String clientId, String[] serviceNames,
+        InstancePublishInfo[] instancePublishInfos) {
+        return new ClientSyncData(clientId, Collections.nCopies(serviceNames.length, "snapshot"),
+            Collections.nCopies(serviceNames.length, "group"), Arrays.asList(serviceNames),
+            Arrays.asList(instancePublishInfos), null);
+    }
+    
+    private InstancePublishInfo instanceInfo(String ip, int port) {
+        InstancePublishInfo result = new InstancePublishInfo(ip, port);
+        result.setHealthy(true);
+        result.setCluster("DEFAULT");
+        return result;
+    }
+    
+    private Service snapshotService(String serviceName) {
+        return Service.newService("snapshot", "group", serviceName, false);
+    }
+    
+    private void removeSnapshotSingleton(String serviceName) {
+        ServiceManager.getInstance().removeSingleton(snapshotService(serviceName));
     }
 }
