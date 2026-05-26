@@ -21,6 +21,7 @@ import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ import org.springframework.mock.env.MockEnvironment;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -111,5 +113,21 @@ class PerformanceLoggerThreadTest {
         assertEquals(0, MetricsMonitor.getTotalPushCountForAvg().get());
         assertEquals(0, MetricsMonitor.getTotalPushCostForAvg().get());
         assertEquals(-1, MetricsMonitor.getMaxPushCostMonitor().get());
+    }
+    
+    @Test
+    void testPerformanceLogTaskRunCatchesException() {
+        NamingExecuteTaskDispatcher dispatcher = Mockito.mock(NamingExecuteTaskDispatcher.class);
+        Mockito.when(dispatcher.workersStatus()).thenThrow(new RuntimeException("failed"));
+        PerformanceLoggerThread performanceLoggerThread = new PerformanceLoggerThread();
+        PerformanceLoggerThread.PerformanceLogTask task =
+            performanceLoggerThread.new PerformanceLogTask();
+        
+        try (MockedStatic<NamingExecuteTaskDispatcher> mockedDispatcher =
+            Mockito.mockStatic(NamingExecuteTaskDispatcher.class)) {
+            mockedDispatcher.when(NamingExecuteTaskDispatcher::getInstance).thenReturn(dispatcher);
+            
+            assertDoesNotThrow(task::run);
+        }
     }
 }

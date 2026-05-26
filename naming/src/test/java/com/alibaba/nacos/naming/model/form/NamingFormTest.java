@@ -194,6 +194,7 @@ class NamingFormTest {
         assertTrue(form.getHealthy());
         assertEquals(1.0, form.getWeight());
         assertTrue(form.getEnabled());
+        assertEquals(form, form);
         assertEquals(form, same);
         assertEquals(form.hashCode(), same.hashCode());
         assertNotEquals(form, different);
