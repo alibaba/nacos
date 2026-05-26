@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.core.v2.client;
 
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -26,9 +28,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
@@ -115,6 +119,37 @@ class AbstractClientTest {
     }
     
     @Test
+    void generateSyncDataWithNormalAndBatchInstances() {
+        Service batchService = Service.newService("ns2", "group2", "batchService");
+        BatchInstancePublishInfo batchInstance = newBatchInstance();
+        abstractClient.addServiceInstance(service, instancePublishInfo);
+        abstractClient.addServiceInstance(batchService, batchInstance);
+        
+        ClientSyncData clientSyncData = abstractClient.generateSyncData();
+        BatchInstanceData batchInstanceData = clientSyncData.getBatchInstanceData();
+        
+        assertEquals(Collections.singletonList("ns1"), clientSyncData.getNamespaces());
+        assertEquals(Collections.singletonList("group1"), clientSyncData.getGroupNames());
+        assertEquals(Collections.singletonList("serviceName001"), clientSyncData.getServiceNames());
+        assertEquals(1, clientSyncData.getInstancePublishInfos().size());
+        assertEquals(Collections.singletonList("ns2"), batchInstanceData.getNamespaces());
+        assertEquals(Collections.singletonList("group2"), batchInstanceData.getGroupNames());
+        assertEquals(Collections.singletonList("batchService"),
+            batchInstanceData.getServiceNames());
+        assertSame(batchInstance, batchInstanceData.getBatchInstancePublishInfos().get(0));
+    }
+    
+    @Test
+    void removeServiceInstanceWithBatchInstance() {
+        BatchInstancePublishInfo batchInstance = newBatchInstance();
+        abstractClient.addServiceInstance(service, batchInstance);
+        
+        InstancePublishInfo removed = abstractClient.removeServiceInstance(service);
+        
+        assertSame(batchInstance, removed);
+    }
+    
+    @Test
     void release() {
         
         abstractClient.addServiceInstance(service, instancePublishInfo);
@@ -126,5 +161,22 @@ class AbstractClientTest {
         
         assertEquals(0, MetricsMonitor.getSubscriberCount().get());
         assertEquals(0, MetricsMonitor.getIpCountMonitor().get());
+    }
+    
+    @Test
+    void releaseWithBatchInstance() {
+        abstractClient.addServiceInstance(service, newBatchInstance());
+        assertEquals(1, MetricsMonitor.getIpCountMonitor().get());
+        
+        abstractClient.release();
+        
+        assertEquals(0, MetricsMonitor.getIpCountMonitor().get());
+    }
+    
+    private BatchInstancePublishInfo newBatchInstance() {
+        BatchInstancePublishInfo result = new BatchInstancePublishInfo();
+        result.setInstancePublishInfos(
+            Collections.singletonList(new InstancePublishInfo("127.0.0.2", 8891)));
+        return result;
     }
 }
