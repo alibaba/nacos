@@ -26,10 +26,12 @@ import org.springframework.mock.env.MockEnvironment;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import static com.alibaba.nacos.api.common.Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,5 +66,16 @@ class InstanceIdGeneratorManagerTest {
         instance.setPort(1000);
         assertThat(InstanceIdGeneratorManager.generateInstanceId(instance),
             is("1.1.1.1#1000#cluster#service"));
+    }
+    
+    @Test
+    void testGenerateInstanceIdWithUnknownGenerator() {
+        Instance instance = new Instance();
+        Map<String, String> metaData = new HashMap<>(1);
+        metaData.put(PreservedMetadataKeys.INSTANCE_ID_GENERATOR, "unknown");
+        instance.setMetadata(metaData);
+        
+        assertThrows(NoSuchElementException.class,
+            () -> InstanceIdGeneratorManager.generateInstanceId(instance));
     }
 }

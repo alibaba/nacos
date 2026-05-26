@@ -97,6 +97,14 @@ class ClientInfoTest {
         assertEquals("0.0.0", actual.version.toString());
     }
     
+    @Test
+    void testGetClientInfoWithoutVersionMarker() {
+        ClientInfo actual = new ClientInfo(ClientInfo.ClientTypeDescription.JAVA_CLIENT);
+        
+        assertEquals(ClientInfo.ClientType.JAVA, actual.type);
+        assertEquals("0.0.0", actual.version.toString());
+    }
+    
     private String getUserAgent(String client) {
         return client + ":v" + testVersionString;
     }
