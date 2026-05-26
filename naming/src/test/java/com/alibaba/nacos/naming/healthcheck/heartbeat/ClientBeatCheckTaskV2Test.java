@@ -40,10 +40,12 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -95,6 +97,11 @@ class ClientBeatCheckTaskV2Test {
     @Test
     void testTaskKey() {
         assertEquals(KeyBuilder.buildServiceMetaKey(CLIENT_ID, "true"), beatCheckTask.taskKey());
+    }
+    
+    @Test
+    void testGetGlobalConfig() {
+        assertEquals(globalConfig, beatCheckTask.getGlobalConfig());
     }
     
     @Test
@@ -172,6 +179,21 @@ class ClientBeatCheckTaskV2Test {
         assertFalse(
             client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
                 .isHealthy());
+    }
+    
+    @Test
+    void testDoHealthCheckSwallowsClientException() {
+        IpPortBasedClient mockClient = mock(IpPortBasedClient.class);
+        when(mockClient.getResponsibleId()).thenReturn(CLIENT_ID);
+        when(mockClient.getAllPublishedService()).thenThrow(new RuntimeException("mock"));
+        ClientBeatCheckTaskV2 task = new ClientBeatCheckTaskV2(mockClient);
+        
+        assertDoesNotThrow(task::doHealthCheck);
+    }
+    
+    @Test
+    void testAfterIntercept() {
+        assertDoesNotThrow(beatCheckTask::afterIntercept);
     }
     
     private HealthCheckInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {

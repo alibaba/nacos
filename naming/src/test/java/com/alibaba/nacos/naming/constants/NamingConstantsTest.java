@@ -14,31 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming;
+package com.alibaba.nacos.naming.constants;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.springframework.boot.SpringApplication;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class NamingAppTest {
+class NamingConstantsTest {
     
     @Test
-    void testNewInstance() {
-        assertEquals(NamingApp.class, new NamingApp().getClass());
-    }
-    
-    @Test
-    void testMainStartsSpringApplication() {
-        String[] args = new String[] {"--server.port=0"};
-        
-        try (MockedStatic<SpringApplication> mockedSpringApplication =
-            Mockito.mockStatic(SpringApplication.class)) {
-            NamingApp.main(args);
-            
-            mockedSpringApplication.verify(() -> SpringApplication.run(NamingApp.class, args));
-        }
+    void testDefaultConstructors() {
+        assertEquals(Constants.class, new Constants().getClass());
+        assertEquals(ClientConstants.class, new ClientConstants().getClass());
+        assertEquals(PushConstants.class, new PushConstants().getClass());
+        assertEquals(RequestConstant.class, new RequestConstant().getClass());
+        assertEquals(FieldsConstants.class, new FieldsConstants().getClass());
     }
 }

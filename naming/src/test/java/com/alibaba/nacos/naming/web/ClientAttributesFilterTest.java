@@ -43,8 +43,10 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -169,6 +171,19 @@ class ClientAttributesFilterTest {
         filter.doFilter(request, response, chain);
         
         verify(chain).doFilter(request, response);
+    }
+    
+    @Test
+    void testDoFilterWrapsServletException() throws IOException, ServletException {
+        when(request.getRequestURI()).thenReturn("/nacos/v1/other");
+        when(request.getMethod()).thenReturn("GET");
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+        doThrow(new ServletException("mock")).when(chain).doFilter(request, response);
+        
+        RuntimeException actual =
+            assertThrows(RuntimeException.class, () -> filter.doFilter(request, response, chain));
+        
+        assertTrue(actual.getCause() instanceof ServletException);
     }
     
     private static class MockRegisterFilter implements Filter {

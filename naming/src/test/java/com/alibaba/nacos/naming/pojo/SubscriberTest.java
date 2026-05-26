@@ -29,6 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SubscriberTest {
     
     @Test
+    void testDefaultConstructor() {
+        Subscriber subscriber = new Subscriber();
+        
+        assertNotNull(subscriber);
+    }
+    
+    @Test
     void subscriberBeanTest() {
         Subscriber subscriber =
             new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test", 0);

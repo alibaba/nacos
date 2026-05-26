@@ -261,6 +261,7 @@ class NamingFormTest {
         assertEquals(Constants.DEFAULT_GROUP, form.getGroupName());
         assertEquals("", form.getConsistencyType());
         assertEquals("", form.getInstances());
+        assertEquals(form, form);
         assertEquals(form, same);
         assertEquals(form.hashCode(), same.hashCode());
         assertNotEquals(form, different);

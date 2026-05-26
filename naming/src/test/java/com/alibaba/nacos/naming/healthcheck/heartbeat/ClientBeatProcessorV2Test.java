@@ -21,7 +21,10 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,6 +68,25 @@ class ClientBeatProcessorV2Test {
         
         assertTrue(instance.isHealthy());
         assertTrue(instance.getLastHeartBeatTime() > 1L);
+    }
+    
+    @Test
+    void testRunWithDebugLogEnabled() {
+        Logger logger = (Logger) Loggers.EVT_LOG;
+        Level oldLevel = logger.getLevel();
+        logger.setLevel(Level.DEBUG);
+        try {
+            HealthCheckInstancePublishInfo instance = newInstance(IP, PORT, false);
+            instance.setLastHeartBeatTime(1L);
+            ClientBeatProcessorV2 processor = newProcessor(instance, newRsInfo(IP, PORT));
+            
+            processor.run();
+            
+            assertTrue(instance.isHealthy());
+            assertTrue(instance.getLastHeartBeatTime() > 1L);
+        } finally {
+            logger.setLevel(oldLevel);
+        }
     }
     
     @Test
