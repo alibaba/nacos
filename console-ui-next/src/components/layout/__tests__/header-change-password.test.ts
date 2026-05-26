@@ -37,3 +37,18 @@ describe('Header change-password wiring', () => {
     );
   });
 });
+
+describe('Header namespace switch wiring', () => {
+  it('checks the registered namespace guard before updating the namespace store', () => {
+    const switchBlock = HEADER_SOURCE.slice(
+      HEADER_SOURCE.indexOf('const handleNamespaceChange'),
+      HEADER_SOURCE.indexOf('return ('),
+    );
+
+    expect(switchBlock).toContain('const guard = getNamespaceChangeGuard();');
+    expect(switchBlock).toContain('if (guard && !guard(value, nextShowName))');
+    expect(switchBlock.indexOf('const guard = getNamespaceChangeGuard();')).toBeLessThan(
+      switchBlock.indexOf('setNamespace(value, nextShowName);'),
+    );
+  });
+});

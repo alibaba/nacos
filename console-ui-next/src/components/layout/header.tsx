@@ -68,7 +68,7 @@ export function Header() {
   const location = useLocation();
   const { theme, setTheme, language, setLanguage } = useAppStore();
   const { username, logout, isOidcUser } = useAuthStore();
-  const { currentNamespace, namespaces, setNamespace } = useNamespaceStore();
+  const { currentNamespace, namespaces, setNamespace, getNamespaceChangeGuard } = useNamespaceStore();
   const { authEnabled } = useServerStore();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
@@ -84,6 +84,11 @@ export function Header() {
   const handleNamespaceChange = (value: string) => {
     const ns = namespaces.find(n => n.namespace === value);
     const nextShowName = ns?.namespaceShowName || value;
+    const guard = getNamespaceChangeGuard();
+    if (guard && !guard(value, nextShowName)) {
+      return;
+    }
+
     setNamespace(value, nextShowName);
 
     const nextSearch = getNamespaceSearchAfterSwitch(location.search, value, nextShowName);

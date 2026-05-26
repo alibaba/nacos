@@ -1,16 +1,21 @@
 import { create } from 'zustand';
 import { namespaceApi, type Namespace } from '@/api';
 
+export type NamespaceChangeGuard = (namespaceId: string, namespaceShowName: string) => boolean;
+
 interface NamespaceState {
   currentNamespace: string;
   namespaceShowName: string;
   namespaces: Namespace[];
   loading: boolean;
   error: string | null;
+  namespaceChangeGuard: NamespaceChangeGuard | null;
 }
 
 interface NamespaceActions {
   setNamespace: (id: string, showName: string) => void;
+  setNamespaceChangeGuard: (guard: NamespaceChangeGuard | null) => void;
+  getNamespaceChangeGuard: () => NamespaceChangeGuard | null;
   fetchNamespaces: () => Promise<void>;
   getCurrentNamespace: () => string;
 }
@@ -64,6 +69,7 @@ export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
   namespaces: [],
   loading: false,
   error: null,
+  namespaceChangeGuard: null,
 
   // Actions
   setNamespace: (id: string, showName: string) => {
@@ -71,6 +77,16 @@ export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
       currentNamespace: id,
       namespaceShowName: showName,
     });
+  },
+
+  setNamespaceChangeGuard: (guard: NamespaceChangeGuard | null) => {
+    set({
+      namespaceChangeGuard: guard,
+    });
+  },
+
+  getNamespaceChangeGuard: () => {
+    return get().namespaceChangeGuard;
   },
 
   fetchNamespaces: async () => {
