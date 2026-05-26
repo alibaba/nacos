@@ -20,10 +20,19 @@ import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.springframework.mock.env.MockEnvironment;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 class PerformanceLoggerThreadTest {
     
@@ -33,6 +42,19 @@ class PerformanceLoggerThreadTest {
         MetricsMonitor.getDomCountMonitor().set(0);
         MetricsMonitor.getIpCountMonitor().set(0);
         MetricsMonitor.getSubscriberCount().set(0);
+    }
+    
+    @Test
+    void testInitSchedulesPerformanceLogger() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+        try (MockedStatic<GlobalExecutor> mockedGlobalExecutor =
+            Mockito.mockStatic(GlobalExecutor.class)) {
+            
+            new PerformanceLoggerThread().init();
+            
+            mockedGlobalExecutor.verify(() -> GlobalExecutor.schedulePerformanceLogger(
+                any(Runnable.class), eq(30L), eq(60L), eq(TimeUnit.SECONDS)));
+        }
     }
     
     @Test
