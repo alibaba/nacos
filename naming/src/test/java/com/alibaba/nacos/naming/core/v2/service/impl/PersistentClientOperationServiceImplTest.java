@@ -30,6 +30,7 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
@@ -60,6 +61,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -155,6 +157,26 @@ class PersistentClientOperationServiceImplTest {
     }
     
     @Test
+    void testDeregisterInstanceWrapsProtocolException() throws Exception {
+        Mockito.doThrow(new Exception("write failed")).when(cpProtocol)
+            .write(any(WriteRequest.class));
+        
+        assertThrows(NacosRuntimeException.class,
+            () -> persistentClientOperationServiceImpl.deregisterInstance(service, instance,
+                clientId));
+    }
+    
+    @Test
+    void testRegisterInstanceWrapsProtocolException() throws Exception {
+        Mockito.doThrow(new Exception("write failed")).when(cpProtocol)
+            .write(any(WriteRequest.class));
+        
+        assertThrows(NacosRuntimeException.class,
+            () -> persistentClientOperationServiceImpl.registerInstance(service, instance,
+                clientId));
+    }
+    
+    @Test
     void updateInstance() throws Exception {
         Field clientManagerField =
             PersistentClientOperationServiceImpl.class.getDeclaredField("clientManager");
@@ -162,6 +184,45 @@ class PersistentClientOperationServiceImplTest {
         // Test register instance
         persistentClientOperationServiceImpl.updateInstance(service, instance, clientId);
         verify(cpProtocol).write(any(WriteRequest.class));
+    }
+    
+    @Test
+    void testUpdateEphemeralInstanceThrowsException() {
+        when(service.isEphemeral()).thenReturn(true);
+        
+        assertThrows(NacosRuntimeException.class,
+            () -> persistentClientOperationServiceImpl.updateInstance(service, instance,
+                clientId));
+    }
+    
+    @Test
+    void testUpdateInstanceWrapsProtocolException() throws Exception {
+        Mockito.doThrow(new Exception("write failed")).when(cpProtocol)
+            .write(any(WriteRequest.class));
+        
+        assertThrows(NacosRuntimeException.class,
+            () -> persistentClientOperationServiceImpl.updateInstance(service, instance,
+                clientId));
+    }
+    
+    @Test
+    void testBatchRegisterInstanceNoop() {
+        persistentClientOperationServiceImpl.batchRegisterInstance(service,
+            Collections.singletonList(instance), clientId);
+    }
+    
+    @Test
+    void testInstanceStoreRequestAccessors() {
+        PersistentClientOperationServiceImpl.InstanceStoreRequest request =
+            new PersistentClientOperationServiceImpl.InstanceStoreRequest();
+        
+        request.setService(service);
+        request.setInstance(instance);
+        request.setClientId(clientId);
+        
+        assertSame(service, request.getService());
+        assertSame(instance, request.getInstance());
+        assertSame(clientId, request.getClientId());
     }
     
     @Test
@@ -243,6 +304,94 @@ class PersistentClientOperationServiceImplTest {
         response = persistentClientOperationServiceImpl.onApply(writeRequest);
         assertTrue(response.getSuccess());
         assertTrue(ServiceManager.getInstance().containSingleton(service1));
+    }
+    
+    @Test
+    void testOnApplyReturnsFailureWhenDeserializeThrowsException() {
+        Mockito.when(serializer.deserialize(Mockito.any()))
+            .thenThrow(new RuntimeException("deserialize failed"));
+        
+        Response response = persistentClientOperationServiceImpl.onApply(
+            WriteRequest.newBuilder().setOperation(DataOperation.ADD.name()).build());
+        
+        assertFalse(response.getSuccess());
+    }
+    
+    @Test
+    void testOnApplyRegisterConnectsMissingClient() {
+        PersistentClientOperationServiceImpl.InstanceStoreRequest request =
+            new PersistentClientOperationServiceImpl.InstanceStoreRequest();
+        Service service1 = Service.newService("A", "B", "C");
+        request.setService(service1);
+        request.setClientId(clientId);
+        request.setInstance(new Instance());
+        Mockito.when(serializer.deserialize(Mockito.any())).thenReturn(request);
+        Mockito.when(clientManager.contains(clientId)).thenReturn(false);
+        Mockito.when(clientManager.getClient(clientId)).thenReturn(ipPortBasedClient);
+        
+        Response response = persistentClientOperationServiceImpl.onApply(
+            WriteRequest.newBuilder().setOperation(DataOperation.ADD.name()).build());
+        
+        assertTrue(response.getSuccess());
+        verify(clientManager).clientConnected(eq(clientId), any(ClientAttributes.class));
+    }
+    
+    @Test
+    void testOnApplyDeregisterReturnsWhenClientMissing() {
+        PersistentClientOperationServiceImpl.InstanceStoreRequest request =
+            new PersistentClientOperationServiceImpl.InstanceStoreRequest();
+        Service service1 = Service.newService("A", "B", "C");
+        request.setService(service1);
+        request.setClientId(clientId);
+        Mockito.when(serializer.deserialize(Mockito.any())).thenReturn(request);
+        Mockito.when(clientManager.getClient(clientId)).thenReturn(null);
+        
+        Response response = persistentClientOperationServiceImpl.onApply(
+            WriteRequest.newBuilder().setOperation(DataOperation.DELETE.name()).build());
+        
+        assertTrue(response.getSuccess());
+        verify(clientManager, times(0)).clientDisconnected(clientId);
+    }
+    
+    @Test
+    void testOnApplyDeregisterDisconnectsEmptyClient() {
+        PersistentClientOperationServiceImpl.InstanceStoreRequest request =
+            new PersistentClientOperationServiceImpl.InstanceStoreRequest();
+        Service service1 = Service.newService("A", "B", "C");
+        request.setService(service1);
+        request.setClientId(clientId);
+        Mockito.when(serializer.deserialize(Mockito.any())).thenReturn(request);
+        Mockito.when(clientManager.getClient(clientId)).thenReturn(ipPortBasedClient);
+        Mockito.when(ipPortBasedClient.getAllPublishedService())
+            .thenReturn(Collections.emptyList());
+        
+        Response response = persistentClientOperationServiceImpl.onApply(
+            WriteRequest.newBuilder().setOperation(DataOperation.DELETE.name()).build());
+        
+        assertTrue(response.getSuccess());
+        verify(clientManager).clientDisconnected(clientId);
+    }
+    
+    @Test
+    void testOnApplyDeregisterPublishesRemovedInstanceMetadata() {
+        PersistentClientOperationServiceImpl.InstanceStoreRequest request =
+            new PersistentClientOperationServiceImpl.InstanceStoreRequest();
+        Service service1 = Service.newService("A", "B", "C");
+        InstancePublishInfo removedInstance = instanceInfo("10.0.0.7", 8848);
+        request.setService(service1);
+        request.setClientId(clientId);
+        Mockito.when(serializer.deserialize(Mockito.any())).thenReturn(request);
+        Mockito.when(clientManager.getClient(clientId)).thenReturn(ipPortBasedClient);
+        Mockito.when(ipPortBasedClient.removeServiceInstance(any(Service.class)))
+            .thenReturn(removedInstance);
+        Mockito.when(ipPortBasedClient.getAllPublishedService())
+            .thenReturn(Collections.singleton(service1));
+        
+        Response response = persistentClientOperationServiceImpl.onApply(
+            WriteRequest.newBuilder().setOperation(DataOperation.DELETE.name()).build());
+        
+        assertTrue(response.getSuccess());
+        verify(clientManager, times(0)).clientDisconnected(clientId);
     }
     
     @Test
