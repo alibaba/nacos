@@ -179,6 +179,19 @@ class ServiceOperatorV2ImplTest {
     }
     
     @Test
+    void testQueryServiceUsesDefaultClusterMetadata() throws NacosException {
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+            .thenReturn(Optional.of(new ServiceMetadata()));
+        Mockito.when(serviceStorage.getClusters(Mockito.any()))
+            .thenReturn(Collections.singleton("D"));
+        
+        ObjectNode objectNode = serviceOperatorV2.queryService("A", "B@@C");
+        
+        assertEquals("D", objectNode.get(FieldsConstants.CLUSTERS).get(0)
+            .get(FieldsConstants.NAME).asText());
+    }
+    
+    @Test
     void testQueryServiceMissingThrows() {
         assertThrows(NacosApiException.class,
             () -> serviceOperatorV2.queryService("A", "B@@missing"));
@@ -214,6 +227,19 @@ class ServiceOperatorV2ImplTest {
         assertFalse(clusterInfo.isUseInstancePortForCheck());
         assertEquals(8080, clusterInfo.getHealthyCheckPort());
         assertEquals("z1", clusterInfo.getMetadata().get("zone"));
+    }
+    
+    @Test
+    void testQueryServiceDetailUsesDefaultClusterMetadata() throws NacosException {
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+            .thenReturn(Optional.of(new ServiceMetadata()));
+        Mockito.when(serviceStorage.getClusters(Mockito.any()))
+            .thenReturn(Collections.singleton("D"));
+        
+        ServiceDetailInfo serviceDetail =
+            serviceOperatorV2.queryService(Service.newService("A", "B", "C"));
+        
+        assertTrue(serviceDetail.getClusterMap().containsKey("D"));
     }
     
     @Test
