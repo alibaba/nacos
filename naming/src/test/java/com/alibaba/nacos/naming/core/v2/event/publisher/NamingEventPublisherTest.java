@@ -184,6 +184,18 @@ class NamingEventPublisherTest {
     }
     
     @Test
+    void testRunHandlesInterruptedTake() throws Exception {
+        namingEventPublisher.addSubscriber(subscriber, TestEvent.class);
+        ThreadUtils.sleep(200L);
+        
+        namingEventPublisher.shutdown();
+        namingEventPublisher.interrupt();
+        ThreadUtils.sleep(200L);
+        
+        assertThat(namingEventPublisher.currentEventSize(), is(0L));
+    }
+    
+    @Test
     void getStatus() throws NacosException {
         namingEventPublisher.publish(new TestEvent());
         namingEventPublisher.publish(new TestEvent.TestEvent1());
