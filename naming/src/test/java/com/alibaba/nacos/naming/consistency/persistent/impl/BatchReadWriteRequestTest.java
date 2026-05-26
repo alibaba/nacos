@@ -58,4 +58,11 @@ class BatchReadWriteRequestTest {
         assertArrayEquals(new byte[] {7}, request.getKeys().get(0));
         assertArrayEquals(new byte[] {8}, request.getValues().get(0));
     }
+    
+    @Test
+    void testOldDataOperationDescriptions() {
+        assertEquals("Write", OldDataOperation.Write.getDesc());
+        assertEquals("Read", OldDataOperation.Read.getDesc());
+        assertEquals("Delete", OldDataOperation.Delete.getDesc());
+    }
 }

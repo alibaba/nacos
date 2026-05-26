@@ -52,9 +52,11 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -85,11 +87,14 @@ class InstanceControllerV3Test extends BaseTest {
     
     private volatile Class<? extends Event> eventReceivedClass;
     
+    private CountDownLatch eventLatch;
+    
     @BeforeEach
     public void before() {
         super.before();
         ReflectionTestUtils.setField(instanceControllerV3, "instanceService", instanceService);
         mockmvc = MockMvcBuilders.standaloneSetup(instanceControllerV3).build();
+        eventLatch = new CountDownLatch(1);
         
         subscriber = new SmartSubscriber() {
             
@@ -103,6 +108,7 @@ class InstanceControllerV3Test extends BaseTest {
             @Override
             public void onEvent(Event event) {
                 eventReceivedClass = event.getClass();
+                eventLatch.countDown();
             }
         };
         NotifyCenter.registerSubscriber(subscriber);
@@ -188,7 +194,7 @@ class InstanceControllerV3Test extends BaseTest {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
-        TimeUnit.SECONDS.sleep(1);
+        assertTrue(eventLatch.await(5, TimeUnit.SECONDS));
         assertEquals(UpdateInstanceTraceEvent.class, eventReceivedClass);
     }
     
