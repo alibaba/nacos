@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Sun,
   Moon,
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { useNamespaceStore } from '@/stores/namespace-store';
+import { getNamespaceSearchAfterSwitch, useNamespaceStore } from '@/stores/namespace-store';
 import { useServerStore } from '@/stores/server-store';
 import {
   DropdownMenu,
@@ -63,6 +64,8 @@ const NAV_LINKS: NavLink[] = [
 
 export function Header() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { theme, setTheme, language, setLanguage } = useAppStore();
   const { username, logout, isOidcUser } = useAuthStore();
   const { currentNamespace, namespaces, setNamespace } = useNamespaceStore();
@@ -80,7 +83,13 @@ export function Header() {
 
   const handleNamespaceChange = (value: string) => {
     const ns = namespaces.find(n => n.namespace === value);
-    setNamespace(value, ns?.namespaceShowName || value);
+    const nextShowName = ns?.namespaceShowName || value;
+    setNamespace(value, nextShowName);
+
+    const nextSearch = getNamespaceSearchAfterSwitch(location.search, value, nextShowName);
+    if (nextSearch !== null && nextSearch !== location.search) {
+      navigate(`${location.pathname}${nextSearch}${location.hash}`, { replace: true });
+    }
   };
 
   return (

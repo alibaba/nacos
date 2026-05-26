@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import Markdown from 'react-markdown';
@@ -93,10 +93,15 @@ import { SkillResourcePanel } from './SkillResourcePanel';
 export default function SkillDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { name: routeName } = useParams<{ name: string }>();
   const skillName = routeName ? decodeURIComponent(routeName) : '';
   const { currentNamespace } = useNamespaceStore();
-  const namespaceId = currentNamespace || 'public';
+  const namespaceId =
+    searchParams.get('namespaceId') ||
+    searchParams.get('namespace') ||
+    currentNamespace ||
+    'public';
   const { globalAdmin } = useAuthStore();
   const copilotEnabled = useServerStore((s) => s.copilotEnabled);
 

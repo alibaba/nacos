@@ -17,14 +17,44 @@ interface NamespaceActions {
 
 type NamespaceStore = NamespaceState & NamespaceActions;
 
-const getDefaultNamespace = (): string => {
-  // Try to get from URL params first
-  const hash = window.location.hash;
-  const match = hash.match(/[?&]namespace=([^&]*)/);
-  if (match) {
-    return decodeURIComponent(match[1]);
+export const getDefaultNamespaceFromHash = (hash: string): string => {
+  const queryString = hash.split('?')[1];
+  if (!queryString) {
+    return '';
   }
-  return '';
+  const params = new URLSearchParams(queryString);
+  return params.get('namespace') || params.get('namespaceId') || '';
+};
+
+export const getNamespaceSearchAfterSwitch = (
+  search: string,
+  namespaceId: string,
+  namespaceShowName: string,
+): string | null => {
+  const params = new URLSearchParams(search);
+  const hasNamespaceParam = params.has('namespace') || params.has('namespaceId');
+  if (!hasNamespaceParam) {
+    return null;
+  }
+  if (params.has('namespace')) {
+    params.set('namespace', namespaceId);
+  }
+  if (params.has('namespaceId')) {
+    params.set('namespaceId', namespaceId);
+  }
+  if (params.has('namespaceShowName')) {
+    params.set('namespaceShowName', namespaceShowName);
+  }
+  const queryString = params.toString();
+  return queryString ? `?${queryString}` : '';
+};
+
+const getDefaultNamespace = (): string => {
+  // Try to get from URL params first.
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return getDefaultNamespaceFromHash(window.location.hash);
 };
 
 export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
