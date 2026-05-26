@@ -39,9 +39,11 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.ADD_SERVICE;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.DELETE_SERVICE;
@@ -316,6 +318,26 @@ public class NamingFuzzyWatchContextServiceTest {
     }
     
     @Test
+    @SuppressWarnings("unchecked")
+    void testTrimContextIgnoresRuntimeException() throws Exception {
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
+        ConcurrentMap<String, Set<String>> matchedServiceKeysMap =
+            (ConcurrentMap<String, Set<String>>) getFieldValue("matchedServiceKeysMap");
+        ConcurrentMap<String, Set<String>> watchedClientsMap =
+            (ConcurrentMap<String, Set<String>>) getFieldValue("watchedClientsMap");
+        Set<String> brokenMatchedServiceKeys = Mockito.mock(Set.class);
+        when(brokenMatchedServiceKeys.size()).thenThrow(new RuntimeException("mock error"));
+        Set<String> watchedClients = new HashSet<>();
+        watchedClients.add("connection");
+        matchedServiceKeysMap.put(groupKeyPattern, brokenMatchedServiceKeys);
+        watchedClientsMap.put(groupKeyPattern, watchedClients);
+        
+        Assertions.assertDoesNotThrow(
+            () -> namingFuzzyWatchContextService.trimFuzzyWatchContext());
+    }
+    
+    @Test
     void testMakeupContextOnOverLoad() throws NacosException {
         
         tMockedStatic.when(() -> GlobalConfig.getMaxPatternCount()).thenReturn(20);
@@ -396,5 +418,11 @@ public class NamingFuzzyWatchContextServiceTest {
             namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern);
         Assertions.assertEquals(0, matchServiceKeys4.size());
         
+    }
+    
+    private Object getFieldValue(String fieldName) throws ReflectiveOperationException {
+        Field field = NamingFuzzyWatchContextService.class.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return field.get(namingFuzzyWatchContextService);
     }
 }

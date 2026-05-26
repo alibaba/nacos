@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class HealthCheckProcessorExtendV2Test {
@@ -70,6 +71,16 @@ class HealthCheckProcessorExtendV2Test {
         verify(registry).registerSingleton(
             healthCheckProcessorExtendV2.lowerFirstChar(mysqlProcessor.getClass().getSimpleName()),
             mysqlProcessor);
+    }
+    
+    @Test
+    void addProcessorThrowsWhenDuplicateTypeFound() {
+        when(mysqlProcessor.getType()).thenReturn("MYSQL");
+        Set<String> origin = new HashSet<>();
+        origin.add("MYSQL");
+        
+        assertThrows(RuntimeException.class,
+            () -> healthCheckProcessorExtendV2.addProcessor(origin));
     }
     
     @Test
