@@ -18,6 +18,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
@@ -38,9 +39,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -99,6 +103,91 @@ class HealthOperatorV2ImplTest {
                 && "1.1.1.1".equals(instance.getIp())
                 && instance.getPort() == 8080 && "cluster-a".equals(instance.getClusterName())),
             anyString());
+    }
+    
+    @Test
+    void testUpdateHealthStatusThrowsWhenMetadataMissing() {
+        when(metadataManager
+            .getServiceMetadata(argThat(service -> isPersistentService(service, "A", "B", "C"))))
+            .thenReturn(Optional.empty());
+        
+        assertThrows(NacosException.class,
+            () -> healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C",
+                "cluster-a", "1.1.1.1", 8080, true));
+    }
+    
+    @Test
+    void testUpdateHealthStatusThrowsWhenClusterMissing() {
+        ServiceMetadata metadata = new ServiceMetadata();
+        when(metadataManager
+            .getServiceMetadata(argThat(service -> isPersistentService(service, "A", "B", "C"))))
+            .thenReturn(Optional.of(metadata));
+        
+        assertThrows(NacosException.class,
+            () -> healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C",
+                "cluster-a", "1.1.1.1", 8080, true));
+    }
+    
+    @Test
+    void testUpdateHealthStatusThrowsWhenCheckerStillWorking() {
+        ServiceMetadata metadata = new ServiceMetadata();
+        Map<String, ClusterMetadata> clusterMap = new HashMap<>(2);
+        ClusterMetadata cluster = Mockito.mock(ClusterMetadata.class);
+        clusterMap.put("cluster-a", cluster);
+        metadata.setClusters(clusterMap);
+        when(cluster.getHealthyCheckType()).thenReturn(HealthCheckType.TCP.name());
+        when(metadataManager
+            .getServiceMetadata(argThat(service -> isPersistentService(service, "A", "B", "C"))))
+            .thenReturn(Optional.of(metadata));
+        
+        assertThrows(NacosException.class,
+            () -> healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C",
+                "cluster-a", "1.1.1.1", 8080, true));
+    }
+    
+    @Test
+    void testUpdateHealthStatusReturnsWhenClientMissing() throws NacosException {
+        givenNoneHealthCheckCluster();
+        when(clientManager.getClient(anyString())).thenReturn(null);
+        
+        healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C", "cluster-a",
+            "1.1.1.1", 8080, true);
+        
+        verifyNoInteractions(clientOperationService);
+    }
+    
+    @Test
+    void testUpdateHealthStatusReturnsWhenInstanceMissing() throws NacosException {
+        givenNoneHealthCheckCluster();
+        ConnectionBasedClient client = Mockito.mock(ConnectionBasedClient.class);
+        when(clientManager.getClient(anyString())).thenReturn(client);
+        when(client.getInstancePublishInfo(
+            argThat(service -> isPersistentService(service, "A", "B", "C"))))
+            .thenReturn(null);
+        
+        healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C", "cluster-a",
+            "1.1.1.1", 8080, true);
+        
+        verifyNoInteractions(clientOperationService);
+    }
+    
+    @Test
+    void testCheckers() {
+        Map<String, AbstractHealthChecker> actual = healthOperatorV2.checkers();
+        
+        assertFalse(actual.isEmpty());
+    }
+    
+    private void givenNoneHealthCheckCluster() {
+        ServiceMetadata metadata = new ServiceMetadata();
+        Map<String, ClusterMetadata> clusterMap = new HashMap<>(2);
+        ClusterMetadata cluster = Mockito.mock(ClusterMetadata.class);
+        clusterMap.put("cluster-a", cluster);
+        metadata.setClusters(clusterMap);
+        when(cluster.getHealthyCheckType()).thenReturn(HealthCheckType.NONE.name());
+        when(metadataManager
+            .getServiceMetadata(argThat(service -> isPersistentService(service, "A", "B", "C"))))
+            .thenReturn(Optional.of(metadata));
     }
     
     private boolean isPersistentService(Service service, String namespace, String groupName,
