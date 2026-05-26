@@ -239,6 +239,8 @@ class InstanceOperatorClientImplTest {
         patchObject.setMetadata(Collections.singletonMap("new", "value"));
         patchObject.setWeight(2.0D);
         patchObject.setEnabled(false);
+        patchObject.setHealthy(true);
+        assertTrue(patchObject.getHealthy());
         instanceOperatorClient.patchInstance("A", Constants.DEFAULT_GROUP, "B", patchObject);
         
         Mockito.verify(metadataOperateService).updateInstanceMetadata(Mockito.any(),
