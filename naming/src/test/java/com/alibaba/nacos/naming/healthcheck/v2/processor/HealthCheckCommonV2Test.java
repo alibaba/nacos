@@ -98,6 +98,26 @@ class HealthCheckCommonV2Test {
     }
     
     @Test
+    void testReEvaluateCheckRtUpdatesBest() {
+        when(healthCheckTaskV2.getCheckRtBest()).thenReturn(10L);
+        when(healthParams.getMax()).thenReturn(100);
+        
+        healthCheckCommonV2.reEvaluateCheckRt(1L, healthCheckTaskV2, healthParams);
+        
+        verify(healthCheckTaskV2).setCheckRtBest(1L);
+    }
+    
+    @Test
+    void testReEvaluateCheckRtUsesMin() {
+        when(healthParams.getMax()).thenReturn(100);
+        when(healthParams.getMin()).thenReturn(10);
+        
+        healthCheckCommonV2.reEvaluateCheckRt(1L, healthCheckTaskV2, healthParams);
+        
+        verify(healthCheckTaskV2).setCheckRtNormalized(10L);
+    }
+    
+    @Test
     void testCheckOk() {
         healthCheckCommonV2.checkOk(healthCheckTaskV2, service, "test checkOk");
         
