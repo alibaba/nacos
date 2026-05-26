@@ -35,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -178,6 +179,22 @@ class HealthOperatorV2ImplTest {
         assertFalse(actual.isEmpty());
     }
     
+    @Test
+    @SuppressWarnings("unchecked")
+    void testCheckersSkipsUnavailableChecker() throws Exception {
+        Field extendField = HealthCheckType.class.getDeclaredField("EXTEND");
+        extendField.setAccessible(true);
+        Map<String, Class<? extends AbstractHealthChecker>> extend =
+            (Map<String, Class<? extends AbstractHealthChecker>>) extendField.get(null);
+        extend.put(BrokenHealthChecker.TYPE, BrokenHealthChecker.class);
+        try {
+            Map<String, AbstractHealthChecker> actual = healthOperatorV2.checkers();
+            assertFalse(actual.containsKey(BrokenHealthChecker.TYPE));
+        } finally {
+            extend.remove(BrokenHealthChecker.TYPE);
+        }
+    }
+    
     private void givenNoneHealthCheckCluster() {
         ServiceMetadata metadata = new ServiceMetadata();
         Map<String, ClusterMetadata> clusterMap = new HashMap<>(2);
@@ -195,6 +212,15 @@ class HealthOperatorV2ImplTest {
         return null != service && namespace.equals(service.getNamespace())
             && groupName.equals(service.getGroup())
             && serviceName.equals(service.getName()) && !service.isEphemeral();
+    }
+    
+    private abstract static class BrokenHealthChecker extends AbstractHealthChecker {
+        
+        private static final String TYPE = "BROKEN";
+        
+        private BrokenHealthChecker() {
+            super(TYPE);
+        }
     }
     
 }
