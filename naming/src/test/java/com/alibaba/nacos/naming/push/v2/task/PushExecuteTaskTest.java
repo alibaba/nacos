@@ -119,6 +119,32 @@ class PushExecuteTaskTest {
     }
     
     @Test
+    void testRunSkipWhenClientDisconnected() {
+        PushDelayTask delayTask = new PushDelayTask(service, 0L);
+        PushExecuteTask executeTask =
+            new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        when(clientManager.getClient(clientId)).thenReturn(null);
+        
+        executeTask.run();
+        
+        assertEquals(0, MetricsMonitor.getTotalPushMonitor().get());
+        verify(delayTaskExecuteEngine, never()).addTask(eq(service), any(PushDelayTask.class));
+    }
+    
+    @Test
+    void testRunSkipWhenSubscriberMissing() {
+        PushDelayTask delayTask = new PushDelayTask(service, 0L);
+        PushExecuteTask executeTask =
+            new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        when(client.getSubscriber(service)).thenReturn(null);
+        
+        executeTask.run();
+        
+        assertEquals(0, MetricsMonitor.getTotalPushMonitor().get());
+        verify(delayTaskExecuteEngine, never()).addTask(eq(service), any(PushDelayTask.class));
+    }
+    
+    @Test
     void testRunFailedWithHandleException() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
         PushExecuteTask executeTask =
