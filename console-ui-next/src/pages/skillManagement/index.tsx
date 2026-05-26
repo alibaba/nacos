@@ -519,7 +519,7 @@ export default function SkillManagementPage() {
         namespaceId={namespaceId}
         onSuccess={(name) => {
           loadData();
-          navigate(`/skill/${encodeURIComponent(name)}`);
+          handleDetail(name);
         }}
       />
 
