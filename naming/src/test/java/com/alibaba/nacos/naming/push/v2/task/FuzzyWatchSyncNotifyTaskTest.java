@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.push.v2.task;
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchSyncRequest;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.BatchTaskCounter;
+import com.alibaba.nacos.naming.push.v2.PushConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -90,6 +91,17 @@ class FuzzyWatchSyncNotifyTaskTest {
         assertTrue(task.getSyncServiceKeys().contains(contextA));
         assertTrue(task.getSyncServiceKeys().contains(contextB));
         assertEquals(50L, task.getLastProcessTime());
+    }
+    
+    @Test
+    void testCallbackTimeout() {
+        FuzzyWatchSyncNotifyTask task =
+            new FuzzyWatchSyncNotifyTask("client", "group@@service*",
+                FUZZY_WATCH_INIT_NOTIFY, null, 100L);
+        FuzzyWatchSyncNotifyCallback callback =
+            new FuzzyWatchSyncNotifyCallback(task, new BatchTaskCounter(1), null);
+        
+        assertEquals(PushConfig.getInstance().getPushTaskTimeout(), callback.getTimeout());
     }
     
     private NamingFuzzyWatchSyncRequest.Context context(String serviceKey) {

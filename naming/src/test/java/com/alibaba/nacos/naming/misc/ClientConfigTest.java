@@ -64,4 +64,13 @@ class ClientConfigTest {
         ClientConfig clientConfig = declaredConstructor.newInstance();
         assertEquals(EXPIRED_TIME, clientConfig.getClientExpiredTime());
     }
+    
+    @Test
+    void testSetClientExpiredTime() {
+        clientConfig.setClientExpiredTime(EXPIRED_TIME);
+        
+        assertEquals(EXPIRED_TIME, clientConfig.getClientExpiredTime());
+        
+        clientConfig.setClientExpiredTime(ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME);
+    }
 }
