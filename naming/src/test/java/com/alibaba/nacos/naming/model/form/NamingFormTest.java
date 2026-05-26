@@ -108,6 +108,12 @@ class NamingFormTest {
         assertEquals(80, form.getCheckPort());
         assertTrue(form.isUseInstancePort4Check());
         assertEquals("{}", form.getHealthChecker());
+        
+        UpdateClusterForm metadataForm = createUpdateClusterForm();
+        metadataForm.setMetadata("metadata");
+        metadataForm.validate();
+        
+        assertEquals("metadata", metadataForm.getMetadata());
     }
     
     @Test

@@ -115,6 +115,21 @@ class NamingWebFilterTest {
     }
     
     @Test
+    void testTrafficReviseFilterContinuesWhenLimitedUrlNotMatched() throws Exception {
+        TrafficReviseFilter filter =
+            trafficReviseFilter(ServerStatus.UP, null,
+                Collections.singletonMap("/nacos/v1/ns/other", 429));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/nacos/v1/ns/instance");
+        request.setQueryString("serviceName=test");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+        
+        filter.doFilter(request, response, chain);
+        
+        verify(chain).doFilter(same(request), same(response));
+    }
+    
+    @Test
     void testTrafficReviseFilterPassesWhenServerUp() throws Exception {
         TrafficReviseFilter filter =
             trafficReviseFilter(ServerStatus.UP, null, Collections.emptyMap());
@@ -179,6 +194,19 @@ class NamingWebFilterTest {
         
         assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, response.getStatus());
         assertTrue(response.getContentAsString().contains("detailed error message: warmup"));
+    }
+    
+    @Test
+    void testTrafficReviseFilterRejectsUnavailableServerWithoutDetail() throws Exception {
+        TrafficReviseFilter filter =
+            trafficReviseFilter(ServerStatus.DOWN, Optional.empty(), Collections.emptyMap());
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/nacos/v1/ns/instance");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        filter.doFilter(request, response, mock(FilterChain.class));
+        
+        assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, response.getStatus());
+        assertTrue(response.getContentAsString().contains("please try again later"));
     }
     
     @Test
