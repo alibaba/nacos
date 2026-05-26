@@ -102,6 +102,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.alibaba.nacos.api.common.Constants.TAG_V2;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
 
 /**
@@ -452,6 +453,122 @@ public class ConfigControllerV3 {
         } else {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "Config is not in beta.");
+        }
+    }
+    
+    /**
+     * Publish gray configuration.
+     */
+    @PostMapping("/gray")
+    @TpsControl(pointName = "ConfigPublish")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> publishGray(HttpServletRequest request, ConfigFormV3 configForm,
+        @RequestParam(value = "grayType", required = false, defaultValue = TAG_V2) String grayType,
+        @RequestParam(value = "grayMatchRuleExp", required = false) String grayMatchRuleExp)
+        throws NacosException {
+        configForm.validateWithContent();
+        final boolean namespaceTransferred =
+            NamespaceUtil.isNeedTransferNamespace(configForm.getNamespaceId());
+        configForm
+            .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
+        if (StringUtils.isNotBlank(grayMatchRuleExp)) {
+            configForm.setGrayRuleExp(grayMatchRuleExp);
+        }
+        validateGrayForm(configForm);
+        ParamUtils.checkParam(configForm.getDataId(), configForm.getGroup(), "datumId",
+            configForm.getContent());
+        
+        if (StringUtils.isBlank(configForm.getSrcUser())) {
+            configForm.setSrcUser(RequestUtil.getSrcUserName(request));
+        }
+        if (!ConfigType.isValidType(configForm.getType())) {
+            configForm.setType(ConfigType.getDefaultType().getType());
+        }
+        
+        String encryptedDataKeyFinal = configForm.getEncryptedDataKey();
+        if (StringUtils.isBlank(encryptedDataKeyFinal)) {
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(),
+                configForm.getContent());
+            configForm.setContent(pair.getSecond());
+            encryptedDataKeyFinal = pair.getFirst();
+        }
+        configForm.setEncryptedDataKey(encryptedDataKeyFinal);
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setSrcType(Constants.HTTP);
+        configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
+        configRequestInfo.setCasMd5(request.getHeader("casMd5"));
+        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
+        
+        return Result.success(
+            configOperationService.publishConfigGray(grayType, configForm, configRequestInfo));
+    }
+    
+    /**
+     * Query gray configuration.
+     */
+    @GetMapping("/gray")
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<ConfigGrayInfo> queryGray(ConfigFormV3 configForm,
+        @RequestParam("grayName") String grayName)
+        throws NacosApiException {
+        configForm.validate();
+        validateGrayName(grayName);
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        ConfigInfoGrayWrapper grayConfig =
+            configInfoGrayPersistService.findConfigInfo4Gray(configForm.getDataId(),
+                configForm.getGroupName(), namespaceId, grayName);
+        if (Objects.isNull(grayConfig)) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Config gray version not found.");
+        }
+        String encryptedDataKey = grayConfig.getEncryptedDataKey();
+        Pair<String, String> pair =
+            EncryptionHandler.decryptHandler(configForm.getDataId(), encryptedDataKey,
+                grayConfig.getContent());
+        grayConfig.setContent(pair.getSecond());
+        return Result.success(ResponseUtil.transferToConfigGrayInfo(grayConfig));
+    }
+    
+    /**
+     * Remove gray configuration.
+     */
+    @DeleteMapping("/gray")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> stopGray(HttpServletRequest request, ConfigFormV3 configForm,
+        @RequestParam("grayName") String grayName) throws NacosApiException {
+        configForm.validate();
+        validateGrayName(grayName);
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        String clientIp = getRemoteIp(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
+        return Result.success(
+            configOperationService.deleteConfig(configForm.getDataId(), configForm.getGroupName(),
+                namespaceId, grayName, clientIp, srcUser, Constants.HTTP));
+    }
+    
+    private void validateGrayForm(ConfigFormV3 configForm) throws NacosApiException {
+        validateGrayName(configForm.getGrayName());
+        if (StringUtils.isBlank(configForm.getGrayRuleExp())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                "Required parameter 'grayRuleExp' type String is not present");
+        }
+        if (StringUtils.isBlank(configForm.getGrayVersion())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                "Required parameter 'grayVersion' type String is not present");
+        }
+    }
+    
+    private void validateGrayName(String grayName) throws NacosApiException {
+        if (StringUtils.isBlank(grayName)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                "Required parameter 'grayName' type String is not present");
+        }
+        if (!ParamUtils.isValid(grayName.trim())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "invalid grayName : " + grayName);
         }
     }
     

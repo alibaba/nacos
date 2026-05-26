@@ -199,7 +199,7 @@ public class ConfigOperationService {
      * @throws NacosException NacosException.
      * @date 2024/2/5
      */
-    private Boolean publishConfigGray(String grayType, ConfigForm configForm,
+    public Boolean publishConfigGray(String grayType, ConfigForm configForm,
         ConfigRequestInfo configRequestInfo)
         throws NacosException {
         configForm

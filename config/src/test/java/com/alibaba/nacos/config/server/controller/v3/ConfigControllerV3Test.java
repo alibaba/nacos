@@ -30,6 +30,7 @@ import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigMigrateService;
@@ -48,6 +49,7 @@ import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -372,6 +374,81 @@ class ConfigControllerV3Test {
             "{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}",
             resConfigInfoBetaWrapper.getGrayRule());
         
+    }
+    
+    @Test
+    void testPublishGray() throws Exception {
+        when(configOperationService.publishConfigGray(anyString(), any(), any())).thenReturn(true);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/gray")
+                .param("dataId", "test").param("groupName", "test").param("namespaceId", "")
+                .param("content", "gray")
+                .param("grayName", "tagv2_gray").param("grayType", "tagv2")
+                .param("grayMatchRuleExp", "region=hz&&env=prod").param("grayVersion", "1.1.0")
+                .param("grayPriority", "1").param("type", "");
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String code = JacksonUtils.toObj(actualValue).get("code").toString();
+        String data = JacksonUtils.toObj(actualValue).get("data").toString();
+        
+        assertEquals("0", code);
+        assertEquals("true", data);
+        ArgumentCaptor<ConfigRequestInfo> requestInfoCaptor =
+            ArgumentCaptor.forClass(ConfigRequestInfo.class);
+        Mockito.verify(configOperationService).publishConfigGray(eq("tagv2"), any(),
+            requestInfoCaptor.capture());
+        assertEquals(Constants.HTTP, requestInfoCaptor.getValue().getSrcType());
+    }
+    
+    @Test
+    void testQueryGray() throws Exception {
+        ConfigInfoGrayWrapper configInfoGrayWrapper = new ConfigInfoGrayWrapper();
+        configInfoGrayWrapper.setDataId("test");
+        configInfoGrayWrapper.setGroup("test");
+        configInfoGrayWrapper.setContent("gray");
+        configInfoGrayWrapper.setGrayName("tagv2_gray");
+        configInfoGrayWrapper.setGrayRule(
+            "{\"type\":\"tagv2\",\"version\":\"1.1.0\",\"expr\":\"region=hz&&env=prod\",\"priority\":1}");
+        when(configInfoGrayPersistService.findConfigInfo4Gray("test", "test", "public",
+            "tagv2_gray")).thenReturn(
+                configInfoGrayWrapper);
+        
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/gray")
+                .param("dataId", "test").param("groupName", "test").param("namespaceId", "")
+                .param("grayName", "tagv2_gray");
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String code = JacksonUtils.toObj(actualValue).get("code").toString();
+        String data = JacksonUtils.toObj(actualValue).get("data").toString();
+        ConfigGrayInfo result = JacksonUtils.toObj(data, ConfigGrayInfo.class);
+        
+        assertEquals("0", code);
+        assertEquals(configInfoGrayWrapper.getDataId(), result.getDataId());
+        assertEquals(configInfoGrayWrapper.getGroup(), result.getGroupName());
+        assertEquals(configInfoGrayWrapper.getContent(), result.getContent());
+        assertEquals(configInfoGrayWrapper.getGrayName(), result.getGrayName());
+    }
+    
+    @Test
+    void testStopGray() throws Exception {
+        when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), anyString(),
+            any(), any(),
+            any())).thenReturn(true);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH + "/gray")
+                .param("dataId", "test").param("groupName", "test").param("namespaceId", "")
+                .param("grayName", "tagv2_gray");
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String code = JacksonUtils.toObj(actualValue).get("code").toString();
+        String data = JacksonUtils.toObj(actualValue).get("data").toString();
+        
+        assertEquals("0", code);
+        assertEquals("true", data);
     }
     
     @Test

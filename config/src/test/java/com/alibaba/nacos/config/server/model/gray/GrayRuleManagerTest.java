@@ -17,13 +17,17 @@
 package com.alibaba.nacos.config.server.model.gray;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.config.server.model.gray.multitag.MultiTagMatchGrayRule;
+import com.alibaba.nacos.config.server.model.gray.singletag.SingleTagMatchGrayRule;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 
+import static com.alibaba.nacos.api.common.Constants.TAG_V2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,6 +56,24 @@ class GrayRuleManagerTest {
         assertNotNull(rule);
         assertTrue(rule instanceof TagGrayRule);
         assertEquals("myTag", rule.getRawGrayRuleExp());
+    }
+    
+    @Test
+    void constructSingleTagV2RuleBySpi() {
+        ConfigGrayPersistInfo persistInfo = new ConfigGrayPersistInfo(TAG_V2,
+            SingleTagMatchGrayRule.VERSION_1_0_0, "region=hz", 1);
+        
+        assertInstanceOf(SingleTagMatchGrayRule.class,
+            GrayRuleManager.constructGrayRule(persistInfo));
+    }
+    
+    @Test
+    void constructMultiTagV2RuleBySpi() {
+        ConfigGrayPersistInfo persistInfo = new ConfigGrayPersistInfo(TAG_V2,
+            MultiTagMatchGrayRule.VERSION_1_1_0, "region=hz&&env=prod", 1);
+        
+        assertInstanceOf(MultiTagMatchGrayRule.class,
+            GrayRuleManager.constructGrayRule(persistInfo));
     }
     
     @Test
