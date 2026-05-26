@@ -24,6 +24,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -148,5 +153,28 @@ class SwitchManagerTest {
     @Test
     void testHealthCheckEnabledEntryConstantValue() {
         assertEquals("healthCheckEnabled", SwitchEntry.HEALTH_CHECK_ENABLED);
+    }
+    
+    @Test
+    void testSwitchDomainDirectAccessors() {
+        switchDomain.update(new SwitchDomain());
+        
+        Map<String, Integer> weights = new HashMap<>();
+        weights.put("service", 7);
+        switchDomain.setAdWeightMap(weights);
+        assertEquals(7, switchDomain.getAdWeight("service"));
+        
+        switchDomain.setDefaultPushCacheMillis(1234L);
+        assertEquals(1234L, switchDomain.getPushCacheMillis("service"));
+        
+        switchDomain.setHealthCheckEnabled(false);
+        assertFalse(switchDomain.isHealthCheckEnabled("service"));
+        
+        Set<String> whiteList = new HashSet<>();
+        whiteList.add("service");
+        switchDomain.setHealthCheckWhiteList(whiteList);
+        assertTrue(switchDomain.isHealthCheckEnabled("service"));
+        
+        assertTrue(switchDomain.toString().contains("\"defaultPushCacheMillis\":1234"));
     }
 }
