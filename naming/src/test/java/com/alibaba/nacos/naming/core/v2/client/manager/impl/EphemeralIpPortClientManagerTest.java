@@ -39,6 +39,7 @@ import java.util.Collection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -99,6 +100,25 @@ class EphemeralIpPortClientManagerTest {
         assertTrue(ephemeralIpPortClientManager.contains(syncedClientId));
         String unUsedClientId = "127.0.0.1:8888#true";
         assertFalse(ephemeralIpPortClientManager.contains(unUsedClientId));
+    }
+    
+    @Test
+    void testClientConnectedWithAttributes() {
+        String clientId = "127.0.0.1:8081#true";
+        
+        assertTrue(ephemeralIpPortClientManager.clientConnected(clientId, attributes));
+        
+        assertTrue(ephemeralIpPortClientManager.contains(clientId));
+    }
+    
+    @Test
+    void testClientDisconnectedWhenMissing() {
+        assertTrue(ephemeralIpPortClientManager.clientDisconnected("missing"));
+    }
+    
+    @Test
+    void testIsResponsibleClientReturnsFalseForOtherClientType() {
+        assertFalse(ephemeralIpPortClientManager.isResponsibleClient(mock(Client.class)));
     }
     
     @Test
