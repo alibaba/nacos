@@ -18,12 +18,16 @@ package com.alibaba.nacos.naming.core.v2.index;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,14 +35,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.ADD_SERVICE;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.DELETE_SERVICE;
 import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -94,6 +102,29 @@ public class NamingFuzzyWatchContextServiceTest {
         Assertions.assertFalse(
             strings.contains(NamingUtils.getServiceKey("namespace", "group", "12service")));
         
+    }
+    
+    @Test
+    void testInit() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+        try (MockedStatic<GlobalExecutor> globalExecutorMockedStatic =
+            Mockito.mockStatic(GlobalExecutor.class);
+            MockedStatic<NotifyCenter> notifyCenterMockedStatic =
+                Mockito.mockStatic(NotifyCenter.class)) {
+            globalExecutorMockedStatic.when(() -> GlobalExecutor
+                .scheduleWithFixDelayByCommon(any(Runnable.class), eq(30000L)))
+                .thenAnswer(invocation -> {
+                    invocation.getArgument(0, Runnable.class).run();
+                    return null;
+                });
+            
+            namingFuzzyWatchContextService.init();
+            
+            globalExecutorMockedStatic.verify(() -> GlobalExecutor
+                .scheduleWithFixDelayByCommon(any(Runnable.class), eq(30000L)));
+            notifyCenterMockedStatic.verify(
+                () -> NotifyCenter.registerSubscriber(namingFuzzyWatchContextService));
+        }
     }
     
     @Test
@@ -189,6 +220,99 @@ public class NamingFuzzyWatchContextServiceTest {
             namingFuzzyWatchContextService.syncServiceContext(serviceDRemove, DELETE_SERVICE);
         Assertions.assertFalse(needNotify2Remove);
         
+    }
+    
+    @Test
+    void testSyncServiceContextReturnsFalseForUnsupportedChangedType() {
+        boolean needNotify = namingFuzzyWatchContextService.syncServiceContext(
+            Service.newService("namespace", "group", "service", true), "UPDATE_SERVICE");
+        
+        Assertions.assertFalse(needNotify);
+    }
+    
+    @Test
+    void testSubscribeTypes() {
+        List<Class<? extends Event>> subscribeTypes =
+            namingFuzzyWatchContextService.subscribeTypes();
+        
+        Assertions.assertEquals(1, subscribeTypes.size());
+        Assertions.assertTrue(
+            subscribeTypes.contains(ClientOperationEvent.ClientReleaseEvent.class));
+    }
+    
+    @Test
+    void testSyncServiceContextSkipsAddWhenLimitReached() throws NacosException {
+        tMockedStatic.when(() -> GlobalConfig.getMaxPatternCount()).thenReturn(20);
+        tMockedStatic.when(() -> GlobalConfig.getMaxMatchedServiceCount()).thenReturn(1);
+        Set<Service> serviceSet = new HashSet<>();
+        serviceSet.add(Service.newService("namespace", "group0", "service0", true));
+        when(serviceManager.getSingletons(eq("namespace"))).thenReturn(serviceSet);
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
+        namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, "connection");
+        
+        boolean needNotify = namingFuzzyWatchContextService.syncServiceContext(
+            Service.newService("namespace", "group1", "service1", true), ADD_SERVICE);
+        
+        Assertions.assertFalse(needNotify);
+        Assertions.assertEquals(1,
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern).size());
+    }
+    
+    @Test
+    void testReachToUpLimitAndMakeupMissingPattern() throws NacosException {
+        tMockedStatic.when(() -> GlobalConfig.getMaxPatternCount()).thenReturn(20);
+        tMockedStatic.when(() -> GlobalConfig.getMaxMatchedServiceCount()).thenReturn(1);
+        String missingPattern =
+            FuzzyGroupKeyPattern.generatePattern("missing*", "group*", "namespace");
+        
+        Assertions.assertFalse(namingFuzzyWatchContextService.reachToUpLimit(missingPattern));
+        namingFuzzyWatchContextService.makeupMatchedGroupKeys(missingPattern);
+        
+        Set<Service> serviceSet = new HashSet<>();
+        serviceSet.add(Service.newService("namespace", "group", "service", true));
+        when(serviceManager.getSingletons(eq("namespace"))).thenReturn(serviceSet);
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
+        namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, "connection");
+        
+        Assertions.assertTrue(namingFuzzyWatchContextService.reachToUpLimit(groupKeyPattern));
+    }
+    
+    @Test
+    void testMakeupMatchedGroupKeysCompletesWithoutReachingLimit() throws NacosException {
+        tMockedStatic.when(() -> GlobalConfig.getMaxPatternCount()).thenReturn(20);
+        tMockedStatic.when(() -> GlobalConfig.getMaxMatchedServiceCount()).thenReturn(10);
+        Set<Service> serviceSet = new HashSet<>();
+        serviceSet.add(Service.newService("namespace", "group", "service", true));
+        when(serviceManager.getSingletons(eq("namespace"))).thenReturn(serviceSet);
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
+        namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, "connection");
+        
+        namingFuzzyWatchContextService.makeupMatchedGroupKeys(groupKeyPattern);
+        
+        Assertions.assertEquals(1,
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern).size());
+    }
+    
+    @Test
+    void testTrimContextWarnsWhenNearLimit() throws NacosException {
+        tMockedStatic.when(() -> GlobalConfig.getMaxPatternCount()).thenReturn(20);
+        tMockedStatic.when(() -> GlobalConfig.getMaxMatchedServiceCount()).thenReturn(10);
+        Set<Service> serviceSet = new HashSet<>();
+        for (int i = 0; i < 8; i++) {
+            serviceSet.add(Service.newService("namespace", "group" + i, "service" + i, true));
+        }
+        when(serviceManager.getSingletons(eq("namespace"))).thenReturn(serviceSet);
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group*", "namespace");
+        namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, "connection");
+        
+        namingFuzzyWatchContextService.trimFuzzyWatchContext();
+        
+        Assertions.assertEquals(8,
+            namingFuzzyWatchContextService.matchServiceKeys(groupKeyPattern).size());
     }
     
     @Test
