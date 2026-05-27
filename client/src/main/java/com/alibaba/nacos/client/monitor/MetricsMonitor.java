@@ -101,6 +101,11 @@ public class MetricsMonitor {
             "naming", method, url, code);
     }
     
+    /**
+     * Record the size of service info map.
+     *
+     * @param size the size of service info map
+     */
     public static void recordServiceInfoMapSize(double size) {
         if (!PROMETHEUS_AVAILABLE) {
             return;
@@ -109,6 +114,11 @@ public class MetricsMonitor {
             "naming", "serviceInfoMapSize");
     }
     
+    /**
+     * Record the count of listened configs.
+     *
+     * @param count the count of listened configs
+     */
     public static void recordListenConfigCount(double count) {
         if (!PROMETHEUS_AVAILABLE) {
             return;
@@ -117,6 +127,14 @@ public class MetricsMonitor {
             "config", "listenConfigCount");
     }
     
+    /**
+     * Record a failed naming request.
+     *
+     * @param reqClass  the request class name
+     * @param resStatus the response status
+     * @param resCode   the response code
+     * @param errClass  the error class name
+     */
     public static void recordNamingRequestFailed(String reqClass, String resStatus,
         String resCode, String errClass) {
         if (!PROMETHEUS_AVAILABLE) {
