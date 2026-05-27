@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.service.resource;
 
-import com.alibaba.nacos.ai.config.ReviewedStatusConfig;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
@@ -1013,48 +1012,28 @@ class AiResourceManagerTest {
     }
     
     @Test
-    void onPipelineCompleteShouldRollbackOnRejection() {
+    void onPipelineCompleteShouldTransitionToReviewedOnRejection() {
         PipelineExecutionResult result = new PipelineExecutionResult();
         result.setExecutionId("exec-2");
         result.setStatus(PipelineExecutionStatus.REJECTED);
         result.setPipeline(new ArrayList<>());
         
-        AiResource meta = buildMeta("res");
-        ResourceVersionInfo vInfo = new ResourceVersionInfo();
-        vInfo.setReviewingVersion("v1");
-        vInfo.setLabels(new HashMap<>());
-        meta.setVersionInfo(JacksonUtils.toJson(vInfo));
-        
-        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
-            eq(1L), any()))
-            .thenReturn(true);
-        
         manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", result);
         
         verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
-            "v1",
-            AiResourceConstants.VERSION_STATUS_DRAFT);
+            "v1", AiResourceConstants.VERSION_STATUS_REVIEWED);
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+            anyString(), anyString(), eq(AiResourceConstants.VERSION_STATUS_DRAFT));
     }
     
     @Test
-    void onPipelineCompleteShouldRollbackOnNullResult() {
-        AiResource meta = buildMeta("res");
-        ResourceVersionInfo vInfo = new ResourceVersionInfo();
-        vInfo.setReviewingVersion("v1");
-        vInfo.setLabels(new HashMap<>());
-        meta.setVersionInfo(JacksonUtils.toJson(vInfo));
-        
-        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
-            eq(1L), any()))
-            .thenReturn(true);
-        
+    void onPipelineCompleteShouldTransitionToReviewedOnNullResult() {
         manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", null);
         
         verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
-            "v1",
-            AiResourceConstants.VERSION_STATUS_DRAFT);
+            "v1", AiResourceConstants.VERSION_STATUS_REVIEWED);
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+            anyString(), anyString(), eq(AiResourceConstants.VERSION_STATUS_DRAFT));
     }
     
     @Test
@@ -1064,41 +1043,8 @@ class AiResourceManagerTest {
         result.setStatus(PipelineExecutionStatus.REJECTED);
         result.setPipeline(new ArrayList<>());
         
-        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(null);
-        
         // Should not throw
         manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", result);
-    }
-    
-    @Test
-    void onPipelineCompleteShouldCatchInnerExceptionFromUpdateVersionInfoCas() {
-        PipelineExecutionResult result = new PipelineExecutionResult();
-        result.setExecutionId("exec-4");
-        result.setStatus(PipelineExecutionStatus.REJECTED);
-        result.setPipeline(new ArrayList<>());
-        
-        AiResource meta = buildMeta("res");
-        ResourceVersionInfo vInfo = new ResourceVersionInfo();
-        vInfo.setReviewingVersion("v1");
-        vInfo.setLabels(new HashMap<>());
-        meta.setVersionInfo(JacksonUtils.toJson(vInfo));
-        
-        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        // Make updateVersionInfoCas fail: CAS returns false, then find returns null -> throws SERVER_ERROR
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
-            eq(1L), any()))
-            .thenReturn(false);
-        // On retry find returns null, causing META_LOST -> inner catch
-        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
-            .thenReturn(meta) // first call: in onPipelineComplete to get meta
-            .thenReturn(null); // second call: inside doCasLoop retry -> META_LOST
-        
-        // Should not throw - inner exception is caught and logged as warn
-        manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", result);
-        
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
-            "v1",
-            AiResourceConstants.VERSION_STATUS_DRAFT);
     }
     
     @Test
@@ -1120,49 +1066,6 @@ class AiResourceManagerTest {
         verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
             anyString(),
             anyString(), anyString());
-    }
-    
-    @Test
-    void onPipelineCompleteWithSwitchEnabledShouldTransitionToReviewedOnRejection() {
-        try (MockedStatic<ReviewedStatusConfig> configStatic =
-            org.mockito.Mockito.mockStatic(ReviewedStatusConfig.class)) {
-            ReviewedStatusConfig mockConfig = mock(ReviewedStatusConfig.class);
-            when(mockConfig.isEnabled()).thenReturn(true);
-            configStatic.when(ReviewedStatusConfig::getInstance).thenReturn(mockConfig);
-            
-            PipelineExecutionResult result = new PipelineExecutionResult();
-            result.setExecutionId("exec-sw-1");
-            result.setStatus(PipelineExecutionStatus.REJECTED);
-            result.setPipeline(new ArrayList<>());
-            
-            manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", result);
-            
-            // With switch enabled, rejected should go to reviewed (not draft)
-            verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
-                "v1", AiResourceConstants.VERSION_STATUS_REVIEWED);
-            verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
-                anyString(), anyString(), eq(AiResourceConstants.VERSION_STATUS_DRAFT));
-        }
-    }
-    
-    @Test
-    void onPipelineCompleteWithSwitchEnabledShouldTransitionToReviewedOnApproval() {
-        try (MockedStatic<ReviewedStatusConfig> configStatic =
-            org.mockito.Mockito.mockStatic(ReviewedStatusConfig.class)) {
-            ReviewedStatusConfig mockConfig = mock(ReviewedStatusConfig.class);
-            when(mockConfig.isEnabled()).thenReturn(true);
-            configStatic.when(ReviewedStatusConfig::getInstance).thenReturn(mockConfig);
-            
-            PipelineExecutionResult result = new PipelineExecutionResult();
-            result.setExecutionId("exec-sw-2");
-            result.setStatus(PipelineExecutionStatus.APPROVED);
-            result.setPipeline(new ArrayList<>());
-            
-            manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", result);
-            
-            verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
-                "v1", AiResourceConstants.VERSION_STATUS_REVIEWED);
-        }
     }
     
     // ---- doRedraft ----

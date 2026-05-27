@@ -75,8 +75,8 @@ create/upload draft
   状态或元数据指针，避免污染正式版本。
 - 审核中版本必须在元数据中记录为 `reviewingVersion`。
 - 流水线执行状态可以写入 `publishPipelineInfo` 和 `pipeline_execution`。
-- 流水线拒绝会把版本退回 `draft`，并恢复 editing 指针。
-- 流水线通过会把版本改为 `reviewed`。
+- 流水线通过和拒绝都会把版本改为 `reviewed`；拒绝后如果需要继续编辑，用户必须显式
+  redraft 该版本。
 - Publish 会把版本改为 `online`，清理 working 指针，按需增加 `onlineCnt`，并可更新
   `latest` label。
 

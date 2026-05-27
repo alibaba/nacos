@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.service.resource;
 
-import com.alibaba.nacos.ai.config.ReviewedStatusConfig;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
@@ -1300,8 +1299,8 @@ public class AiResourceManager {
     /**
      * Handle pipeline completion: persist pipeline info and transition version status.
      *
-     * <p>When reviewed-status switch is enabled, both approved and rejected results transition
-     * to {@code reviewed}. When disabled, rejected rolls back to {@code draft} (legacy behavior).</p>
+     * <p>Both approved and rejected results transition to {@code reviewed}. Users must explicitly
+     * call redraft to return to draft.</p>
      */
     public void onPipelineComplete(String namespaceId, String name, String type, String version,
         PipelineExecutionResult result) {
@@ -1317,44 +1316,12 @@ public class AiResourceManager {
             boolean approved =
                 result != null && result.getStatus() == PipelineExecutionStatus.APPROVED;
             
-            if (ReviewedStatusConfig.getInstance().isEnabled()) {
-                // New behavior: always transition to reviewed regardless of pipeline result.
-                aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
-                    AiResourceConstants.VERSION_STATUS_REVIEWED);
-                AiResourceTraceService.logSuccess(type, name, version,
-                    approved ? AiResourceTraceService.OP_REVIEW_APPROVED
-                        : AiResourceTraceService.OP_REVIEW_REJECTED,
-                    "system", "", result == null ? null : result.getExecutionId());
-            } else {
-                // Legacy behavior: rejected rolls back to draft, approved transitions to reviewed.
-                if (!approved) {
-                    aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
-                        AiResourceConstants.VERSION_STATUS_DRAFT);
-                    AiResource meta = aiResourcePersistService.find(namespaceId, name, type);
-                    if (meta != null) {
-                        ResourceVersionInfo vInfo = requireVersionInfo(meta);
-                        if (StringUtils.equals(vInfo.getReviewingVersion(), version)) {
-                            vInfo.setReviewingVersion(null);
-                            vInfo.setEditingVersion(version);
-                            try {
-                                updateVersionInfoCas(namespaceId, meta, vInfo);
-                            } catch (Exception ex) {
-                                LOGGER.warn("Failed to rollback meta working pointers for {}@{}",
-                                    name, version, ex);
-                            }
-                        }
-                    }
-                    AiResourceTraceService.logSuccess(type, name, version,
-                        AiResourceTraceService.OP_REVIEW_REJECTED,
-                        "system", "", result == null ? null : result.getExecutionId());
-                } else {
-                    aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
-                        AiResourceConstants.VERSION_STATUS_REVIEWED);
-                    AiResourceTraceService.logSuccess(type, name, version,
-                        AiResourceTraceService.OP_REVIEW_APPROVED,
-                        "system", "", result.getExecutionId());
-                }
-            }
+            aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+                AiResourceConstants.VERSION_STATUS_REVIEWED);
+            AiResourceTraceService.logSuccess(type, name, version,
+                approved ? AiResourceTraceService.OP_REVIEW_APPROVED
+                    : AiResourceTraceService.OP_REVIEW_REJECTED,
+                "system", "", result == null ? null : result.getExecutionId());
         } catch (Throwable ex) {
             LOGGER.error("Pipeline callback failed for {}@{}", name, version, ex);
         }

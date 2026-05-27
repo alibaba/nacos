@@ -81,9 +81,9 @@ operation.
 - A reviewing version must be recorded in metadata as `reviewingVersion`.
 - Pipeline execution state may be written to `publishPipelineInfo` and
   `pipeline_execution`.
-- Rejected pipeline results move the version back to `draft` and restore the
-  editing pointer.
-- Approved pipeline results move the version to `reviewed`.
+- Approved and rejected pipeline results move the version to `reviewed`; users
+  must explicitly redraft the version when further editing is required after a
+  rejected result.
 - Publish moves the version to `online`, clears working pointers, increments
   `onlineCnt` when needed, and optionally updates the `latest` label.
 
