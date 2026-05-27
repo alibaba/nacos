@@ -1,6 +1,5 @@
 ---
 name: nacos-skill-registry
-version: 0.0.8
 description: Discover, install, update, merge, and publish AI skills with Nacos for personal or team skill registries.
 ---
 
