@@ -24,6 +24,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -54,8 +55,10 @@ class NamingConfigTest {
         assertInstanceOf(DistroFilter.class, registration.getFilter());
         assertEquals("distroFilter", registration.getFilterName());
         assertEquals(7, registration.getOrder());
-        assertEquals(1, registration.getUrlPatterns().size());
-        assertEquals("/v1/ns/*", registration.getUrlPatterns().iterator().next());
+        assertEquals(3, registration.getUrlPatterns().size());
+        assertTrue(registration.getUrlPatterns().contains("/v1/ns/*"));
+        assertTrue(registration.getUrlPatterns().contains("/v3/client/ns/*"));
+        assertTrue(registration.getUrlPatterns().contains("/v3/admin/ns/*"));
     }
     
     @Test

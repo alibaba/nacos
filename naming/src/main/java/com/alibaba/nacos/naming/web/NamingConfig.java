@@ -37,6 +37,8 @@ public class NamingConfig {
     
     private static final String URL_PATTERNS_V2 = "/v2/ns/*";
     
+    private static final String URL_PATTERNS_V3_CLIENT = "/v3/client/ns/*";
+    private static final String URL_PATTERNS_V3_ADMIN = "/v3/admin/ns/*";
     private static final String DISTRO_FILTER = "distroFilter";
     
     private static final String SERVICE_NAME_FILTER = "serviceNameFilter";
@@ -60,7 +62,7 @@ public class NamingConfig {
     public FilterRegistrationBean<DistroFilter> distroFilterRegistration() {
         FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(distroFilter());
-        registration.addUrlPatterns(URL_PATTERNS);
+        registration.addUrlPatterns(URL_PATTERNS, URL_PATTERNS_V3_CLIENT, URL_PATTERNS_V3_ADMIN);
         registration.setName(DISTRO_FILTER);
         registration.setOrder(7);
         return registration;
