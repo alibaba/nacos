@@ -132,6 +132,71 @@ where supported.
 Runtime clients should not receive broad management operations such as upload,
 publish, delete, or unrestricted listing.
 
+Runtime clients may query Skill by `name`, optional `version`, optional
+`label`, and optional md5. If md5 equals the content md5 of the currently
+resolved version, the server may return a not-modified error and must not
+include a ZIP body. When the client does not send md5, the server must return
+the current content as a ZIP together with the corresponding md5. This
+contract supports polling-based listening; subscriptions should report Skill
+content changes through md5 transitions without exposing broad management
+listing behavior to runtime clients.
+
+Skill content md5 is a version-scoped field. It must be computed once when an
+upload or publish writes version content and must be persisted with
+`ai_resource_version`; runtime query paths must not recompute it. The md5
+input is the full set of package bytes of the published version (`SKILL.md`
+and all referenced resources), and its scope must match the ZIP bytes returned
+on download so that an md5 hit on the client never corresponds to different
+server-side bytes.
+
+For versions that exist before the listening contract is enabled and therefore
+lack md5, the server must backfill md5 with the same input scope on the first
+listening-style query and return that md5 in the same response. While md5 is
+missing or backfill fails, the server must return a 200 response with the ZIP
+and must not return not-modified.
+
+### 6.1 Client Polling Listener Contract
+
+Nacos does not push Skill changes; the client SDK realizes listener semantics
+by periodically issuing a conditional `GET /v3/client/ai/skills`. The listener
+contract is composed of the following requirements that both the server and
+any SDK implementing this contract must respect:
+
+- **Response headers**: A 200 response must carry `Content-Type:
+  application/zip`, `Content-Disposition: attachment;filename=<name>.zip`,
+  `ETag: "<md5>"`, `X-Nacos-Skill-Md5: <md5>`, and
+  `X-Nacos-Skill-Resolved-Version: <version>`. The resolved-version header
+  reflects the actual version after `label`/`latest` routing parameters are
+  resolved.
+- **304 response**: When the client-supplied md5 equals the md5 of the
+  resolved version, the server returns `304 Not Modified` with an empty body.
+  It must include `ETag` and `X-Nacos-Skill-Md5`. Per RFC 7232 it must not
+  include `Content-Type` and must not include
+  `X-Nacos-Skill-Resolved-Version`, since 304 should not restate entity
+  metadata.
+- **404 response**: When the skill name is valid but the resource is missing,
+  the server returns `404` with business error code `20004`. Clients must
+  translate this into local cache eviction and emit a content-missing event,
+  and must not treat it as a transient error to retry.
+- **Polling schedule**: The SDK must adopt a single-threaded `schedule + tail
+  self-reschedule` pattern, so that the next query starts from the previous
+  task's completion time rather than its start time. This avoids request
+  pile-up under slow server responses. The SDK must not use
+  `scheduleAtFixedRate`.
+- **Default interval**: The default polling interval is `10000` milliseconds
+  (`AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL`). The first query happens
+  one interval after the subscription. Because the subscription itself
+  synchronously primes the cache, the SDK must not issue an immediate
+  additional query.
+- **Tunable interval**: Clients override the default by passing
+  `nacosAiSkillCacheUpdateInterval`
+  (`AiConstants.AI_SKILL_CACHE_UPDATE_INTERVAL`) through `Properties`, in
+  milliseconds. This setting only applies to Skill and is independent from
+  the polling intervals of Prompt, MCP Server, and AgentCard.
+- **Cancellation**: `unsubscribeSkill` must cancel the corresponding task,
+  remove the md5 cache entry, and stop emitting polling requests to the
+  server.
+
 ## 7. Pending Alignment Issues
 
 - Enforce the full upstream name validation rule during upload.

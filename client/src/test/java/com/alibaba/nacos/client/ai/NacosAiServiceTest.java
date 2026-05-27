@@ -35,7 +35,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
@@ -100,9 +99,6 @@ class NacosAiServiceTest {
     
     @Mock
     private AiClientProxy aiClientProxy;
-    
-    @Mock
-    private ConfigService skillConfigService;
     
     @Mock
     private AiChangeNotifier aiChangeNotifier;
@@ -819,7 +815,6 @@ class NacosAiServiceTest {
         nacosAiService.shutdown();
         verify(grpcClient).shutdown();
         verify(httpProxy).shutdown();
-        verify(skillConfigService).shutDown();
         verify(mcpServerCacheHolder).shutdown();
         verify(promptCacheHolder).shutdown();
         verify(agentSpecCacheHolder).shutdown();
@@ -883,10 +878,6 @@ class NacosAiServiceTest {
         NacosAgentSpecCacheHolder autoBuildAgentSpecCacheHolder =
             (NacosAgentSpecCacheHolder) field.get(nacosAiService);
         field.set(nacosAiService, agentSpecCacheHolder);
-        field = NacosAiService.class.getDeclaredField("skillConfigService");
-        field.setAccessible(true);
-        ConfigService autoBuildConfigService = (ConfigService) field.get(nacosAiService);
-        field.set(nacosAiService, skillConfigService);
         field = NacosAiService.class.getDeclaredField("aiChangeNotifier");
         field.setAccessible(true);
         field.set(nacosAiService, aiChangeNotifier);
@@ -897,7 +888,6 @@ class NacosAiServiceTest {
             autoBuildAgentCacheHolder.shutdown();
             autoBuildPromptCacheHolder.shutdown();
             autoBuildAgentSpecCacheHolder.shutdown();
-            autoBuildConfigService.shutDown();
         } catch (NacosException ignored) {
         }
     }

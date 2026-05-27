@@ -60,6 +60,24 @@ public class CacheKeyUtils {
     }
     
     /**
+     * Build skill query key.
+     *
+     * @param skillName skill name
+     * @param version skill version, optional
+     * @param label skill label, optional
+     * @return skill query key, pattern ${skillName}::label:${label}|version:${version}|latest
+     */
+    public static String buildSkillKey(String skillName, String version, String label) {
+        if (StringUtils.isNotBlank(label)) {
+            return skillName + "::label:" + label;
+        }
+        if (StringUtils.isNotBlank(version)) {
+            return skillName + "::version:" + version;
+        }
+        return skillName + "::" + LATEST_VERSION;
+    }
+    
+    /**
      * Build agent spec key.
      *
      * @param agentSpecName name of agent spec

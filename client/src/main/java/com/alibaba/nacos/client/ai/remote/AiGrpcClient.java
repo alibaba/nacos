@@ -733,6 +733,20 @@ public class AiGrpcClient implements AiClientProxy {
     }
     
     @Override
+    public SkillQueryResponse querySkill(String skillName, String version, String label, String md5)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Skill query is only supported via HTTP transport.");
+    }
+    
+    @Override
+    public AgentSpecQueryResponse queryAgentSpec(String agentSpecName, String version,
+        String label, String md5) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "AgentSpec query is only supported via HTTP transport.");
+    }
+    
+    @Override
     public void shutdown() throws NacosException {
         rpcClient.shutdown();
         serverListManager.shutdown();

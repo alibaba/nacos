@@ -29,6 +29,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.ai.utils.AgentSpecContentDigestUtils;
 import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
 import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
@@ -681,6 +682,114 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     /**
+     * Query an AgentSpec for the client listener path with MD5-based not-modified semantics.
+     * When {@code clientMd5} matches the stored content MD5, throws NOT_MODIFIED so the
+     * controller returns HTTP 304 without loading content.
+     */
+    @Override
+    public AgentSpecQueryResult queryAgentSpecForClient(String namespaceId, String name,
+        String version, String label, String clientMd5) throws NacosException {
+        // Step 1: Resolve version via existing logic (validates meta, status, etc.)
+        AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
+        if (meta == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "AgentSpec not found: " + name);
+        }
+        resourceManager.ensureReadableOrNotFound(meta, "AgentSpec not found: " + name);
+        if (!AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "AgentSpec disabled: " + name);
+        }
+        String resolved = AiResourceManager.resolveVersion(meta, version, label);
+        if (StringUtils.isBlank(resolved)) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "AgentSpec version not found: " + name);
+        }
+        
+        // Step 2: Read stored contentMd5 from version row's storage JSON
+        String storedMd5 = readStoredContentMd5(namespaceId, name, resolved);
+        
+        // Step 3: Fast path — client cache is fresh
+        if (StringUtils.isNotBlank(storedMd5) && StringUtils.isNotBlank(clientMd5)
+            && storedMd5.equals(clientMd5)) {
+            throw new NacosException(NacosException.NOT_MODIFIED,
+                "agentspec data is up to date");
+        }
+        
+        // Step 4: Load full AgentSpec from storage
+        AiResourceVersion versionRow = resourceManager.findVersion(namespaceId, name,
+            RESOURCE_TYPE_AGENTSPEC, resolved);
+        if (versionRow == null || !AiResourceConstants.VERSION_STATUS_ONLINE
+            .equalsIgnoreCase(versionRow.getStatus())) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "AgentSpec version not online: " + name);
+        }
+        AgentSpec agentSpec = loadAgentSpecFromStorage(namespaceId, name, resolved);
+        
+        // Step 5: Determine effective MD5; back-fill if missing (legacy data)
+        String effectiveMd5 = storedMd5;
+        if (StringUtils.isBlank(effectiveMd5)) {
+            effectiveMd5 = backfillContentMd5(namespaceId, name, resolved, agentSpec);
+        }
+        return new AgentSpecQueryResult(agentSpec, effectiveMd5, resolved);
+    }
+    
+    /**
+     * Read the persisted contentMd5 from the version row's storage JSON column.
+     */
+    private String readStoredContentMd5(String namespaceId, String name,
+        String resolvedVersion) {
+        if (StringUtils.isBlank(resolvedVersion)) {
+            return null;
+        }
+        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, name,
+            RESOURCE_TYPE_AGENTSPEC, resolvedVersion);
+        if (versionRow == null || StringUtils.isBlank(versionRow.getStorage())) {
+            return null;
+        }
+        try {
+            Map<String, Object> map = JacksonUtils.toObj(versionRow.getStorage(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                });
+            Object md5 = map == null ? null
+                : map.get(Constants.Skills.STORAGE_KEY_CONTENT_MD5);
+            return md5 instanceof String ? (String) md5 : null;
+        } catch (Exception e) {
+            LOGGER.warn("Failed to parse storage JSON for agentspec {}@{}, ignored",
+                name, resolvedVersion, e);
+            return null;
+        }
+    }
+    
+    /**
+     * Back-fill: compute the content MD5 from the loaded AgentSpec and persist it into the
+     * version row's storage column. Persistence failure is swallowed and logged.
+     */
+    private String backfillContentMd5(String namespaceId, String name,
+        String resolvedVersion, AgentSpec agentSpec) {
+        String computed;
+        try {
+            computed = AgentSpecContentDigestUtils.computeContentMd5(agentSpec);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to compute content MD5 for agentspec {}@{}",
+                name, resolvedVersion, e);
+            return null;
+        }
+        if (StringUtils.isBlank(resolvedVersion)) {
+            return computed;
+        }
+        try {
+            aiResourceVersionPersistService.updateStorageMd5(namespaceId, name,
+                RESOURCE_TYPE_AGENTSPEC, resolvedVersion, computed);
+        } catch (Exception e) {
+            LOGGER.warn(
+                "Failed to back-fill content MD5 for agentspec {}@{}, response is still 200",
+                name, resolvedVersion, e);
+        }
+        return computed;
+    }
+    
+    /**
      * Create a new draft version for an existing or brand-new AgentSpec.
      * For existing specs with a base version, copies storage content from that version.
      * For brand-new specs, creates an empty AgentSpec draft.
@@ -869,13 +978,14 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     /**
-     * Publish a version: update version status to online.
+     * Publish a version: update version status to online and compute content MD5.
      */
     @Override
-    public void publish(String namespaceId, String name, String version, boolean updateLatestLabel)
-        throws NacosException {
+    public void publish(String namespaceId, String name, String version,
+        boolean updateLatestLabel) throws NacosException {
         resourceManager.doPublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version,
             updateLatestLabel);
+        computeAndStoreContentMd5(namespaceId, name, version);
     }
     
     /**
@@ -883,10 +993,26 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      */
     @Override
     public void forcePublish(String namespaceId, String name, String version,
-        boolean updateLatestLabel)
-        throws NacosException {
+        boolean updateLatestLabel) throws NacosException {
         resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version,
             updateLatestLabel);
+        computeAndStoreContentMd5(namespaceId, name, version);
+    }
+    
+    /**
+     * Compute content MD5 for a published version and persist it to the storage column.
+     * Failure is logged but does not break the publish operation.
+     */
+    private void computeAndStoreContentMd5(String namespaceId, String name, String version) {
+        try {
+            AgentSpec agentSpec = loadAgentSpecFromStorage(namespaceId, name, version);
+            String md5 = AgentSpecContentDigestUtils.computeContentMd5(agentSpec);
+            aiResourceVersionPersistService.updateStorageMd5(namespaceId, name,
+                RESOURCE_TYPE_AGENTSPEC, version, md5);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to compute/store content MD5 for agentspec {}@{}",
+                name, version, e);
+        }
     }
     
     @Override

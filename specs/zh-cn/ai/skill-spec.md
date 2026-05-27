@@ -106,6 +106,48 @@ Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.m
 
 运行时客户端不应获得 upload、publish、delete 或无限制列表等宽管理能力。
 
+运行时客户端可以通过 `name`、可选 `version`、可选 `label` 和可选 md5 查询
+Skill。如果 md5 与当前命中版本的内容 md5 一致，服务端可以返回 not-modified 错误，
+响应不携带 ZIP 主体。客户端不传 md5 时，服务端必须按当前内容返回 ZIP 与对应 md5。
+该契约用于支持轮询监听，订阅应基于 md5 变更报告 Skill 内容变化，但不应向运行时
+客户端暴露宽范围管理列表能力。
+
+Skill 内容 md5 是版本级字段，必须在 upload 或发布写入版本内容时一次性计算并随
+`ai_resource_version` 持久化，运行时查询不得重新计算。计算输入是发布版本的全部包
+字节内容（`SKILL.md` 与所有引用资源），计算口径必须与下载返回的 ZIP 字节内容
+保持一致，避免出现“客户端 md5 命中但服务端会返回不同字节”的偏差。
+
+对升级前已存在但缺少 md5 的历史版本，服务端首次响应监听类查询时必须按上述口径
+回填 md5，并在同一次响应中返回该 md5；只要 md5 缺失或回填失败，服务端必须返回
+带 ZIP 的 200 响应，不得返回 not-modified。
+
+### 6.1 客户端轮询监听契约
+
+Nacos 不为 Skill 提供推送通道，客户端 SDK 通过周期性条件查询 `GET /v3/client/ai/skills`
+实现监听语义。监听契约由以下要素组成，服务端与所有实现该 SDK 契约的客户端必须遵守：
+
+- **响应头**：200 响应必须携带 `Content-Type: application/zip`、`Content-Disposition:
+  attachment;filename=<name>.zip`、`ETag: "<md5>"`、`X-Nacos-Skill-Md5: <md5>` 与
+  `X-Nacos-Skill-Resolved-Version: <version>`。`X-Nacos-Skill-Resolved-Version` 反映
+  `label`/`latest` 等路由参数解析后的真实版本。
+- **304 响应**：当客户端传入 md5 与服务端命中版本的 md5 一致时，服务端返回
+  `304 Not Modified`，body 必须为空，必须携带 `ETag` 与 `X-Nacos-Skill-Md5`，按 RFC 7232
+  不得携带 `Content-Type`，且不得携带 `X-Nacos-Skill-Resolved-Version`（304 不应再次声明
+  实体元信息）。
+- **404 响应**：当 skill 名合法但资源缺失时返回 `404` 与业务错误码 `20004`，客户端
+  必须将其翻译为本地缓存淘汰并发布"内容缺失"事件，不得视为暂时性错误重试。
+- **轮询调度**：SDK 必须采用单线程 `schedule + 任务尾端自调度` 模式，使下一次查询的
+  起点为上一次任务的结束时刻而非开始时刻，避免服务端慢响应导致请求堆积。SDK 不应
+  使用 `scheduleAtFixedRate`。
+- **频率默认值**：默认轮询间隔为 `10000` 毫秒（`AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL`）。
+  首次查询发生在订阅后第一个 interval 之后，订阅本身已同步预热缓存，因此不应再立即
+  发起一次轮询。
+- **频率可调项**：客户端通过 `Properties` 传入 `nacosAiSkillCacheUpdateInterval`
+  （`AiConstants.AI_SKILL_CACHE_UPDATE_INTERVAL`）覆盖默认值，单位毫秒。该配置仅作用于
+  Skill，与 Prompt、MCP Server、AgentCard 等其他资源的轮询配置相互独立。
+- **取消语义**：`unsubscribeSkill` 必须取消对应任务并移除 md5 缓存项，且不得继续向服务
+  端发起轮询请求。
+
 ## 7. 待对齐问题
 
 - upload 时强制执行完整的上游 name 校验规则。

@@ -19,9 +19,9 @@ package com.alibaba.nacos.ai.controller;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.client.SkillQueryForm;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
-import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -47,23 +47,36 @@ import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMO
 @ExtractorManager.Extractor(httpExtractor = SkillHttpParamExtractor.class)
 public class SkillClientController {
     
-    private final SkillOperationService skillOperationService;
+    private final SkillClientOperationService skillClientOperationService;
     
-    public SkillClientController(SkillOperationService skillOperationService) {
-        this.skillOperationService = skillOperationService;
+    public SkillClientController(SkillClientOperationService skillClientOperationService) {
+        this.skillClientOperationService = skillClientOperationService;
     }
     
     /**
      * Download an online skill version as ZIP file by label/version/latest.
+     *
+     * <p>Supports listener-style polling: when the {@code md5} query parameter matches the
+     * server-side published content MD5, the server returns HTTP 304 with the listener headers
+     * ({@code ETag}/{@code X-Nacos-Skill-Md5}) so the client can keep using its local cache.
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
         tags = {ALLOW_ANONYMOUS})
     public ResponseEntity<byte[]> get(SkillQueryForm form) throws NacosException {
         form.validate();
-        Skill skill = skillOperationService.querySkill(form.getNamespaceId(), form.getName(),
-            form.getVersion(),
-            form.getLabel());
-        return SkillRequestUtil.buildSkillZipResponse(skill);
+        try {
+            SkillQueryResult result = skillClientOperationService.querySkill(form.getNamespaceId(),
+                form.getName(), form.getVersion(), form.getLabel(), form.getMd5());
+            return SkillRequestUtil.buildSkillZipResponseWithMd5(result.getSkill(),
+                result.getMd5(), result.getResolvedVersion());
+        } catch (NacosException ex) {
+            if (ex.getErrCode() == NacosException.NOT_MODIFIED) {
+                // On 304 the client-supplied MD5 equals the published one, so we can echo it back
+                // as the ETag without re-loading the skill bytes.
+                return SkillRequestUtil.buildSkillNotModifiedResponse(form.getMd5(), null);
+            }
+            throw ex;
+        }
     }
 }

@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.ai;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -344,6 +345,32 @@ public interface AiService extends A2aService {
      */
     void unsubscribePrompt(String promptKey, String version, String label,
         AbstractNacosPromptListener promptListener) throws NacosException;
+    
+    /**
+     * Subscribe skill changes.
+     *
+     * @param skillName     skill name
+     * @param version       target skill version, optional
+     * @param label         target skill label, optional
+     * @param skillListener listener for skill changes
+     * @return current skill ZIP bytes, may be {@code null} when the skill is not found
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    byte[] subscribeSkill(String skillName, String version, String label,
+        AbstractNacosSkillListener skillListener) throws NacosException;
+    
+    /**
+     * Un-subscribe skill changes.
+     *
+     * @param skillName     skill name
+     * @param version       target skill version, optional
+     * @param label         target skill label, optional
+     * @param skillListener listener previously registered via
+     *                      {@link #subscribeSkill(String, String, String, AbstractNacosSkillListener)}
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribeSkill(String skillName, String version, String label,
+        AbstractNacosSkillListener skillListener) throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.

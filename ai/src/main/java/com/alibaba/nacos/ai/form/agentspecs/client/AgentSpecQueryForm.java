@@ -36,6 +36,8 @@ public class AgentSpecQueryForm {
     
     private String label;
     
+    private String md5;
+    
     /**
      * Validate and normalize query parameters.
      *
@@ -82,5 +84,13 @@ public class AgentSpecQueryForm {
     
     public void setLabel(String label) {
         this.label = label;
+    }
+    
+    public String getMd5() {
+        return md5;
+    }
+    
+    public void setMd5(String md5) {
+        this.md5 = md5;
     }
 }

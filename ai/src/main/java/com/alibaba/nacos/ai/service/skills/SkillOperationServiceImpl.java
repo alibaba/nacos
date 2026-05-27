@@ -35,6 +35,7 @@ import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
+import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -276,7 +277,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         List<String> files = writeSkillToStorage(namespaceId, skill, version);
         
         // Step 4: Insert meta + version rows with status directly set to online (published)
-        String storageJson = buildStorageJson(namespaceId, skillName, version, files);
+        String storageJson = buildStorageJson(namespaceId, skillName, version, files,
+            SkillContentDigestUtils.computeContentMd5(skill));
         resourceManager.insertBootstrapMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL,
             skill.getDescription(), null, DEFAULT_AUTHOR, from, version, storageJson);
         
@@ -460,7 +462,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         // Normalize frontmatter before writing (overwrite = existing skill, not first create)
         SkillRequestUtil.normalizeSkillFrontmatter(skill, skill.getName(), editing, false);
         List<String> files = writeSkillToStorage(namespaceId, skill, editing);
-        String storageJson = buildStorageJson(namespaceId, skill.getName(), editing, files);
+        String storageJson = buildStorageJson(namespaceId, skill.getName(), editing, files,
+            SkillContentDigestUtils.computeContentMd5(skill));
         if (StringUtils.isNotBlank(commitMsg)) {
             resourceManager.updateVersionStorageAndDesc(namespaceId, skill.getName(),
                 RESOURCE_TYPE_SKILL, editing, storageJson, commitMsg);
@@ -758,7 +761,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.insertVersionRow(namespaceId, name, RESOURCE_TYPE_SKILL,
                 StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
                 AiResourceConstants.VERSION_STATUS_DRAFT, newVersion, versionDesc,
-                buildStorageJson(namespaceId, name, newVersion, files));
+                buildStorageJson(namespaceId, name, newVersion, files,
+                    SkillContentDigestUtils.computeContentMd5(baseSkill)));
             
             // Step 3: Update meta's editingVersion pointer
             info.setEditingVersion(newVersion);
@@ -804,7 +808,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         // Step 3: Overwrite storage files with new content, update version row's storage JSON and meta description
         List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing);
-        String storageJson = buildStorageJson(namespaceId, name, editing, files);
+        String storageJson = buildStorageJson(namespaceId, name, editing, files,
+            SkillContentDigestUtils.computeContentMd5(draftSkill));
         if (StringUtils.isNotBlank(commitMsg)) {
             resourceManager.updateVersionStorageAndDesc(namespaceId, name, RESOURCE_TYPE_SKILL,
                 editing,
@@ -1168,7 +1173,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         resourceManager.insertVersionRow(namespaceId, skillName, RESOURCE_TYPE_SKILL,
             StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
             AiResourceConstants.VERSION_STATUS_DRAFT, version, versionDesc,
-            buildStorageJson(namespaceId, skillName, version, files));
+            buildStorageJson(namespaceId, skillName, version, files,
+                SkillContentDigestUtils.computeContentMd5(skill)));
         
         // 3) create or update meta for editingVersion
         resourceManager.initOrUpdateMetaForDraft(namespaceId, skillName, RESOURCE_TYPE_SKILL,
@@ -1185,14 +1191,21 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     /**
-     * Build storage metadata JSON for version row (provider + scope + file list).
+     * Build storage metadata JSON for version row (provider + scope + file list + optional contentMd5).
+     *
+     * @param contentMd5 published content MD5; may be {@code null} or blank when the caller does not
+     *                   yet need to persist the listener-related fingerprint
      */
     private static String buildStorageJson(String namespaceId, String skillName, String version,
-        List<String> files) {
-        Map<String, Object> json = new HashMap<>(4);
+        List<String> files, String contentMd5) {
+        Map<String, Object> json = new LinkedHashMap<>(8);
         json.put("provider", resolveSkillStorageProvider());
         json.put("scope", namespaceId + ":" + skillName + ":" + version);
         json.put("files", files);
+        if (StringUtils.isNotBlank(contentMd5)) {
+            json.put(com.alibaba.nacos.ai.constant.Constants.Skills.STORAGE_KEY_CONTENT_MD5,
+                contentMd5);
+        }
         return JacksonUtils.toJson(json);
     }
     
