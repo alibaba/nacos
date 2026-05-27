@@ -55,7 +55,7 @@ public class MetricsHttpAgent implements HttpAgent {
         String encode, long readTimeoutMs) throws Exception {
         Date start = new Date();
         MetricsMonitor.MetricsTimer timer = MetricsMonitor.getConfigRequestMonitor(
-                GET, path, DEFAULT_CODE);
+            GET, path, DEFAULT_CODE);
         HttpRestResult<String> result;
         try {
             result = httpAgent.httpGet(path, headers, paramValues, encode, readTimeoutMs);
@@ -74,7 +74,7 @@ public class MetricsHttpAgent implements HttpAgent {
         String encode, long readTimeoutMs) throws Exception {
         Date start = new Date();
         MetricsMonitor.MetricsTimer timer = MetricsMonitor.getConfigRequestMonitor(
-                POST, path, DEFAULT_CODE);
+            POST, path, DEFAULT_CODE);
         HttpRestResult<String> result;
         try {
             result = httpAgent.httpPost(path, headers, paramValues, encode, readTimeoutMs);
@@ -93,7 +93,7 @@ public class MetricsHttpAgent implements HttpAgent {
         String encode, long readTimeoutMs) throws Exception {
         Date start = new Date();
         MetricsMonitor.MetricsTimer timer = MetricsMonitor.getConfigRequestMonitor(
-                DELETE, path, DEFAULT_CODE);
+            DELETE, path, DEFAULT_CODE);
         HttpRestResult<String> result;
         try {
             result = httpAgent.httpDelete(path, headers, paramValues, encode, readTimeoutMs);
