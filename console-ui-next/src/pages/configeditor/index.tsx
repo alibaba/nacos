@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { configApi } from '@/api/config';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { MonacoEditor } from '@/components/config/MonacoEditor';
+import { DiffEditor } from '@/components/config/DiffEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -92,6 +93,7 @@ export default function ConfigEditorPage() {
   const [betaPublishing, setBetaPublishing] = useState(false);
   const [stopBetaDialogOpen, setStopBetaDialogOpen] = useState(false);
   const [loadedSnapshot, setLoadedSnapshot] = useState<ConfigEditorSnapshot | null>(null);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
 
   const urlDataId = searchParams.get('dataId') || '';
   const urlGroup = searchParams.get('group') || '';
@@ -126,6 +128,7 @@ export default function ConfigEditorPage() {
     setBetaLoading(false);
     setStopBetaDialogOpen(false);
     setLoadedSnapshot(null);
+    setPublishConfirmOpen(false);
   }, []);
 
   const redirectToConfigList = useCallback((showMissingMessage = false) => {
@@ -248,12 +251,7 @@ export default function ConfigEditorPage() {
     navigate(`/configdetail?dataId=${encodeURIComponent(urlDataId)}&group=${encodeURIComponent(urlGroup)}&namespace=${encodeURIComponent(urlNamespace)}`);
   };
 
-  const handleSubmit = async () => {
-    if (!content.trim()) {
-      toast.error(t('config.contentRequired'));
-      return;
-    }
-
+  const publishConfig = async () => {
     setPublishing(true);
     try {
       await configApi.publish({
@@ -267,12 +265,27 @@ export default function ConfigEditorPage() {
         namespaceId: urlNamespace,
       });
       toast.success(t('config.publishSuccess'));
+      setPublishConfirmOpen(false);
       navigate(`/configdetail?dataId=${encodeURIComponent(dataId)}&group=${encodeURIComponent(groupName)}&namespace=${encodeURIComponent(urlNamespace)}`);
     } catch {
       toast.error(t('config.publishFailed'));
     } finally {
       setPublishing(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!content.trim()) {
+      toast.error(t('config.contentRequired'));
+      return;
+    }
+
+    if (isEditing && loadedSnapshot && loadedSnapshot.content !== content) {
+      setPublishConfirmOpen(true);
+      return;
+    }
+
+    await publishConfig();
   };
 
   const handleBetaPublish = async () => {
@@ -536,6 +549,59 @@ export default function ConfigEditorPage() {
             </Button>
             <Button variant="destructive" onClick={handleStopBeta}>
               {t('common.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Publish Diff Confirmation Dialog */}
+      <Dialog
+        open={publishConfirmOpen}
+        onOpenChange={(open) => {
+          if (!publishing) {
+            setPublishConfirmOpen(open);
+          }
+        }}
+      >
+        <DialogContent className="max-w-[90vw] w-[90vw]">
+          <DialogHeader>
+            <DialogTitle>{t('config.publishConfirmTitle')}</DialogTitle>
+            <DialogDescription>{t('config.publishConfirmDescription')}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 rounded-md border bg-muted/40 p-4 text-sm md:grid-cols-3">
+            <div>
+              <div className="text-muted-foreground">{t('config.dataId')}</div>
+              <div className="font-medium break-all">{dataId}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">{t('config.group')}</div>
+              <div className="font-medium break-all">{groupName}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">{t('common.namespace')}</div>
+              <div className="font-medium break-all">{urlNamespace || 'public'}</div>
+            </div>
+          </div>
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{t('config.currentPublishedContent')}</span>
+            <span>{t('config.pendingPublishContent')}</span>
+          </div>
+          <DiffEditor
+            original={loadedSnapshot?.content || ''}
+            modified={content}
+            language={type}
+            height="500px"
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPublishConfirmOpen(false)}
+              disabled={publishing}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={publishConfig} disabled={publishing}>
+              {publishing ? t('common.loading') : t('config.publish')}
             </Button>
           </DialogFooter>
         </DialogContent>
