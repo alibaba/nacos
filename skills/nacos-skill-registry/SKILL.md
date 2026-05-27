@@ -1,13 +1,12 @@
 ---
 name: nacos-skill-registry
-description: Helps users discover and install AI skills from a team's Nacos server when they ask questions like "how do I do X", "I want to X", "help me with X", "find a skill for X", "is there a skill that can...", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill in Nacos. Also supports uploading and releasing skills for team sharing with version-aware command guidance.
+version: 0.0.8
+description: Discover, install, update, merge, and publish AI skills with Nacos for personal or team skill registries.
 ---
 
 # Nacos Skill Registry
 
-This skill helps you discover, install, upload, and release AI skills in a Nacos configuration center using the
-nacos-cli tool. In current lifecycle versions, uploading is only a draft-creation step, not the recommended final
-sharing action.
+This skill helps you discover, install, update, merge, and publish AI skills through Nacos using the `nacos-cli` tool.
 
 ## When to Use This Skill
 
@@ -17,48 +16,56 @@ Use this skill when the user:
 - Says "find a skill for X" or "is there a skill in Nacos for X"
 - Asks "what skills are available" or "list skills from Nacos"
 - Wants to search for tools, templates, or workflows stored in Nacos
-- Needs to download or install a skill from a team/organization's Nacos server
-- Wants to publish, release, or share a skill through Nacos for their team
-- Mentions they want to share or discover skills within their team
+- Needs to download or install a skill from a personal, team, or organization Nacos registry
+- Wants to upload or publish a local skill to Nacos for reuse
+- Mentions sharing skills across agents, machines, teammates, or execution environments
+- Needs to merge local skill edits with a newer remote version and publish the merged result
 
 ## What is nacos-cli?
 
-The nacos-cli is a command-line tool for managing AI skills stored in a Nacos configuration center. Think of Nacos as a private skill registry for teams and organizations.
+The nacos-cli is a command-line tool for interacting with Nacos. It supports configuration management, skill management, agent spec management, and provides an interactive terminal.
 
 **GitHub**: https://github.com/nacos-group/nacos-cli
 
-Prefer the latest nacos-cli version whenever possible. The legacy command flow is only a fallback when the user's
-environment cannot upgrade.
+**Key skill commands:**
 
-**Check the installed CLI before choosing commands:**
+- `nacos-cli skill-list` — Search and list available skills
+- `nacos-cli skill-get <name...>` — Download and install one or more skills locally
+- `nacos-cli skill-upload <path>` — Upload a skill and create an editing draft
+- `nacos-cli skill-review <name> [--version <version>]` — Submit a draft for review
+- `nacos-cli skill-release <name> --version <version>` — Release an approved version online
+- `nacos-cli skill-describe <name>` — Inspect skill metadata and per-version status
+
+**Other commands:**
+
+- `nacos-cli profile edit|show [name]` — Manage connection profiles
+- `nacos-cli config-list|config-get|config-set` — Manage Nacos configurations
+- `nacos-cli agentspec-list|agentspec-get|agentspec-upload|agentspec-review|agentspec-release|agentspec-describe` — Manage agent specs
+- `nacos-cli interactive` — Start interactive terminal mode
+- `nacos-cli completion [bash|zsh|fish|powershell]` — Generate shell completion scripts
+
+## Version-Aware CLI Contract
+
+Always check the installed `nacos-cli` version and available skill commands before publishing or documenting a workflow:
 
 ```bash
-nacos-cli --version
-nacos-cli skill-release --help
+nacos-cli -v
+nacos-cli --help
 ```
 
-If `skill-release` prints command help, use the current lifecycle command set. If it reports an unknown command, the
-user is probably on a nacos-cli version before 1.0.4. Recommend upgrading to the latest CLI first; if they cannot
-upgrade, use the legacy publish command set below.
+Use the command contract that matches the installed version:
 
-**Current lifecycle commands (`nacos-cli` v1.0.4 and newer):**
+| Installed CLI | Skill publish workflow | Notes |
+| :--- | :--- | :--- |
+| `1.0.4` | `skill-upload` -> `skill-review` -> wait for approval -> `skill-release` | Current lifecycle. `skill-publish` is deprecated and only runs upload + review for compatibility. |
+| Any other version | Inspect `nacos-cli --help` and command-specific help | Do not hard-code old behavior. Follow the commands actually present in the installed CLI. |
 
-- `nacos-cli skill-list` - Search and list available skills
-- `nacos-cli skill-describe <name>` - Show skill detail and version history
-- `nacos-cli skill-get <name...>` - Download one or more skills locally
-- `nacos-cli skill-upload <path>` - Create or update a skill draft in Nacos; do not present this as final publishing
-- `nacos-cli skill-review <name>` - Submit a draft for review
-- `nacos-cli skill-release <name> --version <version>` - Release an approved version online
-- `nacos-cli skill-publish <path>` - Deprecated compatibility shortcut for `skill-upload` + `skill-review`
+For `1.0.4`, treat these as distinct states:
 
-**Legacy commands (before `nacos-cli` 1.0.4):**
-
-- `nacos-cli skill-list` - Search and list available skills
-- `nacos-cli skill-get <name>` - Download a skill locally
-- `nacos-cli skill-publish <path>` - Recommended publishing command; equivalent to upload + review
-
-Do not assume `skill-review`, `skill-release`, or `skill-describe` exists without checking the installed CLI. Match the
-commands to the user's actual version.
+- `skill-upload`: creates or updates an `editing` draft version
+- `skill-review`: submits the draft, moving it toward `reviewing`
+- `skill-describe`: use this to confirm the submitted version has passed review
+- `skill-release`: publishes a reviewed/approved version online; it requires an explicit `--version`
 
 ## How to Help Users Find and Install Skills
 
@@ -70,27 +77,7 @@ Check if nacos-cli is installed:
 which nacos-cli
 ```
 
-If not found, there are two options:
-
-**Option A: Use via npx or npm**
-
-You can run nacos-cli directly through npx without any installation:
-
-```bash
-npx @nacos-group/cli@latest <command>
-```
-
-For example: `npx @nacos-group/cli@latest skill-list` or `npx @nacos-group/cli@latest skill-get my-skill`.
-
-If using npx, replace all `nacos-cli` commands in the subsequent steps with `npx @nacos-group/cli@latest`.
-
-To install globally with npm:
-
-```bash
-npm install -g @nacos-group/cli@latest
-```
-
-**Option B: Install nacos-cli globally**
+If not found, install it using the official installer script:
 
 **Linux / macOS:**
 
@@ -104,110 +91,120 @@ curl -fsSL https://nacos.io/nacos-installer.sh | sudo bash -s -- --cli
 iwr -UseBasicParsing https://nacos.io/nacos-installer.ps1 -OutFile $env:TEMP\nacos-installer.ps1; & $env:TEMP\nacos-installer.ps1 -cli; Remove-Item $env:TEMP\nacos-installer.ps1
 ```
 
-### Step 2: Resolve Configuration
+### Step 2: Resolve Configuration (Profile)
 
-First check whether the installed CLI supports profiles:
+nacos-cli uses a **profile** mechanism. Profile configs are stored in `~/.nacos-cli/<profile>.conf`. The default profile is `default` (i.e., `~/.nacos-cli/default.conf`).
+
+Before asking the user to create or edit a profile, check whether the environment already provides a complete
+`sts-hiclaw` setup:
 
 ```bash
-nacos-cli profile --help
+printenv NACOS_AUTH_TYPE HICLAW_CONTROLLER_URL HICLAW_AUTH_TOKEN_FILE
 ```
 
-If `profile` prints command help, use the managed profile workflow. If it reports an unknown command, use the legacy
-`--config` file or pass connection flags directly.
+If `NACOS_AUTH_TYPE=sts-hiclaw`, `HICLAW_CONTROLLER_URL` is set, and `HICLAW_AUTH_TOKEN_FILE` points to a readable local
+token file, use `sts-hiclaw` mode directly. Do not require a local `~/.nacos-cli/<profile>.conf` file in this case.
 
-#### Current Profile Workflow (`nacos-cli` 0.0.11 and newer)
-
-`nacos-cli` 0.0.11 and newer support a **profile-based** configuration system. The default profile is stored at
-`~/.nacos-cli/default.conf`; named profiles are stored as `~/.nacos-cli/<profile>.conf`. Once configured, all commands
-work without extra connection flags.
-
-Check if the default profile already exists by running:
+You can verify connectivity directly:
 
 ```bash
-test -f ~/.nacos-cli/default.conf && echo "configured" || echo "not configured"
+nacos-cli skill-list
 ```
 
-**If the output is "configured"**, skip to the next step -- nacos-cli will use it automatically.
+Treat `NACOS_AUTH_TYPE` as the source of truth for environment-based auth selection. If it is not set to `sts-hiclaw`,
+do not assume `sts-hiclaw` mode only because `HICLAW_CONTROLLER_URL` and `HICLAW_AUTH_TOKEN_FILE` exist. Fall back to
+profile initialization when the explicit environment-based setup is missing or fails.
 
-**If the output is "not configured"**, use the managed profile flow:
+First, check if a default profile already exists:
 
 ```bash
-nacos-cli profile edit
+nacos-cli profile show
 ```
 
-For a named environment:
+**If a profile exists** (the command prints config content), proceed to Step 3. The default profile requires no extra flags:
 
 ```bash
-nacos-cli profile edit dev
+nacos-cli skill-list
+```
+
+To use a named profile:
+
+```bash
 nacos-cli --profile dev skill-list
 ```
 
-If the command prompts for connection details, ask the user for:
+**If no profile exists** (the command reports an error or shows empty/default values), guide the user through first-time initialization:
 
-1. Nacos server host (for example `10.0.0.1`; the CLI default is `market.hiclaw.io`)
-2. Nacos server port (for example `8848`; the CLI default is `80` when no host or port is provided)
-3. Auth type: `nacos`, `aliyun`, or `sts-hiclaw`
-4. Credentials for the selected auth mode
-5. Namespace ID (leave empty for the public namespace)
+#### First-Time Profile Initialization
 
-Auth mode guidance:
+Ask the user the following information:
 
-- `nacos`: username/password.
-- `aliyun`: AccessKey/SecretKey, with optional security token when applicable.
-- `sts-hiclaw`: uses dynamic STS credentials. Set `HICLAW_CONTROLLER_URL` and `HICLAW_AUTH_TOKEN_FILE`; the CLI reads
-  the token file and calls `<controller>/api/v1/credentials/sts`.
+1. **Nacos server address**: the host and port of their Nacos server (e.g., `127.0.0.1:8848`, or a remote address like `nacos.example.com:8848`)
+2. **Auth type**: `none`, `nacos`, `aliyun`, or `sts-hiclaw`
+3. **Credentials**:
+   - For `none` auth: no credentials are required
+   - For `nacos` auth: username and password from the user's local Nacos instance
+   - For `aliyun` auth: AccessKey and SecretKey
+   - For `sts-hiclaw` auth: credentials are fetched dynamically from HiClaw STS; the local environment must provide
+     `HICLAW_CONTROLLER_URL` and `HICLAW_AUTH_TOKEN_FILE`
+4. **Namespace** (optional): the Nacos namespace ID to use. Leave empty for the default public namespace.
 
-Environment variables can provide connection settings when no command-line or profile value is available:
+Once the user provides the info, create the local profile file on their machine:
 
 ```bash
-export NACOS_HOST=127.0.0.1
-export NACOS_PORT=8848
-export NACOS_NAMESPACE=your-namespace-id
-export NACOS_AUTH_TYPE=nacos
+mkdir -p ~/.nacos-cli
+${EDITOR:-vi} ~/.nacos-cli/default.conf
 ```
 
-Use `--config <file>` only when the user explicitly wants a specific config file or when the installed CLI does not have
-the `profile` command. Otherwise prefer `profile edit` because it matches the current CLI workflow.
+Tell the user to fill in only their local connection values: host, port, auth type, credentials when the selected auth type needs them, and namespace.
+Do not include concrete usernames, passwords, access keys, or secret keys in shared docs or skill examples.
 
-Configuration priority is:
+For `sts-hiclaw`, the profile should set `authType: sts-hiclaw`; do not store STS credentials in the profile. The CLI reads
+`HICLAW_CONTROLLER_URL` and `HICLAW_AUTH_TOKEN_FILE`, then requests temporary credentials from
+`$HICLAW_CONTROLLER_URL/api/v1/credentials/sts`.
 
-1. Command-line flags
-2. `--config` file or selected profile
-3. Environment variables
-4. CLI defaults
-
-Useful global flags:
+After writing the config, verify it works:
 
 ```bash
-nacos-cli --host 127.0.0.1 --port 8848 skill-list
+nacos-cli profile show
+```
+
+Then do a quick connectivity test:
+
+```bash
+nacos-cli skill-list
+```
+
+If the connection succeeds, tell the user:
+
+```text
+Profile initialized! nacos-cli is now connected to <host>:<port>.
+You can start searching and installing skills.
+```
+
+If it fails (auth error, connection refused, etc.), help the user troubleshoot:
+
+- Connection refused → check host/port, is Nacos server running?
+- 401/403 → check username/password or AK/SK
+- Namespace error → verify the namespace ID is correct
+
+#### Creating Additional Profiles
+
+If the user needs to connect to multiple Nacos servers (e.g., dev and prod), they can create named profiles:
+
+```bash
+# Create or edit a named profile locally (e.g., "dev")
+mkdir -p ~/.nacos-cli
+${EDITOR:-vi} ~/.nacos-cli/dev.conf
+```
+
+Do not hard-code real credentials in shared docs, repositories, or skill examples. Fill the local profile with the
+actual host, auth type, username, password, and namespace only on the user's machine.
+
+Then use it with `--profile`:
+
+```bash
 nacos-cli --profile dev skill-list
-nacos-cli --config ./local.conf skill-list
-nacos-cli --auth-type nacos --username nacos --password nacos skill-list
-```
-
-After configuring the default profile, subsequent commands use it automatically.
-
-#### Legacy Configuration Workflow
-
-`nacos-cli` versions older than 0.0.11 may not support `profile edit`. For those versions, either pass connection flags
-on each command or create a YAML config file and use `--config`.
-
-```bash
-nacos-cli skill-list -s 127.0.0.1:8848 -u nacos -p nacos
-```
-
-Legacy config file example:
-
-```bash
-cat > local.conf << EOF
-host: 127.0.0.1
-port: 8848
-username: nacos
-password: nacos
-namespace: ""
-EOF
-
-nacos-cli --config ./local.conf skill-list
 ```
 
 ### Step 3: Understand What They Need
@@ -220,39 +217,46 @@ When a user asks for help, identify:
 
 ### Step 4: Search for Skills
 
-Run the skill-list command. With current profiles this uses the selected/default profile automatically; with legacy
-configuration, include `--config` or connection flags if needed.
+List all skills:
 
 ```bash
 nacos-cli skill-list
 ```
 
-To filter by name:
+Filter by name (supports wildcard `*`):
 
 ```bash
-nacos-cli skill-list --name <keyword>
+nacos-cli skill-list --name "creator"
 ```
 
-For current CLI versions that support machine-readable output:
+With pagination:
 
 ```bash
-nacos-cli skill-list --output json
+nacos-cli skill-list --page 2 --size 10
 ```
 
 For example:
 
-- User asks "can you help me review code?" -> `nacos-cli skill-list --name review`
-- User asks "is there a skill for testing?" -> `nacos-cli skill-list --name test`
-- User asks "what skills do we have?" -> `nacos-cli skill-list`
+- User asks "can you help me review code?" → `nacos-cli skill-list --name review`
+- User asks "is there a skill for testing?" → `nacos-cli skill-list --name test`
+- User asks "what skills do we have?" → `nacos-cli skill-list`
 
 The command returns results in this format:
 
 ```text
-Skill List (Total: N)
+Skill List (Page: 1/1, Total: N)
 ═══════════════════════════════════════════════════════════════════════════════
   1. <skill-name> - <description>
-  2. <skill-name> - <description>
+     latest=<version>  editing=<version-or->  reviewing=<version-or->  online=<count>  status=enabled
+     scope=<scope>  owner=<owner>  updated=<yyyy-mm-dd hh:mm:ss>  downloads=<count>
   ...
+```
+
+For scripts or exact verification, use JSON output:
+
+```bash
+nacos-cli skill-list --name <skill-name> --output json
+nacos-cli skill-describe <skill-name> --output json
 ```
 
 ### Step 5: Present Options to the User
@@ -279,55 +283,235 @@ Would you like me to install it?
 
 ### Step 6: Install the Skill
 
-If the user wants to proceed, download and install the skill:
+Download and install a skill:
 
 ```bash
 nacos-cli skill-get <skill-name>
 ```
 
-The skill will be downloaded to `~/.skills/` by default. Current CLI versions support multiple skill names; older
-versions may only accept one name at a time. To install multiple skills or use a custom location:
+Download multiple skills at once:
 
 ```bash
-nacos-cli skill-get <skill-one> <skill-two>
-nacos-cli skill-get <skill-name> -o /custom/path
+nacos-cli skill-get skill-a skill-b skill-c
 ```
 
-Current CLI versions can download a specific version or route label:
+Download a specific version:
 
 ```bash
-nacos-cli skill-get <skill-name> --version <version>
-nacos-cli skill-get <skill-name> --label latest
+nacos-cli skill-get <skill-name> --version v2
 ```
 
-After installation, confirm the skill is available by checking the directory:
+Download via route label (e.g., latest, stable):
+
+```bash
+nacos-cli skill-get <skill-name> --label stable
+```
+
+Download to a custom directory (default is `~/.skills`):
+
+```bash
+nacos-cli skill-get <skill-name> -o ~/my-skills
+```
+
+After installation, confirm the skill is available:
 
 ```bash
 ls ~/.skills/<skill-name>/SKILL.md
 ```
 
-## How to Help Users Publish and Release Skills to Nacos
+## Handling Version Conflicts When Updating Skills
 
-When a user wants to share a skill with their team, first choose the flow that matches their installed nacos-cli.
-For current lifecycle versions, do not recommend standalone upload as the user-facing goal; recommend release/publish and
-use upload only as the draft step inside that flow.
-Recommend upgrading to the latest nacos-cli before publishing or releasing skills. Use the legacy flow only when the
-user is pinned to an older CLI.
+When a user wants to update a locally installed skill from Nacos, there may be a conflict: the user has made local edits to the skill, and Nacos also has a newer version. This section describes how to detect and resolve such conflicts.
 
-- Current lifecycle flow (`nacos-cli` v1.0.4 and newer): `skill-upload` -> `skill-review` -> `skill-release`
-- Legacy publish flow (before `nacos-cli` 1.0.4): `skill-publish`, which is equivalent to upload + review
+### Understanding Skill Metadata
+
+When `nacos-cli skill-get` installs a skill, it creates a `_meta.json` file in the skill directory with version and origin info:
+
+```json
+{
+  "ownerId": "abc123",
+  "slug": "skill-name",
+  "version": "1.0.1",
+  "publishedAt": 1771756867954
+}
+```
+
+Key fields:
+
+- `version` — The version that was installed from Nacos
+- `publishedAt` — Timestamp (epoch ms) of when this version was published on Nacos
+- `slug` — The skill's unique name in the registry
+
+If the active local skill directory does not have `_meta.json` (for example, a skill under `$CODEX_HOME/skills`), use the
+`version` field in `SKILL.md` frontmatter as the local version. If both exist, prefer `_meta.json` for install-origin
+metadata and use `SKILL.md` frontmatter as a consistency check.
+
+### Step 1: Detect Local Changes
+
+Before updating a skill, check if the user has made local modifications since it was installed.
+
+Read the metadata:
+
+```bash
+cat ~/.skills/<skill-name>/_meta.json
+```
+
+Check if any files (excluding `_meta.json`) have been modified after the install. Compare file modification times against the `publishedAt` timestamp:
+
+```bash
+# Convert publishedAt (epoch ms) to a reference timestamp for comparison
+PUBLISHED_AT=$(python3 -c "import json; print(json.load(open('$HOME/.skills/<skill-name>/_meta.json'))['publishedAt'] / 1000)")
+
+# Find files modified after publishedAt
+find ~/.skills/<skill-name> -name '_meta.json' -prune -o -newer <reference> -print
+```
+
+Or more simply, compare the SKILL.md modification time with the `publishedAt` timestamp. If the file was modified after install, there are local changes.
+
+### Step 2: Check Remote Version
+
+Query the remote to see if a newer version is available:
+
+```bash
+nacos-cli skill-list --name <skill-name>
+nacos-cli skill-describe <skill-name>
+```
+
+On `nacos-cli` 1.0.4, prefer `skill-describe` for version comparison because it shows each version and its lifecycle
+status. Compare the remote online/latest version with the local `_meta.json` version. If the remote version is newer, an update is available.
+If `_meta.json` is absent, compare the remote online/latest version with the `version` field in the local `SKILL.md`
+frontmatter.
+
+On older CLIs that do not have `skill-describe`, use `skill-list --name <skill-name>` and the fields available in that version.
+
+### Step 3: Determine the Scenario
+
+Based on the results of Step 1 and Step 2, there are four possible scenarios:
+
+| Local Changes? | Remote Newer? | Action |
+| :--- | :--- | :--- |
+| No | No | Already up to date. No action needed. |
+| No | Yes | Safe update — pull remote directly. |
+| Yes | No | Local is ahead — suggest publishing local changes. |
+| **Yes** | **Yes** | **Conflict — needs resolution (see below).** |
+
+Version gate for publishing local edits:
+
+- If the local version and remote online/latest version are the same, the remote has not advanced beyond the local base.
+  When local files contain intended edits, publish the local skill directly according to the installed CLI contract.
+- If the remote online/latest version is greater than the local version, do not upload the local directory directly.
+  Download the newer remote version, diff it against the local directory, merge remote changes with local edits, then
+  publish the merged result as a new version.
+- Example: local `0.0.6` and remote latest `0.0.6` means local edits can be uploaded. Local `0.0.6` and remote latest
+  `0.0.7` means merge remote `0.0.7` first.
+
+### Step 4: Resolve Conflicts
+
+When both local changes and a newer remote version exist, present the user with two options:
+
+**Option A: Discard local changes, use remote version**
+
+This is the simpler path. Back up the local version first, then overwrite with the remote:
+
+```bash
+# 1. Back up the current local skill
+cp -r ~/.skills/<skill-name> /tmp/<skill-name>-local-backup
+
+# 2. Pull the latest remote version (overwrites local)
+nacos-cli skill-get <skill-name>
+```
+
+Tell the user:
+
+```text
+Local changes have been backed up to /tmp/<skill-name>-local-backup.
+The skill has been updated to the latest remote version (<remote-version>).
+If you need to recover your local changes, the backup is available.
+```
+
+**Option B: Merge local and remote changes, then submit a new version**
+
+This preserves both local and remote changes. The workflow:
+
+```bash
+# 1. Back up local version
+cp -r ~/.skills/<skill-name> /tmp/<skill-name>-local-backup
+
+# 2. Download the remote version to a temporary directory
+nacos-cli skill-get <skill-name> -o /tmp/<skill-name>-remote
+
+# 3. Diff local vs remote to understand the differences
+diff /tmp/<skill-name>-local-backup/SKILL.md /tmp/<skill-name>-remote/<skill-name>/SKILL.md
+```
+
+After reviewing the diff:
+
+1. Help the user merge the changes in `~/.skills/<skill-name>/` — incorporate remote improvements while preserving local customizations.
+2. Keep the skill itself stateless. Runtime data such as processed issues, PR tracking, task state, or local work logs must stay in a user-level workspace outside agent-specific skill directories.
+3. Validate the merged skill before publishing.
+4. Publish or submit the merged result using the installed CLI contract.
+
+For `nacos-cli` 1.0.4:
+
+```bash
+nacos-cli skill-upload ~/.skills/<skill-name>
+nacos-cli skill-review <skill-name>
+nacos-cli skill-describe <skill-name>
+# Wait until the target version is reviewed/approved.
+nacos-cli skill-release <skill-name> --version <new-version>
+nacos-cli skill-describe <skill-name>
+```
+
+For any other version, inspect command help first and follow the installed behavior:
+
+```bash
+nacos-cli --help
+nacos-cli skill-upload --help
+nacos-cli skill-review --help
+nacos-cli skill-release --help
+nacos-cli skill-publish --help
+```
+
+Tell the user:
+
+```text
+I've merged the local changes with the remote version.
+- Local version: <local-version>
+- Remote version: <remote-version>
+- Merged version: <new-version>
+
+The merged skill has been processed according to the installed nacos-cli contract.
+- Target version: <new-version>
+- Final status: <online|reviewing|editing>
+- Latest label: <latest-version>
+- Verification command: <skill-describe or skill-list command used>
+```
+
+### Step 5: Present the Choice to the User
+
+When a conflict is detected, always explain the situation clearly before acting:
+
+```text
+Conflict detected for skill "<skill-name>":
+- Local version: <local-version> (with local modifications)
+- Remote version: <remote-version>
+
+How would you like to proceed?
+A) Discard local changes and update to the remote version (your changes will be backed up)
+B) Merge local and remote changes, then publish as a new version
+```
+
+**Never overwrite local changes without asking.** Always back up before any destructive operation.
+
+## How to Help Users Publish Skills to Nacos
+
+When a user wants to reuse or share a skill by publishing it to Nacos, follow these steps.
 
 ### Step 1: Ensure nacos-cli is Available and Configured
 
-Same as the discovery flow above -- check `which nacos-cli` and ensure a profile is configured (see Step 2 of the
-discovery flow). Then detect whether lifecycle commands are available:
-
-```bash
-nacos-cli --version
-nacos-cli skill-release --help
-```
-
-If `skill-release` is unavailable and the user cannot upgrade, use the pre-1.0.4 `skill-publish` flow.
+Same as the discovery flow above — check `which nacos-cli`, then use either a configured profile or the environment-based
+`sts-hiclaw` setup. If `NACOS_AUTH_TYPE=sts-hiclaw`, `HICLAW_CONTROLLER_URL`, and `HICLAW_AUTH_TOKEN_FILE` are already set,
+do not require `nacos-cli profile show` to succeed before publishing.
 
 ### Step 2: Verify the Skill Directory
 
@@ -337,96 +521,99 @@ A valid skill directory must contain a `SKILL.md` file with proper frontmatter (
 ls <path-to-skill>/SKILL.md
 ```
 
-If the file doesn't exist or lacks frontmatter, help the user create or fix it before uploading.
+If the file doesn't exist or lacks frontmatter, help the user create or fix it before publishing.
 
-### Step 3: Create or Update the Draft (Current Lifecycle Only)
+### Step 3: Publish the Skill
 
-```bash
-nacos-cli skill-upload <path-to-skill>
-```
-
-In current lifecycle versions, the command reads the skill's `SKILL.md` frontmatter and uploads the directory or ZIP as
-an editing draft. Treat this as an intermediate step before review and release, not as a completed publication.
-
-To create/update drafts for every valid skill directory under a folder:
+First confirm the installed CLI contract:
 
 ```bash
-nacos-cli skill-upload --all <skills-folder>
+nacos-cli -v
+nacos-cli --help
 ```
 
-### Step 4: Submit the Draft for Review (Current Lifecycle Only)
+Before uploading a locally edited skill, compare the local version with the remote online/latest version using
+`nacos-cli skill-describe <skill-name> --output json`. If they match, proceed with upload/review/release. If the remote
+version is newer, stop the direct publish path and use the conflict merge workflow above before publishing.
+
+For `nacos-cli` 1.0.4, use the explicit lifecycle:
 
 ```bash
-nacos-cli skill-review <skill-name>
+nacos-cli skill-upload ./my-skill
+nacos-cli skill-review my-skill
+nacos-cli skill-describe my-skill
+# Wait until the target version is reviewed/approved.
+nacos-cli skill-release my-skill --version <version>
+nacos-cli skill-describe my-skill
 ```
 
-The review pipeline is asynchronous. If the server has not marked the version as reviewed yet, wait briefly and check
-status before release:
+Upload all skills in a directory:
 
 ```bash
-nacos-cli skill-describe <skill-name>
+nacos-cli skill-upload --all ./skills-folder
 ```
 
-Do not run `skill-release` immediately after `skill-review`. Wait until `skill-describe` shows the target version has
-finished review and is approved/reviewed. If the version is still reviewing, wait and check again; if review failed or
-was rejected, do not release it.
+For `1.0.4`, `skill-publish` is deprecated. It only runs `skill-upload` + `skill-review` for compatibility and does not complete `skill-release`.
 
-### Step 5: Release the Approved Version (Current Lifecycle Only)
+For any other version, inspect command help before acting. Do not assume whether `skill-publish` uploads only or upload+submits.
 
-```bash
-nacos-cli skill-release <skill-name> --version <version>
-```
+### Step 4: Verify the Publish
 
-Use `--update-latest=false` only when the latest route label should not move to this released version:
-
-```bash
-nacos-cli skill-release <skill-name> --version <version> --update-latest=false
-```
-
-### Legacy Publish Flow (Before 1.0.4)
-
-For nacos-cli versions before 1.0.4, use `skill-publish`. In this flow, publish is equivalent to upload + review.
-Verify the skill is visible after publishing:
-
-```bash
-nacos-cli skill-publish <path-to-skill>
-nacos-cli skill-list --name <skill-name>
-```
-
-If these commands fail with "unknown command", do not retry with them. Ask whether to upgrade nacos-cli or use the
-commands shown by `nacos-cli --help`.
-
-### Step 6: Verify the Release
-
-For current lifecycle versions, after release, verify the skill is visible and inspect version status:
+After upload/review/release, verify the exact version, not only that the skill name appears in `skill-list`.
 
 ```bash
 nacos-cli skill-list --name <skill-name>
 nacos-cli skill-describe <skill-name>
+nacos-cli skill-describe <skill-name> --output json
 ```
+
+For `nacos-cli` 1.0.4, the minimal acceptance check is:
+
+- before release: target version is reviewed/approved in `skill-describe`; do not run `skill-release` while it is only `editing` or still waiting for review
+- after release: target version is `online`
+- if `--update-latest=false` was not used: `labels.latest` equals the target version
+- after downloading a specific version: local `_meta.json` version equals the requested version
 
 Example response to user:
 
 ```text
-Your skill "<skill-name>" has been reviewed and released successfully.
-Team members can install it with:
-nacos-cli skill-get <skill-name>
+Your skill "<skill-name>" has been processed with the installed nacos-cli workflow.
+- Target version: <version>
+- Final status: <online|reviewing|editing>
+- Latest label: <latest-version>
+Other agents, machines, or teammates can install it with:
+  nacos-cli skill-get <skill-name>
 ```
-
-`skill-publish` still exists for backward compatibility, but it only runs upload + review. Prefer the explicit lifecycle
-commands above, especially when the user expects the skill to be online.
 
 ## Connection Reference
 
-For newer nacos-cli versions with the `profile` command, when no command-line connection flags are provided, nacos-cli
-loads the selected profile:
+**Global flags** (can override profile settings on any command):
 
-- default profile: `~/.nacos-cli/default.conf`
-- named profile: `~/.nacos-cli/<profile>.conf` via `--profile <name>`
+| Flag | Short | Description |
+| :--- | :--- | :--- |
+| --host | | Nacos server host (e.g., 127.0.0.1) |
+| --port | | Nacos server port (e.g., 8848) |
+| --username | -u | Username for nacos auth |
+| --password | -p | Password for nacos auth |
+| --namespace | -n | Namespace ID |
+| --profile | | Profile name, loads `~/.nacos-cli/<profile>.conf` |
+| --config | -c | Path to a config file (overrides profile) |
+| --auth-type | | Auth type: `none`, `nacos`, `aliyun`, or `sts-hiclaw` |
+| --access-key | | AccessKey for aliyun auth |
+| --secret-key | | SecretKey for aliyun auth |
+| --security-token | | STS SecurityToken for legacy/explicit sts-hiclaw auth |
 
-This is the recommended way for current nacos-cli: configure once with `nacos-cli profile edit`, then run commands
-without connection flags. For older nacos-cli versions without `profile`, use `--config <file>` or pass `-s`, `-u`,
-`-p`, and `-n` flags directly.
+For `sts-hiclaw`, prefer environment-based temporary credentials instead of storing credential values in a profile:
+
+```bash
+export NACOS_AUTH_TYPE=sts-hiclaw
+export HICLAW_CONTROLLER_URL=<your-hiclaw-controller-url>
+export HICLAW_AUTH_TOKEN_FILE=<path-to-local-token-file>
+nacos-cli skill-list
+```
+
+Treat `NACOS_AUTH_TYPE` as the source of truth. Do not assume `sts-hiclaw` mode unless `NACOS_AUTH_TYPE=sts-hiclaw` is
+set explicitly.
 
 ## When No Skills Are Found
 
@@ -434,7 +621,7 @@ If no relevant skills exist in Nacos:
 
 1. Acknowledge that no existing skill was found
 2. Offer to help with the task directly using general capabilities
-3. Suggest creating and publishing or releasing a new skill
+3. Suggest creating and publishing a new skill
 
 Example:
 
@@ -443,25 +630,17 @@ I searched for skills related to "xyz" in Nacos but didn't find any matches.
 I can still help you with this task directly! Would you like me to proceed?
 
 If this is something your team does often, you could create a skill and
-release it through Nacos for everyone:
-
-# Current lifecycle versions:
-nacos-cli skill-upload /path/to/your-skill
-nacos-cli skill-review <skill-name>
-nacos-cli skill-release <skill-name> --version <version>
-
-# Before 1.0.4:
-nacos-cli skill-publish /path/to/your-skill
+publish it to Nacos for everyone:
+  nacos-cli skill-upload /path/to/your-skill
+  nacos-cli skill-review <skill-name>
+  nacos-cli skill-release <skill-name> --version <version>
 ```
 
 ## Tips for Effective Use
 
-1. **One-time setup**: If `nacos-cli profile --help` works, run `nacos-cli profile edit` once; otherwise use legacy
-   `--config` or connection flags
-2. **Use specific keywords**: "react testing" is better than just "testing" when filtering
-3. **Try alternative terms**: If "deploy" doesn't work, try "deployment" or "ci-cd"
-4. **Check namespaces**: Different teams may store skills in different Nacos namespaces - use `-n <namespace>` to switch
-5. **Refresh skills by version**: current lifecycle versions should use `nacos-cli skill-get <skill-name>` to download
-   or refresh local skills
-6. **Release is explicit in v1.0.4+**: `skill-upload` creates a draft, `skill-review` submits it, and `skill-release`
-   makes an approved version online; before 1.0.4, use `skill-publish` (`publish = upload + review`)
+1. **Use specific keywords**: "react testing" is better than just "testing" when filtering
+2. **Try alternative terms**: If "deploy" doesn't work, try "deployment" or "ci-cd"
+3. **Check namespaces**: Different teams may store skills in different Nacos namespaces — use `-n <namespace>` to switch
+4. **Use profiles**: Save connection details in profiles (`nacos-cli profile edit`) to avoid typing credentials repeatedly
+5. **Version and label**: Use `--version` or `--label` with `skill-get` to pin specific skill versions
+6. **Shell completion**: Run `nacos-cli completion zsh` (or bash/fish) for tab completion support
