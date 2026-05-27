@@ -55,7 +55,8 @@ import org.springframework.stereotype.Component;
 public class ReleaseMcpServerRequestHandler
     extends RequestHandler<ReleaseMcpServerRequest, ReleaseMcpServerResponse> {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseMcpServerRequest.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ReleaseMcpServerRequestHandler.class);
     
     private final McpServerOperationService mcpServerOperationService;
     
