@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -107,6 +108,7 @@ public class UserControllerV3 {
      */
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
         action = ActionTypes.WRITE)
+    @Since("3.0.0")
     @PostMapping
     public Result<String> createUser(@RequestParam String username, @RequestParam String password) {
         User user = userDetailsService.getUser(username);
@@ -120,6 +122,7 @@ public class UserControllerV3 {
     /**
      * Create a admin user only not exist admin user can use.
      */
+    @Since("3.0.0")
     @PostMapping("/admin")
     public Result<User> createAdminUser(@RequestParam(required = false) String password) {
         
@@ -152,6 +155,7 @@ public class UserControllerV3 {
      * @return ok if deleted succeed, keep silent if user not exist
      * @since 1.2.0
      */
+    @Since("3.0.0")
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
         action = ActionTypes.WRITE)
@@ -251,6 +255,7 @@ public class UserControllerV3 {
      * @return A collection of users, empty set if no user is found
      * @since 1.2.0
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
         action = ActionTypes.READ)
@@ -272,6 +277,7 @@ public class UserControllerV3 {
      * @param username username
      * @return Matched username
      */
+    @Since("3.0.0")
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
         action = ActionTypes.WRITE)
@@ -290,6 +296,7 @@ public class UserControllerV3 {
      * @return new token of the user
      * @throws AccessException if user info is incorrect
      */
+    @Since("3.0.0")
     @PostMapping("/login")
     public Object login(HttpServletResponse response, HttpServletRequest request)
         throws AccessException, IOException {

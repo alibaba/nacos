@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
@@ -71,6 +72,7 @@ public class OidcLoginController {
      * @param response HTTP response
      * @throws IOException if redirect fails
      */
+    @Since("3.2.0")
     @GetMapping("/login")
     public void login(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
@@ -103,6 +105,7 @@ public class OidcLoginController {
      * @param response HTTP response
      * @return authentication result with access token
      */
+    @Since("3.2.0")
     @GetMapping("/callback")
     public Result<Map<String, Object>> callback(
         @RequestParam(required = false) String code,
@@ -200,6 +203,7 @@ public class OidcLoginController {
      * @return logout result
      * @throws IOException if redirect fails
      */
+    @Since("3.2.0")
     @RequestMapping(value = "/logout", method = {RequestMethod.GET, RequestMethod.POST})
     public Result<String> logout(
         @RequestParam(required = false) String idToken,
@@ -237,6 +241,7 @@ public class OidcLoginController {
      *
      * @return OIDC configuration
      */
+    @Since("3.2.0")
     @GetMapping("/config")
     public Result<Map<String, Object>> getConfig() {
         try {

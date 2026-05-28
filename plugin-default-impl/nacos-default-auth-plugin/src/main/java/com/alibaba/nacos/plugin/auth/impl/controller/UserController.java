@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.model.RestResultUtils;
@@ -83,6 +84,7 @@ public class UserController {
      * @return new token of the user
      * @throws AccessException if user info is incorrect
      */
+    @Since("2.3.0")
     @PostMapping("/login")
     @Compatibility(apiType = ApiType.OPEN_API,
         alternatives = "POST ${contextPath:nacos}/v3/auth/user/login")

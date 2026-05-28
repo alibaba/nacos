@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -64,6 +65,7 @@ public class PermissionControllerV3 {
      * @param action   the related action
      * @return ok if succeed
      */
+    @Since("3.0.0")
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions",
         action = ActionTypes.WRITE)
@@ -81,6 +83,7 @@ public class PermissionControllerV3 {
      * @param action   the related action
      * @return ok if succeed
      */
+    @Since("3.0.0")
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions",
         action = ActionTypes.WRITE)
@@ -99,6 +102,7 @@ public class PermissionControllerV3 {
      * @param search   the type of search (accurate or blur)
      * @return permission of a role
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions",
         action = ActionTypes.READ)
@@ -123,6 +127,7 @@ public class PermissionControllerV3 {
      * @param action   the related action
      * @return true if duplicate, false otherwise
      */
+    @Since("3.0.0")
     @GetMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions",
         action = ActionTypes.READ)

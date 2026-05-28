@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.controller.v3.ai;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.pipeline.PipelineDetailForm;
 import com.alibaba.nacos.ai.form.pipeline.PipelineListForm;
@@ -55,6 +56,7 @@ public class ConsolePipelineController {
     /**
      * List pipeline executions with pagination.
      */
+    @Since("3.2.0")
     @GetMapping(Constants.Pipeline.LIST_SUBPATH)
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<Page<PipelineExecution>> listPipelines(PipelineListForm form, PageForm pageForm)
@@ -70,6 +72,7 @@ public class ConsolePipelineController {
     /**
      * Get pipeline execution detail by ID (query parameter {@code pipelineId}).
      */
+    @Since("3.2.1")
     @GetMapping(Constants.Pipeline.DETAIL_SUBPATH)
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<PipelineExecution> getPipelineDetail(PipelineDetailForm form)
@@ -83,6 +86,7 @@ public class ConsolePipelineController {
      *
      * @deprecated since 3.2.1, for removal in a future release. Use {@code GET .../detail?pipelineId=}.
      */
+    @Since("3.2.0")
     @Deprecated(since = "3.2.1", forRemoval = true)
     @GetMapping("/{pipelineId}")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
@@ -96,6 +100,7 @@ public class ConsolePipelineController {
      *
      * @deprecated since 3.2.1, for removal in a future release. Use {@code GET .../list}.
      */
+    @Since("3.2.1")
     @Deprecated(since = "3.2.1", forRemoval = true)
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
