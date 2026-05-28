@@ -24,6 +24,7 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 
 import java.util.Collection;
+import java.util.Optional;
 
 /**
  * Auth service.
@@ -32,14 +33,14 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public interface AuthPluginService {
-    
+
     /**
      * Define which identity information needed from request. e.q: username, password, accessToken.
      *
      * @return identity names
      */
     Collection<String> identityNames();
-    
+
     /**
      * Judgement whether this plugin enable auth for this action and type.
      *
@@ -48,7 +49,7 @@ public interface AuthPluginService {
      * @return @return {@code true} if enable auth, otherwise {@code false}
      */
     boolean enableAuth(ActionTypes action, String type);
-    
+
     /**
      * To validate whether the identity context from request is legal or illegal.
      *
@@ -59,7 +60,7 @@ public interface AuthPluginService {
      */
     AuthResult validateIdentity(IdentityContext identityContext, Resource resource)
         throws AccessException;
-    
+
     /**
      * Validate the identity whether has the resource authority.
      *
@@ -70,14 +71,31 @@ public interface AuthPluginService {
      */
     AuthResult validateAuthority(IdentityContext identityContext, Permission permission)
         throws AccessException;
-    
+
+    /**
+     * Get namespaces that the identity can access.
+     *
+     * <p>Empty {@link Optional} means the plugin does not support namespace filtering, so callers should keep
+     * the original namespace list.
+     *
+     * @param identityContext where we can find the user information.
+     * @param namespaceIds    candidate namespace ids.
+     * @param action          action to auth.
+     * @return namespace ids that the identity can access, or empty optional if unsupported.
+     * @throws AccessException if authorization is failed
+     */
+    default Optional<Collection<String>> getAuthorizedNamespaceIds(IdentityContext identityContext,
+        Collection<String> namespaceIds, ActionTypes action) throws AccessException {
+        return Optional.empty();
+    }
+
     /**
      * AuthPluginService Name which for conveniently find AuthPluginService instance.
      *
      * @return AuthServiceName mark a AuthPluginService instance.
      */
     String getAuthServiceName();
-    
+
     /**
      * Is the plugin enable login.
      *
@@ -87,7 +105,7 @@ public interface AuthPluginService {
     default boolean isLoginEnabled() {
         return false;
     }
-    
+
     /**
      * Whether need administrator .
      *

@@ -37,6 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -46,19 +48,19 @@ import java.util.Map;
  */
 public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
     implements NacosRoleService {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosRoleServiceRemoteImpl.class);
-    
+
     private final NacosRestTemplate nacosRestTemplate;
-    
+
     private final AuthConfigs authConfigs;
-    
+
     public NacosRoleServiceRemoteImpl(AuthConfigs authConfigs) {
         super(authConfigs);
         this.authConfigs = authConfigs;
         this.nacosRestTemplate = new DefaultHttpClientFactory(LOGGER).createNacosRestTemplate();
     }
-    
+
     @Override
     public void addPermission(String role, String resource, String action) {
         Map<String, String> body = Map.of("role", role, "resource", resource, "action", action);
@@ -74,7 +76,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 unpectedException.getMessage());
         }
     }
-    
+
     @Override
     public void deletePermission(String role, String resource, String action) {
         Query query = Query.newInstance().addParam("role", role).addParam("resource", resource)
@@ -91,7 +93,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 unpectedException.getMessage());
         }
     }
-    
+
     @Override
     public List<PermissionInfo> getPermissions(String role) {
         List<PermissionInfo> cached = getCachedPermissionInfoMap().get(role);
@@ -101,21 +103,46 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
         reload();
         return getCachedPermissionInfoMap().get(role);
     }
-    
+
+    @Override
+    public List<PermissionInfo> getPermissions(Collection<String> roles) {
+        List<PermissionInfo> permissionInfos = getCachedPermissions(roles);
+        if (permissionInfos != null) {
+            return permissionInfos;
+        }
+        reload();
+        return getCachedPermissions(roles);
+    }
+
     @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
         Query query = Query.newInstance().addParam("role", role).addParam("pageNo", pageNo)
             .addParam("pageSize", pageSize).addParam("search", "accurate");
         return getPermissionInfoPageFromRemote(query);
     }
-    
+
+    private List<PermissionInfo> getCachedPermissions(Collection<String> roles) {
+        if (roles == null || roles.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<PermissionInfo> permissionInfos = new ArrayList<>();
+        for (String role : roles) {
+            List<PermissionInfo> rolePermissions = getCachedPermissionInfoMap().get(role);
+            if (rolePermissions == null) {
+                return null;
+            }
+            permissionInfos.addAll(rolePermissions);
+        }
+        return permissionInfos;
+    }
+
     @Override
     public Page<PermissionInfo> findPermissions(String role, int pageNo, int pageSize) {
         Query query = Query.newInstance().addParam("role", role).addParam("pageNo", pageNo)
             .addParam("pageSize", pageSize).addParam("search", "blur");
         return getPermissionInfoPageFromRemote(query);
     }
-    
+
     @Override
     public List<RoleInfo> getRoles(String username) {
         List<RoleInfo> cached = getCachedRoleInfoMap().get(username);
@@ -125,7 +152,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
         reload();
         return getCachedRoleInfoMap().get(username);
     }
-    
+
     @Override
     public Page<RoleInfo> getRoles(String username, String role, int pageNo, int pageSize) {
         Query query = Query.newInstance().addParam("username", username).addParam("role", role)
@@ -133,14 +160,14 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
             .addParam("search", "accurate");
         return getRoleInfoPageFromRemote(query);
     }
-    
+
     @Override
     public Page<RoleInfo> findRoles(String username, String role, int pageNo, int pageSize) {
         Query query = Query.newInstance().addParam("username", username).addParam("role", role)
             .addParam("pageNo", pageNo).addParam("pageSize", pageSize).addParam("search", "blur");
         return getRoleInfoPageFromRemote(query);
     }
-    
+
     @Override
     public List<String> findRoleNames(String role) {
         Query query = Query.newInstance().addParam("role", role);
@@ -160,13 +187,13 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 unpectedException.getMessage());
         }
     }
-    
+
     @Override
     public List<RoleInfo> getAllRoles() {
         return getRoles(StringUtils.EMPTY, StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE)
             .getPageItems();
     }
-    
+
     @Override
     public void addRole(String role, String username) {
         if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
@@ -191,7 +218,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 unpectedException.getMessage());
         }
     }
-    
+
     @Override
     public void deleteRole(String role, String userName) {
         rejectReservedRole(role);
@@ -208,7 +235,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 unpectedException.getMessage());
         }
     }
-    
+
     @Override
     public void deleteRole(String role) {
         rejectReservedRole(role);
@@ -226,7 +253,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 unpectedException.getMessage());
         }
     }
-    
+
     @Override
     public void addAdminRole(String username) {
         // if has global admin role, means already synced admin role to console cached.
@@ -238,12 +265,12 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
         getCachedRoleSet().add(AuthConstants.GLOBAL_ADMIN_ROLE);
         authConfigs.setHasGlobalAdminRole(true);
     }
-    
+
     private String buildRemotePermissionUrlPath(String apiPath) {
         return RequestUrlConstants.HTTP_PREFIX + RemoteServerUtil.getOneNacosServerAddress()
             + RemoteServerUtil.getRemoteServerContextPath() + apiPath;
     }
-    
+
     private Page<PermissionInfo> getPermissionInfoPageFromRemote(Query query) {
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.get(
@@ -261,12 +288,12 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 unpectedException.getMessage());
         }
     }
-    
+
     private String buildRemoteRoleUrlPath(String apiPath) {
         return RequestUrlConstants.HTTP_PREFIX + RemoteServerUtil.getOneNacosServerAddress()
             + RemoteServerUtil.getRemoteServerContextPath() + apiPath;
     }
-    
+
     private Page<RoleInfo> getRoleInfoPageFromRemote(Query query) {
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.get(

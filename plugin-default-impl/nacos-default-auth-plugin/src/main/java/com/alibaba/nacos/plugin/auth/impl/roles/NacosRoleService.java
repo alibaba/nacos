@@ -23,6 +23,7 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -31,7 +32,7 @@ import java.util.List;
  * @author xiweng.yy
  */
 public interface NacosRoleService {
-    
+
     /**
      * Determine if the user has permission of the resource.
      *
@@ -43,7 +44,7 @@ public interface NacosRoleService {
      * @return true if granted, false otherwise
      */
     boolean hasPermission(NacosUser nacosUser, Permission permission);
-    
+
     /**
      * Add permission to tole.
      *
@@ -52,7 +53,7 @@ public interface NacosRoleService {
      * @param action   action
      */
     void addPermission(String role, String resource, String action);
-    
+
     /**
      * Delete permission from role.
      *
@@ -61,7 +62,7 @@ public interface NacosRoleService {
      * @param action   action
      */
     void deletePermission(String role, String resource, String action);
-    
+
     /**
      * Get all permissions of the role.
      *
@@ -69,7 +70,15 @@ public interface NacosRoleService {
      * @return List of {@link PermissionInfo} for the role
      */
     List<PermissionInfo> getPermissions(String role);
-    
+
+    /**
+     * Get all permissions of roles.
+     *
+     * @param roles role names
+     * @return List of {@link PermissionInfo} for roles
+     */
+    List<PermissionInfo> getPermissions(Collection<String> roles);
+
     /**
      * Accurate search permissions by role name pattern.
      *
@@ -79,7 +88,7 @@ public interface NacosRoleService {
      * @return List of {@link RoleInfo} match role name pattern
      */
     Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize);
-    
+
     /**
      * Blur search permissions by role name pattern.
      *
@@ -89,7 +98,7 @@ public interface NacosRoleService {
      * @return List of {@link RoleInfo} match role name pattern
      */
     Page<PermissionInfo> findPermissions(String role, int pageNo, int pageSize);
-    
+
     /**
      * Judge whether the permission is duplicate.
      *
@@ -99,7 +108,7 @@ public interface NacosRoleService {
      * @return true if duplicate, false otherwise
      */
     Result<Boolean> isDuplicatePermission(String role, String resource, String action);
-    
+
     /**
      * Get All roles for target user.
      *
@@ -107,7 +116,7 @@ public interface NacosRoleService {
      * @return List of {@link RoleInfo} for target user
      */
     List<RoleInfo> getRoles(String username);
-    
+
     /**
      * Accurate search roles by role name pattern.
      *
@@ -118,7 +127,7 @@ public interface NacosRoleService {
      * @return List of {@link RoleInfo} match role name pattern
      */
     Page<RoleInfo> getRoles(String username, String role, int pageNo, int pageSize);
-    
+
     /**
      * Blur search roles by role name pattern.
      *
@@ -129,7 +138,7 @@ public interface NacosRoleService {
      * @return List of {@link RoleInfo} match role name pattern
      */
     Page<RoleInfo> findRoles(String username, String role, int pageNo, int pageSize);
-    
+
     /**
      * Blur search role names by role name pattern.
      *
@@ -137,14 +146,14 @@ public interface NacosRoleService {
      * @return List of {@link RoleInfo} match role name pattern
      */
     List<String> findRoleNames(String role);
-    
+
     /**
      * Get All roles in Nacos.
      *
      * @return List of {@link RoleInfo} in Nacos
      */
     List<RoleInfo> getAllRoles();
-    
+
     /**
      * Add role to user.
      *
@@ -152,7 +161,7 @@ public interface NacosRoleService {
      * @param username user name
      */
     void addRole(String role, String username);
-    
+
     /**
      * Delete Role from user.
      *
@@ -160,21 +169,21 @@ public interface NacosRoleService {
      * @param userName userName
      */
     void deleteRole(String role, String userName);
-    
+
     /**
      * Delete Role from Nacos.
      *
      * @param role role
      */
     void deleteRole(String role);
-    
+
     /**
      * Add role.
      *
      * @param username user name
      */
     void addAdminRole(String username);
-    
+
     /**
      * Check if user has admin role.
      *
@@ -182,7 +191,7 @@ public interface NacosRoleService {
      * @return true if user has admin role.
      */
     boolean hasGlobalAdminRole(String userName);
-    
+
     /**
      * Check if all user has at least one admin role.
      *

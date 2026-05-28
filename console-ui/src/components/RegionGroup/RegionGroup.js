@@ -18,17 +18,20 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import $ from 'jquery';
 import { Button } from '@alifd/next';
+import { withRouter } from 'react-router-dom';
 import NameSpaceList from '../NameSpaceList';
 import { setParams, request } from '../../globalLib';
 import PageTitle from '../PageTitle';
 
 import './index.scss';
 
+@withRouter
 class RegionGroup extends React.Component {
   static propTypes = {
     url: PropTypes.string,
     left: PropTypes.any,
     right: PropTypes.any,
+    history: PropTypes.object,
     namespaceCallBack: PropTypes.func,
     setNowNameSpace: PropTypes.func,
   };
@@ -317,6 +320,7 @@ class RegionGroup extends React.Component {
           {this.props.namespaceCallBack && (
             <NameSpaceList
               ref={this.nameSpaceList}
+              history={this.props.history}
               namespaceCallBack={this.props.namespaceCallBack}
               setNowNameSpace={this.props.setNowNameSpace}
             />

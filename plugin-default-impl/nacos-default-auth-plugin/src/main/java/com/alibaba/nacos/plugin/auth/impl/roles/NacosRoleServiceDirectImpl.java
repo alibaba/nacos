@@ -27,7 +27,11 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Nacos builtin role service, implemented by directly access to database.
@@ -37,17 +41,17 @@ import java.util.List;
  */
 public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     implements NacosRoleService {
-    
+
     private static final int DEFAULT_PAGE_NO = 1;
-    
+
     private final AuthConfigs authConfigs;
-    
+
     private final RolePersistService rolePersistService;
-    
+
     private final NacosUserService userDetailsService;
-    
+
     private final PermissionPersistService permissionPersistService;
-    
+
     public NacosRoleServiceDirectImpl(AuthConfigs authConfigs,
         RolePersistService rolePersistService,
         NacosUserService userDetailsService, PermissionPersistService permissionPersistService) {
@@ -57,7 +61,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         this.userDetailsService = userDetailsService;
         this.permissionPersistService = permissionPersistService;
     }
-    
+
     @Override
     public List<RoleInfo> getRoles(String username) {
         List<RoleInfo> roleInfoList = getCachedRoleInfoMap().get(username);
@@ -73,7 +77,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         }
         return roleInfoList;
     }
-    
+
     @Override
     public Page<RoleInfo> getRoles(String username, String role, int pageNo, int pageSize) {
         Page<RoleInfo> roles =
@@ -83,7 +87,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         }
         return roles;
     }
-    
+
     @Override
     public List<RoleInfo> getAllRoles() {
         Page<RoleInfo> roleInfoPage =
@@ -94,7 +98,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         }
         return roleInfoPage.getPageItems();
     }
-    
+
     @Override
     public List<PermissionInfo> getPermissions(String role) {
         List<PermissionInfo> permissionInfoList = getCachedPermissionInfoMap().get(role);
@@ -110,7 +114,23 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         }
         return permissionInfoList;
     }
-    
+
+    @Override
+    public List<PermissionInfo> getPermissions(Collection<String> roles) {
+        if (CollectionUtils.isEmpty(roles)) {
+            return new ArrayList<>();
+        }
+        if (authConfigs.isCachingEnabled()) {
+            List<PermissionInfo> cachedPermissions = getCachedPermissions(roles);
+            if (cachedPermissions != null) {
+                return cachedPermissions;
+            }
+        }
+        List<PermissionInfo> permissionInfos = permissionPersistService.getPermissions(roles);
+        cachePermissions(permissionInfos);
+        return permissionInfos;
+    }
+
     @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
         Page<PermissionInfo> pageInfo =
@@ -120,32 +140,56 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         }
         return pageInfo;
     }
-    
+
+    private List<PermissionInfo> getCachedPermissions(Collection<String> roles) {
+        List<PermissionInfo> permissionInfos = new ArrayList<>();
+        for (String role : roles) {
+            List<PermissionInfo> rolePermissions = getCachedPermissionInfoMap().get(role);
+            if (rolePermissions == null) {
+                return null;
+            }
+            permissionInfos.addAll(rolePermissions);
+        }
+        return permissionInfos;
+    }
+
+    private void cachePermissions(List<PermissionInfo> permissionInfos) {
+        if (!authConfigs.isCachingEnabled() || CollectionUtils.isEmpty(permissionInfos)) {
+            return;
+        }
+        Map<String, List<PermissionInfo>> groupedPermissions = new HashMap<>(16);
+        for (PermissionInfo permissionInfo : permissionInfos) {
+            groupedPermissions.computeIfAbsent(permissionInfo.getRole(), key -> new ArrayList<>())
+                .add(permissionInfo);
+        }
+        getCachedPermissionInfoMap().putAll(groupedPermissions);
+    }
+
     @Override
     public void addRole(String role, String username) {
         if (userDetailsService.getUser(username) == null) {
             throw new IllegalArgumentException("user '" + username + "' not found!");
         }
-        
+
         if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
             throw new IllegalArgumentException(
                 "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
-        
+
         if (AuthConstants.ANONYMOUS_ROLE.equals(role)) {
             throw new IllegalArgumentException(
                 "role '" + AuthConstants.ANONYMOUS_ROLE + "' is reserved by the system");
         }
-        
+
         if (isUserBoundToRole(role, username)) {
             throw new IllegalArgumentException(
                 "user '" + username + "' already bound to the role '" + role + "'!");
         }
-        
+
         rolePersistService.addRole(role, username);
         getCachedRoleSet().add(role);
     }
-    
+
     @Override
     public void addAdminRole(String username) {
         if (userDetailsService.getUser(username) == null) {
@@ -155,25 +199,25 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
             throw new IllegalArgumentException(
                 "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' already exist !");
         }
-        
+
         rolePersistService.addRole(AuthConstants.GLOBAL_ADMIN_ROLE, username);
         getCachedRoleSet().add(AuthConstants.GLOBAL_ADMIN_ROLE);
         authConfigs.setHasGlobalAdminRole(true);
     }
-    
+
     @Override
     public void deleteRole(String role, String userName) {
         rejectReservedRole(role);
         rolePersistService.deleteRole(role, userName);
     }
-    
+
     @Override
     public void deleteRole(String role) {
         rejectReservedRole(role);
         rolePersistService.deleteRole(role);
         getCachedRoleInfoMap().remove(role);
     }
-    
+
     @Override
     public void addPermission(String role, String resource, String action) {
         if (!getCachedRoleSet().contains(role)) {
@@ -181,27 +225,27 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         }
         permissionPersistService.addPermission(role, resource, action);
     }
-    
+
     @Override
     public void deletePermission(String role, String resource, String action) {
         permissionPersistService.deletePermission(role, resource, action);
     }
-    
+
     @Override
     public Page<RoleInfo> findRoles(String username, String role, int pageNo, int pageSize) {
         return rolePersistService.findRolesLike4Page(username, role, pageNo, pageSize);
     }
-    
+
     @Override
     public List<String> findRoleNames(String role) {
         return rolePersistService.findRolesLikeRoleName(role);
     }
-    
+
     @Override
     public Page<PermissionInfo> findPermissions(String role, int pageNo, int pageSize) {
         return permissionPersistService.findPermissionsLike4Page(role, pageNo, pageSize);
     }
-    
+
     boolean isUserBoundToRole(String role, String username) {
         Page<RoleInfo> roleInfoPage =
             rolePersistService.getRolesByUserNameAndRoleName(username, role, DEFAULT_PAGE_NO,

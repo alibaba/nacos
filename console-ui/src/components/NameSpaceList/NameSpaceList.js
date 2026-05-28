@@ -33,6 +33,7 @@ class NameSpaceList extends React.Component {
     locale: PropTypes.object,
     setNowNameSpace: PropTypes.func,
     namespaceCallBack: PropTypes.func,
+    history: PropTypes.object,
     title: PropTypes.string,
   };
 
@@ -97,9 +98,24 @@ class NameSpaceList extends React.Component {
     window.nownamespace = ns;
     window.namespaceShowName = nsName;
     window.namespaceDesc = nsDesc;
+    this.syncHistoryNamespace(ns, nsName);
 
     this.calleeParent(true);
     this.props.setNowNameSpace && this.props.setNowNameSpace(nsName, ns, nsDesc);
+  }
+
+  syncHistoryNamespace(ns, nsName) {
+    const { history } = this.props;
+    if (!history || !history.location || !history.replace) {
+      return;
+    }
+    const params = new URLSearchParams(history.location.search);
+    params.set('namespace', ns || '');
+    params.set('namespaceShowName', nsName || '');
+    history.replace({
+      pathname: history.location.pathname,
+      search: `?${params.toString()}`,
+    });
   }
 
   changeName(...value) {
