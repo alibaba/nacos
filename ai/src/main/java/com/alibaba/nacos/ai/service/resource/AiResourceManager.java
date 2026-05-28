@@ -861,18 +861,10 @@ public class AiResourceManager {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 type + " version not found: " + name + "@" + version);
         }
-        if (!AiResourceConstants.VERSION_STATUS_REVIEWED.equalsIgnoreCase(v.getStatus())
-            && !AiResourceConstants.VERSION_STATUS_REVIEWING.equalsIgnoreCase(
-                v.getStatus())) {
-            // Allow draft only for legacy data: pipeline rejected → draft (historical is null/false)
-            boolean allowDraft = AiResourceConstants.VERSION_STATUS_DRAFT
-                .equalsIgnoreCase(v.getStatus()) && isLegacyRejectedDraft(v);
-            if (!allowDraft) {
-                throw new NacosApiException(NacosException.INVALID_PARAM,
-                    ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Force-publish is only allowed for versions in 'reviewing' or "
-                        + "'reviewed' status, current: " + v.getStatus());
-            }
+        if (AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Force-publish is not allowed for already online version: " + version);
         }
         
         LOGGER.warn("[FORCE-PUBLISH] Bypassing pipeline validation for {} {}@{} by user {}",
@@ -1097,24 +1089,6 @@ public class AiResourceManager {
     }
     
     /**
-     * Check if a draft version is a legacy rejected-to-draft (not from redraft).
-     * Returns true when pipeline info exists with REJECTED status and historical is null/false.
-     */
-    private boolean isLegacyRejectedDraft(AiResourceVersion v) {
-        if (StringUtils.isBlank(v.getPublishPipelineInfo())) {
-            return false;
-        }
-        try {
-            PublishPipelineInfo info =
-                JacksonUtils.toObj(v.getPublishPipelineInfo(), PublishPipelineInfo.class);
-            return info.getStatus() == PipelineExecutionStatus.REJECTED
-                && !Boolean.TRUE.equals(info.getHistorical());
-        } catch (Exception ex) {
-            return false;
-        }
-    }
-    
-    /**
      * Functional interface for deleting storage associated with a specific version.
      */
     @FunctionalInterface
@@ -1209,7 +1183,7 @@ public class AiResourceManager {
         aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
             AiResourceConstants.VERSION_STATUS_DRAFT);
         
-        // Mark pipeline info as historical so forcePublish is not available on redrafted versions
+        // Mark pipeline info as historical so redraft history is not treated as the current review.
         if (StringUtils.isNotBlank(v.getPublishPipelineInfo())) {
             try {
                 PublishPipelineInfo pipelineInfo =

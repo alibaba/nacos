@@ -283,7 +283,7 @@ public interface AgentSpecOperationService {
     
     /**
      * Force-publish an agentspec version, bypassing pipeline validation.
-     * Accepts draft (pipeline-rejected) and reviewing (pipeline in-progress) versions.
+     * Accepts any non-online version.
      * Should only be invoked by admin users.
      *
      * @param namespaceId       namespace ID

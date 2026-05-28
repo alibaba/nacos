@@ -1684,15 +1684,13 @@ class AiResourceManagerTest {
     }
     
     @Test
-    void doForcePublishShouldAllowLegacyRejectedDraft() throws NacosException {
+    void doForcePublishShouldAllowDraft() throws NacosException {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
-        v.setPublishPipelineInfo(
-            "{\"executionId\":\"e1\",\"status\":\"REJECTED\",\"pipeline\":[]}");
         when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
             .thenReturn(v);
         when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
@@ -1706,8 +1704,9 @@ class AiResourceManagerTest {
     }
     
     @Test
-    void doForcePublishShouldThrowWhenDraftWithHistoricalPipeline() {
+    void doForcePublishShouldAllowDraftWithHistoricalPipeline() throws NacosException {
         AiResource meta = buildMeta("res");
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
@@ -1716,9 +1715,14 @@ class AiResourceManagerTest {
             "{\"executionId\":\"e1\",\"status\":\"REJECTED\",\"pipeline\":[],\"historical\":true}");
         when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
             .thenReturn(v);
-        NacosApiException ex = assertThrows(NacosApiException.class,
-            () -> manager.doForcePublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true));
-        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any()))
+            .thenReturn(true);
+        AiResourceVersion result =
+            manager.doForcePublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true);
+        assertNotNull(result);
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            "v1", AiResourceConstants.VERSION_STATUS_ONLINE);
     }
     
     // ---- validateAndUpdateLabels ----

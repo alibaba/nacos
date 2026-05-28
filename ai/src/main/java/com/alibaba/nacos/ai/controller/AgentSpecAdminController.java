@@ -267,8 +267,8 @@ public class AgentSpecAdminController {
     }
     
     /**
-     * Force-publish an agentspec version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and
-     * reviewing (pipeline in-progress) versions. Only admin users can call this endpoint.
+     * Force-publish an agentspec version, bypassing pipeline validation. Accepts any non-online version.
+     * Only admin users can call this endpoint.
      */
     @Since("3.2.1")
     @PostMapping("/force-publish")

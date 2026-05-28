@@ -245,9 +245,8 @@ public class ConsoleAgentSpecController {
     }
     
     /**
-     * Force-publish an agentspec version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and
-     * reviewing (pipeline in-progress) versions. Restricted to admin users only (apiType = ADMIN_API enforces global
-     * admin check).
+     * Force-publish an agentspec version, bypassing pipeline validation. Accepts any non-online version.
+     * Restricted to admin users only (apiType = ADMIN_API enforces global admin check).
      */
     @Since("3.2.1")
     @PostMapping("/force-publish")
