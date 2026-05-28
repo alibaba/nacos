@@ -41,9 +41,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -455,11 +453,16 @@ class ClientWorkerTest {
             ((ClientWorker.ConfigRpcTransportClient) clientWorker.getAgent())
                 .handleClientMetricsRequest(
                     configMetricsRequest);
-        Json
-
-... [OUTPUT TRUNCATED - 4336 chars omitted out of 54336 total] ...
-
-s.PROTOTYPE.derive(prop);
+    }
+    
+    @Test
+    void testExecuteConfigListen() throws Exception {
+        Properties prop = new Properties();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
+        Mockito.when(agent.getName()).thenReturn("mocktest");
+        final NacosClientProperties nacosClientProperties =
+            NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         clientWorker.shutdown();
         
@@ -878,12 +881,15 @@ s.PROTOTYPE.derive(prop);
             NacosClientProperties.PROTOTYPE.derive(prop);
         final ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         
+        Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
             Mockito.mockStatic(MetricsMonitor.class)) {
+            mockedMetricsMonitor.when(MetricsMonitor::getListenConfigCountMonitor)
+                .thenReturn(mockGaugeChild);
             
             clientWorker.removeCache(dataId, group, tenant);
             
-            mockedMetricsMonitor.verify(() -> MetricsMonitor.recordListenConfigCount(0), times(1));
+            verify(mockGaugeChild, times(1)).set(0);
         }
     }
     
@@ -903,12 +909,15 @@ s.PROTOTYPE.derive(prop);
         final ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         clientWorkerSpy = Mockito.spy(clientWorker);
         
+        Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
             Mockito.mockStatic(MetricsMonitor.class)) {
+            mockedMetricsMonitor.when(MetricsMonitor::getListenConfigCountMonitor)
+                .thenReturn(mockGaugeChild);
             
             clientWorker.removeCache(dataId, group, tenant);
             
-            mockedMetricsMonitor.verify(() -> MetricsMonitor.recordListenConfigCount(0), times(0));
+            verify(mockGaugeChild, times(0)).set(0);
         }
     }
     
@@ -926,12 +935,15 @@ s.PROTOTYPE.derive(prop);
             NacosClientProperties.PROTOTYPE.derive(prop);
         final ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         
+        Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
             Mockito.mockStatic(MetricsMonitor.class)) {
+            mockedMetricsMonitor.when(MetricsMonitor::getListenConfigCountMonitor)
+                .thenReturn(mockGaugeChild);
             
             clientWorker.removeCache(dataId, group, tenant);
             
-            mockedMetricsMonitor.verify(() -> MetricsMonitor.recordListenConfigCount(0), times(1));
+            verify(mockGaugeChild, times(1)).set(0);
         }
     }
     
@@ -951,11 +963,14 @@ s.PROTOTYPE.derive(prop);
         final ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         clientWorkerSpy = Mockito.spy(clientWorker);
         
+        Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
             Mockito.mockStatic(MetricsMonitor.class)) {
+            mockedMetricsMonitor.when(MetricsMonitor::getListenConfigCountMonitor)
+                .thenReturn(mockGaugeChild);
             
             RuntimeException exception = new RuntimeException("Mocked exception");
-            doThrow(exception).when(() -> MetricsMonitor.recordListenConfigCount(0));
+            doThrow(exception).when(mockGaugeChild).set(0);
             
             assertDoesNotThrow(() -> clientWorker.removeCache(dataId, group, tenant));
         }
@@ -975,12 +990,15 @@ s.PROTOTYPE.derive(prop);
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         
+        Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
             Mockito.mockStatic(MetricsMonitor.class)) {
+            mockedMetricsMonitor.when(MetricsMonitor::getListenConfigCountMonitor)
+                .thenReturn(mockGaugeChild);
             
             clientWorker.addCacheDataIfAbsent(dataId, group, tenant);
             
-            mockedMetricsMonitor.verify(() -> MetricsMonitor.recordListenConfigCount(1), times(1));
+            verify(mockGaugeChild, times(1)).set(1);
         }
     }
     
@@ -1003,7 +1021,7 @@ s.PROTOTYPE.derive(prop);
             Mockito.mockStatic(MetricsMonitor.class)) {
             clientWorker.addCacheDataIfAbsent(dataId, group, tenant);
             
-            mockedMetricsMonitor.verify(() -> MetricsMonitor.recordListenConfigCount(org.mockito.ArgumentMatchers.anyDouble()), never());
+            mockedMetricsMonitor.verify(MetricsMonitor::getListenConfigCountMonitor, never());
         }
     }
     
@@ -1020,12 +1038,15 @@ s.PROTOTYPE.derive(prop);
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         
+        Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
             Mockito.mockStatic(MetricsMonitor.class)) {
+            mockedMetricsMonitor.when(MetricsMonitor::getListenConfigCountMonitor)
+                .thenReturn(mockGaugeChild);
             
             clientWorker.addCacheDataIfAbsent(dataId, group, tenant);
             
-            mockedMetricsMonitor.verify(() -> MetricsMonitor.recordListenConfigCount(1), times(1));
+            verify(mockGaugeChild, times(1)).set(1);
         }
     }
 }
