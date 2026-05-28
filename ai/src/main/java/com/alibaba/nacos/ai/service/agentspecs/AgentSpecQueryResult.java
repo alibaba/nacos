@@ -23,6 +23,10 @@ import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
  * its published content MD5 and the resolved version string so the controller can populate
  * listener-related response headers without re-parsing metadata.
  *
+ * <p>When the client-supplied MD5 matches the published one, {@link #isNotModified()} is
+ * {@code true} and {@link #getAgentSpec()} is {@code null}; the controller maps this to HTTP 304
+ * without loading or transferring the AgentSpec content.
+ *
  * @author nacos
  * @since 3.2.0
  */
@@ -34,10 +38,27 @@ public class AgentSpecQueryResult {
     
     private final String resolvedVersion;
     
+    private final boolean notModified;
+    
     public AgentSpecQueryResult(AgentSpec agentSpec, String md5, String resolvedVersion) {
+        this(agentSpec, md5, resolvedVersion, false);
+    }
+    
+    private AgentSpecQueryResult(AgentSpec agentSpec, String md5, String resolvedVersion,
+        boolean notModified) {
         this.agentSpec = agentSpec;
         this.md5 = md5;
         this.resolvedVersion = resolvedVersion;
+        this.notModified = notModified;
+    }
+    
+    /**
+     * Build a result that signals "client cache is fresh". The {@code agentSpec} payload is
+     * intentionally left {@code null} so the controller can short-circuit to HTTP 304 without
+     * loading content.
+     */
+    public static AgentSpecQueryResult notModified(String md5, String resolvedVersion) {
+        return new AgentSpecQueryResult(null, md5, resolvedVersion, true);
     }
     
     public AgentSpec getAgentSpec() {
@@ -50,5 +71,9 @@ public class AgentSpecQueryResult {
     
     public String getResolvedVersion() {
         return resolvedVersion;
+    }
+    
+    public boolean isNotModified() {
+        return notModified;
     }
 }

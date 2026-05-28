@@ -65,18 +65,15 @@ public class SkillClientController {
         tags = {ALLOW_ANONYMOUS})
     public ResponseEntity<byte[]> get(SkillQueryForm form) throws NacosException {
         form.validate();
-        try {
-            SkillQueryResult result = skillClientOperationService.querySkill(form.getNamespaceId(),
-                form.getName(), form.getVersion(), form.getLabel(), form.getMd5());
-            return SkillRequestUtil.buildSkillZipResponseWithMd5(result.getSkill(),
-                result.getMd5(), result.getResolvedVersion());
-        } catch (NacosException ex) {
-            if (ex.getErrCode() == NacosException.NOT_MODIFIED) {
-                // On 304 the client-supplied MD5 equals the published one, so we can echo it back
-                // as the ETag without re-loading the skill bytes.
-                return SkillRequestUtil.buildSkillNotModifiedResponse(form.getMd5(), null);
-            }
-            throw ex;
+        SkillQueryResult result = skillClientOperationService.querySkill(form.getNamespaceId(),
+            form.getName(), form.getVersion(), form.getLabel(), form.getMd5());
+        if (result.isNotModified()) {
+            // Client-supplied MD5 equals the published one; echo it back as the ETag without
+            // re-loading the skill bytes.
+            return SkillRequestUtil.buildSkillNotModifiedResponse(result.getMd5(),
+                result.getResolvedVersion());
         }
+        return SkillRequestUtil.buildSkillZipResponseWithMd5(result.getSkill(),
+            result.getMd5(), result.getResolvedVersion());
     }
 }

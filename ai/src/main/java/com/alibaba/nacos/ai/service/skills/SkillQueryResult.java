@@ -23,6 +23,10 @@ import com.alibaba.nacos.api.ai.model.skills.Skill;
  * published content MD5 and the resolved version string so that the controller can populate the
  * listener-related response headers without re-parsing the manifest.
  *
+ * <p>When the client-supplied MD5 matches the published one, {@link #isNotModified()} is
+ * {@code true} and {@link #getSkill()} is {@code null}; the controller maps this to HTTP 304
+ * without loading or transferring the skill bytes.
+ *
  * @author nacos
  * @since 3.2.0
  */
@@ -34,10 +38,25 @@ public class SkillQueryResult {
     
     private final String resolvedVersion;
     
+    private final boolean notModified;
+    
     public SkillQueryResult(Skill skill, String md5, String resolvedVersion) {
+        this(skill, md5, resolvedVersion, false);
+    }
+    
+    private SkillQueryResult(Skill skill, String md5, String resolvedVersion, boolean notModified) {
         this.skill = skill;
         this.md5 = md5;
         this.resolvedVersion = resolvedVersion;
+        this.notModified = notModified;
+    }
+    
+    /**
+     * Build a result that signals "client cache is fresh". The {@code skill} payload is intentionally
+     * left {@code null} so the controller can short-circuit to HTTP 304 without loading content.
+     */
+    public static SkillQueryResult notModified(String md5, String resolvedVersion) {
+        return new SkillQueryResult(null, md5, resolvedVersion, true);
     }
     
     public Skill getSkill() {
@@ -50,5 +69,9 @@ public class SkillQueryResult {
     
     public String getResolvedVersion() {
         return resolvedVersion;
+    }
+    
+    public boolean isNotModified() {
+        return notModified;
     }
 }

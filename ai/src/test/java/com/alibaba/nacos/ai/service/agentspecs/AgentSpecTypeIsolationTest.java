@@ -387,6 +387,12 @@ class AgentSpecTypeIsolationTest {
         }
         
         @Override
+        public int updateStorageMd5(String namespaceId, String name, String type, String version,
+            String contentMd5) {
+            return 0;
+        }
+        
+        @Override
         public Page<AiResourceVersion> list(String namespaceId, String name, String type,
             String status, int pageNo,
             int pageSize) {

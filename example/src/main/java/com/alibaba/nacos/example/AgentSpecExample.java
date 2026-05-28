@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.ai.listener.NacosAgentSpecEvent;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -40,11 +39,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * with at least one published AgentSpec (e.g., "test").
  */
 public class AgentSpecExample {
-
+    
     public static void main(String[] args) throws Exception {
         String serverAddr = "localhost:8848";
         String agentSpecName = "test";
-
+        
         // Allow override via command line
         if (args.length > 0) {
             agentSpecName = args[0];
@@ -52,14 +51,14 @@ public class AgentSpecExample {
         if (args.length > 1) {
             serverAddr = args[1];
         }
-
+        
         System.out.println("============================================");
         System.out.println("  AgentSpec Client Integration Test");
         System.out.println("============================================");
         System.out.println("[Config] serverAddr = " + serverAddr);
         System.out.println("[Config] agentSpecName = " + agentSpecName);
         System.out.println();
-
+        
         Properties properties = new Properties();
         properties.setProperty("serverAddr", serverAddr);
         properties.setProperty("namespace", "public");
@@ -67,18 +66,19 @@ public class AgentSpecExample {
         properties.setProperty("password", "nacos");
         // AgentSpec polling uses HTTP transport
         properties.setProperty("nacosAiTransportMode", "http");
-
+        
         System.out.println("[Step 1] Creating AiService...");
         AiService aiService = AiFactory.createAiService(properties);
         System.out.println("[Step 1] AiService created successfully.");
         System.out.println();
-
+        
         // === Test: Subscribe to AgentSpec ===
         System.out.println("[Step 2] Subscribing to AgentSpec: " + agentSpecName);
         CountDownLatch eventLatch = new CountDownLatch(1);
         AtomicInteger eventCount = new AtomicInteger(0);
-
+        
         AbstractNacosAgentSpecListener listener = new AbstractNacosAgentSpecListener() {
+            
             @Override
             public void onEvent(NacosAgentSpecEvent event) {
                 int count = eventCount.incrementAndGet();
@@ -98,7 +98,7 @@ public class AgentSpecExample {
                 eventLatch.countDown();
             }
         };
-
+        
         AgentSpec initialSpec = aiService.subscribeAgentSpec(agentSpecName, listener);
         System.out.println("[Step 2] Subscribe completed.");
         if (initialSpec != null) {
@@ -113,32 +113,34 @@ public class AgentSpecExample {
             System.out.println("  Initial AgentSpec: null (not found)");
         }
         System.out.println();
-
+        
         // === Wait for polling cycles ===
         System.out.println("[Step 3] Waiting 25 seconds to observe polling behavior...");
         System.out.println("  (Polling interval is ~10s, expecting 2 poll cycles with 304)");
         System.out.println("  (If you update the AgentSpec on server during this time,");
         System.out.println("   you should see additional [Event] callbacks above)");
         System.out.println();
-
+        
         // Wait regardless of initial event - we want to observe polling 304s
         Thread.sleep(25000);
         System.out.println("[Step 3] Done waiting. Total events: " + eventCount.get());
-        System.out.println("  (Only 1 event = initial load. No extra events = 304 working correctly)");
+        System.out
+            .println("  (Only 1 event = initial load. No extra events = 304 working correctly)");
         System.out.println();
-
+        
         // === Test: Unsubscribe ===
         System.out.println("[Step 4] Unsubscribing from AgentSpec: " + agentSpecName);
         aiService.unsubscribeAgentSpec(agentSpecName, listener);
         System.out.println("[Step 4] Unsubscribed. Polling should stop.");
         System.out.println();
-
+        
         // Wait a bit to confirm no more polling
-        System.out.println("[Step 5] Waiting 15 seconds to verify no more polling after unsubscribe...");
+        System.out
+            .println("[Step 5] Waiting 15 seconds to verify no more polling after unsubscribe...");
         Thread.sleep(15000);
         System.out.println("[Step 5] Done. Total events received: " + eventCount.get());
         System.out.println();
-
+        
         // === Shutdown ===
         System.out.println("[Step 6] Shutting down AiService...");
         aiService.shutdown();

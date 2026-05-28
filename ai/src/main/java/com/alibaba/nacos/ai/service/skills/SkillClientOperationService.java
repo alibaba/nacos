@@ -23,7 +23,8 @@ import com.alibaba.nacos.api.exception.NacosException;
  *
  * <p>The implementation is responsible for resolving the requested version, comparing the
  * client-supplied content MD5 against the published one, lazily back-filling the MD5 for
- * historical versions, and raising {@link NacosException#NOT_MODIFIED} when the cache is fresh.
+ * historical versions, and signalling "client cache is fresh" via
+ * {@link SkillQueryResult#isNotModified()} when the two MD5s match.
  *
  * @author nacos
  * @since 3.2.0
@@ -34,21 +35,22 @@ public interface SkillClientOperationService {
      * Query a skill from the client runtime path with optional MD5-based not-modified semantics.
      *
      * <p>When {@code clientMd5} is non-blank and equals the published content MD5 of the resolved
-     * version, this method throws {@link NacosException} with code
-     * {@link NacosException#NOT_MODIFIED} so the controller layer can translate it into HTTP 304.
-     * Otherwise the resolved skill is returned together with its content MD5 and resolved version.
+     * version, this method returns a result whose {@link SkillQueryResult#isNotModified()} is
+     * {@code true} and {@link SkillQueryResult#getSkill()} is {@code null}, so the controller can
+     * translate it into HTTP 304 without loading content. Otherwise the resolved skill is returned
+     * together with its content MD5 and resolved version.
      *
      * <p>If the published content MD5 is missing on the version row (e.g. legacy data published
      * before the listener feature shipped), the implementation MUST back-fill it synchronously and
-     * still respond with HTTP 200 — never NOT_MODIFIED — when back-fill fails.
+     * still respond with the loaded skill — never with not-modified — when back-fill fails.
      *
      * @param namespaceId namespace
      * @param name        skill name
      * @param version     explicit version, may be {@code null} when {@code label} is provided
      * @param label       label, may be {@code null} when {@code version} is provided
      * @param clientMd5   MD5 carried by the listener; may be {@code null} or blank for the first poll
-     * @return resolved skill plus its content MD5 and resolved version
-     * @throws NacosException with code {@link NacosException#NOT_MODIFIED} if the client cache is fresh
+     * @return resolved skill plus its content MD5 and resolved version, or a not-modified marker
+     * @throws NacosException if resolution or load fails
      */
     SkillQueryResult querySkill(String namespaceId, String name, String version, String label,
         String clientMd5) throws NacosException;

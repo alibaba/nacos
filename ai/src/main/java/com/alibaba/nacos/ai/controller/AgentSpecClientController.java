@@ -82,19 +82,14 @@ public class AgentSpecClientController {
     public ResponseEntity<Result<AgentSpec>> get(AgentSpecQueryForm form)
         throws NacosException {
         form.validate();
-        try {
-            AgentSpecQueryResult result =
-                agentSpecOperationService.queryAgentSpecForClient(
-                    form.getNamespaceId(), form.getName(), form.getVersion(),
-                    form.getLabel(), form.getMd5());
-            return AgentSpecRequestUtil.buildAgentSpecResponse(result.getAgentSpec(),
-                result.getMd5(), result.getResolvedVersion());
-        } catch (NacosException ex) {
-            if (ex.getErrCode() == NacosException.NOT_MODIFIED) {
-                return AgentSpecRequestUtil.buildAgentSpecNotModifiedResponse(
-                    form.getMd5());
-            }
-            throw ex;
+        AgentSpecQueryResult result =
+            agentSpecOperationService.queryAgentSpecForClient(
+                form.getNamespaceId(), form.getName(), form.getVersion(),
+                form.getLabel(), form.getMd5());
+        if (result.isNotModified()) {
+            return AgentSpecRequestUtil.buildAgentSpecNotModifiedResponse(result.getMd5());
         }
+        return AgentSpecRequestUtil.buildAgentSpecResponse(result.getAgentSpec(),
+            result.getMd5(), result.getResolvedVersion());
     }
 }

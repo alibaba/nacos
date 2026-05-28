@@ -683,8 +683,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     
     /**
      * Query an AgentSpec for the client listener path with MD5-based not-modified semantics.
-     * When {@code clientMd5} matches the stored content MD5, throws NOT_MODIFIED so the
-     * controller returns HTTP 304 without loading content.
+     * When {@code clientMd5} matches the stored content MD5, returns a not-modified result so the
+     * controller can return HTTP 304 without loading content.
      */
     @Override
     public AgentSpecQueryResult queryAgentSpecForClient(String namespaceId, String name,
@@ -712,8 +712,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         // Step 3: Fast path — client cache is fresh
         if (StringUtils.isNotBlank(storedMd5) && StringUtils.isNotBlank(clientMd5)
             && storedMd5.equals(clientMd5)) {
-            throw new NacosException(NacosException.NOT_MODIFIED,
-                "agentspec data is up to date");
+            return AgentSpecQueryResult.notModified(storedMd5, resolved);
         }
         
         // Step 4: Load full AgentSpec from storage

@@ -90,7 +90,7 @@ public class SkillClientOperationServiceImpl implements SkillClientOperationServ
         // Step 3: Fast path — client cache is fresh, no need to load skill bytes.
         if (StringUtils.isNotBlank(storedMd5) && StringUtils.isNotBlank(clientMd5)
             && storedMd5.equals(clientMd5)) {
-            throw new NacosException(NacosException.NOT_MODIFIED, "skill data is up to date");
+            return SkillQueryResult.notModified(storedMd5, resolvedVersion);
         }
         
         // Step 4: Load the skill via the regular query path. This also validates meta visibility
@@ -100,8 +100,8 @@ public class SkillClientOperationServiceImpl implements SkillClientOperationServ
         // Step 5: Decide effective MD5. When the version row is missing the field (legacy publish
         // before the listener feature shipped), compute it from the loaded skill and back-fill the
         // storage column synchronously (Path A). The defensive null-fallback ensures we always
-        // return HTTP 200 in this branch — never NOT_MODIFIED — even if the freshly computed MD5
-        // happens to coincide with the client-supplied one.
+        // return a fresh payload in this branch — never not-modified — even if the freshly
+        // computed MD5 happens to coincide with the client-supplied one.
         String effectiveMd5 = storedMd5;
         if (StringUtils.isBlank(effectiveMd5)) {
             effectiveMd5 = backfillContentMd5(namespaceId, name, resolvedVersion, skill);
