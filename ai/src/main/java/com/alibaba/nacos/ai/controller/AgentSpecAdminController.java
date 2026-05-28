@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
@@ -84,6 +85,7 @@ public class AgentSpecAdminController {
      * @return result of the get operation
      * @throws NacosException if the agentspec get fails
      */
+    @Since("3.2.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<AgentSpecMeta> getAgentSpec(AgentSpecForm form) throws NacosException {
@@ -100,6 +102,7 @@ public class AgentSpecAdminController {
      * @return full agentspec content for the specified version
      * @throws NacosException if the agentspec or version not found
      */
+    @Since("3.2.0")
     @GetMapping("/version")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<AgentSpec> getAgentSpecVersion(AgentSpecForm form) throws NacosException {
@@ -118,6 +121,7 @@ public class AgentSpecAdminController {
      * @return agentspec with resource list containing only name and type
      * @throws NacosException if the agentspec or version not found
      */
+    @Since("3.2.1")
     @GetMapping("/version/meta")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<AgentSpec> getAgentSpecVersionMeta(AgentSpecForm form) throws NacosException {
@@ -135,6 +139,7 @@ public class AgentSpecAdminController {
      * @return result of the deletion operation
      * @throws NacosException if the agentspec deletion fails
      */
+    @Since("3.2.0")
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteAgentSpec(AgentSpecForm form) throws NacosException {
@@ -151,6 +156,7 @@ public class AgentSpecAdminController {
      * @return result of the list operation
      * @throws NacosException if the agentspec list fails
      */
+    @Since("3.2.1")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
         tags = {ALLOW_ANONYMOUS})
@@ -176,6 +182,7 @@ public class AgentSpecAdminController {
      * @return result of the upload operation
      * @throws NacosException if the upload fails
      */
+    @Since("3.2.0")
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
@@ -194,6 +201,7 @@ public class AgentSpecAdminController {
     /**
      * Create draft version.
      */
+    @Since("3.2.0")
     @PostMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> createDraft(AgentSpecDraftCreateForm form) throws NacosException {
@@ -207,6 +215,7 @@ public class AgentSpecAdminController {
     /**
      * Update current draft content.
      */
+    @Since("3.2.0")
     @PutMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateDraft(AgentSpecUpdateForm form) throws NacosException {
@@ -219,6 +228,7 @@ public class AgentSpecAdminController {
     /**
      * Delete current draft version.
      */
+    @Since("3.2.0")
     @DeleteMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteDraft(AgentSpecForm form) throws NacosException {
@@ -230,6 +240,7 @@ public class AgentSpecAdminController {
     /**
      * Submit a version for pipeline review.
      */
+    @Since("3.2.0")
     @PostMapping("/submit")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> submit(AgentSpecSubmitForm form) throws NacosException {
@@ -243,6 +254,7 @@ public class AgentSpecAdminController {
     /**
      * Publish an approved reviewing version.
      */
+    @Since("3.2.0")
     @PostMapping("/publish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> publish(AgentSpecPublishForm form) throws NacosException {
@@ -258,6 +270,7 @@ public class AgentSpecAdminController {
      * Force-publish an agentspec version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and
      * reviewing (pipeline in-progress) versions. Only admin users can call this endpoint.
      */
+    @Since("3.2.1")
     @PostMapping("/force-publish")
     @Secured(resource = Constants.AgentSpecs.ADMIN_PATH
         + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -274,6 +287,7 @@ public class AgentSpecAdminController {
     /**
      * Re-edit a reviewed agentspec version, transitioning it back to draft for modification.
      */
+    @Since("3.2.2")
     @PostMapping("/redraft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> redraft(AgentSpecPublishForm form) throws NacosException {
@@ -286,6 +300,7 @@ public class AgentSpecAdminController {
     /**
      * Update runtime route labels without changing version status.
      */
+    @Since("3.2.0")
     @PutMapping("/labels")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
@@ -299,6 +314,7 @@ public class AgentSpecAdminController {
     /**
      * Update agentspec biz tags without changing version status.
      */
+    @Since("3.2.0")
     @PutMapping("/biz-tags")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
@@ -311,6 +327,7 @@ public class AgentSpecAdminController {
     /**
      * Online operation (version-level or agentspec-level by scope).
      */
+    @Since("3.2.0")
     @PostMapping("/online")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> online(AgentSpecOnlineForm form) throws NacosException {
@@ -328,6 +345,7 @@ public class AgentSpecAdminController {
      * @return result of the update operation
      * @throws NacosException if the agentspec not found or no permission
      */
+    @Since("3.2.0")
     @PutMapping("/scope")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateScope(AgentSpecScopeForm form) throws NacosException {
@@ -340,6 +358,7 @@ public class AgentSpecAdminController {
     /**
      * Offline operation (version-level or agentspec-level by scope).
      */
+    @Since("3.2.0")
     @PostMapping("/offline")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> offline(AgentSpecOnlineForm form) throws NacosException {

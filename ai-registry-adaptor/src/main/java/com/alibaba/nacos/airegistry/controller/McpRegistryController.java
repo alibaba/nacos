@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.airegistry.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.airegistry.form.GetServerForm;
 import com.alibaba.nacos.airegistry.form.ListServerForm;
 import com.alibaba.nacos.airegistry.form.ListServersNacosForm;
@@ -68,6 +69,7 @@ public class McpRegistryController {
      * @return mcp server list {@link McpRegistryServerList}
      * @throws NacosApiException if request parameter is invalid or handle error
      */
+    @Since("3.2.1")
     @GetMapping(value = "/v0/servers")
     public McpRegistryServerList listMcpServers(ListServersNacosForm form)
         throws NacosApiException, NacosException {
@@ -106,6 +108,7 @@ public class McpRegistryController {
      * @return mcp server detail or McpErrorResponse when server not found.
      * @throws NacosApiException if request parameter is invalid or handle error
      */
+    @Since("3.2.1")
     @GetMapping(value = "/v0/servers/{name}/versions")
     public Object getServerVersions(@PathVariable String name, GetServerForm form,
         HttpServletResponse response)
@@ -136,6 +139,7 @@ public class McpRegistryController {
      *         found.
      * @throws NacosException if handle error
      */
+    @Since("3.2.1")
     @GetMapping(value = "/v0/servers/{serverName}/versions/{version}")
     public Object getVersionedServer(@PathVariable String serverName, @PathVariable String version,
         GetServerForm form, HttpServletResponse response)

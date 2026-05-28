@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
@@ -88,6 +89,7 @@ public class SkillAdminController {
      * @return result of the get operation
      * @throws NacosException if the skill get fails
      */
+    @Since("3.2.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<SkillMeta> getSkill(SkillForm form) throws NacosException {
@@ -103,6 +105,7 @@ public class SkillAdminController {
      * @return full skill content for the specified version
      * @throws NacosException if the skill or version not found
      */
+    @Since("3.2.0")
     @GetMapping("/version")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<Skill> getSkillVersion(SkillForm form) throws NacosException {
@@ -119,6 +122,7 @@ public class SkillAdminController {
      * @return ZIP file as ResponseEntity
      * @throws NacosException if the skill or version not found
      */
+    @Since("3.2.0")
     @GetMapping("/version/download")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public ResponseEntity<byte[]> downloadSkillVersion(SkillForm form) throws NacosException {
@@ -136,6 +140,7 @@ public class SkillAdminController {
      * @return result of the deletion operation
      * @throws NacosException if the skill deletion fails
      */
+    @Since("3.2.0")
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteSkill(SkillForm form) throws NacosException {
@@ -152,6 +157,7 @@ public class SkillAdminController {
      * @return result of the list operation
      * @throws NacosException if the skill list fails
      */
+    @Since("3.2.1")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
         tags = {ALLOW_ANONYMOUS})
@@ -178,6 +184,7 @@ public class SkillAdminController {
      * @return result of the upload operation
      * @throws NacosException if the upload fails
      */
+    @Since("3.2.2")
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
@@ -212,6 +219,7 @@ public class SkillAdminController {
      * @return batch upload result with succeeded and failed lists
      * @throws NacosException if zip parsing fails entirely
      */
+    @Since("3.2.2")
     @PostMapping(value = "/upload/batch", consumes = "multipart/form-data")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
@@ -230,6 +238,7 @@ public class SkillAdminController {
     /**
      * Create draft: {@code skillCard} required unless {@code basedOnVersion} is set (fork from existing version).
      */
+    @Since("3.2.0")
     @PostMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> createDraft(SkillDraftCreateForm form) throws NacosException {
@@ -243,6 +252,7 @@ public class SkillAdminController {
     /**
      * Update current draft content.
      */
+    @Since("3.2.0")
     @PutMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateDraft(SkillUpdateForm form) throws NacosException {
@@ -255,6 +265,7 @@ public class SkillAdminController {
     /**
      * Delete current draft version.
      */
+    @Since("3.2.0")
     @DeleteMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteDraft(SkillForm form) throws NacosException {
@@ -266,6 +277,7 @@ public class SkillAdminController {
     /**
      * Submit a version for pipeline review.
      */
+    @Since("3.2.0")
     @PostMapping("/submit")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> submit(SkillSubmitForm form) throws NacosException {
@@ -278,6 +290,7 @@ public class SkillAdminController {
     /**
      * Publish an approved reviewing version.
      */
+    @Since("3.2.0")
     @PostMapping("/publish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> publish(SkillPublishForm form) throws NacosException {
@@ -292,6 +305,7 @@ public class SkillAdminController {
      * Force-publish a skill version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and reviewing
      * (pipeline in-progress) versions. Only admin users can call this endpoint.
      */
+    @Since("3.2.1")
     @PostMapping("/force-publish")
     @Secured(resource = ADMIN_PATH
         + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -307,6 +321,7 @@ public class SkillAdminController {
     /**
      * Re-edit a reviewed version, transitioning it back to draft for modification.
      */
+    @Since("3.2.2")
     @PostMapping("/redraft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> redraft(SkillPublishForm form) throws NacosException {
@@ -319,6 +334,7 @@ public class SkillAdminController {
     /**
      * Update runtime route labels without changing version status.
      */
+    @Since("3.2.0")
     @PutMapping("/labels")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateLabels(SkillLabelsUpdateForm form) throws NacosException {
@@ -331,6 +347,7 @@ public class SkillAdminController {
     /**
      * Update skill biz tags without changing version status.
      */
+    @Since("3.2.0")
     @PutMapping("/biz-tags")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
@@ -343,6 +360,7 @@ public class SkillAdminController {
     /**
      * Online operation (version-level or skill-level by scope).
      */
+    @Since("3.2.0")
     @PostMapping("/online")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> online(SkillOnlineForm form) throws NacosException {
@@ -360,6 +378,7 @@ public class SkillAdminController {
      * @return result of the update operation
      * @throws NacosException if the skill not found or no permission
      */
+    @Since("3.2.0")
     @PutMapping("/scope")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateScope(SkillScopeForm form) throws NacosException {
@@ -372,6 +391,7 @@ public class SkillAdminController {
     /**
      * Offline operation (version-level or skill-level by scope).
      */
+    @Since("3.2.0")
     @PostMapping("/offline")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> offline(SkillOnlineForm form) throws NacosException {

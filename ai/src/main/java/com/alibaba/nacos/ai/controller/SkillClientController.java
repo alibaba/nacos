@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.client.SkillQueryForm;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
@@ -56,6 +57,7 @@ public class SkillClientController {
     /**
      * Download an online skill version as ZIP file by label/version/latest.
      */
+    @Since("3.2.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
         tags = {ALLOW_ANONYMOUS})

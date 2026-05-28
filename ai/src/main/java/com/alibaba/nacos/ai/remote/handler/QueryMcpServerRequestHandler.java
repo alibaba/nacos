@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
@@ -40,6 +41,7 @@ import org.springframework.stereotype.Component;
  *
  * @author xiweng.yy
  */
+@Since("3.0.3")
 @Component
 public class QueryMcpServerRequestHandler
     extends RequestHandler<QueryMcpServerRequest, QueryMcpServerResponse> {

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.agentspecs.client.AgentSpecQueryForm;
 import com.alibaba.nacos.ai.form.agentspecs.client.AgentSpecSearchForm;
@@ -58,6 +59,7 @@ public class AgentSpecClientController {
     /**
      * Search enabled agentspecs for runtime usage.
      */
+    @Since("3.2.0")
     @GetMapping("/search")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
     public Result<Page<AgentSpecBasicInfo>> search(AgentSpecSearchForm form, PageForm pageForm)
@@ -72,6 +74,7 @@ public class AgentSpecClientController {
     /**
      * Get an online agentspec version by label/version/latest.
      */
+    @Since("3.2.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
         tags = {ALLOW_ANONYMOUS})

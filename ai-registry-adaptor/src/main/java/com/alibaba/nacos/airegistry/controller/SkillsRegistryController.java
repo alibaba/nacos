@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.airegistry.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -70,6 +71,7 @@ public class SkillsRegistryController {
      * @return well-known index payload
      * @throws NacosException if query fails
      */
+    @Since("3.2.2")
     @GetMapping(value = WELL_KNOWN_AGENT_SKILLS + "/index.json",
         produces = MediaType.APPLICATION_JSON_VALUE)
     public WellKnownSkillsIndex getAgentSkillsIndex(@PathVariable String namespaceId)
@@ -84,6 +86,7 @@ public class SkillsRegistryController {
      * @return legacy well-known index payload
      * @throws NacosException if query fails
      */
+    @Since("3.2.2")
     @GetMapping(value = WELL_KNOWN_SKILLS + "/index.json",
         produces = MediaType.APPLICATION_JSON_VALUE)
     public WellKnownSkillsIndex getLegacySkillsIndex(@PathVariable String namespaceId)
@@ -100,6 +103,7 @@ public class SkillsRegistryController {
      * @return search response with CLI-compatible shape
      * @throws NacosException if query fails
      */
+    @Since("3.2.1")
     @GetMapping(value = BASE_PATH + "/{namespaceId}/api/search",
         produces = MediaType.APPLICATION_JSON_VALUE)
     public SkillsSearchResponse search(@PathVariable String namespaceId, SkillsSearchForm form,
@@ -120,6 +124,7 @@ public class SkillsRegistryController {
      * @return skill markdown when the skill is exportable, otherwise 404
      * @throws NacosException if query fails
      */
+    @Since("3.2.1")
     @GetMapping(value = {
         WELL_KNOWN_AGENT_SKILLS + "/{skillName}/SKILL.md",
         WELL_KNOWN_SKILLS + "/{skillName}/SKILL.md"
@@ -146,6 +151,7 @@ public class SkillsRegistryController {
      * @return skill ZIP archive when exportable, otherwise 404
      * @throws NacosException if query fails
      */
+    @Since("3.2.2")
     @GetMapping(value = {
         WELL_KNOWN_AGENT_SKILLS + "/{skillName}.zip",
         WELL_KNOWN_SKILLS + "/{skillName}.zip"
@@ -172,6 +178,7 @@ public class SkillsRegistryController {
      * @return file content when the skill and file are exportable, otherwise 404
      * @throws NacosException if query fails
      */
+    @Since("3.2.1")
     @GetMapping(value = {
         WELL_KNOWN_AGENT_SKILLS + "/{skillName}/**",
         WELL_KNOWN_SKILLS + "/{skillName}/**"
