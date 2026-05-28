@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
@@ -46,6 +47,7 @@ public class OperatorMetricsV1Controller {
     /**
      * Get metrics (only status). Kept for old clients; full metrics available at v3 API.
      */
+    @Since("3.2.0")
     @GetMapping("/metrics")
     @Compatibility(apiType = ApiType.OPEN_API,
         alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")

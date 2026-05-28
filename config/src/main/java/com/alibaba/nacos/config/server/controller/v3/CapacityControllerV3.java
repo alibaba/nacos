@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -64,6 +65,7 @@ public class CapacityControllerV3 {
     /**
      * Get capacity information.
      */
+    @Since("3.0.0")
     @GetMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
         signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -97,6 +99,7 @@ public class CapacityControllerV3 {
     /**
      * Modify group or capacity of namespaceId, and init record when capacity information are still initial.
      */
+    @Since("3.0.0")
     @PostMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
         signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)

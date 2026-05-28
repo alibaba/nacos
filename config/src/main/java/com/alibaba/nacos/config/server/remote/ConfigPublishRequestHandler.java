@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
@@ -52,6 +53,7 @@ import static com.alibaba.nacos.config.server.constant.Constants.RPC;
  * @author liuzunfei
  * @version $Id: ConfigPublishRequestHandler.java, v 0.1 2020年07月16日 4:41 PM liuzunfei Exp $
  */
+@Since("2.0.0")
 @Component
 public class ConfigPublishRequestHandler
     extends RequestHandler<ConfigPublishRequest, ConfigPublishResponse> {

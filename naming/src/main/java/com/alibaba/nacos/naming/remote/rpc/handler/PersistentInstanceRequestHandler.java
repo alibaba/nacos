@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
@@ -45,6 +46,7 @@ import org.springframework.stereotype.Component;
  *
  * @author blake.qiu
  */
+@Since("2.0.0")
 @Component
 public class PersistentInstanceRequestHandler
     extends RequestHandler<PersistentInstanceRequest, InstanceResponse> {

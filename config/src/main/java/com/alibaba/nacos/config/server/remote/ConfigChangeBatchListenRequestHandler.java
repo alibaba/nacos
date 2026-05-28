@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
@@ -43,6 +44,7 @@ import org.springframework.stereotype.Component;
  * @author liuzunfei
  * @version $Id: ConfigChangeListenRequestHandler.java, v 0.1 2020年07月14日 10:11 AM liuzunfei Exp $
  */
+@Since("2.0.0")
 @Component
 public class ConfigChangeBatchListenRequestHandler
     extends RequestHandler<ConfigBatchListenRequest, ConfigChangeBatchListenResponse> {

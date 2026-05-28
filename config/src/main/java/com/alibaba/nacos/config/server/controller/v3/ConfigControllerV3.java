@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.ConfigType;
@@ -166,6 +167,7 @@ public class ConfigControllerV3 {
     /**
      * Query configuration.
      */
+    @Since("3.0.0")
     @GetMapping
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -194,6 +196,7 @@ public class ConfigControllerV3 {
     /**
      * Publish configuration.
      */
+    @Since("3.0.0")
     @PostMapping
     @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -249,6 +252,7 @@ public class ConfigControllerV3 {
      * @return the result
      * @throws NacosException the nacos exception
      */
+    @Since("3.1.0")
     @PutMapping("/metadata")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> publishConfigMetadata(HttpServletRequest request,
@@ -278,6 +282,7 @@ public class ConfigControllerV3 {
     /**
      * Delete configuration.
      */
+    @Since("3.0.0")
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfig(HttpServletRequest request, ConfigFormV3 configForm)
@@ -300,6 +305,7 @@ public class ConfigControllerV3 {
     /**
      * Batch delete configuration by ids.
      */
+    @Since("3.0.0")
     @DeleteMapping("/batch")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfigs(HttpServletRequest request,
@@ -326,6 +332,7 @@ public class ConfigControllerV3 {
     /**
      * Subscribe to configured client information.
      */
+    @Since("3.0.0")
     @GetMapping("/listener")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm,
@@ -350,6 +357,7 @@ public class ConfigControllerV3 {
      * `nacos.config.search.wait_timeout` to control the waiting time of query.
      * </p>
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
@@ -393,6 +401,7 @@ public class ConfigControllerV3 {
     /**
      * Execute to remove beta operation.
      */
+    @Since("3.0.0")
     @DeleteMapping("/beta")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest, ConfigFormV3 configForm)
@@ -433,6 +442,7 @@ public class ConfigControllerV3 {
     /**
      * Execute to query beta operation.
      */
+    @Since("3.0.0")
     @GetMapping("/beta")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigGrayInfo> queryBeta(ConfigFormV3 configForm) throws NacosApiException {
@@ -459,6 +469,7 @@ public class ConfigControllerV3 {
     /**
      * Publish gray configuration.
      */
+    @Since("3.2.2")
     @PostMapping("/gray")
     @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -508,6 +519,7 @@ public class ConfigControllerV3 {
     /**
      * Query gray configuration.
      */
+    @Since("3.2.2")
     @GetMapping("/gray")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigGrayInfo> queryGray(ConfigFormV3 configForm,
@@ -534,6 +546,7 @@ public class ConfigControllerV3 {
     /**
      * Remove gray configuration.
      */
+    @Since("3.2.2")
     @DeleteMapping("/gray")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> stopGray(HttpServletRequest request, ConfigFormV3 configForm,
@@ -575,6 +588,7 @@ public class ConfigControllerV3 {
     /**
      * Execute import and publish config operation.
      */
+    @Since("3.0.0")
     @PostMapping("/import")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
@@ -735,6 +749,7 @@ public class ConfigControllerV3 {
     /**
      * Export config add metadata.yml file record config metadata.
      */
+    @Since("3.0.0")
     @GetMapping("/export")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
@@ -781,6 +796,7 @@ public class ConfigControllerV3 {
     /**
      * Execute clone config operation.
      */
+    @Since("3.0.0")
     @PostMapping("/clone")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
