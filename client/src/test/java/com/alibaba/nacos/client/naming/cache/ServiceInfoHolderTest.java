@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
-import io.prometheus.client.Gauge;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -114,15 +113,12 @@ class ServiceInfoHolderTest {
         hosts.add(instance2);
         info.setHosts(hosts);
         
-        Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
             Mockito.mockStatic(MetricsMonitor.class)) {
-            mockedMetricsMonitor.when(MetricsMonitor::getServiceInfoMapSizeMonitor)
-                .thenReturn(mockGaugeChild);
             
             holder.processServiceInfo(info);
             
-            verify(mockGaugeChild, times(1)).set(1);
+            mockedMetricsMonitor.verify(() -> MetricsMonitor.recordServiceInfoMapSize(1), times(1));
         }
     }
     
@@ -141,7 +137,7 @@ class ServiceInfoHolderTest {
             Mockito.mockStatic(MetricsMonitor.class)) {
             holder.processServiceInfo(info);
             
-            mockedMetricsMonitor.verify(MetricsMonitor::getServiceInfoMapSizeMonitor, never());
+            mockedMetricsMonitor.verify(() -> MetricsMonitor.recordServiceInfoMapSize(org.mockito.ArgumentMatchers.anyDouble()), never());
         }
     }
     
@@ -157,15 +153,12 @@ class ServiceInfoHolderTest {
         
         info.setHosts(hosts);
         
-        Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
             Mockito.mockStatic(MetricsMonitor.class)) {
-            mockedMetricsMonitor.when(MetricsMonitor::getServiceInfoMapSizeMonitor)
-                .thenReturn(mockGaugeChild);
             
             holder.processServiceInfo(info);
             
-            verify(mockGaugeChild, times(1)).set(1);
+            mockedMetricsMonitor.verify(() -> MetricsMonitor.recordServiceInfoMapSize(1), times(1));
         }
     }
     
@@ -180,14 +173,11 @@ class ServiceInfoHolderTest {
         hosts.add(instance2);
         info.setHosts(hosts);
         
-        Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         RuntimeException exception = new RuntimeException("Mocked exception");
         
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
             Mockito.mockStatic(MetricsMonitor.class)) {
-            mockedMetricsMonitor.when(MetricsMonitor::getServiceInfoMapSizeMonitor)
-                .thenReturn(mockGaugeChild);
-            doThrow(exception).when(mockGaugeChild).set(anyInt());
+            doThrow(exception).when(() -> MetricsMonitor.recordServiceInfoMapSize(org.mockito.ArgumentMatchers.anyDouble()));
             
             ServiceInfo actual2 = holder.processServiceInfo(info);
             
