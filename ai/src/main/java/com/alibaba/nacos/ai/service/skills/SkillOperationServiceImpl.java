@@ -943,7 +943,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     /**
-     * Force-publish a version regardless of its current status. Same manifest update as {@link #publish}.
+     * Force-publish a draft, reviewing, or reviewed version. Same manifest update as {@link #publish}.
      */
     @Override
     public void forcePublish(String namespaceId, String name, String version,

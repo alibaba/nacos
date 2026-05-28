@@ -1684,6 +1684,20 @@ class AiResourceManagerTest {
     }
     
     @Test
+    void doForcePublishShouldThrowWhenOffline() {
+        AiResource meta = buildMeta("res");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion("v1");
+        v.setStatus(AiResourceConstants.VERSION_STATUS_OFFLINE);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(v);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.doForcePublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+    
+    @Test
     void doForcePublishShouldAllowDraft() throws NacosException {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");

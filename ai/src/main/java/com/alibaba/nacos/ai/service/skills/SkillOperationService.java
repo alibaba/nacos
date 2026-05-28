@@ -255,7 +255,7 @@ public interface SkillOperationService {
     
     /**
      * Force-publish a skill version, bypassing pipeline validation.
-     * Accepts any non-online version.
+     * Accepts draft, reviewing, and reviewed versions.
      * Should only be invoked by admin users.
      *
      * @param namespaceId      namespace ID

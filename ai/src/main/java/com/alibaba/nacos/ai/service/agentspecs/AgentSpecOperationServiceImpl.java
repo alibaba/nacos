@@ -988,7 +988,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     /**
-     * Force-publish a version regardless of its current status.
+     * Force-publish a draft, reviewing, or reviewed version.
      */
     @Override
     public void forcePublish(String namespaceId, String name, String version,

@@ -861,10 +861,11 @@ public class AiResourceManager {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 type + " version not found: " + name + "@" + version);
         }
-        if (AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
+        if (AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())
+            || AiResourceConstants.VERSION_STATUS_OFFLINE.equalsIgnoreCase(v.getStatus())) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
-                "Force-publish is not allowed for already online version: " + version);
+                "Force-publish is not allowed for online or offline version: " + version);
         }
         
         LOGGER.warn("[FORCE-PUBLISH] Bypassing pipeline validation for {} {}@{} by user {}",

@@ -56,7 +56,8 @@ create/upload draft
 如果没有启用发布流水线，或没有匹配该资源类型的流水线节点，`submit` 可以根据类型
 实现直接发布。
 
-`force-publish` 会绕过流水线校验，必须保持为管理操作。
+`force-publish` 会绕过流水线校验，必须保持为管理操作。它仅接受 `draft`、
+`reviewing` 和 `reviewed` 版本；`online` 和 `offline` 版本必须被拒绝。
 
 ## 3. Draft 规则
 
@@ -79,6 +80,7 @@ create/upload draft
   redraft 该版本。
 - Publish 会把版本改为 `online`，清理 working 指针，按需增加 `onlineCnt`，并可更新
   `latest` label。
+- Force publish 会在跳过流水线通过校验的同时，执行与 publish 成功时一致的状态转换。
 
 流水线扩展行为由 [AI 发布流水线插件规范](../plugin/ai-pipeline-plugin-spec.md)定义。
 本领域规范只定义 AI 资源生命周期如何响应流水线结果。

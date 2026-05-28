@@ -279,7 +279,7 @@ public class ConsoleSkillController {
     }
     
     /**
-     * Force-publish a skill version, bypassing pipeline validation. Accepts any non-online version.
+     * Force-publish a skill version, bypassing pipeline validation. Accepts draft, reviewing, and reviewed versions.
      * Restricted to admin users only (apiType = ADMIN_API enforces global admin check).
      */
     @Since("3.2.1")

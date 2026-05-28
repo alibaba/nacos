@@ -156,7 +156,7 @@ public interface SkillHandler {
     void publish(SkillPublishForm form) throws NacosException;
     
     /**
-     * Force-publish a skill version, bypassing pipeline validation. Accepts any non-online version.
+     * Force-publish a skill version, bypassing pipeline validation. Accepts draft, reviewing, and reviewed versions.
      * Should only be called by admin users.
      *
      * @param form publish form
