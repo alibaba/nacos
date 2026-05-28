@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -77,6 +78,7 @@ public class NamespaceControllerV3 {
      *
      * @return namespace list
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/namespace", action = ActionTypes.READ, signType = SignType.CONSOLE,
@@ -91,6 +93,7 @@ public class NamespaceControllerV3 {
      * @param namespaceId namespaceId
      * @return namespace all info
      */
+    @Since("3.0.0")
     @GetMapping
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "namespaces", action = ActionTypes.READ, signType = SignType.CONSOLE,
@@ -106,6 +109,7 @@ public class NamespaceControllerV3 {
      * @param namespaceForm namespaceForm.
      * @return whether create ok
      */
+    @Since("3.0.0")
     @PostMapping
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -148,6 +152,7 @@ public class NamespaceControllerV3 {
      * @param namespaceForm namespace params
      * @return whether edit ok
      */
+    @Since("3.0.0")
     @PutMapping
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -170,6 +175,7 @@ public class NamespaceControllerV3 {
      * @param namespaceId namespace ID
      * @return whether delete ok
      */
+    @Since("3.0.0")
     @DeleteMapping
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -184,6 +190,7 @@ public class NamespaceControllerV3 {
      * @param namespaceId namespaceId
      * @return whether exist
      */
+    @Since("3.0.0")
     @GetMapping("/check")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "namespaces", action = ActionTypes.READ, signType = SignType.CONSOLE,

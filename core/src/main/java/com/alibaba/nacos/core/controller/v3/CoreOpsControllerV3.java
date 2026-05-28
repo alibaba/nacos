@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -74,6 +75,7 @@ public class CoreOpsControllerV3 {
      * @param form RaftCommandForm
      * @return {@link RestResult}
      */
+    @Since("3.0.0")
     @PostMapping(value = "/raft")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/ops", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -88,6 +90,7 @@ public class CoreOpsControllerV3 {
      *
      * @return {@link RestResult}
      */
+    @Since("3.0.0")
     @GetMapping(value = "/ids")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/ops", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -116,6 +119,7 @@ public class CoreOpsControllerV3 {
      * @return {@link Result}
      * @throws NacosApiException if parameters are invalid
      */
+    @Since("3.0.0")
     @PutMapping(value = "/log")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/ops", action = ActionTypes.WRITE, signType = SignType.CONSOLE,

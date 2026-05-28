@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
@@ -63,6 +64,7 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
+    @Since("3.0.0")
     @GetMapping("/current")
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3 + "/loader", action = ActionTypes.READ,
         apiType = ApiType.ADMIN_API)
@@ -77,6 +79,7 @@ public class ServerLoaderControllerV3 {
      */
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3
         + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Since("3.0.0")
     @PostMapping("/reloadCurrent")
     public Result<String> reloadCount(@RequestParam Integer count,
         @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
@@ -90,6 +93,7 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
+    @Since("3.0.0")
     @PostMapping("/smartReloadCluster")
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3
         + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
@@ -109,6 +113,7 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
+    @Since("3.0.0")
     @PostMapping("/reloadClient")
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3
         + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
@@ -123,6 +128,7 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
+    @Since("3.0.0")
     @GetMapping("/cluster")
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3 + "/loader", action = ActionTypes.READ,
         apiType = ApiType.ADMIN_API)

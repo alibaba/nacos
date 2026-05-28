@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.core;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
@@ -43,6 +44,7 @@ import java.util.Map;
  */
 @InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 @Component
+@Since("2.0.0")
 public class ServerReloaderRequestHandler
     extends RequestHandler<ServerReloadRequest, ServerReloadResponse> {
     
