@@ -65,7 +65,7 @@ class NacosSkillCacheHolderTest {
     @BeforeEach
     void setUp() {
         Properties properties = new Properties();
-        properties.put(AiConstants.AI_SKILL_CACHE_UPDATE_INTERVAL, "100");
+        properties.put(AiConstants.AI_SKILL_CACHE_UPDATE_INTERVAL, "60000");
         NotifyCenter.registerToPublisher(SkillChangedEvent.class, 16384);
         cacheHolder = new NacosSkillCacheHolder(aiClientProxy,
             NacosClientProperties.PROTOTYPE.derive(properties));

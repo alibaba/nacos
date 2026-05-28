@@ -67,7 +67,7 @@ class NacosAgentSpecCacheHolderTest {
     @BeforeEach
     void setUp() {
         Properties properties = new Properties();
-        properties.put(AiConstants.AI_AGENTSPEC_CACHE_UPDATE_INTERVAL, "100");
+        properties.put(AiConstants.AI_AGENTSPEC_CACHE_UPDATE_INTERVAL, "60000");
         NotifyCenter.registerToPublisher(AgentSpecChangedEvent.class, 16384);
         cacheHolder = new NacosAgentSpecCacheHolder(aiClientProxy,
             NacosClientProperties.PROTOTYPE.derive(properties));
