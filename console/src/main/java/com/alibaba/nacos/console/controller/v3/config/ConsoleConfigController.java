@@ -388,6 +388,7 @@ public class ConsoleConfigController {
      * @return Result containing a map of the clone status.
      * @throws NacosException If a Nacos-specific error occurs.
      */
+    @Since("3.0.0")
     @PostMapping("/clone")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API,
         tags = {

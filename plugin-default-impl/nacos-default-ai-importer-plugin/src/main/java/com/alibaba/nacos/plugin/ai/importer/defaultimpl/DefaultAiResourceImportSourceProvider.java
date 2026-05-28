@@ -87,7 +87,7 @@ public class DefaultAiResourceImportSourceProvider implements AiResourceImportSo
     }
     
     private AiResourceImportSource loadOfficialMcpSource(Properties properties) {
-        if (!getBoolean(properties, MCP_OFFICIAL_PREFIX + "enabled", false)) {
+        if (!getBoolean(properties, MCP_OFFICIAL_PREFIX + "enabled", true)) {
             return null;
         }
         AiResourceImportSource result = new AiResourceImportSource();
@@ -133,7 +133,7 @@ public class DefaultAiResourceImportSourceProvider implements AiResourceImportSo
     }
     
     private AiResourceImportSource loadSkillsShSource(Properties properties) {
-        if (!getBoolean(properties, SKILLS_SH_PREFIX + "enabled", false)) {
+        if (!getBoolean(properties, SKILLS_SH_PREFIX + "enabled", true)) {
             return null;
         }
         AiResourceImportSource result = new AiResourceImportSource();

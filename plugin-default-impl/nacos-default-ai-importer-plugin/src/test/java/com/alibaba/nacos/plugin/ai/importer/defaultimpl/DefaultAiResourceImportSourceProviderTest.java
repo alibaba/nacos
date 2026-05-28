@@ -40,9 +40,22 @@ class DefaultAiResourceImportSourceProviderTest {
         new DefaultAiResourceImportSourceProvider();
     
     @Test
+    void testLoadDefaultEnabledSources() throws Exception {
+        List<AiResourceImportSource> sources = toList(provider.loadSources(new Properties()));
+        
+        assertEquals(2, sources.size());
+        assertEquals("mcp-official", sources.get(0).getSourceId());
+        assertEquals(McpRegistryImportServiceBuilder.IMPORTER_TYPE,
+            sources.get(0).getPluginName());
+        assertEquals("skills-sh", sources.get(1).getSourceId());
+        assertEquals(SkillsShImportServiceBuilder.IMPORTER_TYPE, sources.get(1).getPluginName());
+    }
+    
+    @Test
     void testLoadOfficialMcpSourceWithDefaultEndpoint() throws Exception {
         Properties properties = new Properties();
         properties.setProperty("nacos.plugin.ai.importer.mcp.official.enabled", "true");
+        properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "false");
         
         List<AiResourceImportSource> sources = toList(provider.loadSources(properties));
         
@@ -60,6 +73,8 @@ class DefaultAiResourceImportSourceProviderTest {
     @Test
     void testLoadSkillWellKnownSourceFromUrl() throws Exception {
         Properties properties = new Properties();
+        properties.setProperty("nacos.plugin.ai.importer.mcp.official.enabled", "false");
+        properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "false");
         properties.setProperty("nacos.plugin.ai.importer.skills.well-known.enabled", "true");
         properties.setProperty("nacos.plugin.ai.importer.skills.well-known.url",
             "https://developers.cloudflare.com");
@@ -80,6 +95,8 @@ class DefaultAiResourceImportSourceProviderTest {
     @Test
     void testLoadSkillWellKnownRejectsMissingUrl() {
         Properties properties = new Properties();
+        properties.setProperty("nacos.plugin.ai.importer.mcp.official.enabled", "false");
+        properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "false");
         properties.setProperty("nacos.plugin.ai.importer.skills.well-known.enabled", "true");
         
         assertThrows(NacosException.class, () -> provider.loadSources(properties));
@@ -88,6 +105,7 @@ class DefaultAiResourceImportSourceProviderTest {
     @Test
     void testLoadSkillsShSourceWithDefaultEndpoint() throws Exception {
         Properties properties = new Properties();
+        properties.setProperty("nacos.plugin.ai.importer.mcp.official.enabled", "false");
         properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "true");
         
         List<AiResourceImportSource> sources = toList(provider.loadSources(properties));
@@ -105,6 +123,7 @@ class DefaultAiResourceImportSourceProviderTest {
     @Test
     void testLoadSourceSecurityOptions() throws Exception {
         Properties properties = new Properties();
+        properties.setProperty("nacos.plugin.ai.importer.mcp.official.enabled", "false");
         properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "true");
         properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.allow-http", "true");
         properties.setProperty("nacos.plugin.ai.importer.skills.skills-sh.allow-private-network",

@@ -183,6 +183,7 @@ public class UserControllerV3 {
      * @throws IllegalArgumentException if user not exist or oldPassword is incorrect
      * @since 1.2.0
      */
+    @Since("3.0.0")
     @PutMapping
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE,
         tags = {

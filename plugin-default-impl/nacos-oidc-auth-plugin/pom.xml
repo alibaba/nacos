@@ -62,7 +62,7 @@
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
-            <version>9.37.3</version>
+            <version>9.37.4</version>
         </dependency>
 
         <!-- Caffeine for JWKS caching -->
