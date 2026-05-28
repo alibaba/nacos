@@ -381,6 +381,7 @@ public interface AiService extends A2aService {
      * @return current skill ZIP bytes, may be {@code null} when the skill is not found
      * @throws NacosException if request parameter is invalid or handle error
      */
+    @Since("3.2.2")
     byte[] subscribeSkill(String skillName, String version, String label,
         AbstractNacosSkillListener skillListener) throws NacosException;
     
@@ -394,6 +395,7 @@ public interface AiService extends A2aService {
      *                      {@link #subscribeSkill(String, String, String, AbstractNacosSkillListener)}
      * @throws NacosException if request parameter is invalid or handle error
      */
+    @Since("3.2.2")
     void unsubscribeSkill(String skillName, String version, String label,
         AbstractNacosSkillListener skillListener) throws NacosException;
     
