@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.config;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
@@ -46,6 +47,7 @@ public interface ConfigMaintainerService
      * @return Configuration information.
      * @throws NacosException If the query fails.
      */
+    @Since("3.0.0")
     default ConfigDetailInfo getConfig(String dataId) throws NacosException {
         return getConfig(dataId, Constants.DEFAULT_GROUP);
     }
@@ -58,6 +60,7 @@ public interface ConfigMaintainerService
      * @return Configuration information.
      * @throws NacosException If the query fails.
      */
+    @Since("3.0.0")
     default ConfigDetailInfo getConfig(String dataId, String groupName) throws NacosException {
         return getConfig(dataId, groupName, Constants.DEFAULT_NAMESPACE_ID);
     }
@@ -71,6 +74,7 @@ public interface ConfigMaintainerService
      * @return Configuration information.
      * @throws NacosException If the query fails.
      */
+    @Since("3.0.0")
     ConfigDetailInfo getConfig(String dataId, String groupName, String namespaceId)
         throws NacosException;
     
@@ -82,6 +86,7 @@ public interface ConfigMaintainerService
      * @return Whether the configuration was published successfully.
      * @throws NacosException If the publish operation fails.
      */
+    @Since("3.0.0")
     default boolean publishConfig(String dataId, String content) throws NacosException {
         return publishConfig(dataId, Constants.DEFAULT_GROUP, content);
     }
@@ -95,6 +100,7 @@ public interface ConfigMaintainerService
      * @return Whether the configuration was published successfully.
      * @throws NacosException If the publish operation fails.
      */
+    @Since("3.0.0")
     default boolean publishConfig(String dataId, String groupName, String content)
         throws NacosException {
         return publishConfig(dataId, groupName, Constants.DEFAULT_NAMESPACE_ID, content);
@@ -110,6 +116,7 @@ public interface ConfigMaintainerService
      * @return Whether the configuration was published successfully.
      * @throws NacosException If the publish operation fails.
      */
+    @Since("3.0.0")
     default boolean publishConfig(String dataId, String groupName, String namespaceId,
         String content)
         throws NacosException {
@@ -127,6 +134,7 @@ public interface ConfigMaintainerService
      * @return Whether the configuration was published successfully.
      * @throws NacosException If the publish operation fails.
      */
+    @Since("3.0.0")
     default boolean publishConfig(String dataId, String groupName, String namespaceId,
         String content, String desc)
         throws NacosException {
@@ -147,6 +155,7 @@ public interface ConfigMaintainerService
      * @return Whether the configuration was published successfully.
      * @throws NacosException If the publish operation fails.
      */
+    @Since("3.0.0")
     default boolean publishConfig(String dataId, String groupName, String namespaceId,
         String content, String desc,
         String type) throws NacosException {
@@ -170,6 +179,7 @@ public interface ConfigMaintainerService
      * @return Whether the configuration was published successfully.
      * @throws NacosException If publishing fails.
      */
+    @Since("3.0.0")
     boolean publishConfig(String dataId, String groupName, String namespaceId, String content,
         String appName,
         String srcUser, String configTags, String desc, String type) throws NacosException;
@@ -185,6 +195,7 @@ public interface ConfigMaintainerService
      * @return the boolean
      * @throws NacosException the nacos exception
      */
+    @Since("3.1.0")
     boolean updateConfigMetadata(String dataId, String groupName, String namespaceId,
         String description,
         String configTags) throws NacosException;
@@ -196,6 +207,7 @@ public interface ConfigMaintainerService
      * @return Whether the configuration was deleted successfully.
      * @throws NacosException If deletion fails.
      */
+    @Since("3.0.0")
     default boolean deleteConfig(String dataId) throws NacosException {
         return deleteConfig(dataId, Constants.DEFAULT_GROUP);
     }
@@ -208,6 +220,7 @@ public interface ConfigMaintainerService
      * @return Whether the configuration was deleted successfully.
      * @throws NacosException If deletion fails.
      */
+    @Since("3.0.0")
     default boolean deleteConfig(String dataId, String groupName) throws NacosException {
         return deleteConfig(dataId, groupName, Constants.DEFAULT_NAMESPACE_ID);
     }
@@ -221,6 +234,7 @@ public interface ConfigMaintainerService
      * @return Whether the configuration was deleted successfully.
      * @throws NacosException If deletion fails.
      */
+    @Since("3.0.0")
     boolean deleteConfig(String dataId, String groupName, String namespaceId) throws NacosException;
     
     /**
@@ -230,6 +244,7 @@ public interface ConfigMaintainerService
      * @return Whether the configurations were deleted successfully.
      * @throws NacosException If deletion fails.
      */
+    @Since("3.0.0")
     boolean deleteConfigs(List<Long> ids) throws NacosException;
     
     /**
@@ -239,6 +254,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> listConfigs(String namespaceId) throws NacosException {
         return listConfigs(StringUtils.EMPTY, StringUtils.EMPTY, namespaceId);
     }
@@ -252,6 +268,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> listConfigs(String dataId, String groupName, String namespaceId)
         throws NacosException {
         return listConfigs(dataId, groupName, namespaceId, null);
@@ -269,6 +286,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> listConfigs(String dataId, String groupName, String namespaceId,
         String type)
         throws NacosException {
@@ -289,6 +307,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> listConfigs(String dataId, String groupName, String namespaceId,
         String type,
         String configTags, String appName) throws NacosException {
@@ -311,6 +330,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> listConfigs(String dataId, String groupName, String namespaceId,
         String type,
         String configTags, String appName, int pageNo, int pageSize) throws NacosException {
@@ -328,6 +348,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> searchConfigs(String dataId, String groupName, String namespaceId)
         throws NacosException {
         dataId = fillAllPattern(dataId);
@@ -347,6 +368,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> searchConfigs(String dataId, String groupName, String namespaceId,
         String type)
         throws NacosException {
@@ -368,6 +390,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> searchConfigs(String dataId, String groupName, String namespaceId,
         String configDetail, String type) throws NacosException {
         dataId = fillAllPattern(dataId);
@@ -390,6 +413,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> searchConfigs(String dataId, String groupName, String namespaceId,
         String configDetail, String type, String configTags, String appName) throws NacosException {
         dataId = fillAllPattern(dataId);
@@ -415,6 +439,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     default Page<ConfigBasicInfo> searchConfigs(String dataId, String groupName, String namespaceId,
         String configDetail, String type, String configTags, String appName, int pageNo,
         int pageSize)
@@ -443,6 +468,7 @@ public interface ConfigMaintainerService
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
+    @Since("3.0.0")
     Page<ConfigBasicInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId,
         String search,
         String configDetail, String type, String configTags, String appName, int pageNo,
@@ -459,6 +485,7 @@ public interface ConfigMaintainerService
      * @return A map containing the clone result (e.g., success count, unrecognized data).
      * @throws NacosException If the clone operation fails.
      */
+    @Since("3.0.0")
     Map<String, Object> cloneConfig(String namespaceId, List<ConfigCloneInfo> cloneInfos,
         String srcUser,
         SameConfigPolicy policy) throws NacosException;
@@ -470,6 +497,7 @@ public interface ConfigMaintainerService
      * @return A list of configurations in the specified namespace.
      * @throws NacosException If the namespace is invalid or the query fails.
      */
+    @Since("3.0.0")
     List<ConfigBasicInfo> getConfigListByNamespace(String namespaceId) throws NacosException;
     
     /**
@@ -480,6 +508,7 @@ public interface ConfigMaintainerService
      * @return List of listeners for the configuration.
      * @throws NacosException If retrieval fails.
      */
+    @Since("3.0.0")
     default ConfigListenerInfo getListeners(String dataId, String groupName) throws NacosException {
         return getListeners(dataId, groupName, Constants.DEFAULT_NAMESPACE_ID, true);
     }
@@ -494,6 +523,7 @@ public interface ConfigMaintainerService
      * @return List of listeners for the configuration.
      * @throws NacosException If retrieval fails.
      */
+    @Since("3.0.0")
     ConfigListenerInfo getListeners(String dataId, String groupName, String namespaceId,
         boolean aggregation)
         throws NacosException;
@@ -508,6 +538,7 @@ public interface ConfigMaintainerService
      * @return the subscription status.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
         boolean aggregation)
         throws NacosException;
@@ -524,6 +555,7 @@ public interface ConfigMaintainerService
      * @param basic basic string
      * @return Filled all pattern string
      */
+    @Since("3.0.0")
     default String fillAllPattern(String basic) {
         if (StringUtils.isBlank(basic)) {
             return basic;

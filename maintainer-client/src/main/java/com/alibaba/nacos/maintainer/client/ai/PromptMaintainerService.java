@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
@@ -43,6 +44,7 @@ public interface PromptMaintainerService {
      * @return paged prompt list
      * @throws NacosException if fail to list prompts
      */
+    @Since("3.2.0")
     Page<PromptMetaSummary> listPrompts(String namespaceId, String promptKey, String search,
         String bizTags, int pageNo,
         int pageSize)
@@ -57,6 +59,7 @@ public interface PromptMaintainerService {
      * @return paged prompt list
      * @throws NacosException if fail to list prompts
      */
+    @Since("3.2.0")
     default Page<PromptMetaSummary> listPrompts(String promptKey, int pageNo, int pageSize)
         throws NacosException {
         return listPrompts(Constants.DEFAULT_NAMESPACE_ID, promptKey, "blur", null, pageNo,
@@ -71,6 +74,7 @@ public interface PromptMaintainerService {
      * @return true if delete success
      * @throws NacosException if fail to delete prompt
      */
+    @Since("3.2.0")
     boolean deletePrompt(String namespaceId, String promptKey) throws NacosException;
     
     /**
@@ -80,6 +84,7 @@ public interface PromptMaintainerService {
      * @return true if delete success
      * @throws NacosException if fail to delete prompt
      */
+    @Since("3.2.0")
     default boolean deletePrompt(String promptKey) throws NacosException {
         return deletePrompt(Constants.DEFAULT_NAMESPACE_ID, promptKey);
     }
@@ -94,6 +99,7 @@ public interface PromptMaintainerService {
      * @return the page
      * @throws NacosException the nacos exception
      */
+    @Since("3.2.0")
     Page<PromptVersionSummary> listPromptVersions(String namespaceId, String promptKey, int pageNo,
         int pageSize)
         throws NacosException;
@@ -107,6 +113,7 @@ public interface PromptMaintainerService {
      * @return the page
      * @throws NacosException the nacos exception
      */
+    @Since("3.2.0")
     default Page<PromptVersionSummary> listPromptVersions(String promptKey, int pageNo,
         int pageSize)
         throws NacosException {
@@ -123,6 +130,7 @@ public interface PromptMaintainerService {
      * @return prompt governance detail
      * @throws NacosException if fail to get detail
      */
+    @Since("3.2.1")
     PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey)
         throws NacosException;
     
@@ -135,6 +143,7 @@ public interface PromptMaintainerService {
      * @return prompt version info
      * @throws NacosException if fail to get version detail
      */
+    @Since("3.2.1")
     PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version)
         throws NacosException;
     
@@ -153,6 +162,7 @@ public interface PromptMaintainerService {
      * @return created draft version string
      * @throws NacosException if fail to create draft
      */
+    @Since("3.2.1")
     String createDraft(String namespaceId, String promptKey, String basedOnVersion,
         String targetVersion,
         String template, String variables, String commitMsg, String description, String bizTags)
@@ -168,6 +178,7 @@ public interface PromptMaintainerService {
      * @param commitMsg   updated commit message (optional)
      * @throws NacosException if fail to update draft
      */
+    @Since("3.2.1")
     void updateDraft(String namespaceId, String promptKey, String template, String variables,
         String commitMsg)
         throws NacosException;
@@ -179,6 +190,7 @@ public interface PromptMaintainerService {
      * @param promptKey   prompt key
      * @throws NacosException if fail to delete draft
      */
+    @Since("3.2.1")
     void deleteDraft(String namespaceId, String promptKey) throws NacosException;
     
     /**
@@ -190,6 +202,7 @@ public interface PromptMaintainerService {
      * @return submitted version string
      * @throws NacosException if fail to submit
      */
+    @Since("3.2.1")
     String submit(String namespaceId, String promptKey, String version) throws NacosException;
     
     /**
@@ -201,6 +214,7 @@ public interface PromptMaintainerService {
      * @param updateLatestLabel whether to update the latest label
      * @throws NacosException if fail to publish
      */
+    @Since("3.2.1")
     void publish(String namespaceId, String promptKey, String version, Boolean updateLatestLabel)
         throws NacosException;
     
@@ -213,6 +227,7 @@ public interface PromptMaintainerService {
      * @param updateLatestLabel whether to update the latest label
      * @throws NacosException if fail to force-publish
      */
+    @Since("3.2.1")
     void forcePublish(String namespaceId, String promptKey, String version,
         Boolean updateLatestLabel)
         throws NacosException;
@@ -226,6 +241,7 @@ public interface PromptMaintainerService {
      * @return true if redraft success
      * @throws NacosException if fail to redraft
      */
+    @Since("3.2.2")
     boolean redraft(String namespaceId, String promptKey, String version) throws NacosException;
     
     /**
@@ -237,6 +253,7 @@ public interface PromptMaintainerService {
      * @param online      true for online, false for offline
      * @throws NacosException if fail to change status
      */
+    @Since("3.2.1")
     void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)
         throws NacosException;
     
@@ -248,6 +265,7 @@ public interface PromptMaintainerService {
      * @param labels      labels JSON string
      * @throws NacosException if fail to update labels
      */
+    @Since("3.2.1")
     void updateLabels(String namespaceId, String promptKey, String labels) throws NacosException;
     
     /**
@@ -258,6 +276,7 @@ public interface PromptMaintainerService {
      * @param description new description
      * @throws NacosException if fail to update description
      */
+    @Since("3.2.1")
     void updateDescription(String namespaceId, String promptKey, String description)
         throws NacosException;
     
@@ -269,6 +288,7 @@ public interface PromptMaintainerService {
      * @param bizTags     biz tags JSON string
      * @throws NacosException if fail to update biz tags
      */
+    @Since("3.2.1")
     void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException;
     
     // ========== Legacy compatibility APIs (deprecated) ==========
@@ -278,6 +298,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #getPromptGovernanceDetail} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     PromptMetaInfo getPromptMeta(String namespaceId, String promptKey) throws NacosException;
     
@@ -286,6 +307,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #getPromptGovernanceDetail} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     default PromptMetaInfo getPromptMeta(String promptKey) throws NacosException {
         return getPromptMeta(Constants.DEFAULT_NAMESPACE_ID, promptKey);
@@ -296,6 +318,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #getVersionDetail} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     PromptVersionInfo queryPromptDetail(String namespaceId, String promptKey, String version,
         String label)
@@ -306,6 +329,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #updateLabels} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     boolean bindLabel(String namespaceId, String promptKey, String label, String version)
         throws NacosException;
@@ -315,6 +339,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #updateLabels} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     boolean unbindLabel(String namespaceId, String promptKey, String label) throws NacosException;
     
@@ -323,6 +348,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #createDraft} + {@link #submit} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     boolean publishPrompt(String namespaceId, String promptKey, String version, String template,
         String commitMsg, String description, String bizTags) throws NacosException;
@@ -332,6 +358,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #createDraft} + {@link #submit} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     default boolean publishPrompt(String namespaceId, String promptKey, String version,
         String template,
@@ -346,6 +373,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #createDraft} + {@link #submit} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     default boolean publishPrompt(String namespaceId, String promptKey, String version,
         String template,
@@ -359,6 +387,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #createDraft} + {@link #submit} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     default boolean publishPrompt(String promptKey, String version, String template,
         String commitMsg)
@@ -373,6 +402,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #updateDescription} and {@link #updateBizTags} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     boolean updatePromptMetadata(String namespaceId, String promptKey, String description,
         String bizTags)
@@ -383,6 +413,7 @@ public interface PromptMaintainerService {
      *
      * @deprecated Use {@link #updateDescription} instead.
      */
+    @Since("3.2.0")
     @Deprecated
     default boolean updatePromptMetadata(String namespaceId, String promptKey, String description)
         throws NacosException {

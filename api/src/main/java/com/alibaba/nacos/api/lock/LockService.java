@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.lock;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 
@@ -39,6 +40,7 @@ public interface LockService {
      * @return Boolean
      * @throws NacosException NacosException
      */
+    @Since("3.0.0")
     Boolean lock(LockInstance instance) throws NacosException;
     
     /**
@@ -49,6 +51,7 @@ public interface LockService {
      * @return Boolean
      * @throws NacosException NacosException
      */
+    @Since("3.0.0")
     Boolean unLock(LockInstance instance) throws NacosException;
     
     /**
@@ -58,6 +61,7 @@ public interface LockService {
      * @return Boolean
      * @throws NacosException NacosException
      */
+    @Since("3.0.0")
     Boolean remoteTryLock(LockInstance instance) throws NacosException;
     
     /**
@@ -67,6 +71,7 @@ public interface LockService {
      * @return Boolean
      * @throws NacosException NacosException
      */
+    @Since("3.0.0")
     Boolean remoteReleaseLock(LockInstance instance) throws NacosException;
     
     /**
@@ -74,5 +79,6 @@ public interface LockService {
      *
      * @throws NacosException exception.
      */
+    @Since("3.0.0")
     void shutdown() throws NacosException;
 }

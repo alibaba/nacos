@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -38,6 +39,7 @@ public interface SkillMaintainerService {
      * @return skill metadata
      * @throws NacosException if fail to get skill metadata
      */
+    @Since("3.2.0")
     default SkillMeta getSkillMeta(String skillName) throws NacosException {
         return getSkillMeta(Constants.DEFAULT_NAMESPACE_ID, skillName);
     }
@@ -50,6 +52,7 @@ public interface SkillMaintainerService {
      * @return skill metadata
      * @throws NacosException if fail to get skill metadata
      */
+    @Since("3.2.0")
     SkillMeta getSkillMeta(String namespaceId, String skillName) throws NacosException;
     
     /**
@@ -60,6 +63,7 @@ public interface SkillMaintainerService {
      * @return skill version detail
      * @throws NacosException if fail to get skill version detail
      */
+    @Since("3.2.0")
     default Skill getSkillVersionDetail(String skillName, String version) throws NacosException {
         return getSkillVersionDetail(Constants.DEFAULT_NAMESPACE_ID, skillName, version);
     }
@@ -73,6 +77,7 @@ public interface SkillMaintainerService {
      * @return skill version detail
      * @throws NacosException if fail to get skill version detail
      */
+    @Since("3.2.0")
     Skill getSkillVersionDetail(String namespaceId, String skillName, String version)
         throws NacosException;
     
@@ -83,6 +88,7 @@ public interface SkillMaintainerService {
      * @return true if delete success
      * @throws NacosException if fail to delete skill
      */
+    @Since("3.2.0")
     default boolean deleteSkill(String skillName) throws NacosException {
         return deleteSkill(Constants.DEFAULT_NAMESPACE_ID, skillName);
     }
@@ -95,6 +101,7 @@ public interface SkillMaintainerService {
      * @return true if delete success
      * @throws NacosException if fail to delete skill
      */
+    @Since("3.2.0")
     boolean deleteSkill(String namespaceId, String skillName) throws NacosException;
     
     /**
@@ -106,6 +113,7 @@ public interface SkillMaintainerService {
      * @return paged skill list
      * @throws NacosException if fail to list skills
      */
+    @Since("3.2.0")
     default Page<SkillSummary> listSkills(String skillName, int pageNo, int pageSize)
         throws NacosException {
         return listSkills(Constants.DEFAULT_NAMESPACE_ID, skillName, "blur", pageNo, pageSize);
@@ -122,6 +130,7 @@ public interface SkillMaintainerService {
      * @return paged skill list
      * @throws NacosException if fail to list skills
      */
+    @Since("3.2.0")
     Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, int pageNo,
         int pageSize)
         throws NacosException;
@@ -143,6 +152,7 @@ public interface SkillMaintainerService {
      * @return paged skill list
      * @throws NacosException if fail to list skills
      */
+    @Since("3.2.1")
     default Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         String orderBy,
         String owner, String scope, int pageNo, int pageSize) throws NacosException {
@@ -169,6 +179,7 @@ public interface SkillMaintainerService {
      * @return paged skill list
      * @throws NacosException if fail to list skills
      */
+    @Since("3.2.1")
     default Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         String orderBy,
         String owner, String scope, String bizTag, int pageNo, int pageSize) throws NacosException {
@@ -182,6 +193,7 @@ public interface SkillMaintainerService {
      * @return skill name
      * @throws NacosException if fail to upload skill
      */
+    @Since("3.2.0")
     default String uploadSkillFromZip(byte[] zipBytes) throws NacosException {
         return uploadSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, false);
     }
@@ -194,6 +206,7 @@ public interface SkillMaintainerService {
      * @return skill name
      * @throws NacosException if fail to upload skill
      */
+    @Since("3.2.0")
     default String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
         return uploadSkillFromZip(namespaceId, zipBytes, false);
     }
@@ -207,6 +220,7 @@ public interface SkillMaintainerService {
      * @return skill name
      * @throws NacosException if fail to upload skill
      */
+    @Since("3.2.0")
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
         throws NacosException;
     
@@ -220,6 +234,7 @@ public interface SkillMaintainerService {
      * @return skill name
      * @throws NacosException if fail to upload skill
      */
+    @Since("3.2.2")
     default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
         String targetVersion)
         throws NacosException {
@@ -237,6 +252,7 @@ public interface SkillMaintainerService {
      * @return skill name
      * @throws NacosException if fail to upload skill
      */
+    @Since("3.2.2")
     default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
         String targetVersion, String commitMsg)
         throws NacosException {
@@ -250,6 +266,7 @@ public interface SkillMaintainerService {
      * @return batch upload result with succeeded and failed lists
      * @throws NacosException if fail to upload
      */
+    @Since("3.2.2")
     default BatchUploadResult batchUploadSkillsFromZip(byte[] zipBytes) throws NacosException {
         return batchUploadSkillsFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, false);
     }
@@ -263,6 +280,7 @@ public interface SkillMaintainerService {
      * @return batch upload result with succeeded and failed lists
      * @throws NacosException if fail to upload
      */
+    @Since("3.2.2")
     BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
         boolean overwrite)
         throws NacosException;
@@ -275,6 +293,7 @@ public interface SkillMaintainerService {
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
+    @Since("3.2.0")
     default String createDraft(String namespaceId, String skillCard) throws NacosException {
         return createDraft(namespaceId, null, null, null, skillCard);
     }
@@ -288,6 +307,7 @@ public interface SkillMaintainerService {
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
+    @Since("3.2.0")
     default String createDraft(String namespaceId, String skillName, String basedOnVersion)
         throws NacosException {
         return createDraft(namespaceId, skillName, basedOnVersion, null, null);
@@ -303,6 +323,7 @@ public interface SkillMaintainerService {
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
+    @Since("3.2.0")
     default String createDraft(String namespaceId, String skillName, String basedOnVersion,
         String targetVersion)
         throws NacosException {
@@ -321,6 +342,7 @@ public interface SkillMaintainerService {
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
+    @Since("3.2.0")
     default String createDraft(String namespaceId, String skillName, String basedOnVersion,
         String targetVersion,
         String skillCard) throws NacosException {
@@ -339,6 +361,7 @@ public interface SkillMaintainerService {
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
+    @Since("3.2.1")
     String createDraft(String namespaceId, String skillName, String basedOnVersion,
         String targetVersion,
         String skillCard, String commitMsg)
@@ -353,6 +376,7 @@ public interface SkillMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update draft
      */
+    @Since("3.2.0")
     default boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest)
         throws NacosException {
         return updateDraft(namespaceId, skillCard, setAsLatest, null);
@@ -368,6 +392,7 @@ public interface SkillMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update draft
      */
+    @Since("3.2.1")
     boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest, String commitMsg)
         throws NacosException;
     
@@ -379,6 +404,7 @@ public interface SkillMaintainerService {
      * @return true if delete success
      * @throws NacosException if fail to delete draft
      */
+    @Since("3.2.0")
     boolean deleteDraft(String namespaceId, String skillName) throws NacosException;
     
     /**
@@ -390,6 +416,7 @@ public interface SkillMaintainerService {
      * @return submit result (e.g. pipeline id)
      * @throws NacosException if fail to submit
      */
+    @Since("3.2.0")
     String submit(String namespaceId, String skillName, String version) throws NacosException;
     
     /**
@@ -402,6 +429,7 @@ public interface SkillMaintainerService {
      * @return true if publish success
      * @throws NacosException if fail to publish
      */
+    @Since("3.2.0")
     boolean publish(String namespaceId, String skillName, String version, Boolean updateLatestLabel)
         throws NacosException;
     
@@ -415,6 +443,7 @@ public interface SkillMaintainerService {
      * @return true if force-publish success
      * @throws NacosException if fail to force-publish
      */
+    @Since("3.2.1")
     boolean forcePublish(String namespaceId, String skillName, String version,
         Boolean updateLatestLabel)
         throws NacosException;
@@ -428,6 +457,7 @@ public interface SkillMaintainerService {
      * @return true if redraft success
      * @throws NacosException if fail to redraft
      */
+    @Since("3.2.2")
     boolean redraft(String namespaceId, String skillName, String version) throws NacosException;
     
     /**
@@ -439,6 +469,7 @@ public interface SkillMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update labels
      */
+    @Since("3.2.0")
     boolean updateLabels(String namespaceId, String skillName, String labels) throws NacosException;
     
     /**
@@ -450,6 +481,7 @@ public interface SkillMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update biz tags
      */
+    @Since("3.2.0")
     boolean updateBizTags(String namespaceId, String skillName, String bizTags)
         throws NacosException;
     
@@ -464,6 +496,7 @@ public interface SkillMaintainerService {
      * @return true if operation success
      * @throws NacosException if fail to change status
      */
+    @Since("3.2.0")
     boolean changeOnlineStatus(String namespaceId, String skillName, String scope, String version,
         boolean online)
         throws NacosException;
@@ -477,5 +510,6 @@ public interface SkillMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update scope
      */
+    @Since("3.2.0")
     boolean updateScope(String namespaceId, String skillName, String scope) throws NacosException;
 }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.naming;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -41,6 +42,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String registerInstance(String serviceName, String ip, int port) throws NacosException {
         return registerInstance(Constants.DEFAULT_GROUP, serviceName, ip, port);
     }
@@ -55,6 +57,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String registerInstance(String groupName, String serviceName, String ip, int port)
         throws NacosException {
         return registerInstance(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName, ip, port);
@@ -71,6 +74,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String registerInstance(String namespaceId, String groupName, String serviceName,
         String ip, int port)
         throws NacosException {
@@ -88,6 +92,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String registerInstance(String serviceName, String ip, int port, String clusterName)
         throws NacosException {
         return registerInstance(Constants.DEFAULT_GROUP, serviceName, ip, port, clusterName);
@@ -104,6 +109,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String registerInstance(String groupName, String serviceName, String ip, int port,
         String clusterName)
         throws NacosException {
@@ -123,6 +129,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String registerInstance(String namespaceId, String groupName, String serviceName,
         String ip, int port,
         String clusterName) throws NacosException {
@@ -142,6 +149,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String registerInstance(String serviceName, Instance instance) throws NacosException {
         return registerInstance(Constants.DEFAULT_GROUP, serviceName, instance);
     }
@@ -155,6 +163,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String registerInstance(String groupName, String serviceName, Instance instance)
         throws NacosException {
         return registerInstance(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName, instance);
@@ -170,6 +179,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String registerInstance(String namespaceId, String groupName, String serviceName,
         Instance instance)
         throws NacosException {
@@ -194,6 +204,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     String registerInstance(Service service, Instance instance) throws NacosException;
     
     /**
@@ -205,6 +216,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String deregisterInstance(String serviceName, String ip, int port)
         throws NacosException {
         return deregisterInstance(Constants.DEFAULT_GROUP, serviceName, ip, port);
@@ -220,6 +232,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String deregisterInstance(String groupName, String serviceName, String ip, int port)
         throws NacosException {
         return deregisterInstance(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName, ip, port);
@@ -236,6 +249,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String deregisterInstance(String namespaceId, String groupName, String serviceName,
         String ip, int port)
         throws NacosException {
@@ -253,6 +267,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String deregisterInstance(String serviceName, String ip, int port, String clusterName)
         throws NacosException {
         return deregisterInstance(Constants.DEFAULT_GROUP, serviceName, ip, port, clusterName);
@@ -269,6 +284,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String deregisterInstance(String groupName, String serviceName, String ip, int port,
         String clusterName)
         throws NacosException {
@@ -288,6 +304,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String deregisterInstance(String namespaceId, String groupName, String serviceName,
         String ip, int port,
         String clusterName) throws NacosException {
@@ -307,6 +324,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String deregisterInstance(String serviceName, Instance instance) throws NacosException {
         return deregisterInstance(Constants.DEFAULT_GROUP, serviceName, instance);
     }
@@ -320,6 +338,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String deregisterInstance(String groupName, String serviceName, Instance instance)
         throws NacosException {
         return deregisterInstance(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName, instance);
@@ -335,6 +354,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String deregisterInstance(String namespaceId, String groupName, String serviceName,
         Instance instance)
         throws NacosException {
@@ -362,6 +382,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     String deregisterInstance(Service service, Instance instance) throws NacosException;
     
     /**
@@ -372,6 +393,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String updateInstance(String serviceName, Instance instance) throws NacosException {
         return updateInstance(Constants.DEFAULT_GROUP, serviceName, instance);
     }
@@ -385,6 +407,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String updateInstance(String groupName, String serviceName, Instance instance)
         throws NacosException {
         return updateInstance(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName, instance);
@@ -400,6 +423,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String updateInstance(String namespaceId, String groupName, String serviceName,
         Instance instance)
         throws NacosException {
@@ -443,6 +467,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     String updateInstance(Service service, Instance instance) throws NacosException;
     
     /**
@@ -466,6 +491,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     InstanceMetadataBatchResult batchUpdateInstanceMetadata(Service service,
         List<Instance> instances,
         Map<String, String> newMetadata) throws NacosException;
@@ -491,6 +517,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     InstanceMetadataBatchResult batchDeleteInstanceMetadata(Service service,
         List<Instance> instances,
         Map<String, String> newMetadata) throws NacosException;
@@ -512,6 +539,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     String partialUpdateInstance(Service service, Instance instance) throws NacosException;
     
     /**
@@ -523,6 +551,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default List<Instance> listInstances(String serviceName, String clusterName,
         boolean healthyOnly)
         throws NacosException {
@@ -539,6 +568,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default List<Instance> listInstances(String groupName, String serviceName, String clusterName,
         boolean healthyOnly)
         throws NacosException {
@@ -557,6 +587,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default List<Instance> listInstances(String namespaceId, String groupName, String serviceName,
         String clusterName,
         boolean healthyOnly) throws NacosException {
@@ -576,6 +607,7 @@ public interface InstanceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     List<Instance> listInstances(Service service, String clusterName, boolean healthyOnly)
         throws NacosException;
     
@@ -588,6 +620,7 @@ public interface InstanceMaintainerService {
      * @return the instance detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Instance getInstanceDetail(String serviceName, String ip, int port)
         throws NacosException {
         return getInstanceDetail(Constants.DEFAULT_GROUP, serviceName, ip, port);
@@ -603,6 +636,7 @@ public interface InstanceMaintainerService {
      * @return the instance detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Instance getInstanceDetail(String groupName, String serviceName, String ip, int port)
         throws NacosException {
         return getInstanceDetail(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName, ip, port);
@@ -619,6 +653,7 @@ public interface InstanceMaintainerService {
      * @return the instance detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Instance getInstanceDetail(String namespaceId, String groupName, String serviceName,
         String ip, int port)
         throws NacosException {
@@ -636,6 +671,7 @@ public interface InstanceMaintainerService {
      * @return the instance detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Instance getInstanceDetail(String serviceName, String ip, int port, String clusterName)
         throws NacosException {
         return getInstanceDetail(Constants.DEFAULT_GROUP, serviceName, ip, port, clusterName);
@@ -652,6 +688,7 @@ public interface InstanceMaintainerService {
      * @return the instance detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Instance getInstanceDetail(String groupName, String serviceName, String ip, int port,
         String clusterName)
         throws NacosException {
@@ -671,6 +708,7 @@ public interface InstanceMaintainerService {
      * @return the instance detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Instance getInstanceDetail(String namespaceId, String groupName, String serviceName,
         String ip, int port,
         String clusterName) throws NacosException {
@@ -694,5 +732,6 @@ public interface InstanceMaintainerService {
      * @return the instance detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     Instance getInstanceDetail(Service service, Instance instance) throws NacosException;
 }
