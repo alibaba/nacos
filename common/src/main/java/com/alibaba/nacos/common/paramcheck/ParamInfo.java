@@ -53,6 +53,8 @@ public class ParamInfo {
     
     private String skillName;
     
+    private String skillSearchName;
+    
     public String getNamespaceShowName() {
         return namespaceShowName;
     }
@@ -163,5 +165,13 @@ public class ParamInfo {
     
     public void setSkillName(String skillName) {
         this.skillName = skillName;
+    }
+    
+    public String getSkillSearchName() {
+        return skillSearchName;
+    }
+    
+    public void setSkillSearchName(String skillSearchName) {
+        this.skillSearchName = skillSearchName;
     }
 }
