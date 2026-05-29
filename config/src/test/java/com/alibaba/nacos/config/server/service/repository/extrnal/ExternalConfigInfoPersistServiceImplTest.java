@@ -443,6 +443,82 @@ class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
+    void testInsertOrUpdateWhenConcurrentInsertConflictFallbackToUpdate() {
+        Map<String, Object> configAdvanceInfo = new HashMap<>();
+        configAdvanceInfo.put("config_tags", "tag1,tag2");
+        configAdvanceInfo.put("desc", "desc11");
+        configAdvanceInfo.put("use", "use2233");
+        configAdvanceInfo.put("effect", "effect222");
+        configAdvanceInfo.put("type", "type3");
+        configAdvanceInfo.put("schema", "schema");
+        
+        String dataId = "dataId";
+        String group = "group";
+        String tenant = "tenant";
+        String content = "content132456";
+        
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, null, content);
+        String encryptedDataKey = "key34567";
+        configInfo.setEncryptedDataKey(encryptedDataKey);
+        
+        // mock config state: first null so insertOrUpdate chooses the add (insert) branch,
+        // then non-null after the conflict-triggered fallback update.
+        Mockito
+            .when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(null, new ConfigInfoStateWrapper());
+        
+        // mock the insert losing the TOCTOU race: a concurrent insert already committed the row,
+        // so the unique constraint is violated and Spring raises DataIntegrityViolationException.
+        long insertConfigInfoId = 12345678765L;
+        GeneratedKeyHolder generatedKeyHolder =
+            TestCaseUtils.createGeneratedKeyHolder(insertConfigInfoId);
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder)
+            .thenReturn(generatedKeyHolder);
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class), any(KeyHolder.class)))
+            .thenThrow(new DataIntegrityViolationException("mock unique constraint violation"));
+        
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setDataId(dataId);
+        configAllInfo.setGroup(group);
+        configAllInfo.setTenant(tenant);
+        configAllInfo.setAppName("old_app");
+        configAllInfo.setMd5("old_md5");
+        configAllInfo.setId(insertConfigInfoId);
+        Mockito
+            .when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
+                eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(configAllInfo);
+        
+        String srcIp = "srcIp";
+        String srcUser = "srcUser";
+        String updateSql = externalConfigInfoPersistService.mapperManager
+            .findMapper(dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO)
+            .update(Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()",
+                "app_name", "c_desc", "c_use", "effect", "type", "c_schema",
+                "encrypted_data_key"),
+                Arrays.asList("data_id", "group_id", "tenant_id"));
+        Mockito.when(jdbcTemplate.update(eq(updateSql), eq(configInfo.getContent()),
+            eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(configAllInfo.getAppName()),
+            eq(configAdvanceInfo.get("desc")), eq(configAdvanceInfo.get("use")),
+            eq(configAdvanceInfo.get("effect")), eq(configAdvanceInfo.get("type")),
+            eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(configInfo.getDataId()),
+            eq(configInfo.getGroup()), eq(tenant))).thenReturn(1);
+        
+        // must not propagate the conflict; should fall back to update and succeed.
+        externalConfigInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo,
+            configAdvanceInfo);
+        
+        // verify the fallback update statement was executed exactly once.
+        Mockito.verify(jdbcTemplate, times(1)).update(eq(updateSql), eq(configInfo.getContent()),
+            eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(configAllInfo.getAppName()),
+            eq(configAdvanceInfo.get("desc")), eq(configAdvanceInfo.get("use")),
+            eq(configAdvanceInfo.get("effect")), eq(configAdvanceInfo.get("type")),
+            eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(configInfo.getDataId()),
+            eq(configInfo.getGroup()), eq(tenant));
+    }
+    
+    @Test
     void testUpdateConfigInfoReturnsFalseWhenOldConfigMissing() {
         ConfigInfo configInfo = new ConfigInfo("dataId", "group", "tenant", "app", "content");
         Mockito.when(jdbcTemplate.queryForObject(anyString(),

@@ -235,7 +235,14 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             if (configInfoState == null) {
-                return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                try {
+                    return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                } catch (DataIntegrityViolationException ive) {
+                    // A concurrent insert won the race between findConfigInfoState and
+                    // addConfigInfo (TOCTOU), so the row already exists now. Keep
+                    // insertOrUpdate idempotent by falling back to an update.
+                    return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
+                }
             } else {
                 return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
             }
