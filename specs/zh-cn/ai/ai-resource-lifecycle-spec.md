@@ -56,7 +56,8 @@ create/upload draft
 如果没有启用发布流水线，或没有匹配该资源类型的流水线节点，`submit` 可以根据类型
 实现直接发布。
 
-`force-publish` 会绕过流水线校验，必须保持为管理操作。
+`force-publish` 会绕过流水线校验，必须保持为管理操作。它仅接受 `draft`、
+`reviewing` 和 `reviewed` 版本；`online` 和 `offline` 版本必须被拒绝。
 
 ## 3. Draft 规则
 
@@ -75,10 +76,11 @@ create/upload draft
   状态或元数据指针，避免污染正式版本。
 - 审核中版本必须在元数据中记录为 `reviewingVersion`。
 - 流水线执行状态可以写入 `publishPipelineInfo` 和 `pipeline_execution`。
-- 流水线拒绝会把版本退回 `draft`，并恢复 editing 指针。
-- 流水线通过会把版本改为 `reviewed`。
+- 流水线通过和拒绝都会把版本改为 `reviewed`；拒绝后如果需要继续编辑，用户必须显式
+  redraft 该版本。
 - Publish 会把版本改为 `online`，清理 working 指针，按需增加 `onlineCnt`，并可更新
   `latest` label。
+- Force publish 会在跳过流水线通过校验的同时，执行与 publish 成功时一致的状态转换。
 
 流水线扩展行为由 [AI 发布流水线插件规范](../plugin/ai-pipeline-plugin-spec.md)定义。
 本领域规范只定义 AI 资源生命周期如何响应流水线结果。
@@ -105,6 +107,9 @@ download 发出 Trace/审计事件。
 
 Trace 插件行为由 [Trace 插件规范](../plugin/trace-plugin-spec.md)定义。计数只用于诊断，
 不得定义鉴权或生命周期状态。
+
+AI 资源 Trace 通过 `AiResourceTraceEvent` 发出。默认 AI 资源 Trace 插件保留
+`ai-resource-trace.log` 中的 JSON 行审计日志，同时允许外部 Trace 订阅者消费同一批事件。
 
 ## 8. 演进说明
 

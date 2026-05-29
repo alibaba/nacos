@@ -172,11 +172,10 @@ class AgentSpecPipelineCompletionTest {
     }
     
     /**
-     * For any REJECTED pipeline result, the version status reverts to draft
-     * and meta pointers are updated (reviewingVersion cleared, editingVersion restored).
+     * For any REJECTED pipeline result, the version status moves to reviewed.
      */
     @Test
-    void pipelineRejectedRevertsVersionToDraft() throws Exception {
+    void pipelineRejectedMovesVersionToReviewed() throws Exception {
         for (RejectedInput input : sampleRejectedInputs()) {
             EnvUtil.setEnvironment(new StandardEnvironment());
             
@@ -250,8 +249,8 @@ class AgentSpecPipelineCompletionTest {
             PipelineCallback callback = callbackCaptor.getValue();
             callback.onComplete(result);
             
-            // Verify: version status was reverted to "draft"
-            // updateStatus is called twice: once during submit (reviewing), once during callback (draft)
+            // Verify: version status was moved to "reviewed"
+            // updateStatus is called twice: once during submit (reviewing), once during callback (reviewed)
             ArgumentCaptor<String> statusCaptor = ArgumentCaptor.forClass(String.class);
             verify(aiResourceVersionPersistService, org.mockito.Mockito.atLeast(2))
                 .updateStatus(eq(input.namespaceId), eq(input.name),
@@ -259,8 +258,8 @@ class AgentSpecPipelineCompletionTest {
             
             List<String> allStatuses = statusCaptor.getAllValues();
             String lastStatus = allStatuses.get(allStatuses.size() - 1);
-            assertTrue("draft".equals(lastStatus),
-                "Version status should be reverted to 'draft' after REJECTED callback, but was: "
+            assertTrue("reviewed".equals(lastStatus),
+                "Version status should be moved to 'reviewed' after REJECTED callback, but was: "
                     + lastStatus);
             
             // Verify: updatePublishPipelineInfo was called with REJECTED
@@ -275,8 +274,8 @@ class AgentSpecPipelineCompletionTest {
                 "publishPipelineInfo should contain REJECTED status after rejected callback, but was: "
                     + lastPipelineInfo);
             
-            // Verify: meta was updated (updateMetaCas called at least twice: submit + callback rollback)
-            verify(aiResourcePersistService, org.mockito.Mockito.atLeast(2))
+            // Verify: meta was only updated during submit; rejected callbacks do not roll back pointers.
+            verify(aiResourcePersistService, org.mockito.Mockito.times(1))
                 .updateMetaCas(eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC),
                     any(Long.class), any());
         }

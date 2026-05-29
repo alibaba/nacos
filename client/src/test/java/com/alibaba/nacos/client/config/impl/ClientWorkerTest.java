@@ -595,9 +595,6 @@ class ClientWorkerTest {
         Map<String, CacheData> cacheDataMapMocked = Mockito.mock(Map.class);
         Mockito.when(cacheDataMapMocked.get(GroupKey.getKeyTenant(dataIdNormal, group, tenant)))
             .thenReturn(cacheNormal);
-        Mockito.when(
-            cacheDataMapMocked.containsKey(GroupKey.getKeyTenant(dataIdNormal, group, tenant)))
-            .thenReturn(true);
         
         Mockito.when(cacheDataMapMocked.values()).thenReturn(cacheDatas);
         AtomicReference<Map<String, CacheData>> cacheMapMocked =
@@ -641,6 +638,101 @@ class ClientWorkerTest {
         //normal cache listener be notified.
         assertEquals(configQueryResponse.getContent(), normalContent.get());
         
+    }
+    
+    /**
+     * Regression test for NPE in ConfigRpcTransportClient.checkListenCache.
+     *
+     * <p>Reproduces the same bug class fixed by PR #9461 (issue: NullPointer judgement order):
+     * if server returns a {@code changeKey} in {@link ConfigChangeBatchListenResponse} that no
+     * longer exists in the local {@code cacheMap} (e.g. user has just called {@code removeListener}
+     * concurrently), the call site previously did
+     * {@code cacheMap.get().get(changeKey).isInitializing()} without null-check.
+     *
+     * <p>The NPE is swallowed by the surrounding {@code catch (Throwable)} so we cannot
+     * detect it via {@code assertDoesNotThrow}. Instead we observe an indirect post-condition:
+     * the buggy code aborts the {@code listenCaches} loop (which clears
+     * {@code cacheData.isInitializing()}), whereas the fixed code skips the ghost key and
+     * still executes that loop. So an unchanged {@code isInitializing()=true} after
+     * {@code executeConfigListen} reveals the swallowed NPE.
+     *
+     * <p>Both former call sites at the buggy lines 1125 and 1136 share the same helper
+     * {@code refreshContentAndCheck(RpcClient, String, boolean)}, so making either one safe
+     * makes the other safe by construction; this test exercises the line-1125 path
+     * (changedConfigs branch) and asserts the helper-level safety.
+     */
+    @Test
+    void testCheckListenCacheSkipsRemovedKey() throws Exception {
+        Properties prop = new Properties();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
+        Mockito.when(agent.getName()).thenReturn("mocktest");
+        final NacosClientProperties nacosClientProperties =
+            NacosClientProperties.PROTOTYPE.derive(prop);
+        ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
+        clientWorker.shutdown();
+        
+        String group = "group-regression";
+        String tenant = "tenant-regression";
+        
+        // local cache contains key K_LOCAL
+        String dataIdLocal = "dataIdLocal" + System.currentTimeMillis();
+        CacheData localCache =
+            normalNotConsistentCache(filter, agent.getName(), dataIdLocal, group, tenant);
+        List<CacheData> cacheDatas = new ArrayList<>();
+        cacheDatas.add(localCache);
+        
+        // cacheMap.values() must return the local cache so executeConfigListen builds a non-empty
+        // listenCachesMap. Production code under test only ever queries cacheMap.get(ghostKey),
+        // which returns null by default (Mockito mock) — exactly modeling the concurrent
+        // removeListener race we want to exercise.
+        Map<String, CacheData> cacheDataMapMocked = Mockito.mock(Map.class);
+        Mockito.when(cacheDataMapMocked.values()).thenReturn(cacheDatas);
+        AtomicReference<Map<String, CacheData>> cacheMapMocked =
+            Mockito.mock(AtomicReference.class);
+        Mockito.when(cacheMapMocked.get()).thenReturn(cacheDataMapMocked);
+        Field cacheMap = ClientWorker.class.getDeclaredField("cacheMap");
+        cacheMap.setAccessible(true);
+        cacheMap.set(clientWorker, cacheMapMocked);
+        
+        // server response carries a "ghost" changeKey that is NOT in cacheMap (concurrent remove)
+        String dataIdGhost = "dataIdGhost" + System.currentTimeMillis();
+        ConfigChangeBatchListenResponse.ConfigContext ghostContext =
+            new ConfigChangeBatchListenResponse.ConfigContext();
+        ghostContext.setDataId(dataIdGhost);
+        ghostContext.setGroup(group);
+        ghostContext.setTenant(tenant);
+        ConfigChangeBatchListenResponse response = new ConfigChangeBatchListenResponse();
+        response.setChangedConfigs(Collections.singletonList(ghostContext));
+        
+        RpcClient rpcClientInner = Mockito.mock(RpcClient.class);
+        Mockito.when(rpcClientInner.isWaitInitiated()).thenReturn(true, false);
+        rpcClientFactoryMockedStatic
+            .when(() -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class),
+                any(GrpcClientConfig.class)))
+            .thenReturn(rpcClientInner);
+        Mockito.when(rpcClientInner.request(any(ConfigBatchListenRequest.class)))
+            .thenReturn(response, response);
+        
+        // sanity check: localCache starts as initializing.
+        assertTrue(localCache.isInitializing(),
+            "precondition: CacheData should start with isInitializing=true");
+        
+        (clientWorker.getAgent()).executeConfigListen();
+        
+        // After executeConfigListen finishes:
+        //   buggy 3.1.1 code: NPE is thrown at lines 1125 / 1136 because cacheMap.get().get(ghostKey)
+        //               returns null; the surrounding catch (Throwable) swallows it but aborts the
+        //               listenCaches loop, so cacheData.setInitializing(false) is never called and
+        //               localCache.isInitializing() is still true.
+        //   fixed code: ghost key is skipped (null-check inside refreshContentAndCheck shared by
+        //               both former call sites), the listenCaches loop runs to completion, and
+        //               localCache.isInitializing() is now false.
+        assertFalse(localCache.isInitializing(),
+            "ConfigRpcTransportClient.checkListenCache must clear isInitializing for the local "
+                + "cache even when server returns a ghost changeKey; "
+                + "if this assertion fails, the listen loop was likely aborted by an "
+                + "NPE in cacheMap.get().get(changeKey).isInitializing() (regression of #9461)");
     }
     
     private CacheData discardCache(ConfigFilterChainManager filter, String envName, String dataId,

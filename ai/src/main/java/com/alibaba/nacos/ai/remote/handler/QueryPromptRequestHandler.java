@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.service.prompt.PromptClientOperationService;
 import com.alibaba.nacos.ai.utils.PromptConvertUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
@@ -41,6 +42,7 @@ import org.springframework.stereotype.Component;
  *
  * @author nacos
  */
+@Since("3.2.0")
 @Component
 public class QueryPromptRequestHandler
     extends RequestHandler<QueryPromptRequest, QueryPromptResponse> {

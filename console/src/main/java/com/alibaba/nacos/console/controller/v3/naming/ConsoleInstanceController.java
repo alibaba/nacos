@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.naming;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -73,6 +74,7 @@ public class ConsoleInstanceController {
      * @param pageForm     Page form
      * @return instances information
      */
+    @Since("3.0.0")
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @RequestMapping("/list")
     public Result<Page<? extends Instance>> getInstanceList(InstanceListForm instanceForm,
@@ -91,6 +93,7 @@ public class ConsoleInstanceController {
     /**
      * Update instance.
      */
+    @Since("3.0.0")
     @CanDistro
     @PutMapping
     @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
@@ -108,6 +111,7 @@ public class ConsoleInstanceController {
     /**
      * Remove instance.
      */
+    @Since("3.2.2")
     @CanDistro
     @DeleteMapping
     @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")

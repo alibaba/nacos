@@ -290,7 +290,10 @@ class PromptDetail extends React.Component {
     }
   };
 
-  getVersionStatusColor = status => {
+  getVersionStatusColor = (status, pipelineInfo) => {
+    if (status === 'reviewed' && pipelineInfo?.status === 'REJECTED') {
+      return '#f5222d';
+    }
     switch (status) {
       case 'draft':
         return '#1890ff';
@@ -307,8 +310,11 @@ class PromptDetail extends React.Component {
     }
   };
 
-  getVersionStatusText = status => {
+  getVersionStatusText = (status, pipelineInfo) => {
     const { locale = {} } = this.props;
+    if (status === 'reviewed' && pipelineInfo?.status === 'REJECTED') {
+      return locale.statusRejected || 'Rejected';
+    }
     switch (status) {
       case 'draft':
         return locale.statusDraft || 'Draft';
@@ -812,6 +818,41 @@ class PromptDetail extends React.Component {
     });
   };
 
+  handleRedraft = () => {
+    const { locale = {} } = this.props;
+    const { selectedVersion } = this.state;
+    const promptKey = getParams('promptKey') || '';
+    const namespaceId = getParams('namespace') || '';
+
+    this.setState({ publishing: true });
+
+    request({
+      method: 'POST',
+      url: 'v3/admin/ai/prompt/redraft',
+      data: {
+        promptKey,
+        version: selectedVersion,
+        namespaceId,
+      },
+      contentType: 'application/x-www-form-urlencoded',
+      success: data => {
+        this.setState({ publishing: false });
+        if (data && data.code === 0) {
+          Message.success(locale.redraftSuccess || 'Re-edit successfully, version is now draft');
+          this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
+            this.loadGovernanceData();
+          });
+        } else {
+          Message.error(data?.message || locale.redraftFailed || 'Failed to re-edit');
+        }
+      },
+      error: () => {
+        this.setState({ publishing: false });
+        Message.error(locale.redraftFailed || 'Failed to re-edit');
+      },
+    });
+  };
+
   handleOnlineVersion = version => {
     const { locale = {} } = this.props;
     const promptKey = getParams('promptKey') || '';
@@ -1235,29 +1276,40 @@ class PromptDetail extends React.Component {
                 onChange={this.handleVersionSelectChange}
                 style={{ minWidth: 200 }}
               >
-                {versions.map(v => (
-                  <Select.Option key={v.version} value={v.version}>
-                    {v.version}
-                    <span
-                      style={{
-                        marginLeft: 8,
-                        fontSize: 12,
-                        color: this.getVersionStatusColor(v.status),
-                      }}
-                    >
-                      ({this.getVersionStatusText(v.status)})
-                    </span>
-                  </Select.Option>
-                ))}
+                {versions.map(v => {
+                  let vPipeline = null;
+                  if (v.publishPipelineInfo) {
+                    try {
+                      vPipeline = JSON.parse(v.publishPipelineInfo);
+                    } catch (e) {
+                      /* ignore */
+                    }
+                  }
+                  return (
+                    <Select.Option key={v.version} value={v.version}>
+                      {v.version}
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          fontSize: 12,
+                          color: this.getVersionStatusColor(v.status, vPipeline),
+                        }}
+                      >
+                        ({this.getVersionStatusText(v.status, vPipeline)})
+                      </span>
+                    </Select.Option>
+                  );
+                })}
               </Select>
             )}
             {selectedVersion && (
               <Tag
                 size="small"
-                color={this.getVersionStatusColor(selectedVersionStatus)}
+                color={this.getVersionStatusColor(selectedVersionStatus, this.state.pipelineInfo)}
                 style={{ borderRadius: 4 }}
               >
-                {selectedVersion} - {this.getVersionStatusText(selectedVersionStatus)}
+                {selectedVersion} -{' '}
+                {this.getVersionStatusText(selectedVersionStatus, this.state.pipelineInfo)}
               </Tag>
             )}
             {onlineCnt > 0 && (
@@ -1316,6 +1368,26 @@ class PromptDetail extends React.Component {
                     {locale.forcePublish || 'Force Publish'}
                   </Button>
                 )}
+              </>
+            )}
+            {selectedVersionStatus === 'reviewed' && (
+              <>
+                <Button
+                  type="primary"
+                  onClick={this.handlePublish}
+                  loading={publishing}
+                  disabled={pipelineInfo && pipelineInfo.status !== 'APPROVED'}
+                >
+                  {locale.publish || 'Publish'}
+                </Button>
+                {pipelineInfo && pipelineInfo.status === 'REJECTED' && (
+                  <Button onClick={this.handleForcePublish} loading={publishing}>
+                    {locale.forcePublish || 'Force Publish'}
+                  </Button>
+                )}
+                <Button onClick={this.handleRedraft} loading={publishing}>
+                  {locale.actionRedraft || 'Re-edit'}
+                </Button>
               </>
             )}
             {selectedVersionStatus === 'online' && (
@@ -1775,15 +1847,25 @@ class PromptDetail extends React.Component {
             <Table.Column
               title={locale.status || 'Status'}
               dataIndex="status"
-              cell={value => (
-                <Tag
-                  size="small"
-                  color={this.getVersionStatusColor(value)}
-                  style={{ borderRadius: 4 }}
-                >
-                  {this.getVersionStatusText(value)}
-                </Tag>
-              )}
+              cell={(value, index, record) => {
+                let vPipeline = null;
+                if (record?.publishPipelineInfo) {
+                  try {
+                    vPipeline = JSON.parse(record.publishPipelineInfo);
+                  } catch (e) {
+                    /* ignore */
+                  }
+                }
+                return (
+                  <Tag
+                    size="small"
+                    color={this.getVersionStatusColor(value, vPipeline)}
+                    style={{ borderRadius: 4 }}
+                  >
+                    {this.getVersionStatusText(value, vPipeline)}
+                  </Tag>
+                );
+              }}
             />
             <Table.Column title={locale.author || 'Author'} dataIndex="srcUser" />
             <Table.Column

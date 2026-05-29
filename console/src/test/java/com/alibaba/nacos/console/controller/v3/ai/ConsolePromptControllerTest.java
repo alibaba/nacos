@@ -388,4 +388,18 @@ class ConsolePromptControllerTest {
         assertEquals(200, response.getStatus());
         verify(promptProxy).updateBizTags(NS, PROMPT_KEY, "tag1,tag2");
     }
+    
+    @Test
+    void testRedraftSuccess() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(Constants.Prompt.CONSOLE_PATH + "/redraft")
+                .param("namespaceId", NS)
+                .param("promptKey", PROMPT_KEY)
+                .param("version", VERSION))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        assertTrue(response.getContentAsString().contains("ok"));
+        verify(promptProxy).redraft(eq(NS), eq(PROMPT_KEY), eq(VERSION));
+    }
 }

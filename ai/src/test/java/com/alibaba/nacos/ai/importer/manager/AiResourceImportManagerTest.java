@@ -40,15 +40,19 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidate;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportContext;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
+import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
+import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportSourceProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -103,6 +107,63 @@ class AiResourceImportManagerTest {
         assertEquals("server-1", response.getItems().get(0).getExternalId());
         assertEquals(10, builder.service.lastContext.getLimit());
         assertEquals("database", builder.service.lastContext.getQuery());
+    }
+    
+    @Test
+    void testSearchRejectsHttpEndpointByDefault() {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.getSources().get(0).setEndpoint("http://example.com/registry");
+        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
+            Collections.singletonList(new FakeOperator()));
+        AiResourceImportSearchRequest request = searchRequest();
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.search(request));
+        
+        assertTrue(exception.getErrMsg().contains("must use https"));
+    }
+    
+    @Test
+    void testSearchAllowsHttpEndpointWhenConfigured() throws NacosException {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.getSources().get(0).setEndpoint("http://example.com/registry");
+        properties.getSources().get(0).setProperties(
+            Collections.singletonMap("allow-http", "true"));
+        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
+            Collections.singletonList(new FakeOperator()));
+        
+        AiResourceImportSearchResponse response = manager.search(searchRequest());
+        
+        assertEquals(1, response.getItems().size());
+    }
+    
+    @Test
+    void testSearchRejectsPrivateEndpointByDefault() {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.getSources().get(0).setEndpoint("https://127.0.0.1/registry");
+        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
+            Collections.singletonList(new FakeOperator()));
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.search(searchRequest()));
+        
+        assertTrue(exception.getErrMsg().contains("private or local target"));
+    }
+    
+    @Test
+    void testSearchAllowsPrivateEndpointWhenConfigured() throws NacosException {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.getSources().get(0).setEndpoint("http://127.0.0.1/registry");
+        Map<String, String> sourceProperties = new HashMap<>(2);
+        sourceProperties.put("allow-http", "true");
+        sourceProperties.put("allow-private-network", "true");
+        properties.getSources().get(0).setProperties(sourceProperties);
+        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
+            Collections.singletonList(new FakeOperator()));
+        
+        AiResourceImportSearchResponse response = manager.search(searchRequest());
+        
+        assertEquals(1, response.getItems().size());
     }
     
     @Test
@@ -170,6 +231,22 @@ class AiResourceImportManagerTest {
             () -> sourceManager.resolveSource("source-1", "mcp"));
         
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode());
+    }
+    
+    @Test
+    void testProviderSourceWorksWhenExplicitImportDisabled() throws NacosException {
+        AiResourceImportProperties properties = enabledProperties();
+        properties.setEnabled(false);
+        AiResourceImportSourceManager sourceManager = newProviderSourceManager(properties);
+        
+        List<AiResourceImportSourceInfo> result = sourceManager.listSourceInfos("mcp");
+        
+        assertEquals(1, result.size());
+        assertEquals("provider-source", result.get(0).getSourceId());
+        assertEquals("Provider Source", result.get(0).getDisplayName());
+        assertEquals("provider source", result.get(0).getDescription());
+        assertEquals("fake-importer", result.get(0).getPluginName());
+        assertEquals(Collections.singletonList("mcp"), result.get(0).getResourceTypes());
     }
     
     @Test
@@ -245,6 +322,17 @@ class AiResourceImportManagerTest {
         return result;
     }
     
+    private AiResourceImportSourceManager newProviderSourceManager(
+        AiResourceImportProperties properties) {
+        AiResourceImportSourceManager result = newSourceManager(properties);
+        ReflectionTestUtils.setField(result, "rawPropertiesSupplier",
+            (Supplier<Properties>) Properties::new);
+        ReflectionTestUtils.setField(result, "sourceProvidersSupplier",
+            (Supplier<List<AiResourceImportSourceProvider>>) () -> Collections.singletonList(
+                new FakeSourceProvider()));
+        return result;
+    }
+    
     private AiResourceImportProperties enabledProperties() {
         AiResourceImportProperties properties = new AiResourceImportProperties();
         properties.setEnabled(true);
@@ -259,6 +347,29 @@ class AiResourceImportManagerTest {
         source.setPluginName("fake-importer");
         source.setResourceTypes(Collections.singletonList("mcp"));
         source.setEndpoint("https://example.com/registry");
+        source.setEnabled(true);
+        source.setMaxItemCount(10);
+        source.setMaxArtifactSize(1024);
+        return source;
+    }
+    
+    private AiResourceImportSearchRequest searchRequest() {
+        AiResourceImportSearchRequest request = new AiResourceImportSearchRequest();
+        request.setResourceType("mcp");
+        request.setSourceId("source-1");
+        request.setQuery("database");
+        request.setLimit(50);
+        return request;
+    }
+    
+    private AiResourceImportSource providerSource() {
+        AiResourceImportSource source = new AiResourceImportSource();
+        source.setSourceId("provider-source");
+        source.setDisplayName("Provider Source");
+        source.setDescription("provider source");
+        source.setPluginName("fake-importer");
+        source.setResourceTypes(Collections.singletonList("mcp"));
+        source.setEndpoint("https://example.com/provider");
         source.setEnabled(true);
         source.setMaxItemCount(10);
         source.setMaxArtifactSize(1024);
@@ -285,6 +396,14 @@ class AiResourceImportManagerTest {
         @Override
         public AiResourceImportService build(Properties properties) {
             return service;
+        }
+    }
+    
+    private class FakeSourceProvider implements AiResourceImportSourceProvider {
+        
+        @Override
+        public List<AiResourceImportSource> loadSources(Properties properties) {
+            return Collections.singletonList(providerSource());
         }
     }
     

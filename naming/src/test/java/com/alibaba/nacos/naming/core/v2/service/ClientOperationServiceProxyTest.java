@@ -31,6 +31,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.Collections;
+
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -116,6 +118,28 @@ class ClientOperationServiceProxyTest {
             persistentIpPortId);
         verify(ephemeralClientOperationServiceImpl, never()).deregisterInstance(service,
             persistentInstance, persistentIpPortId);
+    }
+    
+    @Test
+    void testBatchRegisterEphemeralInstance() {
+        clientOperationServiceProxy.batchRegisterInstance(service,
+            Collections.singletonList(ephemeralInstance), ephemeralIpPortId);
+        
+        verify(ephemeralClientOperationServiceImpl).batchRegisterInstance(service,
+            Collections.singletonList(ephemeralInstance), ephemeralIpPortId);
+        verify(persistentClientOperationServiceImpl, never()).batchRegisterInstance(service,
+            Collections.singletonList(ephemeralInstance), ephemeralIpPortId);
+    }
+    
+    @Test
+    void testBatchRegisterPersistentInstance() {
+        clientOperationServiceProxy.batchRegisterInstance(service,
+            Collections.singletonList(persistentInstance), persistentIpPortId);
+        
+        verify(persistentClientOperationServiceImpl).batchRegisterInstance(service,
+            Collections.singletonList(persistentInstance), persistentIpPortId);
+        verify(ephemeralClientOperationServiceImpl, never()).batchRegisterInstance(service,
+            Collections.singletonList(persistentInstance), persistentIpPortId);
     }
     
     @Test

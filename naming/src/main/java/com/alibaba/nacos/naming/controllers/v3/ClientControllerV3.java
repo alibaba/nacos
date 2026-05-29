@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -66,6 +67,7 @@ public class ClientControllerV3 {
     /**
      * Query all clients.
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<String>> getClientList() {
@@ -75,6 +77,7 @@ public class ClientControllerV3 {
     /**
      * Query client by clientId.
      */
+    @Since("3.0.0")
     @GetMapping()
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<ClientSummaryInfo> getClientDetail(@RequestParam("clientId") String clientId)
@@ -86,6 +89,7 @@ public class ClientControllerV3 {
     /**
      * Query the services registered by the specified client.
      */
+    @Since("3.0.0")
     @GetMapping("/publish/list")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<ClientServiceInfo>> getPublishedServiceList(
@@ -98,6 +102,7 @@ public class ClientControllerV3 {
     /**
      * Query the services to which the specified client subscribes.
      */
+    @Since("3.0.0")
     @GetMapping("/subscribe/list")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<ClientServiceInfo>> getSubscribeServiceList(
@@ -110,6 +115,7 @@ public class ClientControllerV3 {
     /**
      * Query the clients that have registered the specified service.
      */
+    @Since("3.0.0")
     @GetMapping("/service/publisher/list")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<ClientPublisherInfo>> getPublishedClientList(
@@ -126,6 +132,7 @@ public class ClientControllerV3 {
     /**
      * Query the clients that are subscribed to the specified service.
      */
+    @Since("3.0.0")
     @GetMapping("/service/subscriber/list")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<ClientSubscriberInfo>> getSubscribeClientList(
@@ -142,6 +149,7 @@ public class ClientControllerV3 {
     /**
      * Query the responsible server for a given client based on its IP and port.
      */
+    @Since("3.0.0")
     @GetMapping("/distro")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
         apiType = ApiType.ADMIN_API)

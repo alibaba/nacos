@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -42,7 +43,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Remote implementation of Skill handler.
- * 
+ *
  * <p>Calls remote Nacos server through maintainer client for Skill operations.</p>
  *
  * @author nacos
@@ -111,11 +112,10 @@ public class SkillRemoteHandler implements SkillHandler {
     }
     
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion)
-        throws NacosException {
-        return clientHolder.getAiMaintainerService().skill().uploadSkillFromZip(namespaceId,
-            zipBytes, overwrite);
+    public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {
+        return clientHolder.getAiMaintainerService().skill().uploadSkillFromZip(
+            request.getNamespaceId(), request.getZipBytes(), request.isOverwrite(),
+            request.getTargetVersion(), request.getCommitMsg());
     }
     
     @Override
@@ -165,6 +165,12 @@ public class SkillRemoteHandler implements SkillHandler {
         clientHolder.getAiMaintainerService().skill()
             .forcePublish(form.getNamespaceId(), form.getSkillName(), form.getVersion(),
                 form.getUpdateLatestLabel());
+    }
+    
+    @Override
+    public void redraft(SkillPublishForm form) throws NacosException {
+        clientHolder.getAiMaintainerService().skill()
+            .redraft(form.getNamespaceId(), form.getSkillName(), form.getVersion());
     }
     
     @Override

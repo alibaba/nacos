@@ -154,6 +154,14 @@ public interface AgentSpecHandler {
     void forcePublish(AgentSpecPublishForm form) throws NacosException;
     
     /**
+     * Re-edit a reviewed version, transitioning it back to draft status.
+     *
+     * @param form publish form (contains namespace, agentspec name, version)
+     * @throws NacosException if operation failed
+     */
+    void redraft(AgentSpecPublishForm form) throws NacosException;
+    
+    /**
      * Update runtime route labels without changing version status.
      *
      * @param form labels update form

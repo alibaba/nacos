@@ -36,6 +36,12 @@ public class SkillQueryForm {
     private String label;
     
     /**
+     * Optional content MD5 carried by skill listener. When provided and matches the published
+     * content MD5, the server returns NOT_MODIFIED so the client may keep its local cache.
+     */
+    private String md5;
+    
+    /**
      * Validate and normalize query parameters.
      *
      * @throws NacosApiException if required parameters are missing
@@ -81,5 +87,13 @@ public class SkillQueryForm {
     
     public void setLabel(String label) {
         this.label = label;
+    }
+    
+    public String getMd5() {
+        return md5;
+    }
+    
+    public void setMd5(String md5) {
+        this.md5 = md5;
     }
 }

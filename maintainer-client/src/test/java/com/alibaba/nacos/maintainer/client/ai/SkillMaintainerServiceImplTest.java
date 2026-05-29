@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -38,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -109,6 +111,27 @@ class SkillMaintainerServiceImplTest {
     }
     
     @Test
+    @DisplayName("uploadSkillFromZip with targetVersion and commitMsg should include params")
+    void testUploadSkillFromZipWithTargetVersionAndCommitMsg() throws NacosException {
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success("test-skill")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        String actual = skillService.uploadSkillFromZip("public", "zip".getBytes(), true,
+            "v2", "upload commit");
+        
+        assertEquals("test-skill", actual);
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy).executeSyncHttpRequest(requestCaptor.capture());
+        HttpRequest request = requestCaptor.getValue();
+        assertEquals("true", request.getParamValues().get("overwrite"));
+        assertEquals("v2", request.getParamValues().get("targetVersion"));
+        assertEquals("upload commit", request.getParamValues().get("commitMsg"));
+        assertTrue(request.isFileUpload());
+    }
+    
+    @Test
     @DisplayName("updateDraft with setAsLatest should return true")
     void testUpdateDraftWithSetAsLatest() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
@@ -156,6 +179,19 @@ class SkillMaintainerServiceImplTest {
             .thenReturn(mockRestResult);
         
         boolean actual = skillService.publish("public", "testSkill", "v1", true);
+        assertTrue(actual);
+    }
+    
+    @Test
+    @DisplayName("redraft should return true")
+    void testRedraftReturnsTrue() throws NacosException {
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult
+            .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        boolean actual = skillService.redraft("public", "testSkill", "v1");
         assertTrue(actual);
     }
     

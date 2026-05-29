@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.lock.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.api.lock.remote.LockOperationEnum;
@@ -36,6 +37,7 @@ import org.springframework.stereotype.Component;
  * @description LockRequestHandler
  * @date 2023/6/29 14:00
  */
+@Since("3.0.0")
 @Component
 public class LockRequestHandler
     extends RequestHandler<LockOperationRequest, LockOperationResponse> {

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,17 +38,20 @@ public class ConsoleRedirectController {
     
     private static final String UI_NEXT = "next";
     
+    @Since("3.2.0")
     @GetMapping("/")
     public String index() {
         String defaultUi = EnvUtil.getProperty(PROPERTY_DEFAULT_UI, UI_NEXT);
         return UI_LEGACY.equals(defaultUi) ? "redirect:/legacy/" : "redirect:/next/";
     }
     
+    @Since("3.2.0")
     @GetMapping("/next/")
     public String next() {
         return "forward:/next/index.html";
     }
     
+    @Since("3.2.0")
     @GetMapping("/legacy/")
     public String legacy() {
         return "forward:/legacy/index.html";

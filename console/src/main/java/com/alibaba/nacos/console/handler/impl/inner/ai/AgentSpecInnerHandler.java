@@ -133,6 +133,12 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     }
     
     @Override
+    public void redraft(AgentSpecPublishForm form) throws NacosException {
+        agentSpecOperationService.redraft(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getVersion());
+    }
+    
+    @Override
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
         agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(),

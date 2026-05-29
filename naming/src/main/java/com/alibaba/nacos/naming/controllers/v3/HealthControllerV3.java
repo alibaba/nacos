@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -54,6 +55,7 @@ public class HealthControllerV3 {
     /**
      * Update health check for instance.
      */
+    @Since("3.0.0")
     @CanDistro
     @PutMapping(value = "/instance")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
@@ -70,6 +72,7 @@ public class HealthControllerV3 {
     /**
      * Get all health checkers.
      */
+    @Since("3.0.0")
     @GetMapping("/checkers")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<Map<String, AbstractHealthChecker>> checkers() {

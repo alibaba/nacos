@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -43,6 +44,7 @@ import org.springframework.stereotype.Component;
  * @author liuzunfei
  * @version $Id: ConfiRemoveRequestHandler.java, v 0.1 2020年07月16日 5:49 PM liuzunfei Exp $
  */
+@Since("2.0.0")
 @Component
 public class ConfigRemoveRequestHandler
     extends RequestHandler<ConfigRemoveRequest, ConfigRemoveResponse> {

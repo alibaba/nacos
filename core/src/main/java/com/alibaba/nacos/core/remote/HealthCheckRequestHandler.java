@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Component;
  * @version $Id: PushService.java, v 0.1 2021年07月17日 1:12 PM liuzunfei Exp $
  */
 @Component
+@Since("2.0.0")
 public class HealthCheckRequestHandler
     extends RequestHandler<HealthCheckRequest, HealthCheckResponse> {
     

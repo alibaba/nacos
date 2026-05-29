@@ -18,7 +18,13 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
@@ -27,6 +33,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +53,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link ServiceOperatorV2Impl} unit tests.
@@ -67,6 +77,9 @@ class ServiceOperatorV2ImplTest {
     
     @Mock
     private ServiceStorage serviceStorage;
+    
+    @Mock
+    private SubscribeManager subscribeManager;
     
     @BeforeEach
     void setUp() throws IllegalAccessException {
@@ -97,10 +110,24 @@ class ServiceOperatorV2ImplTest {
     }
     
     @Test
+    void testCreateDuplicateServiceThrows() {
+        assertThrows(NacosApiException.class,
+            () -> serviceOperatorV2.create(Service.newService("A", "B", "C"),
+                new ServiceMetadata()));
+    }
+    
+    @Test
     void testUpdate() throws NacosException {
         serviceOperatorV2.update(Service.newService("A", "B", "C"), new ServiceMetadata());
         
         Mockito.verify(metadataOperateService).updateServiceMetadata(Mockito.any(), Mockito.any());
+    }
+    
+    @Test
+    void testUpdateMissingServiceThrows() {
+        assertThrows(NacosApiException.class,
+            () -> serviceOperatorV2.update(Service.newService("A", "B", "missing"),
+                new ServiceMetadata()));
     }
     
     @Test
@@ -112,6 +139,23 @@ class ServiceOperatorV2ImplTest {
         serviceOperatorV2.delete("A", "B@@C");
         
         Mockito.verify(metadataOperateService).deleteServiceMetadata(Mockito.any());
+    }
+    
+    @Test
+    void testDeleteMissingServiceThrows() {
+        assertThrows(NacosApiException.class,
+            () -> serviceOperatorV2.delete(Service.newService("A", "B", "missing")));
+    }
+    
+    @Test
+    void testDeleteNotEmptyServiceThrows() {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        Instance instance = new Instance();
+        serviceInfo.setHosts(Collections.singletonList(instance));
+        Mockito.when(serviceStorage.getPushData(Mockito.any())).thenReturn(serviceInfo);
+        
+        assertThrows(NacosApiException.class,
+            () -> serviceOperatorV2.delete(Service.newService("A", "B", "C")));
     }
     
     @Test
@@ -135,9 +179,85 @@ class ServiceOperatorV2ImplTest {
     }
     
     @Test
+    void testQueryServiceUsesDefaultClusterMetadata() throws NacosException {
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+            .thenReturn(Optional.of(new ServiceMetadata()));
+        Mockito.when(serviceStorage.getClusters(Mockito.any()))
+            .thenReturn(Collections.singleton("D"));
+        
+        ObjectNode objectNode = serviceOperatorV2.queryService("A", "B@@C");
+        
+        assertEquals("D", objectNode.get(FieldsConstants.CLUSTERS).get(0)
+            .get(FieldsConstants.NAME).asText());
+    }
+    
+    @Test
+    void testQueryServiceMissingThrows() {
+        assertThrows(NacosApiException.class,
+            () -> serviceOperatorV2.queryService("A", "B@@missing"));
+    }
+    
+    @Test
+    void testQueryServiceDetail() throws NacosException {
+        ClusterMetadata clusterMetadata = new ClusterMetadata();
+        clusterMetadata.setHealthyCheckPort(8080);
+        clusterMetadata.setUseInstancePortForCheck(false);
+        clusterMetadata.getExtendData().put("zone", "z1");
+        Map<String, ClusterMetadata> clusterMetadataMap = new HashMap<>(2);
+        clusterMetadataMap.put("D", clusterMetadata);
+        ServiceMetadata metadata = new ServiceMetadata();
+        metadata.setProtectThreshold(0.5F);
+        metadata.getExtendData().put("owner", "naming");
+        metadata.setClusters(clusterMetadataMap);
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+            .thenReturn(Optional.of(metadata));
+        Mockito.when(serviceStorage.getClusters(Mockito.any()))
+            .thenReturn(Collections.singleton("D"));
+        
+        ServiceDetailInfo serviceDetail =
+            serviceOperatorV2.queryService(Service.newService("A", "B", "C"));
+        
+        assertEquals("A", serviceDetail.getNamespaceId());
+        assertEquals("B", serviceDetail.getGroupName());
+        assertEquals("C", serviceDetail.getServiceName());
+        assertTrue(serviceDetail.isEphemeral());
+        assertEquals(0.5F, serviceDetail.getProtectThreshold());
+        assertEquals("naming", serviceDetail.getMetadata().get("owner"));
+        ClusterInfo clusterInfo = serviceDetail.getClusterMap().get("D");
+        assertFalse(clusterInfo.isUseInstancePortForCheck());
+        assertEquals(8080, clusterInfo.getHealthyCheckPort());
+        assertEquals("z1", clusterInfo.getMetadata().get("zone"));
+    }
+    
+    @Test
+    void testQueryServiceDetailUsesDefaultClusterMetadata() throws NacosException {
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+            .thenReturn(Optional.of(new ServiceMetadata()));
+        Mockito.when(serviceStorage.getClusters(Mockito.any()))
+            .thenReturn(Collections.singleton("D"));
+        
+        ServiceDetailInfo serviceDetail =
+            serviceOperatorV2.queryService(Service.newService("A", "B", "C"));
+        
+        assertTrue(serviceDetail.getClusterMap().containsKey("D"));
+    }
+    
+    @Test
+    void testQueryServiceDetailMissingThrows() {
+        assertThrows(NacosApiException.class,
+            () -> serviceOperatorV2.queryService(Service.newService("A", "B", "missing")));
+    }
+    
+    @Test
     void testListService() throws NacosException {
         Collection<String> res = serviceOperatorV2.listService("A", "B", null);
         assertEquals(1, res.size());
+    }
+    
+    @Test
+    void testListServiceReturnsEmptyWhenNamespaceMissing() throws NacosException {
+        Collection<String> res = serviceOperatorV2.listService("missing", "B", null);
+        assertTrue(res.isEmpty());
     }
     
     @Test
@@ -149,5 +269,37 @@ class ServiceOperatorV2ImplTest {
     void testSearchServiceName() throws NacosException {
         Collection<String> res = serviceOperatorV2.searchServiceName("A", "");
         assertEquals(1, res.size());
+    }
+    
+    @Test
+    void testGetSubscribers() throws NacosException {
+        Subscriber subscriber =
+            new Subscriber("1.1.1.1:8848", "agent", "app", "1.1.1.1", "A", "B@@C", 8848);
+        Mockito.when(subscribeManager.getSubscribers(Mockito.any(), Mockito.eq(false)))
+            .thenReturn(Collections.singletonList(subscriber));
+        
+        Page<SubscriberInfo> page = serviceOperatorV2.getSubscribers("A", "C", "B", false, 1, 10);
+        
+        assertEquals(1, page.getTotalCount());
+        assertEquals(1, page.getPageItems().size());
+        SubscriberInfo subscriberInfo = page.getPageItems().get(0);
+        assertEquals("A", subscriberInfo.getNamespaceId());
+        assertEquals("B", subscriberInfo.getGroupName());
+        assertEquals("C", subscriberInfo.getServiceName());
+        assertEquals("app", subscriberInfo.getAppName());
+        assertEquals("agent", subscriberInfo.getAgent());
+        assertEquals("1.1.1.1", subscriberInfo.getIp());
+        assertEquals(8848, subscriberInfo.getPort());
+    }
+    
+    @Test
+    void testGetSubscribersReturnsEmptyWhenQueryFails() throws NacosException {
+        Mockito.when(subscribeManager.getSubscribers(Mockito.any(), Mockito.eq(true)))
+            .thenThrow(new RuntimeException("failed"));
+        
+        Page<SubscriberInfo> page = serviceOperatorV2.getSubscribers("A", "C", "B", true, 1, 10);
+        
+        assertTrue(page.getPageItems().isEmpty());
+        assertEquals(0, page.getTotalCount());
     }
 }

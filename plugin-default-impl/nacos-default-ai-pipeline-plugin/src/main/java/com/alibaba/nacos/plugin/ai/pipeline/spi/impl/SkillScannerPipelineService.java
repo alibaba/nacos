@@ -155,7 +155,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
                 }
             }
             
-            int exitCode = process.waitFor();
+            int exitCode = waitForProcess(process);
             
             if (exitCode == 0) {
                 LOGGER.info("[SkillScannerPipeline] {} {} 扫描通过", context.getResourceType(),
@@ -216,6 +216,10 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             command.add("--enable-meta");
         }
         return command;
+    }
+    
+    int waitForProcess(Process process) throws InterruptedException {
+        return process.waitFor();
     }
     
     private void writeResourceFiles(Path baseDir, List<ResourceFileContent> files)

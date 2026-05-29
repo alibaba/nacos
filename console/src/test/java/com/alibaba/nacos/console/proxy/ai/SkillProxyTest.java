@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -45,6 +46,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -139,39 +141,21 @@ class SkillProxyTest {
     }
     
     @Test
-    void testUploadSkillFromZipNoArgs() throws NacosException {
+    void testUploadSkillFromZip() throws NacosException {
         byte[] zipBytes = new byte[] {1, 2, 3};
-        when(skillHandler.uploadSkillFromZip(NS, zipBytes, false, null))
-            .thenReturn(SKILL_NAME);
+        SkillUploadRequest request = SkillUploadRequest.builder()
+            .namespaceId(NS)
+            .zipBytes(zipBytes)
+            .overwrite(true)
+            .targetVersion("v2")
+            .commitMsg("upload commit")
+            .build();
+        when(skillHandler.uploadSkillFromZip(request)).thenReturn(SKILL_NAME);
         
-        String result = skillProxy.uploadSkillFromZip(NS, zipBytes);
+        String result = skillProxy.uploadSkillFromZip(request);
         
         assertEquals(SKILL_NAME, result);
-        verify(skillHandler).uploadSkillFromZip(NS, zipBytes, false, null);
-    }
-    
-    @Test
-    void testUploadSkillFromZipWithOverwrite() throws NacosException {
-        byte[] zipBytes = new byte[] {1, 2, 3};
-        when(skillHandler.uploadSkillFromZip(NS, zipBytes, true, null))
-            .thenReturn(SKILL_NAME);
-        
-        String result = skillProxy.uploadSkillFromZip(NS, zipBytes, true);
-        
-        assertEquals(SKILL_NAME, result);
-        verify(skillHandler).uploadSkillFromZip(NS, zipBytes, true, null);
-    }
-    
-    @Test
-    void testUploadSkillFromZipWithOverwriteAndVersion() throws NacosException {
-        byte[] zipBytes = new byte[] {1, 2, 3};
-        when(skillHandler.uploadSkillFromZip(NS, zipBytes, true, "v2"))
-            .thenReturn(SKILL_NAME);
-        
-        String result = skillProxy.uploadSkillFromZip(NS, zipBytes, true, "v2");
-        
-        assertEquals(SKILL_NAME, result);
-        verify(skillHandler).uploadSkillFromZip(NS, zipBytes, true, "v2");
+        verify(skillHandler).uploadSkillFromZip(request);
     }
     
     @Test
@@ -286,6 +270,20 @@ class SkillProxyTest {
         skillProxy.online(form);
         
         verify(skillHandler).changeOnlineStatus(form, true);
+    }
+    
+    @Test
+    public void testRedraft() throws NacosException {
+        SkillPublishForm form = new SkillPublishForm();
+        form.setNamespaceId(NS);
+        form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
+        
+        doNothing().when(skillHandler).redraft(form);
+        
+        skillProxy.redraft(form);
+        
+        verify(skillHandler, times(1)).redraft(form);
     }
     
     @Test

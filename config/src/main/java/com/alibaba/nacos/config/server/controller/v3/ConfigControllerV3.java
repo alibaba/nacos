@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.ConfigType;
@@ -102,6 +103,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.alibaba.nacos.api.common.Constants.TAG_V2;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
 
 /**
@@ -165,6 +167,7 @@ public class ConfigControllerV3 {
     /**
      * Query configuration.
      */
+    @Since("3.0.0")
     @GetMapping
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -193,6 +196,7 @@ public class ConfigControllerV3 {
     /**
      * Publish configuration.
      */
+    @Since("3.0.0")
     @PostMapping
     @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -248,6 +252,7 @@ public class ConfigControllerV3 {
      * @return the result
      * @throws NacosException the nacos exception
      */
+    @Since("3.1.0")
     @PutMapping("/metadata")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> publishConfigMetadata(HttpServletRequest request,
@@ -277,6 +282,7 @@ public class ConfigControllerV3 {
     /**
      * Delete configuration.
      */
+    @Since("3.0.0")
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfig(HttpServletRequest request, ConfigFormV3 configForm)
@@ -299,6 +305,7 @@ public class ConfigControllerV3 {
     /**
      * Batch delete configuration by ids.
      */
+    @Since("3.0.0")
     @DeleteMapping("/batch")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfigs(HttpServletRequest request,
@@ -325,6 +332,7 @@ public class ConfigControllerV3 {
     /**
      * Subscribe to configured client information.
      */
+    @Since("3.0.0")
     @GetMapping("/listener")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm,
@@ -349,6 +357,7 @@ public class ConfigControllerV3 {
      * `nacos.config.search.wait_timeout` to control the waiting time of query.
      * </p>
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
@@ -392,6 +401,7 @@ public class ConfigControllerV3 {
     /**
      * Execute to remove beta operation.
      */
+    @Since("3.0.0")
     @DeleteMapping("/beta")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest, ConfigFormV3 configForm)
@@ -432,6 +442,7 @@ public class ConfigControllerV3 {
     /**
      * Execute to query beta operation.
      */
+    @Since("3.0.0")
     @GetMapping("/beta")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigGrayInfo> queryBeta(ConfigFormV3 configForm) throws NacosApiException {
@@ -456,8 +467,128 @@ public class ConfigControllerV3 {
     }
     
     /**
+     * Publish gray configuration.
+     */
+    @Since("3.2.2")
+    @PostMapping("/gray")
+    @TpsControl(pointName = "ConfigPublish")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> publishGray(HttpServletRequest request, ConfigFormV3 configForm,
+        @RequestParam(value = "grayType", required = false, defaultValue = TAG_V2) String grayType,
+        @RequestParam(value = "grayMatchRuleExp", required = false) String grayMatchRuleExp)
+        throws NacosException {
+        configForm.validateWithContent();
+        final boolean namespaceTransferred =
+            NamespaceUtil.isNeedTransferNamespace(configForm.getNamespaceId());
+        configForm
+            .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
+        if (StringUtils.isNotBlank(grayMatchRuleExp)) {
+            configForm.setGrayRuleExp(grayMatchRuleExp);
+        }
+        validateGrayForm(configForm);
+        ParamUtils.checkParam(configForm.getDataId(), configForm.getGroup(), "datumId",
+            configForm.getContent());
+        
+        if (StringUtils.isBlank(configForm.getSrcUser())) {
+            configForm.setSrcUser(RequestUtil.getSrcUserName(request));
+        }
+        if (!ConfigType.isValidType(configForm.getType())) {
+            configForm.setType(ConfigType.getDefaultType().getType());
+        }
+        
+        String encryptedDataKeyFinal = configForm.getEncryptedDataKey();
+        if (StringUtils.isBlank(encryptedDataKeyFinal)) {
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(),
+                configForm.getContent());
+            configForm.setContent(pair.getSecond());
+            encryptedDataKeyFinal = pair.getFirst();
+        }
+        configForm.setEncryptedDataKey(encryptedDataKeyFinal);
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setSrcType(Constants.HTTP);
+        configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
+        configRequestInfo.setCasMd5(request.getHeader("casMd5"));
+        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
+        
+        return Result.success(
+            configOperationService.publishConfigGray(grayType, configForm, configRequestInfo));
+    }
+    
+    /**
+     * Query gray configuration.
+     */
+    @Since("3.2.2")
+    @GetMapping("/gray")
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<ConfigGrayInfo> queryGray(ConfigFormV3 configForm,
+        @RequestParam("grayName") String grayName)
+        throws NacosApiException {
+        configForm.validate();
+        validateGrayName(grayName);
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        ConfigInfoGrayWrapper grayConfig =
+            configInfoGrayPersistService.findConfigInfo4Gray(configForm.getDataId(),
+                configForm.getGroupName(), namespaceId, grayName);
+        if (Objects.isNull(grayConfig)) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Config gray version not found.");
+        }
+        String encryptedDataKey = grayConfig.getEncryptedDataKey();
+        Pair<String, String> pair =
+            EncryptionHandler.decryptHandler(configForm.getDataId(), encryptedDataKey,
+                grayConfig.getContent());
+        grayConfig.setContent(pair.getSecond());
+        return Result.success(ResponseUtil.transferToConfigGrayInfo(grayConfig));
+    }
+    
+    /**
+     * Remove gray configuration.
+     */
+    @Since("3.2.2")
+    @DeleteMapping("/gray")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> stopGray(HttpServletRequest request, ConfigFormV3 configForm,
+        @RequestParam("grayName") String grayName) throws NacosApiException {
+        configForm.validate();
+        validateGrayName(grayName);
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        String clientIp = getRemoteIp(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
+        return Result.success(
+            configOperationService.deleteConfig(configForm.getDataId(), configForm.getGroupName(),
+                namespaceId, grayName, clientIp, srcUser, Constants.HTTP));
+    }
+    
+    private void validateGrayForm(ConfigFormV3 configForm) throws NacosApiException {
+        validateGrayName(configForm.getGrayName());
+        if (StringUtils.isBlank(configForm.getGrayRuleExp())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                "Required parameter 'grayRuleExp' type String is not present");
+        }
+        if (StringUtils.isBlank(configForm.getGrayVersion())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                "Required parameter 'grayVersion' type String is not present");
+        }
+    }
+    
+    private void validateGrayName(String grayName) throws NacosApiException {
+        if (StringUtils.isBlank(grayName)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                "Required parameter 'grayName' type String is not present");
+        }
+        if (!ParamUtils.isValid(grayName.trim())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "invalid grayName : " + grayName);
+        }
+    }
+    
+    /**
      * Execute import and publish config operation.
      */
+    @Since("3.0.0")
     @PostMapping("/import")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
@@ -618,6 +749,7 @@ public class ConfigControllerV3 {
     /**
      * Export config add metadata.yml file record config metadata.
      */
+    @Since("3.0.0")
     @GetMapping("/export")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
@@ -664,6 +796,7 @@ public class ConfigControllerV3 {
     /**
      * Execute clone config operation.
      */
+    @Since("3.0.0")
     @PostMapping("/clone")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,

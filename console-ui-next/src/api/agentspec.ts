@@ -97,6 +97,14 @@ export const agentSpecApi = {
   }): ApiResult<string> =>
     client.post(`${BASE}/force-publish`, data) as ApiResult<string>,
 
+  /** 重新编辑已审核版本（回退到草稿状态） */
+  redraft: (data: {
+    namespaceId?: string;
+    agentSpecName: string;
+    version: string;
+  }): ApiResult<string> =>
+    client.post(`${BASE}/redraft`, data) as ApiResult<string>,
+
   /** 更新标签 */
   updateLabels: (data: {
     namespaceId?: string;

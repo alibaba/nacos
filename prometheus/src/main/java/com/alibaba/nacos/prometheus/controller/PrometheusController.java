@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.prometheus.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -60,6 +61,7 @@ public class PrometheusController {
      *
      * @throws NacosException NacosException.
      */
+    @Since("2.2.0")
     @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_PATH,
         produces = "application/json; charset=UTF-8")
     public ResponseEntity<String> metric() throws NacosException {
@@ -87,6 +89,7 @@ public class PrometheusController {
      *
      * @throws NacosException NacosException.
      */
+    @Since("2.3.0")
     @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH,
         produces = "application/json; charset=UTF-8")
     public ResponseEntity<String> metricNamespace(@PathVariable("namespaceId") String namespaceId)
@@ -101,6 +104,7 @@ public class PrometheusController {
      *
      * @throws NacosException NacosException.
      */
+    @Since("2.3.0")
     @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH,
         produces = "application/json; charset=UTF-8")
     public ResponseEntity<String> metricNamespaceService(

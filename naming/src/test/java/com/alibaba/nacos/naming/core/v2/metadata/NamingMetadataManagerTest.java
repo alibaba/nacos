@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -126,6 +128,14 @@ class NamingMetadataManagerTest {
     }
     
     @Test
+    void testGetInstanceMetadataWhenServiceMissing() {
+        Optional<InstanceMetadata> instanceMetadata =
+            namingMetadataManager.getInstanceMetadata(Mockito.mock(Service.class), METADATA_ID);
+        
+        assertFalse(instanceMetadata.isPresent());
+    }
+    
+    @Test
     void testUpdateServiceMetadata() throws NoSuchFieldException, IllegalAccessException {
         
         ServiceMetadata serviceMetadata = new ServiceMetadata();
@@ -160,6 +170,20 @@ class NamingMetadataManagerTest {
     }
     
     @Test
+    void testUpdateInstanceMetadataWhenServiceMissing() {
+        Service newService = Mockito.mock(Service.class);
+        InstanceMetadata newInstanceMetadata = new InstanceMetadata();
+        
+        namingMetadataManager.updateInstanceMetadata(newService, "newMetadataId",
+            newInstanceMetadata);
+        
+        Optional<InstanceMetadata> optional =
+            namingMetadataManager.getInstanceMetadata(newService, "newMetadataId");
+        assertTrue(optional.isPresent());
+        assertEquals(newInstanceMetadata, optional.get());
+    }
+    
+    @Test
     void testRemoveServiceMetadata() {
         
         namingMetadataManager.removeServiceMetadata(service);
@@ -187,6 +211,15 @@ class NamingMetadataManagerTest {
     }
     
     @Test
+    void testRemoveInstanceMetadataWhenServiceMissing() {
+        Service missingService = Mockito.mock(Service.class);
+        
+        namingMetadataManager.removeInstanceMetadata(missingService, METADATA_ID);
+        
+        assertEquals(1, namingMetadataManager.getInstanceMetadataSnapshot().size());
+    }
+    
+    @Test
     void testGetServiceMetadataSnapshot() {
         Map<Service, ServiceMetadata> serviceMetadataSnapshot =
             namingMetadataManager.getServiceMetadataSnapshot();
@@ -209,6 +242,19 @@ class NamingMetadataManagerTest {
             namingMetadataManager.getServiceMetadataSnapshot();
         
         assertEquals(0, serviceMetadataSnapshot.size());
+    }
+    
+    @Test
+    void testLoadServiceMetadataSnapshotWithService() {
+        ConcurrentMap<Service, ServiceMetadata> snapshot = new ConcurrentHashMap<>();
+        Service snapshotService = Service.newService("namespace", "group", "name", true);
+        ServiceMetadata snapshotMetadata = new ServiceMetadata();
+        snapshot.put(snapshotService, snapshotMetadata);
+        
+        namingMetadataManager.loadServiceMetadataSnapshot(snapshot);
+        
+        assertEquals(snapshotMetadata,
+            namingMetadataManager.getServiceMetadata(snapshotService).orElse(null));
     }
     
     @Test
@@ -251,5 +297,19 @@ class NamingMetadataManagerTest {
         
         namingMetadataManager.onEvent(clientDisconnectEvent);
         Mockito.verify(clientDisconnectEvent).getClient();
+    }
+    
+    @Test
+    void testOnClientDisconnectEventWithPublishedService() {
+        Mockito.when(clientDisconnectEvent.getClient()).thenReturn(client);
+        Mockito.when(client.getAllPublishedService())
+            .thenReturn(Collections.singletonList(service));
+        InstancePublishInfo publishInfo = Mockito.mock(InstancePublishInfo.class);
+        Mockito.when(publishInfo.getMetadataId()).thenReturn(METADATA_ID);
+        Mockito.when(client.getInstancePublishInfo(service)).thenReturn(publishInfo);
+        
+        namingMetadataManager.onEvent(clientDisconnectEvent);
+        
+        assertEquals(1, namingMetadataManager.getExpiredMetadataInfos().size());
     }
 }

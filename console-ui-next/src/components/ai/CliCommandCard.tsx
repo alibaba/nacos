@@ -25,6 +25,7 @@ interface CliCommandCardProps {
 
 export function CliCommandCard({ commands, className, onDownload, downloadFileName, downloadDisabled }: CliCommandCardProps) {
   const { t } = useTranslation();
+  const downloadLabel = downloadFileName || t('common.cliUsage.downloadZip');
 
   if (commands.length === 0 && !onDownload) return null;
 
@@ -44,12 +45,14 @@ export function CliCommandCard({ commands, className, onDownload, downloadFileNa
             <Button
               variant="outline"
               size="sm"
-              className="w-full h-8 text-xs gap-1.5"
+              className="w-full h-8 min-w-0 overflow-hidden text-xs gap-1.5"
               disabled={downloadDisabled}
               onClick={onDownload}
             >
               <Download className="h-3.5 w-3.5" />
-              {downloadFileName || t('common.cliUsage.downloadZip')}
+              <span className="min-w-0 truncate" title={downloadLabel}>
+                {downloadLabel}
+              </span>
             </Button>
           </>
         )}

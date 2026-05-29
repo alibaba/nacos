@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.controller.v3.ai;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
@@ -30,6 +31,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -83,6 +85,7 @@ public class ConsoleSkillController {
      * @return result of the get operation
      * @throws NacosException if the skill get fails
      */
+    @Since("3.2.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<SkillMeta> getSkill(SkillForm form) throws NacosException {
@@ -97,6 +100,7 @@ public class ConsoleSkillController {
      * @return full skill content for the specified version
      * @throws NacosException if the skill or version not found
      */
+    @Since("3.2.0")
     @GetMapping("/version")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<Skill> getSkillVersion(SkillForm form) throws NacosException {
@@ -111,6 +115,7 @@ public class ConsoleSkillController {
      * @return ZIP file as ResponseEntity
      * @throws NacosException if the skill or version not found
      */
+    @Since("3.2.0")
     @GetMapping("/version/download")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public ResponseEntity<byte[]> downloadSkillVersion(SkillForm form) throws NacosException {
@@ -126,6 +131,7 @@ public class ConsoleSkillController {
      * @return result of the deletion operation
      * @throws NacosException if the skill deletion fails
      */
+    @Since("3.2.0")
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> deleteSkill(SkillForm form) throws NacosException {
@@ -142,6 +148,7 @@ public class ConsoleSkillController {
      * @return result of the list operation
      * @throws NacosException if the skill list fails
      */
+    @Since("3.2.1")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm,
@@ -157,10 +164,12 @@ public class ConsoleSkillController {
      *
      * @param request     HTTP servlet request
      * @param namespaceId namespace ID
+     * @param commitMsg   version-level commit message
      * @param file        zip file containing skill
      * @return result of the upload operation
      * @throws NacosException if the upload fails
      */
+    @Since("3.2.2")
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
@@ -169,11 +178,18 @@ public class ConsoleSkillController {
         @RequestParam(value = "overwrite", required = false,
             defaultValue = "false") boolean overwrite,
         @RequestParam(value = "targetVersion", required = false) String targetVersion,
+        @RequestParam(value = "commitMsg", required = false) String commitMsg,
         @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        String skillName =
-            skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
+        SkillUploadRequest uploadRequest = SkillUploadRequest.builder()
+            .namespaceId(namespaceId)
+            .zipBytes(zipBytes)
+            .overwrite(overwrite)
+            .targetVersion(targetVersion)
+            .commitMsg(commitMsg)
+            .build();
+        String skillName = skillProxy.uploadSkillFromZip(uploadRequest);
         return Result.success(skillName);
     }
     
@@ -188,6 +204,7 @@ public class ConsoleSkillController {
      * @return batch upload result with succeeded and failed lists
      * @throws NacosException if zip parsing fails entirely
      */
+    @Since("3.2.2")
     @PostMapping(value = "/upload/batch", consumes = "multipart/form-data")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
@@ -206,6 +223,7 @@ public class ConsoleSkillController {
     /**
      * Create draft. {@link SkillDraftCreateForm#prepareCreateDraftRequest()} validates here; handler only delegates.
      */
+    @Since("3.2.0")
     @PostMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> createDraft(SkillDraftCreateForm form) throws NacosException {
@@ -216,6 +234,7 @@ public class ConsoleSkillController {
     /**
      * Update current draft content.
      */
+    @Since("3.2.0")
     @PutMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> updateDraft(SkillUpdateForm form) throws NacosException {
@@ -227,6 +246,7 @@ public class ConsoleSkillController {
     /**
      * Delete current draft version.
      */
+    @Since("3.2.0")
     @DeleteMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> deleteDraft(SkillForm form) throws NacosException {
@@ -238,6 +258,7 @@ public class ConsoleSkillController {
     /**
      * Submit a version for pipeline review.
      */
+    @Since("3.2.0")
     @PostMapping("/submit")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> submit(SkillSubmitForm form) throws NacosException {
@@ -248,6 +269,7 @@ public class ConsoleSkillController {
     /**
      * Publish an approved reviewing version.
      */
+    @Since("3.2.0")
     @PostMapping("/publish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> publish(SkillPublishForm form) throws NacosException {
@@ -257,10 +279,10 @@ public class ConsoleSkillController {
     }
     
     /**
-     * Force-publish a skill version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and reviewing
-     * (pipeline in-progress) versions. Restricted to admin users only (apiType = ADMIN_API enforces global admin
-     * check).
+     * Force-publish a skill version, bypassing pipeline validation. Accepts draft, reviewing, and reviewed versions.
+     * Restricted to admin users only (apiType = ADMIN_API enforces global admin check).
      */
+    @Since("3.2.1")
     @PostMapping("/force-publish")
     @Secured(resource = CONSOLE_RESOURCE_NAME_PREFIX
         + "skills", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -272,8 +294,21 @@ public class ConsoleSkillController {
     }
     
     /**
+     * Re-edit a reviewed skill version, transitioning it back to draft status.
+     */
+    @Since("3.2.2")
+    @PostMapping("/redraft")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> redraft(SkillPublishForm form) throws NacosException {
+        form.validate();
+        skillProxy.redraft(form);
+        return Result.success("ok");
+    }
+    
+    /**
      * Update runtime route labels without changing version status.
      */
+    @Since("3.2.0")
     @PutMapping("/labels")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> updateLabels(SkillLabelsUpdateForm form) throws NacosException {
@@ -285,6 +320,7 @@ public class ConsoleSkillController {
     /**
      * Update skill biz tags without changing version status.
      */
+    @Since("3.2.0")
     @PutMapping("/biz-tags")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
@@ -296,6 +332,7 @@ public class ConsoleSkillController {
     /**
      * Online operation (version-level or skill-level by scope).
      */
+    @Since("3.2.0")
     @PostMapping("/online")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> online(SkillOnlineForm form) throws NacosException {
@@ -307,6 +344,7 @@ public class ConsoleSkillController {
     /**
      * Offline operation (version-level or skill-level by scope).
      */
+    @Since("3.2.0")
     @PostMapping("/offline")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> offline(SkillOnlineForm form) throws NacosException {
@@ -318,6 +356,7 @@ public class ConsoleSkillController {
     /**
      * Update skill visibility scope (PUBLIC or PRIVATE).
      */
+    @Since("3.2.0")
     @PutMapping("/scope")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> updateScope(SkillScopeForm form) throws NacosException {

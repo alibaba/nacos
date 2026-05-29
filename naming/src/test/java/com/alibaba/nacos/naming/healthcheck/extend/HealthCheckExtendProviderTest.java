@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.healthcheck.extend;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
 import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 class HealthCheckExtendProviderTest {
@@ -57,5 +60,22 @@ class HealthCheckExtendProviderTest {
     @Test
     void init() {
         healthCheckExtendProvider.init();
+    }
+    
+    @Test
+    void testInitWithDuplicateCheckerType() {
+        Collection<AbstractHealthChecker> checkers = new ArrayList<>();
+        checkers.add(new Tcp());
+        ReflectionTestUtils.setField(healthCheckExtendProvider, "checkers", checkers);
+        
+        assertThrows(RuntimeException.class, () -> healthCheckExtendProvider.init());
+    }
+    
+    @Test
+    void testInitWithUnmatchedProcessorAndChecker() {
+        ReflectionTestUtils.setField(healthCheckExtendProvider, "checkers",
+            new ArrayList<AbstractHealthChecker>());
+        
+        assertThrows(RuntimeException.class, () -> healthCheckExtendProvider.init());
     }
 }

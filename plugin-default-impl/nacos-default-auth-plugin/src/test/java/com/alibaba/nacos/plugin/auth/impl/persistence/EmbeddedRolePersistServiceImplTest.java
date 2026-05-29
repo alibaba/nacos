@@ -24,14 +24,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -91,5 +94,49 @@ class EmbeddedRolePersistServiceImplTest {
         List<String> role = embeddedRolePersistService.findRolesLikeRoleName("role");
         
         assertEquals(0, role.size());
+    }
+    
+    @Test
+    void testFindRolesLikeAndGenerateLikeArgument() {
+        assertEquals("ro\\_le%", embeddedRolePersistService.generateLikeArgument("ro_le*"));
+        assertEquals("plain", embeddedRolePersistService.generateLikeArgument("plain"));
+        
+        RoleInfo roleInfo = new RoleInfo();
+        roleInfo.setRole("role");
+        roleInfo.setUsername("userName");
+        Page<RoleInfo> page = new Page<>();
+        page.setPageItems(Collections.singletonList(roleInfo));
+        page.setTotalCount(1);
+        AuthPaginationHelper<RoleInfo> helper = Mockito.mock(AuthPaginationHelper.class);
+        EmbeddedRolePersistServiceImpl service = serviceWithHelper(helper);
+        when(helper.fetchPage(any(), any(), any(), eq(1), eq(10), any())).thenReturn(page);
+        
+        assertSame(page, service.findRolesLike4Page("user*", "ro_le*", 1, 10));
+        assertSame(page, service.findRolesLike4Page("", "", 1, 10));
+        assertSame(page, service.getRolesByUserNameAndRoleName("", "", 1, 10));
+    }
+    
+    @Test
+    void testGetRolesReturnsEmptyPageWhenHelperReturnsNull() {
+        AuthPaginationHelper<RoleInfo> helper = Mockito.mock(AuthPaginationHelper.class);
+        EmbeddedRolePersistServiceImpl service = serviceWithHelper(helper);
+        when(helper.fetchPage(any(), any(), any(), eq(1), eq(10), any())).thenReturn(null);
+        
+        Page<RoleInfo> result = service.getRoles(1, 10);
+        
+        assertEquals(0, result.getTotalCount());
+        assertEquals(Collections.emptyList(), result.getPageItems());
+    }
+    
+    private EmbeddedRolePersistServiceImpl serviceWithHelper(
+        AuthPaginationHelper<RoleInfo> helper) {
+        return new EmbeddedRolePersistServiceImpl(databaseOperate) {
+            
+            @Override
+            @SuppressWarnings("unchecked")
+            public <E> AuthPaginationHelper<E> createPaginationHelper() {
+                return (AuthPaginationHelper<E>) helper;
+            }
+        };
     }
 }

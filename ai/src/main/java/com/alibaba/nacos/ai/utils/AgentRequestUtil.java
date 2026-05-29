@@ -44,7 +44,7 @@ import java.util.Objects;
  */
 public class AgentRequestUtil {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(McpRequestUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AgentRequestUtil.class);
     
     /**
      * Parse Agent card request form to {@link AgentCard}.

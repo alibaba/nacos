@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.SingletonBeanRegistry;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -31,7 +33,13 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class HealthCheckProcessorExtendV2Test {
@@ -63,5 +71,47 @@ class HealthCheckProcessorExtendV2Test {
         verify(registry).registerSingleton(
             healthCheckProcessorExtendV2.lowerFirstChar(mysqlProcessor.getClass().getSimpleName()),
             mysqlProcessor);
+    }
+    
+    @Test
+    void addProcessorThrowsWhenDuplicateTypeFound() {
+        when(mysqlProcessor.getType()).thenReturn("MYSQL");
+        Set<String> origin = new HashSet<>();
+        origin.add("MYSQL");
+        
+        assertThrows(RuntimeException.class,
+            () -> healthCheckProcessorExtendV2.addProcessor(origin));
+    }
+    
+    @Test
+    void testLowerFirstChar() {
+        assertEquals("mysqlHealthCheckProcessor",
+            healthCheckProcessorExtendV2.lowerFirstChar("MysqlHealthCheckProcessor"));
+    }
+    
+    @Test
+    void testLowerFirstCharWithBlankName() {
+        assertThrows(IllegalArgumentException.class,
+            () -> healthCheckProcessorExtendV2.lowerFirstChar(""));
+    }
+    
+    @Test
+    void testSetBeanFactoryWithSingletonRegistry() {
+        HealthCheckProcessorExtendV2 processorExtend = new HealthCheckProcessorExtendV2();
+        ConfigurableListableBeanFactory beanFactory =
+            mock(ConfigurableListableBeanFactory.class);
+        
+        processorExtend.setBeanFactory(beanFactory);
+        
+        assertSame(beanFactory, ReflectionTestUtils.getField(processorExtend, "registry"));
+    }
+    
+    @Test
+    void testSetBeanFactoryWithOtherBeanFactory() {
+        HealthCheckProcessorExtendV2 processorExtend = new HealthCheckProcessorExtendV2();
+        
+        processorExtend.setBeanFactory(mock(BeanFactory.class));
+        
+        assertNull(ReflectionTestUtils.getField(processorExtend, "registry"));
     }
 }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -74,6 +75,7 @@ public class ConfigOpenApiController {
         this.configQueryChainService = configQueryChainService;
     }
     
+    @Since("3.0.0")
     @GetMapping
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.OPEN_API)

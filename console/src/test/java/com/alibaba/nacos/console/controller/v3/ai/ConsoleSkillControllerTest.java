@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -36,6 +37,7 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -45,9 +47,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -145,6 +145,24 @@ class ConsoleSkillControllerTest {
     }
     
     @Test
+    void testRedraftSuccess() throws Exception {
+        doNothing().when(skillProxy).redraft(any(SkillPublishForm.class));
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
+            Constants.Skills.CONSOLE_PATH + "/redraft").param("namespaceId", "test-ns")
+            .param("skillName", "test-skill").param("version", "v1");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        String content = response.getContentAsString();
+        Result<String> result = JacksonUtils.toObj(content, new TypeReference<>() {
+        });
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+        verify(skillProxy).redraft(any(SkillPublishForm.class));
+    }
+    
+    @Test
     void testListSkillsSuccess() throws Exception {
         Page<SkillSummary> page = new Page<>();
         page.setTotalCount(1);
@@ -185,8 +203,11 @@ class ConsoleSkillControllerTest {
     
     @Test
     void testUploadSkill() throws Exception {
-        when(skillProxy.uploadSkillFromZip(anyString(), any(byte[].class),
-            anyBoolean(), isNull())).thenReturn(SKILL_NAME);
+        when(skillProxy.uploadSkillFromZip(argThat(request -> request != null
+            && NS.equals(request.getNamespaceId()) && !request.isOverwrite()
+            && request.getTargetVersion() == null
+            && "upload commit".equals(request.getCommitMsg())
+            && request.getZipBytes() != null))).thenReturn(SKILL_NAME);
         
         MockMultipartFile file = new MockMultipartFile("file", "skill.zip",
             "application/zip", new byte[] {0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0,
@@ -194,7 +215,8 @@ class ConsoleSkillControllerTest {
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.multipart(BASE_PATH + "/upload").file(file)
-                .param("namespaceId", NS).param("overwrite", "false"))
+                .param("namespaceId", NS).param("overwrite", "false")
+                .param("commitMsg", "upload commit"))
             .andReturn().getResponse();
         
         assertEquals(200, response.getStatus());

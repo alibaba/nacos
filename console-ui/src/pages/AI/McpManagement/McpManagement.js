@@ -85,8 +85,6 @@ class McpManagement extends React.Component {
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppId;
     this.isAdvance = getParams('isAdvanceQuery') || false;
-    this.DEFAULT_REGISTRY_URL = 'https://registry.modelcontextprotocol.io/v0/servers';
-
     this.state = {
       configurations: {
         pageItems: [],

@@ -124,6 +124,16 @@ public interface PromptOperationService {
         throws NacosException;
     
     /**
+     * Re-edit a reviewed version, transitioning it back to draft.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param version     version to re-edit
+     * @throws NacosException if version not found or not in reviewed status
+     */
+    void redraft(String namespaceId, String promptKey, String version) throws NacosException;
+    
+    /**
      * Online/offline operation for a prompt version.
      *
      * @param namespaceId namespace ID

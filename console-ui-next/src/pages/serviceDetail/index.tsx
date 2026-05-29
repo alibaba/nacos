@@ -41,14 +41,25 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
+const getServiceManagementPath = (namespaceId: string) => {
+  const params = new URLSearchParams();
+  if (namespaceId) {
+    params.set('namespace', namespaceId);
+  }
+  const query = params.toString();
+  return query ? `/serviceManagement?${query}` : '/serviceManagement';
+};
+
 export default function ServiceDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { currentNamespace } = useNamespaceStore();
+  const { currentNamespace, setNamespaceChangeGuard } = useNamespaceStore();
 
   const serviceName = searchParams.get('serviceName') || '';
   const groupName = searchParams.get('groupName') || 'DEFAULT_GROUP';
+  const activeNamespace =
+    searchParams.get('namespace') || searchParams.get('namespaceId') || currentNamespace;
 
   const {
     currentService,
@@ -107,14 +118,47 @@ export default function ServiceDetailPage() {
   // Instance toggling state
   const [togglingInstances, setTogglingInstances] = useState<Set<string>>(new Set());
 
+  const closeDetailDialogs = useCallback(() => {
+    setEditServiceOpen(false);
+    setEditClusterOpen(false);
+    setEditInstanceOpen(false);
+    setDeleteInstanceTarget(null);
+  }, []);
+
   // Load service detail
   useEffect(() => {
     if (serviceName) {
-      fetchServiceDetail(currentNamespace, serviceName, groupName);
+      fetchServiceDetail(activeNamespace, serviceName, groupName);
     }
     return () => clearCurrentService();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serviceName, groupName, currentNamespace]);
+  }, [serviceName, groupName, activeNamespace]);
+
+  useEffect(() => {
+    const hasPendingDialog = editServiceOpen
+      || editClusterOpen
+      || editInstanceOpen
+      || deleteInstanceTarget !== null;
+    setNamespaceChangeGuard(() => {
+      if (!hasPendingDialog) {
+        return true;
+      }
+      if (!window.confirm(t('service.namespaceSwitchConfirm'))) {
+        return false;
+      }
+      closeDetailDialogs();
+      return true;
+    });
+    return () => setNamespaceChangeGuard(null);
+  }, [
+    closeDetailDialogs,
+    deleteInstanceTarget,
+    editClusterOpen,
+    editInstanceOpen,
+    editServiceOpen,
+    setNamespaceChangeGuard,
+    t,
+  ]);
 
   // Fetch instances for each cluster when service detail loads
   useEffect(() => {
@@ -134,7 +178,7 @@ export default function ServiceDetailPage() {
     }));
     try {
       const response = await serviceApi.listInstances({
-        namespaceId: currentNamespace,
+        namespaceId: activeNamespace,
         serviceName,
         groupName,
         clusterName,
@@ -153,10 +197,10 @@ export default function ServiceDetailPage() {
         [clusterName]: { list: [], total: 0, loading: false },
       }));
     }
-  }, [currentNamespace, serviceName, groupName, clusterPages]);
+  }, [activeNamespace, serviceName, groupName, clusterPages]);
 
   const refreshDetail = () => {
-    fetchServiceDetail(currentNamespace, serviceName, groupName);
+    fetchServiceDetail(activeNamespace, serviceName, groupName);
     // Instances will re-fetch via the useEffect on currentService change
   };
 
@@ -193,7 +237,7 @@ export default function ServiceDetailPage() {
         ? JSON.stringify({ type: 'none' })
         : JSON.stringify({ type: editServiceForm.selectorType, expression: editServiceForm.selectorExpression });
       await serviceApi.updateService({
-        namespaceId: currentNamespace,
+        namespaceId: activeNamespace,
         serviceName,
         groupName,
         protectThreshold: editServiceForm.protectThreshold,
@@ -241,7 +285,7 @@ export default function ServiceDetailPage() {
         healthCheckerObj.headers = editClusterForm.checkHeaders;
       }
       await serviceApi.updateCluster({
-        namespaceId: currentNamespace,
+        namespaceId: activeNamespace,
         serviceName,
         groupName,
         clusterName: editClusterName,
@@ -285,7 +329,7 @@ export default function ServiceDetailPage() {
     setEditInstanceSubmitting(true);
     try {
       await serviceApi.updateInstance({
-        namespaceId: currentNamespace,
+        namespaceId: activeNamespace,
         serviceName,
         groupName,
         clusterName: editInstanceCluster,
@@ -313,7 +357,7 @@ export default function ServiceDetailPage() {
         ? JSON.stringify(inst.metadata)
         : undefined;
       await serviceApi.updateInstance({
-        namespaceId: currentNamespace,
+        namespaceId: activeNamespace,
         serviceName,
         groupName,
         clusterName,
@@ -341,7 +385,7 @@ export default function ServiceDetailPage() {
     setDeleteInstanceSubmitting(true);
     try {
       await serviceApi.deleteInstance({
-        namespaceId: currentNamespace,
+        namespaceId: activeNamespace,
         serviceName,
         groupName,
         clusterName,
@@ -399,7 +443,7 @@ export default function ServiceDetailPage() {
   if (!currentService) {
     return (
       <div className="flex flex-col gap-4">
-        <Button variant="ghost" onClick={() => navigate('/serviceManagement')} className="gap-2 w-fit">
+        <Button variant="ghost" onClick={() => navigate(getServiceManagementPath(activeNamespace))} className="gap-2 w-fit">
           <ArrowLeft className="h-4 w-4" />
           {t('common.back')}
         </Button>
@@ -416,7 +460,7 @@ export default function ServiceDetailPage() {
     <div className="flex flex-col gap-4">
       {/* Back + Title */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/serviceManagement')}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(getServiceManagementPath(activeNamespace))}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-semibold text-foreground">{serviceName}</h1>

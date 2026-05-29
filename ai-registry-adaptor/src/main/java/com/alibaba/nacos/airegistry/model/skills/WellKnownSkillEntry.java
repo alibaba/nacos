@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.airegistry.model.skills;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.List;
 
 /**
@@ -23,11 +25,20 @@ import java.util.List;
  *
  * @author nacos
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class WellKnownSkillEntry {
     
     private String name;
     
+    private String type;
+    
     private String description;
+    
+    private String url;
+    
+    private String digest;
+    
+    private String version;
     
     private List<String> files;
     
@@ -39,12 +50,44 @@ public class WellKnownSkillEntry {
         this.name = name;
     }
     
+    public String getType() {
+        return type;
+    }
+    
+    public void setType(String type) {
+        this.type = type;
+    }
+    
     public String getDescription() {
         return description;
     }
     
     public void setDescription(String description) {
         this.description = description;
+    }
+    
+    public String getUrl() {
+        return url;
+    }
+    
+    public void setUrl(String url) {
+        this.url = url;
+    }
+    
+    public String getDigest() {
+        return digest;
+    }
+    
+    public void setDigest(String digest) {
+        this.digest = digest;
+    }
+    
+    public String getVersion() {
+        return version;
+    }
+    
+    public void setVersion(String version) {
+        this.version = version;
     }
     
     public List<String> getFiles() {

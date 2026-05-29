@@ -538,13 +538,13 @@ class AgentSpecOperationServiceImplTest {
         meta.setNamespaceId(namespaceId);
         meta.setStatus("enable");
         meta.setMetaVersion(1L);
-        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":1}");
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString()))
             .thenReturn(meta);
         
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion(version);
-        v.setStatus("draft");
+        v.setStatus("reviewed");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(agentSpecName), anyString(),
             eq(version)))
             .thenReturn(v);

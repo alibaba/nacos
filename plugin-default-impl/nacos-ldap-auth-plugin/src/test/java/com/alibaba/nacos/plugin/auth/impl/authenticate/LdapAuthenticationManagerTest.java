@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.authenticate;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
@@ -30,10 +31,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ldap.core.LdapTemplate;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,7 +65,7 @@ public class LdapAuthenticationManagerTest {
         user.setPassword(PasswordEncoderUtil.encode("test"));
         ldapAuthenticationManager =
             new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager,
-                roleService, "", true);
+                roleService, "uid", true);
     }
     
     @Test
@@ -98,5 +101,68 @@ public class LdapAuthenticationManagerTest {
                 userDetailsService, jwtTokenManager, roleService, "", false);
         assertThrows(AccessException.class,
             () -> caseInsensitiveManager.authenticate("LDAP_admin", "nacos"));
+    }
+    
+    @Test
+    void testAuthenticateWithBlankUsername() {
+        assertThrows(AccessException.class,
+            () -> ldapAuthenticationManager.authenticate(" ", "test"));
+    }
+    
+    @Test
+    void testAuthenticateWithExistingLdapUser() throws AccessException {
+        String username = "ldap";
+        String password = "ldapPassword";
+        User ldapUser = createUser(AuthConstants.LDAP_PREFIX + username,
+            AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+        when(userDetailsService.loadUserByUsername(username))
+            .thenThrow(new UsernameNotFoundException("missing"));
+        when(ldapTemplate.authenticate("", "(uid=" + username + ")", password)).thenReturn(true);
+        when(userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username))
+            .thenReturn(new NacosUserDetails(ldapUser));
+        when(jwtTokenManager.createToken(AuthConstants.LDAP_PREFIX + username)).thenReturn("token");
+        
+        NacosUser actual = ldapAuthenticationManager.authenticate(username, password);
+        
+        assertEquals(AuthConstants.LDAP_PREFIX + username, actual.getUserName());
+        assertEquals("token", actual.getToken());
+    }
+    
+    @Test
+    void testAuthenticateCreatesMissingLdapUser() throws AccessException {
+        String username = "newUser";
+        String password = "ldapPassword";
+        when(userDetailsService.loadUserByUsername(username))
+            .thenThrow(new UsernameNotFoundException("missing"));
+        when(ldapTemplate.authenticate("", "(uid=" + username + ")", password)).thenReturn(true);
+        when(userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username))
+            .thenThrow(new UsernameNotFoundException("missing"));
+        when(jwtTokenManager.createToken(AuthConstants.LDAP_PREFIX + username)).thenReturn("token");
+        
+        NacosUser actual = ldapAuthenticationManager.authenticate(username, password);
+        
+        assertEquals(AuthConstants.LDAP_PREFIX + username, actual.getUserName());
+        assertEquals("token", actual.getToken());
+        verify(userDetailsService).createUser(AuthConstants.LDAP_PREFIX + username,
+            AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD, false);
+    }
+    
+    @Test
+    void testAuthenticateWithFailedLdapLogin() {
+        String username = "ldap";
+        String password = "ldapPassword";
+        when(userDetailsService.loadUserByUsername(username))
+            .thenThrow(new UsernameNotFoundException("missing"));
+        when(ldapTemplate.authenticate("", "(uid=" + username + ")", password)).thenReturn(false);
+        
+        assertThrows(AccessException.class,
+            () -> ldapAuthenticationManager.authenticate(username, password));
+    }
+    
+    private User createUser(String username, String password) {
+        User result = new User();
+        result.setUsername(username);
+        result.setPassword(password);
+        return result;
     }
 }

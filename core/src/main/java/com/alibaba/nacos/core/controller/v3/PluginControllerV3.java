@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -67,6 +68,7 @@ public class PluginControllerV3 {
      * @param pluginType plugin type filter (optional)
      * @return plugin list
      */
+    @Since("3.2.0")
     @GetMapping("/list")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/plugin", action = ActionTypes.READ, signType = SignType.CONSOLE,
@@ -92,6 +94,7 @@ public class PluginControllerV3 {
      * @param pluginName plugin name
      * @return plugin detail
      */
+    @Since("3.2.0")
     @GetMapping("/detail")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/plugin", action = ActionTypes.READ, signType = SignType.CONSOLE,
@@ -117,6 +120,7 @@ public class PluginControllerV3 {
      * @param localOnly  whether only apply to local node
      * @return success result
      */
+    @Since("3.2.0")
     @PutMapping("/status")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -140,6 +144,7 @@ public class PluginControllerV3 {
      * @param localOnly  whether only apply to local node
      * @return success result
      */
+    @Since("3.2.0")
     @PutMapping("/config")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE,

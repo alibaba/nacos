@@ -335,4 +335,18 @@ class AgentSpecRemoteHandlerTest {
         verify(agentSpecMaintainerService).changeOnlineStatus(NAMESPACE_ID, AGENT_SPEC_NAME,
             "PUBLIC", "v1", true);
     }
+    
+    @Test
+    void testRedraft() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setVersion("v1");
+        when(agentSpecMaintainerService.redraft(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("v1")))
+            .thenReturn(true);
+        
+        agentSpecRemoteHandler.redraft(form);
+        
+        verify(agentSpecMaintainerService).redraft(NAMESPACE_ID, AGENT_SPEC_NAME, "v1");
+    }
 }

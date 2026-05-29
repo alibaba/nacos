@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -91,6 +92,7 @@ public class ServiceControllerV3 {
     /**
      * Create a new service. This API will create a persistence service.
      */
+    @Since("3.0.0")
     @PostMapping()
     @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
@@ -114,6 +116,7 @@ public class ServiceControllerV3 {
     /**
      * Remove service.
      */
+    @Since("3.0.0")
     @DeleteMapping()
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
@@ -133,6 +136,7 @@ public class ServiceControllerV3 {
     /**
      * Get detail of service.
      */
+    @Since("3.0.0")
     @GetMapping()
     @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
@@ -157,6 +161,7 @@ public class ServiceControllerV3 {
      *     </li>
      * </ul>
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
@@ -185,6 +190,7 @@ public class ServiceControllerV3 {
     /**
      * Update service.
      */
+    @Since("3.0.0")
     @PutMapping()
     @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
@@ -232,6 +238,7 @@ public class ServiceControllerV3 {
     /**
      * get subscriber list.
      */
+    @Since("3.0.0")
     @GetMapping("/subscribers")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<Page<SubscriberInfo>> subscribers(ServiceForm serviceForm, PageForm pageForm,
@@ -252,6 +259,7 @@ public class ServiceControllerV3 {
     /**
      * Get all {@link Selector} types.
      */
+    @Since("3.0.0")
     @GetMapping("/selector/types")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<String>> listSelectorTypes() {

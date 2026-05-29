@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,11 +36,16 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.lang.reflect.Constructor;
 import java.util.Collection;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -102,6 +109,25 @@ class EphemeralIpPortClientManagerTest {
     }
     
     @Test
+    void testClientConnectedWithAttributes() {
+        String clientId = "127.0.0.1:8081#true";
+        
+        assertTrue(ephemeralIpPortClientManager.clientConnected(clientId, attributes));
+        
+        assertTrue(ephemeralIpPortClientManager.contains(clientId));
+    }
+    
+    @Test
+    void testClientDisconnectedWhenMissing() {
+        assertTrue(ephemeralIpPortClientManager.clientDisconnected("missing"));
+    }
+    
+    @Test
+    void testIsResponsibleClientReturnsFalseForOtherClientType() {
+        assertFalse(ephemeralIpPortClientManager.isResponsibleClient(mock(Client.class)));
+    }
+    
+    @Test
     void testVerifyClient0() {
         assertTrue(ephemeralIpPortClientManager
             .verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 0)));
@@ -119,5 +145,36 @@ class EphemeralIpPortClientManagerTest {
             .verifyClient(new DistroClientVerifyInfo(syncedClientId, 1)));
         assertTrue(ephemeralIpPortClientManager
             .verifyClient(new DistroClientVerifyInfo(syncedClientId, 5120)));
+    }
+    
+    @Test
+    void testExpiredClientCleanerKeepsActiveSubscriberClient() throws Exception {
+        EphemeralIpPortClientManager clientManager = mock(EphemeralIpPortClientManager.class);
+        IpPortBasedClient activeClient = mock(IpPortBasedClient.class);
+        String activeClientId = "127.0.0.1:8848#true";
+        when(clientManager.allClientId()).thenReturn(Collections.singleton(activeClientId));
+        when(clientManager.getClient(activeClientId)).thenReturn(activeClient);
+        when(activeClient.isEphemeral()).thenReturn(true);
+        when(activeClient.getLastUpdatedTime())
+            .thenReturn(System.currentTimeMillis() - Constants.DEFAULT_IP_DELETE_TIMEOUT - 1);
+        when(activeClient.getAllPublishedService()).thenReturn(Collections.emptySet());
+        when(activeClient.getAllSubscribeService()).thenReturn(
+            Collections.singleton(Service.newService("namespace", "group", "service", true)));
+        when(switchDomain.getDefaultPushCacheMillis()).thenReturn(Long.MAX_VALUE);
+        
+        newExpiredClientCleaner(clientManager).run();
+        
+        verify(clientManager, never()).clientDisconnected(activeClientId);
+    }
+    
+    private Runnable newExpiredClientCleaner(EphemeralIpPortClientManager clientManager)
+        throws Exception {
+        Class<?> cleanerClass = Class.forName(EphemeralIpPortClientManager.class.getName()
+            + "$ExpiredClientCleaner");
+        Constructor<?> constructor =
+            cleanerClass.getDeclaredConstructor(EphemeralIpPortClientManager.class,
+                SwitchDomain.class);
+        constructor.setAccessible(true);
+        return (Runnable) constructor.newInstance(clientManager, switchDomain);
     }
 }

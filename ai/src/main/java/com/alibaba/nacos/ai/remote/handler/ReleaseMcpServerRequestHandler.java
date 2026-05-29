@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpEndpointOperationService;
@@ -51,11 +52,13 @@ import org.springframework.stereotype.Component;
  *
  * @author xiweng.yy
  */
+@Since("3.0.3")
 @Component
 public class ReleaseMcpServerRequestHandler
     extends RequestHandler<ReleaseMcpServerRequest, ReleaseMcpServerResponse> {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseMcpServerRequest.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ReleaseMcpServerRequestHandler.class);
     
     private final McpServerOperationService mcpServerOperationService;
     

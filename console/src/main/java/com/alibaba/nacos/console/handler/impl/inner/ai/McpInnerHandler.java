@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
-import com.alibaba.nacos.ai.service.McpServerImportService;
+import com.alibaba.nacos.ai.service.McpLegacyImportAdapter;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -44,12 +44,12 @@ public class McpInnerHandler implements McpHandler {
     
     private final McpServerOperationService mcpServerOperationService;
     
-    private final McpServerImportService mcpServerImportService;
+    private final McpLegacyImportAdapter mcpLegacyImportAdapter;
     
     public McpInnerHandler(McpServerOperationService mcpServerOperationService,
-        McpServerImportService mcpServerImportService) {
+        McpLegacyImportAdapter mcpLegacyImportAdapter) {
         this.mcpServerOperationService = mcpServerOperationService;
-        this.mcpServerImportService = mcpServerImportService;
+        this.mcpLegacyImportAdapter = mcpLegacyImportAdapter;
     }
     
     @Override
@@ -95,12 +95,12 @@ public class McpInnerHandler implements McpHandler {
     @Override
     public McpServerImportValidationResult validateImport(String namespaceId,
         McpServerImportRequest request) throws NacosException {
-        return mcpServerImportService.validateImport(namespaceId, request);
+        return mcpLegacyImportAdapter.validateImport(namespaceId, request);
     }
     
     @Override
     public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
         throws NacosException {
-        return mcpServerImportService.executeImport(namespaceId, request);
+        return mcpLegacyImportAdapter.executeImport(namespaceId, request);
     }
 }

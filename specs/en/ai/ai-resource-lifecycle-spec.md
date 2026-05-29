@@ -57,7 +57,8 @@ If no publish pipeline is enabled or no pipeline node matches the resource
 type, `submit` may publish directly according to the type implementation.
 
 `force-publish` bypasses pipeline validation and must remain an administrative
-operation.
+operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
+`online` and `offline` versions must be rejected.
 
 ## 3. Draft Rules
 
@@ -81,11 +82,13 @@ operation.
 - A reviewing version must be recorded in metadata as `reviewingVersion`.
 - Pipeline execution state may be written to `publishPipelineInfo` and
   `pipeline_execution`.
-- Rejected pipeline results move the version back to `draft` and restore the
-  editing pointer.
-- Approved pipeline results move the version to `reviewed`.
+- Approved and rejected pipeline results move the version to `reviewed`; users
+  must explicitly redraft the version when further editing is required after a
+  rejected result.
 - Publish moves the version to `online`, clears working pointers, increments
   `onlineCnt` when needed, and optionally updates the `latest` label.
+- Force publish applies the same successful state transition as publish while
+  skipping pipeline approval checks.
 
 Pipeline extension behavior is defined by the
 [AI Publish Pipeline Plugin Spec](../plugin/ai-pipeline-plugin-spec.md). This
@@ -119,6 +122,10 @@ delete, label update, description update, scope update, and download.
 Trace plugin behavior is defined by the
 [Trace Plugin Spec](../plugin/trace-plugin-spec.md). Counters are diagnostic
 and must not define authorization or lifecycle state.
+
+AI resource trace emission uses `AiResourceTraceEvent`. The default AI resource
+trace plugin preserves the JSON line audit log in `ai-resource-trace.log` while
+allowing external trace subscribers to consume the same events.
 
 ## 8. Evolution Note
 

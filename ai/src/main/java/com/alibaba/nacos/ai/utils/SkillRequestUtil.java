@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.utils;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
@@ -30,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -61,11 +63,66 @@ public class SkillRequestUtil {
         try {
             byte[] zipBytes = SkillUtils.toZipBytes(skill);
             HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/zip"));
             headers.add("Content-Disposition", "attachment;filename=" + skill.getName() + ".zip");
             return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR,
                 "Failed to create skill zip: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Build a ZIP download {@link ResponseEntity} together with the listener-related headers
+     * ({@code ETag}, {@code X-Nacos-Skill-Md5} and {@code X-Nacos-Skill-Resolved-Version}).
+     *
+     * <p>{@code md5} and {@code resolvedVersion} may be blank; only non-blank values are emitted as
+     * headers so legacy paths that do not yet carry MD5 keep their existing response shape.
+     *
+     * @param skill           the Skill object
+     * @param md5             published content MD5, optional
+     * @param resolvedVersion resolved version when caller queries by label, optional
+     * @return ResponseEntity containing ZIP bytes with proper headers
+     * @throws NacosException if ZIP creation fails
+     */
+    public static ResponseEntity<byte[]> buildSkillZipResponseWithMd5(Skill skill, String md5,
+        String resolvedVersion) throws NacosException {
+        try {
+            byte[] zipBytes = SkillUtils.toZipBytes(skill);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/zip"));
+            headers.add("Content-Disposition", "attachment;filename=" + skill.getName() + ".zip");
+            applyListenerHeaders(headers, md5, resolvedVersion);
+            return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Failed to create skill zip: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Build an HTTP 304 Not Modified response carrying the listener-related headers so the client
+     * can refresh its local cache metadata even when the body is empty.
+     *
+     * @param md5             published content MD5
+     * @param resolvedVersion resolved version, may be {@code null}
+     * @return ResponseEntity with status 304 and listener headers
+     */
+    public static ResponseEntity<byte[]> buildSkillNotModifiedResponse(String md5,
+        String resolvedVersion) {
+        HttpHeaders headers = new HttpHeaders();
+        applyListenerHeaders(headers, md5, resolvedVersion);
+        return new ResponseEntity<>(headers, HttpStatus.NOT_MODIFIED);
+    }
+    
+    private static void applyListenerHeaders(HttpHeaders headers, String md5,
+        String resolvedVersion) {
+        if (StringUtils.isNotBlank(md5)) {
+            headers.add(HttpHeaders.ETAG, md5);
+            headers.add(Constants.Skills.HEADER_SKILL_MD5, md5);
+        }
+        if (StringUtils.isNotBlank(resolvedVersion)) {
+            headers.add(Constants.Skills.HEADER_SKILL_RESOLVED_VERSION, resolvedVersion);
         }
     }
     

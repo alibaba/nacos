@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -51,6 +52,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -130,6 +132,41 @@ class ServiceControllerV3Test {
     }
     
     @Test
+    void testCreateWithSelector() throws Exception {
+        
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceForm.setServiceName("service");
+        serviceForm.setGroupName(Constants.DEFAULT_GROUP);
+        serviceForm.setEphemeral(true);
+        serviceForm.setProtectThreshold(0.0F);
+        serviceForm.setMetadata("");
+        serviceForm.setSelector("{\"type\":\"mock\",\"expression\":\"key=value\"}");
+        when(selectorManager.parseSelector("mock", "key=value"))
+            .thenReturn(Mockito.mock(Selector.class));
+        
+        Result<String> actual = serviceControllerV3.create(serviceForm);
+        
+        verify(selectorManager).parseSelector("mock", "key=value");
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
+        assertEquals("ok", actual.getData());
+    }
+    
+    @Test
+    void testCreateThrowsWhenSelectorMissingType() {
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceForm.setServiceName("service");
+        serviceForm.setGroupName(Constants.DEFAULT_GROUP);
+        serviceForm.setEphemeral(true);
+        serviceForm.setProtectThreshold(0.0F);
+        serviceForm.setMetadata("");
+        serviceForm.setSelector("{\"expression\":\"key=value\"}");
+        
+        assertThrows(Exception.class, () -> serviceControllerV3.create(serviceForm));
+    }
+    
+    @Test
     void testRemove() throws Exception {
         ServiceForm serviceForm = new ServiceForm();
         serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
@@ -178,6 +215,27 @@ class ServiceControllerV3Test {
     }
     
     @Test
+    void testListWithInstances() throws Exception {
+        Page<ServiceDetailInfo> result = new Page<>();
+        result.getPageItems().add(new ServiceDetailInfo());
+        when(catalogServiceV2.pageListServiceDetail(Constants.DEFAULT_NAMESPACE_ID,
+            Constants.DEFAULT_GROUP, "serviceName", 1, 10)).thenReturn(result);
+        ServiceListForm serviceListForm = new ServiceListForm();
+        serviceListForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceListForm.setGroupNameParam(Constants.DEFAULT_GROUP);
+        serviceListForm.setServiceNameParam("serviceName");
+        serviceListForm.setWithInstances(true);
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
+        
+        Result<Object> actual = serviceControllerV3.list(serviceListForm, pageForm);
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
+        assertEquals(result, actual.getData());
+    }
+    
+    @Test
     void testUpdate() throws Exception {
         ServiceForm serviceForm = new ServiceForm();
         serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
@@ -195,6 +253,19 @@ class ServiceControllerV3Test {
         assertEquals("ok", actual.getData());
         TimeUnit.SECONDS.sleep(3);
         assertEquals(UpdateServiceTraceEvent.class, eventReceivedClass);
+    }
+    
+    @Test
+    void testUpdateThrowsWhenSelectorUnknown() {
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceForm.setGroupName(Constants.DEFAULT_GROUP);
+        serviceForm.setServiceName("service");
+        serviceForm.setProtectThreshold(0.0f);
+        serviceForm.setMetadata("");
+        serviceForm.setSelector("{\"type\":\"mock\",\"expression\":\"key=value\"}");
+        
+        assertThrows(Exception.class, () -> serviceControllerV3.update(serviceForm));
     }
     
     @Test

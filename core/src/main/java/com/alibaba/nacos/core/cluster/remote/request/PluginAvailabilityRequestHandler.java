@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster.remote.request;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
@@ -36,6 +37,7 @@ import java.util.Map;
  * @since 3.2.0
  */
 @Component
+@Since("3.2.0")
 public class PluginAvailabilityRequestHandler
     extends RequestHandler<PluginAvailabilityRequest, PluginAvailabilityResponse> {
     

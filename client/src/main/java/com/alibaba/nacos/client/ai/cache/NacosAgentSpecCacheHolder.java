@@ -16,40 +16,37 @@
 
 package com.alibaba.nacos.client.ai.cache;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
-import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecResource;
-import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
-import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.ai.event.AgentSpecChangedEvent;
+import com.alibaba.nacos.client.ai.remote.AgentSpecQueryResponse;
+import com.alibaba.nacos.client.ai.remote.AiClientProxy;
+import com.alibaba.nacos.client.ai.utils.CacheKeyUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Nacos AI module agent spec cache holder.
  *
- * <p>Reads agent spec data from Nacos Config via {@link ConfigService}, leveraging its local cache
- * and push notifications for real-time updates. The server writes a manifest config
- * ({@code agentspec_index.json}) at group {@code agentspec__{name}} containing the current online
- * version and file list. Each resource file is stored under group {@code agentspec__{name}__{version}}
- * with the file path as dataId.</p>
+ * <p>Owns the per-subscription polling loop that periodically calls
+ * {@link AiClientProxy#queryAgentSpec(String, String, String, String)} with the locally cached MD5
+ * for conditional query. When the server returns 304 ({@link NacosException#NOT_MODIFIED})
+ * the local cache is preserved and no callback fires; when the response carries new content
+ * (different MD5) an {@link AgentSpecChangedEvent} is published so {@code AiChangeNotifier} can
+ * dispatch it to all registered listeners.
  *
  * @author nacos
  */
@@ -57,47 +54,69 @@ public class NacosAgentSpecCacheHolder implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(NacosAgentSpecCacheHolder.class);
     
-    private static final String MANIFEST_JSON_RESOURCE_NAME = "manifest.json";
+    private final AiClientProxy aiClientProxy;
     
-    private static final long CONFIG_TIMEOUT = 3000L;
+    /**
+     * agentSpecName -> last published MD5.
+     */
+    private final Map<String, String> md5Cache;
     
-    private final ConfigService configService;
-    
-    private final String namespaceId;
-    
+    /**
+     * agentSpecName -> cached AgentSpec object.
+     */
     private final Map<String, AgentSpec> agentSpecCache;
     
-    private final Map<String, AgentSpecSubscriptionInfo> subscriptionMap;
+    private final ScheduledExecutorService updaterExecutor;
     
-    private final ObjectMapper objectMapper;
+    private final long updateIntervalMillis;
     
-    public NacosAgentSpecCacheHolder(ConfigService configService, String namespaceId) {
-        this.configService = configService;
-        this.namespaceId = namespaceId;
+    private final Map<String, AgentSpecUpdater> updateTaskMap;
+    
+    public NacosAgentSpecCacheHolder(AiClientProxy aiClientProxy,
+        NacosClientProperties properties) {
+        this.aiClientProxy = aiClientProxy;
+        this.md5Cache = new ConcurrentHashMap<>(4);
         this.agentSpecCache = new ConcurrentHashMap<>(4);
-        this.subscriptionMap = new ConcurrentHashMap<>(4);
-        this.objectMapper =
-            JsonMapper.builder().configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        this.updateTaskMap = new ConcurrentHashMap<>(4);
+        this.updaterExecutor = new ScheduledThreadPoolExecutor(1,
+            new NameThreadFactory("com.alibaba.nacos.client.ai.agentspec.updater"));
+        this.updateIntervalMillis = properties.getLong(
+            AiConstants.AI_AGENTSPEC_CACHE_UPDATE_INTERVAL,
+            AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL);
     }
     
     /**
-     * Load agent spec from Nacos Config (leverages ConfigService local cache).
+     * Query agent spec synchronously (no subscription).
      *
      * @param agentSpecName name of agent spec
-     * @return AgentSpec object, null if agent spec not found or manifest missing
+     * @return AgentSpec object, null if not found
      * @throws NacosException if error occurs
      */
     public AgentSpec queryAgentSpec(String agentSpecName) throws NacosException {
-        return loadAgentSpecFromConfig(agentSpecName);
+        if (StringUtils.isBlank(agentSpecName)) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "Required parameter `agentSpecName` not present");
+        }
+        try {
+            AgentSpecQueryResponse response =
+                aiClientProxy.queryAgentSpec(agentSpecName, null, null, null);
+            return response.getAgentSpec();
+        } catch (NacosException e) {
+            if (e.getErrCode() == NacosException.NOT_FOUND) {
+                return null;
+            }
+            throw e;
+        }
     }
     
     /**
-     * Subscribe to agent spec changes via Nacos Config listeners.
+     * Subscribe to agent spec changes and start polling.
+     *
+     * <p>Performs the initial query synchronously and primes the MD5 cache; subsequent polls
+     * piggy-back the cached MD5 to short-circuit unchanged content.
      *
      * @param agentSpecName name of agent spec
-     * @return current AgentSpec object, nullable if agent spec not found
+     * @return current AgentSpec object, null if not found
      * @throws NacosException if error occurs
      */
     public AgentSpec subscribeAgentSpec(String agentSpecName) throws NacosException {
@@ -105,46 +124,31 @@ public class NacosAgentSpecCacheHolder implements Closeable {
             throw new NacosException(NacosException.INVALID_PARAM,
                 "Required parameter `agentSpecName` not present");
         }
+        String cacheKey = CacheKeyUtils.buildAgentSpecKey(agentSpecName);
         
-        if (subscriptionMap.containsKey(agentSpecName)) {
-            return agentSpecCache.get(agentSpecName);
+        AgentSpec agentSpec = null;
+        try {
+            AgentSpecQueryResponse response =
+                aiClientProxy.queryAgentSpec(agentSpecName, null, null, null);
+            agentSpec = response.getAgentSpec();
+            // Only update cache during initial subscribe; do NOT publish event here.
+            // The caller (NacosAiService) handles the first listener notification.
+            String newMd5 = response.getMd5();
+            if (StringUtils.isNotBlank(newMd5)) {
+                md5Cache.put(cacheKey, newMd5);
+            }
+        } catch (NacosException e) {
+            if (e.getErrCode() != NacosException.NOT_FOUND) {
+                throw e;
+            }
+            md5Cache.remove(cacheKey);
         }
         
-        // Initial load
-        AgentSpec agentSpec = loadAgentSpecFromConfig(agentSpecName);
         if (agentSpec != null) {
-            agentSpecCache.put(agentSpecName, agentSpec);
+            agentSpecCache.put(cacheKey, agentSpec);
         }
-        
-        // Set up subscription
-        AgentSpecSubscriptionInfo sub = new AgentSpecSubscriptionInfo(agentSpecName);
-        subscriptionMap.put(agentSpecName, sub);
-        
-        AgentSpecIndex index = loadAgentSpecIndex(agentSpecName);
-        if (index != null && index.files != null) {
-            sub.currentVersion = index.version;
-            sub.currentFiles = index.files;
-            subscribeResources(sub, index);
-        }
-        
-        // Listen to manifest for version changes
-        Listener manifestListener = new Listener() {
-            
-            @Override
-            public Executor getExecutor() {
-                return null;
-            }
-            
-            @Override
-            public void receiveConfigInfo(String configInfo) {
-                onManifestChanged(agentSpecName, configInfo);
-            }
-        };
-        sub.manifestListener = manifestListener;
-        configService.addListener(AgentSpecUtils.AGENTSPEC_INDEX_DATA_ID,
-            AgentSpecUtils.buildAgentSpecGroup(agentSpecName), manifestListener);
-        
-        LOGGER.info("Subscribed agent spec via config: {}", agentSpecName);
+        addUpdateTask(agentSpecName);
+        LOGGER.info("Subscribed agent spec: {}", agentSpecName);
         return agentSpec;
     }
     
@@ -157,259 +161,95 @@ public class NacosAgentSpecCacheHolder implements Closeable {
         if (StringUtils.isBlank(agentSpecName)) {
             return;
         }
-        
-        AgentSpecSubscriptionInfo sub = subscriptionMap.remove(agentSpecName);
-        if (sub != null) {
-            if (sub.manifestListener != null) {
-                configService.removeListener(AgentSpecUtils.AGENTSPEC_INDEX_DATA_ID,
-                    AgentSpecUtils.buildAgentSpecGroup(agentSpecName), sub.manifestListener);
-            }
-            unsubscribeResources(sub);
-        }
-        agentSpecCache.remove(agentSpecName);
-        
+        String cacheKey = CacheKeyUtils.buildAgentSpecKey(agentSpecName);
+        removeUpdateTask(agentSpecName);
+        md5Cache.remove(cacheKey);
+        agentSpecCache.remove(cacheKey);
         LOGGER.info("Unsubscribed agent spec: {}", agentSpecName);
     }
     
     @Override
     public void shutdown() throws NacosException {
-        for (String agentSpecName : new java.util.HashSet<>(subscriptionMap.keySet())) {
-            unsubscribeAgentSpec(agentSpecName);
+        this.updaterExecutor.shutdownNow();
+    }
+    
+    private void addUpdateTask(String agentSpecName) {
+        String key = CacheKeyUtils.buildAgentSpecKey(agentSpecName);
+        this.updateTaskMap.computeIfAbsent(key, s -> {
+            AgentSpecUpdater task = new AgentSpecUpdater(agentSpecName);
+            updaterExecutor.schedule(task, updateIntervalMillis, TimeUnit.MILLISECONDS);
+            return task;
+        });
+    }
+    
+    private void removeUpdateTask(String agentSpecName) {
+        String key = CacheKeyUtils.buildAgentSpecKey(agentSpecName);
+        AgentSpecUpdater task = this.updateTaskMap.remove(key);
+        if (task != null) {
+            task.cancel();
         }
     }
     
-    // ======================== Private methods ========================
+    private void processAgentSpec(String agentSpecName, String cacheKey,
+        AgentSpecQueryResponse response) {
+        String oldMd5 = md5Cache.get(cacheKey);
+        String newMd5 = response == null ? null : response.getMd5();
+        if (response == null) {
+            md5Cache.remove(cacheKey);
+            agentSpecCache.remove(cacheKey);
+        } else if (StringUtils.isNotBlank(newMd5)) {
+            md5Cache.put(cacheKey, newMd5);
+            agentSpecCache.put(cacheKey, response.getAgentSpec());
+        }
+        if (response != null && !StringUtils.equals(oldMd5, newMd5)) {
+            NotifyCenter.publishEvent(
+                new AgentSpecChangedEvent(agentSpecName, response.getAgentSpec()));
+        }
+    }
     
-    private void onManifestChanged(String agentSpecName, String configInfo) {
-        try {
-            AgentSpecSubscriptionInfo sub = subscriptionMap.get(agentSpecName);
-            if (sub == null) {
+    private class AgentSpecUpdater implements Runnable {
+        
+        private final String agentSpecName;
+        
+        private final String cacheKey;
+        
+        private final AtomicBoolean cancel = new AtomicBoolean(false);
+        
+        AgentSpecUpdater(String agentSpecName) {
+            this.agentSpecName = agentSpecName;
+            this.cacheKey = CacheKeyUtils.buildAgentSpecKey(agentSpecName);
+        }
+        
+        void cancel() {
+            cancel.set(true);
+        }
+        
+        @Override
+        public void run() {
+            if (cancel.get()) {
                 return;
             }
-            
-            AgentSpecIndex newIndex = parseAgentSpecIndex(configInfo);
-            String newVersion = newIndex != null ? newIndex.version : null;
-            
-            if (!StringUtils.equals(sub.currentVersion, newVersion)) {
-                LOGGER.info("AgentSpec {} manifest version changed: {} -> {}", agentSpecName,
-                    sub.currentVersion, newVersion);
-                unsubscribeResources(sub);
-                if (newIndex != null && newIndex.files != null) {
-                    sub.currentVersion = newIndex.version;
-                    sub.currentFiles = newIndex.files;
-                    subscribeResources(sub, newIndex);
-                } else {
-                    sub.currentVersion = null;
-                    sub.currentFiles = null;
-                }
-            }
-            
-            reloadAndPublish(agentSpecName);
-        } catch (Exception e) {
-            LOGGER.error("Failed to handle manifest change for agent spec: {}", agentSpecName, e);
-        }
-    }
-    
-    private void onResourceChanged(String agentSpecName) {
-        reloadAndPublish(agentSpecName);
-    }
-    
-    private void reloadAndPublish(String agentSpecName) {
-        try {
-            AgentSpec oldAgentSpec = agentSpecCache.get(agentSpecName);
-            AgentSpec newAgentSpec = loadAgentSpecFromConfig(agentSpecName);
-            
-            if (isAgentSpecChanged(oldAgentSpec, newAgentSpec)) {
-                LOGGER.info("AgentSpec {} changed, publishing event.", agentSpecName);
-                if (newAgentSpec != null) {
-                    agentSpecCache.put(agentSpecName, newAgentSpec);
-                } else {
-                    agentSpecCache.remove(agentSpecName);
-                }
-                NotifyCenter.publishEvent(new AgentSpecChangedEvent(agentSpecName, newAgentSpec));
-            }
-        } catch (Exception e) {
-            LOGGER.error("Failed to reload agent spec: {}", agentSpecName, e);
-        }
-    }
-    
-    @SuppressWarnings("unchecked")
-    private AgentSpec loadAgentSpecFromConfig(String agentSpecName) throws NacosException {
-        AgentSpecIndex index = loadAgentSpecIndex(agentSpecName);
-        if (index == null || StringUtils.isBlank(index.version) || index.files == null
-            || index.files.isEmpty()) {
-            return null;
-        }
-        
-        String versionGroup =
-            AgentSpecUtils.buildAgentSpecVersionGroup(agentSpecName, index.version);
-        AgentSpec agentSpec = new AgentSpec();
-        agentSpec.setNamespaceId(namespaceId);
-        Map<String, AgentSpecResource> resourceMap = new HashMap<>(index.files.size());
-        
-        for (String filePath : index.files) {
-            String content = configService.getConfig(filePath, versionGroup, CONFIG_TIMEOUT);
-            if (StringUtils.isBlank(content)) {
-                continue;
-            }
-            AgentSpecResource resource = JacksonUtils.toObj(content, AgentSpecResource.class);
-            if (resource == null) {
-                continue;
-            }
-            
-            if (MANIFEST_JSON_RESOURCE_NAME.equals(resource.getName())) {
-                // Extract name and description from manifest.json content
-                String manifestContent = resource.getContent();
-                if (StringUtils.isNotBlank(manifestContent)) {
-                    try {
-                        Map<String, Object> manifestMap =
-                            JacksonUtils.toObj(manifestContent, Map.class);
-                        if (manifestMap != null) {
-                            Object nameObj = manifestMap.get("name");
-                            if (nameObj != null) {
-                                agentSpec.setName(String.valueOf(nameObj));
-                            }
-                            Object descObj = manifestMap.get("description");
-                            if (descObj != null) {
-                                agentSpec.setDescription(String.valueOf(descObj));
-                            }
-                        }
-                    } catch (Exception e) {
-                        LOGGER.warn("Failed to parse manifest.json content for agent spec: {}",
-                            agentSpecName, e);
-                    }
-                }
-                agentSpec.setContent(manifestContent);
-            } else {
-                String resourceId =
-                    AgentSpecUtils.generateResourceId(resource.getType(), resource.getName());
-                resourceMap.put(resourceId, resource);
-            }
-        }
-        
-        agentSpec.setResource(resourceMap);
-        return agentSpec;
-    }
-    
-    private AgentSpecIndex loadAgentSpecIndex(String agentSpecName) throws NacosException {
-        String group = AgentSpecUtils.buildAgentSpecGroup(agentSpecName);
-        String indexContent = configService.getConfig(AgentSpecUtils.AGENTSPEC_INDEX_DATA_ID, group,
-            CONFIG_TIMEOUT);
-        return parseAgentSpecIndex(indexContent);
-    }
-    
-    private static AgentSpecIndex parseAgentSpecIndex(String json) {
-        if (StringUtils.isBlank(json)) {
-            return null;
-        }
-        try {
-            return JacksonUtils.toObj(json, AgentSpecIndex.class);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to parse agent spec index: {}", e.getMessage());
-            return null;
-        }
-    }
-    
-    private void subscribeResources(AgentSpecSubscriptionInfo sub, AgentSpecIndex index) {
-        if (index.files == null || index.files.isEmpty() || StringUtils.isBlank(index.version)) {
-            return;
-        }
-        String versionGroup =
-            AgentSpecUtils.buildAgentSpecVersionGroup(sub.agentSpecName, index.version);
-        sub.resourceGroup = versionGroup;
-        for (String filePath : index.files) {
-            Listener listener = new Listener() {
-                
-                @Override
-                public Executor getExecutor() {
-                    return null;
-                }
-                
-                @Override
-                public void receiveConfigInfo(String configInfo) {
-                    onResourceChanged(sub.agentSpecName);
-                }
-            };
             try {
-                configService.addListener(filePath, versionGroup, listener);
-                sub.resourceListeners.put(filePath, listener);
+                String currentMd5 = md5Cache.get(cacheKey);
+                AgentSpecQueryResponse response =
+                    aiClientProxy.queryAgentSpec(agentSpecName, null, null, currentMd5);
+                processAgentSpec(agentSpecName, cacheKey, response);
             } catch (NacosException e) {
-                LOGGER.warn("Failed to add listener for {}:{}", versionGroup, filePath, e);
+                if (e.getErrCode() == NacosException.NOT_FOUND) {
+                    processAgentSpec(agentSpecName, cacheKey, null);
+                } else if (e.getErrCode() == NacosException.NOT_MODIFIED) {
+                    // No content change, keep local cache and skip callback.
+                } else {
+                    LOGGER.warn(
+                        "AgentSpec updater query failed: name={}, err={}",
+                        agentSpecName, e.getErrMsg());
+                }
+            } finally {
+                if (!cancel.get()) {
+                    updaterExecutor.schedule(this, updateIntervalMillis,
+                        TimeUnit.MILLISECONDS);
+                }
             }
-        }
-    }
-    
-    private void unsubscribeResources(AgentSpecSubscriptionInfo sub) {
-        if (StringUtils.isBlank(sub.resourceGroup)) {
-            return;
-        }
-        for (Map.Entry<String, Listener> entry : sub.resourceListeners.entrySet()) {
-            configService.removeListener(entry.getKey(), sub.resourceGroup, entry.getValue());
-        }
-        sub.resourceListeners.clear();
-        sub.resourceGroup = null;
-    }
-    
-    private boolean isAgentSpecChanged(AgentSpec oldAgentSpec, AgentSpec newAgentSpec) {
-        try {
-            String newJson = objectMapper.writeValueAsString(newAgentSpec);
-            if (null == oldAgentSpec) {
-                LOGGER.info("Init new agent spec: {} -> {}",
-                    newAgentSpec != null ? newAgentSpec.getName() : "null", newJson);
-                return true;
-            }
-            String oldJson = objectMapper.writeValueAsString(oldAgentSpec);
-            if (!StringUtils.equals(oldJson, newJson)) {
-                LOGGER.info("AgentSpec changed: {} -> {}", oldJson, newJson);
-                return true;
-            }
-        } catch (JsonProcessingException e) {
-            LOGGER.error("Compare agent spec info failed: ", e);
-        }
-        return false;
-    }
-    
-    // ======================== Inner classes ========================
-    
-    private static class AgentSpecSubscriptionInfo {
-        
-        final String agentSpecName;
-        
-        String currentVersion;
-        
-        List<String> currentFiles;
-        
-        Listener manifestListener;
-        
-        String resourceGroup;
-        
-        final Map<String, Listener> resourceListeners = new ConcurrentHashMap<>(4);
-        
-        AgentSpecSubscriptionInfo(String agentSpecName) {
-            this.agentSpecName = agentSpecName;
-        }
-    }
-    
-    private static class AgentSpecIndex {
-        
-        private String version;
-        
-        private List<String> files;
-        
-        public String getVersion() {
-            return version;
-        }
-        
-        public void setVersion(String version) {
-            this.version = version;
-        }
-        
-        public List<String> getFiles() {
-            return files;
-        }
-        
-        public void setFiles(List<String> files) {
-            this.files = files;
         }
     }
 }

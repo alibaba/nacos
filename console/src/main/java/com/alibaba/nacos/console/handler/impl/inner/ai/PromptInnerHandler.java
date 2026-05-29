@@ -139,6 +139,12 @@ public class PromptInnerHandler implements PromptHandler {
     }
     
     @Override
+    public void redraft(String namespaceId, String promptKey, String version)
+        throws NacosException {
+        promptOperationService.redraft(namespaceId, promptKey, version);
+    }
+    
+    @Override
     public void changeOnlineStatus(String namespaceId, String promptKey, String version,
         boolean online)
         throws NacosException {

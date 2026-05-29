@@ -237,11 +237,12 @@ Lock 领域语义由[分布式锁规范](../lock/lock-spec.md)定义。当前 gR
 2. 在正确的 `META-INF/services/com.alibaba.nacos.api.remote.Payload` 文件中注册
    请求和响应 payload。
 3. 新增 `RequestHandler<Request, Response>` bean，并记录 action、module 和 source。
-4. 面向 SDK 或受保护的 inner 操作应添加 `@Secured`。
-5. cluster-only payload 应添加 `@InvokeSource`。
-6. 请求字段保持显式且 JSON 兼容。
-7. 当操作暴露为公开 SDK interface 时，同步更新本规范和
+4. 新增 handler 类必须添加 `@Since`，声明该 gRPC API 起始支持的 Nacos 版本号。
+5. 面向 SDK 或受保护的 inner 操作应添加 `@Secured`。
+6. cluster-only payload 应添加 `@InvokeSource`。
+7. 请求字段保持显式且 JSON 兼容。
+8. 当操作暴露为公开 SDK interface 时，同步更新本规范和
    [SDK interface 规范](../sdk/sdk-spec.md)。
-8. 对于服务端间 payload，还应同步更新
+9. 对于服务端间 payload，还应同步更新
    [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)，或拥有该集群请求语义的
    领域规范。

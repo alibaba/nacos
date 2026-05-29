@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.core;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -61,6 +62,7 @@ public class ConsoleClusterController {
      * @param ipKeyWord search keyWord
      * @return all members
      */
+    @Since("3.0.0")
     @GetMapping(value = "/nodes")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT
         + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE,

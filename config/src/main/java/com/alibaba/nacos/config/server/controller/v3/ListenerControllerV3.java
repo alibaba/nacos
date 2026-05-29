@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
@@ -57,6 +58,7 @@ public class ListenerControllerV3 {
     /**
      * Get subscribe information from client side.
      */
+    @Since("3.0.0")
     @GetMapping
     @Secured(signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigListenerInfo> getAllSubClientConfigByIp(@RequestParam("ip") String ip,

@@ -1048,11 +1048,17 @@ public class ClientWorker implements Closeable {
                     }));
         }
         
-        private void refreshContentAndCheck(RpcClient rpcClient, String groupKey, boolean notify) {
-            if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
-                CacheData cache = cacheMap.get().get(groupKey);
-                refreshContentAndCheck(rpcClient, cache, notify);
+        private void refreshContentAndCheck(RpcClient rpcClient, String groupKey) {
+            Map<String, CacheData> cacheMapSnapshot = cacheMap.get();
+            if (cacheMapSnapshot == null) {
+                return;
             }
+            CacheData cache = cacheMapSnapshot.get(groupKey);
+            if (cache == null) {
+                return;
+            }
+            boolean notify = !cache.isInitializing();
+            refreshContentAndCheck(rpcClient, cache, notify);
         }
         
         private void refreshContentAndCheck(RpcClient rpcClient, CacheData cacheData,
@@ -1174,10 +1180,7 @@ public class ClientWorker implements Closeable {
                                             changeConfig.getDataId(),
                                             changeConfig.getGroup(), changeConfig.getTenant());
                                         changeKeys.add(changeKey);
-                                        boolean isInitializing =
-                                            cacheMap.get().get(changeKey).isInitializing();
-                                        refreshContentAndCheck(rpcClient, changeKey,
-                                            !isInitializing);
+                                        refreshContentAndCheck(rpcClient, changeKey);
                                     }
                                     
                                 }
@@ -1188,10 +1191,7 @@ public class ClientWorker implements Closeable {
                                             cacheData.group,
                                             cacheData.getTenant());
                                         if (!changeKeys.contains(changeKey)) {
-                                            boolean isInitializing =
-                                                cacheMap.get().get(changeKey).isInitializing();
-                                            refreshContentAndCheck(rpcClient, changeKey,
-                                                !isInitializing);
+                                            refreshContentAndCheck(rpcClient, changeKey);
                                         }
                                     }
                                 }

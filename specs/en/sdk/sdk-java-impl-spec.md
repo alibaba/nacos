@@ -279,6 +279,9 @@ resource management belongs to `AiMaintainerService`.
 - `api`, `client`, and `plugin` modules remain Java 8 compatible unless the
   module policy changes.
 - Server-side and maintainer modules follow the repository Java version policy.
+- Newly added API methods on Client SDK and Maintainer SDK service interfaces
+  (`XxxService`) must declare `@Since` with the first Nacos version that
+  supports the method.
 - Deprecated Client SDK methods should keep binary compatibility when possible,
   but new designs should point callers to the Maintainer SDK.
 - Public model changes should preserve source and binary compatibility where

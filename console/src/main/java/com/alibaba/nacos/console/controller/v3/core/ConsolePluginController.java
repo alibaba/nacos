@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.controller.v3.core;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -66,6 +67,7 @@ public class ConsolePluginController {
      * @param pluginType plugin type filter (optional)
      * @return plugin list
      */
+    @Since("3.2.0")
     @GetMapping("/list")
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
         + "plugins", action = ActionTypes.READ, signType = SignType.CONSOLE,
@@ -83,6 +85,7 @@ public class ConsolePluginController {
      * @param pluginName plugin name
      * @return plugin detail
      */
+    @Since("3.2.0")
     @GetMapping
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
         + "plugins", action = ActionTypes.READ, signType = SignType.CONSOLE,
@@ -100,6 +103,7 @@ public class ConsolePluginController {
      * @param enabled    enable or disable
      * @return success result
      */
+    @Since("3.2.0")
     @PutMapping("/status")
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
         + "plugins", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -118,6 +122,7 @@ public class ConsolePluginController {
      * @param form plugin config form
      * @return success result
      */
+    @Since("3.2.0")
     @PutMapping("/config")
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
         + "plugins", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -146,6 +151,7 @@ public class ConsolePluginController {
      * @param pluginName plugin name
      * @return node availability map
      */
+    @Since("3.2.0")
     @GetMapping("/availability")
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
         + "plugins", action = ActionTypes.READ, signType = SignType.CONSOLE,

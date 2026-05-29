@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.NodeState;
@@ -63,6 +64,7 @@ public class NacosClusterControllerV3 {
         this.nacosClusterOperationService = nacosClusterOperationService;
     }
     
+    @Since("3.0.0")
     @GetMapping(value = "/node/self")
     @Secured(action = ActionTypes.READ, resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
@@ -77,6 +79,7 @@ public class NacosClusterControllerV3 {
      * @param state   match state
      * @return members that matches condition
      */
+    @Since("3.0.0")
     @GetMapping(value = "/node/list")
     @Secured(action = ActionTypes.READ, resource = NACOS_ADMIN_CORE_CONTEXT_V3
         + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
@@ -102,6 +105,7 @@ public class NacosClusterControllerV3 {
      * @param nodes List of {@link Member}
      * @return {@link RestResult}
      */
+    @Since("3.0.0")
     @PutMapping(value = "/node/list")
     @Secured(action = ActionTypes.WRITE, resource = NACOS_ADMIN_CORE_CONTEXT_V3
         + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
@@ -119,6 +123,7 @@ public class NacosClusterControllerV3 {
      * @param request {@link LookupUpdateRequest}
      * @return {@link RestResult}
      */
+    @Since("3.0.0")
     @PutMapping(value = "/lookup")
     @Secured(action = ActionTypes.WRITE, resource = NACOS_ADMIN_CORE_CONTEXT_V3
         + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)

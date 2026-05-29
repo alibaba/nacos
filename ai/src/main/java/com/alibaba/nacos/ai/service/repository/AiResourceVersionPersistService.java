@@ -47,6 +47,23 @@ public interface AiResourceVersionPersistService {
     int updateStorageAndDesc(String namespaceId, String name, String type, String version,
         String storage, String desc);
     
+    /**
+     * Update only the {@code contentMd5} entry inside the {@code storage} JSON column. The provider,
+     * scope and files entries are preserved by performing a read-merge-write on the existing row.
+     *
+     * <p>Used by the skill listener path to back-fill the content MD5 for historical versions that
+     * were published before the listener feature shipped.
+     *
+     * @param namespaceId namespace ID
+     * @param name        resource name
+     * @param type        resource type
+     * @param version     version string
+     * @param contentMd5  content MD5 to write into {@code storage.contentMd5}
+     * @return number of rows affected; {@code 0} when the version row is missing
+     */
+    int updateStorageMd5(String namespaceId, String name, String type, String version,
+        String contentMd5);
+    
     int updatePublishPipelineInfo(String namespaceId, String name, String type, String version,
         String publishPipelineInfo);
     

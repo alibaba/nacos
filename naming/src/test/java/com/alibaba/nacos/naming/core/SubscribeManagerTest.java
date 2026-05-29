@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.NamingSubscriberServiceAggregationImpl;
 import com.alibaba.nacos.naming.push.NamingSubscriberServiceLocalImpl;
@@ -28,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -121,5 +123,55 @@ class SubscribeManagerTest {
         } catch (Exception ignored) {
             
         }
+    }
+    
+    @Test
+    void getSubscribersByServiceNameWithEmptyAggregationReturnsEmptyList() {
+        Mockito.when(aggregation.getFuzzySubscribers("public", "group@@service"))
+            .thenReturn(Collections.emptyList());
+        
+        List<Subscriber> actual = subscribeManager.getSubscribers("group@@service", "public", true);
+        
+        assertEquals(0, actual.size());
+    }
+    
+    @Test
+    void getSubscribersByServiceWithLocalSubscribers() {
+        Service service = Service.newService("public", "group", "service");
+        Subscriber subscriber =
+            new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", "public",
+                "group@@service", 8080);
+        Mockito.when(local.getSubscribers(service))
+            .thenReturn(Collections.singletonList(subscriber));
+        
+        List<Subscriber> actual = subscribeManager.getSubscribers(service, false);
+        
+        assertEquals(1, actual.size());
+        assertEquals(subscriber, actual.get(0));
+    }
+    
+    @Test
+    void getSubscribersByServiceWithAggregationDeduplicatesSubscribers() {
+        Service service = Service.newService("public", "group", "service");
+        Subscriber subscriber =
+            new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", "public",
+                "group@@service", 8080);
+        Mockito.when(aggregation.getSubscribers(service))
+            .thenReturn(java.util.Arrays.asList(subscriber, subscriber));
+        
+        List<Subscriber> actual = subscribeManager.getSubscribers(service, true);
+        
+        assertEquals(1, actual.size());
+        assertEquals(subscriber, actual.get(0));
+    }
+    
+    @Test
+    void getSubscribersByServiceWithEmptyAggregationReturnsEmptyList() {
+        Service service = Service.newService("public", "group", "service");
+        Mockito.when(aggregation.getSubscribers(service)).thenReturn(Collections.emptyList());
+        
+        List<Subscriber> actual = subscribeManager.getSubscribers(service, true);
+        
+        assertEquals(0, actual.size());
     }
 }

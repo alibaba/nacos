@@ -29,6 +29,7 @@ import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
@@ -54,6 +55,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -237,6 +239,12 @@ class DistroClientDataProcessorTest {
     }
     
     @Test
+    void testProcessDataForUnsupportedOperation() {
+        distroData.setType(DataOperation.VERIFY);
+        assertFalse(distroClientDataProcessor.processData(distroData));
+    }
+    
+    @Test
     void testProcessDataForChangeClient() {
         distroData.setType(DataOperation.CHANGE);
         assertEquals(0L, client.getRevision());
@@ -245,6 +253,20 @@ class DistroClientDataProcessorTest {
         verify(clientManager).syncClientConnected(CLIENT_ID, clientSyncData.getAttributes());
         assertEquals(1L, client.getRevision());
         assertEquals(1, client.getAllPublishedService().size());
+    }
+    
+    @Test
+    void testProcessDataRemovesStaleService() {
+        Service staleService =
+            ServiceManager.getInstance().getSingleton(Service.newService("ns", "group",
+                "stale"));
+        client.addServiceInstance(staleService, new InstancePublishInfo("4.4.4.4", 2222));
+        assertTrue(client.getAllPublishedService().contains(staleService));
+        
+        distroData.setType(DataOperation.CHANGE);
+        distroClientDataProcessor.processData(distroData);
+        
+        assertFalse(client.getAllPublishedService().contains(staleService));
     }
     
     @Test
@@ -384,9 +406,28 @@ class DistroClientDataProcessorTest {
     }
     
     @Test
+    void testGetDistroDataWithoutClient() {
+        when(clientManager.getClient(CLIENT_ID)).thenReturn(null);
+        assertNull(distroClientDataProcessor.getDistroData(distroKey));
+    }
+    
+    @Test
     void testGetDatumSnapshot() {
         when(clientManager.allClientId()).thenReturn(Collections.singletonList(CLIENT_ID));
         DistroData actual = distroClientDataProcessor.getDatumSnapshot();
+        assertEquals(DataOperation.SNAPSHOT.name(), actual.getDistroKey().getResourceKey());
+        assertEquals(DistroClientDataProcessor.TYPE, actual.getDistroKey().getResourceType());
+    }
+    
+    @Test
+    void testGetDatumSnapshotSkipsUnavailableClients() {
+        Client persistentClient = new IpPortBasedClient("1.1.1.1:80#false", false);
+        when(clientManager.allClientId()).thenReturn(Arrays.asList("missing", "persistent"));
+        when(clientManager.getClient("missing")).thenReturn(null);
+        when(clientManager.getClient("persistent")).thenReturn(persistentClient);
+        
+        DistroData actual = distroClientDataProcessor.getDatumSnapshot();
+        
         assertEquals(DataOperation.SNAPSHOT.name(), actual.getDistroKey().getResourceKey());
         assertEquals(DistroClientDataProcessor.TYPE, actual.getDistroKey().getResourceType());
     }
@@ -401,5 +442,19 @@ class DistroClientDataProcessorTest {
         assertEquals(CLIENT_ID, list.iterator().next().getDistroKey().getResourceKey());
         assertEquals(DistroClientDataProcessor.TYPE,
             list.iterator().next().getDistroKey().getResourceType());
+    }
+    
+    @Test
+    void testGetVerifyDataSkipsUnavailableClients() {
+        Client persistentClient = new IpPortBasedClient("1.1.1.1:80#false", false);
+        Client irresponsibleClient = new ConnectionBasedClient("irresponsible", true, 0L);
+        when(clientManager.allClientId())
+            .thenReturn(Arrays.asList("missing", "persistent", "irresponsible"));
+        when(clientManager.getClient("missing")).thenReturn(null);
+        when(clientManager.getClient("persistent")).thenReturn(persistentClient);
+        when(clientManager.getClient("irresponsible")).thenReturn(irresponsibleClient);
+        when(clientManager.isResponsibleClient(irresponsibleClient)).thenReturn(false);
+        
+        assertNull(distroClientDataProcessor.getVerifyData());
     }
 }

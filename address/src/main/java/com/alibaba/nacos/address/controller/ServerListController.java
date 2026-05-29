@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.address.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.address.component.AddressServerGeneratorManager;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -65,6 +66,7 @@ public class ServerListController {
      * @param cluster will get Ip list of that product cluster to be associated
      * @return result of get
      */
+    @Since("1.1.0")
     @RequestMapping(value = "/{product}/{cluster}", method = RequestMethod.GET)
     public ResponseEntity<String> getCluster(@PathVariable String product,
         @PathVariable String cluster) {

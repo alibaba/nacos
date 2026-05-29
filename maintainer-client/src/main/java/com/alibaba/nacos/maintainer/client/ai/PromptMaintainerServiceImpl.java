@@ -267,6 +267,26 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     }
     
     @Override
+    public boolean redraft(String namespaceId, String promptKey, String version)
+        throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("promptKey", promptKey);
+        params.put("version", version);
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, promptKey))
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_PROMPT_ADMIN_PATH + "/redraft")
+                .setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<Boolean> result =
+            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+            });
+        return Boolean.TRUE.equals(result.getData());
+    }
+    
+    @Override
     public void changeOnlineStatus(String namespaceId, String promptKey, String version,
         boolean online)
         throws NacosException {

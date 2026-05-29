@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InstanceListFormTest {
@@ -55,5 +56,27 @@ class InstanceListFormTest {
     void testValidateThrowsExceptionWhenServiceNameIsBlank() {
         InstanceListForm form = new InstanceListForm();
         assertThrows(NacosApiException.class, () -> form.validate());
+    }
+    
+    @Test
+    void testObjectMethods() throws NacosApiException {
+        InstanceListForm form = createForm("service");
+        InstanceListForm same = createForm("service");
+        InstanceListForm different = createForm("other");
+        form.validate();
+        same.validate();
+        
+        assertEquals(form, form);
+        assertEquals(form, same);
+        assertEquals(form.hashCode(), same.hashCode());
+        assertNotEquals(form, different);
+        assertNotEquals(form, null);
+        assertNotEquals(form, new Object());
+    }
+    
+    private InstanceListForm createForm(String serviceName) {
+        InstanceListForm form = new InstanceListForm();
+        form.setServiceName(serviceName);
+        return form;
     }
 }

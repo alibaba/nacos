@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.airegistry.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -26,6 +27,7 @@ import com.alibaba.nacos.airegistry.model.skills.WellKnownSkillsIndex;
 import com.alibaba.nacos.airegistry.service.NacosSkillsRegistryService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.AntPathMatcher;
@@ -52,6 +54,8 @@ public class SkillsRegistryController {
     
     private static final String WELL_KNOWN_SKILLS = BASE_PATH + "/{namespaceId}/.well-known/skills";
     
+    private static final String APPLICATION_ZIP_VALUE = "application/zip";
+    
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
     
     private final NacosSkillsRegistryService nacosSkillsRegistryService;
@@ -67,12 +71,27 @@ public class SkillsRegistryController {
      * @return well-known index payload
      * @throws NacosException if query fails
      */
-    @GetMapping(value = {
-        WELL_KNOWN_AGENT_SKILLS + "/index.json",
-        WELL_KNOWN_SKILLS + "/index.json"
-    }, produces = MediaType.APPLICATION_JSON_VALUE)
-    public WellKnownSkillsIndex getIndex(@PathVariable String namespaceId) throws NacosException {
-        return nacosSkillsRegistryService.buildIndex(namespaceId);
+    @Since("3.2.2")
+    @GetMapping(value = WELL_KNOWN_AGENT_SKILLS + "/index.json",
+        produces = MediaType.APPLICATION_JSON_VALUE)
+    public WellKnownSkillsIndex getAgentSkillsIndex(@PathVariable String namespaceId)
+        throws NacosException {
+        return nacosSkillsRegistryService.buildAgentSkillsIndex(namespaceId);
+    }
+    
+    /**
+     * Expose legacy well-known index.json for v0.1-compatible clients.
+     *
+     * @param namespaceId namespace to query
+     * @return legacy well-known index payload
+     * @throws NacosException if query fails
+     */
+    @Since("3.2.2")
+    @GetMapping(value = WELL_KNOWN_SKILLS + "/index.json",
+        produces = MediaType.APPLICATION_JSON_VALUE)
+    public WellKnownSkillsIndex getLegacySkillsIndex(@PathVariable String namespaceId)
+        throws NacosException {
+        return nacosSkillsRegistryService.buildLegacySkillsIndex(namespaceId);
     }
     
     /**
@@ -84,6 +103,7 @@ public class SkillsRegistryController {
      * @return search response with CLI-compatible shape
      * @throws NacosException if query fails
      */
+    @Since("3.2.1")
     @GetMapping(value = BASE_PATH + "/{namespaceId}/api/search",
         produces = MediaType.APPLICATION_JSON_VALUE)
     public SkillsSearchResponse search(@PathVariable String namespaceId, SkillsSearchForm form,
@@ -104,6 +124,7 @@ public class SkillsRegistryController {
      * @return skill markdown when the skill is exportable, otherwise 404
      * @throws NacosException if query fails
      */
+    @Since("3.2.1")
     @GetMapping(value = {
         WELL_KNOWN_AGENT_SKILLS + "/{skillName}/SKILL.md",
         WELL_KNOWN_SKILLS + "/{skillName}/SKILL.md"
@@ -123,6 +144,32 @@ public class SkillsRegistryController {
     }
     
     /**
+     * Return an exported skill archive for v0.2 well-known discovery.
+     *
+     * @param namespaceId namespace to query
+     * @param skillName skill name
+     * @return skill ZIP archive when exportable, otherwise 404
+     * @throws NacosException if query fails
+     */
+    @Since("3.2.2")
+    @GetMapping(value = {
+        WELL_KNOWN_AGENT_SKILLS + "/{skillName}.zip",
+        WELL_KNOWN_SKILLS + "/{skillName}.zip"
+    }, produces = APPLICATION_ZIP_VALUE)
+    public ResponseEntity<byte[]> getSkillArchive(@PathVariable String namespaceId,
+        @PathVariable String skillName)
+        throws NacosException {
+        byte[] content = nacosSkillsRegistryService.getSkillArchiveContent(namespaceId,
+            skillName);
+        return content == null ? ResponseEntity.notFound().build()
+            : ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment;filename=" + skillName + ".zip")
+                .contentType(MediaType.parseMediaType(APPLICATION_ZIP_VALUE))
+                .body(content);
+    }
+    
+    /**
      * Return an exported text resource for a namespace skill.
      *
      * @param namespaceId namespace to query
@@ -131,6 +178,7 @@ public class SkillsRegistryController {
      * @return file content when the skill and file are exportable, otherwise 404
      * @throws NacosException if query fails
      */
+    @Since("3.2.1")
     @GetMapping(value = {
         WELL_KNOWN_AGENT_SKILLS + "/{skillName}/**",
         WELL_KNOWN_SKILLS + "/{skillName}/**"

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.ResponseCode;
@@ -88,6 +89,7 @@ public class InstanceOpenApiController {
      * code `21003` to indicate caller should register again with heartBeat=false.
      * @throws NacosException register or heart beat with exception.
      */
+    @Since("3.0.0")
     @CanDistro
     @PostMapping
     @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
@@ -114,6 +116,7 @@ public class InstanceOpenApiController {
      * @return deregister result, if instance not found, also return remove success.
      * @throws NacosException deregister with exception.
      */
+    @Since("3.0.0")
     @CanDistro
     @DeleteMapping
     @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
@@ -147,6 +150,7 @@ public class InstanceOpenApiController {
      * @return all instances for specified service without `enabled=false`.
      * @throws Exception any exception during get instances.
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ, apiType = ApiType.OPEN_API)

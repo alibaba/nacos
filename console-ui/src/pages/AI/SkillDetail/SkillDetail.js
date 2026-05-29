@@ -438,7 +438,10 @@ class SkillDetail extends React.Component {
     this.handleCloseVersionPanel();
   };
 
-  getVersionStatusColor = status => {
+  getVersionStatusColor = (status, pipelineInfo) => {
+    if (status === 'reviewed' && pipelineInfo?.status === 'REJECTED') {
+      return '#f5222d';
+    }
     switch (status) {
       case 'draft':
         return '#1890ff';
@@ -455,8 +458,11 @@ class SkillDetail extends React.Component {
     }
   };
 
-  getVersionStatusText = status => {
+  getVersionStatusText = (status, pipelineInfo) => {
     const { locale = {} } = this.props;
+    if (status === 'reviewed' && pipelineInfo?.status === 'REJECTED') {
+      return locale.versionStatusRejected || 'Rejected';
+    }
     switch (status) {
       case 'draft':
         return locale.versionStatusDraft || 'Draft';
@@ -754,6 +760,41 @@ class SkillDetail extends React.Component {
             Message.error(locale.publishFailed || 'Failed to publish');
           },
         });
+      },
+    });
+  };
+
+  handleRedraft = () => {
+    const { locale = {} } = this.props;
+    const { selectedVersion } = this.state;
+    const skillName = getParams('name');
+    const namespaceId = getParams('namespace') || '';
+
+    this.setState({ publishing: true });
+
+    request({
+      method: 'POST',
+      url: 'v3/admin/ai/skills/redraft',
+      data: {
+        skillName,
+        version: selectedVersion,
+        namespaceId,
+      },
+      contentType: 'application/x-www-form-urlencoded',
+      success: data => {
+        this.setState({ publishing: false });
+        if (data && data.code === 0) {
+          Message.success(locale.redraftSuccess || 'Re-edit successfully, version is now draft');
+          this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
+            this.loadSkillData();
+          });
+        } else {
+          Message.error(data?.message || locale.redraftFailed || 'Failed to re-edit');
+        }
+      },
+      error: () => {
+        this.setState({ publishing: false });
+        Message.error(locale.redraftFailed || 'Failed to re-edit');
       },
     });
   };
@@ -1883,10 +1924,11 @@ class SkillDetail extends React.Component {
               {selectedVersion && (
                 <Tag
                   size="small"
-                  color={this.getVersionStatusColor(selectedVersionStatus)}
+                  color={this.getVersionStatusColor(selectedVersionStatus, this.state.pipelineInfo)}
                   style={{ borderRadius: 4 }}
                 >
-                  {selectedVersion} - {this.getVersionStatusText(selectedVersionStatus)}
+                  {selectedVersion} -{' '}
+                  {this.getVersionStatusText(selectedVersionStatus, this.state.pipelineInfo)}
                 </Tag>
               )}
               {downloadCount > 0 && (
@@ -1929,6 +1971,21 @@ class SkillDetail extends React.Component {
                 >
                   {locale.publishVersion || 'Publish'}
                 </Button>
+              )}
+              {selectedVersionStatus === 'reviewed' && (
+                <>
+                  <Button
+                    type="primary"
+                    onClick={this.handlePublish}
+                    loading={publishing}
+                    disabled={pipelineInfo && pipelineInfo.status !== 'APPROVED'}
+                  >
+                    {locale.publishVersion || 'Publish'}
+                  </Button>
+                  <Button onClick={this.handleRedraft} loading={publishing}>
+                    {locale.actionRedraft || 'Re-edit'}
+                  </Button>
+                </>
               )}
               {selectedVersionStatus === 'online' && (
                 <>
@@ -2262,15 +2319,25 @@ class SkillDetail extends React.Component {
                     title={locale.versionStatus || 'Status'}
                     dataIndex="status"
                     width={80}
-                    cell={value => (
-                      <Tag
-                        size="small"
-                        color={this.getVersionStatusColor(value)}
-                        style={{ borderRadius: 4 }}
-                      >
-                        {this.getVersionStatusText(value)}
-                      </Tag>
-                    )}
+                    cell={(value, index, record) => {
+                      let vPipeline = null;
+                      if (record?.publishPipelineInfo) {
+                        try {
+                          vPipeline = JSON.parse(record.publishPipelineInfo);
+                        } catch (e) {
+                          /* ignore */
+                        }
+                      }
+                      return (
+                        <Tag
+                          size="small"
+                          color={this.getVersionStatusColor(value, vPipeline)}
+                          style={{ borderRadius: 4 }}
+                        >
+                          {this.getVersionStatusText(value, vPipeline)}
+                        </Tag>
+                      );
+                    }}
                   />
                   <Table.Column
                     title={locale.author || 'Author'}

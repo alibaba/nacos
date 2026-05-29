@@ -29,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,5 +56,12 @@ class ClusterOperatorV2ImplTest {
             "clusterName_test", clusterMetadata);
         verify(metadataOperateServiceMock).addClusterMetadata(any(Service.class), anyString(),
             any(ClusterMetadata.class));
+    }
+    
+    @Test
+    void testUpdateClusterMetadataThrowsWhenServiceMissing() {
+        assertThrows(NacosException.class,
+            () -> clusterOperatorV2Impl.updateClusterMetadata("missing_namespace", "missing_group",
+                "missing_service", "clusterName_test", clusterMetadata));
     }
 }

@@ -26,6 +26,8 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link SkillScannerPipelineService} unit test.
@@ -161,6 +165,47 @@ class SkillScannerPipelineServiceTest {
     }
     
     @Test
+    void constructorsUseDefaultScanOptionsTest() {
+        SkillScannerPipelineService commandService = new SkillScannerPipelineService("scanner");
+        assertEquals("scanner", commandService.buildScanCommand(Path.of("/tmp/skill")).get(0));
+        
+        SkillScannerPipelineService installedService =
+            new SkillScannerPipelineService(true, null);
+        List<String> command = installedService.buildScanCommand(Path.of("/tmp/skill"));
+        assertEquals(SkillScannerPipelineService.DEFAULT_SKILL_SCANNER_CMD, command.get(0));
+        assertFalse(command.contains("--use-llm"));
+    }
+    
+    @Test
+    void deleteRecursivelyHandlesMissingAndFailedDeleteTest() throws Exception {
+        Method deleteRecursively =
+            SkillScannerPipelineService.class.getDeclaredMethod("deleteRecursively", File.class);
+        deleteRecursively.setAccessible(true);
+        deleteRecursively.invoke(service, new Object[] {null});
+        
+        File file = mock(File.class);
+        when(file.exists()).thenReturn(true);
+        when(file.isDirectory()).thenReturn(false);
+        when(file.delete()).thenReturn(false);
+        when(file.getAbsolutePath()).thenReturn("/tmp/not-deleted");
+        
+        deleteRecursively.invoke(service, file);
+    }
+    
+    @Test
+    void constructorWithNullOptionsAndNotInstalledRejectsTest() {
+        SkillScannerPipelineService unavailableService =
+            new SkillScannerPipelineService(false, null);
+        
+        PublishPipelineResult result =
+            unavailableService.execute(createBenignSkillContext("unavailable-skill"));
+        
+        assertNotNull(result);
+        assertFalse(result.isPassed());
+        assertTrue(result.getMessage().contains("未安装"));
+    }
+    
+    @Test
     void executeEmptyAgentSpecFilesTest() {
         SkillScannerPipelineService installedService = new SkillScannerPipelineService(true);
         ResourceFilesPipelineContext context = new ResourceFilesPipelineContext();
@@ -229,6 +274,55 @@ class SkillScannerPipelineServiceTest {
     }
     
     @Test
+    void executeWithInvalidCommandRejectsTest() {
+        SkillScannerPipelineService installedService =
+            new SkillScannerPipelineService("/path/to/missing-skill-scanner");
+        
+        PublishPipelineResult result = installedService.execute(createBenignSkillContext("demo"));
+        
+        assertNotNull(result);
+        assertFalse(result.isPassed());
+        assertTrue(result.getMessage().contains("执行 skill-scanner 失败"));
+        assertEquals(PublishPipelineMessageType.MARKDOWN, result.getType());
+        assertNotNull(result.getCheckpoints());
+        assertEquals(1, result.getCheckpoints().size());
+        assertEquals("skill-scanner CLI 执行", result.getCheckpoints().get(0).getTitle());
+        assertFalse(result.getCheckpoints().get(0).getPassed());
+    }
+    
+    @Test
+    void executeInterruptedScannerProcessTest() {
+        SkillScannerPipelineService installedService =
+            new StubSkillScannerPipelineService(StubScanMode.PASS_SKILL,
+                SkillScannerScanOptions.none()) {
+                
+                @Override
+                int waitForProcess(Process process) throws InterruptedException {
+                    throw new InterruptedException("test interrupt");
+                }
+            };
+        List<ResourceFileContent> files = Arrays.asList(
+            new ResourceFileContent("SKILL.md",
+                "---\ndescription: 演示用 Skill\n---\n\n这是一个简单的演示 Skill。"),
+            new ResourceFileContent("subdir/helper.py", "# benign script\nprint('hello')"));
+        
+        try {
+            PublishPipelineResult result =
+                installedService.execute(createSkillContext("sleepy-skill", files));
+            
+            assertNotNull(result);
+            assertFalse(result.isPassed());
+            assertTrue(result.getMessage().contains("扫描被中断"));
+            assertEquals(PublishPipelineMessageType.MARKDOWN, result.getType());
+            assertNotNull(result.getCheckpoints());
+            assertEquals("skill-scanner CLI 执行", result.getCheckpoints().get(0).getTitle());
+            assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
+    }
+    
+    @Test
     void executeBenignSkillWithStubScannerTest() {
         SkillScannerPipelineService installedService = createStubService(StubScanMode.PASS_SKILL);
         List<ResourceFileContent> files = Arrays.asList(
@@ -293,7 +387,7 @@ class SkillScannerPipelineServiceTest {
         assertEquals(PublishPipelineMessageType.MARKDOWN, result.getType());
         assertNotNull(result.getCheckpoints());
         assertEquals(1, result.getCheckpoints().size());
-        assertEquals("HIGH — Prompt injection", result.getCheckpoints().get(0).getTitle());
+        assertEquals("HIGH - Prompt injection", result.getCheckpoints().get(0).getTitle());
         assertFalse(result.getCheckpoints().get(0).getPassed());
     }
     
@@ -360,7 +454,7 @@ class SkillScannerPipelineServiceTest {
         assertEquals(PublishPipelineMessageType.MARKDOWN, result.getType());
         assertNotNull(result.getCheckpoints());
         assertEquals(1, result.getCheckpoints().size());
-        assertEquals("HIGH — Agent spec override", result.getCheckpoints().get(0).getTitle());
+        assertEquals("HIGH - Agent spec override", result.getCheckpoints().get(0).getTitle());
         assertFalse(result.getCheckpoints().get(0).getPassed());
     }
     
@@ -375,6 +469,54 @@ class SkillScannerPipelineServiceTest {
         assertNotNull(result);
         assertTrue(result.isPassed(), "Expected pass: " + result.getMessage());
         assertTrue(result.getMessage().contains("扫描通过"));
+    }
+    
+    @Test
+    void executeSkipsUnsafeAndBlankFilePathsTest() {
+        SkillScannerPipelineService installedService =
+            createStubService(StubScanMode.PASS_SKIPPED_FILES);
+        List<ResourceFileContent> files = Arrays.asList(
+            new ResourceFileContent(null, "ignored"),
+            new ResourceFileContent("", "ignored"),
+            new ResourceFileContent("../evil.txt", "ignored"),
+            new ResourceFileContent("valid.txt", null));
+        SkillPipelineContext context = createSkillContext("path-boundary-skill", files);
+        
+        PublishPipelineResult result = installedService.execute(context);
+        
+        assertNotNull(result);
+        assertTrue(result.isPassed(), result.getMessage());
+    }
+    
+    @Test
+    void executeAgentSpecWithNullPathGeneratesSkillMdTest() {
+        SkillScannerPipelineService installedService =
+            createStubService(StubScanMode.PASS_AGENTSPEC_WITH_NULL_PATH);
+        List<ResourceFileContent> files = Arrays.asList(
+            new ResourceFileContent(null, "ignored-null-path-content"),
+            new ResourceFileContent("manifest.json", "{\"name\":\"agent-null-path\"}"),
+            new ResourceFileContent("config/SOUL.md", "helpful assistant"));
+        ResourceFilesPipelineContext context = createAgentSpecContext("agent-null-path", files);
+        
+        PublishPipelineResult result = installedService.execute(context);
+        
+        assertNotNull(result);
+        assertTrue(result.isPassed(), result.getMessage());
+    }
+    
+    @Test
+    void executePromptWithNullPathGeneratesSkillMdTest() {
+        SkillScannerPipelineService installedService =
+            createStubService(StubScanMode.PASS_PROMPT_WITH_NULL_PATH);
+        List<ResourceFileContent> files = Arrays.asList(
+            new ResourceFileContent(null, "ignored-null-path-content"),
+            new ResourceFileContent("prompt-main.json", "{\"template\":\"helpful assistant\"}"));
+        ResourceFilesPipelineContext context = createPromptContext("prompt-null-path", files);
+        
+        PublishPipelineResult result = installedService.execute(context);
+        
+        assertNotNull(result);
+        assertTrue(result.isPassed(), result.getMessage());
     }
     
     private SkillScannerPipelineService createStubService(StubScanMode mode) {
@@ -443,14 +585,30 @@ class SkillScannerPipelineServiceTest {
         return ctx;
     }
     
+    private ResourceFilesPipelineContext createAgentSpecContext(String name,
+        List<ResourceFileContent> files) {
+        ResourceFilesPipelineContext ctx = new ResourceFilesPipelineContext();
+        ctx.setResourceType(PublishPipelineResourceType.AGENTSPEC);
+        ctx.setResourceName(name);
+        ctx.setNamespaceId("public");
+        ctx.setVersion("v1");
+        ctx.setFiles(files);
+        return ctx;
+    }
+    
     private ResourceFilesPipelineContext createPromptContext(String name, String promptContent) {
+        List<ResourceFileContent> files = new ArrayList<>();
+        files.add(new ResourceFileContent("prompt-main.json", promptContent));
+        return createPromptContext(name, files);
+    }
+    
+    private ResourceFilesPipelineContext createPromptContext(String name,
+        List<ResourceFileContent> files) {
         ResourceFilesPipelineContext ctx = new ResourceFilesPipelineContext();
         ctx.setResourceType(PublishPipelineResourceType.PROMPT);
         ctx.setResourceName(name);
         ctx.setNamespaceId("public");
         ctx.setVersion("v1");
-        List<ResourceFileContent> files = new ArrayList<>();
-        files.add(new ResourceFileContent("prompt-main.json", promptContent));
         ctx.setFiles(files);
         return ctx;
     }
@@ -461,10 +619,14 @@ class SkillScannerPipelineServiceTest {
         PASS_AGENTSPEC,
         REJECT_AGENTSPEC,
         PASS_PROMPT,
-        VERIFY_LLM_ENV
+        VERIFY_LLM_ENV,
+        PASS_SKIPPED_FILES,
+        PASS_AGENTSPEC_WITH_NULL_PATH,
+        PASS_PROMPT_WITH_NULL_PATH,
+        SLEEP
     }
     
-    private static final class StubSkillScannerPipelineService extends SkillScannerPipelineService {
+    private static class StubSkillScannerPipelineService extends SkillScannerPipelineService {
         
         private final StubScanMode mode;
         
@@ -529,10 +691,29 @@ class SkillScannerPipelineServiceTest {
                         "Generated from Prompt pipeline context");
                     requireContains(root.resolve("prompt-main.json"), "helpful assistant");
                     return;
+                case PASS_SKIPPED_FILES:
+                    requireEmpty(root.resolve("valid.txt"));
+                    requireNotExists(root.resolve("../evil.txt").normalize());
+                    return;
+                case PASS_AGENTSPEC_WITH_NULL_PATH:
+                    requireContains(root.resolve("SKILL.md"),
+                        "Generated from AgentSpec pipeline context");
+                    requireContains(root.resolve("SKILL.md"), "File: manifest.json");
+                    requireNotContains(root.resolve("SKILL.md"), "ignored-null-path-content");
+                    return;
+                case PASS_PROMPT_WITH_NULL_PATH:
+                    requireContains(root.resolve("SKILL.md"),
+                        "Generated from Prompt pipeline context");
+                    requireContains(root.resolve("SKILL.md"), "File: prompt-main.json");
+                    requireNotContains(root.resolve("SKILL.md"), "ignored-null-path-content");
+                    return;
                 case VERIFY_LLM_ENV:
                     requireEnv("SKILL_SCANNER_LLM_API_KEY", "test-api-key");
                     requireEnv("SKILL_SCANNER_LLM_MODEL", "test-model");
                     requireContains(root.resolve("SKILL.md"), "SYSTEM OVERRIDE");
+                    return;
+                case SLEEP:
+                    Thread.sleep(300);
                     return;
                 default:
                     throw new IllegalStateException("Unsupported mode: " + mode);
@@ -555,7 +736,7 @@ class SkillScannerPipelineServiceTest {
             System.out.println();
             System.out.println("## Findings");
             System.out.println();
-            System.out.println("### HIGH — " + findingTitle);
+            System.out.println("### HIGH - " + findingTitle);
             System.out.println();
             System.out.println(findingDetail);
         }
@@ -565,6 +746,28 @@ class SkillScannerPipelineServiceTest {
             if (!content.contains(expected)) {
                 throw new IllegalStateException(
                     "Expected '" + expected + "' in " + path + ", actual=" + content);
+            }
+        }
+        
+        private static void requireNotContains(Path path, String unexpected) throws Exception {
+            String content = Files.readString(path, StandardCharsets.UTF_8);
+            if (content.contains(unexpected)) {
+                throw new IllegalStateException(
+                    "Did not expect '" + unexpected + "' in " + path + ", actual=" + content);
+            }
+        }
+        
+        private static void requireEmpty(Path path) throws Exception {
+            String content = Files.readString(path, StandardCharsets.UTF_8);
+            if (!content.isEmpty()) {
+                throw new IllegalStateException(
+                    "Expected empty content in " + path + ", actual=" + content);
+            }
+        }
+        
+        private static void requireNotExists(Path path) {
+            if (Files.exists(path)) {
+                throw new IllegalStateException("Expected path not to exist: " + path);
             }
         }
         

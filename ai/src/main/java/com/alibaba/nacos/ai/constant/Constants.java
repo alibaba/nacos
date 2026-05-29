@@ -154,6 +154,26 @@ public class Constants {
         public static final String SKILL_DEFAULT_NAMESPACE = "public";
         
         /**
+         * Resource type constant used in {@code ai_resource_version.type} for skill rows.
+         */
+        public static final String RESOURCE_TYPE_SKILL = "skill";
+        
+        /**
+         * Key inside {@code ai_resource_version.storage} JSON for the published content MD5.
+         */
+        public static final String STORAGE_KEY_CONTENT_MD5 = "contentMd5";
+        
+        /**
+         * Response header carrying the published skill content MD5 for client listener cache.
+         */
+        public static final String HEADER_SKILL_MD5 = "X-Nacos-Skill-Md5";
+        
+        /**
+         * Response header carrying the resolved version when the client queries by label.
+         */
+        public static final String HEADER_SKILL_RESOLVED_VERSION = "X-Nacos-Skill-Resolved-Version";
+        
+        /**
          * Default max allowed size for skill zip upload (10MB).
          *
          * <p>Runtime callers should use
@@ -198,6 +218,11 @@ public class Constants {
         public static final String SEARCH_ACCURATE = "accurate";
         
         public static final String AGENTSPEC_DEFAULT_NAMESPACE = "public";
+        
+        public static final String HEADER_AGENTSPEC_MD5 = "X-Nacos-AgentSpec-Md5";
+        
+        public static final String HEADER_AGENTSPEC_RESOLVED_VERSION =
+            "X-Nacos-AgentSpec-Resolved-Version";
     }
     
     public static class Pipeline {

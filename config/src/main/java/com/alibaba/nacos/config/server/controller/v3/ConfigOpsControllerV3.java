@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -78,6 +79,7 @@ public class ConfigOpsControllerV3 {
     /**
      * Manually trigger dump of a local configuration file.
      */
+    @Since("3.0.0")
     @PostMapping(value = "/localCache")
     @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
         signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -94,6 +96,7 @@ public class ConfigOpsControllerV3 {
         }
     }
     
+    @Since("3.0.0")
     @PutMapping(value = "/log")
     @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
         signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -123,6 +126,7 @@ public class ConfigOpsControllerV3 {
      * @param sql The query
      * @return {@link RestResult}
      */
+    @Since("3.0.0")
     @GetMapping(value = "/derby")
     @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
         signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -176,6 +180,7 @@ public class ConfigOpsControllerV3 {
      * @param multipartFile {@link MultipartFile}
      * @return {@link DeferredResult}
      */
+    @Since("3.0.0")
     @PostMapping(value = "/derby/import")
     @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
         signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)

@@ -9,6 +9,7 @@ interface ToolArg {
   enum?: string[];
   items?: any;
   properties?: Record<string, any>;
+  schema?: Record<string, any>;
 }
 
 interface RawTool {
@@ -25,6 +26,113 @@ interface McpConfig {
     securitySchemes: any[];
   };
   tools: RawTool[];
+}
+
+const JSON_SCHEMA_COPY_KEYS = [
+  'type',
+  'description',
+  'default',
+  'enum',
+  'format',
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'minLength',
+  'maxLength',
+  'pattern',
+  'minItems',
+  'maxItems',
+  'uniqueItems',
+  'nullable',
+  'additionalProperties',
+  'oneOf',
+  'anyOf',
+] as const;
+
+function cloneValue<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function mergeSchema(target: Record<string, any>, source: Record<string, any>) {
+  for (const [key, value] of Object.entries(source)) {
+    if (key === 'properties' && value && typeof value === 'object') {
+      target.properties = { ...(target.properties || {}), ...value };
+    } else if (key === 'required' && Array.isArray(value)) {
+      target.required = Array.from(new Set([...(target.required || []), ...value]));
+    } else if (target[key] === undefined) {
+      target[key] = value;
+    }
+  }
+}
+
+function normalizeSchema(schema: any): Record<string, any> {
+  if (!schema || typeof schema !== 'object') {
+    return { type: 'string' };
+  }
+
+  const result: Record<string, any> = {};
+  if (Array.isArray(schema.allOf)) {
+    for (const item of schema.allOf) {
+      mergeSchema(result, normalizeSchema(item));
+    }
+  }
+
+  for (const key of JSON_SCHEMA_COPY_KEYS) {
+    if (schema[key] !== undefined) {
+      result[key] = cloneValue(schema[key]);
+    }
+  }
+
+  if (schema.properties && typeof schema.properties === 'object') {
+    result.properties = {};
+    for (const [name, propertySchema] of Object.entries(schema.properties)) {
+      result.properties[name] = normalizeSchema(propertySchema);
+    }
+  }
+
+  if (schema.items) {
+    result.items = normalizeSchema(schema.items);
+  }
+
+  if (Array.isArray(schema.required)) {
+    result.required = [...schema.required];
+  }
+
+  if (!result.type) {
+    if (result.properties) {
+      result.type = 'object';
+    } else if (result.items) {
+      result.type = 'array';
+    } else {
+      result.type = 'string';
+    }
+  }
+
+  return result;
+}
+
+function applySchemaToArg(arg: ToolArg, schema: any) {
+  const normalized = normalizeSchema(schema);
+  arg.schema = normalized;
+  arg.type = normalized.type;
+  if (!arg.description && normalized.description) {
+    arg.description = normalized.description;
+  }
+  if (Array.isArray(normalized.enum)) {
+    arg.enum = normalized.enum;
+  }
+  if (normalized.items) {
+    arg.items = normalized.items;
+  }
+  if (normalized.properties) {
+    arg.properties = normalized.properties;
+  }
+}
+
+function isComplexArg(arg?: ToolArg) {
+  const type = arg?.schema?.type || arg?.type;
+  return type === 'object' || type === 'array';
 }
 
 /**
@@ -105,21 +213,7 @@ function convertOperation(path: string, method: string, operation: any, servers?
         position: param.in,
       };
       if (param.schema) {
-        arg.type = param.schema.type;
-        if (param.schema.enum?.length > 0) arg.enum = param.schema.enum;
-        if (param.schema.type === 'array' && param.schema.items) {
-          arg.items = { type: param.schema.items.type };
-        }
-        if (param.schema.type === 'object' && param.schema.properties) {
-          arg.properties = {};
-          for (const pn of Object.keys(param.schema.properties)) {
-            const p = param.schema.properties[pn];
-            if (p) {
-              arg.properties[pn] = { type: p.type };
-              if (p.description) arg.properties[pn].description = p.description;
-            }
-          }
-        }
+        applySchemaToArg(arg, param.schema);
       }
       tool.args.push(arg);
     }
@@ -148,31 +242,7 @@ function convertOperation(path: string, method: string, operation: any, servers?
             required: schema.required?.includes(propName) || false,
             position: 'body',
           };
-          if (prop.enum?.length > 0) arg.enum = prop.enum;
-          if (prop.type === 'array' && prop.items) {
-            arg.items = {
-              type: prop.items.type,
-              description: prop.items.description || '',
-            };
-            if (prop.items.type === 'object' && prop.items.properties) {
-              arg.items.properties = prop.items.properties;
-            }
-          }
-          if (prop.type === 'object' && prop.properties) {
-            arg.properties = {};
-            for (const sn of Object.keys(prop.properties)) {
-              const sp = prop.properties[sn];
-              if (sp) {
-                arg.properties[sn] = { type: sp.type, description: sp.description || '' };
-                if (sp.default !== undefined) arg.properties[sn].default = sp.default;
-                if (sp.enum) arg.properties[sn].enum = sp.enum;
-              }
-            }
-          }
-          if (!prop.type && prop.allOf?.length === 1) {
-            arg.type = 'object';
-            arg.properties = allOfHandle(prop.allOf[0]);
-          }
+          applySchemaToArg(arg, prop);
           tool.args.push(arg);
         }
       }
@@ -182,24 +252,6 @@ function convertOperation(path: string, method: string, operation: any, servers?
 
   tool.args.sort((a, b) => a.name.localeCompare(b.name));
   return tool;
-}
-
-function allOfHandle(schema: any): Record<string, any> {
-  const properties: Record<string, any> = {};
-  if (schema.type === 'object' && schema.properties) {
-    for (const pn of Object.keys(schema.properties)) {
-      const p = schema.properties[pn];
-      if (p) {
-        properties[pn] = { type: p.type };
-        if (p.description) properties[pn].description = p.description;
-        if (!p.type && p.allOf?.length === 1) {
-          properties[pn].type = 'object';
-          properties[pn].properties = allOfHandle(p.allOf[0]);
-        }
-      }
-    }
-  }
-  return properties;
 }
 
 function createRequestTemplate(path: string, method: string, operation: any, servers?: any[]) {
@@ -350,13 +402,20 @@ export function transformToolsFromConfig(config: McpConfig) {
       type: 'object' as const,
       properties: tool.args.reduce(
         (acc, arg) => {
-          acc[arg.name] = {
-            type: arg.type,
-            description: arg.description,
-            ...(arg.properties ? { properties: arg.properties } : {}),
-            ...(arg.enum ? { enum: arg.enum } : {}),
-            ...(arg.items ? { items: arg.items } : {}),
-          };
+          const argSchema = { ...(arg.schema || { type: arg.type || 'string' }) };
+          if (arg.description) {
+            argSchema.description = arg.description;
+          }
+          if (arg.enum && !argSchema.enum) {
+            argSchema.enum = arg.enum;
+          }
+          if (arg.items && !argSchema.items) {
+            argSchema.items = arg.items;
+          }
+          if (arg.properties && !argSchema.properties) {
+            argSchema.properties = arg.properties;
+          }
+          acc[arg.name] = argSchema;
           return acc;
         },
         {} as Record<string, any>
@@ -396,7 +455,7 @@ export function transformToolsFromConfig(config: McpConfig) {
 
       const argsPos: Record<string, string> = tmpl.argsPosition || {};
       let url: string = tmpl.requestTemplate.url || '';
-      let headers = ensureHeadersArray(tmpl.requestTemplate.headers);
+      const headers = ensureHeadersArray(tmpl.requestTemplate.headers);
       let body: string | undefined = tmpl.requestTemplate.body;
 
       const allArgs = toolArgsByName[toolName] || [];
@@ -414,6 +473,8 @@ export function transformToolsFromConfig(config: McpConfig) {
       const totalArgsCount = entries.length;
       const allInQuery = totalArgsCount > 0 && queryArgs.length === totalArgsCount;
       const allInBody = totalArgsCount > 0 && bodyArgs.length === totalArgsCount;
+      const hasComplexQueryArg = queryArgs.some((n) => isComplexArg(byName[n]));
+      const hasComplexBodyArg = bodyArgs.some((n) => isComplexArg(byName[n]));
 
       // path placeholders
       for (const name of pathArgs) {
@@ -423,7 +484,11 @@ export function transformToolsFromConfig(config: McpConfig) {
 
       // query params
       if (allInQuery) {
-        tmpl.requestTemplate.argsToUrlParam = true;
+        if (hasComplexQueryArg) {
+          shouldKeepArgsPosition = true;
+        } else {
+          tmpl.requestTemplate.argsToUrlParam = true;
+        }
       } else if (queryArgs.length > 0) {
         const pairs = queryArgs.map((name) => `${name}={{.args.${name}}}`);
         const connector = url.includes('?') ? '&' : '?';
@@ -467,17 +532,15 @@ export function transformToolsFromConfig(config: McpConfig) {
               headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
             }
           }
+          if (hasComplexBodyArg) {
+            shouldKeepArgsPosition = true;
+          }
         } else if (!hasExplicit) {
           if (ct.includes('application/x-www-form-urlencoded')) {
             const formPairs = bodyArgs.map((name) => `${name}={{.args.${name}}}`);
             body = formPairs.join('&');
           } else {
-            const hasComplex = bodyArgs.some((n) => {
-              const a = byName[n];
-              const t = a?.type;
-              return t === 'object' || t === 'array';
-            });
-            if (hasComplex) {
+            if (hasComplexBodyArg) {
               tmpl.requestTemplate.argsToJsonBody = true;
               shouldKeepArgsPosition = true;
               if (!hasHeaderKey(headers, 'Content-Type')) {
@@ -513,7 +576,7 @@ export function transformToolsFromConfig(config: McpConfig) {
           shouldKeepArgsPosition = true;
         }
       }
-      if (!shouldKeepArgsPosition || allInQuery || allInBody) {
+      if (!shouldKeepArgsPosition) {
         delete tmpl.argsPosition;
       }
     }

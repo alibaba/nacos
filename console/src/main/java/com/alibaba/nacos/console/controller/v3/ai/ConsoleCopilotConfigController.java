@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.controller.v3.ai;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -60,6 +61,7 @@ public class ConsoleCopilotConfigController {
      *
      * @return Simplified CopilotProperties with only apiKey, model, studioUrl and studioProject
      */
+    @Since("3.2.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<CopilotProperties> getConfig() throws NacosException {
@@ -86,6 +88,7 @@ public class ConsoleCopilotConfigController {
      * @param config Simplified CopilotProperties with only apiKey, model, studioUrl and studioProject
      * @return success result
      */
+    @Since("3.2.0")
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<Boolean> saveConfig(@RequestBody CopilotProperties config) throws NacosException {

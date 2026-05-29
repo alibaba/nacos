@@ -146,6 +146,7 @@ Automated validation should map findings to concrete spec rules, including:
 - HTTP method semantics;
 - `Result<T>` response shape and documented exceptions;
 - `@Secured` declaration, action, sign type, and API type;
+- `@Since` declaration on newly added controller methods;
 - deprecated compatibility endpoints and their migration status.
 
 ## 3. Current V3 Documents
@@ -164,10 +165,12 @@ Additional detail specs:
 2. Choose the module and resource path using the stable path shape.
 3. Use HTTP methods according to section 2.3.
 4. Declare authorization and action semantics.
-5. Use `Result<T>` for JSON responses unless a documented exception applies.
-6. Put validation in a form object or dedicated validator.
-7. Add route, validation, auth, and response-shape tests for meaningful changes.
-8. Update the matching spec and website documentation in the same change.
+5. Add `@Since` to newly added controller methods to declare the first Nacos
+   version that supports the API.
+6. Use `Result<T>` for JSON responses unless a documented exception applies.
+7. Put validation in a form object or dedicated validator.
+8. Add route, validation, auth, and response-shape tests for meaningful changes.
+9. Update the matching spec and website documentation in the same change.
 
 New Open APIs require an explicit compatibility note. New Admin or Console APIs
 require an explicit authorization note. New non-`Result<T>` APIs require an

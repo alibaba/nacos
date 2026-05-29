@@ -43,8 +43,11 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,6 +98,16 @@ class ClientAttributesFilterTest {
     }
     
     @Test
+    void testDoFilterForRegisterV2Uri() throws IOException {
+        when(request.getRequestURI()).thenReturn(
+            UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT);
+        when(request.getMethod()).thenReturn("POST");
+        
+        filter.doFilter(request, response, new MockFilterChain(servlet, new MockRegisterFilter()));
+    }
+    
+    @Test
     void testDoFilterForBeatUri() throws IOException {
         when(request.getParameter("ip")).thenReturn("127.0.0.1");
         when(request.getParameter("port")).thenReturn("8848");
@@ -106,6 +119,71 @@ class ClientAttributesFilterTest {
         when(request.getMethod()).thenReturn("PUT");
         filter.doFilter(request, response, new MockFilterChain());
         verify(client).setAttributes(any(ClientAttributes.class));
+    }
+    
+    @Test
+    void testDoFilterForBeatUriSkipsWhenRequestVersionMissing() throws IOException {
+        RequestContextHolder.getContext().getBasicContext().setUserAgent(null);
+        when(request.getParameter("encoding")).thenReturn("utf-8");
+        when(request.getParameter("ip")).thenReturn("127.0.0.1");
+        when(request.getParameter("port")).thenReturn("8848");
+        when(clientManager.getClient("127.0.0.1:8848#true")).thenReturn(client);
+        when(request.getRequestURI()).thenReturn(
+            UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/beat");
+        when(request.getMethod()).thenReturn("PUT");
+        
+        filter.doFilter(request, response, new MockFilterChain());
+        
+        verify(client, never()).setAttributes(any(ClientAttributes.class));
+    }
+    
+    @Test
+    void testDoFilterForBeatUriSkipsWhenClientAlreadyHasVersion() throws IOException {
+        ClientAttributes clientAttributes = new ClientAttributes();
+        clientAttributes.addClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER, "old");
+        when(client.getClientAttributes()).thenReturn(clientAttributes);
+        when(request.getParameter("encoding")).thenReturn("utf-8");
+        when(request.getParameter("ip")).thenReturn("127.0.0.1");
+        when(request.getParameter("port")).thenReturn("8848");
+        when(clientManager.getClient("127.0.0.1:8848#true")).thenReturn(client);
+        when(request.getRequestURI()).thenReturn(
+            UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/beat");
+        when(request.getMethod()).thenReturn("PUT");
+        
+        filter.doFilter(request, response, new MockFilterChain());
+        
+        verify(client, never()).setAttributes(any(ClientAttributes.class));
+    }
+    
+    @Test
+    void testDoFilterSwallowsAttributeHandlingException() throws IOException, ServletException {
+        when(request.getParameter("encoding")).thenReturn("utf-8");
+        when(request.getParameter("ip")).thenReturn("127.0.0.1");
+        when(request.getParameter("port")).thenReturn("invalid");
+        when(request.getRequestURI()).thenReturn(
+            UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/beat");
+        when(request.getMethod()).thenReturn("PUT");
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+        
+        filter.doFilter(request, response, chain);
+        
+        verify(chain).doFilter(request, response);
+    }
+    
+    @Test
+    void testDoFilterWrapsServletException() throws IOException, ServletException {
+        when(request.getRequestURI()).thenReturn("/nacos/v1/other");
+        when(request.getMethod()).thenReturn("GET");
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+        doThrow(new ServletException("mock")).when(chain).doFilter(request, response);
+        
+        RuntimeException actual =
+            assertThrows(RuntimeException.class, () -> filter.doFilter(request, response, chain));
+        
+        assertTrue(actual.getCause() instanceof ServletException);
     }
     
     private static class MockRegisterFilter implements Filter {

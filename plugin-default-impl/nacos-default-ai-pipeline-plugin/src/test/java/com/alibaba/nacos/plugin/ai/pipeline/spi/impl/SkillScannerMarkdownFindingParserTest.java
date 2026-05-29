@@ -33,6 +33,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SkillScannerMarkdownFindingParserTest {
     
     @Test
+    void extractFindingTitlesEmptyInput() {
+        assertTrue(SkillScannerMarkdownFindingParser.extractFindingTitles(null).isEmpty());
+        assertTrue(SkillScannerMarkdownFindingParser.extractFindingTitles("").isEmpty());
+    }
+    
+    @Test
+    void extractFindingTitlesWithoutSectionBody() {
+        assertTrue(SkillScannerMarkdownFindingParser.extractFindingTitles("## Findings").isEmpty());
+    }
+    
+    @Test
     void extractFindingTitlesSingleHeading() {
         String md = ""
             + "## Summary\n\nok\n"

@@ -31,6 +31,7 @@ class AiResourceImportPropertiesTest {
     void testLoadSourcesFromProperties() {
         Properties raw = new Properties();
         raw.setProperty("nacos.ai.resource.import.enabled", "true");
+        raw.setProperty("nacos.ai.resource.import.legacy-mcp-api-enabled", "true");
         raw.setProperty("nacos.ai.resource.import.default-connect-timeout-ms", "2000");
         raw.setProperty("nacos.ai.resource.import.default-max-artifact-size", "2048");
         raw.setProperty("nacos.ai.resource.import.sources[0].source-id", "mcp-official");
@@ -45,6 +46,7 @@ class AiResourceImportPropertiesTest {
         AiResourceImportProperties properties = AiResourceImportProperties.load(raw);
         
         assertTrue(properties.isEnabled());
+        assertTrue(properties.isLegacyMcpImportApiEnabled());
         assertFalse(properties.isAllowUserUrl());
         assertEquals(2000, properties.getDefaultConnectTimeoutMillis());
         assertEquals(2048, properties.getDefaultMaxArtifactSize());

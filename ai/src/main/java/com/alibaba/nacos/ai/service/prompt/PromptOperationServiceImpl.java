@@ -94,6 +94,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private static final String VERSION_STATUS_REVIEWING = "reviewing";
     
+    private static final String VERSION_STATUS_REVIEWED = "reviewed";
+    
     private static final String VERSION_STATUS_OFFLINE = "offline";
     
     private static final String DEFAULT_AUTHOR = "-";
@@ -277,30 +279,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     @Override
     public void deleteDraft(String namespaceId, String promptKey) throws NacosException {
-        AiResource meta = requireMeta(namespaceId, promptKey);
-        VisibilityHelper.checkWritableResource(meta);
-        PromptVersionInfoPojo info = requireVersionInfo(meta);
-        String editing = info.getEditingVersion();
-        if (StringUtils.isBlank(editing)) {
-            return;
-        }
-        
-        AiResourceVersion v =
-            resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
-                editing);
-        
-        // 1) meta: clear editingVersion reference first
-        info.setEditingVersion(null);
-        updateMetaVersionInfoCas(namespaceId, meta, info);
-        
-        // 2) version row, then storage files
-        if (v != null && VERSION_STATUS_DRAFT.equalsIgnoreCase(v.getStatus())) {
-            resourceManager.deleteVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, editing);
-            deletePromptStorageForVersion(namespaceId, promptKey, editing);
-        }
-        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, editing,
-            AiResourceTraceService.OP_DELETE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
-            VisibilityHelper.resolveClientIp());
+        resourceManager.doDeleteDraft(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+            v -> deletePromptStorageForVersion(namespaceId, promptKey, v.getVersion()));
     }
     
     @Override
@@ -500,6 +480,12 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
             }
         }
+    }
+    
+    @Override
+    public void redraft(String namespaceId, String promptKey, String version)
+        throws NacosException {
+        resourceManager.doRedraft(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version);
     }
     
     @Override

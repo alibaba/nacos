@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +47,8 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -99,6 +102,40 @@ class HttpHealthCheckProcessorTest {
         
         verify(healthCheckTaskV2).getClient();
         verify(healthCheckInstancePublishInfo).tryStartCheck();
+    }
+    
+    @Test
+    void testProcessReturnsWhenInstanceMissing() {
+        when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(null);
+        
+        httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(healthCheckTaskV2).getClient();
+    }
+    
+    @Test
+    void testProcessReevaluatesWhenPreviousCheckStillRunning() {
+        when(healthCheckInstancePublishInfo.tryStartCheck()).thenReturn(false);
+        when(healthCheckTaskV2.getCheckRtNormalized()).thenReturn(10L);
+        
+        httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(healthCheckCommon).reEvaluateCheckRt(20L, healthCheckTaskV2,
+            switchDomain.getHttpHealthParams());
+    }
+    
+    @Test
+    void testProcessHandlesHealthCheckerFailure() {
+        when(healthCheckInstancePublishInfo.tryStartCheck()).thenReturn(true);
+        
+        httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(healthCheckInstancePublishInfo)
+            .setCheckRt(switchDomain.getHttpHealthParams().getMax());
+        verify(healthCheckCommon).checkFail(eq(healthCheckTaskV2), eq(service),
+            startsWith("http:error:"));
+        verify(healthCheckCommon).reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(),
+            healthCheckTaskV2, switchDomain.getHttpHealthParams());
     }
     
     @Test
@@ -165,6 +202,20 @@ class HttpHealthCheckProcessorTest {
     }
     
     @Test
+    void testOnReceiveWithMovedTemp()
+        throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
+        InstantiationException {
+        Object objects = newCallback();
+        int code = HttpURLConnection.HTTP_MOVED_TEMP;
+        when(restResult.getCode()).thenReturn(code);
+        Method onReceive = objects.getClass().getMethod("onReceive", RestResult.class);
+        onReceive.invoke(objects, restResult);
+        
+        verify(healthCheckCommon).checkFail(healthCheckTaskV2, service,
+            "http:" + restResult.getCode());
+    }
+    
+    @Test
     void testOnReceiveWithNotFound()
         throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
         InstantiationException, InterruptedException {
@@ -211,15 +262,8 @@ class HttpHealthCheckProcessorTest {
     @Test
     void testOnError() throws NoSuchMethodException, IllegalAccessException,
         InvocationTargetException, InstantiationException {
-        Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
-        Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
-        Class<?> aClass = Arrays.stream(classes).findFirst().get();
-        Constructor<?> constructor = aClass.getConstructor(HttpHealthCheckProcessor.class,
-            HealthCheckInstancePublishInfo.class,
-            HealthCheckTaskV2.class, Service.class);
-        Object objects = constructor.newInstance(httpHealthCheckProcessor,
-            healthCheckInstancePublishInfo, healthCheckTaskV2, service);
-        Method onReceive = aClass.getMethod("onError", Throwable.class);
+        Object objects = newCallback();
+        Method onReceive = objects.getClass().getMethod("onError", Throwable.class);
         onReceive.invoke(objects, connectException);
         
         verify(healthCheckCommon).checkFailNow(healthCheckTaskV2, service,
@@ -227,5 +271,54 @@ class HttpHealthCheckProcessorTest {
         verify(healthCheckCommon).reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(),
             healthCheckTaskV2,
             switchDomain.getHttpHealthParams());
+    }
+    
+    @Test
+    void testOnErrorWithTimeoutException()
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException,
+        InstantiationException {
+        Object objects = newCallback();
+        when(healthCheckTaskV2.getCheckRtNormalized()).thenReturn(10L);
+        Method onReceive = objects.getClass().getMethod("onError", Throwable.class);
+        onReceive.invoke(objects, new SocketTimeoutException("timeout"));
+        
+        verify(healthCheckCommon).checkFail(healthCheckTaskV2, service, "http:timeout");
+        verify(healthCheckCommon).reEvaluateCheckRt(20L, healthCheckTaskV2,
+            switchDomain.getHttpHealthParams());
+    }
+    
+    @Test
+    void testOnErrorWithGenericException()
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException,
+        InstantiationException {
+        Object objects = newCallback();
+        Method onReceive = objects.getClass().getMethod("onError", Throwable.class);
+        onReceive.invoke(objects, new IllegalStateException("broken"));
+        
+        verify(healthCheckCommon).checkFail(healthCheckTaskV2, service, "http:error:broken");
+        verify(healthCheckCommon).reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(),
+            healthCheckTaskV2, switchDomain.getHttpHealthParams());
+    }
+    
+    @Test
+    void testOnCancel()
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException,
+        InstantiationException {
+        Object objects = newCallback();
+        Method onCancel = objects.getClass().getMethod("onCancel");
+        
+        onCancel.invoke(objects);
+    }
+    
+    private Object newCallback() throws NoSuchMethodException, InvocationTargetException,
+        InstantiationException, IllegalAccessException {
+        Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
+        Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
+        Class<?> aClass = Arrays.stream(classes).findFirst().get();
+        Constructor<?> constructor = aClass.getConstructor(HttpHealthCheckProcessor.class,
+            HealthCheckInstancePublishInfo.class,
+            HealthCheckTaskV2.class, Service.class);
+        return constructor.newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo,
+            healthCheckTaskV2, service);
     }
 }

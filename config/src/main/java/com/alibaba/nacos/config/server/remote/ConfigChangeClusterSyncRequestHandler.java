@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
@@ -49,6 +50,7 @@ import org.springframework.stereotype.Component;
  * @author liuzunfei
  * @version $Id: ConfigChangeClusterSyncRequestHandler.java, v 0.1 2020年08月11日 4:35 PM liuzunfei Exp $
  */
+@Since("2.0.0")
 @Component
 @InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 public class ConfigChangeClusterSyncRequestHandler

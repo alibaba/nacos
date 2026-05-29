@@ -355,6 +355,26 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
     }
     
     @Override
+    public boolean redraft(String namespaceId, String agentSpecName, String version)
+        throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("agentSpecName", agentSpecName);
+        params.put("version", version);
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, agentSpecName))
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_AGENTSPEC_ADMIN_PATH + "/redraft")
+                .setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+    
+    @Override
     public boolean updateLabels(String namespaceId, String agentSpecName, String labels)
         throws NacosException {
         namespaceId = resolveNamespace(namespaceId);

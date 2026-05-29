@@ -50,6 +50,22 @@ class ClientInfoTest {
     }
     
     @Test
+    void testGetClientInfoForCsharp() {
+        String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.CSHARP_CLIENT);
+        ClientInfo actual = new ClientInfo(userAgent);
+        assertEquals(ClientInfo.ClientType.CSHARP, actual.type);
+        assertEquals(testVersionString, actual.version.toString());
+    }
+    
+    @Test
+    void testGetClientInfoForPhp() {
+        String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.PHP_CLIENT);
+        ClientInfo actual = new ClientInfo(userAgent);
+        assertEquals(ClientInfo.ClientType.PHP, actual.type);
+        assertEquals(testVersionString, actual.version.toString());
+    }
+    
+    @Test
     void testGetClientInfoForCpp() {
         String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.CPP_CLIENT);
         ClientInfo actual = new ClientInfo(userAgent);
@@ -95,6 +111,21 @@ class ClientInfoTest {
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.UNKNOWN, actual.type);
         assertEquals("0.0.0", actual.version.toString());
+    }
+    
+    @Test
+    void testGetClientInfoWithoutVersionMarker() {
+        ClientInfo actual = new ClientInfo(ClientInfo.ClientTypeDescription.JAVA_CLIENT);
+        
+        assertEquals(ClientInfo.ClientType.JAVA, actual.type);
+        assertEquals("0.0.0", actual.version.toString());
+    }
+    
+    @Test
+    void testNewClientTypeDescription() {
+        ClientInfo.ClientTypeDescription actual = new ClientInfo.ClientTypeDescription();
+        
+        assertEquals(ClientInfo.ClientTypeDescription.class, actual.getClass());
     }
     
     private String getUserAgent(String client) {

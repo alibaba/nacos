@@ -53,11 +53,11 @@ import java.util.stream.Collectors;
  * <p>Adapt the External data(mcp server json file, mcp registry api data) to Nacos MCP server format
  * {@link McpServerDetailInfo}. MCP official formats docs.</p>
  *
- * <p>1. MCP Server format is defined in 
+ * <p>1. MCP Server format is defined in
  * <a href="https://github.com/modelcontextprotocol/registry/blob/main/docs/reference/server-json/server.schema.json">
  * server.schema.json</a>.</p>
  *
- * <p>2. MCP Registry Api is defined in 
+ * <p>2. MCP Registry Api is defined in
  * <a href="https://github.com/modelcontextprotocol/registry/blob/main/docs/reference/api/openapi.yaml">
  * openapi.yaml</a>.</p>
  *
@@ -119,6 +119,52 @@ public class McpExternalDataAdaptor {
         } else {
             throw new IllegalArgumentException("Unsupported import type: " + externalDataTypeEnum);
         }
+    }
+    
+    /**
+     * Fetch one official MCP registry page and adapt it to Nacos MCP server detail info.
+     *
+     * @param urlData registry endpoint
+     * @param cursor page cursor
+     * @param limit page size
+     * @param search search keyword
+     * @return adapted page result
+     * @throws Exception if registry fetch or adaptation failed
+     */
+    public UrlPageResult fetchOfficialRegistryPage(String urlData, String cursor, Integer limit,
+        String search)
+        throws Exception {
+        if (StringUtils.isBlank(urlData)) {
+            throw new IllegalArgumentException("URL is blank");
+        }
+        return fetchUrlPage(urlData.trim(), cursor, limit, search);
+    }
+    
+    /**
+     * Fetch one official MCP registry server by name or generated id.
+     *
+     * @param urlData registry endpoint
+     * @param externalId selected server name or generated id
+     * @param limit search page size
+     * @return adapted MCP server detail
+     * @throws Exception if registry fetch or adaptation failed
+     */
+    public McpServerDetailInfo fetchOfficialRegistryServer(String urlData, String externalId,
+        int limit) throws Exception {
+        if (StringUtils.isBlank(externalId)) {
+            throw new IllegalArgumentException("MCP server external id is blank");
+        }
+        int actualLimit = limit > 0 ? limit : 30;
+        UrlPageResult page = fetchOfficialRegistryPage(urlData, null, actualLimit, externalId);
+        if (CollectionUtils.isNotEmpty(page.getServers())) {
+            for (McpServerDetailInfo each : page.getServers()) {
+                if (StringUtils.equals(externalId, each.getName())
+                    || StringUtils.equals(externalId, each.getId())) {
+                    return each;
+                }
+            }
+        }
+        throw new IllegalStateException("MCP server not found in registry: " + externalId);
     }
     
     private UrlPageResult fetchUrlPage(String urlData, String cursor, Integer limit, String search)
@@ -192,9 +238,10 @@ public class McpExternalDataAdaptor {
      */
     private McpServerDetailInfo adaptOfficialMcpServerFromResponse(ServerResponse response) {
         McpServerDetailInfo adaptOfficialMcpServer = adaptOfficialMcpServer(response.getServer());
-        OfficialMeta official = response.getMeta().getOfficial();
         ServerVersionDetail versionDetail = adaptOfficialMcpServer.getVersionDetail();
-        if (versionDetail != null) {
+        OfficialMeta official =
+            response.getMeta() == null ? null : response.getMeta().getOfficial();
+        if (versionDetail != null && official != null) {
             versionDetail.setRelease_date(official.getPublishedAt());
             versionDetail.setIs_latest(true);
             String status = official.getStatus();

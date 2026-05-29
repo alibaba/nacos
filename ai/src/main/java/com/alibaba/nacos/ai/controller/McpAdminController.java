@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
@@ -72,6 +73,7 @@ public class McpAdminController {
      * @return mcp server list wrapper with {@link Result}
      * @throws NacosApiException if request parameter is invalid or handle error
      */
+    @Since("3.0.1")
     @GetMapping(value = "/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<Page<McpServerBasicInfo>> listMcpServers(McpListForm mcpListForm,
@@ -92,6 +94,7 @@ public class McpAdminController {
      * @return detail info with {@link McpServerDetailInfo}
      * @throws NacosException any exception during handling
      */
+    @Since("3.0.1")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<McpServerDetailInfo> getMcpServer(McpForm mcpForm) throws NacosException {
@@ -107,6 +110,7 @@ public class McpAdminController {
      * @param mcpForm create mcp server request form
      * @throws NacosException any exception during handling
      */
+    @Since("3.0.1")
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> createMcpServer(McpDetailForm mcpForm) throws NacosException {
@@ -131,6 +135,7 @@ public class McpAdminController {
      * @param mcpForm update mcp servers request form
      * @throws NacosException any exception during handling
      */
+    @Since("3.0.1")
     @PutMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateMcpServer(McpUpdateForm mcpForm) throws NacosException {
@@ -151,6 +156,7 @@ public class McpAdminController {
      * @param mcpForm delete mcp server request form
      * @throws NacosException any exception during handling
      */
+    @Since("3.0.1")
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteMcpServer(McpForm mcpForm) throws NacosException {
