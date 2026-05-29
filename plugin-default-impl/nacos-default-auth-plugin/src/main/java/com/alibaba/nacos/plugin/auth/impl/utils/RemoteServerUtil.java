@@ -38,11 +38,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class RemoteServerUtil {
     
+    private static final String DEFAULT_REMOTE_SERVER_CONTEXT_PATH = "/nacos";
+    
     private static List<String> serverAddresses = new LinkedList<>();
     
     private static AtomicInteger index = new AtomicInteger();
     
-    private static String remoteServerContextPath = "/nacos";
+    private static String remoteServerContextPath = DEFAULT_REMOTE_SERVER_CONTEXT_PATH;
     
     static {
         readRemoteServerAddress();
@@ -51,8 +53,12 @@ public class RemoteServerUtil {
     }
     
     private static void initRemoteServerContextPath() {
+        if (EnvUtil.getEnvironment() == null) {
+            return;
+        }
         remoteServerContextPath =
-            EnvUtil.getProperty("nacos.console.remote.server.context-path", "/nacos");
+            EnvUtil.getProperty("nacos.console.remote.server.context-path",
+                DEFAULT_REMOTE_SERVER_CONTEXT_PATH);
     }
     
     private static void registerWatcher() {
