@@ -120,8 +120,9 @@ public class SkillsShImportService implements AiResourceImportService {
         try {
             AiResourceImportSource source = requireSource(context);
             String apiRoot = resolveApiRoot(source);
+            int resultLimit = resolveLimit(context.getLimit());
             ImportHttpResponse response = fetchUrl(source, searchUrl(apiRoot,
-                resolveQuery(context.getQuery()), resolveLimit(context.getLimit())));
+                resolveQuery(context.getQuery()), resolveSearchFetchLimit(resultLimit)));
             if (!response.isSuccess()) {
                 throw new IllegalStateException(
                     "HTTP " + response.getStatusCode() + " when fetching " + response.getUrl());
@@ -129,7 +130,7 @@ public class SkillsShImportService implements AiResourceImportService {
             SkillsShSearchResponse searchResponse =
                 JacksonUtils.toObj(response.getBody(), SkillsShSearchResponse.class);
             AiResourceImportCandidatePage result = new AiResourceImportCandidatePage();
-            result.setItems(toCandidates(apiRoot, searchResponse));
+            result.setItems(toCandidates(apiRoot, searchResponse, resultLimit));
             result.setHasMore(false);
             result.setNextCursor(null);
             return result;
@@ -183,6 +184,10 @@ public class SkillsShImportService implements AiResourceImportService {
         return limit <= 0 ? DEFAULT_LIMIT : limit;
     }
     
+    private int resolveSearchFetchLimit(int resultLimit) {
+        return Math.max(resultLimit, DEFAULT_LIMIT);
+    }
+    
     private String resolveQuery(String query) throws NacosException {
         if (StringUtils.isBlank(query)) {
             return DEFAULT_SEARCH_QUERY;
@@ -195,7 +200,7 @@ public class SkillsShImportService implements AiResourceImportService {
     }
     
     private List<AiResourceImportCandidate> toCandidates(String apiRoot,
-        SkillsShSearchResponse searchResponse) throws NacosException {
+        SkillsShSearchResponse searchResponse, int limit) throws NacosException {
         if (searchResponse == null || CollectionUtils.isEmpty(searchResponse.getSkills())) {
             return Collections.emptyList();
         }
@@ -205,9 +210,24 @@ public class SkillsShImportService implements AiResourceImportService {
             if (each == null || StringUtils.isBlank(each.getId())) {
                 continue;
             }
+            if (!isSupportedRepositorySource(each.getSource())) {
+                continue;
+            }
             result.add(toCandidate(apiRoot, each));
+            if (result.size() >= limit) {
+                break;
+            }
         }
         return result;
+    }
+    
+    private boolean isSupportedRepositorySource(String repositorySource) {
+        if (StringUtils.isBlank(repositorySource)) {
+            return true;
+        }
+        String[] segments = repositorySource.split("/");
+        return segments.length == 2 && StringUtils.isNotBlank(segments[0])
+            && StringUtils.isNotBlank(segments[1]);
     }
     
     private AiResourceImportCandidate toCandidate(String apiRoot, SkillsShSearchItem item)
@@ -264,9 +284,7 @@ public class SkillsShImportService implements AiResourceImportService {
     }
     
     private void validateRepositorySource(String repositorySource) throws NacosException {
-        String[] segments = repositorySource.split("/");
-        if (segments.length != 2 || StringUtils.isBlank(segments[0])
-            || StringUtils.isBlank(segments[1])) {
+        if (!isSupportedRepositorySource(repositorySource)) {
             throw invalid("skills.sh repository source must use owner/repo format.");
         }
     }

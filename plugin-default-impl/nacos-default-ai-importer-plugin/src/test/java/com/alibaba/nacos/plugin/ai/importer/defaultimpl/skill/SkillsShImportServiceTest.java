@@ -111,6 +111,18 @@ class SkillsShImportServiceTest {
     }
     
     @Test
+    void testSearchSkipsUnsupportedRepositorySource() throws Exception {
+        AiResourceImportContext context = newContext();
+        context.setQuery("skill");
+        context.setLimit(30);
+        
+        AiResourceImportCandidatePage result = importService.search(context);
+        
+        assertEquals(1, result.getItems().size());
+        assertEquals("openai/skills/pdf", result.getItems().get(0).getExternalId());
+    }
+    
+    @Test
     void testSearchRejectsOneCharacterQuery() {
         AiResourceImportContext context = newContext();
         context.setQuery("p");
@@ -196,7 +208,12 @@ class SkillsShImportServiceTest {
             + "\"skillId\":\"pdf\","
             + "\"name\":\"pdf\","
             + "\"installs\":3330,"
-            + "\"source\":\"openai/skills\"}"
+            + "\"source\":\"openai/skills\"},"
+            + "{\"id\":\"skills.volces.com/find-skills-skill\","
+            + "\"skillId\":\"find-skills-skill\","
+            + "\"name\":\"find-skills-skill\","
+            + "\"installs\":123,"
+            + "\"source\":\"skills.volces.com\"}"
             + "]}";
     }
     
@@ -219,8 +236,8 @@ class SkillsShImportServiceTest {
     private HttpResponse<byte[]> responseFor(HttpRequest request) {
         URI uri = request.uri();
         if ("/api/search".equals(uri.getPath())) {
-            assertTrue("q=pdf&limit=2".equals(uri.getQuery())
-                || "q=skill&limit=12".equals(uri.getQuery()));
+            assertTrue("q=pdf&limit=30".equals(uri.getQuery())
+                || "q=skill&limit=30".equals(uri.getQuery()));
             return response(200, searchJson());
         }
         if ("/api/download/openai/skills/pdf".equals(uri.getPath())) {
