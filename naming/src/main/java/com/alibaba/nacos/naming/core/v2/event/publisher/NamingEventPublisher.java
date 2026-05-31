@@ -42,7 +42,8 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
     
     private static final int DEFAULT_WAIT_TIME = 60;
     
-    private final Map<Class<? extends Event>, Set<Subscriber<? extends Event>>> subscribes = new ConcurrentHashMap<>();
+    private final Map<Class<? extends Event>, Set<Subscriber<? extends Event>>> subscribes =
+        new ConcurrentHashMap<>();
     
     private volatile boolean initialized = false;
     
@@ -77,7 +78,8 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
     
     @Override
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
-        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>()).add(subscriber);
+        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>())
+            .add(subscriber);
     }
     
     @Override
@@ -98,7 +100,9 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
         checkIsStart();
         boolean success = this.queue.offer(event);
         if (!success) {
-            Loggers.EVT_LOG.warn("Unable to plug in due to interruption, synchronize sending time, event : {}", event);
+            Loggers.EVT_LOG.warn(
+                "Unable to plug in due to interruption, synchronize sending time, event : {}",
+                event);
             handleEvent(event);
         }
         return true;
@@ -134,8 +138,9 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
             waitSubscriberForInit();
             handleEvents();
         } catch (Exception e) {
-            Loggers.EVT_LOG.error("Naming Event Publisher {}, stop to handle event due to unexpected exception: ",
-                    this.publisherName, e);
+            Loggers.EVT_LOG.error(
+                "Naming Event Publisher {}, stop to handle event due to unexpected exception: ",
+                this.publisherName, e);
         }
     }
     
@@ -156,7 +161,8 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
                 final Event event = queue.take();
                 handleEvent(event);
             } catch (InterruptedException e) {
-                Loggers.EVT_LOG.warn("Naming Event Publisher {} take event from queue failed:", this.publisherName, e);
+                Loggers.EVT_LOG.warn("Naming Event Publisher {} take event from queue failed:",
+                    this.publisherName, e);
                 // set the interrupted flag
                 Thread.currentThread().interrupt();
             }
@@ -168,7 +174,8 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
         Set<Subscriber<? extends Event>> subscribers = subscribes.get(eventType);
         if (null == subscribers) {
             if (Loggers.EVT_LOG.isDebugEnabled()) {
-                Loggers.EVT_LOG.debug("[NotifyCenter] No subscribers for slow event {}", eventType.getName());
+                Loggers.EVT_LOG.debug("[NotifyCenter] No subscribers for slow event {}",
+                    eventType.getName());
             }
             return;
         }
@@ -184,7 +191,8 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
     }
     
     public String getStatus() {
-        return String.format("Publisher %-30s: shutdown=%5s, queue=%7d/%-7d", publisherName, shutdown,
-                currentEventSize(), queueMaxSize);
+        return String.format("Publisher %-30s: shutdown=%5s, queue=%7d/%-7d", publisherName,
+            shutdown,
+            currentEventSize(), queueMaxSize);
     }
 }

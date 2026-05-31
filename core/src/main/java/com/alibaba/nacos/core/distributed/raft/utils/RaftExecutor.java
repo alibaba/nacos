@@ -54,28 +54,31 @@ public final class RaftExecutor {
      */
     public static void init(RaftConfig config) {
         
-        int raftCoreThreadNum = Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_CORE_THREAD_NUM, "8"));
+        int raftCoreThreadNum =
+            Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_CORE_THREAD_NUM, "8"));
         int raftCliServiceThreadNum = Integer
-                .parseInt(config.getValOfDefault(RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM, "4"));
+            .parseInt(config.getValOfDefault(RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM, "4"));
         
         raftCoreExecutor = ExecutorFactory.Managed.newFixedExecutorService(OWNER, raftCoreThreadNum,
-                new NameThreadFactory("com.alibaba.nacos.core.raft-core"));
+            new NameThreadFactory("com.alibaba.nacos.core.raft-core"));
         
-        raftCliServiceExecutor = ExecutorFactory.Managed.newFixedExecutorService(OWNER, raftCliServiceThreadNum,
+        raftCliServiceExecutor =
+            ExecutorFactory.Managed.newFixedExecutorService(OWNER, raftCliServiceThreadNum,
                 new NameThreadFactory("com.alibaba.nacos.core.raft-cli-service"));
         
         raftCommonExecutor = ExecutorFactory.Managed.newScheduledExecutorService(OWNER, 8,
-                new NameThreadFactory("com.alibaba.nacos.core.protocol.raft-common"));
+            new NameThreadFactory("com.alibaba.nacos.core.protocol.raft-common"));
         
         int snapshotNum = raftCoreThreadNum / 2;
         snapshotNum = snapshotNum == 0 ? raftCoreThreadNum : snapshotNum;
         
         raftSnapshotExecutor = ExecutorFactory.Managed.newFixedExecutorService(OWNER, snapshotNum,
-                        new NameThreadFactory("com.alibaba.nacos.core.raft-snapshot"));
+            new NameThreadFactory("com.alibaba.nacos.core.raft-snapshot"));
         
     }
     
-    public static void scheduleRaftMemberRefreshJob(Runnable runnable, long initialDelay, long period, TimeUnit unit) {
+    public static void scheduleRaftMemberRefreshJob(Runnable runnable, long initialDelay,
+        long period, TimeUnit unit) {
         raftCommonExecutor.scheduleAtFixedRate(runnable, initialDelay, period, unit);
     }
     

@@ -77,7 +77,8 @@ public class LongPollingService {
         
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.clientMd5Map.containsKey(groupKey)) {
-                lisentersGroupkeyStatus.put(clientLongPolling.ip, clientLongPolling.clientMd5Map.get(groupKey).getMd5());
+                lisentersGroupkeyStatus.put(clientLongPolling.ip,
+                    clientLongPolling.clientMd5Map.get(groupKey).getMd5());
             }
         }
         sampleResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
@@ -91,7 +92,8 @@ public class LongPollingService {
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.ip.equals(clientIp)) {
                 // One ip can have multiple listener.
-                for (Map.Entry<String, ConfigListenState> entry : clientLongPolling.clientMd5Map.entrySet()) {
+                for (Map.Entry<String, ConfigListenState> entry : clientLongPolling.clientMd5Map
+                    .entrySet()) {
                     lisenersGroupkeyStatus.put(entry.getKey(), entry.getValue().getMd5());
                 }
             }
@@ -111,7 +113,8 @@ public class LongPollingService {
         SampleResult mergeResult = new SampleResult();
         Map<String, String> lisentersGroupkeyStatus = new HashMap<>(50);
         for (SampleResult sampleResult : sampleResults) {
-            Map<String, String> lisentersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
+            Map<String, String> lisentersGroupkeyStatusTmp =
+                sampleResult.getLisentersGroupkeyStatus();
             for (Map.Entry<String, String> entry : lisentersGroupkeyStatusTmp.entrySet()) {
                 lisentersGroupkeyStatus.put(entry.getKey(), entry.getValue());
             }
@@ -145,9 +148,11 @@ public class LongPollingService {
         for (int i = 0; i < SAMPLE_TIMES; i++) {
             SampleResult sampleTmp = getSubscribleInfoByIp(ip);
             if (sampleTmp != null) {
-                if (sampleTmp.getLisentersGroupkeyStatus() != null && !sampleResult.getLisentersGroupkeyStatus()
+                if (sampleTmp.getLisentersGroupkeyStatus() != null
+                    && !sampleResult.getLisentersGroupkeyStatus()
                         .equals(sampleTmp.getLisentersGroupkeyStatus())) {
-                    sampleResult.getLisentersGroupkeyStatus().putAll(sampleTmp.getLisentersGroupkeyStatus());
+                    sampleResult.getLisentersGroupkeyStatus()
+                        .putAll(sampleTmp.getLisentersGroupkeyStatus());
                 }
             }
             if (i < SAMPLE_TIMES - 1) {
@@ -169,8 +174,9 @@ public class LongPollingService {
      * @param clientMd5Map     clientMd5Map.
      * @param probeRequestSize probeRequestSize.
      */
-    public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, ConfigListenState> clientMd5Map,
-            int probeRequestSize) {
+    public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp,
+        Map<String, ConfigListenState> clientMd5Map,
+        int probeRequestSize) {
         
         String noHangUpFlag = req.getHeader(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER);
         
@@ -178,14 +184,16 @@ public class LongPollingService {
         Map<String, ConfigListenState> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
         if (changedGroups.size() > 0) {
             generateResponse(req, rsp, changedGroups);
-            LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
-                    RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
-                    changedGroups.size());
+            LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start,
+                "instant",
+                RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
+                changedGroups.size());
             return;
         } else if (noHangUpFlag != null && noHangUpFlag.equalsIgnoreCase(TRUE_STR)) {
-            LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
-                    RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
-                    changedGroups.size());
+            LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start,
+                "nohangup",
+                RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
+                changedGroups.size());
             return;
         }
         
@@ -197,28 +205,33 @@ public class LongPollingService {
         ConnectionCheckResponse connectionCheckResponse = checkLimit(req);
         if (!connectionCheckResponse.isSuccess()) {
             RpcScheduledExecutor.CONTROL_SCHEDULER.schedule(
-                    () -> generate503Response(asyncContext, rsp, connectionCheckResponse.getMessage()),
-                    1000L + ThreadLocalRandom.current().nextInt(2000), TimeUnit.MILLISECONDS);
+                () -> generate503Response(asyncContext, rsp, connectionCheckResponse.getMessage()),
+                1000L + ThreadLocalRandom.current().nextInt(2000), TimeUnit.MILLISECONDS);
             return;
         }
         
         String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         String tag = req.getHeader("Vipserver-Tag");
         int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
-        int minLongPoolingTimeout = SwitchService.getSwitchInteger("MIN_LONG_POOLING_TIMEOUT", 10000);
+        int minLongPoolingTimeout =
+            SwitchService.getSwitchInteger("MIN_LONG_POOLING_TIMEOUT", 10000);
         
         // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
         String requestLongPollingTimeOut = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
-        long timeout = Math.max(minLongPoolingTimeout, Long.parseLong(requestLongPollingTimeOut) - delayTime);
+        long timeout =
+            Math.max(minLongPoolingTimeout, Long.parseLong(requestLongPollingTimeOut) - delayTime);
         ConfigExecutor.executeLongPolling(
-                new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
+            new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout,
+                appName, tag));
     }
     
     private ConnectionCheckResponse checkLimit(HttpServletRequest httpServletRequest) {
         String ip = RequestUtil.getRemoteIp(httpServletRequest);
         String appName = httpServletRequest.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
-        ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest(ip, appName, "LongPolling");
-        ConnectionCheckResponse checkResponse = ControlManagerCenter.getInstance().getConnectionControlManager()
+        ConnectionCheckRequest connectionCheckRequest =
+            new ConnectionCheckRequest(ip, appName, "LongPolling");
+        ConnectionCheckResponse checkResponse =
+            ControlManagerCenter.getInstance().getConnectionControlManager()
                 .check(connectionCheckRequest);
         return checkResponse;
     }
@@ -269,17 +282,21 @@ public class LongPollingService {
         @Override
         public void run() {
             try {
-                for (Iterator<ClientLongPolling> iter = allSubs.iterator(); iter.hasNext(); ) {
+                for (Iterator<ClientLongPolling> iter = allSubs.iterator(); iter.hasNext();) {
                     ClientLongPolling clientSub = iter.next();
                     if (clientSub.clientMd5Map.containsKey(groupKey)) {
                         
                         getRetainIps().put(clientSub.ip, System.currentTimeMillis());
                         iter.remove(); // Delete subscribers' relationships.
-                        LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - changeTime),
-                                "in-advance",
-                                RequestUtil.getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
-                                "polling", clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
-                        clientSub.sendResponse(Collections.singletonMap(groupKey, clientSub.clientMd5Map.get(groupKey)));
+                        LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}",
+                            (System.currentTimeMillis() - changeTime),
+                            "in-advance",
+                            RequestUtil.getRemoteIp(
+                                (HttpServletRequest) clientSub.asyncContext.getRequest()),
+                            "polling", clientSub.clientMd5Map.size(), clientSub.probeRequestSize,
+                            groupKey);
+                        clientSub.sendResponse(Collections.singletonMap(groupKey,
+                            clientSub.clientMd5Map.get(groupKey)));
                     }
                 }
                 
@@ -320,9 +337,11 @@ public class LongPollingService {
                     
                     if (removeFlag) {
                         
-                        LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime),
-                                "timeout", RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
-                                "polling", clientMd5Map.size(), probeRequestSize);
+                        LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}",
+                            (System.currentTimeMillis() - createTime),
+                            "timeout",
+                            RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+                            "polling", clientMd5Map.size(), probeRequestSize);
                         sendResponse(null);
                         
                     } else {
@@ -372,8 +391,9 @@ public class LongPollingService {
             }
         }
         
-        ClientLongPolling(AsyncContext ac, Map<String, ConfigListenState> clientMd5Map, String ip, int probeRequestSize,
-                long timeoutTime, String appName, String tag) {
+        ClientLongPolling(AsyncContext ac, Map<String, ConfigListenState> clientMd5Map, String ip,
+            int probeRequestSize,
+            long timeoutTime, String appName, String tag) {
             this.asyncContext = ac;
             this.clientMd5Map = clientMd5Map;
             this.probeRequestSize = probeRequestSize;
@@ -404,13 +424,16 @@ public class LongPollingService {
         
         @Override
         public String toString() {
-            return "ClientLongPolling{" + "clientMd5Map=" + clientMd5Map + ", createTime=" + createTime + ", ip='" + ip
-                    + '\'' + ", appName='" + appName + '\'' + ", tag='" + tag + '\'' + ", probeRequestSize="
-                    + probeRequestSize + ", timeoutTime=" + timeoutTime + '}';
+            return "ClientLongPolling{" + "clientMd5Map=" + clientMd5Map + ", createTime="
+                + createTime + ", ip='" + ip
+                + '\'' + ", appName='" + appName + '\'' + ", tag='" + tag + '\''
+                + ", probeRequestSize="
+                + probeRequestSize + ", timeoutTime=" + timeoutTime + '}';
         }
     }
     
-    void generateResponse(HttpServletRequest request, HttpServletResponse response, Map<String, ConfigListenState> changedGroups) {
+    void generateResponse(HttpServletRequest request, HttpServletResponse response,
+        Map<String, ConfigListenState> changedGroups) {
         if (null == changedGroups) {
             return;
         }
@@ -428,7 +451,8 @@ public class LongPollingService {
         }
     }
     
-    void generate503Response(AsyncContext asyncContext, HttpServletResponse response, String message) {
+    void generate503Response(AsyncContext asyncContext, HttpServletResponse response,
+        String message) {
         
         try {
             

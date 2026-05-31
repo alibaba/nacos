@@ -64,7 +64,8 @@ class ListenerControllerV3Test {
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(listenerControllerV3, "configListenerStateDelegate", configListenerStateDelegate);
+        ReflectionTestUtils.setField(listenerControllerV3, "configListenerStateDelegate",
+            configListenerStateDelegate);
         mockmvc = MockMvcBuilders.standaloneSetup(listenerControllerV3).build();
     }
     
@@ -75,12 +76,16 @@ class ListenerControllerV3Test {
         Map<String, String> map = new HashMap<>();
         map.put("test", "test");
         sampleResult.setListenersStatus(map);
-        when(configListenerStateDelegate.getListenerStateByIp("localhost", true)).thenReturn(sampleResult);
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+            .thenReturn(sampleResult);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
-                .param("ip", "localhost").param("all", "true").param("namespaceId", "test").param("sampleTime", "1");
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
+                .param("ip", "localhost").param("all", "true").param("namespaceId", "test")
+                .param("sampleTime", "1");
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         ConfigListenerInfo configListenerInfo = JacksonUtils.toObj(data, ConfigListenerInfo.class);
@@ -88,6 +93,78 @@ class ListenerControllerV3Test {
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, configListenerInfo.getQueryType());
         assertEquals(map.get("test"), resultMap.get("test"));
         
+    }
+    
+    @Test
+    void testGetAllSubClientConfigByIpEmptyListeners() throws Exception {
+        ConfigListenerInfo sampleResult = new ConfigListenerInfo();
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+            .thenReturn(sampleResult);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
+                .param("ip", "localhost").param("all", "true");
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());
+    }
+    
+    @Test
+    void testGetAllSubClientConfigByIpWithNamespaceFilter() throws Exception {
+        ConfigListenerInfo sampleResult = new ConfigListenerInfo();
+        Map<String, String> map = new HashMap<>();
+        map.put("dataId+group+ns1", "md5a");
+        map.put("dataId+group+ns2", "md5b");
+        sampleResult.setListenersStatus(map);
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+            .thenReturn(sampleResult);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
+                .param("ip", "localhost").param("all", "false")
+                .param("namespaceId", "ns1");
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());
+    }
+    
+    @Test
+    void testGetAllSubClientConfigByIpWithAllFlag() throws Exception {
+        ConfigListenerInfo sampleResult = new ConfigListenerInfo();
+        Map<String, String> map = new HashMap<>();
+        map.put("dataId+group+tenant", "md5");
+        sampleResult.setListenersStatus(map);
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+            .thenReturn(sampleResult);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
+                .param("ip", "localhost").param("all", "true");
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        String data = JacksonUtils.toObj(actualValue).get("data").toString();
+        ConfigListenerInfo configListenerInfo = JacksonUtils.toObj(data, ConfigListenerInfo.class);
+        assertEquals("md5", configListenerInfo.getListenersStatus().get("dataId+group+tenant"));
+    }
+    
+    @Test
+    void testGetAllSubClientConfigByIpKeepsDefaultNamespaceWhenAllIsFalse()
+        throws Exception {
+        ConfigListenerInfo sampleResult = new ConfigListenerInfo();
+        Map<String, String> map = new HashMap<>();
+        map.put("dataId+group", "md5");
+        sampleResult.setListenersStatus(map);
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+            .thenReturn(sampleResult);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
+                .param("ip", "localhost").param("all", "false");
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        String data = JacksonUtils.toObj(actualValue).get("data").toString();
+        ConfigListenerInfo configListenerInfo = JacksonUtils.toObj(data, ConfigListenerInfo.class);
+        assertEquals("md5", configListenerInfo.getListenersStatus().get("dataId+group"));
     }
     
 }

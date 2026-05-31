@@ -22,13 +22,13 @@ package com.alibaba.nacos.airegistry.form;
  * @author xinluo
  */
 public class ListServersNacosForm extends ListServersOfficialForm {
-
+    
     private String namespaceId;
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }

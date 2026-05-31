@@ -56,7 +56,8 @@ class NamingFuzzyWatchSyncRequestTest {
         Context context = Context.build(SERVICE_KEY, CHANGED_TYPE);
         contexts.add(context);
         
-        NamingFuzzyWatchSyncRequest request = new NamingFuzzyWatchSyncRequest(GROUP_KEY_PATTERN, SYNC_TYPE, contexts);
+        NamingFuzzyWatchSyncRequest request =
+            new NamingFuzzyWatchSyncRequest(GROUP_KEY_PATTERN, SYNC_TYPE, contexts);
         request.setTotalBatch(2);
         request.setCurrentBatch(1);
         
@@ -73,9 +74,11 @@ class NamingFuzzyWatchSyncRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"groupKeyPattern\":\"groupKeyPattern\",\"contexts\":[{\"serviceKey\":\"serviceKey\","
+        String json =
+            "{\"headers\":{},\"groupKeyPattern\":\"groupKeyPattern\",\"contexts\":[{\"serviceKey\":\"serviceKey\","
                 + "\"changedType\":\"changedType\"}],\"totalBatch\":2,\"currentBatch\":1,\"syncType\":\"syncType\",\"module\":\"naming\"}";
-        NamingFuzzyWatchSyncRequest actual = mapper.readValue(json, NamingFuzzyWatchSyncRequest.class);
+        NamingFuzzyWatchSyncRequest actual =
+            mapper.readValue(json, NamingFuzzyWatchSyncRequest.class);
         assertEquals(GROUP_KEY_PATTERN, actual.getGroupKeyPattern());
         assertEquals(SYNC_TYPE, actual.getSyncType());
         assertEquals(2, actual.getTotalBatch());
@@ -95,7 +98,7 @@ class NamingFuzzyWatchSyncRequestTest {
         contexts.add(context);
         
         NamingFuzzyWatchSyncRequest request = NamingFuzzyWatchSyncRequest.buildSyncNotifyRequest(
-                GROUP_KEY_PATTERN, SYNC_TYPE, contexts, 3, 2);
+            GROUP_KEY_PATTERN, SYNC_TYPE, contexts, 3, 2);
         
         assertEquals(GROUP_KEY_PATTERN, request.getGroupKeyPattern());
         assertEquals(SYNC_TYPE, request.getSyncType());

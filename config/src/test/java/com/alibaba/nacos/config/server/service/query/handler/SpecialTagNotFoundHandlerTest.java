@@ -43,7 +43,8 @@ class SpecialTagNotFoundHandlerTest {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setTag("someTag");
         ConfigQueryChainResponse response = specialTagNotFoundHandler.handle(request);
-        assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND, response.getStatus());
+        assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND,
+            response.getStatus());
     }
     
     @Test

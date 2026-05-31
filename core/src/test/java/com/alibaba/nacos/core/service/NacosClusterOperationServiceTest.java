@@ -139,7 +139,7 @@ class NacosClusterOperationServiceTest {
         verify(serverMemberManager).switchLookup("test");
         assertTrue(result);
     }
-
+    
     @Test
     void testListNodesEmptyAddress() throws NacosException {
         Member member = new Member();
@@ -147,12 +147,12 @@ class NacosClusterOperationServiceTest {
         member.setPort(8848);
         member.setState(NodeState.UP);
         when(serverMemberManager.allMembers()).thenReturn(Arrays.asList(member));
-
+        
         Collection<Member> result = nacosClusterOperationService.listNodes("", null);
         assertEquals(1, result.size());
         assertEquals("1.1.1.1:8848", result.iterator().next().getAddress());
     }
-
+    
     @Test
     void testUpdateNodesWhenUpdateReturnsFalse() {
         Member member = new Member();
@@ -160,7 +160,7 @@ class NacosClusterOperationServiceTest {
         member.setPort(8848);
         member.setAddress("1.1.1.1:8848");
         when(serverMemberManager.update(any())).thenReturn(false);
-
+        
         Boolean result = nacosClusterOperationService.updateNodes(Arrays.asList(member));
         assertTrue(result);
         verify(serverMemberManager, times(1)).update(any());

@@ -34,5 +34,5 @@ public interface TenantInfoMapper extends Mapper {
     default String getTableName() {
         return TableConstant.TENANT_INFO;
     }
-
+    
 }

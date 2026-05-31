@@ -30,7 +30,8 @@ class RequestResourceTest {
     
     @Test
     void testBuildNamingRequestResource() {
-        RequestResource actual = RequestResource.namingBuilder().setNamespace("NS").setGroup("G").setResource("Service").build();
+        RequestResource actual = RequestResource.namingBuilder().setNamespace("NS").setGroup("G")
+            .setResource("Service").build();
         assertEquals(SignType.NAMING, actual.getType());
         assertEquals("NS", actual.getNamespace());
         assertEquals("G", actual.getGroup());
@@ -39,10 +40,28 @@ class RequestResourceTest {
     
     @Test
     void testBuildConfigRequestResource() {
-        RequestResource actual = RequestResource.configBuilder().setNamespace("NS").setGroup("G").setResource("dataId").build();
+        RequestResource actual = RequestResource.configBuilder().setNamespace("NS").setGroup("G")
+            .setResource("dataId").build();
         assertEquals(SignType.CONFIG, actual.getType());
         assertEquals("NS", actual.getNamespace());
         assertEquals("G", actual.getGroup());
         assertEquals("dataId", actual.getResource());
+    }
+    
+    @Test
+    void testBuildLockAndAiRequestResource() {
+        RequestResource lock = RequestResource.lockBuilder().setNamespace("lockNs")
+            .setGroup("lockGroup").setResource("lock").build();
+        RequestResource ai = RequestResource.aiBuilder().setNamespace("aiNs").setGroup("aiGroup")
+            .setResource("skill").build();
+        
+        assertEquals(SignType.LOCK, lock.getType());
+        assertEquals("lockNs", lock.getNamespace());
+        assertEquals("lockGroup", lock.getGroup());
+        assertEquals("lock", lock.getResource());
+        assertEquals(SignType.AI, ai.getType());
+        assertEquals("aiNs", ai.getNamespace());
+        assertEquals("aiGroup", ai.getGroup());
+        assertEquals("skill", ai.getResource());
     }
 }

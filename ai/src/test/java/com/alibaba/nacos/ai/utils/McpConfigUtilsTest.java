@@ -42,7 +42,8 @@ class McpConfigUtilsTest {
     @Test
     void testFormatServerSpecInfoDataId() {
         String result = McpConfigUtils.formatServerSpecInfoDataId(TEST_SERVER_ID, TEST_VERSION);
-        assertEquals("%s-%s-mcp-server.json", Constants.SERVER_SPECIFICATION_CONFIG_DATA_ID_TEMPLATE);
+        assertEquals("%s-%s-mcp-server.json",
+            Constants.SERVER_SPECIFICATION_CONFIG_DATA_ID_TEMPLATE);
         assertEquals("test-server-id-v1.0.0-mcp-server.json", result);
     }
     
@@ -68,25 +69,25 @@ class McpConfigUtilsTest {
     @Test
     void testIsConfigFoundPositive() {
         assertTrue(McpConfigUtils.isConfigFound(
-                ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL));
+            ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL));
     }
     
     @Test
     void testIsConfigFoundNegative() {
         assertFalse(McpConfigUtils.isConfigFound(
-                ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND));
+            ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND));
     }
     
     @Test
     void testIsConfigNotFoundPositive() {
         assertTrue(McpConfigUtils.isConfigNotFound(
-                ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND));
+            ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND));
     }
     
     @Test
     void testIsConfigNotFoundNegative() {
         assertFalse(McpConfigUtils.isConfigNotFound(
-                ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL));
+            ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL));
     }
     
     @Test

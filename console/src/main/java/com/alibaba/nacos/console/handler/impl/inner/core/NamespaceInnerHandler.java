@@ -53,14 +53,15 @@ public class NamespaceInnerHandler implements NamespaceHandler {
     
     @Override
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
-            throws NacosException {
+        throws NacosException {
         return namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc);
     }
     
     @Override
     public Boolean updateNamespace(NamespaceForm namespaceForm) throws NacosException {
-        return namespaceOperationService.editNamespace(namespaceForm.getNamespaceId(), namespaceForm.getNamespaceName(),
-                namespaceForm.getNamespaceDesc());
+        return namespaceOperationService.editNamespace(namespaceForm.getNamespaceId(),
+            namespaceForm.getNamespaceName(),
+            namespaceForm.getNamespaceDesc());
     }
     
     @Override
@@ -73,4 +74,3 @@ public class NamespaceInnerHandler implements NamespaceHandler {
         return namespaceOperationService.namespaceExists(namespaceId);
     }
 }
-

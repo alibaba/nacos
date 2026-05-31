@@ -24,35 +24,35 @@ import java.util.List;
  * @author nacos
  */
 public class ResourceFilesPipelineContext extends PublishPipelineContext {
-
+    
     @FunctionalInterface
     public interface FilesLoader {
-
+        
         List<ResourceFileContent> load();
     }
-
+    
     /**
      * Resource file content list loaded from storage.
      */
     private List<ResourceFileContent> files;
-
+    
     private FilesLoader filesLoader;
-
+    
     public List<ResourceFileContent> getFiles() {
         if (files == null && filesLoader != null) {
             files = filesLoader.load();
         }
         return files;
     }
-
+    
     public void setFiles(List<ResourceFileContent> files) {
         this.files = files;
     }
-
+    
     public FilesLoader getFilesLoader() {
         return filesLoader;
     }
-
+    
     public void setFilesLoader(FilesLoader filesLoader) {
         this.filesLoader = filesLoader;
     }

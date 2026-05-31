@@ -80,12 +80,14 @@ public class MetricsMonitor {
     /**
      * version -> naming subscriber count.
      */
-    private final ConcurrentHashMap<String, AtomicInteger> namingSubscriber = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicInteger> namingSubscriber =
+        new ConcurrentHashMap<>();
     
     /**
      * version -> naming publisher count.
      */
-    private final ConcurrentHashMap<String, AtomicInteger> namingPublisher = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicInteger> namingPublisher =
+        new ConcurrentHashMap<>();
     
     /**
      * topn service change count.
@@ -109,22 +111,26 @@ public class MetricsMonitor {
         
         List<Tag> tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v1"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_subscriber", tags, namingSubscriber.get("v1"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_subscriber", tags,
+            namingSubscriber.get("v1"));
         
         tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v2"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_subscriber", tags, namingSubscriber.get("v2"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_subscriber", tags,
+            namingSubscriber.get("v2"));
         
         namingPublisher.put("v1", new AtomicInteger(0));
         namingPublisher.put("v2", new AtomicInteger(0));
         
         tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v1"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_publisher", tags, namingPublisher.get("v1"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_publisher", tags,
+            namingPublisher.get("v1"));
         
         tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v2"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_publisher", tags, namingPublisher.get("v2"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_publisher", tags,
+            namingPublisher.get("v2"));
     }
     
     private <T extends Number> void registerToMetrics(String name, T number) {
@@ -256,12 +262,14 @@ public class MetricsMonitor {
     }
     
     public static Counter getDiskException() {
-        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "naming", "name", "disk");
+        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module",
+            "naming", "name", "disk");
     }
     
     public static Counter getLeaderSendBeatFailedException() {
         return NacosMeterRegistryCenter
-                .counter(METER_REGISTRY, "nacos_exception", "module", "naming", "name", "leaderSendBeatFailed");
+            .counter(METER_REGISTRY, "nacos_exception", "module", "naming", "name",
+                "leaderSendBeatFailed");
     }
     
     /**
@@ -271,7 +279,7 @@ public class MetricsMonitor {
      * @param instancePublishInfo must be BatchInstancePublishInfo
      */
     public static void incrementIpCountWithBatchRegister(InstancePublishInfo old,
-            BatchInstancePublishInfo instancePublishInfo) {
+        BatchInstancePublishInfo instancePublishInfo) {
         int newSize = instancePublishInfo.getInstancePublishInfos().size();
         if (null == old) {
             // First time increment batchPublishInfo, add all into metrics.
@@ -292,8 +300,10 @@ public class MetricsMonitor {
      * @param instancePublishInfo must be BatchInstancePublishInfo
      */
     public static void decrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
-        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
-        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
+        BatchInstancePublishInfo batchInstancePublishInfo =
+            (BatchInstancePublishInfo) instancePublishInfo;
+        List<InstancePublishInfo> instancePublishInfos =
+            batchInstancePublishInfo.getInstancePublishInfos();
         getIpCountMonitor().addAndGet(-1 * instancePublishInfos.size());
     }
     

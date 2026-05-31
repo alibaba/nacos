@@ -37,18 +37,18 @@ import org.springframework.stereotype.Service;
 public class PipelineNoopHandler implements PipelineHandler {
     
     private static final String NOT_ENABLED_MSG =
-            "Nacos AI Pipeline module requires both `naming` and `config` module.";
+        "Nacos AI Pipeline module requires both `naming` and `config` module.";
     
     @Override
     public PipelineExecution getPipeline(String pipelineId) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
-                ErrorCode.API_FUNCTION_DISABLED, NOT_ENABLED_MSG);
+            ErrorCode.API_FUNCTION_DISABLED, NOT_ENABLED_MSG);
     }
     
     @Override
     public Page<PipelineExecution> listPipelines(String resourceType, String resourceName,
-            String namespaceId, String version, int pageNo, int pageSize) throws NacosException {
+        String namespaceId, String version, int pageNo, int pageSize) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
-                ErrorCode.API_FUNCTION_DISABLED, NOT_ENABLED_MSG);
+            ErrorCode.API_FUNCTION_DISABLED, NOT_ENABLED_MSG);
     }
 }

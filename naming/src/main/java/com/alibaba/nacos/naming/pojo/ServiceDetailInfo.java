@@ -32,9 +32,9 @@ import java.util.Map;
  */
 @Deprecated
 public class ServiceDetailInfo implements Serializable {
-
+    
     private static final long serialVersionUID = 6351606608785841722L;
-
+    
     private String namespace;
     
     private String serviceName;
@@ -151,7 +151,8 @@ public class ServiceDetailInfo implements Serializable {
      * @param newServiceDetailInfo new {@link com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo}
      * @return this deprecated one
      */
-    public static ServiceDetailInfo from(com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo newServiceDetailInfo) {
+    public static ServiceDetailInfo from(
+        com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo newServiceDetailInfo) {
         ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
         serviceDetailInfo.setNamespace(newServiceDetailInfo.getNamespaceId());
         serviceDetailInfo.setServiceName(newServiceDetailInfo.getServiceName());
@@ -160,9 +161,11 @@ public class ServiceDetailInfo implements Serializable {
         serviceDetailInfo.setProtectThreshold(newServiceDetailInfo.getProtectThreshold());
         serviceDetailInfo.setSelector(newServiceDetailInfo.getSelector());
         serviceDetailInfo.setEphemeral(newServiceDetailInfo.isEphemeral());
-        Map<String, ClusterInfo> clusterInfoMap = new HashMap<>(newServiceDetailInfo.getClusterMap().size());
-        for (Map.Entry<String, com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo> entry : newServiceDetailInfo.getClusterMap()
-                .entrySet()) {
+        Map<String, ClusterInfo> clusterInfoMap =
+            new HashMap<>(newServiceDetailInfo.getClusterMap().size());
+        for (Map.Entry<String, com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo> entry : newServiceDetailInfo
+            .getClusterMap()
+            .entrySet()) {
             clusterInfoMap.put(entry.getKey(), ClusterInfo.from(entry.getValue()));
         }
         serviceDetailInfo.setClusterMap(clusterInfoMap);

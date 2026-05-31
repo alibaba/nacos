@@ -33,10 +33,10 @@ public class DefaultConfigQueryHandlerChainBuilder implements ConfigQueryHandler
     public ConfigQueryHandlerChain build() {
         ConfigQueryHandlerChain chain = new ConfigQueryHandlerChain();
         chain.addHandler(new ConfigChainEntryHandler())
-                .addHandler(new ConfigContentTypeHandler())
-                .addHandler(new GrayRuleMatchHandler())
-                .addHandler(new SpecialTagNotFoundHandler())
-                .addHandler(new FormalHandler());
+            .addHandler(new ConfigContentTypeHandler())
+            .addHandler(new GrayRuleMatchHandler())
+            .addHandler(new SpecialTagNotFoundHandler())
+            .addHandler(new FormalHandler());
         return chain;
     }
     

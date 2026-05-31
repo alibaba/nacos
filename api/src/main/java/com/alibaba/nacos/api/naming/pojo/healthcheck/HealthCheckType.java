@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author nkorange
  */
 public enum HealthCheckType {
+    
     /**
      * TCP type.
      */
@@ -54,7 +55,8 @@ public enum HealthCheckType {
      * In JDK 1.6, the map need full class for general. So ignore check style.
      */
     @SuppressWarnings("checkstyle:linelength")
-    private static final Map<String, Class<? extends AbstractHealthChecker>> EXTEND = new ConcurrentHashMap<>();
+    private static final Map<String, Class<? extends AbstractHealthChecker>> EXTEND =
+        new ConcurrentHashMap<>();
     
     HealthCheckType(Class<? extends AbstractHealthChecker> healthCheckerClass) {
         this.healthCheckerClass = healthCheckerClass;
@@ -66,7 +68,8 @@ public enum HealthCheckType {
      * @param type               type name of extend health checker
      * @param healthCheckerClass class of extend health checker
      */
-    public static void registerHealthChecker(String type, Class<? extends AbstractHealthChecker> healthCheckerClass) {
+    public static void registerHealthChecker(String type,
+        Class<? extends AbstractHealthChecker> healthCheckerClass) {
         if (!EXTEND.containsKey(type)) {
             EXTEND.put(type, healthCheckerClass);
             HealthCheckerFactory.registerSubType(healthCheckerClass, type);

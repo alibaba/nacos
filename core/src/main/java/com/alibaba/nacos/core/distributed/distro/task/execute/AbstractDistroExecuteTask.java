@@ -38,7 +38,8 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
     
     private final DistroComponentHolder distroComponentHolder;
     
-    protected AbstractDistroExecuteTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
+    protected AbstractDistroExecuteTask(DistroKey distroKey,
+        DistroComponentHolder distroComponentHolder) {
         this.distroKey = distroKey;
         this.distroComponentHolder = distroComponentHolder;
     }
@@ -106,7 +107,8 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
      */
     protected void handleFailedTask() {
         String type = getDistroKey().getResourceType();
-        DistroFailedTaskHandler failedTaskHandler = distroComponentHolder.findFailedTaskHandler(type);
+        DistroFailedTaskHandler failedTaskHandler =
+            distroComponentHolder.findFailedTaskHandler(type);
         if (null == failedTaskHandler) {
             Loggers.DISTRO.warn("[DISTRO] Can't find failed task for type {}, so discarded", type);
             return;
@@ -118,19 +120,22 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
         
         @Override
         public void onSuccess() {
-            DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
+            DistroRecord distroRecord =
+                DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
             distroRecord.syncSuccess();
             Loggers.DISTRO.info("[DISTRO-END] {} result: true", getDistroKey().toString());
         }
         
         @Override
         public void onFailed(Throwable throwable) {
-            DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
+            DistroRecord distroRecord =
+                DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
             distroRecord.syncFail();
             if (null == throwable) {
                 Loggers.DISTRO.info("[DISTRO-END] {} result: false", getDistroKey().toString());
             } else {
-                Loggers.DISTRO.warn("[DISTRO] Sync data change failed. key: {}", getDistroKey().toString(), throwable);
+                Loggers.DISTRO.warn("[DISTRO] Sync data change failed. key: {}",
+                    getDistroKey().toString(), throwable);
             }
             handleFailedTask();
         }

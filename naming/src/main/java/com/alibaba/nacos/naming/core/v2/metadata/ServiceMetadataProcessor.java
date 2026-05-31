@@ -60,8 +60,9 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     private final ReentrantReadWriteLock.ReadLock readLock;
     
     @SuppressWarnings("unchecked")
-    public ServiceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager,
-            ServiceStorage serviceStorage) {
+    public ServiceMetadataProcessor(NamingMetadataManager namingMetadataManager,
+        ProtocolManager protocolManager,
+        ServiceStorage serviceStorage) {
         this.namingMetadataManager = namingMetadataManager;
         this.serviceStorage = serviceStorage;
         this.serializer = SerializeFactory.getDefault();
@@ -73,7 +74,8 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(new ServiceMetadataSnapshotOperation(namingMetadataManager, lock));
+        return Collections
+            .singletonList(new ServiceMetadataSnapshotOperation(namingMetadataManager, lock));
     }
     
     @Override
@@ -85,7 +87,8 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     public Response onApply(WriteRequest request) {
         readLock.lock();
         try {
-            MetadataOperation<ServiceMetadata> op = serializer.deserialize(request.getData().toByteArray(), processType);
+            MetadataOperation<ServiceMetadata> op =
+                serializer.deserialize(request.getData().toByteArray(), processType);
             switch (DataOperation.valueOf(request.getOperation())) {
                 case ADD:
                     addClusterMetadataToService(op);
@@ -98,11 +101,12 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
                     break;
                 default:
                     return Response.newBuilder().setSuccess(false)
-                            .setErrMsg("Unsupported operation " + request.getOperation()).build();
+                        .setErrMsg("Unsupported operation " + request.getOperation()).build();
             }
             return Response.newBuilder().setSuccess(true).build();
         } catch (Exception e) {
-            Loggers.RAFT.error("onApply {} service metadata operation failed. ", request.getOperation(), e);
+            Loggers.RAFT.error("onApply {} service metadata operation failed. ",
+                request.getOperation(), e);
             String errorMessage = null == e.getMessage() ? e.getClass().getName() : e.getMessage();
             return Response.newBuilder().setSuccess(false).setErrMsg(errorMessage).build();
         } finally {
@@ -112,8 +116,10 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     
     private void addClusterMetadataToService(MetadataOperation<ServiceMetadata> op) {
         Service service = Service
-                .newService(op.getNamespace(), op.getGroup(), op.getServiceName(), op.getMetadata().isEphemeral());
-        Optional<ServiceMetadata> currentMetadata = namingMetadataManager.getServiceMetadata(service);
+            .newService(op.getNamespace(), op.getGroup(), op.getServiceName(),
+                op.getMetadata().isEphemeral());
+        Optional<ServiceMetadata> currentMetadata =
+            namingMetadataManager.getServiceMetadata(service);
         if (currentMetadata.isPresent()) {
             currentMetadata.get().getClusters().putAll(op.getMetadata().getClusters());
         } else {
@@ -124,8 +130,10 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     
     private void updateServiceMetadata(MetadataOperation<ServiceMetadata> op) {
         Service service = Service
-                .newService(op.getNamespace(), op.getGroup(), op.getServiceName(), op.getMetadata().isEphemeral());
-        Optional<ServiceMetadata> currentMetadata = namingMetadataManager.getServiceMetadata(service);
+            .newService(op.getNamespace(), op.getGroup(), op.getServiceName(),
+                op.getMetadata().isEphemeral());
+        Optional<ServiceMetadata> currentMetadata =
+            namingMetadataManager.getServiceMetadata(service);
         if (currentMetadata.isPresent()) {
             ServiceMetadata newMetadata = mergeMetadata(currentMetadata.get(), op.getMetadata());
             Service singleton = ServiceManager.getInstance().getSingleton(service);
@@ -145,7 +153,8 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
      * @param newMetadata new metadata
      * @return merged metadata
      */
-    private ServiceMetadata mergeMetadata(ServiceMetadata oldMetadata, ServiceMetadata newMetadata) {
+    private ServiceMetadata mergeMetadata(ServiceMetadata oldMetadata,
+        ServiceMetadata newMetadata) {
         ServiceMetadata result = new ServiceMetadata();
         result.setEphemeral(oldMetadata.isEphemeral());
         result.setClusters(oldMetadata.getClusters());

@@ -55,7 +55,7 @@ class PromptClientControllerTest {
         form.setPromptKey("p1");
         HttpServletResponse response = new MockHttpServletResponse();
         when(promptClientOperationService.queryPrompt("public", "p1", null, null, null))
-                .thenThrow(new NacosException(NacosException.NOT_MODIFIED, "up to date"));
+            .thenThrow(new NacosException(NacosException.NOT_MODIFIED, "up to date"));
         
         Result<Prompt> result = controller.queryPrompt(form, response);
         
@@ -73,7 +73,8 @@ class PromptClientControllerTest {
         versionInfo.setVersion("1.0.0");
         versionInfo.setTemplate("template");
         versionInfo.setMd5("md5");
-        when(promptClientOperationService.queryPrompt("public", "p1", null, null, null)).thenReturn(versionInfo);
+        when(promptClientOperationService.queryPrompt("public", "p1", null, null, null))
+            .thenReturn(versionInfo);
         
         Result<Prompt> result = controller.queryPrompt(form, response);
         
@@ -89,7 +90,7 @@ class PromptClientControllerTest {
         form.setPromptKey("p1");
         HttpServletResponse response = new MockHttpServletResponse();
         when(promptClientOperationService.queryPrompt("public", "p1", null, null, null))
-                .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
+            .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
         
         assertThrows(NacosException.class, () -> controller.queryPrompt(form, response));
     }

@@ -28,35 +28,35 @@ import java.util.Map;
  */
 @Component
 public class NacosResourceManager {
-
+    
     private ResourceSnapshot resourceSnapshot;
-
+    
     @Autowired
     NacosServiceInfoResourceWatcher serviceInfoResourceWatcher;
-
+    
     @Autowired
     private IstioConfig istioConfig;
-
+    
     public NacosResourceManager() {
         resourceSnapshot = new ResourceSnapshot(istioConfig);
     }
-
+    
     public Map<String, IstioService> services() {
         return serviceInfoResourceWatcher.snapshot();
     }
-
+    
     public IstioConfig getIstioConfig() {
         return istioConfig;
     }
-
+    
     public synchronized ResourceSnapshot getResourceSnapshot() {
         return resourceSnapshot;
     }
-
+    
     public synchronized void setResourceSnapshot(ResourceSnapshot resourceSnapshot) {
         this.resourceSnapshot = resourceSnapshot;
     }
-
+    
     public void initResourceSnapshot() {
         ResourceSnapshot resourceSnapshot = getResourceSnapshot();
         resourceSnapshot.initResourceSnapshot(this);

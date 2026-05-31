@@ -32,7 +32,7 @@ import java.util.Properties;
  * @author boyan
  */
 public class ResourceUtils {
-
+    
     private ResourceUtils() {
     }
     
@@ -51,7 +51,8 @@ public class ResourceUtils {
             
             ClassLoader classLoader = ResourceUtils.class.getClassLoader();
             
-            URL url = (classLoader != null ? classLoader.getResource(path) : ClassLoader.getSystemResource(path));
+            URL url = (classLoader != null ? classLoader.getResource(path)
+                : ClassLoader.getSystemResource(path));
             if (url == null) {
                 throw new FileNotFoundException("Resource [" + resource + "] does not exist");
             }
@@ -108,7 +109,8 @@ public class ResourceUtils {
      * @return The resource
      * @throws IOException If the resource cannot be found or read
      */
-    public static InputStream getResourceAsStream(ClassLoader loader, String resource) throws IOException {
+    public static InputStream getResourceAsStream(ClassLoader loader, String resource)
+        throws IOException {
         InputStream in = null;
         if (loader != null) {
             in = loader.getResourceAsStream(resource);
@@ -142,7 +144,8 @@ public class ResourceUtils {
      * @return The resource
      * @throws IOException If the resource cannot be found or read
      */
-    public static Properties getResourceAsProperties(ClassLoader loader, String resource) throws IOException {
+    public static Properties getResourceAsProperties(ClassLoader loader, String resource)
+        throws IOException {
         Properties props = new Properties();
         InputStream in = getResourceAsStream(loader, resource);
         props.load(in);
@@ -157,7 +160,8 @@ public class ResourceUtils {
      * @return The resource
      * @throws IOException If the resource cannot be found or read
      */
-    public static InputStreamReader getResourceAsReader(String resource, String charsetName) throws IOException {
+    public static InputStreamReader getResourceAsReader(String resource, String charsetName)
+        throws IOException {
         return new InputStreamReader(getResourceAsStream(resource), charsetName);
     }
     
@@ -169,8 +173,9 @@ public class ResourceUtils {
      * @return The resource
      * @throws IOException If the resource cannot be found or read
      */
-    public static Reader getResourceAsReader(ClassLoader loader, String resource, String charsetName)
-            throws IOException {
+    public static Reader getResourceAsReader(ClassLoader loader, String resource,
+        String charsetName)
+        throws IOException {
         return new InputStreamReader(getResourceAsStream(loader, resource), charsetName);
     }
     

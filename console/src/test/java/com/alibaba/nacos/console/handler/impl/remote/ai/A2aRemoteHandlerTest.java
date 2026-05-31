@@ -78,9 +78,11 @@ public class A2aRemoteHandlerTest extends AbstractRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setRegistrationType(REGISTRATION_TYPE);
         
-        when(a2aMaintainerService.registerAgent(eq(agentCard), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE))).thenReturn(true);
+        when(a2aMaintainerService.registerAgent(eq(agentCard), eq(NAMESPACE_ID),
+            eq(REGISTRATION_TYPE))).thenReturn(true);
         a2aRemoteHandler.registerAgent(agentCard, form);
-        verify(a2aMaintainerService).registerAgent(eq(agentCard), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE));
+        verify(a2aMaintainerService).registerAgent(eq(agentCard), eq(NAMESPACE_ID),
+            eq(REGISTRATION_TYPE));
     }
     
     @Test
@@ -93,13 +95,15 @@ public class A2aRemoteHandlerTest extends AbstractRemoteHandlerTest {
         AgentCardDetailInfo expectedDetailInfo = new AgentCardDetailInfo();
         expectedDetailInfo.setName(AGENT_NAME);
         
-        when(a2aMaintainerService.getAgentCard(eq(AGENT_NAME), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE))).thenReturn(
+        when(a2aMaintainerService.getAgentCard(eq(AGENT_NAME), eq(NAMESPACE_ID),
+            eq(REGISTRATION_TYPE))).thenReturn(
                 expectedDetailInfo);
         
         AgentCardDetailInfo actualDetailInfo = a2aRemoteHandler.getAgentCardWithVersions(form);
         
         assertEquals(expectedDetailInfo, actualDetailInfo);
-        verify(a2aMaintainerService).getAgentCard(eq(AGENT_NAME), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE));
+        verify(a2aMaintainerService).getAgentCard(eq(AGENT_NAME), eq(NAMESPACE_ID),
+            eq(REGISTRATION_TYPE));
     }
     
     @Test
@@ -126,11 +130,12 @@ public class A2aRemoteHandlerTest extends AbstractRemoteHandlerTest {
         form.setRegistrationType(REGISTRATION_TYPE);
         
         when(a2aMaintainerService.updateAgentCard(eq(agentCard), eq(NAMESPACE_ID), eq(true),
-                eq(REGISTRATION_TYPE))).thenReturn(true);
+            eq(REGISTRATION_TYPE))).thenReturn(true);
         
         a2aRemoteHandler.updateAgentCard(agentCard, form);
         
-        verify(a2aMaintainerService).updateAgentCard(eq(agentCard), eq(NAMESPACE_ID), eq(true), eq(REGISTRATION_TYPE));
+        verify(a2aMaintainerService).updateAgentCard(eq(agentCard), eq(NAMESPACE_ID), eq(true),
+            eq(REGISTRATION_TYPE));
     }
     
     @Test
@@ -146,14 +151,17 @@ public class A2aRemoteHandlerTest extends AbstractRemoteHandlerTest {
         
         Page<AgentCardVersionInfo> expectedPage = new Page<>();
         
-        when(a2aMaintainerService.searchAgentCardsByName(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(PAGE_NO),
-                eq(PAGE_SIZE))).thenReturn(expectedPage);
+        when(a2aMaintainerService.searchAgentCardsByName(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(PAGE_NO),
+            eq(PAGE_SIZE))).thenReturn(expectedPage);
         
-        Page<AgentCardVersionInfo> actualPage = a2aRemoteHandler.listAgents(agentListForm, pageForm);
+        Page<AgentCardVersionInfo> actualPage =
+            a2aRemoteHandler.listAgents(agentListForm, pageForm);
         
         assertEquals(expectedPage, actualPage);
-        verify(a2aMaintainerService).searchAgentCardsByName(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(PAGE_NO),
-                eq(PAGE_SIZE));
+        verify(a2aMaintainerService).searchAgentCardsByName(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(PAGE_NO),
+            eq(PAGE_SIZE));
     }
     
     @Test
@@ -170,12 +178,14 @@ public class A2aRemoteHandlerTest extends AbstractRemoteHandlerTest {
         Page<AgentCardVersionInfo> expectedPage = new Page<>();
         
         when(a2aMaintainerService.listAgentCards(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(PAGE_NO),
-                eq(PAGE_SIZE))).thenReturn(expectedPage);
+            eq(PAGE_SIZE))).thenReturn(expectedPage);
         
-        Page<AgentCardVersionInfo> actualPage = a2aRemoteHandler.listAgents(agentListForm, pageForm);
+        Page<AgentCardVersionInfo> actualPage =
+            a2aRemoteHandler.listAgents(agentListForm, pageForm);
         
         assertEquals(expectedPage, actualPage);
-        verify(a2aMaintainerService).listAgentCards(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(PAGE_NO), eq(PAGE_SIZE));
+        verify(a2aMaintainerService).listAgentCards(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(PAGE_NO),
+            eq(PAGE_SIZE));
     }
     
     @Test
@@ -185,9 +195,11 @@ public class A2aRemoteHandlerTest extends AbstractRemoteHandlerTest {
         version.setVersion("1.0.0");
         expectedVersions.add(version);
         
-        when(a2aMaintainerService.listAllVersionOfAgent(eq(AGENT_NAME), eq(NAMESPACE_ID))).thenReturn(expectedVersions);
+        when(a2aMaintainerService.listAllVersionOfAgent(eq(AGENT_NAME), eq(NAMESPACE_ID)))
+            .thenReturn(expectedVersions);
         
-        List<AgentVersionDetail> actualVersions = a2aRemoteHandler.listAgentVersions(NAMESPACE_ID, AGENT_NAME);
+        List<AgentVersionDetail> actualVersions =
+            a2aRemoteHandler.listAgentVersions(NAMESPACE_ID, AGENT_NAME);
         
         assertEquals(expectedVersions, actualVersions);
         verify(a2aMaintainerService).listAllVersionOfAgent(eq(AGENT_NAME), eq(NAMESPACE_ID));

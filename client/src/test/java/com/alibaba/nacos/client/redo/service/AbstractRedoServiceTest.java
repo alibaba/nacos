@@ -177,6 +177,6 @@ class AbstractRedoServiceTest {
     }
     
     private static class MockRedoData extends RedoData<String> {
-    
+        
     }
 }

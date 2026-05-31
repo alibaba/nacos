@@ -29,16 +29,19 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implements NacosTaskExecuteEngine<T> {
+public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask>
+    implements NacosTaskExecuteEngine<T> {
     
     private final Logger log;
     
-    private final ConcurrentHashMap<Object, NacosTaskProcessor> taskProcessors = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Object, NacosTaskProcessor> taskProcessors =
+        new ConcurrentHashMap<>();
     
     private NacosTaskProcessor defaultTaskProcessor;
     
     public AbstractNacosTaskExecuteEngine(Logger logger) {
-        this.log = null != logger ? logger : LoggerFactory.getLogger(AbstractNacosTaskExecuteEngine.class.getName());
+        this.log = null != logger ? logger
+            : LoggerFactory.getLogger(AbstractNacosTaskExecuteEngine.class.getName());
     }
     
     @Override

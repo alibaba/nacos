@@ -71,7 +71,8 @@ class ServiceInfoTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String example = "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],"
+        String example =
+            "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],"
                 + "\"lastRefTime\":0,\"checksum\":\"\",\"allIps\":false,\"valid\":true,\"groupName\":\"\"}";
         ServiceInfo actual = mapper.readValue(example, ServiceInfo.class);
         assertEquals("G@@testName", actual.getName());
@@ -110,7 +111,7 @@ class ServiceInfoTest {
     void testGetKeyWithException() {
         try (MockedStatic<URLEncoder> mockedStatic = Mockito.mockStatic(URLEncoder.class)) {
             mockedStatic.when(() -> URLEncoder.encode(Mockito.anyString(), Mockito.anyString()))
-                    .thenThrow(new UnsupportedEncodingException());
+                .thenThrow(new UnsupportedEncodingException());
             String key = serviceInfo.getKeyEncoded();
             assertEquals(key, ServiceInfo.getKey("G@@testName", "testClusters"));
         }

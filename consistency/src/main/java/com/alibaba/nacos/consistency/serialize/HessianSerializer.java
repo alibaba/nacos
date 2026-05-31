@@ -58,7 +58,8 @@ public class HessianSerializer implements Serializer {
             return result;
         }
         throw new NacosDeserializationException(cls, new ClassCastException(
-                "%s cannot be cast to %s".format(result.getClass().getCanonicalName(), cls.getCanonicalName())));
+            "%s cannot be cast to %s".format(result.getClass().getCanonicalName(),
+                cls.getCanonicalName())));
     }
     
     @Override

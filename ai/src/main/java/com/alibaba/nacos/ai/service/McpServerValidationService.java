@@ -41,7 +41,7 @@ import java.util.Set;
  */
 @Service
 public class McpServerValidationService {
-
+    
     @Autowired
     private McpServerOperationService mcpServerOperationService;
     
@@ -53,8 +53,9 @@ public class McpServerValidationService {
      * @return validation result
      * @throws NacosException if validation fails
      */
-    public McpServerImportValidationResult validateServers(String namespaceId, List<McpServerDetailInfo> servers) 
-            throws NacosException {
+    public McpServerImportValidationResult validateServers(String namespaceId,
+        List<McpServerDetailInfo> servers)
+        throws NacosException {
         McpServerImportValidationResult result = new McpServerImportValidationResult();
         List<McpServerValidationItem> validationItems = new ArrayList<>();
         List<String> overallErrors = new ArrayList<>();
@@ -66,7 +67,8 @@ public class McpServerValidationService {
         
         try {
             for (McpServerDetailInfo server : servers) {
-                McpServerValidationItem item = validateSingleServer(namespaceId, server, serverNames);
+                McpServerValidationItem item =
+                    validateSingleServer(namespaceId, server, serverNames);
                 validationItems.add(item);
                 
                 switch (item.getStatus()) {
@@ -110,8 +112,9 @@ public class McpServerValidationService {
      * @param existingNames existing server names in current batch
      * @return validation item
      */
-    private McpServerValidationItem validateSingleServer(String namespaceId, McpServerDetailInfo server, 
-            Set<String> existingNames) {
+    private McpServerValidationItem validateSingleServer(String namespaceId,
+        McpServerDetailInfo server,
+        Set<String> existingNames) {
         McpServerValidationItem item = new McpServerValidationItem();
         List<String> errors = new ArrayList<>();
         
@@ -144,7 +147,8 @@ public class McpServerValidationService {
         }
         
         try {
-            if (isVersionedServerExist(namespaceId, serverName, server.getVersionDetail().getVersion())) {
+            if (isVersionedServerExist(namespaceId, serverName,
+                server.getVersionDetail().getVersion())) {
                 item.setExists(true);
                 if (!McpServerValidationConstants.STATUS_DUPLICATE.equals(item.getStatus())) {
                     item.setStatus(McpServerValidationConstants.STATUS_DUPLICATE);
@@ -168,10 +172,12 @@ public class McpServerValidationService {
         item.setErrors(errors);
         return item;
     }
-
-    private boolean isVersionedServerExist(String namespaceId, String serverName, String version) throws NacosException {
+    
+    private boolean isVersionedServerExist(String namespaceId, String serverName, String version)
+        throws NacosException {
         try {
-            McpServerDetailInfo existingServer = mcpServerOperationService.getMcpServerDetail(namespaceId, version, serverName, null);
+            McpServerDetailInfo existingServer = mcpServerOperationService
+                .getMcpServerDetail(namespaceId, version, serverName, null);
             return existingServer != null;
         } catch (NacosApiException e) {
             if (e.getDetailErrCode() == ErrorCode.MCP_SERVER_NOT_FOUND.getCode()) {
@@ -189,10 +195,10 @@ public class McpServerValidationService {
      */
     private boolean isValidProtocol(String protocol) {
         return AiConstants.Mcp.MCP_PROTOCOL_STDIO.equals(protocol)
-                || AiConstants.Mcp.MCP_PROTOCOL_SSE.equals(protocol)
-                || AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE.equals(protocol)
-                || AiConstants.Mcp.MCP_PROTOCOL_HTTP.equals(protocol)
-                || AiConstants.Mcp.MCP_PROTOCOL_DUBBO.equals(protocol);
+            || AiConstants.Mcp.MCP_PROTOCOL_SSE.equals(protocol)
+            || AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE.equals(protocol)
+            || AiConstants.Mcp.MCP_PROTOCOL_HTTP.equals(protocol)
+            || AiConstants.Mcp.MCP_PROTOCOL_DUBBO.equals(protocol);
     }
     
     /**
@@ -206,8 +212,10 @@ public class McpServerValidationService {
         
         if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equals(protocol)) {
             // For stdio protocol, check if command is provided
-            if (server.getLocalServerConfig() == null && CollectionUtils.isEmpty(server.getPackages())) {
-                errors.add("Local server configuration or packages are required for stdio protocol");
+            if (server.getLocalServerConfig() == null
+                && CollectionUtils.isEmpty(server.getPackages())) {
+                errors
+                    .add("Local server configuration or packages are required for stdio protocol");
             }
         } else {
             // For non-stdio protocols, basic validation
@@ -218,7 +226,8 @@ public class McpServerValidationService {
         
         // Validate tools if present
         if (server.getToolSpec() != null) {
-            if (server.getToolSpec().getTools() == null || server.getToolSpec().getTools().isEmpty()) {
+            if (server.getToolSpec().getTools() == null
+                || server.getToolSpec().getTools().isEmpty()) {
                 errors.add("Tool specification should contain at least one tool");
             }
         }

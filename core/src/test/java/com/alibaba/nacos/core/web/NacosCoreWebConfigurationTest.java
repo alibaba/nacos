@@ -35,28 +35,29 @@ import static org.mockito.Mockito.verify;
  */
 @ExtendWith(MockitoExtension.class)
 class NacosCoreWebConfigurationTest {
-
+    
     @Mock
     private ControllerMethodsCache methodsCache;
-
+    
     private NacosCoreWebConfiguration configuration;
-
+    
     @BeforeEach
     void setUp() {
         configuration = new NacosCoreWebConfiguration(methodsCache);
     }
-
+    
     @Test
     void initCallsMethodsCacheInitClassMethod() {
         configuration.init();
         verify(methodsCache).initClassMethod("com.alibaba.nacos.core.controller");
     }
-
+    
     @Test
     void formSizeFilterRegistrationReturnsBeanWithCorrectSettings() {
         FormSizeFilter filter = new FormSizeFilter(1024);
-        FilterRegistrationBean<FormSizeFilter> registration = configuration.formSizeFilterRegistration(filter);
-
+        FilterRegistrationBean<FormSizeFilter> registration =
+            configuration.formSizeFilterRegistration(filter);
+        
         assertNotNull(registration);
         assertEquals(filter, registration.getFilter());
         assertEquals(1, registration.getUrlPatterns().size());
@@ -64,11 +65,11 @@ class NacosCoreWebConfigurationTest {
         assertEquals("formSizeFilter", ReflectionTestUtils.getField(registration, "name"));
         assertEquals(5, registration.getOrder());
     }
-
+    
     @Test
     void formSizeFilterBeanCreatesFilterWithCorrectSize() {
         FormSizeFilter filter = configuration.formSizeFilter(DataSize.ofMegabytes(2));
-
+        
         assertNotNull(filter);
     }
 }

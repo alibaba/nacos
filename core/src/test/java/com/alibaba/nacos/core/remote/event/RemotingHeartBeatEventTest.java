@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RemotingHeartBeatEventTest {
-
+    
     @Test
     void constructorAndGetters() {
         RemotingHeartBeatEvent event = new RemotingHeartBeatEvent("conn-1", "127.0.0.1", "2.0");

@@ -26,7 +26,7 @@ import java.util.Map;
  * @since 3.2.0
  */
 public interface PluginStateApplier {
-
+    
     /**
      * Apply plugin state change.
      *
@@ -34,7 +34,7 @@ public interface PluginStateApplier {
      * @param enabled whether enabled
      */
     void applyStateChange(String pluginId, boolean enabled);
-
+    
     /**
      * Apply plugin config change.
      *

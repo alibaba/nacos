@@ -57,70 +57,82 @@ public class ConfigProxy {
     /**
      * Get configure information list.
      */
-    public Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
-            Map<String, Object> configAdvanceInfo) throws IOException, ServletException, NacosException {
-        return configHandler.getConfigList(pageNo, pageSize, dataId, group, namespaceId, configAdvanceInfo);
+    public Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId,
+        String group, String namespaceId,
+        Map<String, Object> configAdvanceInfo)
+        throws IOException, ServletException, NacosException {
+        return configHandler.getConfigList(pageNo, pageSize, dataId, group, namespaceId,
+            configAdvanceInfo);
     }
     
     /**
      * Get the specific configuration information.
      */
-    public ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
+    public ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId)
+        throws NacosException {
         return configHandler.getConfigDetail(dataId, group, namespaceId);
     }
     
     /**
      * Add or update configuration.
      */
-    public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo) throws NacosException {
+    public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo)
+        throws NacosException {
         return configHandler.publishConfig(configForm, configRequestInfo);
     }
     
     /**
      * Delete configuration.
      */
-    public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
-            String srcUser) throws NacosException {
+    public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag,
+        String clientIp,
+        String srcUser) throws NacosException {
         return configHandler.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser);
     }
     
     /**
      * Batch delete configurations.
      */
-    public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) throws NacosException {
+    public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser)
+        throws NacosException {
         return configHandler.batchDeleteConfigs(ids, clientIp, srcUser);
     }
     
     /**
      * Search config list by config detail.
      */
-    public Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
-            String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
-        return configHandler.getConfigListByContent(search, pageNo, pageSize, dataId, group, namespaceId,
-                configAdvanceInfo);
+    public Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize,
+        String dataId, String group,
+        String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
+        return configHandler.getConfigListByContent(search, pageNo, pageSize, dataId, group,
+            namespaceId,
+            configAdvanceInfo);
     }
     
     /**
      * Subscribe to configured client information.
      */
-    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, boolean aggregation)
-            throws Exception {
+    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId,
+        boolean aggregation)
+        throws Exception {
         return configHandler.getListeners(dataId, group, namespaceId, aggregation);
     }
     
     /**
      * Get subscription information based on IP, tenant, and other parameters.
      */
-    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, boolean aggregation)
-            throws NacosException {
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
+        boolean aggregation)
+        throws NacosException {
         return configHandler.getAllSubClientConfigByIp(ip, all, namespaceId, aggregation);
     }
     
     /**
      * New version export config adds metadata.yml file to record config metadata.
      */
-    public ResponseEntity<byte[]> exportConfigV2(String dataId, String group, String namespaceId, String appName,
-            List<Long> ids) throws Exception {
+    public ResponseEntity<byte[]> exportConfigV2(String dataId, String group, String namespaceId,
+        String appName,
+        List<Long> ids) throws Exception {
         return configHandler.exportConfig(dataId, group, namespaceId, appName, ids);
     }
     
@@ -128,32 +140,37 @@ public class ConfigProxy {
      * Imports and publishes a configuration from a file.
      */
     public Result<Map<String, Object>> importAndPublishConfig(String srcUser, String namespaceId,
-            SameConfigPolicy policy, MultipartFile file, String srcIp, String requestIpApp) throws NacosException {
-        return configHandler.importAndPublishConfig(srcUser, namespaceId, policy, file, srcIp, requestIpApp);
+        SameConfigPolicy policy, MultipartFile file, String srcIp, String requestIpApp)
+        throws NacosException {
+        return configHandler.importAndPublishConfig(srcUser, namespaceId, policy, file, srcIp,
+            requestIpApp);
     }
     
     /**
      * Clone configuration.
      */
     public Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
-            List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
-            String requestIpApp) throws NacosException {
-        return configHandler.cloneConfig(srcUser, namespaceId, configBeansList, policy, srcIp, requestIpApp);
+        List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
+        String requestIpApp) throws NacosException {
+        return configHandler.cloneConfig(srcUser, namespaceId, configBeansList, policy, srcIp,
+            requestIpApp);
     }
     
     /**
      * Remove beta configuration based on dataId, group, and namespaceId.
      */
-    public boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp,
-            String requestIpApp, String srcUser) throws NacosException {
-        return configHandler.removeBetaConfig(dataId, group, namespaceId, remoteIp, requestIpApp, srcUser);
+    public boolean removeBetaConfig(String dataId, String group, String namespaceId,
+        String remoteIp,
+        String requestIpApp, String srcUser) throws NacosException {
+        return configHandler.removeBetaConfig(dataId, group, namespaceId, remoteIp, requestIpApp,
+            srcUser);
     }
     
     /**
      * Query beta configuration based on dataId, group, and namespaceId.
      */
     public ConfigGrayInfo queryBetaConfig(String dataId, String group, String namespaceId)
-            throws NacosException {
+        throws NacosException {
         return configHandler.queryBetaConfig(dataId, group, namespaceId);
     }
 }

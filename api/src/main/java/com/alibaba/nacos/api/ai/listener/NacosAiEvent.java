@@ -22,5 +22,5 @@ package com.alibaba.nacos.api.ai.listener;
  * @author nkorange
  */
 public interface NacosAiEvent {
-
+    
 }

@@ -32,14 +32,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * {@link BatchInstanceRequestParamExtractor} unit test.
  */
 class BatchInstanceRequestParamExtractorTest {
-
+    
     private BatchInstanceRequestParamExtractor extractor;
-
+    
     @BeforeEach
     void setUp() {
         extractor = new BatchInstanceRequestParamExtractor();
     }
-
+    
     @Test
     void extractParamWithNullInstances() {
         BatchInstanceRequest request = new BatchInstanceRequest();
@@ -52,7 +52,7 @@ class BatchInstanceRequestParamExtractorTest {
         assertEquals(1, list.size());
         assertEquals("ns1", list.get(0).getNamespaceId());
     }
-
+    
     @Test
     void extractParamWithInstances() {
         BatchInstanceRequest request = new BatchInstanceRequest();

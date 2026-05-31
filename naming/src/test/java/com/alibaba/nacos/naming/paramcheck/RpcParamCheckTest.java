@@ -45,18 +45,23 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class RpcParamCheckTest {
     
     @Test
-    void testFilter() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    void testFilter()
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class);
-        mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any())).thenAnswer((k) -> k.getArgument(2));
+        mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any()))
+            .thenAnswer((k) -> k.getArgument(2));
         RemoteParamCheckFilter filter = new RemoteParamCheckFilter();
-        Method method = filter.getClass().getDeclaredMethod("filter", Request.class, RequestMeta.class, Class.class);
+        Method method = filter.getClass().getDeclaredMethod("filter", Request.class,
+            RequestMeta.class, Class.class);
         method.setAccessible(true);
         InstanceRequest request = new InstanceRequest();
         request.setNamespace("test111");
-        Response response = (Response) method.invoke(filter, request, null, InstanceRequestHandler.class);
+        Response response =
+            (Response) method.invoke(filter, request, null, InstanceRequestHandler.class);
         assertNull(response);
         request.setNamespace("test@@@");
-        Response response2 = (Response) method.invoke(filter, request, null, InstanceRequestHandler.class);
+        Response response2 =
+            (Response) method.invoke(filter, request, null, InstanceRequestHandler.class);
         assertEquals(400, response2.getErrorCode());
         mockedStatic.close();
     }

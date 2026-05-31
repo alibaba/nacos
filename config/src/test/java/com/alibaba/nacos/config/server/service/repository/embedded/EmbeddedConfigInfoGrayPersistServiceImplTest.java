@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
@@ -48,6 +49,7 @@ import java.util.List;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -91,15 +93,18 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
      */
     @BeforeEach
     public void before() {
-        embeddedStorageContextHolderMockedStatic = Mockito.mockStatic(EmbeddedStorageContextHolder.class);
+        embeddedStorageContextHolderMockedStatic =
+            Mockito.mockStatic(EmbeddedStorageContextHolder.class);
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         when(DynamicDataSource.getInstance()).thenReturn(dynamicDataSource);
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
-                .thenReturn(false);
-        embeddedConfigInfoGrayPersistService = new EmbeddedConfigInfoGrayPersistServiceImpl(databaseOperate,
+        envUtilMockedStatic
+            .when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
+            .thenReturn(false);
+        embeddedConfigInfoGrayPersistService =
+            new EmbeddedConfigInfoGrayPersistServiceImpl(databaseOperate,
                 idGeneratorManager, historyConfigInfoPersistService);
     }
     
@@ -130,26 +135,34 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         String grayName = "tag123grayName";
         String grayRule = "";
         
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null).thenReturn(configInfoStateWrapper);
+        Mockito
+            .when(databaseOperate.queryOne(anyString(),
+                eq(new Object[] {dataId, group, tenant, grayName}),
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(null).thenReturn(configInfoStateWrapper);
         
         String srcIp = "ip345678";
         String srcUser = "user1234567";
-        ConfigOperateResult configOperateResult = embeddedConfigInfoGrayPersistService.insertOrUpdateGray(configInfo,
+        ConfigOperateResult configOperateResult =
+            embeddedConfigInfoGrayPersistService.insertOrUpdateGray(configInfo,
                 grayName, grayRule, srcIp, srcUser);
         
         //mock insert invoked.
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), any(), eq(dataId), eq(group), eq(tenant),
-                        eq(grayName), eq(grayRule), eq(appName), eq(content),
-                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), any(Timestamp.class)), times(1));
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), any(), eq(dataId),
+                eq(group), eq(tenant),
+                eq(grayName), eq(grayRule), eq(appName), eq(content),
+                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
+                any(Timestamp.class), any(Timestamp.class)),
+            times(1));
         
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("I"), eq("gray"), eq(grayName), anyString());
+            .insertConfigHistoryAtomic(eq(configInfo.getId()), eq(configInfo), eq(srcIp),
+                eq(srcUser),
+                any(Timestamp.class), eq("I"), eq("gray"), eq(grayName), anyString());
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(configInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         
     }
     
@@ -170,9 +183,12 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         String grayName = "tag123grayName";
         final String grayRule = "tag123grayrule";
         
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                        eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(new ConfigInfoStateWrapper())
-                .thenReturn(configInfoStateWrapper);
+        Mockito
+            .when(databaseOperate.queryOne(anyString(),
+                eq(new Object[] {dataId, group, tenant, grayName}),
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(new ConfigInfoStateWrapper())
+            .thenReturn(configInfoStateWrapper);
         
         //mock exist config info
         ConfigInfoGrayWrapper configAllInfo4Gray = new ConfigInfoGrayWrapper();
@@ -181,24 +197,29 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         configAllInfo4Gray.setSrcUser("user");
-        when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
         String srcIp = "ip345678";
         String srcUser = "user1234567";
-        ConfigOperateResult configOperateResult = embeddedConfigInfoGrayPersistService.insertOrUpdateGray(configInfo,
+        ConfigOperateResult configOperateResult =
+            embeddedConfigInfoGrayPersistService.insertOrUpdateGray(configInfo,
                 grayName, grayRule, srcIp, srcUser);
         //verify update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
-                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq(appName), eq(grayRule), eq(dataId), eq(group), eq(tenant),
-                        eq(grayName)), times(1));
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
+                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
+                any(Timestamp.class), eq(appName), eq(grayRule), eq(dataId), eq(group), eq(tenant),
+                eq(grayName)),
+            times(1));
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp),
-                        eq(srcUser), any(Timestamp.class), eq("U"), eq("gray"), eq(grayName), anyString());
+            .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray),
+                eq(srcIp),
+                eq(srcUser), any(Timestamp.class), eq("U"), eq("gray"), eq(grayName), anyString());
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(configInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         
     }
     
@@ -220,25 +241,33 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         String grayName = "tag123grayName";
         String grayRule = "";
         
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null).thenReturn(configInfoStateWrapper);
+        Mockito
+            .when(databaseOperate.queryOne(anyString(),
+                eq(new Object[] {dataId, group, tenant, grayName}),
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(null).thenReturn(configInfoStateWrapper);
         
         String srcIp = "ip345678";
         String srcUser = "user1234567";
-        ConfigOperateResult configOperateResult = embeddedConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
+        ConfigOperateResult configOperateResult =
+            embeddedConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
                 grayName, grayRule, srcIp, srcUser);
         //verify insert to be invoked
         //mock insert invoked.
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), any(), eq(dataId), eq(group), eq(tenant),
-                        eq(grayName), eq(grayRule), eq(appName), eq(content),
-                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), any(Timestamp.class)), times(1));
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), any(), eq(dataId),
+                eq(group), eq(tenant),
+                eq(grayName), eq(grayRule), eq(appName), eq(content),
+                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
+                any(Timestamp.class), any(Timestamp.class)),
+            times(1));
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("I"), eq("gray"), eq(grayName), anyString());
+            .insertConfigHistoryAtomic(eq(configInfo.getId()), eq(configInfo), eq(srcIp),
+                eq(srcUser),
+                any(Timestamp.class), eq("I"), eq("gray"), eq(grayName), anyString());
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(configInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
         
     }
     
@@ -259,9 +288,12 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         configInfoStateWrapper.setId(234567890L);
         String grayName = "tag123grayName";
         final String grayRule = "";
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                        eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(new ConfigInfoStateWrapper())
-                .thenReturn(configInfoStateWrapper);
+        Mockito
+            .when(databaseOperate.queryOne(anyString(),
+                eq(new Object[] {dataId, group, tenant, grayName}),
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(new ConfigInfoStateWrapper())
+            .thenReturn(configInfoStateWrapper);
         
         //mock exist config info
         ConfigInfoGrayWrapper configAllInfo4Gray = new ConfigInfoGrayWrapper();
@@ -270,27 +302,107 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         configAllInfo4Gray.setSrcUser("user");
-        when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
         String srcIp = "ip345678";
         String srcUser = "user1234567";
         
         //mock cas update return 1
         Mockito.when(databaseOperate.blockUpdate()).thenReturn(true);
-        ConfigOperateResult configOperateResult = embeddedConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
+        ConfigOperateResult configOperateResult =
+            embeddedConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
                 grayName, grayRule, srcIp, srcUser);
         //verify update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
-                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), eq(appName),
-                        eq(grayRule), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(configInfo.getMd5())),
-                times(1));
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
+                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
+                eq(appName),
+                eq(grayRule), eq(dataId), eq(group), eq(tenant), eq(grayName),
+                eq(configInfo.getMd5())),
+            times(1));
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp),
-                        eq(srcUser), any(Timestamp.class), eq("U"), eq("gray"), eq(grayName), anyString());
+            .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray),
+                eq(srcIp),
+                eq(srcUser), any(Timestamp.class), eq("U"), eq("gray"), eq(grayName), anyString());
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
-        assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(configInfoStateWrapper.getLastModified(),
+            configOperateResult.getLastModified());
+    }
+    
+    @Test
+    void testAddConfigInfo4GrayWithBlankOptionalValuesReturnsFalseWhenStateMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        
+        ConfigOperateResult result = embeddedConfigInfoGrayPersistService.addConfigInfo4Gray(
+            configInfo, " ", " ", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+        embeddedStorageContextHolderMockedStatic.verify(
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), any(), eq("dataId"),
+                eq("group"), eq(StringUtils.EMPTY), eq(StringUtils.EMPTY), eq(StringUtils.EMPTY),
+                eq(StringUtils.EMPTY), eq("content"), eq(MD5Utils.md5Hex("content",
+                    Constants.ENCODE)),
+                eq("srcIp"), eq("srcUser"), any(Timestamp.class),
+                any(Timestamp.class)),
+            times(1));
+    }
+    
+    @Test
+    void testUpdateConfigInfo4GrayReturnsFalseWhenOldGrayMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        
+        ConfigOperateResult result = embeddedConfigInfoGrayPersistService.updateConfigInfo4Gray(
+            configInfo, " ", " ", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4GrayCasReturnsFalseWhenOldGrayMissing() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        
+        ConfigOperateResult result = embeddedConfigInfoGrayPersistService.updateConfigInfo4GrayCas(
+            configInfo, " ", " ", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+    }
+    
+    @Test
+    void testUpdateConfigInfo4GrayCasReturnsFalseWhenBlockUpdateFails() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
+        configInfo.setMd5("oldMd5");
+        ConfigInfoGrayWrapper oldGray = new ConfigInfoGrayWrapper();
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(oldGray);
+        when(databaseOperate.blockUpdate()).thenReturn(false);
+        
+        ConfigOperateResult result = embeddedConfigInfoGrayPersistService.updateConfigInfo4GrayCas(
+            configInfo, "", "", "srcIp", "srcUser");
+        
+        assertTrue(!result.isSuccess());
+    }
+    
+    @Test
+    void testRemoveConfigInfoGrayThrowsWhenOldGrayMissing() {
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY, StringUtils.EMPTY}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(null);
+        
+        assertThrows(NullPointerException.class,
+            () -> embeddedConfigInfoGrayPersistService.removeConfigInfoGray(
+                "dataId", "group", null, "", "srcIp", "srcUser"));
     }
     
     @Test
@@ -309,18 +421,23 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         
-        when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+        when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
-        embeddedConfigInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, grayName, srcIp, srcUser);
+        embeddedConfigInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, grayName,
+            srcIp, srcUser);
         
         //verify delete sql invoked.
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant),
-                        eq(grayName)), times(1));
+            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group),
+                eq(tenant),
+                eq(grayName)),
+            times(1));
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp),
-                        eq(srcUser), any(Timestamp.class), eq("D"), eq("gray"), eq(grayName), anyString());
+            .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray),
+                eq(srcIp),
+                eq(srcUser), any(Timestamp.class), eq("D"), eq("gray"), eq(grayName), anyString());
     }
     
     @Test
@@ -334,10 +451,12 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         ConfigInfoGrayWrapper configInfoGrayWrapperMocked = new ConfigInfoGrayWrapper();
         configInfoGrayWrapperMocked.setLastModified(System.currentTimeMillis());
         
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configInfoGrayWrapperMocked);
+        Mockito.when(databaseOperate.queryOne(anyString(),
+            eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configInfoGrayWrapperMocked);
         
-        ConfigInfoGrayWrapper configInfo4GrayReturn = embeddedConfigInfoGrayPersistService.findConfigInfo4Gray(dataId,
+        ConfigInfoGrayWrapper configInfo4GrayReturn =
+            embeddedConfigInfoGrayPersistService.findConfigInfo4Gray(dataId,
                 group, tenant, grayName);
         assertEquals(configInfoGrayWrapperMocked, configInfo4GrayReturn);
     }
@@ -354,6 +473,14 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
     }
     
     @Test
+    void testConfigInfoGrayCountRejectsNullResult() {
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(Integer.class))).thenReturn(null);
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> embeddedConfigInfoGrayPersistService.configInfoGrayCount());
+    }
+    
+    @Test
     public void testFindAllConfigInfoGrayForDumpAll() {
         
         //mock count
@@ -367,12 +494,14 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         mockGrayList.get(2).setLastModified(System.currentTimeMillis());
         //mock query list
         Mockito.when(
-                        databaseOperate.queryMany(anyString(), eq(new Object[] {}), eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER)))
-                .thenReturn(mockGrayList);
+            databaseOperate.queryMany(anyString(), eq(new Object[] {}),
+                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER)))
+            .thenReturn(mockGrayList);
         int pageNo = 3;
         int pageSize = 100;
         //execute & verify
-        Page<ConfigInfoGrayWrapper> returnGrayPage = embeddedConfigInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(
+        Page<ConfigInfoGrayWrapper> returnGrayPage =
+            embeddedConfigInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(
                 pageNo, pageSize);
         assertEquals(308, returnGrayPage.getTotalCount());
         assertEquals(mockGrayList, returnGrayPage.getPageItems());
@@ -384,10 +513,26 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         String group = "group22";
         String tenant = "tenant2";
         List<String> mockedGrays = Arrays.asList("tags1", "tags11", "tags111");
-        Mockito.when(databaseOperate.queryMany(anyString(), eq(new Object[] {dataId, group, tenant}), eq(String.class)))
-                .thenReturn(mockedGrays);
-        List<String> configInfoGrays = embeddedConfigInfoGrayPersistService.findConfigInfoGrays(dataId, group, tenant);
+        Mockito
+            .when(databaseOperate.queryMany(anyString(), eq(new Object[] {dataId, group, tenant}),
+                eq(String.class)))
+            .thenReturn(mockedGrays);
+        List<String> configInfoGrays =
+            embeddedConfigInfoGrayPersistService.findConfigInfoGrays(dataId, group, tenant);
         assertEquals(mockedGrays, configInfoGrays);
+    }
+    
+    @Test
+    void testFindConfigInfoGraysUsesEmptyTenant() {
+        List<String> mockedGrays = Arrays.asList("gray1", "gray2");
+        Mockito.when(databaseOperate.queryMany(anyString(),
+            eq(new Object[] {"dataId", "group", StringUtils.EMPTY}), eq(String.class)))
+            .thenReturn(mockedGrays);
+        
+        List<String> result = embeddedConfigInfoGrayPersistService.findConfigInfoGrays(
+            "dataId", "group", null);
+        
+        assertEquals(mockedGrays, result);
     }
     
     @Test
@@ -402,10 +547,11 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         long lastMaxId = 123;
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         when(databaseOperate.queryMany(anyString(), eq(new Object[] {timestamp, lastMaxId, 100}),
-                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockList)
-                .thenThrow(new CannotGetJdbcConnectionException("mock exception22"));
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockList)
+            .thenThrow(new CannotGetJdbcConnectionException("mock exception22"));
         
-        List<ConfigInfoGrayWrapper> changeConfig = embeddedConfigInfoGrayPersistService.findChangeConfig(timestamp,
+        List<ConfigInfoGrayWrapper> changeConfig =
+            embeddedConfigInfoGrayPersistService.findChangeConfig(timestamp,
                 lastMaxId, 100);
         assertTrue(changeConfig.get(0).getLastModified() == mockList.get(0).getLastModified());
         assertTrue(changeConfig.get(1).getLastModified() == mockList.get(1).getLastModified());

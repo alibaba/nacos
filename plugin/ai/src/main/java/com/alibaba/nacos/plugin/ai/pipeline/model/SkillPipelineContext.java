@@ -23,9 +23,8 @@ package com.alibaba.nacos.plugin.ai.pipeline.model;
  * @since 3.2.0
  */
 public class SkillPipelineContext extends ResourceFilesPipelineContext {
-
+    
     public SkillPipelineContext() {
         setResourceType(PublishPipelineResourceType.SKILL);
     }
 }
-

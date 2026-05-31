@@ -16,24 +16,20 @@
 
 package com.alibaba.nacos.ai.service.trace;
 
-import com.alibaba.nacos.ai.utils.AiLogUtil;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.ai.AiResourceTraceEvent;
 
 /**
  * AI resource trace service for auditing AI resource version operations.
  *
- * <p>Logs are output in JSON format with ISO 8601 timestamps, designed for ELK/Loki integration.</p>
+ * <p>Trace records are emitted as {@link AiResourceTraceEvent}. The default subscriber keeps
+ * the existing JSON line file output, designed for ELK/Loki integration.</p>
  *
  * <p>Log format example:</p>
  * <pre>
  * {"timestamp":"2026-03-30T10:15:30Z","operator":"admin","resource_type":"skill",
- *  "resource_id":"my-skill","version":"v1.0","operation":"PUBLISH","status":"SUCCESS","ip":"192.168.1.1"}
+ *  "resource_id":"my-skill","version":"v1.0","operation":"PUBLISH",
+ *  "status":"SUCCESS","ip":"192.168.1.1"}
  * </pre>
  *
  * @author nacos
@@ -82,6 +78,11 @@ public class AiResourceTraceService {
      * Force skip review (admin operation).
      */
     public static final String OP_REVIEW_FORCE_SKIP = "REVIEW_FORCE_SKIP";
+    
+    /**
+     * Re-edit a reviewed version (transition back to draft).
+     */
+    public static final String OP_REDRAFT = "REDRAFT";
     
     /**
      * Publish a version to online.
@@ -153,6 +154,21 @@ public class AiResourceTraceService {
      */
     public static final String OP_DISABLE = "DISABLE";
     
+    /**
+     * Search external AI resource import candidates.
+     */
+    public static final String OP_IMPORT_SEARCH = "IMPORT_SEARCH";
+    
+    /**
+     * Validate selected external AI resource import candidates.
+     */
+    public static final String OP_IMPORT_VALIDATE = "IMPORT_VALIDATE";
+    
+    /**
+     * Execute external AI resource import.
+     */
+    public static final String OP_IMPORT_EXECUTE = "IMPORT_EXECUTE";
+    
     // ==================== Status Constants ====================
     
     /**
@@ -164,6 +180,11 @@ public class AiResourceTraceService {
      * Operation failed.
      */
     public static final String STATUS_FAILURE = "FAILURE";
+    
+    /**
+     * Operation skipped by request policy.
+     */
+    public static final String STATUS_SKIPPED = "SKIPPED";
     
     // ==================== Logging Methods ====================
     
@@ -177,8 +198,9 @@ public class AiResourceTraceService {
      * @param operator     the operator identity (user id or username)
      * @param clientIp     the client IP address
      */
-    public static void logSuccess(String resourceType, String resourceId, String version, String operation,
-            String operator, String clientIp) {
+    public static void logSuccess(String resourceType, String resourceId, String version,
+        String operation,
+        String operator, String clientIp) {
         log(resourceType, resourceId, version, operation, STATUS_SUCCESS, operator, clientIp, null);
     }
     
@@ -193,8 +215,9 @@ public class AiResourceTraceService {
      * @param clientIp     the client IP address
      * @param ext          extra information (nullable)
      */
-    public static void logSuccess(String resourceType, String resourceId, String version, String operation,
-            String operator, String clientIp, String ext) {
+    public static void logSuccess(String resourceType, String resourceId, String version,
+        String operation,
+        String operator, String clientIp, String ext) {
         log(resourceType, resourceId, version, operation, STATUS_SUCCESS, operator, clientIp, ext);
     }
     
@@ -209,9 +232,11 @@ public class AiResourceTraceService {
      * @param clientIp     the client IP address
      * @param errorMsg     the error message
      */
-    public static void logFailure(String resourceType, String resourceId, String version, String operation,
-            String operator, String clientIp, String errorMsg) {
-        log(resourceType, resourceId, version, operation, STATUS_FAILURE, operator, clientIp, errorMsg);
+    public static void logFailure(String resourceType, String resourceId, String version,
+        String operation,
+        String operator, String clientIp, String errorMsg) {
+        log(resourceType, resourceId, version, operation, STATUS_FAILURE, operator, clientIp,
+            errorMsg);
     }
     
     /**
@@ -226,27 +251,17 @@ public class AiResourceTraceService {
      * @param clientIp     the client IP address
      * @param ext          extra information or error message (nullable)
      */
-    public static void log(String resourceType, String resourceId, String version, String operation, String status,
-            String operator, String clientIp, String ext) {
-        if (!AiLogUtil.TRACE_LOG.isInfoEnabled()) {
-            return;
-        }
-        
-        Map<String, Object> logEntry = new LinkedHashMap<>(10);
-        logEntry.put("timestamp", DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
-        logEntry.put("operator", StringUtils.defaultIfBlank(operator, "-"));
-        logEntry.put("resource_type", StringUtils.defaultIfBlank(resourceType, "-"));
-        logEntry.put("resource_id", StringUtils.defaultIfBlank(resourceId, "-"));
-        if (StringUtils.isNotBlank(version)) {
-            logEntry.put("version", version);
-        }
-        logEntry.put("operation", StringUtils.defaultIfBlank(operation, "-"));
-        logEntry.put("status", StringUtils.defaultIfBlank(status, "-"));
-        logEntry.put("ip", StringUtils.defaultIfBlank(clientIp, "-"));
-        if (StringUtils.isNotBlank(ext)) {
-            logEntry.put("ext", ext);
-        }
-        
-        AiLogUtil.TRACE_LOG.info(JacksonUtils.toJson(logEntry));
+    public static void log(String resourceType, String resourceId, String version, String operation,
+        String status,
+        String operator, String clientIp, String ext) {
+        NotifyCenter.publishEvent(buildTraceEvent(resourceType, resourceId, version, operation,
+            status, operator, clientIp, ext));
+    }
+    
+    static AiResourceTraceEvent buildTraceEvent(String resourceType, String resourceId,
+        String version, String operation, String status, String operator, String clientIp,
+        String ext) {
+        return new AiResourceTraceEvent(System.currentTimeMillis(), operator, resourceType,
+            resourceId, version, operation, status, clientIp, ext);
     }
 }

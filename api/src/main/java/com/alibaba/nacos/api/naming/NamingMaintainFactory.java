@@ -38,9 +38,11 @@ public class NamingMaintainFactory {
      * @return new maintain service
      * @throws NacosException nacos exception
      */
-    public static NamingMaintainService createMaintainService(String serverList) throws NacosException {
+    public static NamingMaintainService createMaintainService(String serverList)
+        throws NacosException {
         try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
+            Class<?> driverImplClass =
+                Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
             Constructor constructor = driverImplClass.getConstructor(String.class);
             return (NamingMaintainService) constructor.newInstance(serverList);
         } catch (Throwable e) {
@@ -55,9 +57,11 @@ public class NamingMaintainFactory {
      * @return new maintain service
      * @throws NacosException nacos exception
      */
-    public static NamingMaintainService createMaintainService(Properties properties) throws NacosException {
+    public static NamingMaintainService createMaintainService(Properties properties)
+        throws NacosException {
         try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
+            Class<?> driverImplClass =
+                Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             return (NamingMaintainService) constructor.newInstance(properties);
         } catch (Throwable e) {

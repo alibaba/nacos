@@ -53,7 +53,7 @@ public class PipelineQueryService {
         PipelineExecution execution = repository.findById(pipelineId);
         if (execution == null) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
-                    "Pipeline execution not found: " + pipelineId);
+                "Pipeline execution not found: " + pipelineId);
         }
         return execution;
     }
@@ -71,11 +71,12 @@ public class PipelineQueryService {
      * @throws NacosException if query fails
      */
     public Page<PipelineExecution> listPipelines(String resourceType, String resourceName,
-            String namespaceId, String version, int pageNo, int pageSize) throws NacosException {
+        String namespaceId, String version, int pageNo, int pageSize) throws NacosException {
         int offset = (pageNo - 1) * pageSize;
         List<PipelineExecution> list = repository.findByResourceWithPage(resourceType, resourceName,
-                namespaceId, version, offset, pageSize);
-        int totalCount = repository.countByResource(resourceType, resourceName, namespaceId, version);
+            namespaceId, version, offset, pageSize);
+        int totalCount =
+            repository.countByResource(resourceType, resourceName, namespaceId, version);
         
         Page<PipelineExecution> page = new Page<>();
         page.setTotalCount(totalCount);

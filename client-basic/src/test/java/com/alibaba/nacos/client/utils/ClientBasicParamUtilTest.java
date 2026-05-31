@@ -108,7 +108,8 @@ class ClientBasicParamUtilTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.NAMESPACE, expect);
         
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        final NacosClientProperties nacosClientProperties =
+            NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ClientBasicParamUtil.parseNamespace(nacosClientProperties);
         assertEquals(expect, actual);
     }
@@ -122,14 +123,18 @@ class ClientBasicParamUtilTest {
     
     @Test
     void testParsingEndpointRuleFromSystem() {
-        System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL, "alibaba_aliware_endpoint_url");
-        assertEquals("alibaba_aliware_endpoint_url", ClientBasicParamUtil.parsingEndpointRule(null));
+        System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
+            "alibaba_aliware_endpoint_url");
+        assertEquals("alibaba_aliware_endpoint_url",
+            ClientBasicParamUtil.parsingEndpointRule(null));
     }
     
     @Test
     void testParsingEndpointRuleFromSystemWithParam() {
-        System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL, "alibaba_aliware_endpoint_url");
-        assertEquals("alibaba_aliware_endpoint_url", ClientBasicParamUtil.parsingEndpointRule("${abc:xxx}"));
+        System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
+            "alibaba_aliware_endpoint_url");
+        assertEquals("alibaba_aliware_endpoint_url",
+            ClientBasicParamUtil.parsingEndpointRule("${abc:xxx}"));
     }
     
     @Test
@@ -140,7 +145,7 @@ class ClientBasicParamUtilTest {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ClientBasicParamUtil.getInputParameters(clientProperties.asProperties());
         assertTrue(actual.startsWith(
-                "Log nacos client init properties with Full mode, This mode is only used for debugging and troubleshooting."));
+            "Log nacos client init properties with Full mode, This mode is only used for debugging and troubleshooting."));
         assertTrue(actual.contains("\ttestKey=testValue\n"));
         Properties envProperties = clientProperties.getProperties(SourceType.ENV);
         String envCaseKey = envProperties.stringPropertyNames().iterator().next();
@@ -156,8 +161,9 @@ class ClientBasicParamUtilTest {
         properties.setProperty(PropertyKeyConst.PASSWORD, "testPassword");
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ClientBasicParamUtil.getInputParameters(clientProperties.asProperties());
-        assertEquals("Nacos client key init properties: \n\tserverAddr=localhost:8848\n\tpassword=te********rd\n",
-                actual);
+        assertEquals(
+            "Nacos client key init properties: \n\tserverAddr=localhost:8848\n\tpassword=te********rd\n",
+            actual);
     }
     
     @Test
@@ -175,6 +181,21 @@ class ClientBasicParamUtilTest {
     @Test
     void testGetNameSuffixByServerIps() {
         assertEquals("1.1.1.1-2.2.2.2_8848",
-                ClientBasicParamUtil.getNameSuffixByServerIps("http://1.1.1.1", "2.2.2.2:8848"));
+            ClientBasicParamUtil.getNameSuffixByServerIps("http://1.1.1.1", "2.2.2.2:8848"));
+    }
+    
+    @Test
+    void testParseNamespaceCloudParsingDefaultsWhenAllBlank() {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING, "true");
+        NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        // No tenant, no ALIBABA_ALIWARE_NAMESPACE, no NAMESPACE → returns DEFAULT_NAMESPACE_ID
+        assertEquals(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID,
+            ClientBasicParamUtil.parseNamespace(clientProperties));
+    }
+    
+    @Test
+    void testConstructor() {
+        new ClientBasicParamUtil();
     }
 }

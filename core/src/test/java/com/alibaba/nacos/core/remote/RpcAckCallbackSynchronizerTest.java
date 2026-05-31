@@ -33,21 +33,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RpcAckCallbackSynchronizerTest {
-
+    
     private static final String CONN_ID = "conn-" + System.currentTimeMillis();
-
+    
     @AfterEach
     void tearDown() {
         RpcAckCallbackSynchronizer.clearContext(CONN_ID);
     }
-
+    
     @Test
     void testAckNotifyWhenConnectionContextNull() {
         Response resp = new HealthCheckResponse();
         resp.setRequestId("req1");
         RpcAckCallbackSynchronizer.ackNotify("nonexistent-conn", resp);
     }
-
+    
     @Test
     void testAckNotifyWhenRequestIdNotInContext() throws NacosException {
         RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
@@ -55,7 +55,7 @@ class RpcAckCallbackSynchronizerTest {
         resp.setRequestId("req-absent");
         RpcAckCallbackSynchronizer.ackNotify(CONN_ID, resp);
     }
-
+    
     @Test
     void testAckNotifySuccess() throws Exception {
         DefaultRequestFuture future = new DefaultRequestFuture(CONN_ID, "req1");
@@ -67,7 +67,7 @@ class RpcAckCallbackSynchronizerTest {
         assertNotNull(got);
         assertTrue(got.isSuccess());
     }
-
+    
     @Test
     void testAckNotifyFail() throws Exception {
         DefaultRequestFuture future = new DefaultRequestFuture(CONN_ID, "req2");
@@ -79,7 +79,7 @@ class RpcAckCallbackSynchronizerTest {
         Response got = future.get(1000L);
         assertNull(got);
     }
-
+    
     @Test
     void testSyncCallbackRequestIdConflict() throws NacosException {
         RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
@@ -87,41 +87,46 @@ class RpcAckCallbackSynchronizerTest {
         DefaultRequestFuture f2 = new DefaultRequestFuture(CONN_ID, "reqConflict");
         RpcAckCallbackSynchronizer.syncCallback(CONN_ID, "reqConflict", f1);
         NacosException ex = assertThrows(NacosException.class,
-                () -> RpcAckCallbackSynchronizer.syncCallback(CONN_ID, "reqConflict", f2));
+            () -> RpcAckCallbackSynchronizer.syncCallback(CONN_ID, "reqConflict", f2));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
         assertTrue(ex.getErrMsg().contains("request id conflict"));
     }
-
+    
     @Test
     void testInitContextIfNecessaryExistingKey() throws NacosException {
-        Map<String, DefaultRequestFuture> first = RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
-        Map<String, DefaultRequestFuture> second = RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
+        Map<String, DefaultRequestFuture> first =
+            RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
+        Map<String, DefaultRequestFuture> second =
+            RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
         assertTrue(first == second);
     }
-
+    
     @Test
     void testClearContext() throws NacosException {
         RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
         RpcAckCallbackSynchronizer.clearContext(CONN_ID);
-        Map<String, DefaultRequestFuture> after = RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
+        Map<String, DefaultRequestFuture> after =
+            RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
         assertNotNull(after);
     }
-
+    
     @Test
     void testClearFutureWhenConnectionAbsent() {
         RpcAckCallbackSynchronizer.clearFuture("absent-conn", "req1");
     }
-
+    
     @Test
     void testClearFutureWhenRequestIdAbsent() throws NacosException {
         RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
         RpcAckCallbackSynchronizer.clearFuture(CONN_ID, "absent-req");
     }
-
+    
     @Test
     void testClearFutureRemovesRequestId() throws NacosException {
-        RpcAckCallbackSynchronizer.syncCallback(CONN_ID, "reqToClear", new DefaultRequestFuture(CONN_ID, "reqToClear"));
-        Map<String, DefaultRequestFuture> ctx = RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
+        RpcAckCallbackSynchronizer.syncCallback(CONN_ID, "reqToClear",
+            new DefaultRequestFuture(CONN_ID, "reqToClear"));
+        Map<String, DefaultRequestFuture> ctx =
+            RpcAckCallbackSynchronizer.initContextIfNecessary(CONN_ID);
         assertTrue(ctx.containsKey("reqToClear"));
         RpcAckCallbackSynchronizer.clearFuture(CONN_ID, "reqToClear");
         assertFalse(ctx.containsKey("reqToClear"));

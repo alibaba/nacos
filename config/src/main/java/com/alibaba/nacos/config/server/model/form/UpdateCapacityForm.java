@@ -28,7 +28,7 @@ import org.springframework.http.HttpStatus;
  *
  * @author Nacos
  */
-public class UpdateCapacityForm implements NacosForm  {
+public class UpdateCapacityForm implements NacosForm {
     
     private static final long serialVersionUID = -1912905276914026856L;
     
@@ -96,7 +96,7 @@ public class UpdateCapacityForm implements NacosForm  {
     public void validate() throws NacosApiException {
         if (quota == null && maxSize == null && maxAggrCount == null && maxAggrSize == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "The parameters quota, maxSize, maxAggrCount, maxAggrSize cannot be empty at the same time");
+                "The parameters quota, maxSize, maxAggrCount, maxAggrSize cannot be empty at the same time");
         }
     }
     
@@ -106,11 +106,12 @@ public class UpdateCapacityForm implements NacosForm  {
      * @param capacityService capacity service
      * @throws NacosApiException NacosApiException
      */
-    public void checkNamespaceIdAndGroupName(CapacityService capacityService) throws NacosApiException {
+    public void checkNamespaceIdAndGroupName(CapacityService capacityService)
+        throws NacosApiException {
         if (StringUtils.isBlank(groupName) && StringUtils.isBlank(namespaceId)) {
             capacityService.initAllCapacity();
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "At least one of the parameters (groupName or namespaceId) must be provided");
+                "At least one of the parameters (groupName or namespaceId) must be provided");
         }
     }
 }

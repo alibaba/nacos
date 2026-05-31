@@ -29,13 +29,13 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PositionalArgument extends InputWithVariables implements Argument {
-
+    
     private String type = "positional";
-
+    
     private String valueHint;
-
+    
     private Boolean isRepeated;
-
+    
     /**
      * Get type.
      *
@@ -44,7 +44,7 @@ public class PositionalArgument extends InputWithVariables implements Argument {
     public String getType() {
         return type;
     }
-
+    
     /**
      * Set type.
      *
@@ -53,7 +53,7 @@ public class PositionalArgument extends InputWithVariables implements Argument {
     public void setType(String type) {
         this.type = type;
     }
-
+    
     /**
      * Get value hint.
      *
@@ -62,7 +62,7 @@ public class PositionalArgument extends InputWithVariables implements Argument {
     public String getValueHint() {
         return valueHint;
     }
-
+    
     /**
      * Set value hint.
      *
@@ -71,7 +71,7 @@ public class PositionalArgument extends InputWithVariables implements Argument {
     public void setValueHint(String valueHint) {
         this.valueHint = valueHint;
     }
-
+    
     /**
      * Get is repeated flag.
      *
@@ -80,7 +80,7 @@ public class PositionalArgument extends InputWithVariables implements Argument {
     public Boolean getIsRepeated() {
         return isRepeated;
     }
-
+    
     /**
      * Set is repeated flag.
      *

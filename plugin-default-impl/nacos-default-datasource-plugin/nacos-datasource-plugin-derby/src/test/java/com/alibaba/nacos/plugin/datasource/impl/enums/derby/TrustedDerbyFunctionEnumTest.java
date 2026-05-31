@@ -25,14 +25,16 @@ import org.junit.jupiter.api.Test;
  * @author blake.qiu
  */
 public class TrustedDerbyFunctionEnumTest {
-
+    
     @Test
     void testGetFunctionByName() {
-        Assertions.assertEquals("CURRENT_TIMESTAMP", TrustedDerbylFunctionEnum.getFunctionByName("NOW()"));
+        Assertions.assertEquals("CURRENT_TIMESTAMP",
+            TrustedDerbylFunctionEnum.getFunctionByName("NOW()"));
     }
-
+    
     @Test()
     void testGetFunctionByErrorName() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> TrustedDerbylFunctionEnum.getFunctionByName("UNKNOWN"));
+        Assertions.assertThrows(IllegalArgumentException.class,
+            () -> TrustedDerbylFunctionEnum.getFunctionByName("UNKNOWN"));
     }
 }

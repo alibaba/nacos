@@ -73,8 +73,10 @@ public class AgentExtension {
             return false;
         }
         AgentExtension that = (AgentExtension) o;
-        return Objects.equals(uri, that.uri) && Objects.equals(description, that.description) && Objects.equals(
-                required, that.required) && Objects.equals(params, that.params);
+        return Objects.equals(uri, that.uri) && Objects.equals(description, that.description)
+            && Objects.equals(
+                required, that.required)
+            && Objects.equals(params, that.params);
     }
     
     @Override

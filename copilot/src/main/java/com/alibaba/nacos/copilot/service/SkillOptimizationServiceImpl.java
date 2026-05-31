@@ -66,27 +66,27 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
     }
     
     @Override
-    public void optimizeSkillStream(SkillOptimizationRequest request, 
-                                    StreamResponseCallback<SkillOptimizationResponse> callback) {
+    public void optimizeSkillStream(SkillOptimizationRequest request,
+        StreamResponseCallback<SkillOptimizationResponse> callback) {
         // 1. Validate request
         Skill skill = request.getSkill();
         if (skill == null) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
-                    "Skill object is required in request"));
+                "Skill object is required in request"));
             return;
         }
         
         // 2. Validate target file name (required)
         if (StringUtils.isBlank(request.getTargetFileName())) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
-                    "Target file name is required. Please select a file to optimize."));
+                "Target file name is required. Please select a file to optimize."));
             return;
         }
         
         // 3. Check if Copilot is enabled
         if (!agentManager.isEnabled()) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
-                    "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
+                "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
             return;
         }
         
@@ -100,30 +100,30 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         ReActAgent agent = agentManager.createAgent(systemPrompt);
         if (agent == null) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
-                    "Failed to create Copilot agent. Please check configuration."));
+                "Failed to create Copilot agent. Please check configuration."));
             return;
         }
         
         // 6. Configure streaming options
         StreamOptions streamOptions = StreamOptions.builder()
-                .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
-                .incremental(true)
-                .build();
+            .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
+            .incremental(true)
+            .build();
         
         // 7. Call agent with stream response using message list
         // Frontend will accumulate and parse the content itself, so we don't need to accumulate fullContent
         Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(messages, streamOptions)
-                .subscribeOn(Schedulers.boundedElastic());
+            .subscribeOn(Schedulers.boundedElastic());
         
         eventFlux.subscribe(StreamEventProcessor.createSubscriber(
-                (type, content, done) -> {
-                    SkillOptimizationResponse response = new SkillOptimizationResponse();
-                    response.setType(type);
-                    response.setChunk(content);
-                    response.setDone(done);
-                    return response;
-                },
-                callback));
+            (type, content, done) -> {
+                SkillOptimizationResponse response = new SkillOptimizationResponse();
+                response.setType(type);
+                response.setChunk(content);
+                response.setDone(done);
+                return response;
+            },
+            callback));
     }
     
     /**
@@ -146,9 +146,9 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         boolean hasSelectedTools = false;
         List<Map<String, Object>> selectedMcpTools = null;
         boolean hasConversationHistory = request.getConversationHistory() != null
-                && request.getConversationHistory().getMessages() != null
-                && !request.getConversationHistory().getMessages().isEmpty();
-
+            && request.getConversationHistory().getMessages() != null
+            && !request.getConversationHistory().getMessages().isEmpty();
+        
         if (request.getParams() != null) {
             Object selectedMcpToolsObj = request.getParams().get("selectedMcpTools");
             if (selectedMcpToolsObj instanceof List) {
@@ -160,7 +160,7 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 }
             }
         }
-
+        
         // Target file name is required (validated above)
         String targetFileName = request.getTargetFileName();
         
@@ -169,7 +169,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         skillInfo.append("名称：").append(skill.getName()).append("\n");
         
         // Check if target file is SKILL.md or a resource file
-        boolean isSkillMd = SKILL_MD_FILE_NAME.equals(targetFileName) || SKILL_MD_KEY.equals(targetFileName);
+        boolean isSkillMd =
+            SKILL_MD_FILE_NAME.equals(targetFileName) || SKILL_MD_KEY.equals(targetFileName);
         if (isSkillMd) {
             // Target is SKILL.md, include description and full markdown content
             skillInfo.append("描述：").append(skill.getDescription()).append("\n");
@@ -177,8 +178,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         } else if (skill.getResource() != null && !skill.getResource().isEmpty()) {
             // Target is a resource file, find and include only that resource
             boolean found = false;
-            for (java.util.Map.Entry<String, SkillResource> entry
-                    : skill.getResource().entrySet()) {
+            for (java.util.Map.Entry<String, SkillResource> entry : skill.getResource()
+                .entrySet()) {
                 String key = entry.getKey();
                 SkillResource res = entry.getValue();
                 
@@ -204,7 +205,7 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                     .append("，以下是所有资源文件供参考：\n");
                 skill.getResource().forEach((key, resource) -> {
                     skillInfo.append("- ").append(key).append(": ")
-                      .append(resource.getName());
+                        .append(resource.getName());
                     if (StringUtils.isNotBlank(resource.getType())) {
                         skillInfo.append(" (type: ").append(resource.getType()).append(")");
                     }
@@ -214,16 +215,16 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         }
         
         messages.add(Msg.builder()
-                .textContent(skillInfo.toString())
-                .role(MsgRole.USER)
-                .build());
-
+            .textContent(skillInfo.toString())
+            .role(MsgRole.USER)
+            .build());
+        
         // Message 2: Assistant acknowledges and asks how to optimize
         messages.add(Msg.builder()
-                .textContent("我已经收到了这个 Skill 的信息。你希望我怎么优化这条 skill？")
-                .role(MsgRole.ASSISTANT)
-                .build());
-
+            .textContent("我已经收到了这个 Skill 的信息。你希望我怎么优化这条 skill？")
+            .role(MsgRole.ASSISTANT)
+            .build());
+        
         // Message 3: User provides optimization requirements based on actual situation
         // Order: Conversation History > MCP Tools > Optimization Goal (last, highest priority via recency effect)
         // If no specific requirements, merge into a simpler structure
@@ -232,9 +233,9 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             String simpleRequest = "请帮我看看这个文件（" + targetFileName + "）有没有明显可以优化的地方。"
                 + "请只优化这个文件的内容，其他文件保持不变。如果没有明显问题，保持原样即可。";
             messages.add(Msg.builder()
-                    .textContent(simpleRequest)
-                    .role(MsgRole.USER)
-                    .build());
+                .textContent(simpleRequest)
+                .role(MsgRole.USER)
+                .build());
         } else {
             // Complex case: build structured optimization request
             StringBuilder optimizationRequest = new StringBuilder();
@@ -244,7 +245,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 optimizationRequest.append("以下是一段对话交互历史。请仔细分析这段对话，完成以下任务：\n");
                 optimizationRequest.append("1. 分析对话中的交互场景：识别用户的需求、助手的处理逻辑、工具调用的模式和流程\n");
                 optimizationRequest.append("2. 将对话场景沉淀为标准流程：提取出可复用的标准操作步骤和决策逻辑\n");
-                optimizationRequest.append("3. 基于沉淀的标准流程优化 Skill：将分析出的标准流程融入到 Skill 的 instruction 中，确保 Skill 能够支持类似的对话场景\n\n");
+                optimizationRequest.append(
+                    "3. 基于沉淀的标准流程优化 Skill：将分析出的标准流程融入到 Skill 的 instruction 中，确保 Skill 能够支持类似的对话场景\n\n");
                 
                 ConversationHistory history = request.getConversationHistory();
                 if (StringUtils.isNotBlank(history.getTitle())) {
@@ -285,10 +287,12 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 for (Map<String, Object> tool : selectedMcpTools) {
                     optimizationRequest.append("工具：").append(tool.get("name")).append("\n");
                     if (tool.get("description") != null) {
-                        optimizationRequest.append("描述：").append(tool.get("description")).append("\n");
+                        optimizationRequest.append("描述：").append(tool.get("description"))
+                            .append("\n");
                     }
                     if (tool.get("inputSchema") != null) {
-                        optimizationRequest.append("参数：").append(tool.get("inputSchema")).append("\n");
+                        optimizationRequest.append("参数：").append(tool.get("inputSchema"))
+                            .append("\n");
                     }
                     optimizationRequest.append("\n");
                 }
@@ -299,23 +303,30 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 if (hasConversationHistory || hasSelectedTools) {
                     optimizationRequest.append("\n");
                 }
-                optimizationRequest.append("【重要】我的优化目标是：").append(request.getOptimizationGoal()).append("\n");
+                optimizationRequest.append("【重要】我的优化目标是：").append(request.getOptimizationGoal())
+                    .append("\n");
                 optimizationRequest.append("请优先考虑并聚焦于这个优化目标，所有优化建议和改动都应该围绕这个目标展开。");
                 
                 // 如果优化目标中包含"资源"相关关键词，特别强调不要添加SKILL.md
                 String optimizationGoalLower = request.getOptimizationGoal().toLowerCase();
-                boolean containsResourceKeyword = optimizationGoalLower.contains(RESOURCE_KEYWORD_ZH)
-                    || optimizationGoalLower.contains(RESOURCE_KEYWORD_EN)
-                    || optimizationGoalLower.contains("增加") || optimizationGoalLower.contains("添加")
-                    || optimizationGoalLower.contains("add") || optimizationGoalLower.contains("增加资源")
-                    || optimizationGoalLower.contains("添加资源");
+                boolean containsResourceKeyword =
+                    optimizationGoalLower.contains(RESOURCE_KEYWORD_ZH)
+                        || optimizationGoalLower.contains(RESOURCE_KEYWORD_EN)
+                        || optimizationGoalLower.contains("增加")
+                        || optimizationGoalLower.contains("添加")
+                        || optimizationGoalLower.contains("add")
+                        || optimizationGoalLower.contains("增加资源")
+                        || optimizationGoalLower.contains("添加资源");
                 if (containsResourceKeyword) {
                     optimizationRequest.append("\n【绝对禁止】如果优化目标涉及添加或增加资源，请注意：");
                     optimizationRequest.append("\n- 绝对不能将 SKILL.md 放在 resource 字段中");
                     optimizationRequest.append("\n- 绝对不能创建名为 SKILL.md 的资源文件");
-                    optimizationRequest.append("\n- 绝对不能将 SKILL.md 放在任何资源类型（template、data、script 等）下");
-                    optimizationRequest.append("\n- SKILL.md 是特殊的元数据文件，位于 skillMd 字段，不需要也不应该在 resource 中定义");
-                    optimizationRequest.append("\n- 只能添加真正的资源文件（如 .json、.yaml、.txt 等），绝对不能添加 SKILL.md");
+                    optimizationRequest
+                        .append("\n- 绝对不能将 SKILL.md 放在任何资源类型（template、data、script 等）下");
+                    optimizationRequest
+                        .append("\n- SKILL.md 是特殊的元数据文件，位于 skillMd 字段，不需要也不应该在 resource 中定义");
+                    optimizationRequest
+                        .append("\n- 只能添加真正的资源文件（如 .json、.yaml、.txt 等），绝对不能添加 SKILL.md");
                 }
             }
             
@@ -358,9 +369,9 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             }
             
             messages.add(Msg.builder()
-                    .textContent(optimizationRequest.toString())
-                    .role(MsgRole.USER)
-                    .build());
+                .textContent(optimizationRequest.toString())
+                .role(MsgRole.USER)
+                .build());
         }
         
         return messages;

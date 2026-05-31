@@ -24,13 +24,13 @@ import java.util.List;
  * @author nacos
  */
 public class SkillsSearchResponse {
-
+    
     private List<SkillsSearchItem> skills;
-
+    
     public List<SkillsSearchItem> getSkills() {
         return skills;
     }
-
+    
     public void setSkills(List<SkillsSearchItem> skills) {
         this.skills = skills;
     }

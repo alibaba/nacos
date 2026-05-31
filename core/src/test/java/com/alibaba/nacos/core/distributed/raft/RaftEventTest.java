@@ -48,12 +48,12 @@ class RaftEventTest {
     void testBuilderBuildWithAllFields() {
         List<String> clusterInfo = Arrays.asList("127.0.0.1:7848", "127.0.0.1:7849");
         RaftEvent event = RaftEvent.builder()
-                .groupId("naming")
-                .leader("127.0.0.1:7848")
-                .term(5L)
-                .raftClusterInfo(clusterInfo)
-                .errMsg("no error")
-                .build();
+            .groupId("naming")
+            .leader("127.0.0.1:7848")
+            .term(5L)
+            .raftClusterInfo(clusterInfo)
+            .errMsg("no error")
+            .build();
         assertEquals("naming", event.getGroupId());
         assertEquals("127.0.0.1:7848", event.getLeader());
         assertEquals(5L, event.getTerm());
@@ -80,11 +80,11 @@ class RaftEventTest {
     @Test
     void testToString() {
         RaftEvent event = RaftEvent.builder()
-                .groupId("g")
-                .leader("l")
-                .term(1L)
-                .raftClusterInfo(Collections.singletonList("n1"))
-                .build();
+            .groupId("g")
+            .leader("l")
+            .term(1L)
+            .raftClusterInfo(Collections.singletonList("n1"))
+            .build();
         String s = event.toString();
         assertNotNull(s);
         assertEquals("RaftEvent{groupId='g', leader='l', term=1, raftClusterInfo=[n1]}", s);

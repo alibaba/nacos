@@ -37,15 +37,17 @@ import java.util.Set;
 public class HealthCheckExtendProvider {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthCheckExtendProvider.class);
-
-    private final Collection<AbstractHealthChecker> checkers = NacosServiceLoader.load(AbstractHealthChecker.class);
-
+    
+    private final Collection<AbstractHealthChecker> checkers =
+        NacosServiceLoader.load(AbstractHealthChecker.class);
+    
     private AbstractHealthCheckProcessorExtend healthCheckProcessorExtend;
-
-    public void setHealthCheckProcessorExtend(AbstractHealthCheckProcessorExtend healthCheckProcessorExtend) {
+    
+    public void setHealthCheckProcessorExtend(
+        AbstractHealthCheckProcessorExtend healthCheckProcessorExtend) {
         this.healthCheckProcessorExtend = healthCheckProcessorExtend;
     }
-
+    
     public void init() {
         loadExtend();
     }
@@ -65,14 +67,15 @@ public class HealthCheckExtendProvider {
             String type = checker.getType();
             if (healthCheckerType.contains(type)) {
                 throw new RuntimeException(
-                        "More than one healthChecker of the same type was found : [type=\"" + type + "\"]");
+                    "More than one healthChecker of the same type was found : [type=\"" + type
+                        + "\"]");
             }
             healthCheckerType.add(type);
             HealthCheckType.registerHealthChecker(checker.getType(), checker.getClass());
         }
         if (!processorType.equals(healthCheckerType)) {
             throw new RuntimeException(
-                    "An unmatched processor and healthChecker are detected in the extension package.");
+                "An unmatched processor and healthChecker are detected in the extension package.");
         }
         if (processorType.size() > origin.size()) {
             processorType.removeAll(origin);

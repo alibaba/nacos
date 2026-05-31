@@ -43,7 +43,7 @@ public class PromptLabelsUpdateForm extends PromptForm {
         super.validate();
         if (StringUtils.isBlank(labels)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'labels' type String is not present");
+                "Required parameter 'labels' type String is not present");
         }
     }
     

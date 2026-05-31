@@ -45,64 +45,73 @@ import java.util.List;
  */
 @Component
 public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
-
+    
     private final NamespaceOperationService namespaceOperationService;
-
+    
     public NamespaceValidationRequestFilter(NamespaceOperationService namespaceOperationService) {
         this.namespaceOperationService = namespaceOperationService;
     }
-
+    
     @Override
-    protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
+    protected Response filter(Request request, RequestMeta meta, Class handlerClazz)
+        throws NacosException {
         try {
             // check global namespace validation config
-            boolean namespaceValidationEnabled = NamespaceValidationConfig.getInstance().isNamespaceValidationEnabled();
+            boolean namespaceValidationEnabled =
+                NamespaceValidationConfig.getInstance().isNamespaceValidationEnabled();
             if (!namespaceValidationEnabled) {
                 return null;
             }
-
+            
             // check namespace validation
             Method method = getHandleMethod(handlerClazz);
             if (method.isAnnotationPresent(NamespaceValidation.class)) {
-                NamespaceValidation namespaceValidation = method.getAnnotation(NamespaceValidation.class);
+                NamespaceValidation namespaceValidation =
+                    method.getAnnotation(NamespaceValidation.class);
                 if (!namespaceValidation.enable()) {
                     return null;
                 }
-
+                
                 List<ParamInfo> paramInfoList = extractNamespaceParam(request, handlerClazz);
                 if (CollectionUtils.isEmpty(paramInfoList)) {
                     return null;
                 }
-
+                
                 for (ParamInfo paramInfo : paramInfoList) {
                     // if namespace param is null or '', don't need to check namespace
                     String namespaceId = paramInfo.getNamespaceId();
                     if (StringUtils.isBlank(namespaceId)) {
                         continue;
                     }
-
+                    
                     boolean exist = namespaceOperationService.namespaceExists(namespaceId);
                     if (!exist) {
                         Response response = super.getDefaultResponseInstance(handlerClazz);
                         response.setErrorInfo(ErrorCode.NAMESPACE_NOT_EXIST.getCode(),
-                                String.format("Namespace '%s' does not exist. Please create the namespace first.", namespaceId));
-
+                            String.format(
+                                "Namespace '%s' does not exist. Please create the namespace first.",
+                                namespaceId));
+                        
                         return response;
                     }
                 }
             }
         } catch (Exception e) {
-            Loggers.CORE.warn("Namespace validation error for request: {}, exception: {}", request, e);
+            Loggers.CORE.warn("Namespace validation error for request: {}, exception: {}", request,
+                e);
         }
-
+        
         return null;
     }
-
+    
     @SuppressWarnings("unchecked")
-    private List<ParamInfo> extractNamespaceParam(Request request, Class handlerClazz) throws NacosException {
-        ExtractorManager.Extractor extractor = getHandleMethod(handlerClazz).getAnnotation(ExtractorManager.Extractor.class);
+    private List<ParamInfo> extractNamespaceParam(Request request, Class handlerClazz)
+        throws NacosException {
+        ExtractorManager.Extractor extractor =
+            getHandleMethod(handlerClazz).getAnnotation(ExtractorManager.Extractor.class);
         if (extractor == null) {
-            extractor = (ExtractorManager.Extractor) handlerClazz.getAnnotation(ExtractorManager.Extractor.class);
+            extractor = (ExtractorManager.Extractor) handlerClazz
+                .getAnnotation(ExtractorManager.Extractor.class);
             if (extractor == null) {
                 return null;
             }

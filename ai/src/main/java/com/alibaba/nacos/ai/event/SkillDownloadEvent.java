@@ -28,37 +28,37 @@ import java.io.Serial;
  * @since 3.2.0
  */
 public class SkillDownloadEvent extends SlowEvent {
-
+    
     @Serial
     private static final long serialVersionUID = 1L;
-
+    
     private final String namespaceId;
-
+    
     private final String name;
-
+    
     private final String type;
-
+    
     private final String version;
-
+    
     public SkillDownloadEvent(String namespaceId, String name, String type, String version) {
         this.namespaceId = namespaceId;
         this.name = name;
         this.type = type;
         this.version = version;
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public String getType() {
         return type;
     }
-
+    
     public String getVersion() {
         return version;
     }

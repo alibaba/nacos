@@ -45,7 +45,8 @@ class NamingFuzzyWatchChangeNotifyRequestTest {
     
     @Test
     void testSerialize() throws JsonProcessingException {
-        NamingFuzzyWatchChangeNotifyRequest request = new NamingFuzzyWatchChangeNotifyRequest(SERVICE_KEY, CHANGED_TYPE);
+        NamingFuzzyWatchChangeNotifyRequest request =
+            new NamingFuzzyWatchChangeNotifyRequest(SERVICE_KEY, CHANGED_TYPE);
         String json = mapper.writeValueAsString(request);
         assertTrue(json.contains("\"serviceKey\":\"" + SERVICE_KEY + "\""));
         assertTrue(json.contains("\"changedType\":\"" + CHANGED_TYPE + "\""));
@@ -55,9 +56,11 @@ class NamingFuzzyWatchChangeNotifyRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"serviceKey\":\"serviceKey\",\"changedType\":\"changedType\","
+        String json =
+            "{\"headers\":{},\"serviceKey\":\"serviceKey\",\"changedType\":\"changedType\","
                 + "\"syncType\":\"FUZZY_WATCH_RESOURCE_CHANGED\",\"module\":\"naming\"}";
-        NamingFuzzyWatchChangeNotifyRequest actual = mapper.readValue(json, NamingFuzzyWatchChangeNotifyRequest.class);
+        NamingFuzzyWatchChangeNotifyRequest actual =
+            mapper.readValue(json, NamingFuzzyWatchChangeNotifyRequest.class);
         assertEquals(SERVICE_KEY, actual.getServiceKey());
         assertEquals(CHANGED_TYPE, actual.getChangedType());
         assertEquals(FUZZY_WATCH_RESOURCE_CHANGED, actual.getSyncType());

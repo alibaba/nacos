@@ -100,8 +100,9 @@ class StreamEventProcessorTest {
         Msg msg = mock(Msg.class);
         ThinkingBlock thinkBlock = mock(ThinkingBlock.class);
         @SuppressWarnings("unchecked")
-        List<io.agentscope.core.message.ContentBlock> contentList = 
-                (List<io.agentscope.core.message.ContentBlock>) (List<?>) Collections.singletonList(thinkBlock);
+        List<io.agentscope.core.message.ContentBlock> contentList =
+            (List<io.agentscope.core.message.ContentBlock>) (List<?>) Collections
+                .singletonList(thinkBlock);
         when(msg.getContent()).thenReturn(contentList);
         
         // When
@@ -158,8 +159,9 @@ class StreamEventProcessorTest {
         ThinkingBlock thinkBlock = mock(ThinkingBlock.class);
         when(thinkBlock.getThinking()).thenReturn("thinking content");
         @SuppressWarnings("unchecked")
-        List<io.agentscope.core.message.ContentBlock> contentList = 
-                (List<io.agentscope.core.message.ContentBlock>) (List<?>) Collections.singletonList(thinkBlock);
+        List<io.agentscope.core.message.ContentBlock> contentList =
+            (List<io.agentscope.core.message.ContentBlock>) (List<?>) Collections
+                .singletonList(thinkBlock);
         when(msg.getContent()).thenReturn(contentList);
         
         // When
@@ -218,8 +220,9 @@ class StreamEventProcessorTest {
         ThinkingBlock thinkBlock = mock(ThinkingBlock.class);
         when(thinkBlock.getThinking()).thenReturn("thinking");
         @SuppressWarnings("unchecked")
-        List<io.agentscope.core.message.ContentBlock> contentList = 
-                (List<io.agentscope.core.message.ContentBlock>) (List<?>) Collections.singletonList(thinkBlock);
+        List<io.agentscope.core.message.ContentBlock> contentList =
+            (List<io.agentscope.core.message.ContentBlock>) (List<?>) Collections
+                .singletonList(thinkBlock);
         
         when(event.isLast()).thenReturn(false);
         when(event.getType()).thenReturn(EventType.REASONING);
@@ -304,6 +307,7 @@ class StreamEventProcessorTest {
     void testCreateSubscriber() {
         // Given
         StreamResponseCallback<String> callback = new StreamResponseCallback<String>() {
+            
             @Override
             public void onNext(String response) {
             }
@@ -317,10 +321,12 @@ class StreamEventProcessorTest {
             }
         };
         
-        StreamEventProcessor.ResponseBuilder<String> builder = (type, content, done) -> type.getCode();
+        StreamEventProcessor.ResponseBuilder<String> builder =
+            (type, content, done) -> type.getCode();
         
         // When
-        org.reactivestreams.Subscriber<Event> subscriber = StreamEventProcessor.createSubscriber(builder, callback);
+        org.reactivestreams.Subscriber<Event> subscriber =
+            StreamEventProcessor.createSubscriber(builder, callback);
         
         // Then
         assertNotNull(subscriber);
@@ -350,7 +356,8 @@ class StreamEventProcessorTest {
         String content = "test content";
         
         // When
-        StreamEventProcessor.EventProcessResult result = new StreamEventProcessor.EventProcessResult(type, content);
+        StreamEventProcessor.EventProcessResult result =
+            new StreamEventProcessor.EventProcessResult(type, content);
         
         // Then
         assertEquals(type, result.getType());

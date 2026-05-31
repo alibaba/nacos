@@ -74,8 +74,10 @@ class SkillOptimizationResponseTest {
         optimizedSkill.setName("optimized-skill");
         
         List<OptimizationChange> changes = new ArrayList<>();
-        changes.add(new OptimizationChange("instruction", "improved", "Enhanced clarity", "Better UX"));
-        changes.add(new OptimizationChange("description", "added", "Added description", "More context"));
+        changes.add(
+            new OptimizationChange("instruction", "improved", "Enhanced clarity", "Better UX"));
+        changes.add(
+            new OptimizationChange("description", "added", "Added description", "More context"));
         
         // When
         response.setType(StreamResponseType.DONE);
@@ -92,7 +94,8 @@ class SkillOptimizationResponseTest {
         assertEquals(optimizedSkill, response.getOptimizedSkill());
         assertEquals(2, response.getChanges().size());
         assertEquals(0.95, response.getQualityScore());
-        assertEquals("The skill was optimized for better clarity and usability", response.getExplanation());
+        assertEquals("The skill was optimized for better clarity and usability",
+            response.getExplanation());
         assertTrue(response.isDone());
     }
     
@@ -102,9 +105,12 @@ class SkillOptimizationResponseTest {
         SkillOptimizationResponse response = new SkillOptimizationResponse();
         List<OptimizationChange> changes = new ArrayList<>();
         
-        OptimizationChange change1 = new OptimizationChange("instruction", "improved", "Better steps", "Clarity");
-        OptimizationChange change2 = new OptimizationChange("description", "added", "New description", "Context");
-        OptimizationChange change3 = new OptimizationChange("metadata", "removed", "Removed field", "Unused");
+        OptimizationChange change1 =
+            new OptimizationChange("instruction", "improved", "Better steps", "Clarity");
+        OptimizationChange change2 =
+            new OptimizationChange("description", "added", "New description", "Context");
+        OptimizationChange change3 =
+            new OptimizationChange("metadata", "removed", "Removed field", "Unused");
         
         changes.add(change1);
         changes.add(change2);
@@ -151,7 +157,8 @@ class SkillOptimizationResponseTest {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setDescription("Optimized skill");
-        skill.setSkillMd("---\nname: test-skill\ndescription: Optimized skill\n---\n\nImproved instruction");
+        skill.setSkillMd(
+            "---\nname: test-skill\ndescription: Optimized skill\n---\n\nImproved instruction");
         
         // When
         response.setOptimizedSkill(skill);
@@ -168,10 +175,12 @@ class SkillOptimizationResponseTest {
         SkillOptimizationResponse response = new SkillOptimizationResponse();
         
         // When
-        response.setExplanation("The skill was optimized to improve clarity and add error handling");
+        response
+            .setExplanation("The skill was optimized to improve clarity and add error handling");
         
         // Then
-        assertEquals("The skill was optimized to improve clarity and add error handling", response.getExplanation());
+        assertEquals("The skill was optimized to improve clarity and add error handling",
+            response.getExplanation());
     }
     
     @Test

@@ -39,12 +39,15 @@ public class ConfigContentTypeHandler extends AbstractConfigQueryHandler {
     public ConfigQueryChainResponse handle(ConfigQueryChainRequest request) throws IOException {
         ConfigQueryChainResponse response = getNextHandler().handle(request);
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND
-                || response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND) {
+            || response
+                .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND) {
             return response;
         }
         String contentType =
-                response.getContentType() != null ? response.getContentType() : FileTypeEnum.TEXT.getFileType();
-        FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(contentType);
+            response.getContentType() != null ? response.getContentType()
+                : FileTypeEnum.TEXT.getFileType();
+        FileTypeEnum fileTypeEnum =
+            FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(contentType);
         String contentTypeHeader = fileTypeEnum.getContentType();
         response.setContentType(contentTypeHeader);
         return response;

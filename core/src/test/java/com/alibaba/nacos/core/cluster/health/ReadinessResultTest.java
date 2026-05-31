@@ -23,21 +23,21 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReadinessResultTest {
-
+    
     @Test
     void testSuccessResult() {
         ReadinessResult result = new ReadinessResult(true, "OK");
         assertTrue(result.isSuccess());
         assertEquals("OK", result.getResultMessage());
     }
-
+    
     @Test
     void testFailureResult() {
         ReadinessResult result = new ReadinessResult(false, "module1 not in readiness");
         assertFalse(result.isSuccess());
         assertEquals("module1 not in readiness", result.getResultMessage());
     }
-
+    
     @Test
     void testResultWithEmptyMessage() {
         ReadinessResult result = new ReadinessResult(true, "");

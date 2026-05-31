@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>3.2.1-SNAPSHOT</revision>
+        <revision>3.3.0-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -128,15 +128,15 @@
         
         <!-- dependency version -->
         <nacos.logback.adapter.version>1.1.4</nacos.logback.adapter.version>
-        <spring-boot-dependencies.version>3.4.10</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>3.5.14</spring-boot-dependencies.version>
         <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
-        <logback.version>1.5.12</logback.version>
+        <logback.version>1.5.32</logback.version>
         <log4j.version>2.25.4</log4j.version>
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
-        <postgresql.version>42.7.2</postgresql.version>
+        <postgresql.version>42.7.11</postgresql.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.78.0</grpc-java.version>
@@ -145,6 +145,7 @@
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
         <mockito.version>4.11.0</mockito.version>
+        <byte-buddy-agent.version>1.17.8</byte-buddy-agent.version>
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.4.0</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
@@ -154,14 +155,15 @@
         <SnakeYaml.version>2.0</SnakeYaml.version>
         <kubernetes.client.version>22.0.0</kubernetes.client.version>
         <junit5.version>5.10.2</junit5.version>
-        <mcp.version>0.17.0</mcp.version>
+        <mcp.version>0.18.2</mcp.version>
         <ojdbc.version>19.7.0.0</ojdbc.version>
 
         <!-- Maven Central Portal -->
         <central.publishing.maven.version>0.7.0</central.publishing.maven.version>
 
-        <!-- override dependency version -->
-        <micrometer.version>1.12.8</micrometer.version>
+        <!-- Override micrometer version for Spring Boot 3.5.x compatibility,
+             see https://github.com/alibaba/nacos/issues/15033 -->
+        <micrometer.version>1.15.11</micrometer.version>
         
         <!-- native -->
         <native-maven-plugin.version>0.10.2</native-maven-plugin.version>
@@ -304,6 +306,28 @@
                 </dependencies>
             </plugin>
             <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.44.4</version>
+                <configuration>
+                    <java>
+                        <excludes>
+                            <exclude>**/api/grpc/auto/**</exclude>
+                            <exclude>**/consistency/entity/**</exclude>
+                            <exclude>**/istio/model/**</exclude>
+                            <exclude>**/common/packagescan/**</exclude>
+                            <exclude>**/nacos/test/**</exclude>
+                            <exclude>**/protobuf/**</exclude>
+                        </excludes>
+                        <toggleOffOn/>
+                        <eclipse>
+                            <file>${maven.multiModuleProjectDirectory}/style/nacos-eclipse-formatter.xml</file>
+                        </eclipse>
+                        <removeUnusedImports/>
+                    </java>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
                 <version>${apache-rat-plugin.version}</version>
@@ -354,6 +378,7 @@
                         <exclude>.qoder/**</exclude>
                         <exclude>.tools/**</exclude>
                         <exclude>skills/**</exclude>
+                        <exclude>.codegraph/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -412,6 +437,7 @@
                 <configuration>
                     <argLine>
                         ${argLine}
+                        -javaagent:${settings.localRepository}/net/bytebuddy/byte-buddy-agent/${byte-buddy-agent.version}/byte-buddy-agent-${byte-buddy-agent.version}.jar
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.lang.reflect=ALL-UNNAMED
                         --add-opens java.base/java.util=ALL-UNNAMED

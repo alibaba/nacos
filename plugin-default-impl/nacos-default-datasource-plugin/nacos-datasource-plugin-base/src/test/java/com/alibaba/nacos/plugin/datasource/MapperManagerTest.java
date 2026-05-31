@@ -44,13 +44,15 @@ class MapperManagerTest {
         Class<MapperManager> mapperManagerClass = MapperManager.class;
         Field declaredField = mapperManagerClass.getDeclaredField("MAPPER_SPI_MAP");
         declaredField.setAccessible(true);
-        Map<String, Map<String, Mapper>> map = (Map<String, Map<String, Mapper>>) declaredField.get(instance);
+        Map<String, Map<String, Mapper>> map =
+            (Map<String, Map<String, Mapper>>) declaredField.get(instance);
         assertEquals(1, map.size());
     }
     
     @Test
     void testJoin() {
         MapperManager.join(new AbstractMapper() {
+            
             @Override
             public String getTableName() {
                 return "test";
@@ -83,7 +85,8 @@ class MapperManagerTest {
     void testEnableDataSourceLogJoin() {
         MapperManager.join(new TestMapper());
         MapperManager instance = MapperManager.instance(true);
-        ConfigInfoGrayMapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "enable_data_source_log_test");
+        ConfigInfoGrayMapper mapper =
+            instance.findMapper(DataSourceConstant.MYSQL, "enable_data_source_log_test");
         assertNotNull(mapper);
     }
     

@@ -47,9 +47,13 @@ class PublishPipelineResourceTypeTest {
         PublishPipelineResourceType[] values = PublishPipelineResourceType.values();
         assertEquals(3, values.length, "PublishPipelineResourceType should have exactly 3 values");
         
-        Set<PublishPipelineResourceType> valueSet = Arrays.stream(values).collect(Collectors.toSet());
-        assertTrue(valueSet.contains(PublishPipelineResourceType.SKILL), "values() should contain SKILL");
-        assertTrue(valueSet.contains(PublishPipelineResourceType.PROMPT), "values() should contain PROMPT");
-        assertTrue(valueSet.contains(PublishPipelineResourceType.AGENTSPEC), "values() should contain AGENTSPEC");
+        Set<PublishPipelineResourceType> valueSet =
+            Arrays.stream(values).collect(Collectors.toSet());
+        assertTrue(valueSet.contains(PublishPipelineResourceType.SKILL),
+            "values() should contain SKILL");
+        assertTrue(valueSet.contains(PublishPipelineResourceType.PROMPT),
+            "values() should contain PROMPT");
+        assertTrue(valueSet.contains(PublishPipelineResourceType.AGENTSPEC),
+            "values() should contain AGENTSPEC");
     }
 }

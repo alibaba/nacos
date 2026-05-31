@@ -27,13 +27,13 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
  * @author Long Yu
  **/
 public abstract class BaseTenantInfoMapper extends AbstractMapper implements TenantInfoMapper {
-
+    
     private DatabaseDialect databaseDialect;
-
+    
     public BaseTenantInfoMapper() {
         databaseDialect = DatabaseDialectManager.getInstance().getDialect(getDataSource());
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return databaseDialect.getFunction(functionName);

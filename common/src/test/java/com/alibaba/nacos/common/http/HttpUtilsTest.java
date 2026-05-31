@@ -217,7 +217,8 @@ class HttpUtilsTest {
     void testInitRequestFromEntity4() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         
-        HttpUtils.initRequestFromEntity(mock(HttpUriRequestBase.class), Collections.emptyMap(), "UTF-8");
+        HttpUtils.initRequestFromEntity(mock(HttpUriRequestBase.class), Collections.emptyMap(),
+            "UTF-8");
         
         // nothing change
         assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
@@ -261,7 +262,8 @@ class HttpUtilsTest {
         params.put("b", "x");
         params.put("uriChar", "=");
         params.put("chinese", "测试");
-        assertEquals("b=x&uriChar=%3D&chinese=%E6%B5%8B%E8%AF%95&", HttpUtils.encodingParams(params, "UTF-8"));
+        assertEquals("b=x&uriChar=%3D&chinese=%E6%B5%8B%E8%AF%95&",
+            HttpUtils.encodingParams(params, "UTF-8"));
     }
     
     @Test
@@ -280,7 +282,8 @@ class HttpUtilsTest {
         params.add("=");
         params.add("chinese");
         params.add("测试");
-        assertEquals("a=&b=x&uriChar=%3D&chinese=%E6%B5%8B%E8%AF%95", HttpUtils.encodingParams(params, "UTF-8"));
+        assertEquals("a=&b=x&uriChar=%3D&chinese=%E6%B5%8B%E8%AF%95",
+            HttpUtils.encodingParams(params, "UTF-8"));
     }
     
     @Test
@@ -308,7 +311,8 @@ class HttpUtilsTest {
         assertTrue(HttpUtils.isTimeoutException(new TimeoutException()));
         assertTrue(HttpUtils.isTimeoutException(new SocketTimeoutException()));
         assertTrue(HttpUtils.isTimeoutException(new ConnectTimeoutException("")));
-        assertTrue(HttpUtils.isTimeoutException(new NacosRuntimeException(0, new TimeoutException())));
+        assertTrue(
+            HttpUtils.isTimeoutException(new NacosRuntimeException(0, new TimeoutException())));
     }
     
     @Test
@@ -316,7 +320,8 @@ class HttpUtilsTest {
         Header header = HttpUtils.builderHeader("Test");
         assertNotNull(header);
         assertEquals(header.getValue(HttpHeaderConsts.CLIENT_VERSION_HEADER), VersionUtils.version);
-        assertEquals(header.getValue(HttpHeaderConsts.USER_AGENT_HEADER), VersionUtils.getFullClientVersion());
+        assertEquals(header.getValue(HttpHeaderConsts.USER_AGENT_HEADER),
+            VersionUtils.getFullClientVersion());
         assertEquals("gzip,deflate,sdch", header.getValue(HttpHeaderConsts.ACCEPT_ENCODING));
         assertEquals("Keep-Alive", header.getValue(HttpHeaderConsts.CONNECTION));
         assertNotNull(header.getValue(HttpHeaderConsts.REQUEST_ID));

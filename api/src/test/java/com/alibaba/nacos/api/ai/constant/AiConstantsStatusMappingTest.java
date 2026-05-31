@@ -27,7 +27,8 @@ class AiConstantsStatusMappingTest {
     void testStatusConstantsAlignedWithEnum() {
         // Verify that AiConstants.Mcp status constants match McpServerStatusEnum values
         assertEquals(McpServerStatusEnum.ACTIVE.getName(), AiConstants.Mcp.MCP_STATUS_ACTIVE);
-        assertEquals(McpServerStatusEnum.DEPRECATED.getName(), AiConstants.Mcp.MCP_STATUS_DEPRECATED);
+        assertEquals(McpServerStatusEnum.DEPRECATED.getName(),
+            AiConstants.Mcp.MCP_STATUS_DEPRECATED);
         assertEquals(McpServerStatusEnum.DELETED.getName(), AiConstants.Mcp.MCP_STATUS_DELETED);
     }
     
@@ -41,13 +42,16 @@ class AiConstantsStatusMappingTest {
     @Test
     void testStatusCanBeParsedFromEnum() {
         // Verify that we can parse the constants back to enum
-        McpServerStatusEnum active = McpServerStatusEnum.parseStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
+        McpServerStatusEnum active =
+            McpServerStatusEnum.parseStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
         assertEquals(McpServerStatusEnum.ACTIVE, active);
         
-        McpServerStatusEnum deprecated = McpServerStatusEnum.parseStatus(AiConstants.Mcp.MCP_STATUS_DEPRECATED);
+        McpServerStatusEnum deprecated =
+            McpServerStatusEnum.parseStatus(AiConstants.Mcp.MCP_STATUS_DEPRECATED);
         assertEquals(McpServerStatusEnum.DEPRECATED, deprecated);
         
-        McpServerStatusEnum deleted = McpServerStatusEnum.parseStatus(AiConstants.Mcp.MCP_STATUS_DELETED);
+        McpServerStatusEnum deleted =
+            McpServerStatusEnum.parseStatus(AiConstants.Mcp.MCP_STATUS_DELETED);
         assertEquals(McpServerStatusEnum.DELETED, deleted);
     }
 }

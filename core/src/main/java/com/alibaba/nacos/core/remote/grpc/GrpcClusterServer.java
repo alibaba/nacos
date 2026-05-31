@@ -60,7 +60,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getKeepAliveTime() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY,
+        Long property =
+            EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY,
                 Long.class);
         if (property != null) {
             return property;
@@ -70,7 +71,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getKeepAliveTimeout() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY,
+        Long property =
+            EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY,
                 Long.class);
         if (property != null) {
             return property;
@@ -86,7 +88,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getPermitKeepAliveTime() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_PERMIT_KEEP_ALIVE_TIME, Long.class);
+        Long property = EnvUtil
+            .getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_PERMIT_KEEP_ALIVE_TIME, Long.class);
         if (property != null) {
             return property;
         }
@@ -95,17 +98,19 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected int getMaxInboundMessageSize() {
-        Integer property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY,
-                Integer.class);
+        Integer property = EnvUtil.getProperty(
+            GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY,
+            Integer.class);
         if (property != null) {
             return property;
         }
         
         int size = super.getMaxInboundMessageSize();
         if (Loggers.REMOTE.isWarnEnabled()) {
-            Loggers.REMOTE.warn("Recommended use '{}' property instead '{}', now property value is {}",
-                    GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY,
-                    GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY, size);
+            Loggers.REMOTE.warn(
+                "Recommended use '{}' property instead '{}', now property value is {}",
+                GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY,
+                GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY, size);
         }
         return size;
     }
@@ -115,7 +120,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
         List<ServerInterceptor> result = new LinkedList<>();
         result.addAll(super.getSeverInterceptors());
         result.addAll(NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors(
-                NacosGrpcServerInterceptor.CLUSTER_INTERCEPTOR));
+            NacosGrpcServerInterceptor.CLUSTER_INTERCEPTOR));
         return result;
     }
     
@@ -124,7 +129,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
         List<ServerTransportFilter> result = new LinkedList<>();
         result.addAll(super.getServerTransportFilters());
         result.addAll(NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters(
-                NacosGrpcServerTransportFilter.CLUSTER_FILTER));
+            NacosGrpcServerTransportFilter.CLUSTER_FILTER));
         return result;
     }
     

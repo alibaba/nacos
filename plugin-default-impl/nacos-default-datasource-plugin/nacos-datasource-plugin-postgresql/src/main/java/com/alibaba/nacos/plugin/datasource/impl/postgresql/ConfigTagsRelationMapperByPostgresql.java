@@ -32,12 +32,12 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  **/
 
 public class ConfigTagsRelationMapperByPostgresql extends BaseConfigTagsRelationMapper {
-
+    
     @Override
     public String getDataSource() {
         return DatabaseTypeConstant.POSTGRESQL;
     }
-
+    
     @Override
     public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -50,7 +50,7 @@ public class ConfigTagsRelationMapperByPostgresql extends BaseConfigTagsRelation
         
         // 构建内层查询：根据标签条件筛选配置
         WhereBuilder innerWhere = new WhereBuilder(
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
+            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
                 + "FROM config_info a ");
         innerWhere.like("a.tenant_id", tenant);
         if (StringUtils.isNotBlank(dataId)) {
@@ -86,10 +86,11 @@ public class ConfigTagsRelationMapperByPostgresql extends BaseConfigTagsRelation
         
         // 构建外层查询：获取筛选出的配置的完整标签信息
         // 使用exists和标量子查询规避group by ...content..带来的大字段分组开销
-        final String sql = "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,c.type,c.c_desc,"
+        final String sql =
+            "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,c.type,c.c_desc,"
                 + "(SELECT STRING_AGG(tag_name, ',') FROM config_tags_relation d WHERE d.id = c.id) as config_tags "
                 + "FROM (" + innerResult.getSql() + ") c ";
         return new MapperResult(sql, innerResult.getParamList());
     }
-
+    
 }

@@ -24,22 +24,25 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NacosGrpcServerInterceptorServiceLoaderTest {
-
+    
     @Test
     void testLoadServerInterceptorsSdk() {
-        List<NacosGrpcServerInterceptor> list = NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors("SDK");
+        List<NacosGrpcServerInterceptor> list =
+            NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors("SDK");
         assertNotNull(list);
     }
-
+    
     @Test
     void testLoadServerInterceptorsCluster() {
-        List<NacosGrpcServerInterceptor> list = NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors("CLUSTER");
+        List<NacosGrpcServerInterceptor> list =
+            NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors("CLUSTER");
         assertNotNull(list);
     }
-
+    
     @Test
     void testLoadServerInterceptorsUnknownType() {
-        List<NacosGrpcServerInterceptor> list = NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors("UNKNOWN");
+        List<NacosGrpcServerInterceptor> list =
+            NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors("UNKNOWN");
         assertNotNull(list);
         assertTrue(list.isEmpty());
     }

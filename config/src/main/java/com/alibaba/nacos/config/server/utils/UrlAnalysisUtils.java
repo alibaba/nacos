@@ -28,7 +28,8 @@ import java.util.regex.Pattern;
  */
 public class UrlAnalysisUtils {
     
-    private static final Pattern URL_PATTERN = Pattern.compile("^(\\w+://)?([\\w\\.]+:)(\\d*)?(\\??.*)");
+    private static final Pattern URL_PATTERN =
+        Pattern.compile("^(\\w+://)?([\\w\\.]+:)(\\d*)?(\\??.*)");
     
     public static String getContentIdentity(String content) {
         

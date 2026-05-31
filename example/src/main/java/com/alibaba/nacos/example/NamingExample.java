@@ -54,42 +54,48 @@ public class NamingExample {
         
         NamingService naming = NamingFactory.createNamingService(properties);
         
-        naming.registerInstance(INSTANCE_SERVICE_NAME, INSTANCE_IP, INSTANCE_PORT, INSTANCE_CLUSTER_NAME);
-    
-        Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-                runnable -> {
-                    Thread thread = new Thread(runnable);
-                    thread.setName("test-thread");
-                    return thread;
-                });
-    
-        naming.subscribe(INSTANCE_SERVICE_NAME, new AbstractEventListener() {
+        naming.registerInstance(INSTANCE_SERVICE_NAME, INSTANCE_IP, INSTANCE_PORT,
+            INSTANCE_CLUSTER_NAME);
         
+        Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>(),
+            runnable -> {
+                Thread thread = new Thread(runnable);
+                thread.setName("test-thread");
+                return thread;
+            });
+        
+        naming.subscribe(INSTANCE_SERVICE_NAME, new AbstractEventListener() {
+            
             //EventListener onEvent is sync to handle, If process too low in onEvent, maybe block other onEvent callback.
             //So you can override getExecutor() to async handle event.
             @Override
             public Executor getExecutor() {
                 return executor;
             }
-        
+            
             @Override
             public void onEvent(Event event) {
                 System.out.println("[serviceName] " + ((NamingEvent) event).getServiceName());
-                System.out.println("[instances from event] " + ((NamingEvent) event).getInstances());
+                System.out
+                    .println("[instances from event] " + ((NamingEvent) event).getInstances());
             }
         });
         
         Thread.sleep(1000);
-    
-        System.out.println("[instances after register] " + naming.getAllInstances(INSTANCE_SERVICE_NAME));
+        
+        System.out
+            .println("[instances after register] " + naming.getAllInstances(INSTANCE_SERVICE_NAME));
         
         Thread.sleep(1000);
-    
-        naming.deregisterInstance(INSTANCE_SERVICE_NAME, INSTANCE_IP, INSTANCE_PORT, INSTANCE_CLUSTER_NAME);
-    
+        
+        naming.deregisterInstance(INSTANCE_SERVICE_NAME, INSTANCE_IP, INSTANCE_PORT,
+            INSTANCE_CLUSTER_NAME);
+        
         Thread.sleep(1000);
         
-        System.out.println("[instances after deregister] " + naming.getAllInstances(INSTANCE_SERVICE_NAME));
+        System.out.println(
+            "[instances after deregister] " + naming.getAllInstances(INSTANCE_SERVICE_NAME));
         
         Thread.sleep(1000);
     }

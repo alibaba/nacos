@@ -38,7 +38,8 @@ public class ConfigFactory {
      */
     public static ConfigService createConfigService(Properties properties) throws NacosException {
         try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
+            Class<?> driverImplClass =
+                Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             ConfigService vendorImpl = (ConfigService) constructor.newInstance(properties);
             return vendorImpl;

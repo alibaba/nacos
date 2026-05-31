@@ -44,8 +44,9 @@ public class NamingFuzzyWatchChangeNotifier extends SmartSubscriber {
     
     private FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine;
     
-    public NamingFuzzyWatchChangeNotifier(NamingFuzzyWatchContextService namingFuzzyWatchContextService,
-            FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine) {
+    public NamingFuzzyWatchChangeNotifier(
+        NamingFuzzyWatchContextService namingFuzzyWatchContextService,
+        FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine) {
         this.fuzzyWatchPushDelayTaskEngine = fuzzyWatchPushDelayTaskEngine;
         this.namingFuzzyWatchContextService = namingFuzzyWatchContextService;
         NotifyCenter.registerSubscriber(this);
@@ -61,29 +62,36 @@ public class NamingFuzzyWatchChangeNotifier extends SmartSubscriber {
     @Override
     public void onEvent(Event event) {
         if (event instanceof ServiceEvent.ServiceChangedEvent) {
-            ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
+            ServiceEvent.ServiceChangedEvent serviceChangedEvent =
+                (ServiceEvent.ServiceChangedEvent) event;
             if (namingFuzzyWatchContextService.syncServiceContext(serviceChangedEvent.getService(),
-                    serviceChangedEvent.getChangedType())) {
+                serviceChangedEvent.getChangedType())) {
                 generateFuzzyWatchChangeNotifyTask(serviceChangedEvent.getService(),
-                        serviceChangedEvent.getChangedType());
+                    serviceChangedEvent.getChangedType());
             }
         }
     }
     
-    private void generateFuzzyWatchChangeNotifyTask(com.alibaba.nacos.naming.core.v2.pojo.Service service,
-            String changedType) {
+    private void generateFuzzyWatchChangeNotifyTask(
+        com.alibaba.nacos.naming.core.v2.pojo.Service service,
+        String changedType) {
         
-        String serviceKey = NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(), service.getName());
-        Set<String> fuzzyWatchedClients = namingFuzzyWatchContextService.getFuzzyWatchedClients(service);
+        String serviceKey = NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(),
+            service.getName());
+        Set<String> fuzzyWatchedClients =
+            namingFuzzyWatchContextService.getFuzzyWatchedClients(service);
         
-        Loggers.SRV_LOG.info("FUZZY_WATCH:serviceKey {}   has {} clients  fuzzy watched", serviceKey,
-                fuzzyWatchedClients == null ? 0 : fuzzyWatchedClients.size());
+        Loggers.SRV_LOG.info("FUZZY_WATCH:serviceKey {}   has {} clients  fuzzy watched",
+            serviceKey,
+            fuzzyWatchedClients == null ? 0 : fuzzyWatchedClients.size());
         // watch notify push task specify by service
         for (String clientId : fuzzyWatchedClients) {
-            FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask = new FuzzyWatchChangeNotifyTask(serviceKey,
+            FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask =
+                new FuzzyWatchChangeNotifyTask(serviceKey,
                     changedType, clientId, PushConfig.getInstance().getPushTaskDelay());
-            fuzzyWatchPushDelayTaskEngine.addTask(FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchChangeNotifyTask),
-                    fuzzyWatchChangeNotifyTask);
+            fuzzyWatchPushDelayTaskEngine.addTask(
+                FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchChangeNotifyTask),
+                fuzzyWatchChangeNotifyTask);
         }
     }
     

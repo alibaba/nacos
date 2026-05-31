@@ -29,7 +29,8 @@ class InstanceTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testRegisterInstanceTraceEvent() {
-        RegisterInstanceTraceEvent registerInstanceTraceEvent = new RegisterInstanceTraceEvent(TIME, CLIENT_IP, true,
+        RegisterInstanceTraceEvent registerInstanceTraceEvent =
+            new RegisterInstanceTraceEvent(TIME, CLIENT_IP, true,
                 NAMESPACE_ID, GROUP_NAME, SERVICE_NAME, IP, PORT);
         assertBasicInfo(registerInstanceTraceEvent);
         assertEquals("REGISTER_INSTANCE_TRACE_EVENT", registerInstanceTraceEvent.getType());
@@ -42,8 +43,10 @@ class InstanceTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testDeregisterInstanceTraceEvent() {
-        DeregisterInstanceTraceEvent deregisterInstanceTraceEvent = new DeregisterInstanceTraceEvent(TIME, CLIENT_IP, true,
-                DeregisterInstanceReason.NATIVE_DISCONNECTED, NAMESPACE_ID, GROUP_NAME, SERVICE_NAME, IP, PORT);
+        DeregisterInstanceTraceEvent deregisterInstanceTraceEvent =
+            new DeregisterInstanceTraceEvent(TIME, CLIENT_IP, true,
+                DeregisterInstanceReason.NATIVE_DISCONNECTED, NAMESPACE_ID, GROUP_NAME,
+                SERVICE_NAME, IP, PORT);
         assertBasicInfo(deregisterInstanceTraceEvent);
         assertEquals("DEREGISTER_INSTANCE_TRACE_EVENT", deregisterInstanceTraceEvent.getType());
         assertEquals(CLIENT_IP, deregisterInstanceTraceEvent.getClientIp());
@@ -51,14 +54,16 @@ class InstanceTraceEventTest extends NamingTraceEventTest {
         assertEquals(IP, deregisterInstanceTraceEvent.getInstanceIp());
         assertEquals(PORT, deregisterInstanceTraceEvent.getInstancePort());
         assertEquals(IP + ":" + PORT, deregisterInstanceTraceEvent.toInetAddr());
-        assertEquals(DeregisterInstanceReason.NATIVE_DISCONNECTED, deregisterInstanceTraceEvent.getReason());
+        assertEquals(DeregisterInstanceReason.NATIVE_DISCONNECTED,
+            deregisterInstanceTraceEvent.getReason());
     }
     
     @Test
     void testUpdateInstanceTraceEvent() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("test1", "testValue");
-        UpdateInstanceTraceEvent updateInstanceTraceEvent = new UpdateInstanceTraceEvent(TIME, CLIENT_IP, NAMESPACE_ID,
+        UpdateInstanceTraceEvent updateInstanceTraceEvent =
+            new UpdateInstanceTraceEvent(TIME, CLIENT_IP, NAMESPACE_ID,
                 GROUP_NAME, SERVICE_NAME, IP, PORT, metadata);
         assertBasicInfo(updateInstanceTraceEvent);
         assertEquals("UPDATE_INSTANCE_TRACE_EVENT", updateInstanceTraceEvent.getType());

@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.api.ai;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -42,6 +44,7 @@ public interface AiService extends A2aService {
      * @return detail information of MCP server
      * @throws NacosException if request parameter is invalid or mcp server not found or handle error
      */
+    @Since("3.0.3")
     default McpServerDetailInfo getMcpServer(String mcpName) throws NacosException {
         return getMcpServer(mcpName, null);
     }
@@ -54,6 +57,7 @@ public interface AiService extends A2aService {
      * @return detail information of MCP server
      * @throws NacosException if request parameter is invalid or mcp server not found or handle error
      */
+    @Since("3.0.3")
     McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException;
     
     /**
@@ -70,11 +74,13 @@ public interface AiService extends A2aService {
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
      */
-    default String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
-            throws NacosException {
+    @Since("3.0.3")
+    default String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification)
+        throws NacosException {
         return releaseMcpServer(serverSpecification, toolSpecification, (McpEndpointSpec) null);
     }
-
+    
     /**
      * Release new mcp server or release new version of exist mcp server request.
      *
@@ -84,9 +90,12 @@ public interface AiService extends A2aService {
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
      */
-    default String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
-            McpResourceSpecification resourceSpecification) throws NacosException {
-        return releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification, null);
+    @Since("3.2.1")
+    default String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification) throws NacosException {
+        return releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification,
+            null);
     }
     
     /**
@@ -104,8 +113,10 @@ public interface AiService extends A2aService {
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
      */
-    String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
-            McpEndpointSpec endpointSpecification) throws NacosException;
+    @Since("3.0.3")
+    String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**
      * Release new mcp server or release new version of exist mcp server request.
@@ -117,10 +128,12 @@ public interface AiService extends A2aService {
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
      */
-    String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
-            McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
-            throws NacosException;
-
+    @Since("3.2.1")
+    String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
+        throws NacosException;
+    
     /**
      * Register an endpoint into target mcp server for all version.
      *
@@ -129,7 +142,9 @@ public interface AiService extends A2aService {
      * @param port      port of endpoint
      * @throws NacosException if request parameter is invalid or handle error
      */
-    default void registerMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
+    @Since("3.0.3")
+    default void registerMcpServerEndpoint(String mcpName, String address, int port)
+        throws NacosException {
         registerMcpServerEndpoint(mcpName, address, port, null);
     }
     
@@ -142,7 +157,9 @@ public interface AiService extends A2aService {
      * @param version   version of mcp server
      * @throws NacosException if request parameter is invalid or handle error
      */
-    void registerMcpServerEndpoint(String mcpName, String address, int port, String version) throws NacosException;
+    @Since("3.0.3")
+    void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
+        throws NacosException;
     
     /**
      * Deregister an endpoint from target mcp server for any version.
@@ -157,7 +174,9 @@ public interface AiService extends A2aService {
      * @param port      port of endpoint
      * @throws NacosException if request parameter is invalid or handle error
      */
-    void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException;
+    @Since("3.0.3")
+    void deregisterMcpServerEndpoint(String mcpName, String address, int port)
+        throws NacosException;
     
     /**
      * Subscribe mcp server.
@@ -167,8 +186,10 @@ public interface AiService extends A2aService {
      * @return The detail info of mcp server at current time
      * @throws NacosException if request parameter is invalid or handle error
      */
-    default McpServerDetailInfo subscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener)
-            throws NacosException {
+    @Since("3.0.3")
+    default McpServerDetailInfo subscribeMcpServer(String mcpName,
+        AbstractNacosMcpServerListener mcpServerListener)
+        throws NacosException {
         return subscribeMcpServer(mcpName, null, mcpServerListener);
     }
     
@@ -181,8 +202,9 @@ public interface AiService extends A2aService {
      * @return The detail info of mcp server at current time, nullable if agent card not found
      * @throws NacosException if request parameter is invalid or handle error
      */
+    @Since("3.0.3")
     McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
-            AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
+        AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
     
     /**
      * Un-subscribe mcp server.
@@ -191,8 +213,10 @@ public interface AiService extends A2aService {
      * @param mcpServerListener listener of mcp server
      * @throws NacosException if request parameter is invalid or handle error
      */
-    default void unsubscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener)
-            throws NacosException {
+    @Since("3.0.3")
+    default void unsubscribeMcpServer(String mcpName,
+        AbstractNacosMcpServerListener mcpServerListener)
+        throws NacosException {
         unsubscribeMcpServer(mcpName, null, mcpServerListener);
     }
     
@@ -204,8 +228,10 @@ public interface AiService extends A2aService {
      * @param mcpServerListener listener of mcp server
      * @throws NacosException if request parameter is invalid or handle error
      */
-    void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
-            throws NacosException;
+    @Since("3.0.3")
+    void unsubscribeMcpServer(String mcpName, String version,
+        AbstractNacosMcpServerListener mcpServerListener)
+        throws NacosException;
     
     /**
      * Download skill as ZIP byte array by skill name. Defaults to latest version.
@@ -217,8 +243,9 @@ public interface AiService extends A2aService {
      * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
      */
+    @Since("3.2.0")
     byte[] downloadSkillZip(String skillName) throws NacosException;
-
+    
     /**
      * Download skill as ZIP byte array by skill name and target version.
      *
@@ -227,8 +254,9 @@ public interface AiService extends A2aService {
      * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
      */
+    @Since("3.2.0")
     byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException;
-
+    
     /**
      * Download skill as ZIP byte array by skill name and target label.
      *
@@ -237,6 +265,7 @@ public interface AiService extends A2aService {
      * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
      */
+    @Since("3.2.0")
     byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException;
     
     // ==================== AgentSpec Management APIs ====================
@@ -253,6 +282,7 @@ public interface AiService extends A2aService {
      * @return complete AgentSpec object with all resources
      * @throws NacosException if agent spec not found or query error
      */
+    @Since("3.2.0")
     AgentSpec loadAgentSpec(String agentSpecName) throws NacosException;
     
     /**
@@ -263,8 +293,10 @@ public interface AiService extends A2aService {
      * @return The agent spec object at current time, nullable if agent spec not found
      * @throws NacosException if request parameter is invalid or handle error
      */
-    AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
-            throws NacosException;
+    @Since("3.2.0")
+    AgentSpec subscribeAgentSpec(String agentSpecName,
+        AbstractNacosAgentSpecListener agentSpecListener)
+        throws NacosException;
     
     /**
      * Un-subscribe agent spec.
@@ -273,8 +305,10 @@ public interface AiService extends A2aService {
      * @param agentSpecListener   listener of agent spec
      * @throws NacosException if request parameter is invalid or handle error
      */
-    void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
-            throws NacosException;
+    @Since("3.2.0")
+    void unsubscribeAgentSpec(String agentSpecName,
+        AbstractNacosAgentSpecListener agentSpecListener)
+        throws NacosException;
     
     // ==================== Prompt Management APIs ====================
     
@@ -285,6 +319,7 @@ public interface AiService extends A2aService {
      * @return prompt object with current version
      * @throws NacosException if prompt not found or query error
      */
+    @Since("3.2.0")
     Prompt getPrompt(String promptKey) throws NacosException;
     
     /**
@@ -295,6 +330,7 @@ public interface AiService extends A2aService {
      * @return prompt object with target version
      * @throws NacosException if prompt not found or query error
      */
+    @Since("3.2.0")
     Prompt getPromptByVersion(String promptKey, String version) throws NacosException;
     
     /**
@@ -305,6 +341,7 @@ public interface AiService extends A2aService {
      * @return prompt object with target label
      * @throws NacosException if prompt not found or query error
      */
+    @Since("3.2.0")
     Prompt getPromptByLabel(String promptKey, String label) throws NacosException;
     
     /**
@@ -317,8 +354,9 @@ public interface AiService extends A2aService {
      * @return current prompt object, may be null if prompt not found
      * @throws NacosException if request parameter is invalid or handle error
      */
+    @Since("3.2.0")
     Prompt subscribePrompt(String promptKey, String version, String label,
-            AbstractNacosPromptListener promptListener) throws NacosException;
+        AbstractNacosPromptListener promptListener) throws NacosException;
     
     /**
      * Un-subscribe prompt changes.
@@ -329,14 +367,44 @@ public interface AiService extends A2aService {
      * @param promptListener listener for prompt changes
      * @throws NacosException if request parameter is invalid or handle error
      */
+    @Since("3.2.0")
     void unsubscribePrompt(String promptKey, String version, String label,
-            AbstractNacosPromptListener promptListener) throws NacosException;
+        AbstractNacosPromptListener promptListener) throws NacosException;
+    
+    /**
+     * Subscribe skill changes.
+     *
+     * @param skillName     skill name
+     * @param version       target skill version, optional
+     * @param label         target skill label, optional
+     * @param skillListener listener for skill changes
+     * @return current skill ZIP bytes, may be {@code null} when the skill is not found
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    @Since("3.2.2")
+    byte[] subscribeSkill(String skillName, String version, String label,
+        AbstractNacosSkillListener skillListener) throws NacosException;
+    
+    /**
+     * Un-subscribe skill changes.
+     *
+     * @param skillName     skill name
+     * @param version       target skill version, optional
+     * @param label         target skill label, optional
+     * @param skillListener listener previously registered via
+     *                      {@link #subscribeSkill(String, String, String, AbstractNacosSkillListener)}
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    @Since("3.2.2")
+    void unsubscribeSkill(String skillName, String version, String label,
+        AbstractNacosSkillListener skillListener) throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.
      *
      * @throws NacosException exception.
      */
+    @Since("3.0.3")
     void shutdown() throws NacosException;
     
 }

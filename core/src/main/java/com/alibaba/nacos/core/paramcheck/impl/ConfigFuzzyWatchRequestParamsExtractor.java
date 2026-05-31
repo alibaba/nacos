@@ -49,7 +49,8 @@ public class ConfigFuzzyWatchRequestParamsExtractor extends AbstractRpcParamExtr
         List<ParamInfo> paramInfos = new ArrayList<>();
         // Extract namespace ID and group from the context
         ParamInfo paramInfo1 = new ParamInfo();
-        paramInfo1.setNamespaceId(FuzzyGroupKeyPattern.getNamespaceFromPattern(req.getGroupKeyPattern()));
+        paramInfo1
+            .setNamespaceId(FuzzyGroupKeyPattern.getNamespaceFromPattern(req.getGroupKeyPattern()));
         paramInfos.add(paramInfo1);
         return paramInfos;
     }

@@ -38,7 +38,8 @@ class DefaultParamCheckerTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        System.setProperty("nacos.naming.service.metadata.length", String.valueOf(maxMetadataLength));
+        System.setProperty("nacos.naming.service.metadata.length",
+            String.valueOf(maxMetadataLength));
         paramChecker = new DefaultParamChecker();
     }
     
@@ -75,12 +76,16 @@ class DefaultParamCheckerTest {
         paramInfo.setNamespaceShowName(namespaceShowName);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'namespaceShowName' is illegal, the param length should not exceed 256.", actual.getMessage());
+        assertEquals(
+            "Param 'namespaceShowName' is illegal, the param length should not exceed 256.",
+            actual.getMessage());
         // Pattern
         paramInfo.setNamespaceShowName("hsbfkj@$!#khdkad");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'namespaceShowName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals(
+            "Param 'namespaceShowName' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
         // Success
         paramInfo.setNamespaceShowName("测试");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -97,12 +102,16 @@ class DefaultParamCheckerTest {
         paramInfo.setNamespaceId(namespaceId);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'namespaceId/tenant' is illegal, the param length should not exceed 64.", actual.getMessage());
+        assertEquals(
+            "Param 'namespaceId/tenant' is illegal, the param length should not exceed 64.",
+            actual.getMessage());
         // Pattern
         paramInfo.setNamespaceId("hsbfkj@$!#khdkad");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'namespaceId/tenant' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals(
+            "Param 'namespaceId/tenant' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
         // Success
         paramInfo.setNamespaceId("123-ashdal");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -119,12 +128,15 @@ class DefaultParamCheckerTest {
         paramInfo.setDataId(dataId);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'dataId' is illegal, the param length should not exceed 256.", actual.getMessage());
+        assertEquals("Param 'dataId' is illegal, the param length should not exceed 256.",
+            actual.getMessage());
         // Pattern
         paramInfo.setDataId("hsbfkj@$!#khdkad");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'dataId' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals(
+            "Param 'dataId' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
         // Success
         paramInfo.setDataId("a-zA-Z0-9-_:.");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -141,12 +153,15 @@ class DefaultParamCheckerTest {
         paramInfo.setServiceName(serviceName);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'serviceName' is illegal, the param length should not exceed 512.", actual.getMessage());
+        assertEquals("Param 'serviceName' is illegal, the param length should not exceed 512.",
+            actual.getMessage());
         // Pattern
         paramInfo.setServiceName("@hsbfkj$@@!#khdkad啊");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'serviceName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals(
+            "Param 'serviceName' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
         // Success
         paramInfo.setServiceName("com.aaa@bbb#_{}-b:v1.2.2");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -163,12 +178,14 @@ class DefaultParamCheckerTest {
         paramInfo.setGroup(group);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'group' is illegal, the param length should not exceed 128.", actual.getMessage());
+        assertEquals("Param 'group' is illegal, the param length should not exceed 128.",
+            actual.getMessage());
         // Pattern
         paramInfo.setGroup("@hsbfkj$@@!#khdkad啊@@");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'group' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals("Param 'group' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
         // Success
         paramInfo.setGroup("a-zA-Z0-9-_:.");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -185,12 +202,15 @@ class DefaultParamCheckerTest {
         paramInfo.setClusters(cluster + "," + cluster);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'cluster' is illegal, the param length should not exceed 64.", actual.getMessage());
+        assertEquals("Param 'cluster' is illegal, the param length should not exceed 64.",
+            actual.getMessage());
         // Pattern
         paramInfo.setClusters("@hsbfkj$@@!#khdkad啊@@");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'cluster' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals(
+            "Param 'cluster' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
         // Success
         paramInfo.setClusters("0-9a-zA-Z-_,DEFAULT_abc-100");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -207,12 +227,15 @@ class DefaultParamCheckerTest {
         paramInfo.setCluster(cluster);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'cluster' is illegal, the param length should not exceed 64.", actual.getMessage());
+        assertEquals("Param 'cluster' is illegal, the param length should not exceed 64.",
+            actual.getMessage());
         // Pattern
         paramInfo.setCluster("@hsbfkj$@@!#khdkad啊@@");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'cluster' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals(
+            "Param 'cluster' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
         // Success
         paramInfo.setCluster("0-9a-zA-Z-_");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -229,12 +252,14 @@ class DefaultParamCheckerTest {
         paramInfo.setIp(ip);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'ip' is illegal, the param length should not exceed 128.", actual.getMessage());
+        assertEquals("Param 'ip' is illegal, the param length should not exceed 128.",
+            actual.getMessage());
         // Pattern
         paramInfo.setIp("禁止中文");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'ip' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals("Param 'ip' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
         // Success
         paramInfo.setIp("host_or_domain_or_ipv4_or_ipv6");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -250,17 +275,20 @@ class DefaultParamCheckerTest {
         paramInfo.setPort("-1");
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'port' is illegal, the value should be between 0 and 65535.", actual.getMessage());
+        assertEquals("Param 'port' is illegal, the value should be between 0 and 65535.",
+            actual.getMessage());
         // Over than range
         paramInfo.setPort("65536");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'port' is illegal, the value should be between 0 and 65535.", actual.getMessage());
+        assertEquals("Param 'port' is illegal, the value should be between 0 and 65535.",
+            actual.getMessage());
         // Not number
         paramInfo.setPort("port");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'port' is illegal, the value should be between 0 and 65535.", actual.getMessage());
+        assertEquals("Param 'port' is illegal, the value should be between 0 and 65535.",
+            actual.getMessage());
         // Success
         paramInfo.setPort("8848");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -279,9 +307,13 @@ class DefaultParamCheckerTest {
         metadata.put("key2", buildStringLength(maxMetadataLength));
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals(String.format("Param 'Metadata' is illegal, the param length should not exceed %d.", maxMetadataLength), actual.getMessage());
+        assertEquals(
+            String.format("Param 'Metadata' is illegal, the param length should not exceed %d.",
+                maxMetadataLength),
+            actual.getMessage());
         // Success
-        metadata.put("key2", String.format("Any key and value, only require length sum not more than %d.", maxMetadataLength));
+        metadata.put("key2", String.format(
+            "Any key and value, only require length sum not more than %d.", maxMetadataLength));
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertTrue(actual.isSuccess());
     }
@@ -296,8 +328,8 @@ class DefaultParamCheckerTest {
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
         assertEquals(
-                "Skill name may only contain lowercase letters, numbers, and hyphens, and must not start or end with a hyphen",
-                actual.getMessage());
+            "Skill name may only contain lowercase letters, numbers, and hyphens, and must not start or end with a hyphen",
+            actual.getMessage());
         // Max Length
         paramInfo.setSkillName(buildStringLength(65));
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -327,7 +359,9 @@ class DefaultParamCheckerTest {
     void testCheckMcpNameFormatIllegalCharacters() {
         ParamCheckResponse actual = paramChecker.checkMcpNameFormat("mcp@name#invalid");
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'mcpName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals(
+            "Param 'mcpName' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
     }
     
     @Test
@@ -361,7 +395,9 @@ class DefaultParamCheckerTest {
         // Chinese characters are outside ASCII range and should fail
         ParamCheckResponse actual = paramChecker.checkAgentNameFormat("agent名字invalid");
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'agentName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        assertEquals(
+            "Param 'agentName' is illegal, illegal characters should not appear in the param.",
+            actual.getMessage());
     }
     
     @Test

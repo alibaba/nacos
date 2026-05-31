@@ -68,7 +68,8 @@ class ConsoleCorsConfigTest {
         environment.setProperty("nacos.console.cors.allowed-headers", "Content-Type,Authorization");
         environment.setProperty("nacos.console.cors.max-age", "3600");
         environment.setProperty("nacos.console.cors.allowed-methods", "GET,POST,PUT");
-        environment.setProperty("nacos.console.cors.allowed-origins", "http://localhost:8080,https://example.com");
+        environment.setProperty("nacos.console.cors.allowed-origins",
+            "http://localhost:8080,https://example.com");
         EnvUtil.setEnvironment(environment);
         
         ConsoleCorsConfig config = new ConsoleCorsConfig();
@@ -77,7 +78,8 @@ class ConsoleCorsConfigTest {
         assertEquals(Arrays.asList("Content-Type", "Authorization"), config.getAllowedHeaders());
         assertEquals(3600L, config.getMaxAge());
         assertEquals(Arrays.asList("GET", "POST", "PUT"), config.getAllowedMethods());
-        assertEquals(Arrays.asList("http://localhost:8080", "https://example.com"), config.getAllowedOrigins());
+        assertEquals(Arrays.asList("http://localhost:8080", "https://example.com"),
+            config.getAllowedOrigins());
     }
     
     @Test

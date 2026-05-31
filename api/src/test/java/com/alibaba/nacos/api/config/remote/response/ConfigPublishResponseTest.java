@@ -46,7 +46,8 @@ class ConfigPublishResponseTest extends BasedConfigResponseTest {
     @Override
     @Test
     public void testSerializeFailResponse() throws JsonProcessingException {
-        ConfigPublishResponse configPublishResponse = ConfigPublishResponse.buildFailResponse(500, "Fail");
+        ConfigPublishResponse configPublishResponse =
+            ConfigPublishResponse.buildFailResponse(500, "Fail");
         String json = mapper.writeValueAsString(configPublishResponse);
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.FAIL.getCode()));
         assertTrue(json.contains("\"errorCode\":500"));

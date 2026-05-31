@@ -33,18 +33,19 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @NacosWebBean
-@ConditionalOnProperty(value = Constants.NACOS_DUPLICATE_BEAN_ENHANCEMENT_ENABLED, havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = Constants.NACOS_DUPLICATE_BEAN_ENHANCEMENT_ENABLED,
+    havingValue = "true", matchIfMissing = true)
 public class NacosWebBeanPostProcessorConfiguration {
     
     @Bean
     public InstantiationAwareBeanPostProcessor nacosDuplicateSpringBeanPostProcessor(
-            ConfigurableApplicationContext context) {
+        ConfigurableApplicationContext context) {
         return new NacosDuplicateSpringBeanPostProcessor(context);
     }
     
     @Bean
     public InstantiationAwareBeanPostProcessor nacosDuplicateConfigurationBeanPostProcessor(
-            ConfigurableApplicationContext context) {
+        ConfigurableApplicationContext context) {
         return new NacosDuplicateConfigurationBeanPostProcessor(context);
     }
 }

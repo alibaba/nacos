@@ -76,10 +76,13 @@ class HealthControllerV3Test extends BaseTest {
     @Test
     void testUpdate() throws Exception {
         doNothing().when(healthOperatorV2)
-                .updateHealthStatusForPersistentInstance(TEST_NAMESPACE, updateHealthForm.getGroupName(),
-                        updateHealthForm.getServiceName(), TEST_CLUSTER_NAME, "123.123.123.123", 8888, true);
+            .updateHealthStatusForPersistentInstance(TEST_NAMESPACE,
+                updateHealthForm.getGroupName(),
+                updateHealthForm.getServiceName(), TEST_CLUSTER_NAME, "123.123.123.123", 8888,
+                true);
         MockHttpServletRequestBuilder builder = convert(updateHealthForm,
-                MockMvcRequestBuilders.put(UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH + "/instance"));
+            MockMvcRequestBuilders
+                .put(UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH + "/instance"));
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         assertEquals("ok", JacksonUtils.toObj(response.getContentAsString()).get("data").asText());

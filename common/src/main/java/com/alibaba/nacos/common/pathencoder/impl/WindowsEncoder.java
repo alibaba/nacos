@@ -28,18 +28,18 @@ import java.util.regex.Pattern;
  * @author daydreamer-ia
  */
 public class WindowsEncoder implements PathEncoder {
-
+    
     /**
      * 不应该含有 / : ? " < > | \.
      */
     private static final String PATTERN_EXP = "[^/:*?\"<>|\\\\]+";
-
+    
     private static final Map<String, String> REG_MAPPING = new HashMap<>();
-
+    
     private static final Map<String, String> CHAR_MAPPING = new HashMap<>();
-
+    
     private static final Pattern PATTERN = Pattern.compile(PATTERN_EXP);
-
+    
     static {
         // reg
         REG_MAPPING.put("\\\\", "%A1%");
@@ -51,7 +51,7 @@ public class WindowsEncoder implements PathEncoder {
         REG_MAPPING.put("<", "%A7%");
         REG_MAPPING.put(">", "%A8%");
         REG_MAPPING.put("\\|", "%A9%");
-
+        
         // char
         CHAR_MAPPING.put("%A1%", "\\\\");
         CHAR_MAPPING.put("%A2%", "/");
@@ -63,7 +63,7 @@ public class WindowsEncoder implements PathEncoder {
         CHAR_MAPPING.put("%A8%", ">");
         CHAR_MAPPING.put("%A9%", "|");
     }
-
+    
     @Override
     public String encode(String str, String charset) {
         for (Map.Entry<String, String> entry : REG_MAPPING.entrySet()) {
@@ -71,7 +71,7 @@ public class WindowsEncoder implements PathEncoder {
         }
         return str;
     }
-
+    
     @Override
     public String decode(String str, String charset) {
         for (Map.Entry<String, String> entry : CHAR_MAPPING.entrySet()) {
@@ -79,12 +79,12 @@ public class WindowsEncoder implements PathEncoder {
         }
         return str;
     }
-
+    
     @Override
     public String name() {
         return "window";
     }
-
+    
     @Override
     public boolean needEncode(String key) {
         if (key == null) {

@@ -35,20 +35,23 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RequestLockAspect {
     
-    
     /**
      * count metrics and get handler time.
      */
     @SuppressWarnings("checkstyle:linelength")
-    @Around(value = "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) && target(com.alibaba.nacos.lock.remote.rpc.handler.LockRequestHandler) && args(request, meta)", argNames = "pjp,request,meta")
-    public Object lockMeterPoint(ProceedingJoinPoint pjp, LockOperationRequest request, RequestMeta meta)
-            throws Throwable {
+    @Around(
+        value = "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) && target(com.alibaba.nacos.lock.remote.rpc.handler.LockRequestHandler) && args(request, meta)",
+        argNames = "pjp,request,meta")
+    public Object lockMeterPoint(ProceedingJoinPoint pjp, LockOperationRequest request,
+        RequestMeta meta)
+        throws Throwable {
         long st = System.currentTimeMillis();
         try {
             LockMetricsMonitor.getTotalMeter(request.getLockOperationEnum()).incrementAndGet();
             LockOperationResponse result = (LockOperationResponse) pjp.proceed();
             if (result.isSuccess()) {
-                LockMetricsMonitor.getSuccessMeter(request.getLockOperationEnum()).incrementAndGet();
+                LockMetricsMonitor.getSuccessMeter(request.getLockOperationEnum())
+                    .incrementAndGet();
             }
             return result;
         } finally {

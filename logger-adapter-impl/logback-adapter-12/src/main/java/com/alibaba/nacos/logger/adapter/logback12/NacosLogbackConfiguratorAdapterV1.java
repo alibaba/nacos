@@ -56,7 +56,7 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator {
     public void addInstanceRules(RuleStore rs) {
         super.addInstanceRules(rs);
         rs.addRule(new ElementSelector("configuration/nacosClientProperty"),
-                new NacosClientPropertyAction(loggingProperties));
+            new NacosClientPropertyAction(loggingProperties));
     }
     
     /**

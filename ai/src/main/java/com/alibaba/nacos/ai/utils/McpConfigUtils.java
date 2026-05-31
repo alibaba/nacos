@@ -32,15 +32,15 @@ import static com.alibaba.nacos.ai.constant.Constants.MCP_SERVER_CONFIG_MARK;
  * @author xinluo
  */
 public class McpConfigUtils {
-
+    
     private static final String MCP_ENDPOINT_CONFIG_DIRECT_SPLIT = ":";
-
+    
     private static final String MCP_ENDPOINT_SPEC_ADDRESS_KEY = "address";
-
+    
     private static final String MCP_ENDPOINT_SPEC_PORT_KEY = "port";
-
+    
     private static final int MCP_ENDPOINT_SPEC_PORT_KEY_LENGTH = 2;
-
+    
     /**
      * Format the Mcp server version info config data id.
      * @param id server id
@@ -61,13 +61,14 @@ public class McpConfigUtils {
     public static String formatServerResourceSpecDataId(String id, String version) {
         return String.format(Constants.SERVER_RESOURCE_SPEC_CONFIG_DATA_ID_TEMPLATE, id, version);
     }
-
+    
     public static String formatServerNameTagBlurSearchValue(String serverName) {
-        return Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + Constants.ALL_PATTERN + serverName + Constants.ALL_PATTERN;
+        return Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + Constants.ALL_PATTERN + serverName
+            + Constants.ALL_PATTERN;
     }
     
     public static String formatServerNameTagAccurateSearchValue(String serverName) {
-        return Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX +  serverName;
+        return Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + serverName;
     }
     
     public static boolean isConfigFound(ConfigQueryChainResponse.ConfigQueryStatus status) {
@@ -77,11 +78,12 @@ public class McpConfigUtils {
     public static boolean isConfigNotFound(ConfigQueryChainResponse.ConfigQueryStatus status) {
         return ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND.equals(status);
     }
-
+    
     public static String buildMcpServerVersionConfigTags(String serverName) {
-        return StringUtils.join(Arrays.asList(MCP_SERVER_CONFIG_MARK, Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + serverName), ",");
+        return StringUtils.join(Arrays.asList(MCP_SERVER_CONFIG_MARK,
+            Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + serverName), ",");
     }
-
+    
     /**
      * Convert {@link FrontEndpointConfig} to {@link McpEndpointSpec}.
      * <p>Only support MCP_ENDPOINT_TYPE_DIRECT type.</p>
@@ -89,7 +91,8 @@ public class McpConfigUtils {
      * @return mcp endpoint spec
      * @throws IllegalArgumentException if convert failed
      */
-    public static McpEndpointSpec convertFrontEndpointConfig(FrontEndpointConfig frontEndpointConfig) {
+    public static McpEndpointSpec convertFrontEndpointConfig(
+        FrontEndpointConfig frontEndpointConfig) {
         Object epDataObj = frontEndpointConfig.getEndpointData();
         String epData = (String) epDataObj;
         McpEndpointSpec endpointSpec = new McpEndpointSpec();
@@ -100,7 +103,8 @@ public class McpConfigUtils {
         endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         endpointSpec.getData().put(MCP_ENDPOINT_SPEC_ADDRESS_KEY, hp[0]);
         endpointSpec.getData().put(MCP_ENDPOINT_SPEC_PORT_KEY, hp[1]);
-        endpointSpec.getData().put(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY, frontEndpointConfig.getProtocol());
+        endpointSpec.getData().put(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY,
+            frontEndpointConfig.getProtocol());
         return endpointSpec;
     }
 }

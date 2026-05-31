@@ -48,14 +48,16 @@ public final class InstancesDiffer {
     public InstancesDiff doDiff(ServiceInfo oldService, ServiceInfo newService) {
         InstancesDiff instancesDiff = new InstancesDiff();
         if (null == oldService) {
-            NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(), newService.getKey(),
-                    JacksonUtils.toJson(newService.getHosts()));
+            NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(),
+                newService.getKey(),
+                JacksonUtils.toJson(newService.getHosts()));
             instancesDiff.setAddedInstances(newService.getHosts());
             return instancesDiff;
         }
         if (oldService.getLastRefTime() > newService.getLastRefTime()) {
-            NAMING_LOGGER.warn("out of date data received, old-t: {}, new-t: {}", oldService.getLastRefTime(),
-                    newService.getLastRefTime());
+            NAMING_LOGGER.warn("out of date data received, old-t: {}, new-t: {}",
+                oldService.getLastRefTime(),
+                newService.getLastRefTime());
             return instancesDiff;
         }
         
@@ -76,7 +78,8 @@ public final class InstancesDiffer {
         for (Map.Entry<String, Instance> entry : newServiceHosts) {
             Instance host = entry.getValue();
             String key = entry.getKey();
-            if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(), oldHostMap.get(key).toString())) {
+            if (oldHostMap.containsKey(key)
+                && !StringUtils.equals(host.toString(), oldHostMap.get(key).toString())) {
                 modHosts.add(host);
                 continue;
             }
@@ -98,20 +101,23 @@ public final class InstancesDiffer {
         }
         
         if (newHosts.size() > 0) {
-            NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
-                    JacksonUtils.toJson(newHosts));
+            NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(),
+                newService.getKey(),
+                JacksonUtils.toJson(newHosts));
             instancesDiff.setAddedInstances(newHosts);
         }
         
         if (remvHosts.size() > 0) {
-            NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
-                    JacksonUtils.toJson(remvHosts));
+            NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(),
+                newService.getKey(),
+                JacksonUtils.toJson(remvHosts));
             instancesDiff.setRemovedInstances(remvHosts);
         }
         
         if (modHosts.size() > 0) {
-            NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
-                    JacksonUtils.toJson(modHosts));
+            NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(),
+                newService.getKey(),
+                JacksonUtils.toJson(modHosts));
             instancesDiff.setModifiedInstances(modHosts);
         }
         return instancesDiff;

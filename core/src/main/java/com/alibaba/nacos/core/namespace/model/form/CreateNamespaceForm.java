@@ -46,7 +46,7 @@ public class CreateNamespaceForm extends NamespaceForm {
     public void validate() throws NacosApiException {
         if (null == super.getNamespaceName()) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "required parameter 'namespaceName' is missing");
+                "required parameter 'namespaceName' is missing");
         }
         if (StringUtils.isBlank(customNamespaceId)) {
             customNamespaceId = UUID.randomUUID().toString();

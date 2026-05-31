@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SkillScopeFormTest {
-
+    
     @Test
     void testValidateSuccess() {
         SkillScopeForm form = new SkillScopeForm();
@@ -33,7 +33,7 @@ class SkillScopeFormTest {
         form.setScope("PUBLIC");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void testValidateSuccessPrivateLowerCase() {
         SkillScopeForm form = new SkillScopeForm();
@@ -41,7 +41,7 @@ class SkillScopeFormTest {
         form.setScope("private");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void testValidateMissingSkillName() {
         SkillScopeForm form = new SkillScopeForm();
@@ -49,7 +49,7 @@ class SkillScopeFormTest {
         NacosApiException ex = assertThrows(NacosApiException.class, form::validate);
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
-
+    
     @Test
     void testValidateMissingScope() {
         SkillScopeForm form = new SkillScopeForm();
@@ -57,7 +57,7 @@ class SkillScopeFormTest {
         NacosApiException ex = assertThrows(NacosApiException.class, form::validate);
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
-
+    
     @Test
     void testValidateInvalidScope() {
         SkillScopeForm form = new SkillScopeForm();

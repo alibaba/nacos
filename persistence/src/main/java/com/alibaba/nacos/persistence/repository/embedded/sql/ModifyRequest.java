@@ -77,6 +77,7 @@ public class ModifyRequest implements Serializable {
     
     @Override
     public String toString() {
-        return "SQL{" + "executeNo=" + executeNo + ", sql='" + sql + '\'' + ", args=" + Arrays.toString(args) + '}';
+        return "SQL{" + "executeNo=" + executeNo + ", sql='" + sql + '\'' + ", args="
+            + Arrays.toString(args) + '}';
     }
 }

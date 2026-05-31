@@ -87,7 +87,7 @@ class AgentRequestUtilTest {
         
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentRequestUtil.validateAgentCard(agentCard));
+            () -> AgentRequestUtil.validateAgentCard(agentCard));
         assertEquals("Required parameter `agentCard.name` not present", exception.getMessage());
     }
     
@@ -99,7 +99,7 @@ class AgentRequestUtilTest {
         
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentRequestUtil.validateAgentCard(agentCard));
+            () -> AgentRequestUtil.validateAgentCard(agentCard));
         assertEquals("Required parameter `agentCard.name` not present", exception.getMessage());
     }
     
@@ -111,7 +111,7 @@ class AgentRequestUtilTest {
         
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentRequestUtil.validateAgentCard(agentCard));
+            () -> AgentRequestUtil.validateAgentCard(agentCard));
         assertEquals("Required parameter `agentCard.version` not present", exception.getMessage());
     }
     
@@ -140,10 +140,12 @@ class AgentRequestUtilTest {
         
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentRequestUtil.validateAgentCard(agentCard));
-        assertEquals("Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
+            () -> AgentRequestUtil.validateAgentCard(agentCard));
+        assertEquals(
+            "Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
                 + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
-                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.", exception.getMessage());
+                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.",
+            exception.getMessage());
     }
     
     @Test
@@ -154,10 +156,12 @@ class AgentRequestUtilTest {
         
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentRequestUtil.validateAgentCard(agentCard));
-        assertEquals("Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
+            () -> AgentRequestUtil.validateAgentCard(agentCard));
+        assertEquals(
+            "Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
                 + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
-                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.", exception.getMessage());
+                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.",
+            exception.getMessage());
     }
     
     @Test
@@ -172,26 +176,32 @@ class AgentRequestUtilTest {
         // protocolVersion missing
         agentCard.setSupportedInterfaces(Collections.singletonList(invalid));
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentRequestUtil.validateAgentCard(agentCard));
-        assertEquals("Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
+            () -> AgentRequestUtil.validateAgentCard(agentCard));
+        assertEquals(
+            "Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
                 + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
-                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.", exception.getMessage());
+                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.",
+            exception.getMessage());
     }
     
     @Test
-    void testValidateAgentCardShouldNormalizeLegacyToSupportedInterfaces() throws NacosApiException {
+    void testValidateAgentCardShouldNormalizeLegacyToSupportedInterfaces()
+        throws NacosApiException {
         AgentCard agentCard = createValidAgentCard();
         agentCard.setSupportedInterfaces(null);
         AgentRequestUtil.validateAgentCard(agentCard);
         assertNotNull(agentCard.getSupportedInterfaces());
         assertEquals(1, agentCard.getSupportedInterfaces().size());
         assertEquals(agentCard.getUrl(), agentCard.getSupportedInterfaces().get(0).getUrl());
-        assertEquals(agentCard.getPreferredTransport(), agentCard.getSupportedInterfaces().get(0).getProtocolBinding());
-        assertEquals(agentCard.getProtocolVersion(), agentCard.getSupportedInterfaces().get(0).getProtocolVersion());
+        assertEquals(agentCard.getPreferredTransport(),
+            agentCard.getSupportedInterfaces().get(0).getProtocolBinding());
+        assertEquals(agentCard.getProtocolVersion(),
+            agentCard.getSupportedInterfaces().get(0).getProtocolVersion());
     }
     
     @Test
-    void testValidateAgentCardShouldNormalizeSupportedInterfacesToLegacyFields() throws NacosApiException {
+    void testValidateAgentCardShouldNormalizeSupportedInterfacesToLegacyFields()
+        throws NacosApiException {
         AgentCard agentCard = createValidAgentCard();
         AgentInterface preferred = new AgentInterface();
         preferred.setUrl("http://example.com/v1");
@@ -211,11 +221,13 @@ class AgentRequestUtilTest {
         assertEquals("1.0", agentCard.getProtocolVersion());
         assertNotNull(agentCard.getAdditionalInterfaces());
         assertEquals(1, agentCard.getAdditionalInterfaces().size());
-        assertEquals("http://example.com/v1/secondary", agentCard.getAdditionalInterfaces().get(0).getUrl());
+        assertEquals("http://example.com/v1/secondary",
+            agentCard.getAdditionalInterfaces().get(0).getUrl());
     }
     
     @Test
-    void testValidateAgentCardShouldNormalizeProtocolBindingAndTransport() throws NacosApiException {
+    void testValidateAgentCardShouldNormalizeProtocolBindingAndTransport()
+        throws NacosApiException {
         AgentCard agentCard = createValidAgentCard();
         agentCard.setProtocolVersion(null);
         agentCard.setPreferredTransport(null);
@@ -277,7 +289,8 @@ class AgentRequestUtilTest {
     }
     
     @Test
-    void testValidateAgentCardShouldNormalizeExtendedAgentCardFromLegacy() throws NacosApiException {
+    void testValidateAgentCardShouldNormalizeExtendedAgentCardFromLegacy()
+        throws NacosApiException {
         AgentCard agentCard = createValidAgentCard();
         agentCard.getCapabilities().setExtendedAgentCard(null);
         agentCard.setSupportsAuthenticatedExtendedCard(true);
@@ -286,7 +299,8 @@ class AgentRequestUtilTest {
     }
     
     @Test
-    void testValidateAgentCardShouldNormalizeExtendedAgentCardFromCapabilities() throws NacosApiException {
+    void testValidateAgentCardShouldNormalizeExtendedAgentCardFromCapabilities()
+        throws NacosApiException {
         AgentCard agentCard = createValidAgentCard();
         agentCard.setSupportsAuthenticatedExtendedCard(null);
         agentCard.getCapabilities().setExtendedAgentCard(true);
@@ -295,7 +309,8 @@ class AgentRequestUtilTest {
     }
     
     @Test
-    void testValidateAgentCardWithNullDefaultInputModesShouldSetEmptyList() throws NacosApiException {
+    void testValidateAgentCardWithNullDefaultInputModesShouldSetEmptyList()
+        throws NacosApiException {
         // Given
         AgentCard agentCard = createValidAgentCard();
         agentCard.setDefaultInputModes(null);
@@ -309,7 +324,8 @@ class AgentRequestUtilTest {
     }
     
     @Test
-    void testValidateAgentCardWithNullDefaultOutputModesShouldSetEmptyList() throws NacosApiException {
+    void testValidateAgentCardWithNullDefaultOutputModesShouldSetEmptyList()
+        throws NacosApiException {
         // Given
         AgentCard agentCard = createValidAgentCard();
         agentCard.setDefaultOutputModes(null);

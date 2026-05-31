@@ -27,7 +27,8 @@ class HttpRequestContextConfigTest {
     void testRequestContextFilterRegistration() {
         HttpRequestContextConfig contextConfig = new HttpRequestContextConfig();
         HttpRequestContextFilter filter = contextConfig.nacosRequestContextFilter();
-        FilterRegistrationBean<HttpRequestContextFilter> actual = contextConfig.requestContextFilterRegistration(
+        FilterRegistrationBean<HttpRequestContextFilter> actual =
+            contextConfig.requestContextFilterRegistration(
                 filter);
         assertEquals(filter, actual.getFilter());
         assertEquals("/*", actual.getUrlPatterns().iterator().next());

@@ -72,7 +72,8 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegot
     @Override
     public NacosGrpcProtocolNegotiator build() {
         Properties properties = EnvUtil.getProperties();
-        RpcServerTlsConfig config = RpcServerTlsConfigFactory.getInstance().createClusterConfig(properties);
+        RpcServerTlsConfig config =
+            RpcServerTlsConfigFactory.getInstance().createClusterConfig(properties);
         if (config.getEnableTls()) {
             SslContext sslContext = DefaultTlsContextBuilder.getSslContext(config);
             return new OptionalTlsProtocolNegotiator(sslContext, config);
@@ -90,4 +91,3 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegot
         return CLUSTER_TYPE_DEFAULT_TLS;
     }
 }
-

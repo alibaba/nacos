@@ -47,7 +47,8 @@ class McpServerEndpointRequestTest extends BasicRequestTest {
         assertTrue(json.contains("\"namespaceId\":\"public\""));
         assertTrue(json.contains("\"mcpName\":\"testMcpName\""));
         assertTrue(json.contains(String.format("\"mcpId\":\"%s\"", id)));
-        assertTrue(json.contains(String.format("\"type\":\"%s\"", AiRemoteConstants.REGISTER_ENDPOINT)));
+        assertTrue(
+            json.contains(String.format("\"type\":\"%s\"", AiRemoteConstants.REGISTER_ENDPOINT)));
         assertTrue(json.contains("\"address\":\"1.1.1.1\""));
         assertTrue(json.contains("\"version\":\"1.0.0\""));
         assertTrue(json.contains("\"port\":3306"));
@@ -56,9 +57,9 @@ class McpServerEndpointRequestTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws Exception {
         String json =
-                "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"mcpId\":\"2aaebf2d-4b7b-4ab9-9ad2-1e60355ae041\","
-                        + "\"mcpName\":\"testMcpName\",\"address\":\"1.1.1.1\",\"port\":3306,\"version\":\"1.0.0\","
-                        + "\"type\":\"registerEndpoint\",\"module\":\"ai\"}";
+            "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"mcpId\":\"2aaebf2d-4b7b-4ab9-9ad2-1e60355ae041\","
+                + "\"mcpName\":\"testMcpName\",\"address\":\"1.1.1.1\",\"port\":3306,\"version\":\"1.0.0\","
+                + "\"type\":\"registerEndpoint\",\"module\":\"ai\"}";
         McpServerEndpointRequest result = mapper.readValue(json, McpServerEndpointRequest.class);
         assertNotNull(result);
         assertEquals("1", result.getRequestId());

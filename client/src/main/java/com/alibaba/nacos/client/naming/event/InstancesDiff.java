@@ -40,7 +40,7 @@ public class InstancesDiff {
     }
     
     public InstancesDiff(List<Instance> addedInstances, List<Instance> removedInstances,
-            List<Instance> modifiedInstances) {
+        List<Instance> modifiedInstances) {
         setAddedInstances(addedInstances);
         setRemovedInstances(removedInstances);
         setModifiedInstances(modifiedInstances);

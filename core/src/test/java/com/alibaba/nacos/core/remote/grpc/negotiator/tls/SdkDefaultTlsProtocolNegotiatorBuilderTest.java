@@ -68,9 +68,12 @@ class SdkDefaultTlsProtocolNegotiatorBuilderTest {
     void testBuildEnabled() {
         try (final MockedStatic<EnvUtil> envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class)) {
             when(EnvUtil.getProperties()).thenReturn(properties);
-            when(properties.getProperty("nacos.remote.server.rpc.tls.enableTls")).thenReturn("true");
-            when(properties.getProperty("nacos.remote.server.rpc.tls.certPrivateKey")).thenReturn("test-server-key.pem");
-            when(properties.getProperty("nacos.remote.server.rpc.tls.certChainFile")).thenReturn("test-server-cert.pem");
+            when(properties.getProperty("nacos.remote.server.rpc.tls.enableTls"))
+                .thenReturn("true");
+            when(properties.getProperty("nacos.remote.server.rpc.tls.certPrivateKey"))
+                .thenReturn("test-server-key.pem");
+            when(properties.getProperty("nacos.remote.server.rpc.tls.certChainFile"))
+                .thenReturn("test-server-cert.pem");
             assertNotNull(builder.build());
         }
     }

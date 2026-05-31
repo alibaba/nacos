@@ -57,8 +57,10 @@ class PathEncoderManagerTest {
     
     @Test
     void testInitWithWindows()
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Constructor<PathEncoderManager> constructor = PathEncoderManager.class.getDeclaredConstructor();
+        throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
+        InstantiationException {
+        Constructor<PathEncoderManager> constructor =
+            PathEncoderManager.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         System.setProperty("os.name", "window");
         PathEncoderManager instance = constructor.newInstance();

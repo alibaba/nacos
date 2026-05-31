@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class NacosGrpcServerInterceptorTest {
-
+    
     @Test
     void testConstants() {
         assertEquals("SDK", NacosGrpcServerInterceptor.SDK_INTERCEPTOR);

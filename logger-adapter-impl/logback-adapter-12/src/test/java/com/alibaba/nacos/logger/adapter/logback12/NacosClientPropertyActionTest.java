@@ -59,15 +59,18 @@ class NacosClientPropertyActionTest {
         
         properties.setProperty("test.nacos.logging.action.lookup", "true");
         
-        final InterpretationContext interpretationContext = new InterpretationContext(context, null);
+        final InterpretationContext interpretationContext =
+            new InterpretationContext(context, null);
         
         final Attributes mockAttr = Mockito.mock(AttributesForTest.class);
         Mockito.when(mockAttr.getValue(Mockito.eq("name"))).thenReturn("logPath");
-        Mockito.when(mockAttr.getValue(Mockito.eq("source"))).thenReturn("test.nacos.logging.action.lookup");
+        Mockito.when(mockAttr.getValue(Mockito.eq("source")))
+            .thenReturn("test.nacos.logging.action.lookup");
         Mockito.when(mockAttr.getValue(Mockito.eq("scope"))).thenReturn("context");
         Mockito.when(mockAttr.getValue(Mockito.eq("defaultValue"))).thenReturn("/root");
         
-        NacosClientPropertyAction nacosClientPropertyAction = new NacosClientPropertyAction(loggingProperties);
+        NacosClientPropertyAction nacosClientPropertyAction =
+            new NacosClientPropertyAction(loggingProperties);
         nacosClientPropertyAction.setContext(context);
         
         nacosClientPropertyAction.begin(interpretationContext, "nacosClientProperty", mockAttr);
@@ -79,19 +82,23 @@ class NacosClientPropertyActionTest {
     
     @Test
     void testBeginWithoutName() throws ActionException {
-        final InterpretationContext interpretationContext = new InterpretationContext(context, null);
+        final InterpretationContext interpretationContext =
+            new InterpretationContext(context, null);
         final Attributes mockAttr = Mockito.mock(AttributesForTest.class);
         Mockito.when(mockAttr.getValue(Mockito.eq("name"))).thenReturn("");
-        Mockito.when(mockAttr.getValue(Mockito.eq("source"))).thenReturn("test.nacos.logging.action.lookup");
+        Mockito.when(mockAttr.getValue(Mockito.eq("source")))
+            .thenReturn("test.nacos.logging.action.lookup");
         Mockito.when(mockAttr.getValue(Mockito.eq("scope"))).thenReturn("context");
         Mockito.when(mockAttr.getValue(Mockito.eq("defaultValue"))).thenReturn("/root");
-        NacosClientPropertyAction nacosClientPropertyAction = new NacosClientPropertyAction(loggingProperties);
+        NacosClientPropertyAction nacosClientPropertyAction =
+            new NacosClientPropertyAction(loggingProperties);
         nacosClientPropertyAction.setContext(context);
         nacosClientPropertyAction.begin(interpretationContext, "nacosClientProperty", mockAttr);
         List<Status> statusList = context.getStatusManager().getCopyOfStatusList();
         assertEquals(1, statusList.size());
         assertTrue(statusList.get(0) instanceof ErrorStatus);
-        assertEquals("The \"name\" and \"source\"  attributes of <nacosClientProperty> must be set", statusList.get(0).getMessage());
+        assertEquals("The \"name\" and \"source\"  attributes of <nacosClientProperty> must be set",
+            statusList.get(0).getMessage());
     }
     
     static class AttributesForTest implements Attributes {

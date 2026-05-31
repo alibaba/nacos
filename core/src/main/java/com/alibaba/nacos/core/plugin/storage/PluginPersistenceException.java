@@ -23,13 +23,13 @@ package com.alibaba.nacos.core.plugin.storage;
  * @since 3.2.0
  */
 public class PluginPersistenceException extends RuntimeException {
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     public PluginPersistenceException(String message) {
         super(message);
     }
-
+    
     public PluginPersistenceException(String message, Throwable cause) {
         super(message, cause);
     }

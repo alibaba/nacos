@@ -49,6 +49,7 @@ class AbstractApacheHttpClientFactoryTest {
     @Test
     void testCreateNacosRestTemplate() throws NoSuchFieldException, IllegalAccessException {
         HttpClientFactory factory = new AbstractApacheHttpClientFactory() {
+            
             @Override
             protected HttpClientConfig buildHttpClientConfig() {
                 return HttpClientConfig.builder().build();

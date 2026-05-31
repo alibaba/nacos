@@ -51,7 +51,8 @@ class CopilotAgentManagerTest {
     
     @BeforeEach
     void setUp() {
-        copilotAgentManager = new CopilotAgentManager(configStorage, defaultProperties, environment);
+        copilotAgentManager =
+            new CopilotAgentManager(configStorage, defaultProperties, environment);
     }
     
     @Test

@@ -46,19 +46,20 @@ import java.util.zip.ZipOutputStream;
  * @author nacos
  */
 public final class SkillSeedArchiveReader {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillSeedArchiveReader.class);
-
+    
     private static final String SKILL_MD_FILE = "SKILL.md";
-
-    private static final Pattern FRONT_MATTER_PATTERN = Pattern.compile("^---\\s*\\n(.*?)\\n---\\s*\\n", Pattern.DOTALL);
-
+    
+    private static final Pattern FRONT_MATTER_PATTERN =
+        Pattern.compile("^---\\s*\\n(.*?)\\n---\\s*\\n", Pattern.DOTALL);
+    
     private static final Pattern NAME_PATTERN = Pattern.compile(
-            "(?m)^name:\\s*(?:\"([^\"]+)\"|'([^']+)'|([^\\n#]+))\\s*$");
-
+        "(?m)^name:\\s*(?:\"([^\"]+)\"|'([^']+)'|([^\\n#]+))\\s*$");
+    
     private SkillSeedArchiveReader() {
     }
-
+    
     /**
      * Read bundled seed archive and return standalone skill packages.
      *
@@ -71,12 +72,12 @@ public final class SkillSeedArchiveReader {
         if (entries.isEmpty()) {
             return Collections.emptyList();
         }
-
+        
         Set<String> roots = detectSkillRoots(entries.keySet());
         if (roots.isEmpty()) {
             return Collections.emptyList();
         }
-
+        
         Set<String> seenSkillNames = new HashSet<>();
         List<SkillPackage> result = new ArrayList<>(roots.size());
         for (String root : roots) {
@@ -90,17 +91,21 @@ public final class SkillSeedArchiveReader {
                 throw new IOException("Missing skill name in " + skillMdPath);
             }
             if (!seenSkillNames.add(skillName)) {
-                LOGGER.warn("Skip duplicate built-in skill name `{}` from archive path `{}`", skillName, root);
+                LOGGER.warn("Skip duplicate built-in skill name `{}` from archive path `{}`",
+                    skillName, root);
                 continue;
             }
-            result.add(new SkillPackage(skillName, extractFrom(root), root, buildSkillZip(entries, root, skillName)));
+            result.add(new SkillPackage(skillName, extractFrom(root), root,
+                buildSkillZip(entries, root, skillName)));
         }
         return result;
     }
-
-    private static Map<String, byte[]> readArchiveEntries(InputStream inputStream) throws IOException {
+    
+    private static Map<String, byte[]> readArchiveEntries(InputStream inputStream)
+        throws IOException {
         Map<String, byte[]> result = new LinkedHashMap<>();
-        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(inputStream, StandardCharsets.UTF_8.name(), true, true)) {
+        try (ZipArchiveInputStream zis =
+            new ZipArchiveInputStream(inputStream, StandardCharsets.UTF_8.name(), true, true)) {
             ZipArchiveEntry entry;
             byte[] buffer = new byte[8192];
             while ((entry = zis.getNextEntry()) != null) {
@@ -122,7 +127,7 @@ public final class SkillSeedArchiveReader {
         }
         return result;
     }
-
+    
     private static Set<String> detectSkillRoots(Set<String> entryNames) {
         Set<String> result = new TreeSet<>();
         for (String entryName : entryNames) {
@@ -136,7 +141,7 @@ public final class SkillSeedArchiveReader {
         }
         return result;
     }
-
+    
     private static String extractSkillName(byte[] skillMdBytes) {
         String content = new String(skillMdBytes, StandardCharsets.UTF_8);
         Matcher frontMatterMatcher = FRONT_MATTER_PATTERN.matcher(content);
@@ -155,8 +160,9 @@ public final class SkillSeedArchiveReader {
         }
         return null;
     }
-
-    private static byte[] buildSkillZip(Map<String, byte[]> entries, String root, String skillName) throws IOException {
+    
+    private static byte[] buildSkillZip(Map<String, byte[]> entries, String root, String skillName)
+        throws IOException {
         List<String> paths = new ArrayList<>();
         for (String entryName : entries.keySet()) {
             if (isInRoot(entryName, root)) {
@@ -164,7 +170,7 @@ public final class SkillSeedArchiveReader {
             }
         }
         Collections.sort(paths);
-
+        
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(out, StandardCharsets.UTF_8)) {
             for (String path : paths) {
@@ -180,11 +186,11 @@ public final class SkillSeedArchiveReader {
         }
         return out.toByteArray();
     }
-
+    
     private static boolean isInRoot(String entryName, String root) {
         return root.isEmpty() || entryName.startsWith(root + "/");
     }
-
+    
     private static String normalizeEntryName(String entryName) {
         if (entryName == null) {
             return null;
@@ -195,11 +201,11 @@ public final class SkillSeedArchiveReader {
         }
         return result;
     }
-
+    
     private static String rootPath(String root, String fileName) {
         return root.isEmpty() ? fileName : root + "/" + fileName;
     }
-
+    
     private static String extractFrom(String sourcePath) {
         if (StringUtils.isBlank(sourcePath)) {
             return null;
@@ -215,39 +221,39 @@ public final class SkillSeedArchiveReader {
         String from = normalized.substring(0, idx).trim();
         return StringUtils.isBlank(from) ? null : from;
     }
-
+    
     /**
      * Standalone skill package built from the seed archive.
      */
     public static final class SkillPackage {
-
+        
         private final String skillName;
-
+        
         private final String from;
-
+        
         private final String sourcePath;
-
+        
         private final byte[] zipBytes;
-
+        
         public SkillPackage(String skillName, String from, String sourcePath, byte[] zipBytes) {
             this.skillName = skillName;
             this.from = from;
             this.sourcePath = sourcePath;
             this.zipBytes = zipBytes == null ? new byte[0] : zipBytes;
         }
-
+        
         public String getSkillName() {
             return skillName;
         }
-
+        
         public String getFrom() {
             return from;
         }
-
+        
         public String getSourcePath() {
             return sourcePath;
         }
-
+        
         public byte[] getZipBytes() {
             return zipBytes;
         }

@@ -28,12 +28,12 @@ public abstract class BasedConfigResponseTest extends BasedConfigRequestTest {
     
     @Override
     public void testSerialize() throws JsonProcessingException {
-    
+        
     }
     
     @Override
     public void testDeserialize() throws JsonProcessingException {
-    
+        
     }
     
     public abstract void testSerializeSuccessResponse() throws JsonProcessingException;

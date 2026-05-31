@@ -70,10 +70,12 @@ public class HistoryProxyTest {
         expectedInfo.setNamespaceId("testNamespace");
         expectedInfo.setId(1L);
         
-        when(historyHandler.getConfigHistoryInfo(anyString(), anyString(), anyString(), anyLong())).thenReturn(
+        when(historyHandler.getConfigHistoryInfo(anyString(), anyString(), anyString(), anyLong()))
+            .thenReturn(
                 expectedInfo);
         
-        ConfigHistoryDetailInfo actualInfo = historyProxy.getConfigHistoryInfo("testDataId", "testGroup",
+        ConfigHistoryDetailInfo actualInfo =
+            historyProxy.getConfigHistoryInfo("testDataId", "testGroup",
                 "testNamespace", 1L);
         
         assertEquals(expectedInfo.getDataId(), actualInfo.getDataId());
@@ -95,10 +97,12 @@ public class HistoryProxyTest {
         expectedInfo.setNamespaceId(namespaceId);
         expectedInfo.setId(id);
         
-        when(historyHandler.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id)).thenReturn(expectedInfo);
+        when(historyHandler.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id))
+            .thenReturn(expectedInfo);
         
         // 测试
-        ConfigHistoryDetailInfo actualInfo = historyProxy.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
+        ConfigHistoryDetailInfo actualInfo =
+            historyProxy.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
         
         // 验证
         assertEquals(expectedInfo, actualInfo);
@@ -115,14 +119,17 @@ public class HistoryProxyTest {
         expectedPage.setPagesAvailable(1);
         expectedPage.setTotalCount(1);
         
-        when(historyHandler.listConfigHistory(DATA_ID, GROUP, NAMESPACE_ID, PAGE_NO, PAGE_SIZE)).thenReturn(
+        when(historyHandler.listConfigHistory(DATA_ID, GROUP, NAMESPACE_ID, PAGE_NO, PAGE_SIZE))
+            .thenReturn(
                 expectedPage);
         
-        Page<ConfigHistoryBasicInfo> result = historyProxy.listConfigHistory(DATA_ID, GROUP, NAMESPACE_ID, PAGE_NO,
+        Page<ConfigHistoryBasicInfo> result =
+            historyProxy.listConfigHistory(DATA_ID, GROUP, NAMESPACE_ID, PAGE_NO,
                 PAGE_SIZE);
         
         assertEquals(expectedPage, result);
-        verify(historyHandler, times(1)).listConfigHistory(DATA_ID, GROUP, NAMESPACE_ID, PAGE_NO, PAGE_SIZE);
+        verify(historyHandler, times(1)).listConfigHistory(DATA_ID, GROUP, NAMESPACE_ID, PAGE_NO,
+            PAGE_SIZE);
     }
     
     @Test

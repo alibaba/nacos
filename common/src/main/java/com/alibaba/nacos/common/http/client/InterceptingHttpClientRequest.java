@@ -36,14 +36,15 @@ public class InterceptingHttpClientRequest implements HttpClientRequest {
     private final Iterator<HttpClientRequestInterceptor> interceptors;
     
     public InterceptingHttpClientRequest(HttpClientRequest httpClientRequest,
-            Iterator<HttpClientRequestInterceptor> interceptors) {
+        Iterator<HttpClientRequestInterceptor> interceptors) {
         this.httpClientRequest = httpClientRequest;
         this.interceptors = interceptors;
     }
     
     @Override
-    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
-            throws Exception {
+    public HttpClientResponse execute(URI uri, String httpMethod,
+        RequestHttpEntity requestHttpEntity)
+        throws Exception {
         while (interceptors.hasNext()) {
             HttpClientRequestInterceptor nextInterceptor = interceptors.next();
             if (nextInterceptor.isIntercept(uri, httpMethod, requestHttpEntity)) {

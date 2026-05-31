@@ -26,15 +26,21 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author nacos
  */
 public class SkillQueryForm {
-
+    
     private String namespaceId;
-
+    
     private String name;
-
+    
     private String version;
-
+    
     private String label;
-
+    
+    /**
+     * Optional content MD5 carried by skill listener. When provided and matches the published
+     * content MD5, the server returns NOT_MODIFIED so the client may keep its local cache.
+     */
+    private String md5;
+    
     /**
      * Validate and normalize query parameters.
      *
@@ -45,41 +51,49 @@ public class SkillQueryForm {
             namespaceId = "public";
         }
         if (StringUtils.isBlank(name)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill name is required");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Skill name is required");
         }
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     public String getLabel() {
         return label;
     }
-
+    
     public void setLabel(String label) {
         this.label = label;
     }
+    
+    public String getMd5() {
+        return md5;
+    }
+    
+    public void setMd5(String md5) {
+        this.md5 = md5;
+    }
 }
-

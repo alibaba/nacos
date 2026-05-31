@@ -50,10 +50,10 @@ public class DistroUtils {
      */
     public static String serviceKey(Service service) {
         return service.getNamespace()
-                + "##"
-                + service.getGroupedServiceName()
-                + "##"
-                + service.isEphemeral();
+            + "##"
+            + service.getGroupedServiceName()
+            + "##"
+            + service.isEphemeral();
     }
     
     /**
@@ -75,27 +75,27 @@ public class DistroUtils {
             return 0;
         }
         return Objects.hash(client.getClientId(),
-                client.getAllPublishedService().stream()
-                        .map(s -> {
-                            InstancePublishInfo ip = client.getInstancePublishInfo(s);
-                            double weight = getWeight(ip);
-                            Boolean enabled = getEnabled(ip);
-                            String cluster = StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
-                            return Objects.hash(
-                                    s.getNamespace(),
-                                    s.getGroup(),
-                                    s.getName(),
-                                    s.isEphemeral(),
-                                    ip.getIp(),
-                                    ip.getPort(),
-                                    weight,
-                                    ip.isHealthy(),
-                                    enabled,
-                                    cluster,
-                                    ip.getExtendDatum()
-                            );
-                        })
-                        .collect(Collectors.toSet()));
+            client.getAllPublishedService().stream()
+                .map(s -> {
+                    InstancePublishInfo ip = client.getInstancePublishInfo(s);
+                    double weight = getWeight(ip);
+                    Boolean enabled = getEnabled(ip);
+                    String cluster =
+                        StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
+                    return Objects.hash(
+                        s.getNamespace(),
+                        s.getGroup(),
+                        s.getName(),
+                        s.isEphemeral(),
+                        ip.getIp(),
+                        ip.getPort(),
+                        weight,
+                        ip.isHealthy(),
+                        enabled,
+                        cluster,
+                        ip.getExtendDatum());
+                })
+                .collect(Collectors.toSet()));
     }
     
     /**
@@ -119,21 +119,21 @@ public class DistroUtils {
         StringBuilder sb = new StringBuilder();
         sb.append(client.getClientId()).append('|');
         client.getAllPublishedService().stream()
-                .sorted(Comparator.comparing(DistroUtils::serviceKey))
-                .forEach(s -> {
-                    InstancePublishInfo ip = client.getInstancePublishInfo(s);
-                    double weight = getWeight(ip);
-                    Boolean enabled = getEnabled(ip);
-                    String cluster = StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
-                    sb.append(serviceKey(s)).append('_')
-                            .append(ip.getIp()).append(':').append(ip.getPort()).append('_')
-                            .append(weight).append('_')
-                            .append(ip.isHealthy()).append('_')
-                            .append(enabled).append('_')
-                            .append(cluster).append('_')
-                            .append(convertMap2String(ip.getExtendDatum()))
-                            .append(',');
-                });
+            .sorted(Comparator.comparing(DistroUtils::serviceKey))
+            .forEach(s -> {
+                InstancePublishInfo ip = client.getInstancePublishInfo(s);
+                double weight = getWeight(ip);
+                Boolean enabled = getEnabled(ip);
+                String cluster = StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
+                sb.append(serviceKey(s)).append('_')
+                    .append(ip.getIp()).append(':').append(ip.getPort()).append('_')
+                    .append(weight).append('_')
+                    .append(ip.isHealthy()).append('_')
+                    .append(enabled).append('_')
+                    .append(cluster).append('_')
+                    .append(convertMap2String(ip.getExtendDatum()))
+                    .append(',');
+            });
         return sb.toString();
     }
     

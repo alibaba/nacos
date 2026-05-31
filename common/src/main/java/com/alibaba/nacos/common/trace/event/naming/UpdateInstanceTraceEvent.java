@@ -56,9 +56,11 @@ public class UpdateInstanceTraceEvent extends NamingTraceEvent {
         return instanceIp + ":" + instancePort;
     }
     
-    public UpdateInstanceTraceEvent(long eventTime, String clientIp, String serviceNamespace, String serviceGroup,
-            String serviceName, String instanceIp, int instancePort, Map<String, String> metadata) {
-        super("UPDATE_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+    public UpdateInstanceTraceEvent(long eventTime, String clientIp, String serviceNamespace,
+        String serviceGroup,
+        String serviceName, String instanceIp, int instancePort, Map<String, String> metadata) {
+        super("UPDATE_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup,
+            serviceName);
         this.clientIp = clientIp;
         this.instanceIp = instanceIp;
         this.instancePort = instancePort;

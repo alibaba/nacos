@@ -27,22 +27,23 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author nacos
  */
 public class SkillsSearchForm implements NacosForm {
-
+    
     private static final int DEFAULT_LIMIT = 10;
-
+    
     private static final int MAX_LIMIT = 10;
-
+    
     private String namespaceId;
-
+    
     private String q;
-
+    
     private Integer limit;
-
+    
     @Override
     public void validate() throws NacosApiException {
         if (StringUtils.isBlank(namespaceId)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "namespaceId is required");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "namespaceId is required");
         }
         if (limit == null || limit <= 0) {
             limit = DEFAULT_LIMIT;
@@ -51,27 +52,27 @@ public class SkillsSearchForm implements NacosForm {
             limit = MAX_LIMIT;
         }
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getQ() {
         return q;
     }
-
+    
     public void setQ(String q) {
         this.q = q;
     }
-
+    
     public Integer getLimit() {
         return limit;
     }
-
+    
     public void setLimit(Integer limit) {
         this.limit = limit;
     }

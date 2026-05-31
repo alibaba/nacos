@@ -61,14 +61,16 @@ public final class LookupFactory {
      * @return {@link MemberLookup}
      * @throws NacosException NacosException
      */
-    public static MemberLookup createLookUp(ServerMemberManager memberManager) throws NacosException {
+    public static MemberLookup createLookUp(ServerMemberManager memberManager)
+        throws NacosException {
         if (!EnvUtil.getStandaloneMode()) {
             LOOK_UP = createLookUp();
         } else {
             LOOK_UP = new StandaloneMemberLookup();
         }
         LOOK_UP.injectMemberManager(memberManager);
-        Loggers.CLUSTER.info("Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
+        Loggers.CLUSTER.info("Current addressing mode selection : {}",
+            LOOK_UP.getClass().getSimpleName());
         return LOOK_UP;
     }
     
@@ -80,13 +82,15 @@ public final class LookupFactory {
      * @return {@link MemberLookup}
      * @throws NacosException {@link NacosException}
      */
-    public static MemberLookup switchLookup(String name, ServerMemberManager memberManager) throws NacosException {
+    public static MemberLookup switchLookup(String name, ServerMemberManager memberManager)
+        throws NacosException {
         LookupType lookupType = LookupType.sourceOf(name);
         
         if (Objects.isNull(lookupType)) {
             throw new IllegalArgumentException(
-                    "The addressing mode exists : " + name + ", just support : [" + Arrays.toString(LookupType.values())
-                            + "]");
+                "The addressing mode exists : " + name + ", just support : ["
+                    + Arrays.toString(LookupType.values())
+                    + "]");
         }
         
         if (Objects.equals(currentLookupType, lookupType)) {
@@ -99,7 +103,8 @@ public final class LookupFactory {
         }
         LOOK_UP = newLookup;
         LOOK_UP.injectMemberManager(memberManager);
-        Loggers.CLUSTER.info("Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
+        Loggers.CLUSTER.info("Current addressing mode selection : {}",
+            LOOK_UP.getClass().getSimpleName());
         return LOOK_UP;
     }
     

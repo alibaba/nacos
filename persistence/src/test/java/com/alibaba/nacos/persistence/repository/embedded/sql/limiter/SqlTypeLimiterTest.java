@@ -48,7 +48,8 @@ class SqlTypeLimiterTest {
     
     @Test
     void testDoLimitForModifyRequestForDdl() throws SQLException {
-        ModifyRequest createTable = new ModifyRequest("create table test(id int,name varchar(255))");
+        ModifyRequest createTable =
+            new ModifyRequest("create table test(id int,name varchar(255))");
         ModifyRequest createIndex = new ModifyRequest("create index test_index on test(id)");
         ModifyRequest alterTable = new ModifyRequest("alter table test add column age int");
         List<ModifyRequest> modifyRequests = new LinkedList<>();

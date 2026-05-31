@@ -27,61 +27,61 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class McpResourceSpecification {
-
+    
     /**
      * Resource specification storage type. Defaults to "normal" (plaintext storage).
      * When set to "encrypted" (or vendor-specific like "encrypt-kms"), server will persist encryptData as-is
      * and skip parsing resources/resourceTemplates.
      */
     private String specificationType;
-
+    
     /**
      * Encrypted payload and metadata when specificationType indicates encryption.
      */
     private EncryptObject encryptData;
-
+    
     private List<Map<String, Object>> resources = new LinkedList<>();
-
+    
     private List<Map<String, Object>> resourceTemplates = new LinkedList<>();
-
+    
     private Map<String, Object> extensions = new HashMap<>(1);
-
+    
     public String getSpecificationType() {
         return specificationType;
     }
-
+    
     public void setSpecificationType(String specificationType) {
         this.specificationType = specificationType;
     }
-
+    
     public EncryptObject getEncryptData() {
         return encryptData;
     }
-
+    
     public void setEncryptData(EncryptObject encryptData) {
         this.encryptData = encryptData;
     }
-
+    
     public List<Map<String, Object>> getResources() {
         return resources;
     }
-
+    
     public void setResources(List<Map<String, Object>> resources) {
         this.resources = resources;
     }
-
+    
     public List<Map<String, Object>> getResourceTemplates() {
         return resourceTemplates;
     }
-
+    
     public void setResourceTemplates(List<Map<String, Object>> resourceTemplates) {
         this.resourceTemplates = resourceTemplates;
     }
-
+    
     public Map<String, Object> getExtensions() {
         return extensions;
     }
-
+    
     public void setExtensions(Map<String, Object> extensions) {
         this.extensions = extensions;
     }

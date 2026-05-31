@@ -29,50 +29,50 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author WangzJi
  */
 class PluginAvailabilityResponseTest {
-
+    
     @Test
     void defaultConstructorTest() {
         PluginAvailabilityResponse response = new PluginAvailabilityResponse();
-
+        
         assertNull(response.getPluginId());
         assertFalse(response.isAvailable());
     }
-
+    
     @Test
     void setPluginIdTest() {
         PluginAvailabilityResponse response = new PluginAvailabilityResponse();
-
+        
         response.setPluginId("trace:otel");
-
+        
         assertEquals("trace:otel", response.getPluginId());
     }
-
+    
     @Test
     void setAvailableTrueTest() {
         PluginAvailabilityResponse response = new PluginAvailabilityResponse();
-
+        
         response.setAvailable(true);
-
+        
         assertTrue(response.isAvailable());
     }
-
+    
     @Test
     void setAvailableFalseTest() {
         PluginAvailabilityResponse response = new PluginAvailabilityResponse();
-
+        
         response.setAvailable(true);
         response.setAvailable(false);
-
+        
         assertFalse(response.isAvailable());
     }
-
+    
     @Test
     void setPluginIdAndAvailableTest() {
         PluginAvailabilityResponse response = new PluginAvailabilityResponse();
-
+        
         response.setPluginId("auth:nacos");
         response.setAvailable(true);
-
+        
         assertEquals("auth:nacos", response.getPluginId());
         assertTrue(response.isAvailable());
     }

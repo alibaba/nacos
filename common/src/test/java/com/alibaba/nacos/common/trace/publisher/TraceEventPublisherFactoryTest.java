@@ -52,22 +52,28 @@ class TraceEventPublisherFactoryTest {
     
     @Test
     void testApply() {
-        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent1.class, Byte.SIZE);
-        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent2.class, Byte.SIZE);
+        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent1.class,
+            Byte.SIZE);
+        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent2.class,
+            Byte.SIZE);
         TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.class, Byte.SIZE);
         String expectedStatus = "Trace event publisher statues:\n"
-                + "\tPublisher TraceEvent                    : shutdown=false, queue=      0/8      \n";
-        assertEquals(expectedStatus, TraceEventPublisherFactory.getInstance().getAllPublisherStatues());
+            + "\tPublisher TraceEvent                    : shutdown=false, queue=      0/8      \n";
+        assertEquals(expectedStatus,
+            TraceEventPublisherFactory.getInstance().getAllPublisherStatues());
     }
     
     @Test
     void testApplyAfterAddEventType() {
         TraceEventPublisherFactory.getInstance().addPublisherEvent(TraceTestEvent.class);
-        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent1.class, Byte.SIZE);
-        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent2.class, Byte.SIZE);
+        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent1.class,
+            Byte.SIZE);
+        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent2.class,
+            Byte.SIZE);
         TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.class, Byte.SIZE);
         String expectedStatus = "Trace event publisher statues:\n"
-                + "\tPublisher TraceTestEvent                : shutdown=false, queue=      0/8      \n";
-        assertEquals(expectedStatus, TraceEventPublisherFactory.getInstance().getAllPublisherStatues());
+            + "\tPublisher TraceTestEvent                : shutdown=false, queue=      0/8      \n";
+        assertEquals(expectedStatus,
+            TraceEventPublisherFactory.getInstance().getAllPublisherStatues());
     }
 }

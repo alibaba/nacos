@@ -62,7 +62,8 @@ class LockGrpcClientTest {
     
     @BeforeEach
     void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        lockGrpcClient = new LockGrpcClient(NacosClientProperties.PROTOTYPE, serverListFactory, securityProxy);
+        lockGrpcClient = new LockGrpcClient(NacosClientProperties.PROTOTYPE, serverListFactory,
+            securityProxy);
         Field rpcClientField = LockGrpcClient.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
         rpcClientField.set(lockGrpcClient, rpcClient);
@@ -76,13 +77,16 @@ class LockGrpcClientTest {
     private void mockRequest() {
         Map<String, String> context = new HashMap<>();
         when(securityProxy.getIdentityContext(any())).thenReturn(context);
-        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK)).thenReturn(AbilityStatus.SUPPORTED);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK))
+            .thenReturn(AbilityStatus.SUPPORTED);
     }
     
     @Test
     void lockNotSupportedFeature() {
-        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK)).thenReturn(AbilityStatus.NOT_SUPPORTED);
-        assertThrows(NacosRuntimeException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)));
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK))
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        assertThrows(NacosRuntimeException.class,
+            () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)));
     }
     
     @Test
@@ -122,8 +126,10 @@ class LockGrpcClientTest {
     
     @Test
     void unLockNotSupportedFeature() {
-        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK)).thenReturn(AbilityStatus.NOT_SUPPORTED);
-        assertThrows(NacosRuntimeException.class, () -> lockGrpcClient.unLock(NLockFactory.getLock("test", -1L)));
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK))
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        assertThrows(NacosRuntimeException.class,
+            () -> lockGrpcClient.unLock(NLockFactory.getLock("test", -1L)));
     }
     
     @Test

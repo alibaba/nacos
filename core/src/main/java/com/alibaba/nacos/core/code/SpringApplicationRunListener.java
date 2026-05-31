@@ -34,14 +34,16 @@ import java.util.Collection;
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
  */
-public class SpringApplicationRunListener implements org.springframework.boot.SpringApplicationRunListener, Ordered {
+public class SpringApplicationRunListener
+    implements org.springframework.boot.SpringApplicationRunListener, Ordered {
     
     private final SpringApplication application;
     
     private final String[] args;
-
-    Collection<NacosApplicationListener> nacosApplicationListeners = NacosServiceLoader.load(NacosApplicationListener.class);
-
+    
+    Collection<NacosApplicationListener> nacosApplicationListeners =
+        NacosServiceLoader.load(NacosApplicationListener.class);
+    
     public SpringApplicationRunListener(SpringApplication application, String[] args) {
         this.application = application;
         this.args = args;
@@ -56,7 +58,7 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     
     @Override
     public void environmentPrepared(ConfigurableBootstrapContext bootstrapContext,
-            ConfigurableEnvironment environment) {
+        ConfigurableEnvironment environment) {
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.environmentPrepared(environment);
         }

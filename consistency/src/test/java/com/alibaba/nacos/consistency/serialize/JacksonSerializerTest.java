@@ -69,7 +69,8 @@ class JacksonSerializerTest {
     
     @Test
     void testDeserializeWithTypeAndEmptyData() {
-        assertNull(jacksonSerializer.deserialize(new byte[0], (java.lang.reflect.Type) String.class));
+        assertNull(
+            jacksonSerializer.deserialize(new byte[0], (java.lang.reflect.Type) String.class));
     }
     
     @Test

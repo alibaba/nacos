@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * @author nacos
  */
 public class AgentSpecListenerInvoker
-        extends AbstractAiListenerInvoker<NacosAgentSpecEvent, AbstractNacosAgentSpecListener> {
+    extends AbstractAiListenerInvoker<NacosAgentSpecEvent, AbstractNacosAgentSpecListener> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentSpecListenerInvoker.class);
     
@@ -37,6 +37,7 @@ public class AgentSpecListenerInvoker
     
     @Override
     protected void logInvoke(NacosAgentSpecEvent event) {
-        LOGGER.info("Invoke event agentSpecName: {} to Listener: {}", event.getAgentSpecName(), listener.toString());
+        LOGGER.info("Invoke event agentSpecName: {} to Listener: {}", event.getAgentSpecName(),
+            listener.toString());
     }
 }

@@ -112,14 +112,18 @@ public class AgentCardBasicInfo {
             return false;
         }
         AgentCardBasicInfo that = (AgentCardBasicInfo) o;
-        return Objects.equals(protocolVersion, that.protocolVersion) && Objects.equals(name, that.name)
-                && Objects.equals(description, that.description) && Objects.equals(version, that.version)
-                && Objects.equals(iconUrl, that.iconUrl) && Objects.equals(capabilities, that.capabilities)
-                && Objects.equals(skills, that.skills);
+        return Objects.equals(protocolVersion, that.protocolVersion)
+            && Objects.equals(name, that.name)
+            && Objects.equals(description, that.description)
+            && Objects.equals(version, that.version)
+            && Objects.equals(iconUrl, that.iconUrl)
+            && Objects.equals(capabilities, that.capabilities)
+            && Objects.equals(skills, that.skills);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(protocolVersion, name, description, version, iconUrl, capabilities, skills);
+        return Objects.hash(protocolVersion, name, description, version, iconUrl, capabilities,
+            skills);
     }
 }

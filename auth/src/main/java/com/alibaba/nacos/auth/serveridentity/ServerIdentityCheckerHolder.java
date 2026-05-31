@@ -52,13 +52,15 @@ public class ServerIdentityCheckerHolder {
     public ServerIdentityChecker newChecker() {
         try {
             return checkerClass.getDeclaredConstructor(new Class[0]).newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+            | NoSuchMethodException e) {
             return new DefaultChecker();
         }
     }
     
     private synchronized void tryGetCheckerBySpi() {
-        Collection<ServerIdentityChecker> checkers = NacosServiceLoader.load(ServerIdentityChecker.class);
+        Collection<ServerIdentityChecker> checkers =
+            NacosServiceLoader.load(ServerIdentityChecker.class);
         if (checkers.isEmpty()) {
             checkerClass = DefaultChecker.class;
             LOGGER.info("Not found ServerIdentityChecker implementation from SPI, use default.");
@@ -69,16 +71,20 @@ public class ServerIdentityCheckerHolder {
             return;
         }
         checkerClass = checkers.iterator().next().getClass();
-        LOGGER.info("Found ServerIdentityChecker implementation {}", checkerClass.getClass().getCanonicalName());
+        LOGGER.info("Found ServerIdentityChecker implementation {}",
+            checkerClass.getClass().getCanonicalName());
     }
     
-    private Class<? extends ServerIdentityChecker> showAllImplementations(Collection<ServerIdentityChecker> checkers) {
+    private Class<? extends ServerIdentityChecker> showAllImplementations(
+        Collection<ServerIdentityChecker> checkers) {
         ServerIdentityChecker result = checkers.iterator().next();
         for (ServerIdentityChecker each : checkers) {
-            LOGGER.warn("Found ServerIdentityChecker implementation {}", each.getClass().getCanonicalName());
+            LOGGER.warn("Found ServerIdentityChecker implementation {}",
+                each.getClass().getCanonicalName());
         }
-        LOGGER.warn("Found more than one ServerIdentityChecker implementation from SPI, use the first one {}.",
-                result.getClass().getCanonicalName());
+        LOGGER.warn(
+            "Found more than one ServerIdentityChecker implementation from SPI, use the first one {}.",
+            result.getClass().getCanonicalName());
         return result.getClass();
     }
 }

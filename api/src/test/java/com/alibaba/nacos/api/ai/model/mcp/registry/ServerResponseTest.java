@@ -63,8 +63,8 @@ class ServerResponseTest extends BasicRequestTest {
     @Test
     void testDeserializeServerResponseBasic() throws JsonProcessingException {
         String json = "{\"server\":{\"name\":\"TestServer\",\"version\":\"1.0.0\"},"
-                + "\"_meta\":{\"io.modelcontextprotocol.registry/official\":"
-                + "{\"publishedAt\":\"2025-01-01T00:00:00Z\",\"isLatest\":true}}}";
+            + "\"_meta\":{\"io.modelcontextprotocol.registry/official\":"
+            + "{\"publishedAt\":\"2025-01-01T00:00:00Z\",\"isLatest\":true}}}";
         
         ServerResponse response = mapper.readValue(json, ServerResponse.class);
         
@@ -83,15 +83,16 @@ class ServerResponseTest extends BasicRequestTest {
         Map<String, Object> extensionData = new HashMap<>();
         extensionData.put("customField", "customValue");
         extensionData.put("metadata", new HashMap<String, Object>() {
+            
             {
                 put("key1", "value1");
             }
         });
         
         String json = "{\"server\":{\"name\":\"ExtendedServer\"},"
-                + "\"_meta\":{"
-                + "\"io.modelcontextprotocol.registry/official\":{\"publishedAt\":\"2025-01-01T00:00:00Z\"},"
-                + "\"customExtension\":\"extensionValue\"}}";
+            + "\"_meta\":{"
+            + "\"io.modelcontextprotocol.registry/official\":{\"publishedAt\":\"2025-01-01T00:00:00Z\"},"
+            + "\"customExtension\":\"extensionValue\"}}";
         
         ServerResponse response = mapper.readValue(json, ServerResponse.class);
         
@@ -130,13 +131,13 @@ class ServerResponseTest extends BasicRequestTest {
     @Test
     void testServerResponseMetaOfficialNested() throws JsonProcessingException {
         String json = "{"
-                + "\"server\":{\"name\":\"NestedServer\"},"
-                + "\"_meta\":{"
-                + "\"io.modelcontextprotocol.registry/official\":{"
-                + "\"publishedAt\":\"2025-01-01T00:00:00Z\","
-                + "\"updatedAt\":\"2025-01-15T00:00:00Z\","
-                + "\"isLatest\":true,"
-                + "\"status\":\"active\"}}}";
+            + "\"server\":{\"name\":\"NestedServer\"},"
+            + "\"_meta\":{"
+            + "\"io.modelcontextprotocol.registry/official\":{"
+            + "\"publishedAt\":\"2025-01-01T00:00:00Z\","
+            + "\"updatedAt\":\"2025-01-15T00:00:00Z\","
+            + "\"isLatest\":true,"
+            + "\"status\":\"active\"}}}";
         
         ServerResponse response = mapper.readValue(json, ServerResponse.class);
         

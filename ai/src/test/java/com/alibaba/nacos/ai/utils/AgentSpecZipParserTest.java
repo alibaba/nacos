@@ -50,9 +50,9 @@ class AgentSpecZipParserTest {
         byte[] zipBytes = createZipWithoutManifest();
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
+            () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
         assertTrue(exception.getMessage().contains("manifest.json"),
-                "Error should mention manifest.json, got: " + exception.getMessage());
+            "Error should mention manifest.json, got: " + exception.getMessage());
     }
     
     // ---- Requirement 1.8: Empty or missing worker.suggested_name ----
@@ -60,23 +60,23 @@ class AgentSpecZipParserTest {
     @Test
     void testParseZipWithEmptySuggestedName() throws IOException {
         byte[] zipBytes = createZipWithManifest(
-                "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"\"}}");
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"\"}}");
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
+            () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
         assertTrue(exception.getMessage().contains("suggested_name"),
-                "Error should mention suggested_name, got: " + exception.getMessage());
+            "Error should mention suggested_name, got: " + exception.getMessage());
     }
     
     @Test
     void testParseZipWithMissingSuggestedName() throws IOException {
         byte[] zipBytes = createZipWithManifest(
-                "{\"version\":\"1.0\",\"worker\":{}}");
+            "{\"version\":\"1.0\",\"worker\":{}}");
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
+            () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
         assertTrue(exception.getMessage().contains("suggested_name"),
-                "Error should mention suggested_name, got: " + exception.getMessage());
+            "Error should mention suggested_name, got: " + exception.getMessage());
     }
     
     @Test
@@ -84,20 +84,20 @@ class AgentSpecZipParserTest {
         byte[] zipBytes = createZipWithManifest("{\"version\":\"1.0\"}");
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
+            () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
         assertTrue(exception.getMessage().contains("suggested_name"),
-                "Error should mention suggested_name, got: " + exception.getMessage());
+            "Error should mention suggested_name, got: " + exception.getMessage());
     }
     
     @Test
     void testParseZipWithBlankSuggestedName() throws IOException {
         byte[] zipBytes = createZipWithManifest(
-                "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"   \"}}");
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"   \"}}");
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
+            () -> AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID));
         assertTrue(exception.getMessage().contains("suggested_name"),
-                "Error should mention suggested_name, got: " + exception.getMessage());
+            "Error should mention suggested_name, got: " + exception.getMessage());
     }
     
     // ---- Requirement 1.9: Corrupted / unreadable zip ----
@@ -107,7 +107,7 @@ class AgentSpecZipParserTest {
         byte[] corruptedBytes = "this is not a zip file".getBytes(StandardCharsets.UTF_8);
         
         assertThrows(NacosApiException.class,
-                () -> AgentSpecZipParser.parseAgentSpecFromZip(corruptedBytes, NAMESPACE_ID));
+            () -> AgentSpecZipParser.parseAgentSpecFromZip(corruptedBytes, NAMESPACE_ID));
     }
     
     @Test
@@ -115,13 +115,13 @@ class AgentSpecZipParserTest {
         byte[] emptyBytes = new byte[0];
         
         assertThrows(NacosApiException.class,
-                () -> AgentSpecZipParser.parseAgentSpecFromZip(emptyBytes, NAMESPACE_ID));
+            () -> AgentSpecZipParser.parseAgentSpecFromZip(emptyBytes, NAMESPACE_ID));
     }
     
     @Test
     void testParseNullZipBytes() {
         assertThrows(NacosApiException.class,
-                () -> AgentSpecZipParser.parseAgentSpecFromZip(null, NAMESPACE_ID));
+            () -> AgentSpecZipParser.parseAgentSpecFromZip(null, NAMESPACE_ID));
     }
     
     // ---- Requirement 1.6: Zip exceeding 50MB size limit ----
@@ -134,11 +134,11 @@ class AgentSpecZipParserTest {
         System.arraycopy(validZip, 0, largeZip, 0, validZip.length);
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentSpecZipParser.parseAgentSpecFromZip(largeZip, NAMESPACE_ID));
+            () -> AgentSpecZipParser.parseAgentSpecFromZip(largeZip, NAMESPACE_ID));
         assertTrue(exception.getMessage().contains("must not exceed"),
-                "Error should mention size limit, got: " + exception.getMessage());
+            "Error should mention size limit, got: " + exception.getMessage());
         assertTrue(exception.getMessage().contains("50"),
-                "Error should mention 50MB, got: " + exception.getMessage());
+            "Error should mention 50MB, got: " + exception.getMessage());
     }
     
     // ---- Positive baseline: valid zip parses successfully ----
@@ -160,8 +160,8 @@ class AgentSpecZipParserTest {
     @Test
     void testParseValidZipWithHiClawLayout() throws Exception {
         String manifest = "{\"version\":\"1.0\",\"description\":\"Sample worker description\","
-                + "\"tags\":[\"game-development\",\"unreal-engine\"],"
-                + "\"worker\":{\"suggested_name\":\"Unreal 技术美术\"}}";
+            + "\"tags\":[\"game-development\",\"unreal-engine\"],"
+            + "\"worker\":{\"suggested_name\":\"Unreal 技术美术\"}}";
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
             addZipEntry(zos, "manifest.json", manifest.getBytes(StandardCharsets.UTF_8));
@@ -188,8 +188,8 @@ class AgentSpecZipParserTest {
     
     private byte[] createValidAgentSpecZip() throws IOException {
         String manifest = "{\"version\":\"1.0\",\"description\":\"Test worker description\","
-                + "\"tags\":[\"design\",\"research\"],"
-                + "\"worker\":{\"suggested_name\":\"UX 研究员\"}}";
+            + "\"tags\":[\"design\",\"research\"],"
+            + "\"worker\":{\"suggested_name\":\"UX 研究员\"}}";
         return createZipWithManifest(manifest);
     }
     
@@ -210,7 +210,8 @@ class AgentSpecZipParserTest {
         return baos.toByteArray();
     }
     
-    private static void addZipEntry(ZipOutputStream zos, String name, byte[] data) throws IOException {
+    private static void addZipEntry(ZipOutputStream zos, String name, byte[] data)
+        throws IOException {
         ZipEntry entry = new ZipEntry(name);
         zos.putNextEntry(entry);
         zos.write(data);

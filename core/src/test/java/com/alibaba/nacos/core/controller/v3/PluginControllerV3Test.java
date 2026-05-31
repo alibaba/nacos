@@ -130,7 +130,7 @@ class PluginControllerV3Test {
         when(unifiedPluginManager.getPlugin("auth:missing")).thenReturn(Optional.empty());
         
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> pluginControllerV3.getPluginDetail("auth", "missing"));
+            () -> pluginControllerV3.getPluginDetail("auth", "missing"));
         
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getErrCode());
         assertTrue(ex.getErrMsg().contains("Plugin not found"));
@@ -148,7 +148,7 @@ class PluginControllerV3Test {
     @Test
     void testUpdatePluginStatusBlankTypeThrows() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> pluginControllerV3.updatePluginStatus("", "nacos", true, false));
+            () -> pluginControllerV3.updatePluginStatus("", "nacos", true, false));
         
         assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getErrCode());
     }
@@ -156,7 +156,7 @@ class PluginControllerV3Test {
     @Test
     void testUpdatePluginStatusBlankNameThrows() {
         assertThrows(NacosApiException.class,
-                () -> pluginControllerV3.updatePluginStatus("auth", "  ", true, false));
+            () -> pluginControllerV3.updatePluginStatus("auth", "  ", true, false));
     }
     
     @Test
@@ -165,7 +165,8 @@ class PluginControllerV3Test {
         config.put("key", "value");
         String configJson = "{\"key\":\"value\"}";
         
-        Result<String> result = pluginControllerV3.updatePluginConfig("auth", "nacos", configJson, false);
+        Result<String> result =
+            pluginControllerV3.updatePluginConfig("auth", "nacos", configJson, false);
         
         assertNotNull(result);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -175,12 +176,13 @@ class PluginControllerV3Test {
     @Test
     void testUpdatePluginConfigNullConfigThrows() {
         assertThrows(Exception.class,
-                () -> pluginControllerV3.updatePluginConfig("auth", "nacos", "null", false));
+            () -> pluginControllerV3.updatePluginConfig("auth", "nacos", "null", false));
     }
     
     @Test
     void testGetPluginListDatasourceDialectExclusive() {
-        PluginInfo info = createPluginInfo("datasource-dialect:mysql", PluginType.DATASOURCE_DIALECT, "mysql");
+        PluginInfo info =
+            createPluginInfo("datasource-dialect:mysql", PluginType.DATASOURCE_DIALECT, "mysql");
         when(unifiedPluginManager.listAllPlugins()).thenReturn(Collections.singletonList(info));
         
         Result<List<PluginInfoVO>> result = pluginControllerV3.getPluginList(null);

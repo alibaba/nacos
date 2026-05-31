@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(SpringExtension.class)
 @WebAppConfiguration
@@ -33,41 +32,18 @@ class GroupKey2Test {
     
     @Test
     void testParseInvalidGroupKey2() {
-        String key = "11111+222+333333+444";
-        try {
-            GroupKey2.parseKey(key);
-            fail();
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.toString());
-        }
+        assertThrows(IllegalArgumentException.class,
+            () -> GroupKey2.parseKey("11111+222+333333+444"));
+        assertThrows(IllegalArgumentException.class, () -> GroupKey2.parseKey("11111+"));
+        assertThrows(IllegalArgumentException.class, () -> GroupKey2.parseKey("11111%29+222"));
+        assertThrows(IllegalArgumentException.class, () -> GroupKey2.parseKey("11111%2b+222"));
         
-        key = "11111+";
-        try {
-            GroupKey2.parseKey(key);
-            fail();
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.toString());
-        }
-        
-        key = "11111%29+222";
-        try {
-            GroupKey2.parseKey(key);
-            fail();
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.toString());
-        }
-        
-        key = "11111%2b+222";
-        try {
-            GroupKey2.parseKey(key);
-            fail();
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.toString());
-        }
-        
-        key = "11111%25+222";
-        String[] pair = GroupKey2.parseKey(key);
+        String[] pair = GroupKey2.parseKey("11111%25+222");
         assertEquals("11111%", pair[0]);
+        assertEquals("222", pair[1]);
+        
+        pair = GroupKey2.parseKey("11111%2B+222");
+        assertEquals("11111+", pair[0]);
         assertEquals("222", pair[1]);
     }
     

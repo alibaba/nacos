@@ -30,7 +30,8 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  *
  * @author Long Yu
  **/
-public abstract class BaseTenantCapacityMapper extends AbstractMapper implements TenantCapacityMapper {
+public abstract class BaseTenantCapacityMapper extends AbstractMapper
+    implements TenantCapacityMapper {
     
     private DatabaseDialect databaseDialect;
     
@@ -40,14 +41,16 @@ public abstract class BaseTenantCapacityMapper extends AbstractMapper implements
     
     @Override
     public MapperResult getCapacityList4CorrectUsage(MapperContext context) {
-        String sql = databaseDialect.getLimitTopSqlWithMark("SELECT id, tenant_id FROM tenant_capacity WHERE id>?");
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+        String sql = databaseDialect
+            .getLimitTopSqlWithMark("SELECT id, tenant_id FROM tenant_capacity WHERE id>?");
+        return new MapperResult(sql,
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
                 context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
+    
     @Override
     public String getFunction(String functionName) {
         return databaseDialect.getFunction(functionName);
     }
-
-
+    
 }

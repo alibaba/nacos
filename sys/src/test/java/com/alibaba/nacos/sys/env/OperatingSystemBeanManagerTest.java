@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,12 +55,13 @@ class OperatingSystemBeanManagerTest {
     @Test
     void testLoadOneWithException() {
         assertNull(ReflectionTestUtils.invokeMethod(OperatingSystemBeanManager.class, "loadOne",
-                Collections.singletonList("com.alibaba.nacos.NonExistClass")));
+            Collections.singletonList("com.alibaba.nacos.NonExistClass")));
     }
     
     @Test
     void testDeduceMethodWithException() {
         assertNull(
-                ReflectionTestUtils.invokeMethod(OperatingSystemBeanManager.class, "deduceMethod", "nonExistMethod"));
+            ReflectionTestUtils.invokeMethod(OperatingSystemBeanManager.class, "deduceMethod",
+                "nonExistMethod"));
     }
 }

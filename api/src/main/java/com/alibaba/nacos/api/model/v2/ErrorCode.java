@@ -270,7 +270,8 @@ public enum ErrorCode {
     
     FUZZY_WATCH_PATTERN_OVER_LIMIT(50310, "fuzzy watch pattern over limit"),
     
-    FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT(50311, "fuzzy watch pattern matched count over limit");
+    FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT(50311,
+        "fuzzy watch pattern matched count over limit");
     
     private final Integer code;
     

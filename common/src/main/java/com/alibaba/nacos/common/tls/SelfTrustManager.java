@@ -46,11 +46,13 @@ public final class SelfTrustManager {
     static TrustManager[] trustAll = new TrustManager[] {new X509TrustManager() {
         
         @Override
-        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s)
+            throws CertificateException {
         }
         
         @Override
-        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s)
+            throws CertificateException {
         }
         
         @Override
@@ -80,7 +82,8 @@ public final class SelfTrustManager {
         }
     }
     
-    private static TrustManager[] buildSecureTrustManager(String trustCertPath) throws SSLException {
+    private static TrustManager[] buildSecureTrustManager(String trustCertPath)
+        throws SSLException {
         TrustManagerFactory selfTmf;
         InputStream in = null;
         
@@ -94,7 +97,8 @@ public final class SelfTrustManager {
             in = new FileInputStream(trustCertPath);
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             
-            Collection<X509Certificate> certs = (Collection<X509Certificate>) cf.generateCertificates(in);
+            Collection<X509Certificate> certs =
+                (Collection<X509Certificate>) cf.generateCertificates(in);
             int count = 0;
             for (Certificate cert : certs) {
                 trustKeyStore.setCertificateEntry("cert-" + (count++), cert);

@@ -123,6 +123,7 @@ public final class WhereBuilder {
         parameters.add(parameter);
         return this;
     }
+    
     /**
      * Build IN.
      *
@@ -152,10 +153,10 @@ public final class WhereBuilder {
      */
     public WhereBuilder offset(int startRow, int pageSize) {
         where.append(" OFFSET ")
-                .append(startRow)
-                .append(" ROWS FETCH NEXT ")
-                .append(pageSize)
-                .append(" ROWS ONLY");
+            .append(startRow)
+            .append(" ROWS FETCH NEXT ")
+            .append(pageSize)
+            .append(" ROWS ONLY");
         return this;
     }
     
@@ -168,9 +169,9 @@ public final class WhereBuilder {
      */
     public WhereBuilder limit(int startRow, int pageSize) {
         where.append(" LIMIT ")
-                .append(startRow)
-                .append(Symbols.COMMA)
-                .append(pageSize);
+            .append(startRow)
+            .append(Symbols.COMMA)
+            .append(pageSize);
         return this;
     }
     
@@ -184,7 +185,7 @@ public final class WhereBuilder {
         where.append(" GROUP BY ").append(fields);
         return this;
     }
-
+    
     /**
      * Build ORDER BY.
      *
@@ -195,7 +196,7 @@ public final class WhereBuilder {
         where.append(" ORDER BY ").append(fields);
         return this;
     }
-
+    
     /**
      * Build EXISTS conditional.
      * <p>

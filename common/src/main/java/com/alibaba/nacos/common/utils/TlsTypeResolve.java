@@ -24,7 +24,7 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider;
  * @author githubcheng2978
  */
 public class TlsTypeResolve {
-
+    
     /**
      * JDK SSL is very slower than OPENSSL, recommend use openSSl.
      *

@@ -40,7 +40,7 @@ public class ConfigOperateResult implements Serializable {
     }
     
     public ConfigOperateResult() {
-    
+        
     }
     
     public boolean isSuccess() {

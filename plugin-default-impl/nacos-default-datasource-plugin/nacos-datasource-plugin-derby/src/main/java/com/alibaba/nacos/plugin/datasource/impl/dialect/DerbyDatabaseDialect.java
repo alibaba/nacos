@@ -25,12 +25,12 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.derby.TrustedDerbyFunction
  * @author xiweng.yy
  */
 public class DerbyDatabaseDialect extends AbstractDatabaseDialect {
-
+    
     @Override
     public String getType() {
         return DatabaseTypeConstant.DERBY;
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedDerbyFunctionEnum.getFunctionByName(functionName);

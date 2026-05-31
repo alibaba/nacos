@@ -102,10 +102,10 @@ public class OidcTokenHolder {
                     }
                 }
                 LOGGER.error("[OIDC-CLIENT] Token request failed, HTTP status: {}, body: {}",
-                        responseCode, errorBody);
+                    responseCode, errorBody);
                 return false;
             }
-
+            
             String responseBody;
             try (InputStream responseStream = connection.getInputStream()) {
                 responseBody = OidcClientContext.readInputStreamAsString(responseStream);
@@ -149,7 +149,8 @@ public class OidcTokenHolder {
             this.expiresInSeconds = newExpiresIn;
             this.obtainedAtMs = System.currentTimeMillis();
             
-            LOGGER.info("[OIDC-CLIENT] Access token obtained successfully, expires_in: {}s", newExpiresIn);
+            LOGGER.info("[OIDC-CLIENT] Access token obtained successfully, expires_in: {}s",
+                newExpiresIn);
             return true;
             
         } catch (IOException e) {
@@ -168,14 +169,15 @@ public class OidcTokenHolder {
         try {
             String charsetName = StandardCharsets.UTF_8.name();
             StringJoiner joiner = new StringJoiner("&");
-            joiner.add(OidcProtocolConstants.GRANT_TYPE + "=" + OidcProtocolConstants.GRANT_TYPE_CLIENT_CREDENTIALS);
+            joiner.add(OidcProtocolConstants.GRANT_TYPE + "="
+                + OidcProtocolConstants.GRANT_TYPE_CLIENT_CREDENTIALS);
             joiner.add(OidcProtocolConstants.PARAM_CLIENT_ID + "="
-                    + URLEncoder.encode(context.getClientId(), charsetName));
+                + URLEncoder.encode(context.getClientId(), charsetName));
             joiner.add(OidcProtocolConstants.PARAM_CLIENT_SECRET + "="
-                    + URLEncoder.encode(context.getClientSecret(), charsetName));
+                + URLEncoder.encode(context.getClientSecret(), charsetName));
             if (context.getScope() != null && !context.getScope().isEmpty()) {
                 joiner.add(OidcProtocolConstants.PARAM_SCOPE + "="
-                        + URLEncoder.encode(context.getScope(), charsetName));
+                    + URLEncoder.encode(context.getScope(), charsetName));
             }
             return joiner.toString();
         } catch (UnsupportedEncodingException e) {

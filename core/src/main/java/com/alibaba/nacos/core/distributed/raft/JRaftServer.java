@@ -128,7 +128,8 @@ public class JRaftServer {
     
     private Serializer serializer;
     
-    private Collection<RequestProcessor4CP> processors = Collections.synchronizedSet(new HashSet<>());
+    private Collection<RequestProcessor4CP> processors =
+        Collections.synchronizedSet(new HashSet<>());
     
     private String selfIp;
     
@@ -164,10 +165,13 @@ public class JRaftServer {
         nodeOptions = new NodeOptions();
         
         // Set the election timeout time. The default is 5 seconds.
-        int electionTimeout = Math.max(ConvertUtils.toInt(config.getVal(RaftSysConstants.RAFT_ELECTION_TIMEOUT_MS),
-                RaftSysConstants.DEFAULT_ELECTION_TIMEOUT), RaftSysConstants.DEFAULT_ELECTION_TIMEOUT);
+        int electionTimeout = Math.max(
+            ConvertUtils.toInt(config.getVal(RaftSysConstants.RAFT_ELECTION_TIMEOUT_MS),
+                RaftSysConstants.DEFAULT_ELECTION_TIMEOUT),
+            RaftSysConstants.DEFAULT_ELECTION_TIMEOUT);
         
-        rpcRequestTimeoutMs = ConvertUtils.toInt(raftConfig.getVal(RaftSysConstants.RAFT_RPC_REQUEST_TIMEOUT_MS),
+        rpcRequestTimeoutMs =
+            ConvertUtils.toInt(raftConfig.getVal(RaftSysConstants.RAFT_RPC_REQUEST_TIMEOUT_MS),
                 RaftSysConstants.DEFAULT_RAFT_RPC_REQUEST_TIMEOUT_MS);
         
         nodeOptions.setSharedElectionTimer(true);
@@ -184,7 +188,8 @@ public class JRaftServer {
         CliOptions cliOptions = new CliOptions();
         
         this.cliService = RaftServiceFactory.createAndInitCliService(cliOptions);
-        this.cliClientService = (CliClientServiceImpl) ((CliServiceImpl) this.cliService).getCliClientService();
+        this.cliClientService =
+            (CliClientServiceImpl) ((CliServiceImpl) this.cliService).getCliClientService();
     }
     
     synchronized void start() {
@@ -192,7 +197,8 @@ public class JRaftServer {
             Loggers.RAFT.info("========= The raft protocol is starting... =========");
             try {
                 // init raft group node
-                com.alipay.sofa.jraft.NodeManager raftNodeManager = com.alipay.sofa.jraft.NodeManager.getInstance();
+                com.alipay.sofa.jraft.NodeManager raftNodeManager =
+                    com.alipay.sofa.jraft.NodeManager.getInstance();
                 for (String address : raftConfig.getMembers()) {
                     PeerId peerId = PeerId.parsePeer(address);
                     conf.addPeer(peerId);
@@ -225,7 +231,8 @@ public class JRaftServer {
             return;
         }
         
-        final String parentPath = Paths.get(EnvUtil.getNacosHome(), "data/protocol/raft").toString();
+        final String parentPath =
+            Paths.get(EnvUtil.getNacosHome(), "data/protocol/raft").toString();
         
         for (RequestProcessor4CP processor : processors) {
             final String groupName = processor.group();
@@ -246,28 +253,34 @@ public class JRaftServer {
             copy.setInitialConf(configuration);
             
             // Set snapshot interval, default 1800 seconds
-            int doSnapshotInterval = ConvertUtils.toInt(raftConfig.getVal(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS),
+            int doSnapshotInterval =
+                ConvertUtils.toInt(raftConfig.getVal(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS),
                     RaftSysConstants.DEFAULT_RAFT_SNAPSHOT_INTERVAL_SECS);
             
             // If the business module does not implement a snapshot processor, cancel the snapshot
-            doSnapshotInterval = CollectionUtils.isEmpty(processor.loadSnapshotOperate()) ? 0 : doSnapshotInterval;
+            doSnapshotInterval =
+                CollectionUtils.isEmpty(processor.loadSnapshotOperate()) ? 0 : doSnapshotInterval;
             
             copy.setSnapshotIntervalSecs(doSnapshotInterval);
             Loggers.RAFT.info("create raft group : {}", groupName);
-            RaftGroupService raftGroupService = new RaftGroupService(groupName, localPeerId, copy, rpcServer, true);
-    
+            RaftGroupService raftGroupService =
+                new RaftGroupService(groupName, localPeerId, copy, rpcServer, true);
+            
             // Because BaseRpcServer has been started before, it is not allowed to start again here
             Node node = raftGroupService.start(false);
             machine.setNode(node);
             RouteTable.getInstance().updateConfiguration(groupName, configuration);
             
-            RaftExecutor.executeByCommon(() -> registerSelfToCluster(groupName, localPeerId, configuration));
+            RaftExecutor.executeByCommon(
+                () -> registerSelfToCluster(groupName, localPeerId, configuration));
             
             // Turn on the leader auto refresh for this group
-            long period = nodeOptions.getElectionTimeoutMs() + ThreadLocalRandom.current().nextInt(5 * 1000);
+            long period =
+                nodeOptions.getElectionTimeoutMs() + ThreadLocalRandom.current().nextInt(5 * 1000);
             RaftExecutor.scheduleRaftMemberRefreshJob(() -> refreshRouteTable(groupName),
-                    nodeOptions.getElectionTimeoutMs(), period, TimeUnit.MILLISECONDS);
-            multiRaftGroup.put(groupName, new RaftGroupTuple(node, processor, raftGroupService, machine));
+                nodeOptions.getElectionTimeoutMs(), period, TimeUnit.MILLISECONDS);
+            multiRaftGroup.put(groupName,
+                new RaftGroupTuple(node, processor, raftGroupService, machine));
         }
     }
     
@@ -283,6 +296,7 @@ public class JRaftServer {
         final RequestProcessor processor = tuple.processor;
         try {
             node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
+                
                 @Override
                 public void run(Status status, long index, byte[] reqCtx) {
                     if (status.isOk()) {
@@ -292,12 +306,14 @@ public class JRaftServer {
                         } catch (Throwable t) {
                             MetricsMonitor.raftReadIndexFailed();
                             future.completeExceptionally(new ConsistencyException(
-                                    "The conformance protocol is temporarily unavailable for reading", t));
+                                "The conformance protocol is temporarily unavailable for reading",
+                                t));
                         }
                         return;
                     }
                     MetricsMonitor.raftReadIndexFailed();
-                    Loggers.RAFT.error("ReadIndex has error : {}, go to Leader read.", status.getErrorMsg());
+                    Loggers.RAFT.error("ReadIndex has error : {}, go to Leader read.",
+                        status.getErrorMsg());
                     MetricsMonitor.raftReadFromLeader();
                     readFromLeader(request, future);
                 }
@@ -305,23 +321,26 @@ public class JRaftServer {
             return future;
         } catch (Throwable e) {
             MetricsMonitor.raftReadFromLeader();
-            Loggers.RAFT.warn("Raft linear read failed, go to Leader read logic : {}", e.toString());
+            Loggers.RAFT.warn("Raft linear read failed, go to Leader read logic : {}",
+                e.toString());
             // run raft read
             readFromLeader(request, future);
             return future;
         }
     }
     
-    public void readFromLeader(final ReadRequest request, final CompletableFuture<Response> future) {
+    public void readFromLeader(final ReadRequest request,
+        final CompletableFuture<Response> future) {
         commit(request.getGroup(), request, future);
     }
     
     public CompletableFuture<Response> commit(final String group, final Message data,
-            final CompletableFuture<Response> future) {
+        final CompletableFuture<Response> future) {
         LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "data requested this time : {}", data);
         final RaftGroupTuple tuple = findTupleByGroup(group);
         if (tuple == null) {
-            future.completeExceptionally(new IllegalArgumentException("No corresponding Raft Group found : " + group));
+            future.completeExceptionally(
+                new IllegalArgumentException("No corresponding Raft Group found : " + group));
             return future;
         }
         
@@ -412,17 +431,19 @@ public class JRaftServer {
         }
         
         byte[] dataBytes = data.toByteArray();
-        task.setData((ByteBuffer) ByteBuffer.allocate(requestTypeFieldBytes.length + dataBytes.length)
+        task.setData(
+            (ByteBuffer) ByteBuffer.allocate(requestTypeFieldBytes.length + dataBytes.length)
                 .put(requestTypeFieldBytes).put(dataBytes).position(0));
         node.apply(task);
     }
     
     private void invokeToLeader(final String group, final Message request, final int timeoutMillis,
-            FailoverClosure closure) {
+        FailoverClosure closure) {
         try {
             final Endpoint leaderIp = Optional.ofNullable(getLeader(group))
-                    .orElseThrow(() -> new NoLeaderException(group)).getEndpoint();
+                .orElseThrow(() -> new NoLeaderException(group)).getEndpoint();
             cliClientService.getRpcClient().invokeAsync(leaderIp, request, new InvokeCallback() {
+                
                 @Override
                 public void complete(Object o, Throwable ex) {
                     if (Objects.nonNull(ex)) {
@@ -430,7 +451,7 @@ public class JRaftServer {
                         closure.run(new Status(RaftError.UNKNOWN, ex.getMessage()));
                         return;
                     }
-                    if (!((Response)o).getSuccess()) {
+                    if (!((Response) o).getSuccess()) {
                         closure.setThrowable(new IllegalStateException(((Response) o).getErrMsg()));
                         closure.run(new Status(RaftError.UNKNOWN, ((Response) o).getErrMsg()));
                         return;
@@ -462,12 +483,14 @@ public class JRaftServer {
         Set<String> waitRemove = oldPeers;
         AtomicInteger successCnt = new AtomicInteger(0);
         multiRaftGroup.forEach(new BiConsumer<String, RaftGroupTuple>() {
+            
             @Override
             public void accept(String group, RaftGroupTuple tuple) {
                 Map<String, String> params = new HashMap<>();
                 params.put(JRaftConstants.GROUP_ID, group);
                 params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.REMOVE_PEERS);
-                params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(waitRemove, StringUtils.COMMA));
+                params.put(JRaftConstants.COMMAND_VALUE,
+                    StringUtils.join(waitRemove, StringUtils.COMMA));
                 RestResult<String> result = maintainService.execute(params);
                 if (result.ok()) {
                     successCnt.incrementAndGet();
@@ -489,20 +512,25 @@ public class JRaftServer {
         try {
             RouteTable instance = RouteTable.getInstance();
             Configuration oldConf = instance.getConfiguration(groupName);
-            String oldLeader = Optional.ofNullable(instance.selectLeader(groupName)).orElse(PeerId.emptyPeer())
+            String oldLeader =
+                Optional.ofNullable(instance.selectLeader(groupName)).orElse(PeerId.emptyPeer())
                     .getEndpoint().toString();
             // fix issue #3661  https://github.com/alibaba/nacos/issues/3661
             status = instance.refreshLeader(this.cliClientService, groupName, rpcRequestTimeoutMs);
             if (!status.isOk()) {
-                Loggers.RAFT.error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
+                Loggers.RAFT.error("Fail to refresh leader for group : {}, status is : {}",
+                    groupName, status);
             }
-            status = instance.refreshConfiguration(this.cliClientService, groupName, rpcRequestTimeoutMs);
+            status = instance.refreshConfiguration(this.cliClientService, groupName,
+                rpcRequestTimeoutMs);
             if (!status.isOk()) {
                 Loggers.RAFT
-                        .error("Fail to refresh route configuration for group : {}, status is : {}", groupName, status);
+                    .error("Fail to refresh route configuration for group : {}, status is : {}",
+                        groupName, status);
             }
         } catch (Exception e) {
-            Loggers.RAFT.error("Fail to refresh raft metadata info for group : {}, error is : {}", groupName, e);
+            Loggers.RAFT.error("Fail to refresh raft metadata info for group : {}, error is : {}",
+                groupName, e);
         }
     }
     
@@ -557,8 +585,9 @@ public class JRaftServer {
         public RaftGroupTuple() {
         }
         
-        public RaftGroupTuple(Node node, RequestProcessor processor, RaftGroupService raftGroupService,
-                NacosStateMachine machine) {
+        public RaftGroupTuple(Node node, RequestProcessor processor,
+            RaftGroupService raftGroupService,
+            NacosStateMachine machine) {
             this.node = node;
             this.processor = processor;
             this.raftGroupService = raftGroupService;

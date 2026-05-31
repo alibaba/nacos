@@ -46,13 +46,16 @@ public class HttpRequest {
     
     private String fileFieldName;
     
-    public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues,
-            String body, RequestResource resource) {
+    public HttpRequest(String httpMethod, String path, Map<String, String> headers,
+        Map<String, String> paramValues,
+        String body, RequestResource resource) {
         this(httpMethod, path, headers, paramValues, body, resource, null, null, null);
     }
     
-    public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues,
-            String body, RequestResource resource, byte[] fileBytes, String fileName, String fileFieldName) {
+    public HttpRequest(String httpMethod, String path, Map<String, String> headers,
+        Map<String, String> paramValues,
+        String body, RequestResource resource, byte[] fileBytes, String fileName,
+        String fileFieldName) {
         this.httpMethod = httpMethod;
         this.path = path;
         this.headers = headers;
@@ -193,9 +196,11 @@ public class HttpRequest {
             return this;
         }
         
+        /** Build the HTTP request. */
         public HttpRequest build() {
-            return new HttpRequest(httpMethod, path, headers, paramValues, body, resource, fileBytes, fileName,
-                    fileFieldName);
+            return new HttpRequest(httpMethod, path, headers, paramValues, body, resource,
+                fileBytes, fileName,
+                fileFieldName);
         }
     }
 }

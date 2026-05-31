@@ -27,9 +27,9 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class PluginStateOperation implements Serializable {
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     /**
      * Operation type enum.
      */
@@ -38,84 +38,84 @@ public class PluginStateOperation implements Serializable {
          * Change plugin enabled/disabled state.
          */
         CHANGE_STATE,
-
+        
         /**
          * Update plugin configuration.
          */
         UPDATE_CONFIG
     }
-
+    
     private OperationType type;
-
+    
     private String pluginId;
-
+    
     private Boolean enabled;
-
+    
     private Map<String, String> config;
-
+    
     public PluginStateOperation() {
     }
-
+    
     public OperationType getType() {
         return type;
     }
-
+    
     public void setType(OperationType type) {
         this.type = type;
     }
-
+    
     public String getPluginId() {
         return pluginId;
     }
-
+    
     public void setPluginId(String pluginId) {
         this.pluginId = pluginId;
     }
-
+    
     public Boolean getEnabled() {
         return enabled;
     }
-
+    
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
-
+    
     public Map<String, String> getConfig() {
         return config;
     }
-
+    
     public void setConfig(Map<String, String> config) {
         this.config = config;
     }
-
+    
     public static Builder builder() {
         return new Builder();
     }
-
+    
     public static class Builder {
-
+        
         private final PluginStateOperation operation = new PluginStateOperation();
-
+        
         public Builder type(OperationType type) {
             operation.type = type;
             return this;
         }
-
+        
         public Builder pluginId(String pluginId) {
             operation.pluginId = pluginId;
             return this;
         }
-
+        
         public Builder enabled(boolean enabled) {
             operation.enabled = enabled;
             return this;
         }
-
+        
         public Builder config(Map<String, String> config) {
             operation.config = config;
             return this;
         }
-
+        
         /**
          * Build the PluginStateOperation.
          *

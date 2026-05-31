@@ -50,7 +50,8 @@ class McpServerRequestParamExtractorTest {
         request.setMcpId("");
         List<ParamInfo> paramInfos = extractor.extractParam(request);
         Assertions.assertEquals(1, paramInfos.size());
-        Assertions.assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, paramInfos.get(0).getNamespaceId());
+        Assertions.assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            paramInfos.get(0).getNamespaceId());
         Assertions.assertEquals("test", paramInfos.get(0).getMcpName());
         Assertions.assertEquals("", paramInfos.get(0).getMcpId());
     }
@@ -63,14 +64,16 @@ class McpServerRequestParamExtractorTest {
         request.setMcpId("");
         List<ParamInfo> paramInfos = extractor.extractParam(request);
         Assertions.assertEquals(1, paramInfos.size());
-        Assertions.assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, paramInfos.get(0).getNamespaceId());
+        Assertions.assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            paramInfos.get(0).getNamespaceId());
         Assertions.assertEquals("test", paramInfos.get(0).getMcpName());
         Assertions.assertEquals("", paramInfos.get(0).getMcpId());
         request.setServerSpecification(new McpServerBasicInfo());
         request.getServerSpecification().setName("innerName");
         paramInfos = extractor.extractParam(request);
         Assertions.assertEquals(1, paramInfos.size());
-        Assertions.assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, paramInfos.get(0).getNamespaceId());
+        Assertions.assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            paramInfos.get(0).getNamespaceId());
         Assertions.assertEquals("innerName", paramInfos.get(0).getMcpName());
         Assertions.assertEquals("", paramInfos.get(0).getMcpId());
     }

@@ -56,7 +56,8 @@ class ReuseUploadFileHttpServletRequestTest {
     void setUp() throws MultipartException {
         mockMultipartHttpServletRequest = Mockito.mock(MockMultipartHttpServletRequest.class);
         when(mockMultipartHttpServletRequest.getParameterMap()).thenReturn(new HashMap<>());
-        reuseUploadFileHttpServletRequest = new ReuseUploadFileHttpServletRequest(mockMultipartHttpServletRequest);
+        reuseUploadFileHttpServletRequest =
+            new ReuseUploadFileHttpServletRequest(mockMultipartHttpServletRequest);
     }
     
     @Test
@@ -78,23 +79,26 @@ class ReuseUploadFileHttpServletRequestTest {
     @Test
     void testGetBodyWithoutFile() throws Exception {
         Object body = reuseUploadFileHttpServletRequest.getBody();
-        assertEquals(HttpUtils.encodingParams(HttpUtils.translateParameterMap(new HashMap<>()), StandardCharsets.UTF_8.name()), body);
+        assertEquals(HttpUtils.encodingParams(HttpUtils.translateParameterMap(new HashMap<>()),
+            StandardCharsets.UTF_8.name()), body);
     }
-
+    
     @Test
     void testGetParameterAndValuesWhenPresent() {
         Map<String, String[]> paramMap = new HashMap<>();
         paramMap.put("k", new String[] {"v1", "v2"});
         when(mockMultipartHttpServletRequest.getParameterMap()).thenReturn(paramMap);
-        ReuseUploadFileHttpServletRequest wrapper = new ReuseUploadFileHttpServletRequest(mockMultipartHttpServletRequest);
+        ReuseUploadFileHttpServletRequest wrapper =
+            new ReuseUploadFileHttpServletRequest(mockMultipartHttpServletRequest);
         assertEquals("v1", wrapper.getParameter("k"));
         assertEquals(2, wrapper.getParameterValues("k").length);
         assertEquals("v1", wrapper.getParameterValues("k")[0]);
     }
-
+    
     @Test
     void testGetBodyWithFileViaSpyGetFile() throws Exception {
-        ReuseUploadFileHttpServletRequest real = new ReuseUploadFileHttpServletRequest(mockMultipartHttpServletRequest);
+        ReuseUploadFileHttpServletRequest real =
+            new ReuseUploadFileHttpServletRequest(mockMultipartHttpServletRequest);
         ReuseUploadFileHttpServletRequest spy = Mockito.spy(real);
         MultipartFile mockFile = mock(MultipartFile.class);
         Resource mockResource = mock(Resource.class);

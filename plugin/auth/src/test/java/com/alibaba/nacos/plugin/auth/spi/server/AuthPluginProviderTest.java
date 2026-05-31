@@ -31,34 +31,34 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @author WangzJi
  */
 class AuthPluginProviderTest {
-
+    
     private AuthPluginProvider provider;
-
+    
     @BeforeEach
     void setUp() {
         provider = new AuthPluginProvider();
     }
-
+    
     @Test
     void getPluginTypeTest() {
         PluginType pluginType = provider.getPluginType();
-
+        
         assertNotNull(pluginType);
         assertEquals(PluginType.AUTH, pluginType);
         assertEquals("auth", pluginType.getType());
     }
-
+    
     @Test
     void getAllPluginsTest() {
         Map<String, AuthPluginService> plugins = provider.getAllPlugins();
-
+        
         assertNotNull(plugins);
     }
-
+    
     @Test
     void getOrderTest() {
         int order = provider.getOrder();
-
+        
         assertEquals(0, order);
     }
 }

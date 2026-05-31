@@ -39,7 +39,7 @@ class ThreadFactoryBuilderTest {
     @Test
     void simpleTest() {
         ThreadFactory threadFactory = new ThreadFactoryBuilder().daemon(true).priority(priority)
-                .nameFormat("nacos-grpc-executor-%d").build();
+            .nameFormat("nacos-grpc-executor-%d").build();
         Thread thread1 = threadFactory.newThread(() -> {
         });
         assertEquals("nacos-grpc-executor-0", thread1.getName());
@@ -60,7 +60,8 @@ class ThreadFactoryBuilderTest {
             thread.setName(threadName);
             return thread;
         };
-        ThreadFactory factory = new ThreadFactoryBuilder().daemon(true).priority(priority).customizeFactory(myFactory).build();
+        ThreadFactory factory = new ThreadFactoryBuilder().daemon(true).priority(priority)
+            .customizeFactory(myFactory).build();
         Thread thread = factory.newThread(() -> {
         });
         assertEquals(threadName, thread.getName());
@@ -70,7 +71,8 @@ class ThreadFactoryBuilderTest {
     void uncaughtExceptionHandlerTest() throws Exception {
         AtomicBoolean state = new AtomicBoolean(false);
         ThreadFactory threadFactory = new ThreadFactoryBuilder().daemon(true).priority(priority)
-                .nameFormat("nacos-grpc-executor-%d").uncaughtExceptionHandler((t, e) -> state.set(true)).build();
+            .nameFormat("nacos-grpc-executor-%d")
+            .uncaughtExceptionHandler((t, e) -> state.set(true)).build();
         threadFactory.newThread(() -> {
             throw new NullPointerException("null pointer");
         }).start();
@@ -102,15 +104,17 @@ class ThreadFactoryBuilderTest {
     @Test
     void propertyUncaughtExceptionHandlerTest() {
         assertThrows(IllegalArgumentException.class, () -> {
-            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d").uncaughtExceptionHandler(null)
-                    .build();
+            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d")
+                .uncaughtExceptionHandler(null)
+                .build();
         });
     }
     
     @Test
     void propertyCustomizeFactoryHandlerTest() {
         assertThrows(IllegalArgumentException.class, () -> {
-            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d").customizeFactory(null).build();
+            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d")
+                .customizeFactory(null).build();
         });
     }
 }

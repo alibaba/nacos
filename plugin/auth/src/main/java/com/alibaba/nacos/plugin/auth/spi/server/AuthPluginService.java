@@ -57,7 +57,8 @@ public interface AuthPluginService {
      * @return {@link AuthResult} of validate result
      * @throws AccessException if authentication is failed
      */
-    AuthResult validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
+    AuthResult validateIdentity(IdentityContext identityContext, Resource resource)
+        throws AccessException;
     
     /**
      * Validate the identity whether has the resource authority.
@@ -67,7 +68,8 @@ public interface AuthPluginService {
      * @return {@link AuthResult} of validate result
      * @throws AccessException if authentication is failed
      */
-    AuthResult validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
+    AuthResult validateAuthority(IdentityContext identityContext, Permission permission)
+        throws AccessException;
     
     /**
      * AuthPluginService Name which for conveniently find AuthPluginService instance.

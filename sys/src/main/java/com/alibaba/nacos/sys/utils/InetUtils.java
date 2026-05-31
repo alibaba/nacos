@@ -61,8 +61,10 @@ public class InetUtils {
     
     private static final List<String> IGNORED_INTERFACES = new ArrayList<>();
     
-    private static final ScheduledExecutorService INET_AUTO_REFRESH_EXECUTOR = ExecutorFactory.Managed.newSingleScheduledExecutorService(
-            InetUtils.class.getCanonicalName(), new NameThreadFactory("com.alibaba.inet.ip.auto-refresh"));
+    private static final ScheduledExecutorService INET_AUTO_REFRESH_EXECUTOR =
+        ExecutorFactory.Managed.newSingleScheduledExecutorService(
+            InetUtils.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.inet.ip.auto-refresh"));
     
     private static volatile String selfIP;
     
@@ -73,7 +75,8 @@ public class InetUtils {
     static {
         NotifyCenter.registerToSharePublisher(IPChangeEvent.class);
         
-        useOnlySiteLocalInterface = Boolean.parseBoolean(EnvUtil.getProperty(USE_ONLY_SITE_INTERFACES));
+        useOnlySiteLocalInterface =
+            Boolean.parseBoolean(EnvUtil.getProperty(USE_ONLY_SITE_INTERFACES));
         
         List<String> networks = EnvUtil.getPropertyList(Constants.PREFERRED_NETWORKS);
         PREFERRED_NETWORKS.addAll(networks);
@@ -109,12 +112,15 @@ public class InetUtils {
             tmpSelfIp = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
         }
         
-        if (InternetAddressUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIp.startsWith(InternetAddressUtil.IPV6_START_MARK)
-                && !tmpSelfIp.endsWith(InternetAddressUtil.IPV6_END_MARK)) {
-            tmpSelfIp = InternetAddressUtil.IPV6_START_MARK + tmpSelfIp + InternetAddressUtil.IPV6_END_MARK;
+        if (InternetAddressUtil.PREFER_IPV6_ADDRESSES
+            && !tmpSelfIp.startsWith(InternetAddressUtil.IPV6_START_MARK)
+            && !tmpSelfIp.endsWith(InternetAddressUtil.IPV6_END_MARK)) {
+            tmpSelfIp =
+                InternetAddressUtil.IPV6_START_MARK + tmpSelfIp + InternetAddressUtil.IPV6_END_MARK;
             if (StringUtils.contains(tmpSelfIp, InternetAddressUtil.PERCENT_SIGN_IN_IPV6)) {
-                tmpSelfIp = tmpSelfIp.substring(0, tmpSelfIp.indexOf(InternetAddressUtil.PERCENT_SIGN_IN_IPV6))
-                        + InternetAddressUtil.IPV6_END_MARK;
+                tmpSelfIp = tmpSelfIp.substring(0,
+                    tmpSelfIp.indexOf(InternetAddressUtil.PERCENT_SIGN_IN_IPV6))
+                    + InternetAddressUtil.IPV6_END_MARK;
             }
         }
         if (!Objects.equals(selfIP, tmpSelfIp) && Objects.nonNull(selfIP)) {
@@ -156,7 +162,8 @@ public class InetUtils {
         preferHostnameOverIP = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
         
         if (!preferHostnameOverIP) {
-            preferHostnameOverIP = Boolean.parseBoolean(EnvUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
+            preferHostnameOverIP =
+                Boolean.parseBoolean(EnvUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
         }
         
         if (!preferHostnameOverIP) {
@@ -191,8 +198,8 @@ public class InetUtils {
         
         try {
             int lowest = Integer.MAX_VALUE;
-            for (Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
-                    nics.hasMoreElements(); ) {
+            for (Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces(); nics
+                .hasMoreElements();) {
                 NetworkInterface ifc = nics.nextElement();
                 if (isUp(ifc)) {
                     LOG.debug("Testing interface: " + ifc.getDisplayName());
@@ -203,12 +210,15 @@ public class InetUtils {
                     }
                     
                     if (!ignoreInterface(ifc.getDisplayName())) {
-                        for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
+                        for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs
+                            .hasMoreElements();) {
                             InetAddress address = addrs.nextElement();
                             boolean isLegalIpVersion =
-                                    InternetAddressUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
-                                            : address instanceof Inet4Address;
-                            if (isLegalIpVersion && !address.isLoopbackAddress() && isPreferredAddress(address)) {
+                                InternetAddressUtil.PREFER_IPV6_ADDRESSES
+                                    ? address instanceof Inet6Address
+                                    : address instanceof Inet4Address;
+                            if (isLegalIpVersion && !address.isLoopbackAddress()
+                                && isPreferredAddress(address)) {
                                 LOG.debug("Found non-loopback interface: " + ifc.getDisplayName());
                                 result = address;
                             }
@@ -238,7 +248,7 @@ public class InetUtils {
      * @param ifc network interface
      * @return true or false;
      */
-    public static boolean isUp(NetworkInterface ifc)  {
+    public static boolean isUp(NetworkInterface ifc) {
         try {
             return ifc.isUp();
         } catch (SocketException e) {
@@ -309,7 +319,7 @@ public class InetUtils {
             return "IPChangeEvent{" + "oldIP='" + oldIP + '\'' + ", newIP='" + newIP + '\'' + '}';
         }
     }
-
+    
     public static String getGrpcListenIp() {
         String grpcListenIp = System.getProperty(NACOS_REMOTE_GRPC_LISTEN_IP);
         if (StringUtils.isNotBlank(grpcListenIp) && !InternetAddressUtil.isIp(grpcListenIp)) {

@@ -43,7 +43,8 @@ public class AuthConfig {
     }
     
     @Bean
-    public FilterRegistrationBean<AuthAdminFilter> authAdminFilterRegistration(AuthAdminFilter authAdminFilter) {
+    public FilterRegistrationBean<AuthAdminFilter> authAdminFilterRegistration(
+        AuthAdminFilter authAdminFilter) {
         FilterRegistrationBean<AuthAdminFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(authAdminFilter);
         registration.addUrlPatterns("/*");
@@ -53,15 +54,17 @@ public class AuthConfig {
     }
     
     @Bean
-    public AuthFilter authFilter(ControllerMethodsCache methodsCache, InnerApiAuthEnabled innerApiAuthEnabled) {
+    public AuthFilter authFilter(ControllerMethodsCache methodsCache,
+        InnerApiAuthEnabled innerApiAuthEnabled) {
         return new AuthFilter(NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE), methodsCache,
-                innerApiAuthEnabled);
+            .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE), methodsCache,
+            innerApiAuthEnabled);
     }
     
     @Bean
     public AuthAdminFilter authAdminFilter(ControllerMethodsCache methodsCache) {
         return new AuthAdminFilter(NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE), methodsCache);
+            .getNacosAuthConfigByScope(NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE),
+            methodsCache);
     }
 }

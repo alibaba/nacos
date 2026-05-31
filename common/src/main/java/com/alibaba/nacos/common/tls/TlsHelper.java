@@ -55,12 +55,13 @@ public final class TlsHelper {
      * @throws KeyManagementException   KeyManagement exception
      */
     public static SSLContext buildSslContext(boolean forClient)
-            throws NoSuchAlgorithmException, KeyManagementException {
+        throws NoSuchAlgorithmException, KeyManagementException {
         
         SSLContext sslcontext = SSLContext.getInstance("TLS");
         sslcontext.init(null, SelfTrustManager
-                        .trustManager(TlsSystemConfig.tlsClientAuthServer, TlsSystemConfig.tlsClientTrustCertPath),
-                new java.security.SecureRandom());
+            .trustManager(TlsSystemConfig.tlsClientAuthServer,
+                TlsSystemConfig.tlsClientTrustCertPath),
+            new java.security.SecureRandom());
         return sslcontext;
     }
 }

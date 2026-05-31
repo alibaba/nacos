@@ -22,9 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
 import com.alibaba.nacos.console.handler.ai.PipelineHandler;
-import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,7 +34,6 @@ import org.springframework.stereotype.Component;
 @Component
 @EnabledInnerHandler
 @EnabledAiHandler
-@Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 public class PipelineInnerHandler implements PipelineHandler {
     
     private final PipelineQueryService pipelineQueryService;
@@ -52,8 +49,8 @@ public class PipelineInnerHandler implements PipelineHandler {
     
     @Override
     public Page<PipelineExecution> listPipelines(String resourceType, String resourceName,
-            String namespaceId, String version, int pageNo, int pageSize) throws NacosException {
+        String namespaceId, String version, int pageNo, int pageSize) throws NacosException {
         return pipelineQueryService.listPipelines(resourceType, resourceName,
-                namespaceId, version, pageNo, pageSize);
+            namespaceId, version, pageNo, pageSize);
     }
 }

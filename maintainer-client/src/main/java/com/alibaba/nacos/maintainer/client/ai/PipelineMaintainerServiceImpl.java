@@ -31,17 +31,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
 import java.util.Map;
 
-final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerService implements PipelineMaintainerService {
-
+final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
+    implements PipelineMaintainerService {
+    
     PipelineMaintainerServiceImpl(AiMaintainerHttpContext context) {
         super(context);
     }
-
+    
     @Override
     public Result<JsonNode> getPipelineDetail(String pipelineId) throws NacosException {
         Map<String, String> params = new HashMap<>(2);
         params.put("pipelineId", pipelineId);
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(StringUtils.EMPTY, pipelineId))
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(StringUtils.EMPTY, pipelineId))
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_PIPELINE_DETAIL_ADMIN_PATH)
                 .setParamValue(params).build();
@@ -54,26 +56,32 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
             throw e;
         }
     }
-
+    
     /**
      * Pre-3.2.1 style: GET {@code /v3/admin/ai/pipelines/{pipelineId}} when {@code /detail} is not mapped.
      */
     private Result<JsonNode> getPipelineDetailLegacy(String pipelineId) throws NacosException {
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(StringUtils.EMPTY, pipelineId))
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(StringUtils.EMPTY, pipelineId))
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH + "/" + pipelineId)
                 .setParamValue(new HashMap<>(2)).build();
         return parseResultFromHttp(executeSyncHttpRequest(httpRequest));
     }
-
+    
     @Override
-    public Result<JsonNode> listPipelineExecutions(String resourceType, String resourceName, String namespaceId,
-            String version, int pageNo, int pageSize) throws NacosException {
-        Map<String, String> params = buildListQueryParams(resourceType, resourceName, namespaceId, version, pageNo,
+    public Result<JsonNode> listPipelineExecutions(String resourceType, String resourceName,
+        String namespaceId,
+        String version, int pageNo, int pageSize) throws NacosException {
+        Map<String, String> params =
+            buildListQueryParams(resourceType, resourceName, namespaceId, version, pageNo,
                 pageSize);
-        String resolvedNamespace = StringUtils.isNotBlank(namespaceId) ? namespaceId : StringUtils.EMPTY;
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(resolvedNamespace, resourceName))
-                .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_PIPELINE_LIST_ADMIN_PATH)
+        String resolvedNamespace =
+            StringUtils.isNotBlank(namespaceId) ? namespaceId : StringUtils.EMPTY;
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(resolvedNamespace, resourceName))
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_PIPELINE_LIST_ADMIN_PATH)
                 .setParamValue(params).build();
         try {
             return parseResultFromHttp(executeSyncHttpRequest(httpRequest));
@@ -84,34 +92,40 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
             throw e;
         }
     }
-
+    
     /**
      * Pre-3.2.1 style: GET {@code /v3/admin/ai/pipelines} when {@code /list} is not mapped.
      */
-    private Result<JsonNode> listPipelineExecutionsLegacy(String resolvedNamespace, String resourceName,
-            Map<String, String> params) throws NacosException {
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(resolvedNamespace, resourceName))
-                .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH)
+    private Result<JsonNode> listPipelineExecutionsLegacy(String resolvedNamespace,
+        String resourceName,
+        Map<String, String> params) throws NacosException {
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(resolvedNamespace, resourceName))
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH)
                 .setParamValue(params).build();
         return parseResultFromHttp(executeSyncHttpRequest(httpRequest));
     }
-
+    
     @Override
     @Deprecated
     public JsonNode getPipeline(String pipelineId) throws NacosException {
         return unwrapSuccessData(getPipelineDetail(pipelineId));
     }
-
+    
     @Override
     @Deprecated
-    public JsonNode listPipelines(String resourceType, String resourceName, String namespaceId, String version,
-            int pageNo, int pageSize) throws NacosException {
+    public JsonNode listPipelines(String resourceType, String resourceName, String namespaceId,
+        String version,
+        int pageNo, int pageSize) throws NacosException {
         return unwrapSuccessData(
-                listPipelineExecutions(resourceType, resourceName, namespaceId, version, pageNo, pageSize));
+            listPipelineExecutions(resourceType, resourceName, namespaceId, version, pageNo,
+                pageSize));
     }
-
-    private Map<String, String> buildListQueryParams(String resourceType, String resourceName, String namespaceId,
-            String version, int pageNo, int pageSize) {
+    
+    private Map<String, String> buildListQueryParams(String resourceType, String resourceName,
+        String namespaceId,
+        String version, int pageNo, int pageSize) {
         Map<String, String> params = new HashMap<>(8);
         params.put("resourceType", resourceType);
         putIfNotBlank(params, "resourceName", resourceName);
@@ -121,24 +135,28 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
         params.put("pageSize", String.valueOf(pageSize));
         return params;
     }
-
-    private static Result<JsonNode> parseResultFromHttp(HttpRestResult<String> restResult) throws NacosException {
+    
+    private static Result<JsonNode> parseResultFromHttp(HttpRestResult<String> restResult)
+        throws NacosException {
         String body = restResult.getData();
         if (StringUtils.isBlank(body)) {
             throw new NacosException(NacosException.SERVER_ERROR, "empty response body");
         }
         try {
-            Result<JsonNode> result = JacksonUtils.toObj(body, new TypeReference<Result<JsonNode>>() {
-            });
+            Result<JsonNode> result =
+                JacksonUtils.toObj(body, new TypeReference<Result<JsonNode>>() {
+                });
             if (result == null) {
-                throw new NacosException(NacosException.SERVER_ERROR, "failed to parse Result wrapper");
+                throw new NacosException(NacosException.SERVER_ERROR,
+                    "failed to parse Result wrapper");
             }
             return result;
         } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR, "failed to parse Result: " + e.getMessage(), e);
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "failed to parse Result: " + e.getMessage(), e);
         }
     }
-
+    
     private static JsonNode unwrapSuccessData(Result<JsonNode> result) throws NacosException {
         if (result == null) {
             throw new NacosException(NacosException.SERVER_ERROR, "empty Result");
@@ -147,10 +165,11 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
         if (isSuccessCode(code)) {
             return result.getData();
         }
-        String msg = StringUtils.isNotBlank(result.getMessage()) ? result.getMessage() : "request failed";
+        String msg =
+            StringUtils.isNotBlank(result.getMessage()) ? result.getMessage() : "request failed";
         throw new NacosException(NacosException.SERVER_ERROR, msg);
     }
-
+    
     private static boolean isSuccessCode(Integer code) {
         if (code == null) {
             return false;

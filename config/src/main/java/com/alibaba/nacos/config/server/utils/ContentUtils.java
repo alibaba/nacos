@@ -34,15 +34,18 @@ public class ContentUtils {
      */
     public static void verifyIncrementPubContent(String content) {
         if (content == null || content.length() == 0) {
-            throw new IllegalArgumentException("The content for publishing or deleting cannot be null!");
+            throw new IllegalArgumentException(
+                "The content for publishing or deleting cannot be null!");
         }
         for (int i = 0; i < content.length(); i++) {
             char c = content.charAt(i);
             if (c == '\r' || c == '\n') {
-                throw new IllegalArgumentException("The content for publishing or deleting cannot contain enter and next line symbol!");
+                throw new IllegalArgumentException(
+                    "The content for publishing or deleting cannot contain enter and next line symbol!");
             }
             if (c == Constants.WORD_SEPARATOR.charAt(0)) {
-                throw new IllegalArgumentException("The content for publishing or deleting cannot contain (char)2!");
+                throw new IllegalArgumentException(
+                    "The content for publishing or deleting cannot contain (char)2!");
             }
         }
     }

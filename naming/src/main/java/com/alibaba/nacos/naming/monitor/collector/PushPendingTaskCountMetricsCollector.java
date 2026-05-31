@@ -35,16 +35,20 @@ public class PushPendingTaskCountMetricsCollector {
     
     private static final long DELAY_SECONDS = 2;
     
-    private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
-        Thread thread = new Thread(r, "nacos.naming.monitor.PushPendingTaskCountMetricsCollector");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private static ScheduledExecutorService executorService =
+        ExecutorFactory.newSingleScheduledExecutorService(r -> {
+            Thread thread =
+                new Thread(r, "nacos.naming.monitor.PushPendingTaskCountMetricsCollector");
+            thread.setDaemon(true);
+            return thread;
+        });
     
     @Autowired
-    public PushPendingTaskCountMetricsCollector(NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
+    public PushPendingTaskCountMetricsCollector(
+        NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
         executorService.scheduleWithFixedDelay(() -> {
-            MetricsMonitor.getPushPendingTaskCount().set(namingSubscriberServiceV2.getPushPendingTaskCount());
+            MetricsMonitor.getPushPendingTaskCount()
+                .set(namingSubscriberServiceV2.getPushPendingTaskCount());
         }, DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
     }
 }

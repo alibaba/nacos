@@ -41,12 +41,12 @@ public abstract class AbstractDatabaseDialect implements DatabaseDialect {
     public String getLimitTopSqlWithMark(String sql) {
         return sql + " LIMIT ? ";
     }
-
+    
     @Override
     public String getLimitPageSqlWithMark(String sql) {
         return sql + " LIMIT ?,? ";
     }
-
+    
     @Override
     public String getLimitPageSql(String sql, int pageNo, int pageSize) {
         return sql + "  LIMIT " + getPagePrevNum(pageNo, pageSize) + " , " + pageSize;
@@ -61,5 +61,5 @@ public abstract class AbstractDatabaseDialect implements DatabaseDialect {
     public String[] getReturnPrimaryKeys() {
         return PrimaryKeyConstant.LOWER_RETURN_PRIMARY_KEYS;
     }
-
+    
 }

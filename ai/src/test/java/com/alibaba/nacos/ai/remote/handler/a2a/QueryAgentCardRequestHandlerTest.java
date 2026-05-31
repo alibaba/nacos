@@ -72,7 +72,8 @@ class QueryAgentCardRequestHandlerTest {
         request.setNamespaceId("public");
         AgentCardDetailInfo mockAgentCard = new AgentCardDetailInfo();
         mockAgentCard.setName("test");
-        when(a2aServerOperationService.getAgentCard("public", "test", null, null)).thenReturn(mockAgentCard);
+        when(a2aServerOperationService.getAgentCard("public", "test", null, null))
+            .thenReturn(mockAgentCard);
         QueryAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(mockAgentCard, response.getAgentCardDetailInfo());
         assertNull(response.getMessage());
@@ -84,7 +85,8 @@ class QueryAgentCardRequestHandlerTest {
         request.setAgentName("test");
         request.setNamespaceId("public");
         when(a2aServerOperationService.getAgentCard("public", "test", null, null)).thenThrow(
-                new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, "test error"));
+            new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                "test error"));
         QueryAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(NacosException.SERVER_ERROR, response.getErrorCode());

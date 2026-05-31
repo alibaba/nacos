@@ -83,9 +83,9 @@ public class SwitchService {
                     
                     map.put(key, value);
                 }
-                switches = map;
-                FATAL_LOG.warn("[reload-switches] {}", getSwitches());
             }
+            switches = map;
+            FATAL_LOG.warn("[reload-switches] {}", getSwitches());
         } catch (IOException e) {
             LogUtil.FATAL_LOG.warn("[reload-switches] error! {}", config);
         }

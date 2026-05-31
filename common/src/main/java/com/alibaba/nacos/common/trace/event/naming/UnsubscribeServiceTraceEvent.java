@@ -31,9 +31,11 @@ public class UnsubscribeServiceTraceEvent extends NamingTraceEvent {
         return clientIp;
     }
     
-    public UnsubscribeServiceTraceEvent(long eventTime, String clientIp, String serviceNamespace, String serviceGroup,
-            String serviceName) {
-        super("UNSUBSCRIBE_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+    public UnsubscribeServiceTraceEvent(long eventTime, String clientIp, String serviceNamespace,
+        String serviceGroup,
+        String serviceName) {
+        super("UNSUBSCRIBE_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup,
+            serviceName);
         this.clientIp = clientIp;
     }
 }

@@ -213,22 +213,30 @@ public class AgentCard extends AgentCardBasicInfo {
             return false;
         }
         AgentCard agentCard = (AgentCard) o;
-        return super.equals(agentCard) && Objects.equals(url, agentCard.url) && Objects.equals(preferredTransport,
-                agentCard.preferredTransport) && Objects.equals(additionalInterfaces, agentCard.additionalInterfaces)
-                && Objects.equals(supportedInterfaces, agentCard.supportedInterfaces)
-                && Objects.equals(provider, agentCard.provider) && Objects.equals(documentationUrl,
-                agentCard.documentationUrl) && Objects.equals(securitySchemes, agentCard.securitySchemes)
-                && Objects.equals(security, agentCard.security) && Objects.equals(securityRequirements,
-                agentCard.securityRequirements) && Objects.equals(defaultInputModes,
-                agentCard.defaultInputModes) && Objects.equals(defaultOutputModes, agentCard.defaultOutputModes)
-                && Objects.equals(supportsAuthenticatedExtendedCard, agentCard.supportsAuthenticatedExtendedCard)
-                && Objects.equals(signatures, agentCard.signatures);
+        return super.equals(agentCard) && Objects.equals(url, agentCard.url)
+            && Objects.equals(preferredTransport,
+                agentCard.preferredTransport)
+            && Objects.equals(additionalInterfaces, agentCard.additionalInterfaces)
+            && Objects.equals(supportedInterfaces, agentCard.supportedInterfaces)
+            && Objects.equals(provider, agentCard.provider) && Objects.equals(documentationUrl,
+                agentCard.documentationUrl)
+            && Objects.equals(securitySchemes, agentCard.securitySchemes)
+            && Objects.equals(security, agentCard.security) && Objects.equals(securityRequirements,
+                agentCard.securityRequirements)
+            && Objects.equals(defaultInputModes,
+                agentCard.defaultInputModes)
+            && Objects.equals(defaultOutputModes, agentCard.defaultOutputModes)
+            && Objects.equals(supportsAuthenticatedExtendedCard,
+                agentCard.supportsAuthenticatedExtendedCard)
+            && Objects.equals(signatures, agentCard.signatures);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), url, preferredTransport, additionalInterfaces, supportedInterfaces,
-                provider, documentationUrl, securitySchemes, security, securityRequirements, defaultInputModes,
-                defaultOutputModes, supportsAuthenticatedExtendedCard, signatures);
+        return Objects.hash(super.hashCode(), url, preferredTransport, additionalInterfaces,
+            supportedInterfaces,
+            provider, documentationUrl, securitySchemes, security, securityRequirements,
+            defaultInputModes,
+            defaultOutputModes, supportsAuthenticatedExtendedCard, signatures);
     }
 }

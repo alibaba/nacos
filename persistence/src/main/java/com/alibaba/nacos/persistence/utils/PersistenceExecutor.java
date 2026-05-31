@@ -32,18 +32,19 @@ import java.util.concurrent.TimeUnit;
 public class PersistenceExecutor {
     
     private static final ScheduledExecutorService TIMER_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(PersistenceExecutor.class.getCanonicalName(), 2,
-                    new NameThreadFactory("com.alibaba.nacos.persistence.timer"));
+        .newScheduledExecutorService(PersistenceExecutor.class.getCanonicalName(), 2,
+            new NameThreadFactory("com.alibaba.nacos.persistence.timer"));
     
     private static final Executor DUMP_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(PersistenceExecutor.class.getCanonicalName(),
-                    new NameThreadFactory("com.alibaba.nacos.persistence.embedded.dump"));
+        .newSingleExecutorService(PersistenceExecutor.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.persistence.embedded.dump"));
     
     private static final ExecutorService EMBEDDED_SNAPSHOT_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(PersistenceExecutor.class.getCanonicalName(),
-                    new NameThreadFactory("com.alibaba.nacos.persistence.embedded.snapshot"));
+        .newSingleExecutorService(PersistenceExecutor.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.persistence.embedded.snapshot"));
     
-    public static void scheduleTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    public static void scheduleTask(Runnable command, long initialDelay, long delay,
+        TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
     

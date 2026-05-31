@@ -51,32 +51,37 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper<E> {
      * @return Paging data
      */
     @Override
-    public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
-            final int pageNo, final int pageSize, final RowMapper rowMapper) {
+    public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows,
+        final Object[] args,
+        final int pageNo, final int pageSize, final RowMapper rowMapper) {
         return fetchPage(sqlCountRows, sqlFetchRows, args, pageNo, pageSize, null, rowMapper);
     }
     
     @Override
-    public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, Object[] args, final int pageNo,
-            final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
+    public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, Object[] args,
+        final int pageNo,
+        final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
         return doFetchPage(sqlCountRows, args, sqlFetchRows, args, pageNo, pageSize, rowMapper);
     }
     
     @Override
-    public Page<E> fetchPageLimit(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
-            final int pageNo, final int pageSize, final RowMapper rowMapper) {
+    public Page<E> fetchPageLimit(final String sqlCountRows, final String sqlFetchRows,
+        final Object[] args,
+        final int pageNo, final int pageSize, final RowMapper rowMapper) {
         return doFetchPage(sqlCountRows, null, sqlFetchRows, args, pageNo, pageSize, rowMapper);
     }
     
     @Override
-    public Page<E> fetchPageLimit(final String sqlCountRows, final Object[] args1, final String sqlFetchRows,
-            final Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
+    public Page<E> fetchPageLimit(final String sqlCountRows, final Object[] args1,
+        final String sqlFetchRows,
+        final Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
         return doFetchPage(sqlCountRows, args1, sqlFetchRows, args2, pageNo, pageSize, rowMapper);
     }
     
     @Override
-    public Page<E> fetchPageLimit(final String sqlFetchRows, final Object[] args, final int pageNo, final int pageSize,
-            final RowMapper rowMapper) {
+    public Page<E> fetchPageLimit(final String sqlFetchRows, final Object[] args, final int pageNo,
+        final int pageSize,
+        final RowMapper rowMapper) {
         checkPageInfo(pageNo, pageSize);
         // Create Page object
         final Page<E> page = new Page<>();
@@ -89,10 +94,13 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper<E> {
     }
     
     @Override
-    public Page fetchPageLimit(MapperResult countMapperResult, MapperResult mapperResult, int pageNo, int pageSize,
-            RowMapper rowMapper) {
-        return fetchPageLimit(countMapperResult.getSql(), countMapperResult.getParamList().toArray(),
-                mapperResult.getSql(), mapperResult.getParamList().toArray(), pageNo, pageSize, rowMapper);
+    public Page fetchPageLimit(MapperResult countMapperResult, MapperResult mapperResult,
+        int pageNo, int pageSize,
+        RowMapper rowMapper) {
+        return fetchPageLimit(countMapperResult.getSql(),
+            countMapperResult.getParamList().toArray(),
+            mapperResult.getSql(), mapperResult.getParamList().toArray(), pageNo, pageSize,
+            rowMapper);
     }
     
     @Override
@@ -111,8 +119,9 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper<E> {
         }
     }
     
-    private Page<E> doFetchPage(final String sqlCountRows, final Object[] countAgrs, final String sqlFetchRows,
-            final Object[] fetchArgs, final int pageNo, final int pageSize, final RowMapper rowMapper) {
+    private Page<E> doFetchPage(final String sqlCountRows, final Object[] countAgrs,
+        final String sqlFetchRows,
+        final Object[] fetchArgs, final int pageNo, final int pageSize, final RowMapper rowMapper) {
         checkPageInfo(pageNo, pageSize);
         // Query the total number of current records
         Integer rowCountInt = null;

@@ -28,36 +28,36 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class PromptRequestParamExtractorTest {
-
+    
     private PromptRequestParamExtractor extractor;
-
+    
     @BeforeEach
     void setUp() {
         extractor = new PromptRequestParamExtractor();
     }
-
+    
     @Test
     void extractParamWithPromptKey() throws Exception {
         QueryPromptRequest request = new QueryPromptRequest();
         request.setNamespaceId("ns-1");
         request.setPromptKey("myPrompt");
-
+        
         List<ParamInfo> list = extractor.extractParam(request);
-
+        
         assertNotNull(list);
         assertEquals(1, list.size());
         assertEquals("ns-1", list.get(0).getNamespaceId());
         assertEquals("myPrompt.json", list.get(0).getDataId());
     }
-
+    
     @Test
     void extractParamWithBlankPromptKey() throws Exception {
         QueryPromptRequest request = new QueryPromptRequest();
         request.setNamespaceId("ns-2");
         request.setPromptKey("");
-
+        
         List<ParamInfo> list = extractor.extractParam(request);
-
+        
         assertNotNull(list);
         assertEquals(1, list.size());
         assertEquals("ns-2", list.get(0).getNamespaceId());

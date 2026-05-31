@@ -69,7 +69,8 @@ class McpServerEndpointRequestHandlerTest {
     
     @BeforeEach
     void setUp() {
-        requestHandler = new McpServerEndpointRequestHandler(clientOperationService, mcpServerOperationService,
+        requestHandler =
+            new McpServerEndpointRequestHandler(clientOperationService, mcpServerOperationService,
                 mcpServerIndex);
     }
     
@@ -81,7 +82,8 @@ class McpServerEndpointRequestHandlerTest {
     void handleWithInvalidParameters() throws NacosException {
         McpServerEndpointRequest request = new McpServerEndpointRequest();
         McpServerEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.INVALID_PARAM, "parameters `mcpName` can't be empty or null");
+        assertErrorResponse(response, NacosException.INVALID_PARAM,
+            "parameters `mcpName` can't be empty or null");
     }
     
     @Test
@@ -91,7 +93,8 @@ class McpServerEndpointRequestHandlerTest {
         request.setPort(3306);
         request.setMcpName("test");
         McpServerEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.NOT_FOUND, "MCP server `test` not found in namespaceId: `public`");
+        assertErrorResponse(response, NacosException.NOT_FOUND,
+            "MCP server `test` not found in namespaceId: `public`");
     }
     
     @Test
@@ -103,15 +106,18 @@ class McpServerEndpointRequestHandlerTest {
         request.setVersion("1.0.0");
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
         String id = UUID.randomUUID().toString();
-        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
-                "1.0.0")).thenReturn(buildMockMcpServerDetailInfo());
+        McpServerIndexData indexData =
+            McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test"))
+            .thenReturn(indexData);
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id,
+            null,
+            "1.0.0")).thenReturn(buildMockMcpServerDetailInfo());
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
         McpServerEndpointResponse response = requestHandler.handle(request, meta);
         assertEquals(AiRemoteConstants.REGISTER_ENDPOINT, response.getType());
         verify(clientOperationService).registerInstance(any(Service.class), any(Instance.class),
-                eq("TEST_CONNECTION_ID"));
+            eq("TEST_CONNECTION_ID"));
     }
     
     @Test
@@ -122,15 +128,18 @@ class McpServerEndpointRequestHandlerTest {
         request.setMcpName("test");
         request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
         String id = UUID.randomUUID().toString();
-        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
-                null)).thenReturn(buildMockMcpServerDetailInfo());
+        McpServerIndexData indexData =
+            McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test"))
+            .thenReturn(indexData);
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id,
+            null,
+            null)).thenReturn(buildMockMcpServerDetailInfo());
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
         McpServerEndpointResponse response = requestHandler.handle(request, meta);
         assertEquals(AiRemoteConstants.DE_REGISTER_ENDPOINT, response.getType());
         verify(clientOperationService).deregisterInstance(any(Service.class), any(Instance.class),
-                eq("TEST_CONNECTION_ID"));
+            eq("TEST_CONNECTION_ID"));
     }
     
     @Test
@@ -141,13 +150,16 @@ class McpServerEndpointRequestHandlerTest {
         request.setMcpName("test");
         request.setType("INVALID_TYPE");
         String id = UUID.randomUUID().toString();
-        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
-                null)).thenReturn(buildMockMcpServerDetailInfo());
+        McpServerIndexData indexData =
+            McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test"))
+            .thenReturn(indexData);
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id,
+            null,
+            null)).thenReturn(buildMockMcpServerDetailInfo());
         McpServerEndpointResponse response = requestHandler.handle(request, meta);
         assertErrorResponse(response, NacosException.INVALID_PARAM,
-                "parameter `type` should be registerEndpoint or deregisterEndpoint, but was INVALID_TYPE");
+            "parameter `type` should be registerEndpoint or deregisterEndpoint, but was INVALID_TYPE");
     }
     
     @Test
@@ -158,27 +170,30 @@ class McpServerEndpointRequestHandlerTest {
         request.setMcpName("test");
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
         String id = UUID.randomUUID().toString();
-        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
+        McpServerIndexData indexData =
+            McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test"))
+            .thenReturn(indexData);
         McpServerDetailInfo detailInfo = buildMockMcpServerDetailInfo();
         detailInfo.getRemoteServerConfig()
-                .setFrontEndpointConfigList(Collections.singletonList(new FrontEndpointConfig()));
+            .setFrontEndpointConfigList(Collections.singletonList(new FrontEndpointConfig()));
         detailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0)
-                .setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
+            .setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
         detailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0)
-                .setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+            .setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         detailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0)
-                .setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+            .setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
         detailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0)
-                .setEndpointData(detailInfo.getRemoteServerConfig().getServiceRef());
+            .setEndpointData(detailInfo.getRemoteServerConfig().getServiceRef());
         detailInfo.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
-                null)).thenReturn(detailInfo);
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id,
+            null,
+            null)).thenReturn(detailInfo);
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
         McpServerEndpointResponse response = requestHandler.handle(request, meta);
         assertEquals(AiRemoteConstants.REGISTER_ENDPOINT, response.getType());
         verify(clientOperationService).registerInstance(any(Service.class), any(Instance.class),
-                eq("TEST_CONNECTION_ID"));
+            eq("TEST_CONNECTION_ID"));
     }
     
     @Test
@@ -189,23 +204,28 @@ class McpServerEndpointRequestHandlerTest {
         request.setMcpName("test");
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
         String id = UUID.randomUUID().toString();
-        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
+        McpServerIndexData indexData =
+            McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test"))
+            .thenReturn(indexData);
         McpServerDetailInfo detailInfo = buildMockMcpServerDetailInfo();
         detailInfo.getRemoteServerConfig()
-                .setFrontEndpointConfigList(Collections.singletonList(new FrontEndpointConfig()));
+            .setFrontEndpointConfigList(Collections.singletonList(new FrontEndpointConfig()));
         detailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0)
-                .setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+            .setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         detailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0)
-                .setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+            .setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         detailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0)
-                .setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
-        detailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0).setEndpointData("127.0.0.1:8848");
+            .setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        detailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0)
+            .setEndpointData("127.0.0.1:8848");
         detailInfo.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
-                null)).thenReturn(detailInfo);
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id,
+            null,
+            null)).thenReturn(detailInfo);
         McpServerEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.NOT_FOUND, "The Mcp Server Ref endpoint service not found.");
+        assertErrorResponse(response, NacosException.NOT_FOUND,
+            "The Mcp Server Ref endpoint service not found.");
     }
     
     McpServerDetailInfo buildMockMcpServerDetailInfo() {

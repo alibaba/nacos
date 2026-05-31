@@ -38,7 +38,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 @ConditionalOnProperty(name = "nacos.core.auth.system.type", havingValue = "oidc")
 public class OidcWebSecurityConfig {
-
+    
     /**
      * Configure security filter chain for OIDC mode.
      * All paths are permitted at Spring Security level because Nacos has its own auth filter.
@@ -50,8 +50,8 @@ public class OidcWebSecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain oidcSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests((authorizeHttpRequests) ->
-                authorizeHttpRequests.requestMatchers("/**").permitAll());
+        http.authorizeHttpRequests(
+            (authorizeHttpRequests) -> authorizeHttpRequests.requestMatchers("/**").permitAll());
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }

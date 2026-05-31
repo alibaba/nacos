@@ -29,12 +29,12 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class DatasourceDialectPluginProvider implements PluginProvider<DatabaseDialect> {
-
+    
     @Override
     public PluginType getPluginType() {
         return PluginType.DATASOURCE_DIALECT;
     }
-
+    
     @Override
     public Map<String, DatabaseDialect> getAllPlugins() {
         return DatabaseDialectManager.getInstance().getAllDialects();

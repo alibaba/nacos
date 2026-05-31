@@ -36,7 +36,8 @@ class NamingFactoryTest {
     @Test
     void testCreateNamingServiceByPropertiesFailure() {
         NacosNamingService.IS_THROW_EXCEPTION.set(true);
-        assertThrows(NacosException.class, () -> NamingFactory.createNamingService(new Properties()));
+        assertThrows(NacosException.class,
+            () -> NamingFactory.createNamingService(new Properties()));
     }
     
     @Test
@@ -48,6 +49,7 @@ class NamingFactoryTest {
     @Test
     void testCreateNamingServiceByServerAddrFailure() {
         NacosNamingService.IS_THROW_EXCEPTION.set(true);
-        assertThrows(NacosException.class, () -> NamingFactory.createNamingService("localhost:8848"));
+        assertThrows(NacosException.class,
+            () -> NamingFactory.createNamingService("localhost:8848"));
     }
 }

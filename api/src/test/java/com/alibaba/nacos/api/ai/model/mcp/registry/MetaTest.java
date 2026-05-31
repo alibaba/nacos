@@ -45,9 +45,11 @@ class MetaTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"io.modelcontextprotocol.registry/publisher-provided\":{\"key1\":\"value1\"}}";
+        String json =
+            "{\"io.modelcontextprotocol.registry/publisher-provided\":{\"key1\":\"value1\"}}";
         
-        McpRegistryServerDetail.Meta meta = mapper.readValue(json, McpRegistryServerDetail.Meta.class);
+        McpRegistryServerDetail.Meta meta =
+            mapper.readValue(json, McpRegistryServerDetail.Meta.class);
         assertNotNull(meta);
         assertEquals("value1", meta.getPublisherMeta().get("key1"));
     }

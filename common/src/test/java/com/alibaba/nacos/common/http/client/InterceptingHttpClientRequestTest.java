@@ -61,7 +61,8 @@ class InterceptingHttpClientRequestTest {
     void setUp() throws Exception {
         List<HttpClientRequestInterceptor> interceptorList = new LinkedList<>();
         interceptorList.add(interceptor);
-        clientRequest = new InterceptingHttpClientRequest(httpClientRequest, interceptorList.listIterator());
+        clientRequest =
+            new InterceptingHttpClientRequest(httpClientRequest, interceptorList.listIterator());
         when(interceptor.intercept()).thenReturn(interceptorResponse);
         when(httpClientRequest.execute(any(), any(), any())).thenReturn(httpClientResponse);
     }
@@ -75,14 +76,14 @@ class InterceptingHttpClientRequestTest {
     void testExecuteIntercepted() throws Exception {
         when(interceptor.isIntercept(any(), any(), any())).thenReturn(true);
         HttpClientResponse response = clientRequest.execute(URI.create("http://example.com"), "GET",
-                new RequestHttpEntity(Header.EMPTY, Query.EMPTY));
+            new RequestHttpEntity(Header.EMPTY, Query.EMPTY));
         assertEquals(interceptorResponse, response);
     }
     
     @Test
     void testExecuteNotIntercepted() throws Exception {
         HttpClientResponse response = clientRequest.execute(URI.create("http://example.com"), "GET",
-                new RequestHttpEntity(Header.EMPTY, Query.EMPTY));
+            new RequestHttpEntity(Header.EMPTY, Query.EMPTY));
         assertEquals(httpClientResponse, response);
     }
 }

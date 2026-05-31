@@ -48,7 +48,8 @@ class QueryMcpServerResponseTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"mcpServerDetailInfo\":"
+        String json =
+            "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"mcpServerDetailInfo\":"
                 + "{\"id\":\"27dde181-cc8f-442f-a63d-2d2dc64735d8\",\"name\":\"testMcpName\",\"enabled\":true},\"success\":true}";
         QueryMcpServerResponse result = mapper.readValue(json, QueryMcpServerResponse.class);
         assertNotNull(result);

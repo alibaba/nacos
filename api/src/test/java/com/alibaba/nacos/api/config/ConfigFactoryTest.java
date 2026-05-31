@@ -36,7 +36,8 @@ class ConfigFactoryTest {
     @Test
     void testCreateConfigServiceByPropertiesFailure() {
         NacosConfigService.IS_THROW_EXCEPTION.set(true);
-        assertThrows(NacosException.class, () -> ConfigFactory.createConfigService(new Properties()));
+        assertThrows(NacosException.class,
+            () -> ConfigFactory.createConfigService(new Properties()));
     }
     
     @Test
@@ -48,6 +49,7 @@ class ConfigFactoryTest {
     @Test
     void testCreateConfigServiceByServerAddrFailure() {
         NacosConfigService.IS_THROW_EXCEPTION.set(true);
-        assertThrows(NacosException.class, () -> ConfigFactory.createConfigService("localhost:8848"));
+        assertThrows(NacosException.class,
+            () -> ConfigFactory.createConfigService("localhost:8848"));
     }
 }

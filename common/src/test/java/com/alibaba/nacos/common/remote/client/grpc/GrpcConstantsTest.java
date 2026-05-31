@@ -32,7 +32,7 @@ class GrpcConstantsTest {
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
             if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    GrpcConstants.GRpcConfigLabel.class)) {
+                GrpcConstants.GRpcConfigLabel.class)) {
                 i++;
             }
         }

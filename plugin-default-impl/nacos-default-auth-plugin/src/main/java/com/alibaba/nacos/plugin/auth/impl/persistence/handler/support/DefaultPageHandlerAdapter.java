@@ -32,7 +32,8 @@ public class DefaultPageHandlerAdapter implements PageHandlerAdapter {
     }
     
     @Override
-    public OffsetFetchResult addOffsetAndFetchNext(String fetchSql, Object[] arg, int pageNo, int pageSize) {
+    public OffsetFetchResult addOffsetAndFetchNext(String fetchSql, Object[] arg, int pageNo,
+        int pageSize) {
         return new OffsetFetchResult(fetchSql, arg);
     }
     

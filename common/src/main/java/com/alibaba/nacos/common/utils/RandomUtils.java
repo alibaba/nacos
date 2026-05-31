@@ -24,7 +24,7 @@ import java.util.Random;
  * @author zzq
  */
 public class RandomUtils {
-
+    
     private RandomUtils() {
     }
     
@@ -75,7 +75,8 @@ public class RandomUtils {
      */
     private static void checkParameters(final long startInclusive, final long endExclusive) {
         if (endExclusive < startInclusive) {
-            throw new IllegalArgumentException("startInclusive must be less than or equal to the endExclusive.");
+            throw new IllegalArgumentException(
+                "startInclusive must be less than or equal to the endExclusive.");
         }
         if (startInclusive < 0) {
             throw new IllegalArgumentException("Both parameters must be non-negative");

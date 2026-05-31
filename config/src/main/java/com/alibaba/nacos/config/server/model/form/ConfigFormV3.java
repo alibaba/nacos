@@ -44,7 +44,7 @@ public class ConfigFormV3 extends ConfigForm {
     public void validate() throws NacosApiException {
         if (StringUtils.isBlank(groupName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'groupName' type String is not present");
+                "Required parameter 'groupName' type String is not present");
         }
         super.setGroup(groupName);
         super.validate();

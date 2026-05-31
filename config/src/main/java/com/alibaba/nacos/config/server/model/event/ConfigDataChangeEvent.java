@@ -45,7 +45,8 @@ public class ConfigDataChangeEvent extends Event {
         this.lastModifiedTs = gmtModified;
     }
     
-    public ConfigDataChangeEvent(String dataId, String group, String tenant, String grayName, long gmtModified) {
+    public ConfigDataChangeEvent(String dataId, String group, String tenant, String grayName,
+        long gmtModified) {
         this(dataId, group, tenant, gmtModified);
         this.grayName = grayName;
     }

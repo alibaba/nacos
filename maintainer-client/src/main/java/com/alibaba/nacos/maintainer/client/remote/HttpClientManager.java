@@ -51,7 +51,8 @@ public class HttpClientManager implements Closeable {
         return httpClientManager;
     }
     
-    private static final HttpClientFactory HTTP_CLIENT_FACTORY = new DefaultHttpClientFactory(LOGGER);
+    private static final HttpClientFactory HTTP_CLIENT_FACTORY =
+        new DefaultHttpClientFactory(LOGGER);
     
     /**
      * get NacosRestTemplate Instance.
@@ -68,8 +69,9 @@ public class HttpClientManager implements Closeable {
         try {
             HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
-            LOGGER.error("[HttpClientManager] An exception occurred when the HTTP client was closed : {}",
-                    ExceptionUtil.getStackTrace(ex));
+            LOGGER.error(
+                "[HttpClientManager] An exception occurred when the HTTP client was closed : {}",
+                ExceptionUtil.getStackTrace(ex));
         }
         LOGGER.info("[HttpClientManager] Completed destruction of NacosRestTemplate");
     }

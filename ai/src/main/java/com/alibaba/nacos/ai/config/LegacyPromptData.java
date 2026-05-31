@@ -29,6 +29,8 @@ import java.util.Map;
  */
 public class LegacyPromptData {
     
+    private String namespaceId;
+    
     private String promptKey;
     
     private String description;
@@ -40,6 +42,14 @@ public class LegacyPromptData {
     private String latestVersion;
     
     private List<String> versions;
+    
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+    
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
+    }
     
     public String getPromptKey() {
         return promptKey;

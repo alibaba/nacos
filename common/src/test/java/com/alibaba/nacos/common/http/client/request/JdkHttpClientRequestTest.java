@@ -100,7 +100,8 @@ class JdkHttpClientRequestTest {
     void testExecuteNormal() throws Exception {
         Header header = Header.newInstance();
         HttpClientConfig config = HttpClientConfig.builder().build();
-        RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, "a=bo&dy");
+        RequestHttpEntity httpEntity =
+            new RequestHttpEntity(config, header, Query.EMPTY, "a=bo&dy");
         HttpClientResponse response = httpClientRequest.execute(uri, "GET", httpEntity);
         byte[] writeBytes = "a=bo&dy".getBytes(StandardCharsets.UTF_8);
         verify(outputStream).write(writeBytes, 0, writeBytes.length);
@@ -116,7 +117,8 @@ class JdkHttpClientRequestTest {
         body.put("a", "bo&dy");
         RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, body);
         HttpClientResponse response = httpClientRequest.execute(uri, "GET", httpEntity);
-        byte[] writeBytes = HttpUtils.encodingParams(body, StandardCharsets.UTF_8.name()).getBytes(StandardCharsets.UTF_8);
+        byte[] writeBytes = HttpUtils.encodingParams(body, StandardCharsets.UTF_8.name())
+            .getBytes(StandardCharsets.UTF_8);
         verify(outputStream).write(writeBytes, 0, writeBytes.length);
         assertEquals(connection, getActualConnection(response));
     }
@@ -223,7 +225,8 @@ class JdkHttpClientRequestTest {
         Map<String, Object> bodyObject = new HashMap<>();
         bodyObject.put("key", "value");
         
-        RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, bodyObject);
+        RequestHttpEntity httpEntity =
+            new RequestHttpEntity(config, header, Query.EMPTY, bodyObject);
         
         HttpClientResponse response = httpClientRequest.execute(uri, "POST", httpEntity);
         
@@ -235,12 +238,13 @@ class JdkHttpClientRequestTest {
     @DisplayName("replaceDefaultConfig should update httpClientConfig when config provided")
     void testReplaceDefaultConfig() throws Exception {
         HttpClientConfig newConfig = HttpClientConfig.builder()
-                .setConTimeOutMillis(5000)
-                .setReadTimeOutMillis(10000)
-                .build();
+            .setConTimeOutMillis(5000)
+            .setReadTimeOutMillis(10000)
+            .build();
         
         Header header = Header.newInstance();
-        RequestHttpEntity httpEntity = new RequestHttpEntity(newConfig, header, Query.EMPTY, "body");
+        RequestHttpEntity httpEntity =
+            new RequestHttpEntity(newConfig, header, Query.EMPTY, "body");
         
         httpClientRequest.execute(uri, "GET", httpEntity);
         
@@ -263,7 +267,9 @@ class JdkHttpClientRequestTest {
         verify(connection).setRequestProperty("Authorization", "Bearer token");
         assertNotNull(response);
     }
-    private HttpURLConnection getActualConnection(HttpClientResponse actual) throws IllegalAccessException, NoSuchFieldException {
+    
+    private HttpURLConnection getActualConnection(HttpClientResponse actual)
+        throws IllegalAccessException, NoSuchFieldException {
         Field field = actual.getClass().getDeclaredField("conn");
         field.setAccessible(true);
         return (HttpURLConnection) field.get(actual);

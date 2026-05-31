@@ -41,7 +41,8 @@ public class PasswordEncoderUtil {
             throw new IllegalArgumentException("Password cannot be null");
         }
         if (raw.length() > AuthConstants.MAX_PASSWORD_LENGTH) {
-            throw new IllegalArgumentException("Password length must not exceed " + AuthConstants.MAX_PASSWORD_LENGTH + " characters");
+            throw new IllegalArgumentException("Password length must not exceed "
+                + AuthConstants.MAX_PASSWORD_LENGTH + " characters");
         }
         return new SafeBcryptPasswordEncoder().encode(raw);
     }

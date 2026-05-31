@@ -41,6 +41,6 @@ public interface SkillGenerationService {
      * @param request  generation request
      * @param callback stream response callback
      */
-    void generateSkillStream(SkillGenerationRequest request, 
-                            StreamResponseCallback<SkillGenerationResponse> callback);
+    void generateSkillStream(SkillGenerationRequest request,
+        StreamResponseCallback<SkillGenerationResponse> callback);
 }

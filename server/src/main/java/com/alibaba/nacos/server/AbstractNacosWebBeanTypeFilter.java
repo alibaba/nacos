@@ -44,8 +44,9 @@ public abstract class AbstractNacosWebBeanTypeFilter implements TypeFilter {
         WEB_BEAN_ANNOTATIONS.add(NacosWebBean.class.getCanonicalName());
     }
     
-    protected boolean isWebBean(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory)
-            throws IOException {
+    protected boolean isWebBean(MetadataReader metadataReader,
+        MetadataReaderFactory metadataReaderFactory)
+        throws IOException {
         for (String each : WEB_BEAN_ANNOTATIONS) {
             if (metadataReader.getAnnotationMetadata().hasAnnotation(each)) {
                 return true;

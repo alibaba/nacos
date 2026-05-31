@@ -24,7 +24,7 @@ import java.util.Arrays;
  * @author zzq
  */
 public class ArrayUtils {
-
+    
     private ArrayUtils() {
     }
     

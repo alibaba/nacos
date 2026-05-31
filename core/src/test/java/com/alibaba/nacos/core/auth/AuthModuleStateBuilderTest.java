@@ -66,14 +66,18 @@ class AuthModuleStateBuilderTest {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "111");
         EnvUtil.setEnvironment(environment);
         PluginStateCheckerHolder.setInstance(pluginStateChecker);
-        lenient().when(pluginStateChecker.isPluginEnabled(PluginType.AUTH.getType(), "nacos")).thenReturn(true);
-        lenient().when(pluginStateChecker.isPluginEnabled(PluginType.AUTH.getType(), MockAuthPluginServiceB.TEST_PLUGIN))
-                .thenReturn(true);
+        lenient().when(pluginStateChecker.isPluginEnabled(PluginType.AUTH.getType(), "nacos"))
+            .thenReturn(true);
+        lenient()
+            .when(pluginStateChecker.isPluginEnabled(PluginType.AUTH.getType(),
+                MockAuthPluginServiceB.TEST_PLUGIN))
+            .thenReturn(true);
     }
     
     @AfterEach
     void tearDown() throws Exception {
-        EnvUtil.setEnvironment(null != cachedEnvironment ? cachedEnvironment : new MockEnvironment());
+        EnvUtil
+            .setEnvironment(null != cachedEnvironment ? cachedEnvironment : new MockEnvironment());
         resetAuthConfig();
         // Reset PluginStateCheckerHolder to avoid effect.
         PluginStateCheckerHolder.setInstance(null);
@@ -81,12 +85,12 @@ class AuthModuleStateBuilderTest {
     
     private void resetAuthConfig() {
         AbstractDynamicConfig config = (AbstractDynamicConfig) NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
+            .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
         if (config != null) {
             ReflectionTestUtils.invokeMethod(config, "resetConfig");
         }
         config = (AbstractDynamicConfig) NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE);
+            .getNacosAuthConfigByScope(NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE);
         if (config != null) {
             ReflectionTestUtils.invokeMethod(config, "resetConfig");
         }
@@ -102,13 +106,14 @@ class AuthModuleStateBuilderTest {
         assertEquals("nacos", actual.getStates().get(AuthModuleStateBuilder.AUTH_SYSTEM_TYPE));
         assertTrue((Boolean) actual.getStates().get(AuthModuleStateBuilder.AUTH_ADMIN_REQUEST));
         
-        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, MockAuthPluginServiceB.TEST_PLUGIN);
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE,
+            MockAuthPluginServiceB.TEST_PLUGIN);
         resetAuthConfig();
         ModuleState actual2 = new AuthModuleStateBuilder().build();
         assertNotNull(actual2);
         assertEquals(AuthModuleStateBuilder.AUTH_MODULE, actual2.getModuleName());
         Assertions.assertEquals(MockAuthPluginServiceB.TEST_PLUGIN,
-                actual2.getStates().get(AuthModuleStateBuilder.AUTH_SYSTEM_TYPE));
+            actual2.getStates().get(AuthModuleStateBuilder.AUTH_SYSTEM_TYPE));
         assertFalse((Boolean) actual2.getStates().get(AuthModuleStateBuilder.AUTH_ADMIN_REQUEST));
     }
     
@@ -132,7 +137,8 @@ class AuthModuleStateBuilderTest {
         boolean cacheable = authModuleStateBuilder.isCacheable();
         assertFalse(cacheable);
         
-        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, MockAuthPluginServiceB.TEST_PLUGIN);
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE,
+            MockAuthPluginServiceB.TEST_PLUGIN);
         resetAuthConfig();
         AuthModuleStateBuilder authModuleStateBuilder2 = new AuthModuleStateBuilder();
         authModuleStateBuilder2.build();

@@ -40,10 +40,12 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,7 +57,8 @@ class ClientBeatCheckTaskV2Test {
     
     private static final int PORT = 10000;
     
-    private static final String CLIENT_ID = IP + InternetAddressUtil.IP_PORT_SPLITER + PORT + "#true";
+    private static final String CLIENT_ID =
+        IP + InternetAddressUtil.IP_PORT_SPLITER + PORT + "#true";
     
     private static final String SERVICE_NAME = "service";
     
@@ -81,7 +84,8 @@ class ClientBeatCheckTaskV2Test {
     
     @BeforeEach
     void setUp() throws Exception {
-        when(applicationContext.getBean(NamingMetadataManager.class)).thenReturn(namingMetadataManager);
+        when(applicationContext.getBean(NamingMetadataManager.class))
+            .thenReturn(namingMetadataManager);
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
         when(applicationContext.getBean(DistroMapper.class)).thenReturn(distroMapper);
         when(distroMapper.responsible(anyString())).thenReturn(true);
@@ -96,6 +100,11 @@ class ClientBeatCheckTaskV2Test {
     }
     
     @Test
+    void testGetGlobalConfig() {
+        assertEquals(globalConfig, beatCheckTask.getGlobalConfig());
+    }
+    
+    @Test
     void testRunUnhealthyInstanceWithoutExpire() {
         injectInstance(false, 0);
         beatCheckTask.run();
@@ -107,7 +116,9 @@ class ClientBeatCheckTaskV2Test {
         injectInstance(true, 0);
         beatCheckTask.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     @Test
@@ -132,17 +143,22 @@ class ClientBeatCheckTaskV2Test {
         when(globalConfig.isExpireInstance()).thenReturn(true);
         beatCheckTask.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertTrue(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertTrue(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     @Test
     void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
-        injectInstance(true, System.currentTimeMillis()).getExtendDatum().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 800);
+        injectInstance(true, System.currentTimeMillis()).getExtendDatum()
+            .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 800);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         beatCheckTask.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     @Test
@@ -151,14 +167,33 @@ class ClientBeatCheckTaskV2Test {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
         metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 500L);
-        String address = IP + InternetAddressUtil.IP_PORT_SPLITER + PORT + InternetAddressUtil.IP_PORT_SPLITER
+        String address =
+            IP + InternetAddressUtil.IP_PORT_SPLITER + PORT + InternetAddressUtil.IP_PORT_SPLITER
                 + UtilsAndCommons.DEFAULT_CLUSTER_NAME;
-        when(namingMetadataManager.getInstanceMetadata(service, address)).thenReturn(Optional.of(metadata));
+        when(namingMetadataManager.getInstanceMetadata(service, address))
+            .thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         beatCheckTask.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
+    }
+    
+    @Test
+    void testDoHealthCheckSwallowsClientException() {
+        IpPortBasedClient mockClient = mock(IpPortBasedClient.class);
+        when(mockClient.getResponsibleId()).thenReturn(CLIENT_ID);
+        when(mockClient.getAllPublishedService()).thenThrow(new RuntimeException("mock"));
+        ClientBeatCheckTaskV2 task = new ClientBeatCheckTaskV2(mockClient);
+        
+        assertDoesNotThrow(task::doHealthCheck);
+    }
+    
+    @Test
+    void testAfterIntercept() {
+        assertDoesNotThrow(beatCheckTask::afterIntercept);
     }
     
     private HealthCheckInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {

@@ -64,14 +64,18 @@ class HistoryConfigInfoMapperByMySqlTest {
     @Test
     void testRemoveConfigHistory() {
         MapperResult mapperResult = historyConfigInfoMapperByMySql.removeConfigHistory(context);
-        assertEquals("DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?", mapperResult.getSql());
-        assertArrayEquals(new Object[] {startTime, limitSize}, mapperResult.getParamList().toArray());
+        assertEquals("DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?",
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {startTime, limitSize},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigHistoryCountByTime() {
-        MapperResult mapperResult = historyConfigInfoMapperByMySql.findConfigHistoryCountByTime(context);
-        assertEquals("SELECT count(*) FROM his_config_info WHERE gmt_modified < ?", mapperResult.getSql());
+        MapperResult mapperResult =
+            historyConfigInfoMapperByMySql.findConfigHistoryCountByTime(context);
+        assertEquals("SELECT count(*) FROM his_config_info WHERE gmt_modified < ?",
+            mapperResult.getSql());
         assertArrayEquals(new Object[] {startTime}, mapperResult.getParamList().toArray());
     }
     
@@ -79,13 +83,13 @@ class HistoryConfigInfoMapperByMySqlTest {
     void testFindDeletedConfig() {
         MapperResult mapperResult = historyConfigInfoMapperByMySql.findDeletedConfig(context);
         assertEquals(
-                "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip,"
-                        + " op_type, tenant_id, publish_type, gray_name, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
-                        + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid limit ? ",
-                mapperResult.getSql());
+            "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip,"
+                + " op_type, tenant_id, publish_type, gray_name, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
+                + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid limit ? ",
+            mapperResult.getSql());
         
         assertArrayEquals(new Object[] {publishType, startTime, lastMaxId, pageSize},
-                mapperResult.getParamList().toArray());
+            mapperResult.getParamList().toArray());
     }
     
     @Test
@@ -98,23 +102,26 @@ class HistoryConfigInfoMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
-        MapperResult mapperResult = historyConfigInfoMapperByMySql.findConfigHistoryFetchRows(context);
+        MapperResult mapperResult =
+            historyConfigInfoMapperByMySql.findConfigHistoryFetchRows(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,publish_type,gray_name,"
-                        + "op_type,gmt_create,gmt_modified FROM his_config_info "
-                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC");
-        assertArrayEquals(new Object[] {dataId, groupId, tenantId}, mapperResult.getParamList().toArray());
+            "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,publish_type,gray_name,"
+                + "op_type,gmt_create,gmt_modified FROM his_config_info "
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC");
+        assertArrayEquals(new Object[] {dataId, groupId, tenantId},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testDetailPreviousConfigHistory() {
         Object id = "1";
         context.putWhereParameter(FieldConstant.ID, id);
-        MapperResult mapperResult = historyConfigInfoMapperByMySql.detailPreviousConfigHistory(context);
+        MapperResult mapperResult =
+            historyConfigInfoMapperByMySql.detailPreviousConfigHistory(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type"
-                        + ",gray_name,ext_info,gmt_create,gmt_modified,encrypted_data_key "
-                        + "FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)");
+            "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type"
+                + ",gray_name,ext_info,gmt_create,gmt_modified,encrypted_data_key "
+                + "FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)");
         assertArrayEquals(new Object[] {id}, mapperResult.getParamList().toArray());
     }
     

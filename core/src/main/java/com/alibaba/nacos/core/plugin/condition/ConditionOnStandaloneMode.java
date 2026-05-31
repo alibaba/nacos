@@ -28,7 +28,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * @since 3.2.0
  */
 public class ConditionOnStandaloneMode implements Condition {
-
+    
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
         return EnvUtil.getStandaloneMode();

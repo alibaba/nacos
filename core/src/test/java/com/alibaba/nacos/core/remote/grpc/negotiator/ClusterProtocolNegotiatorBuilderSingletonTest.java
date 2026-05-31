@@ -48,16 +48,20 @@ class ClusterProtocolNegotiatorBuilderSingletonTest {
     
     @Test
     void testSingletonInstance() {
-        AbstractProtocolNegotiatorBuilderSingleton singleton1 = ClusterProtocolNegotiatorBuilderSingleton.getSingleton();
-        AbstractProtocolNegotiatorBuilderSingleton singleton2 = ClusterProtocolNegotiatorBuilderSingleton.getSingleton();
+        AbstractProtocolNegotiatorBuilderSingleton singleton1 =
+            ClusterProtocolNegotiatorBuilderSingleton.getSingleton();
+        AbstractProtocolNegotiatorBuilderSingleton singleton2 =
+            ClusterProtocolNegotiatorBuilderSingleton.getSingleton();
         assertSame(singleton1, singleton2);
     }
     
     @Test
     void testDefaultBuilderPair() {
-        Pair<String, ProtocolNegotiatorBuilder> defaultPair = ClusterProtocolNegotiatorBuilderSingleton.getSingleton().defaultBuilderPair();
+        Pair<String, ProtocolNegotiatorBuilder> defaultPair =
+            ClusterProtocolNegotiatorBuilderSingleton.getSingleton().defaultBuilderPair();
         assertNotNull(defaultPair);
-        assertEquals(ClusterProtocolNegotiatorBuilderSingleton.TYPE_PROPERTY_KEY, defaultPair.getFirst());
+        assertEquals(ClusterProtocolNegotiatorBuilderSingleton.TYPE_PROPERTY_KEY,
+            defaultPair.getFirst());
         assertNotNull(defaultPair.getSecond());
     }
     

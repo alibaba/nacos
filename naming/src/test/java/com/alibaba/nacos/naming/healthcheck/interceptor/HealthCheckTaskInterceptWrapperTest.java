@@ -24,7 +24,9 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
+import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptorChain;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -37,11 +39,15 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -84,7 +90,8 @@ class HealthCheckTaskInterceptWrapperTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        when(applicationContext.getBean(NamingMetadataManager.class)).thenReturn(namingMetadataManager);
+        when(applicationContext.getBean(NamingMetadataManager.class))
+            .thenReturn(namingMetadataManager);
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
         when(applicationContext.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(applicationContext.getBean(DistroMapper.class)).thenReturn(distroMapper);
@@ -122,7 +129,9 @@ class HealthCheckTaskInterceptWrapperTest {
         injectInstance(true, 0);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     @Test
@@ -147,17 +156,22 @@ class HealthCheckTaskInterceptWrapperTest {
         when(globalConfig.isExpireInstance()).thenReturn(true);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertTrue(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertTrue(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     @Test
     void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
-        injectInstance(true, System.currentTimeMillis()).getExtendDatum().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
+        injectInstance(true, System.currentTimeMillis()).getExtendDatum()
+            .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.MILLISECONDS.sleep(1100);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
     }
     
     @Test
@@ -166,12 +180,33 @@ class HealthCheckTaskInterceptWrapperTest {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
         metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000L);
-        when(namingMetadataManager.getInstanceMetadata(service, instance.getMetadataId())).thenReturn(Optional.of(metadata));
+        when(namingMetadataManager.getInstanceMetadata(service, instance.getMetadataId()))
+            .thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.MILLISECONDS.sleep(1100);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+            client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                .isHealthy());
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void testRunSwallowsInterceptorException() throws Exception {
+        NacosHealthCheckTask task = mock(NacosHealthCheckTask.class);
+        when(task.getTaskId()).thenReturn("task");
+        HealthCheckTaskInterceptWrapper wrapper = new HealthCheckTaskInterceptWrapper(task);
+        NacosNamingInterceptorChain<NacosHealthCheckTask> interceptorChain =
+            mock(NacosNamingInterceptorChain.class);
+        doThrow(new RuntimeException("mock error")).when(interceptorChain).doInterceptor(task);
+        Field field = HealthCheckTaskInterceptWrapper.class.getDeclaredField("interceptorChain");
+        field.setAccessible(true);
+        field.set(wrapper, interceptorChain);
+        
+        assertDoesNotThrow(wrapper::run);
+        
+        verify(task).getTaskId();
     }
     
     private HealthCheckInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {

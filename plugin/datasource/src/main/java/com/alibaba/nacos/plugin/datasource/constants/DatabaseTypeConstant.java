@@ -22,23 +22,23 @@ package com.alibaba.nacos.plugin.datasource.constants;
  * @author Long Yu
  **/
 public class DatabaseTypeConstant {
-
+    
     public static final String POSTGRESQL = "postgresql";
-
+    
     public static final String GUASSDB = "gaussdb";
-
+    
     public static final String MYSQL = "mysql";
-
+    
     public static final String ORACLE = "oracle";
-
+    
     public static final String DM = "dm";
-
+    
     public static final String SQLSERVER = "sqlserver";
-
+    
     public static final String KINGBASE = "kingbase";
-
+    
     public static final String YASDB = "yasdb";
-
+    
     public static final String DERBY = "derby";
-
+    
 }

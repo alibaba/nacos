@@ -39,14 +39,15 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @ResponseBody
 public class PrometheusApiExceptionHandler {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusApiExceptionHandler.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(PrometheusApiExceptionHandler.class);
     
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<Result<String>> handleNacosException(NacosException e) {
         LOGGER.error("got exception. {}", e.getErrMsg());
         return ResponseEntity.internalServerError().body(Result.failure(e.getErrMsg()));
     }
-
+    
     @ExceptionHandler(NacosRuntimeException.class)
     public ResponseEntity<Result<String>> handleNacosRuntimeException(NacosRuntimeException e) {
         LOGGER.error("got exception. {}", e.getMessage());

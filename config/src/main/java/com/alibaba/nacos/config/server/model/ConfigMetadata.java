@@ -99,9 +99,12 @@ public class ConfigMetadata {
                 return false;
             }
             ConfigExportItem that = (ConfigExportItem) o;
-            return Objects.equals(group, that.group) && Objects.equals(dataId, that.dataId) && Objects
-                    .equals(desc, that.desc) && Objects.equals(type, that.type) && Objects
-                    .equals(appName, that.appName) && Objects.equals(configTags, that.configTags);
+            return Objects.equals(group, that.group) && Objects.equals(dataId, that.dataId)
+                && Objects
+                    .equals(desc, that.desc)
+                && Objects.equals(type, that.type) && Objects
+                    .equals(appName, that.appName)
+                && Objects.equals(configTags, that.configTags);
         }
         
         @Override

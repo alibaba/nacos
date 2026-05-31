@@ -55,7 +55,8 @@ class McpEndpointInfoTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"protocol\":\"https\",\"address\":\"127.0.0.1\",\"port\":8080,\"path\":\"/api/mcp\","
+        String json =
+            "{\"protocol\":\"https\",\"address\":\"127.0.0.1\",\"port\":8080,\"path\":\"/api/mcp\","
                 + "\"headers\":[{\"name\":\"Content-Type\",\"value\":\"application/json\"}]}";
         
         McpEndpointInfo result = mapper.readValue(json, McpEndpointInfo.class);

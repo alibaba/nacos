@@ -26,20 +26,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * {@link PageForm} unit test.
  */
 class PageFormTest {
-
+    
     @Test
     void defaultValues() {
         PageForm form = new PageForm();
         assertEquals(1, form.getPageNo());
         assertEquals(100, form.getPageSize());
     }
-
+    
     @Test
     void validateSuccessWithDefaults() throws NacosApiException {
         PageForm form = new PageForm();
         form.validate();
     }
-
+    
     @Test
     void validateSuccessWithCustomValues() throws NacosApiException {
         PageForm form = new PageForm();
@@ -49,25 +49,27 @@ class PageFormTest {
         assertEquals(2, form.getPageNo());
         assertEquals(50, form.getPageSize());
     }
-
+    
     @Test
     void validateThrowsWhenPageNoLessThanOne() {
         PageForm form = new PageForm();
         form.setPageNo(0);
         NacosApiException ex = assertThrows(NacosApiException.class, form::validate);
         assertEquals(400, ex.getErrCode());
-        assertEquals("Required parameter 'pageNo' should be positive integer, current is 0", ex.getErrMsg());
+        assertEquals("Required parameter 'pageNo' should be positive integer, current is 0",
+            ex.getErrMsg());
     }
-
+    
     @Test
     void validateThrowsWhenPageSizeLessThanOne() {
         PageForm form = new PageForm();
         form.setPageSize(0);
         NacosApiException ex = assertThrows(NacosApiException.class, form::validate);
         assertEquals(400, ex.getErrCode());
-        assertEquals("Required parameter 'pageSize' should be positive integer, current is 0", ex.getErrMsg());
+        assertEquals("Required parameter 'pageSize' should be positive integer, current is 0",
+            ex.getErrMsg());
     }
-
+    
     @Test
     void gettersAndSetters() {
         PageForm form = new PageForm();

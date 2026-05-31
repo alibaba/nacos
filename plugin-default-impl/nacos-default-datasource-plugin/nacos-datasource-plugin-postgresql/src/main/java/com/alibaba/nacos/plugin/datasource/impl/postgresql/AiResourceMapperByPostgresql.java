@@ -31,31 +31,31 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * @author nacos
  */
 public class AiResourceMapperByPostgresql extends AbstractMapper implements AiResourceMapper {
-
+    
     @Override
     public MapperResult findAiResourceFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,"
-                        + "biz_tags,ext,c_from,version_info,meta_version,scope,owner,download_count "
-                        + "FROM ai_resource");
+            "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,"
+                + "biz_tags,ext,c_from,version_info,meta_version,scope,owner,download_count "
+                + "FROM ai_resource");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
-
+        
         appendExtraQueryCondition(where, context);
-
+        
         MapperResult built = where.build();
-        String sql = built.getSql() + resolveOrderByClause(context) + " LIMIT " + context.getPageSize() + " OFFSET "
-                + context.getStartRow();
+        String sql = built.getSql() + resolveOrderByClause(context) + " LIMIT "
+            + context.getPageSize() + " OFFSET "
+            + context.getStartRow();
         return new MapperResult(sql, built.getParamList());
     }
-
+    
     @Override
     public String getDataSource() {
         return DatabaseTypeConstant.POSTGRESQL;
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedPostgresqlFunctionEnum.getFunctionByName(functionName);
     }
 }
-

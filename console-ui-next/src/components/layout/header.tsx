@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Sun,
   Moon,
@@ -10,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { useNamespaceStore } from '@/stores/namespace-store';
+import { getNamespaceSearchAfterSwitch, useNamespaceStore } from '@/stores/namespace-store';
 import { useServerStore } from '@/stores/server-store';
 import {
   DropdownMenu,
@@ -31,6 +33,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { ChangePasswordDialog } from '@/components/layout/change-password-dialog';
 
 function getBaseUrl(language: string) {
   return language.toLowerCase() === 'en-us' ? 'https://nacos.io/en/' : 'https://nacos.io/';
@@ -61,10 +64,13 @@ const NAV_LINKS: NavLink[] = [
 
 export function Header() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { theme, setTheme, language, setLanguage } = useAppStore();
   const { username, logout, isOidcUser } = useAuthStore();
-  const { currentNamespace, namespaces, setNamespace } = useNamespaceStore();
+  const { currentNamespace, namespaces, setNamespace, getNamespaceChangeGuard } = useNamespaceStore();
   const { authEnabled } = useServerStore();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const baseUrl = getBaseUrl(language);
 
@@ -77,7 +83,18 @@ export function Header() {
 
   const handleNamespaceChange = (value: string) => {
     const ns = namespaces.find(n => n.namespace === value);
-    setNamespace(value, ns?.namespaceShowName || value);
+    const nextShowName = ns?.namespaceShowName || value;
+    const guard = getNamespaceChangeGuard();
+    if (guard && !guard(value, nextShowName)) {
+      return;
+    }
+
+    setNamespace(value, nextShowName);
+
+    const nextSearch = getNamespaceSearchAfterSwitch(location.search, value, nextShowName);
+    if (nextSearch !== null && nextSearch !== location.search) {
+      navigate(`${location.pathname}${nextSearch}${location.hash}`, { replace: true });
+    }
   };
 
   return (
@@ -164,6 +181,9 @@ export function Header() {
         </Tooltip>
 
         {/* User menu */}
+        {authEnabled && !isOidcUser() && (
+          <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
+        )}
         {authEnabled && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -181,7 +201,13 @@ export function Header() {
             <DropdownMenuSeparator />
             {!isOidcUser() && (
               <>
-                <DropdownMenuItem className="gap-2 text-xs">
+                <DropdownMenuItem
+                  className="gap-2 text-xs"
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setChangePasswordOpen(true);
+                  }}
+                >
                   <KeyRound size={14} />
                   {t('header.changePassword')}
                 </DropdownMenuItem>

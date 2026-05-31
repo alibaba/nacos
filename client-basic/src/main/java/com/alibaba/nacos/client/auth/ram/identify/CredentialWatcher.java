@@ -61,9 +61,10 @@ public class CredentialWatcher {
         loadCredential(true);
         
         executor = ExecutorFactory.newSingleScheduledExecutorService(
-                new NameThreadFactory("com.alibaba.nacos.client.auth.ram.identify.watcher"));
+            new NameThreadFactory("com.alibaba.nacos.client.auth.ram.identify.watcher"));
         
         executor.scheduleWithFixedDelay(new Runnable() {
+            
             private long modified = 0;
             
             @Override
@@ -112,28 +113,32 @@ public class CredentialWatcher {
         InputStream propertiesIs = loadPropertyPathToStream();
         Credentials credentials = new Credentials();
         boolean loadResult = Objects.isNull(propertiesIs) ? loadCredentialFromEnv(init, credentials)
-                : loadCredentialFromProperties(propertiesIs, init, credentials);
+            : loadCredentialFromProperties(propertiesIs, init, credentials);
         if (!loadResult) {
             return;
         }
         if (!credentials.valid()) {
             LOGGER
-                    .warn("[1] Credential file missing required property {} Credential file missing {} or {}", appName,
-                            IdentifyConstants.ACCESS_KEY, IdentifyConstants.SECRET_KEY);
+                .warn(
+                    "[1] Credential file missing required property {} Credential file missing {} or {}",
+                    appName,
+                    IdentifyConstants.ACCESS_KEY, IdentifyConstants.SECRET_KEY);
             propertyPath = null;
             // return;
         }
         serviceInstance.setCredential(credentials);
     }
     
-    private boolean loadCredentialFromProperties(InputStream propertiesIs, boolean init, Credentials credentials) {
+    private boolean loadCredentialFromProperties(InputStream propertiesIs, boolean init,
+        Credentials credentials) {
         Properties properties = new Properties();
         try {
             properties.load(propertiesIs);
         } catch (IOException e) {
             LOGGER
-                    .error("[26] Unable to load credential file, appName:" + appName + "Unable to load credential file "
-                            + propertyPath, e);
+                .error("[26] Unable to load credential file, appName:" + appName
+                    + "Unable to load credential file "
+                    + propertyPath, e);
             propertyPath = null;
             return false;
         } finally {
@@ -141,7 +146,7 @@ public class CredentialWatcher {
                 propertiesIs.close();
             } catch (IOException e) {
                 LOGGER.error("[27] Unable to close credential file, appName:" + appName
-                        + "Unable to close credential file " + propertyPath, e);
+                    + "Unable to close credential file " + propertyPath, e);
             }
         }
         
@@ -182,8 +187,10 @@ public class CredentialWatcher {
     
     private boolean loadCredentialFromEnv(boolean init, Credentials credentials) {
         propertyPath = null;
-        String accessKey = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_ACCESS_KEY);
-        String secretKey = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_SECRET_KEY);
+        String accessKey =
+            NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_ACCESS_KEY);
+        String secretKey =
+            NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_SECRET_KEY);
         if (accessKey == null && secretKey == null) {
             if (init) {
                 LOGGER.info("{} No credential found", appName);
@@ -209,17 +216,19 @@ public class CredentialWatcher {
                 }
                 if (propertyPath == null || propertyPath.isEmpty()) {
                     propertyPath =
-                            IdentifyConstants.CREDENTIAL_PATH + (appName == null ? IdentifyConstants.CREDENTIAL_DEFAULT
-                                    : appName);
+                        IdentifyConstants.CREDENTIAL_PATH
+                            + (appName == null ? IdentifyConstants.CREDENTIAL_DEFAULT
+                                : appName);
                 } else {
                     if (init) {
-                        LOGGER.info("[{}] Defined credential file: -Dspas.identity={}", appName, propertyPath);
+                        LOGGER.info("[{}] Defined credential file: -Dspas.identity={}", appName,
+                            propertyPath);
                     }
                 }
             } else {
                 if (init) {
                     LOGGER.info("[{}] Load credential file from classpath: {}", appName,
-                            IdentifyConstants.PROPERTIES_FILENAME);
+                        IdentifyConstants.PROPERTIES_FILENAME);
                 }
             }
         }
@@ -231,9 +240,11 @@ public class CredentialWatcher {
             try {
                 propertiesIs = new FileInputStream(propertyPath);
             } catch (FileNotFoundException e) {
-                if (appName != null && !appName.equals(IdentifyConstants.CREDENTIAL_DEFAULT) && propertyPath
+                if (appName != null && !appName.equals(IdentifyConstants.CREDENTIAL_DEFAULT)
+                    && propertyPath
                         .equals(IdentifyConstants.CREDENTIAL_PATH + appName)) {
-                    propertyPath = IdentifyConstants.CREDENTIAL_PATH + IdentifyConstants.CREDENTIAL_DEFAULT;
+                    propertyPath = IdentifyConstants.CREDENTIAL_PATH
+                        + IdentifyConstants.CREDENTIAL_DEFAULT;
                     continue;
                 }
                 if (!IdentifyConstants.DOCKER_CREDENTIAL_PATH.equals(propertyPath)) {

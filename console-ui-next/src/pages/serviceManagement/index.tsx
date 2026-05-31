@@ -318,7 +318,7 @@ export default function ServiceManagementPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            navigate(`/serviceDetail?serviceName=${encodeURIComponent(svc.name)}&groupName=${encodeURIComponent(svc.groupName)}`)
+                            navigate(`/serviceDetail?serviceName=${encodeURIComponent(svc.name)}&groupName=${encodeURIComponent(svc.groupName)}&namespace=${encodeURIComponent(currentNamespace)}`)
                           }
                         >
                           {t('common.detail')}
@@ -327,7 +327,7 @@ export default function ServiceManagementPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            navigate(`/subscriberList?serviceName=${encodeURIComponent(svc.name)}&groupName=${encodeURIComponent(svc.groupName)}`)
+                            navigate(`/subscriberList?serviceName=${encodeURIComponent(svc.name)}&groupName=${encodeURIComponent(svc.groupName)}&namespace=${encodeURIComponent(currentNamespace)}`)
                           }
                         >
                           {t('service.subscriberName')}

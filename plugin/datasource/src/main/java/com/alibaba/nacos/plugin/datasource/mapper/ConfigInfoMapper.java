@@ -56,7 +56,8 @@ public interface ConfigInfoMapper extends Mapper {
      * @return The sql of finding all dataId and group.
      */
     default MapperResult findAllDataIdAndGroup(MapperContext context) {
-        return new MapperResult("SELECT DISTINCT data_id, group_id FROM config_info", Collections.emptyList());
+        return new MapperResult("SELECT DISTINCT data_id, group_id FROM config_info",
+            Collections.emptyList());
     }
     
     /**
@@ -151,9 +152,10 @@ public interface ConfigInfoMapper extends Mapper {
      */
     default MapperResult findChangeConfig(MapperContext context) {
         String sql =
-                "SELECT id, data_id, group_id, tenant_id, app_name,md5, gmt_modified, encrypted_data_key FROM config_info WHERE "
-                        + "gmt_modified >= ? and id > ? order by id  limit ? ";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+            "SELECT id, data_id, group_id, tenant_id, app_name,md5, gmt_modified, encrypted_data_key FROM config_info WHERE "
+                + "gmt_modified >= ? and id > ? order by id  limit ? ";
+        return new MapperResult(sql,
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
                 context.getWhereParameter(FieldConstant.LAST_MAX_ID),
                 context.getWhereParameter(FieldConstant.PAGE_SIZE)));
     }
@@ -239,7 +241,8 @@ public interface ConfigInfoMapper extends Mapper {
     default MapperResult findAllConfigInfo4Export(MapperContext context) {
         List<Long> ids = (List<Long>) context.getWhereParameter(FieldConstant.IDS);
         
-        String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,"
+        String sql =
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,"
                 + "src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         
@@ -438,7 +441,7 @@ public interface ConfigInfoMapper extends Mapper {
     default MapperResult findConfigInfosByIds(MapperContext context) {
         List<Long> ids = (List<Long>) context.getWhereParameter(FieldConstant.IDS);
         StringBuilder sql = new StringBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ");
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ");
         sql.append("id IN (");
         ArrayList<Object> paramList = new ArrayList<>();
         
@@ -487,7 +490,8 @@ public interface ConfigInfoMapper extends Mapper {
     default MapperResult updateConfigInfoAtomicCas(MapperContext context) {
         List<Object> paramList = new ArrayList<>();
         
-        StringBuilder sql = new StringBuilder("UPDATE config_info SET content=?, md5=?, src_ip=?, src_user=?, gmt_modified=");
+        StringBuilder sql = new StringBuilder(
+            "UPDATE config_info SET content=?, md5=?, src_ip=?, src_user=?, gmt_modified=");
         sql.append(getFunction("NOW()"));
         sql.append(", app_name=?");
         
@@ -510,7 +514,8 @@ public interface ConfigInfoMapper extends Mapper {
         paramList.add(context.getUpdateParameter(FieldConstant.C_SCHEMA));
         paramList.add(context.getUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY));
         
-        sql.append(" WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')");
+        sql.append(
+            " WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')");
         paramList.add(context.getWhereParameter(FieldConstant.DATA_ID));
         paramList.add(context.getWhereParameter(FieldConstant.GROUP_ID));
         paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));

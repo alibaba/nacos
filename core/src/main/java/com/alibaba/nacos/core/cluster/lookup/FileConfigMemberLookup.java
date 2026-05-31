@@ -40,6 +40,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
     private static final String DEFAULT_SEARCH_SEQ = "cluster.conf";
     
     private FileWatcher watcher = new FileWatcher() {
+        
         @Override
         public void onChange(FileChangeEvent event) {
             readClusterConfFromDisk();
@@ -60,7 +61,8 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
         try {
             WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), watcher);
         } catch (Throwable e) {
-            Loggers.CLUSTER.error("An exception occurred in the launch file monitor : {}", e.getMessage());
+            Loggers.CLUSTER.error("An exception occurred in the launch file monitor : {}",
+                e.getMessage());
         }
     }
     
@@ -81,7 +83,8 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
             tmpMembers = MemberUtil.readServerConf(tmp);
         } catch (Throwable e) {
             Loggers.CLUSTER
-                    .error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e.getMessage());
+                .error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}",
+                    e.getMessage());
         }
         
         afterLookup(tmpMembers);

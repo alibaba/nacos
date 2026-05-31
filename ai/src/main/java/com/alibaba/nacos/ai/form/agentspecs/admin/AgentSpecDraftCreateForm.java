@@ -35,12 +35,14 @@ public class AgentSpecDraftCreateForm extends AgentSpecForm {
     
     private String basedOnVersion;
     
+    private String targetVersion;
+    
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
         if (StringUtils.isBlank(getAgentSpecName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `agentSpecName` should not be blank.");
+                "Request parameter `agentSpecName` should not be blank.");
         }
     }
     
@@ -50,5 +52,13 @@ public class AgentSpecDraftCreateForm extends AgentSpecForm {
     
     public void setBasedOnVersion(String basedOnVersion) {
         this.basedOnVersion = basedOnVersion;
+    }
+    
+    public String getTargetVersion() {
+        return targetVersion;
+    }
+    
+    public void setTargetVersion(String targetVersion) {
+        this.targetVersion = targetVersion;
     }
 }

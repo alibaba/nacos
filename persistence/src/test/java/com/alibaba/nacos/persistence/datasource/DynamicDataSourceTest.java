@@ -86,14 +86,14 @@ class DynamicDataSourceTest {
     private void deleteDirectory(java.io.File directory) throws Exception {
         if (directory.exists()) {
             java.nio.file.Files.walk(directory.toPath())
-                    .sorted((a, b) -> b.compareTo(a))
-                    .forEach(path -> {
-                        try {
-                            java.nio.file.Files.delete(path);
-                        } catch (Exception e) {
-                            // Ignore
-                        }
-                    });
+                .sorted((a, b) -> b.compareTo(a))
+                .forEach(path -> {
+                    try {
+                        java.nio.file.Files.delete(path);
+                    } catch (Exception e) {
+                        // Ignore
+                    }
+                });
         }
     }
     

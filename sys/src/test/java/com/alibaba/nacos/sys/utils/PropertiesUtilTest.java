@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,8 @@ class PropertiesUtilTest {
     @Test
     @SuppressWarnings("unchecked")
     void testGetPropertiesWithPrefixForMap() {
-        Map<String, Object> actual = PropertiesUtil.getPropertiesWithPrefixForMap(environment, "nacos.prefix");
+        Map<String, Object> actual =
+            PropertiesUtil.getPropertiesWithPrefixForMap(environment, "nacos.prefix");
         assertEquals(3, actual.size());
         for (Map.Entry<String, Object> entry : actual.entrySet()) {
             String key = entry.getKey();
@@ -68,5 +69,17 @@ class PropertiesUtilTest {
     void testHandleSpringBinder() {
         Map properties = PropertiesUtil.handleSpringBinder(environment, "nacos.prefix", Map.class);
         assertEquals(3, properties.size());
+    }
+    
+    @Test
+    void testHandleSpringBinderWithDotEndingPrefix() {
+        Map properties =
+            PropertiesUtil.handleSpringBinder(environment, "nacos.prefix.", Map.class);
+        assertEquals(3, properties.size());
+    }
+    
+    @Test
+    void testConstructor() {
+        new PropertiesUtil();
     }
 }

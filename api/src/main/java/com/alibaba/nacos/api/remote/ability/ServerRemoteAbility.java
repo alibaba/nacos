@@ -26,9 +26,9 @@ import java.util.Objects;
  * @version $Id: ServerRemoteAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
 public class ServerRemoteAbility implements Serializable {
-
+    
     private static final long serialVersionUID = -3069795759506428390L;
-
+    
     /**
      * if support remote connection.
      */
@@ -64,7 +64,8 @@ public class ServerRemoteAbility implements Serializable {
             return false;
         }
         ServerRemoteAbility that = (ServerRemoteAbility) o;
-        return supportRemoteConnection == that.supportRemoteConnection && grpcReportEnabled == that.grpcReportEnabled;
+        return supportRemoteConnection == that.supportRemoteConnection
+            && grpcReportEnabled == that.grpcReportEnabled;
     }
     
     @Override

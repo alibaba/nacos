@@ -85,11 +85,12 @@ class ReleaseAgentCardRequestHandlerTest {
         request.setNamespaceId("public");
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
         when(a2aServerOperationService.getAgentCard("public", "test", "1.0.0", "")).thenThrow(
-                new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_NOT_FOUND, ""));
+            new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_NOT_FOUND, ""));
         ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         assertNull(response.getMessage());
-        verify(a2aServerOperationService).registerAgent(any(AgentCard.class), anyString(), anyString());
+        verify(a2aServerOperationService).registerAgent(any(AgentCard.class), anyString(),
+            anyString());
     }
     
     @Test
@@ -109,11 +110,12 @@ class ReleaseAgentCardRequestHandlerTest {
         existAgentCard.setName("test");
         existAgentCard.setVersion("0.9.0");
         when(a2aServerOperationService.getAgentCard("public", "test", "1.0.0", "")).thenThrow(
-                new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_VERSION_NOT_FOUND, ""));
+            new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_VERSION_NOT_FOUND, ""));
         ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         assertNull(response.getMessage());
-        verify(a2aServerOperationService).updateAgentCard(any(AgentCard.class), anyString(), anyString(), eq(true));
+        verify(a2aServerOperationService).updateAgentCard(any(AgentCard.class), anyString(),
+            anyString(), eq(true));
     }
     
     @Test
@@ -131,12 +133,15 @@ class ReleaseAgentCardRequestHandlerTest {
         AgentCardDetailInfo existAgentCard = new AgentCardDetailInfo();
         existAgentCard.setName("test");
         existAgentCard.setVersion("1.0.0");
-        when(a2aServerOperationService.getAgentCard("public", "test", "1.0.0", "")).thenReturn(existAgentCard);
+        when(a2aServerOperationService.getAgentCard("public", "test", "1.0.0", ""))
+            .thenReturn(existAgentCard);
         ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        verify(a2aServerOperationService, never()).registerAgent(any(AgentCard.class), anyString(), anyString());
-        verify(a2aServerOperationService, never()).updateAgentCard(any(AgentCard.class), anyString(), anyString(),
-                anyBoolean());
+        verify(a2aServerOperationService, never()).registerAgent(any(AgentCard.class), anyString(),
+            anyString());
+        verify(a2aServerOperationService, never()).updateAgentCard(any(AgentCard.class),
+            anyString(), anyString(),
+            anyBoolean());
     }
     
     @Test
@@ -152,13 +157,16 @@ class ReleaseAgentCardRequestHandlerTest {
         request.setNamespaceId("public");
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
         when(a2aServerOperationService.getAgentCard("public", "test", "1.0.0", "")).thenThrow(
-                new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, "test error"));
+            new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                "test error"));
         ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(NacosException.SERVER_ERROR, response.getErrorCode());
         assertEquals("test error", response.getMessage());
-        verify(a2aServerOperationService, never()).registerAgent(any(AgentCard.class), anyString(), anyString());
-        verify(a2aServerOperationService, never()).updateAgentCard(any(AgentCard.class), anyString(), anyString(),
-                anyBoolean());
+        verify(a2aServerOperationService, never()).registerAgent(any(AgentCard.class), anyString(),
+            anyString());
+        verify(a2aServerOperationService, never()).updateAgentCard(any(AgentCard.class),
+            anyString(), anyString(),
+            anyBoolean());
     }
 }

@@ -59,7 +59,8 @@ class McpToolOperationServiceTest {
     
     @BeforeEach
     void setUp() {
-        toolOperationService = new McpToolOperationService(configQueryChainService, configOperationService);
+        toolOperationService =
+            new McpToolOperationService(configQueryChainService, configOperationService);
     }
     
     @AfterEach
@@ -70,8 +71,10 @@ class McpToolOperationServiceTest {
     void refreshMcpTool() throws NacosException {
         McpServerBasicInfo serverBasicInfo = getMcpServerBasicInfo();
         McpToolSpecification toolSpecification = new McpToolSpecification();
-        toolOperationService.refreshMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, serverBasicInfo, toolSpecification);
-        verify(configOperationService).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class), isNull());
+        toolOperationService.refreshMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, serverBasicInfo,
+            toolSpecification);
+        verify(configOperationService).publishConfig(any(ConfigFormV3.class),
+            any(ConfigRequestInfo.class), isNull());
     }
     
     @Test
@@ -79,11 +82,13 @@ class McpToolOperationServiceTest {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         response.setContent(JacksonUtils.toJson(new McpToolSpecification()));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
         String id = UUID.randomUUID().toString();
         String version = "1.0.0";
         String toolRef = McpConfigUtils.formatServerToolSpecDataId(id, version);
-        McpToolSpecification actual = toolOperationService.getMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, toolRef);
+        McpToolSpecification actual =
+            toolOperationService.getMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, toolRef);
         assertNotNull(actual);
     }
     
@@ -91,11 +96,13 @@ class McpToolOperationServiceTest {
     void getMcpToolNotFound() {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
         String id = UUID.randomUUID().toString();
         String version = "1.0.0";
         String toolRef = McpConfigUtils.formatServerToolSpecDataId(id, version);
-        McpToolSpecification actual = toolOperationService.getMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, toolRef);
+        McpToolSpecification actual =
+            toolOperationService.getMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, toolRef);
         assertNull(actual);
     }
     
@@ -103,8 +110,10 @@ class McpToolOperationServiceTest {
     void deleteMcpTool() throws NacosException {
         String id = UUID.randomUUID().toString();
         toolOperationService.deleteMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, "1.0.0");
-        verify(configOperationService).deleteConfig(McpConfigUtils.formatServerToolSpecDataId(id, "1.0.0"),
-                Constants.MCP_SERVER_TOOL_GROUP, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
+        verify(configOperationService).deleteConfig(
+            McpConfigUtils.formatServerToolSpecDataId(id, "1.0.0"),
+            Constants.MCP_SERVER_TOOL_GROUP, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null,
+            "nacos", null);
     }
     
     private McpServerBasicInfo getMcpServerBasicInfo() {

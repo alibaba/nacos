@@ -22,11 +22,11 @@ package com.alibaba.nacos.ai.model.mcp;
  * @author xinluo
  */
 public class McpServerIndexData {
-
+    
     private String id;
-
+    
     private String namespaceId;
-
+    
     /**
      * Factory method for index data.
      * @param id server id
@@ -39,19 +39,19 @@ public class McpServerIndexData {
         data.setId(id);
         return data;
     }
-
+    
     public String getId() {
         return id;
     }
-
+    
     public void setId(String id) {
         this.id = id;
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }

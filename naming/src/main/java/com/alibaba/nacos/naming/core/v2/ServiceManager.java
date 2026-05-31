@@ -63,7 +63,9 @@ public class ServiceManager {
             NotifyCenter.publishEvent(new MetadataEvent.ServiceMetadataEvent(service, false));
             return service;
         });
-        namespaceSingletonMaps.computeIfAbsent(result.getNamespace(), namespace -> new ConcurrentHashSet<>()).add(result);
+        namespaceSingletonMaps
+            .computeIfAbsent(result.getNamespace(), namespace -> new ConcurrentHashSet<>())
+            .add(result);
         return result;
     }
     

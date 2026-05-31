@@ -34,7 +34,7 @@ public class TpsCheckRequest {
     private long count = 1;
     
     public TpsCheckRequest() {
-    
+        
     }
     
     public TpsCheckRequest(String pointName, String connectionId, String clientIp) {

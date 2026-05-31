@@ -41,7 +41,8 @@ class McpEndpointSpecTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\",\"port\":\"8080\"}}";
+        String json =
+            "{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\",\"port\":\"8080\"}}";
         McpEndpointSpec mcpEndpointSpec = mapper.readValue(json, McpEndpointSpec.class);
         assertEquals(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT, mcpEndpointSpec.getType());
         assertEquals("127.0.0.1", mcpEndpointSpec.getData().get("address"));

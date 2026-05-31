@@ -53,15 +53,17 @@ public class ClientConfigMetricResponseTest extends BasedConfigResponseTest {
     
     @Override
     public void testSerializeFailResponse() throws JsonProcessingException {
-    
+        
     }
     
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"6ef9237b-24f3-448a-87fc-713f18ee06a1\","
+        String json =
+            "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"6ef9237b-24f3-448a-87fc-713f18ee06a1\","
                 + "\"metrics\":{\"m1\":\"v1\",\"m2\":\"v2\"},\"success\":true}";
-        ClientConfigMetricResponse actual = mapper.readValue(json, ClientConfigMetricResponse.class);
+        ClientConfigMetricResponse actual =
+            mapper.readValue(json, ClientConfigMetricResponse.class);
         assertTrue(actual.isSuccess());
         assertEquals(actual.getResultCode(), ResponseCode.SUCCESS.getCode());
         assertEquals(actual.getMetrics(), metric);

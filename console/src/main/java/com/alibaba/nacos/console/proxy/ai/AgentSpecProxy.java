@@ -63,16 +63,17 @@ public class AgentSpecProxy {
     }
     
     public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm,
-            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
+        AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         return agentSpecHandler.listAgentSpecs(agentSpecListForm, filterableForm, pageForm);
     }
     
-    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes)
+        throws NacosException {
         return uploadAgentSpecFromZip(namespaceId, zipBytes, false);
     }
-
+    
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-            throws NacosException {
+        throws NacosException {
         return agentSpecHandler.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
     }
     
@@ -100,10 +101,14 @@ public class AgentSpecProxy {
         agentSpecHandler.forcePublish(form);
     }
     
+    public void redraft(AgentSpecPublishForm form) throws NacosException {
+        agentSpecHandler.redraft(form);
+    }
+    
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
         agentSpecHandler.updateLabels(form);
     }
-
+    
     public void updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
         agentSpecHandler.updateBizTags(form);
     }
@@ -111,7 +116,7 @@ public class AgentSpecProxy {
     public void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException {
         agentSpecHandler.changeOnlineStatus(form, online);
     }
-
+    
     public void updateScope(AgentSpecScopeForm form) throws NacosException {
         agentSpecHandler.updateScope(form);
     }
@@ -119,7 +124,7 @@ public class AgentSpecProxy {
     public void online(AgentSpecOnlineForm form) throws NacosException {
         agentSpecHandler.changeOnlineStatus(form, true);
     }
-
+    
     public void offline(AgentSpecOnlineForm form) throws NacosException {
         agentSpecHandler.changeOnlineStatus(form, false);
     }

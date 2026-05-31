@@ -54,9 +54,10 @@ public abstract class Connection implements Requester {
         if (abilityTable == null || !abilityTable.containsKey(abilityKey.getName())) {
             return AbilityStatus.UNKNOWN;
         }
-        return  abilityTable.get(abilityKey.getName()) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
+        return abilityTable.get(abilityKey.getName()) ? AbilityStatus.SUPPORTED
+            : AbilityStatus.NOT_SUPPORTED;
     }
-
+    
     public boolean isAbilitiesSet() {
         return abilityTable != null;
     }

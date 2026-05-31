@@ -52,6 +52,7 @@ public interface PipelineAdminClient {
      * @return parsed {@link Result}; may carry non-success {@code code} when HTTP status is 200
      * @throws NacosException transport / HTTP failure
      */
-    Result<JsonNode> listPipelineExecutions(String resourceType, String resourceName, String namespaceId,
-            String version, int pageNo, int pageSize) throws NacosException;
+    Result<JsonNode> listPipelineExecutions(String resourceType, String resourceName,
+        String namespaceId,
+        String version, int pageNo, int pageSize) throws NacosException;
 }

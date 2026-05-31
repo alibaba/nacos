@@ -51,7 +51,8 @@ public class DefaultLabelsCollectorManager implements LabelsCollectorManager {
         return labels;
     }
     
-    Map<String, String> getLabels(ArrayList<LabelsCollector> labelsCollectorsList, Properties properties) {
+    Map<String, String> getLabels(ArrayList<LabelsCollector> labelsCollectorsList,
+        Properties properties) {
         
         if (properties == null) {
             properties = new Properties();
@@ -60,19 +61,24 @@ public class DefaultLabelsCollectorManager implements LabelsCollectorManager {
         for (LabelsCollector labelsCollector : labelsCollectorsList) {
             
             LOGGER.info("Process LabelsCollector with [name:{}]", labelsCollector.getName());
-            for (Map.Entry<String, String> entry : labelsCollector.collectLabels(properties).entrySet()) {
+            for (Map.Entry<String, String> entry : labelsCollector.collectLabels(properties)
+                .entrySet()) {
                 if (!checkValidLabel(entry.getKey(), entry.getValue())) {
-                    LOGGER.info(" ignore invalid label with [key:{}, value:{}] of collector [name:{}]", entry.getKey(),
-                            entry.getValue(), labelsCollector.getName());
+                    LOGGER.info(
+                        " ignore invalid label with [key:{}, value:{}] of collector [name:{}]",
+                        entry.getKey(),
+                        entry.getValue(), labelsCollector.getName());
                     continue;
                 }
                 if (innerAddLabel(labels, entry.getKey(), entry.getValue())) {
-                    LOGGER.info("pick label with [key:{}, value:{}] of collector [name:{}]", entry.getKey(),
-                            entry.getValue(), labelsCollector.getName());
+                    LOGGER.info("pick label with [key:{}, value:{}] of collector [name:{}]",
+                        entry.getKey(),
+                        entry.getValue(), labelsCollector.getName());
                 } else {
                     LOGGER.info(" ignore label with [key:{}, value:{}] of collector [name:{}],"
-                                    + "already existed in LabelsCollectorManager with previous [value:{}]，", entry.getKey(),
-                            entry.getValue(), labelsCollector.getName(), labels.get(entry.getKey()));
+                        + "already existed in LabelsCollectorManager with previous [value:{}]，",
+                        entry.getKey(),
+                        entry.getValue(), labelsCollector.getName(), labels.get(entry.getKey()));
                 }
             }
         }

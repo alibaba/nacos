@@ -65,7 +65,8 @@ public final class PromptDataIdUtils {
     }
     
     public static boolean isDescriptorDataId(String dataId) {
-        return StringUtils.isNotBlank(dataId) && dataId.endsWith(Constants.Prompt.DESCRIPTOR_DATA_ID_SUFFIX);
+        return StringUtils.isNotBlank(dataId)
+            && dataId.endsWith(Constants.Prompt.DESCRIPTOR_DATA_ID_SUFFIX);
     }
     
     @Deprecated
@@ -80,7 +81,8 @@ public final class PromptDataIdUtils {
      * @return true if mapping dataId
      */
     public static boolean isLabelVersionMappingDataId(String dataId) {
-        return StringUtils.isNotBlank(dataId) && dataId.endsWith(Constants.Prompt.LABEL_VERSION_MAPPING_DATA_ID_SUFFIX);
+        return StringUtils.isNotBlank(dataId)
+            && dataId.endsWith(Constants.Prompt.LABEL_VERSION_MAPPING_DATA_ID_SUFFIX);
     }
     
     /**
@@ -103,7 +105,8 @@ public final class PromptDataIdUtils {
         if (!isDescriptorDataId(dataId)) {
             return null;
         }
-        return dataId.substring(0, dataId.length() - Constants.Prompt.DESCRIPTOR_DATA_ID_SUFFIX.length());
+        return dataId.substring(0,
+            dataId.length() - Constants.Prompt.DESCRIPTOR_DATA_ID_SUFFIX.length());
     }
     
     @Deprecated
@@ -121,6 +124,7 @@ public final class PromptDataIdUtils {
         if (!isLabelVersionMappingDataId(dataId)) {
             return null;
         }
-        return dataId.substring(0, dataId.length() - Constants.Prompt.LABEL_VERSION_MAPPING_DATA_ID_SUFFIX.length());
+        return dataId.substring(0,
+            dataId.length() - Constants.Prompt.LABEL_VERSION_MAPPING_DATA_ID_SUFFIX.length());
     }
 }

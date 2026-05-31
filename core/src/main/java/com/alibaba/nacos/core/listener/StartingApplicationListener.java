@@ -74,6 +74,6 @@ public class StartingApplicationListener implements NacosApplicationListener {
         }
         LOGGER.error("Startup errors : ", exception);
         LOGGER.error("Nacos failed to start, please see {} for more details.",
-                Paths.get(EnvUtil.getNacosHome(), "logs/nacos.log"));
+            Paths.get(EnvUtil.getNacosHome(), "logs/nacos.log"));
     }
 }

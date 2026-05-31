@@ -35,32 +35,32 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DatabaseOperateTest {
-
+    
     @Spy
     private DatabaseOperate databaseOperate;
-
+    
     @BeforeEach
     void setUp() {
         EmbeddedStorageContextHolder.cleanAllContext();
     }
-
+    
     @AfterEach
     void tearDown() {
         EmbeddedStorageContextHolder.cleanAllContext();
     }
-
+    
     @Test
     void testDefaultUpdate() {
         when(databaseOperate.update(anyList(), eq(null))).thenReturn(true);
         assertTrue(databaseOperate.update(Collections.emptyList()));
     }
-
+    
     @Test
     void testBlockUpdateNoConsumer() {
         when(databaseOperate.update(anyList(), eq(null))).thenReturn(true);
         assertTrue(databaseOperate.blockUpdate());
     }
-
+    
     @Test
     void testBlockUpdateWithConsumer() {
         AtomicBoolean consumed = new AtomicBoolean(false);

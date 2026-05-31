@@ -51,7 +51,8 @@ public class PersistentIpPortClientManager implements ClientManager {
     private ConcurrentMap<String, IpPortBasedClient> clients = new ConcurrentHashMap<>();
     
     public PersistentIpPortClientManager() {
-        clientFactory = ClientFactoryHolder.getInstance().findClientFactory(ClientConstants.PERSISTENT_IP_PORT);
+        clientFactory =
+            ClientFactoryHolder.getInstance().findClientFactory(ClientConstants.PERSISTENT_IP_PORT);
     }
     
     @Override
@@ -85,7 +86,8 @@ public class PersistentIpPortClientManager implements ClientManager {
         boolean isResponsible = isResponsibleClient(client);
         NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsible));
         client.release();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
+        NotifyCenter
+            .publishEvent(new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
         return true;
     }
     
@@ -139,7 +141,7 @@ public class PersistentIpPortClientManager implements ClientManager {
         this.clients = clients;
         oldClients.clear();
     }
-
+    
     /**
      * add client directly.
      *
@@ -148,7 +150,7 @@ public class PersistentIpPortClientManager implements ClientManager {
     public void addSyncClient(IpPortBasedClient client) {
         clients.put(client.getClientId(), client);
     }
-
+    
     /**
      * remove client.
      *

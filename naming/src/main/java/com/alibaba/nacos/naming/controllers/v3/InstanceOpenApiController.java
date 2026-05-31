@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.ResponseCode;
@@ -88,12 +89,14 @@ public class InstanceOpenApiController {
      * code `21003` to indicate caller should register again with heartBeat=false.
      * @throws NacosException register or heart beat with exception.
      */
+    @Since("3.0.0")
     @CanDistro
     @PostMapping
     @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.OPEN_API)
-    public Result<String> register(InstanceForm instanceForm, @RequestParam(defaultValue = "false") boolean heartBeat)
-            throws NacosException {
+    public Result<String> register(InstanceForm instanceForm,
+        @RequestParam(defaultValue = "false") boolean heartBeat)
+        throws NacosException {
         // check param
         instanceForm.validate();
         if (heartBeat) {
@@ -113,6 +116,7 @@ public class InstanceOpenApiController {
      * @return deregister result, if instance not found, also return remove success.
      * @throws NacosException deregister with exception.
      */
+    @Since("3.0.0")
     @CanDistro
     @DeleteMapping
     @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
@@ -120,13 +124,16 @@ public class InstanceOpenApiController {
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
-        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
+        Instance instance =
+            InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
         instanceOperator.removeInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), instance);
+            instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
-                new DeregisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
-                        DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                        instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
+            new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIp(), false,
+                DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(),
+                instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
     
@@ -143,6 +150,7 @@ public class InstanceOpenApiController {
      * @return all instances for specified service without `enabled=false`.
      * @throws Exception any exception during get instances.
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ, apiType = ApiType.OPEN_API)
@@ -153,27 +161,31 @@ public class InstanceOpenApiController {
         String namespaceId = instanceForm.getNamespaceId();
         String groupName = instanceForm.getGroupName();
         String serviceName = instanceForm.getServiceName();
-        ServiceInfo serviceInfo = instanceOperator.listInstance(namespaceId, groupName, serviceName, null,
+        ServiceInfo serviceInfo =
+            instanceOperator.listInstance(namespaceId, groupName, serviceName, null,
                 instanceForm.getClusterName(), false);
         return Result.success(serviceInfo.getHosts());
     }
     
     private int doHeartBeat(InstanceForm instanceForm) throws NacosException {
         BeatInfoInstanceBuilder builder = BeatInfoInstanceBuilder.newBuilder();
-        return instanceOperator.handleBeat(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), instanceForm.getIp(), instanceForm.getPort(),
-                instanceForm.getClusterName(), null, builder);
+        return instanceOperator.handleBeat(instanceForm.getNamespaceId(),
+            instanceForm.getGroupName(),
+            instanceForm.getServiceName(), instanceForm.getIp(), instanceForm.getPort(),
+            instanceForm.getClusterName(), null, builder);
     }
     
     private void doRegisterInstance(InstanceForm instanceForm) throws NacosException {
         NamingRequestUtil.checkWeight(instanceForm.getWeight());
-        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
+        Instance instance =
+            InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
         String namespaceId = instanceForm.getNamespaceId();
         String groupName = instanceForm.getGroupName();
         String serviceName = instanceForm.getServiceName();
         instanceOperator.registerInstance(namespaceId, groupName, serviceName, instance);
         NotifyCenter.publishEvent(
-                new RegisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
-                        namespaceId, groupName, serviceName, instance.getIp(), instance.getPort()));
+            new RegisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIp(), false,
+                namespaceId, groupName, serviceName, instance.getIp(), instance.getPort()));
     }
 }

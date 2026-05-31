@@ -42,19 +42,19 @@ import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.T
  * @date 2024/4/8
  */
 public class RpcServerTlsConfigFactory implements RpcTlsConfigFactory {
-
+    
     private static RpcServerTlsConfigFactory instance;
-
+    
     private RpcServerTlsConfigFactory() {
     }
-
+    
     public static synchronized RpcServerTlsConfigFactory getInstance() {
         if (instance == null) {
             instance = new RpcServerTlsConfigFactory();
         }
         return instance;
     }
-
+    
     /**
      * Create SDK client TLS config.
      *
@@ -65,7 +65,7 @@ public class RpcServerTlsConfigFactory implements RpcTlsConfigFactory {
     public RpcServerTlsConfig createSdkConfig(Properties properties) {
         return createServerTlsConfig(properties, NACOS_SERVER_RPC);
     }
-
+    
     /**
      * Create cluster client TLS config.
      *
@@ -76,7 +76,7 @@ public class RpcServerTlsConfigFactory implements RpcTlsConfigFactory {
     public RpcServerTlsConfig createClusterConfig(Properties properties) {
         return createServerTlsConfig(properties, RpcConstants.NACOS_PEER_RPC);
     }
-
+    
     /**
      * create sdk server tls config.
      *
@@ -90,7 +90,8 @@ public class RpcServerTlsConfigFactory implements RpcTlsConfigFactory {
         tlsConfig.setMutualAuthEnable(getBooleanProperty(properties, prefix + MUTUAL_AUTH, false));
         tlsConfig.setProtocols(properties.getProperty(prefix + TLS_PROTOCOLS));
         tlsConfig.setCiphers(properties.getProperty(prefix + TLS_CIPHERS));
-        tlsConfig.setTrustCollectionCertFile(properties.getProperty(prefix + TLS_TRUST_COLLECTION_CHAIN_PATH));
+        tlsConfig.setTrustCollectionCertFile(
+            properties.getProperty(prefix + TLS_TRUST_COLLECTION_CHAIN_PATH));
         tlsConfig.setCertChainFile(properties.getProperty(prefix + TLS_CERT_CHAIN_PATH));
         tlsConfig.setCertPrivateKey(properties.getProperty(prefix + TLS_CERT_KEY));
         tlsConfig.setTrustAll(getBooleanProperty(properties, prefix + TLS_TRUST_ALL, true));

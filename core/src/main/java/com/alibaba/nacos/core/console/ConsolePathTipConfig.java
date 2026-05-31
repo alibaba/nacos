@@ -33,9 +33,11 @@ import org.springframework.context.annotation.Configuration;
 public class ConsolePathTipConfig {
     
     @Bean
-    @ConditionalOnProperty(name = Constants.NACOS_DEPLOYMENT_TYPE, havingValue = Constants.NACOS_DEPLOYMENT_TYPE_MERGED, matchIfMissing = true)
+    @ConditionalOnProperty(name = Constants.NACOS_DEPLOYMENT_TYPE,
+        havingValue = Constants.NACOS_DEPLOYMENT_TYPE_MERGED, matchIfMissing = true)
     public FilterRegistrationBean<NacosConsolePathTipFilter> nacosConsolePathTipFilterRegistration() {
-        FilterRegistrationBean<NacosConsolePathTipFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<NacosConsolePathTipFilter> registration =
+            new FilterRegistrationBean<>();
         registration.setFilter(new NacosConsolePathTipFilter());
         registration.addUrlPatterns("/*");
         registration.setName("nacosConsolePathTipFilter");

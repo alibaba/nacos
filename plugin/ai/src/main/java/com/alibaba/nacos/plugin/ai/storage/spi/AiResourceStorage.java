@@ -31,14 +31,14 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
  * @since 3.2.0
  */
 public interface AiResourceStorage {
-
+    
     /**
      * Type identifier, corresponding to {@link StorageKey#getProvider()}.
      *
      * @return storage provider type, e.g. "nacos_config", "oss"
      */
     String type();
-
+    
     /**
      * Save content to storage.
      *
@@ -47,7 +47,7 @@ public interface AiResourceStorage {
      * @throws NacosException if save operation fails
      */
     void save(StorageKey storageKey, byte[] content) throws NacosException;
-
+    
     /**
      * Get content from storage.
      *
@@ -56,7 +56,7 @@ public interface AiResourceStorage {
      * @throws NacosException if get operation fails
      */
     byte[] get(StorageKey storageKey) throws NacosException;
-
+    
     /**
      * Delete content from storage.
      *
@@ -65,4 +65,3 @@ public interface AiResourceStorage {
      */
     void delete(StorageKey storageKey) throws NacosException;
 }
-

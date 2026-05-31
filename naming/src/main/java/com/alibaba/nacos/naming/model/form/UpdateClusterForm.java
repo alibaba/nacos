@@ -52,23 +52,23 @@ public class UpdateClusterForm implements NacosForm {
     public void validate() throws NacosApiException {
         if (StringUtils.isBlank(serviceName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'serviceName' type String is not present");
+                "Required parameter 'serviceName' type String is not present");
         }
         if (StringUtils.isBlank(clusterName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'clusterName' type String is not present");
+                "Required parameter 'clusterName' type String is not present");
         }
         if (null == checkPort) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'checkPort' type Integer is not present");
+                "Required parameter 'checkPort' type Integer is not present");
         }
         if (null == useInstancePort4Check) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'useInstancePort4Check' type Boolean is not present");
+                "Required parameter 'useInstancePort4Check' type Boolean is not present");
         }
         if (StringUtils.isEmpty(healthChecker)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'healthChecker' type String is not present");
+                "Required parameter 'healthChecker' type String is not present");
         }
         fillDefaultValue();
     }

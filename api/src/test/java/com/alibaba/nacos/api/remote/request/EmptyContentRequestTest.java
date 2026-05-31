@@ -27,7 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EmptyContentRequestTest extends BasicRequestTest {
     
-    private static final String COMMON_JSON = "{\"headers\":{\"clientIp\":\"1.1.1.1\"},\"requestId\":\"1\",\"module\":\"internal\"}";
+    private static final String COMMON_JSON =
+        "{\"headers\":{\"clientIp\":\"1.1.1.1\"},\"requestId\":\"1\",\"module\":\"internal\"}";
     
     private static final String TO_STRING = "%s{headers={clientIp=1.1.1.1}, requestId='1'}";
     
@@ -39,27 +40,31 @@ class EmptyContentRequestTest extends BasicRequestTest {
     }
     
     @Test
-    void testClientDetectionRequest() throws JsonProcessingException, InstantiationException, IllegalAccessException {
+    void testClientDetectionRequest()
+        throws JsonProcessingException, InstantiationException, IllegalAccessException {
         doTest(ClientDetectionRequest.class);
     }
     
     @Test
-    void testHealthCheckRequest() throws JsonProcessingException, InstantiationException, IllegalAccessException {
+    void testHealthCheckRequest()
+        throws JsonProcessingException, InstantiationException, IllegalAccessException {
         doTest(HealthCheckRequest.class);
     }
     
     @Test
-    void testServerCheckRequest() throws JsonProcessingException, InstantiationException, IllegalAccessException {
+    void testServerCheckRequest()
+        throws JsonProcessingException, InstantiationException, IllegalAccessException {
         doTest(ServerCheckRequest.class);
     }
     
     @Test
-    void testServerLoaderInfoRequest() throws JsonProcessingException, InstantiationException, IllegalAccessException {
+    void testServerLoaderInfoRequest()
+        throws JsonProcessingException, InstantiationException, IllegalAccessException {
         doTest(ServerLoaderInfoRequest.class);
     }
     
     private void doTest(Class<? extends Request> clazz)
-            throws IllegalAccessException, InstantiationException, JsonProcessingException {
+        throws IllegalAccessException, InstantiationException, JsonProcessingException {
         Request request = clazz.newInstance();
         request.setRequestId("1");
         request.putHeader("clientIp", "1.1.1.1");
@@ -80,6 +85,7 @@ class EmptyContentRequestTest extends BasicRequestTest {
         assertEquals("internal", request.getModule());
         assertEquals(1, request.getHeaders().size());
         assertEquals("1.1.1.1", request.getHeader("clientIp"));
-        assertEquals(String.format(TO_STRING, request.getClass().getSimpleName()), request.toString());
+        assertEquals(String.format(TO_STRING, request.getClass().getSimpleName()),
+            request.toString());
     }
 }

@@ -28,30 +28,30 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class MemberReportRequestTest {
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     void defaultConstructor() {
         MemberReportRequest request = new MemberReportRequest();
         assertNull(request.getNode());
     }
-
+    
     @Test
     void constructorWithNode() {
         Member node = Member.builder().ip("127.0.0.1").port(8848).state(NodeState.UP).build();
         MemberReportRequest request = new MemberReportRequest(node);
         assertEquals(node, request.getNode());
     }
-
+    
     @Test
     void setNode() {
         MemberReportRequest request = new MemberReportRequest();

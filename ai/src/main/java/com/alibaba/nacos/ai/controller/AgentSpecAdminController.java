@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
@@ -84,12 +85,14 @@ public class AgentSpecAdminController {
      * @return result of the get operation
      * @throws NacosException if the agentspec get fails
      */
+    @Since("3.2.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<AgentSpecMeta> getAgentSpec(AgentSpecForm form) throws NacosException {
         form.validate();
         return Result.success(
-                agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(), form.getAgentSpecName()));
+            agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(),
+                form.getAgentSpecName()));
     }
     
     /**
@@ -99,13 +102,34 @@ public class AgentSpecAdminController {
      * @return full agentspec content for the specified version
      * @throws NacosException if the agentspec or version not found
      */
+    @Since("3.2.0")
     @GetMapping("/version")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<AgentSpec> getAgentSpecVersion(AgentSpecForm form) throws NacosException {
         form.validate();
         return Result.success(
-                agentSpecOperationService.getAgentSpecVersionDetail(form.getNamespaceId(), form.getAgentSpecName(),
-                        form.getVersion()));
+            agentSpecOperationService.getAgentSpecVersionDetail(form.getNamespaceId(),
+                form.getAgentSpecName(),
+                form.getVersion()));
+    }
+    
+    /**
+     * Get specific version metadata of an agentspec without resource content. Returns the agentspec main content and
+     * resource list (name + type only), skipping resource file IO.
+     *
+     * @param form the agentspec form containing agentSpecName and version
+     * @return agentspec with resource list containing only name and type
+     * @throws NacosException if the agentspec or version not found
+     */
+    @Since("3.2.1")
+    @GetMapping("/version/meta")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<AgentSpec> getAgentSpecVersionMeta(AgentSpecForm form) throws NacosException {
+        form.validate();
+        return Result.success(
+            agentSpecOperationService.getAgentSpecVersionMeta(form.getNamespaceId(),
+                form.getAgentSpecName(),
+                form.getVersion()));
     }
     
     /**
@@ -115,6 +139,7 @@ public class AgentSpecAdminController {
      * @return result of the deletion operation
      * @throws NacosException if the agentspec deletion fails
      */
+    @Since("3.2.0")
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteAgentSpec(AgentSpecForm form) throws NacosException {
@@ -131,19 +156,21 @@ public class AgentSpecAdminController {
      * @return result of the list operation
      * @throws NacosException if the agentspec list fails
      */
+    @Since("3.2.1")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
-            tags = {ALLOW_ANONYMOUS})
+        tags = {ALLOW_ANONYMOUS})
     public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm,
-            AiResourceFilterableForm filterableForm, PageForm pageForm)
-            throws NacosException {
+        AiResourceFilterableForm filterableForm, PageForm pageForm)
+        throws NacosException {
         agentSpecListForm.validate();
         filterableForm.validate();
         pageForm.validate();
-        return Result.success(agentSpecOperationService.listAgentSpecs(agentSpecListForm.getNamespaceId(),
-                agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(),
-                agentSpecListForm.getOrderBy(), filterableForm.getOwner(), filterableForm.getScope(),
-                pageForm.getPageNo(), pageForm.getPageSize()));
+        return Result.success(agentSpecOperationService.listAgentSpecs(
+            agentSpecListForm.getNamespaceId(),
+            agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(),
+            agentSpecListForm.getOrderBy(), filterableForm.getOwner(), filterableForm.getScope(),
+            pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
     /**
@@ -155,34 +182,40 @@ public class AgentSpecAdminController {
      * @return result of the upload operation
      * @throws NacosException if the upload fails
      */
+    @Since("3.2.0")
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<String> uploadAgentSpec(HttpServletRequest request,
-            @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
-            @RequestParam("file") MultipartFile file) throws NacosException {
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "overwrite", required = false,
+            defaultValue = "false") boolean overwrite,
+        @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = AgentSpecRequestUtil.validateAndExtractZipBytes(file);
-        String agentSpecName = agentSpecOperationService.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
+        String agentSpecName =
+            agentSpecOperationService.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
         return Result.success(agentSpecName);
     }
     
     /**
      * Create draft version.
      */
+    @Since("3.2.0")
     @PostMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> createDraft(AgentSpecDraftCreateForm form) throws NacosException {
         form.validate();
-        String v = agentSpecOperationService.createDraft(form.getNamespaceId(), form.getAgentSpecName(),
-                form.getBasedOnVersion());
+        String v =
+            agentSpecOperationService.createDraft(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getBasedOnVersion(), form.getTargetVersion());
         return Result.success(v);
     }
     
     /**
      * Update current draft content.
      */
+    @Since("3.2.0")
     @PutMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateDraft(AgentSpecUpdateForm form) throws NacosException {
@@ -195,6 +228,7 @@ public class AgentSpecAdminController {
     /**
      * Delete current draft version.
      */
+    @Since("3.2.0")
     @DeleteMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteDraft(AgentSpecForm form) throws NacosException {
@@ -206,11 +240,13 @@ public class AgentSpecAdminController {
     /**
      * Submit a version for pipeline review.
      */
+    @Since("3.2.0")
     @PostMapping("/submit")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> submit(AgentSpecSubmitForm form) throws NacosException {
         form.validate();
-        String result = agentSpecOperationService.submit(form.getNamespaceId(), form.getAgentSpecName(),
+        String result =
+            agentSpecOperationService.submit(form.getNamespaceId(), form.getAgentSpecName(),
                 form.getVersion());
         return Result.success(result);
     }
@@ -218,66 +254,90 @@ public class AgentSpecAdminController {
     /**
      * Publish an approved reviewing version.
      */
+    @Since("3.2.0")
     @PostMapping("/publish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> publish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        agentSpecOperationService.publish(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion(),
-                updateLatest);
+        agentSpecOperationService.publish(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getVersion(),
+            updateLatest);
         return Result.success("ok");
     }
     
     /**
-     * Force-publish an agentspec version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and
-     * reviewing (pipeline in-progress) versions. Only admin users can call this endpoint.
+     * Force-publish an agentspec version, bypassing pipeline validation. Accepts draft, reviewing, and reviewed
+     * versions. Only admin users can call this endpoint.
      */
+    @Since("3.2.1")
     @PostMapping("/force-publish")
     @Secured(resource = Constants.AgentSpecs.ADMIN_PATH
-            + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        apiType = ApiType.ADMIN_API)
     public Result<String> forcePublish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion(),
-                updateLatest);
+        agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getVersion(),
+            updateLatest);
+        return Result.success("ok");
+    }
+    
+    /**
+     * Re-edit a reviewed agentspec version, transitioning it back to draft for modification.
+     */
+    @Since("3.2.2")
+    @PostMapping("/redraft")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<String> redraft(AgentSpecPublishForm form) throws NacosException {
+        form.validate();
+        agentSpecOperationService.redraft(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getVersion());
         return Result.success("ok");
     }
     
     /**
      * Update runtime route labels without changing version status.
      */
+    @Since("3.2.0")
     @PutMapping("/labels")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
         form.validate();
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
-        agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(), labels);
+        agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(),
+            labels);
         return Result.success("ok");
     }
-
+    
     /**
      * Update agentspec biz tags without changing version status.
      */
+    @Since("3.2.0")
     @PutMapping("/biz-tags")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
         form.validate();
-        agentSpecOperationService.updateBizTags(form.getNamespaceId(), form.getAgentSpecName(), form.getBizTags());
+        agentSpecOperationService.updateBizTags(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getBizTags());
         return Result.success("ok");
     }
     
     /**
      * Online operation (version-level or agentspec-level by scope).
      */
+    @Since("3.2.0")
     @PostMapping("/online")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> online(AgentSpecOnlineForm form) throws NacosException {
         form.validate();
-        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(), form.getScope(),
-                form.getVersion(), true);
+        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getScope(),
+            form.getVersion(), true);
         return Result.success("ok");
     }
-
+    
     /**
      * Update agentspec visibility scope (PUBLIC or PRIVATE).
      *
@@ -285,23 +345,27 @@ public class AgentSpecAdminController {
      * @return result of the update operation
      * @throws NacosException if the agentspec not found or no permission
      */
+    @Since("3.2.0")
     @PutMapping("/scope")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateScope(AgentSpecScopeForm form) throws NacosException {
         form.validate();
-        agentSpecOperationService.updateScope(form.getNamespaceId(), form.getAgentSpecName(), form.getScope());
+        agentSpecOperationService.updateScope(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getScope());
         return Result.success("ok");
     }
     
     /**
      * Offline operation (version-level or agentspec-level by scope).
      */
+    @Since("3.2.0")
     @PostMapping("/offline")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> offline(AgentSpecOnlineForm form) throws NacosException {
         form.validate();
-        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(), form.getScope(),
-                form.getVersion(), false);
+        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(),
+            form.getScope(),
+            form.getVersion(), false);
         return Result.success("ok");
     }
 }

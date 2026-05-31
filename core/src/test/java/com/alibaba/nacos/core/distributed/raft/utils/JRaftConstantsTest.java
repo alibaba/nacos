@@ -25,7 +25,8 @@ class JRaftConstantsTest {
     
     @Test
     void testExtendInfoKeyIsJRaftLogOperationCanonicalName() {
-        assertEquals(JRaftLogOperation.class.getCanonicalName(), JRaftConstants.JRAFT_EXTEND_INFO_KEY);
+        assertEquals(JRaftLogOperation.class.getCanonicalName(),
+            JRaftConstants.JRAFT_EXTEND_INFO_KEY);
     }
     
     @Test

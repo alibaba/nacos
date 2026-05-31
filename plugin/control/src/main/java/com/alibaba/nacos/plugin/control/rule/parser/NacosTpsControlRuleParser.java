@@ -30,7 +30,7 @@ public class NacosTpsControlRuleParser implements TpsControlRuleParser {
     @Override
     public TpsControlRule parseRule(String ruleContent) {
         return StringUtils.isBlank(ruleContent) ? new TpsControlRule()
-                : JacksonUtils.toObj(ruleContent, TpsControlRule.class);
+            : JacksonUtils.toObj(ruleContent, TpsControlRule.class);
     }
     
 }

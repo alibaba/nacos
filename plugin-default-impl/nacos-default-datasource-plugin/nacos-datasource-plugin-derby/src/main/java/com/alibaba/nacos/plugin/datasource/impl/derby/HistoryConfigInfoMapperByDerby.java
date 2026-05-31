@@ -29,41 +29,46 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * @author hyx
  **/
 
-public class HistoryConfigInfoMapperByDerby extends AbstractMapperByDerby implements HistoryConfigInfoMapper {
-
+public class HistoryConfigInfoMapperByDerby extends AbstractMapperByDerby
+    implements HistoryConfigInfoMapper {
+    
     @Override
     public MapperResult removeConfigHistory(MapperContext context) {
         String sql = "DELETE FROM his_config_info WHERE nid IN( "
-                + "SELECT nid FROM his_config_info WHERE gmt_modified < ? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY)";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+            + "SELECT nid FROM his_config_info WHERE gmt_modified < ? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY)";
+        return new MapperResult(sql,
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
                 context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
-
+    
     @Override
     public MapperResult pageFindConfigHistoryFetchRows(MapperContext context) {
         String sql =
-                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gray_name,ext_info,publish_type,gmt_create,gmt_modified "
-                        + "FROM his_config_info "
-                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  OFFSET "
-                        + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
-                context.getWhereParameter(FieldConstant.GROUP_ID), context.getWhereParameter(FieldConstant.TENANT_ID)));
+            "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gray_name,ext_info,publish_type,gmt_create,gmt_modified "
+                + "FROM his_config_info "
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  OFFSET "
+                + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
+                + " ROWS ONLY";
+        return new MapperResult(sql,
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
+                context.getWhereParameter(FieldConstant.GROUP_ID),
+                context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
     
     @Override
     public String getDataSource() {
         return DataSourceConstant.DERBY;
     }
-
+    
     @Override
     public MapperResult findDeletedConfig(MapperContext context) {
         return new MapperResult(
-                "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip, op_type, tenant_id, "
-                        + "publish_type,gray_name, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
-                        + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.PUBLISH_TYPE),
-                        context.getWhereParameter(FieldConstant.START_TIME),
-                        context.getWhereParameter(FieldConstant.LAST_MAX_ID),
-                        context.getWhereParameter(FieldConstant.PAGE_SIZE)));
+            "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip, op_type, tenant_id, "
+                + "publish_type,gray_name, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
+                + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.PUBLISH_TYPE),
+                context.getWhereParameter(FieldConstant.START_TIME),
+                context.getWhereParameter(FieldConstant.LAST_MAX_ID),
+                context.getWhereParameter(FieldConstant.PAGE_SIZE)));
     }
 }

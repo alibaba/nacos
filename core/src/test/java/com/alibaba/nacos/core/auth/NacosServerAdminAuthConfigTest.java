@@ -95,7 +95,8 @@ class NacosServerAdminAuthConfigTest {
     @Test
     void testGetServerIdentityKeyAndValue() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "admin-key");
-        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "admin-value");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE,
+            "admin-value");
         NacosServerAdminAuthConfig config = new NacosServerAdminAuthConfig();
         assertEquals("admin-key", config.getServerIdentityKey());
         assertEquals("admin-value", config.getServerIdentityValue());
@@ -104,7 +105,8 @@ class NacosServerAdminAuthConfigTest {
     @Test
     void testValidateThrowsWhenAuthEnabledButEmptyType() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "true");
-        NacosRuntimeException ex = assertThrows(NacosRuntimeException.class, NacosServerAdminAuthConfig::new);
+        NacosRuntimeException ex =
+            assertThrows(NacosRuntimeException.class, NacosServerAdminAuthConfig::new);
         assertEquals(AuthErrorCode.INVALID_TYPE.getCode(), ex.getErrCode());
         assertTrue(ex.getMessage().contains(AuthErrorCode.INVALID_TYPE.getMsg()));
     }
@@ -113,7 +115,8 @@ class NacosServerAdminAuthConfigTest {
     void testValidateThrowsWhenAuthEnabledButEmptyIdentity() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "true");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
-        NacosRuntimeException ex = assertThrows(NacosRuntimeException.class, NacosServerAdminAuthConfig::new);
+        NacosRuntimeException ex =
+            assertThrows(NacosRuntimeException.class, NacosServerAdminAuthConfig::new);
         assertEquals(AuthErrorCode.EMPTY_IDENTITY.getCode(), ex.getErrCode());
         assertTrue(ex.getMessage().contains(AuthErrorCode.EMPTY_IDENTITY.getMsg()));
     }

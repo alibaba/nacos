@@ -20,8 +20,9 @@ import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -49,7 +51,8 @@ class MetricsMonitorTest {
         ApplicationUtils.injectContext(context);
         when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(null);
         // add simple meterRegistry.
-        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY).add(new SimpleMeterRegistry());
+        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY)
+            .add(new SimpleMeterRegistry());
         
         MetricsMonitor.resetPush();
         MetricsMonitor.getIpCountMonitor().set(0);
@@ -99,5 +102,31 @@ class MetricsMonitorTest {
         newTest.setInstancePublishInfos(newInstances);
         MetricsMonitor.incrementIpCountWithBatchRegister(new InstancePublishInfo(), newTest);
         assertEquals(2, MetricsMonitor.getIpCountMonitor().get());
+    }
+    
+    @Test
+    void testDecrementIpCountWithBatchRegister() {
+        BatchInstancePublishInfo batchInstancePublishInfo = new BatchInstancePublishInfo();
+        List<InstancePublishInfo> instancePublishInfos = new LinkedList<>();
+        instancePublishInfos.add(new InstancePublishInfo());
+        instancePublishInfos.add(new InstancePublishInfo());
+        batchInstancePublishInfo.setInstancePublishInfos(instancePublishInfos);
+        MetricsMonitor.getIpCountMonitor().set(3);
+        
+        MetricsMonitor.decrementIpCountWithBatchRegister(batchInstancePublishInfo);
+        
+        assertEquals(1, MetricsMonitor.getIpCountMonitor().get());
+    }
+    
+    @Test
+    void testLeaderStatusAndExceptionCounters() {
+        MetricsMonitor.getLeaderStatusMonitor().set(1L);
+        Counter diskException = MetricsMonitor.getDiskException();
+        Counter leaderSendBeatFailedException =
+            MetricsMonitor.getLeaderSendBeatFailedException();
+        
+        assertEquals(1L, MetricsMonitor.getLeaderStatusMonitor().get());
+        assertNotNull(diskException);
+        assertNotNull(leaderSendBeatFailedException);
     }
 }

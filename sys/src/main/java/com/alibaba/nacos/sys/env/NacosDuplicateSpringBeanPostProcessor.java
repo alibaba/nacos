@@ -36,7 +36,8 @@ public class NacosDuplicateSpringBeanPostProcessor extends AbstractNacosDuplicat
     }
     
     @Override
-    protected boolean isReUsingBean(Class<?> beanClass, String beanName, BeanDefinition beanDefinition) {
+    protected boolean isReUsingBean(Class<?> beanClass, String beanName,
+        BeanDefinition beanDefinition) {
         return !isContextBean(beanClass);
     }
     
@@ -46,6 +47,6 @@ public class NacosDuplicateSpringBeanPostProcessor extends AbstractNacosDuplicat
     
     private boolean isContextClass(String beanClassName) {
         return beanClassName.startsWith("org.springframework.context")
-                || beanClassName.startsWith("org.springframework.boot.context");
+            || beanClassName.startsWith("org.springframework.boot.context");
     }
 }

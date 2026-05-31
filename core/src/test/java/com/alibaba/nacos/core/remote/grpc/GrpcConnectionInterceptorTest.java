@@ -34,31 +34,31 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GrpcConnectionInterceptorTest {
-
+    
     @Mock
     private ServerCall<byte[], byte[]> serverCall;
-
+    
     @Mock
     private Metadata headers;
-
+    
     @Mock
     private ServerCallHandler<byte[], byte[]> next;
-
+    
     @Test
     void testInterceptCallWithNonBiStreamService() {
         Attributes attrs = Attributes.newBuilder()
-                .set(GrpcServerConstants.ATTR_TRANS_KEY_CONN_ID, "conn-1")
-                .set(GrpcServerConstants.ATTR_TRANS_KEY_REMOTE_IP, "127.0.0.1")
-                .set(GrpcServerConstants.ATTR_TRANS_KEY_REMOTE_PORT, 9848)
-                .set(GrpcServerConstants.ATTR_TRANS_KEY_LOCAL_PORT, 8848)
-                .build();
+            .set(GrpcServerConstants.ATTR_TRANS_KEY_CONN_ID, "conn-1")
+            .set(GrpcServerConstants.ATTR_TRANS_KEY_REMOTE_IP, "127.0.0.1")
+            .set(GrpcServerConstants.ATTR_TRANS_KEY_REMOTE_PORT, 9848)
+            .set(GrpcServerConstants.ATTR_TRANS_KEY_LOCAL_PORT, 8848)
+            .build();
         when(serverCall.getAttributes()).thenReturn(attrs);
         MethodDescriptor<byte[], byte[]> methodDescriptor = mock(MethodDescriptor.class);
         when(methodDescriptor.getServiceName()).thenReturn("Request");
         when(serverCall.getMethodDescriptor()).thenReturn(methodDescriptor);
         ServerCall.Listener<byte[]> listener = mock(ServerCall.Listener.class);
         when(next.startCall(any(), any())).thenReturn(listener);
-
+        
         ServerInterceptor interceptor = new GrpcConnectionInterceptor();
         ServerCall.Listener<byte[]> result = interceptor.interceptCall(serverCall, headers, next);
         assertNotNull(result);

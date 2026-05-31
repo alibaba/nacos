@@ -47,14 +47,17 @@ public class NacosConsolePathTipFilter implements Filter {
     private static final String NACOS_CONSOLE_DEFAULT_PORT = "8080";
     
     private static final String NACOS_CONSOLE_DEFAULT_PATH = "/";
-
+    
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
-            throws IOException, ServletException {
-        if (servletRequest instanceof HttpServletRequest && servletResponse instanceof HttpServletResponse) {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+        FilterChain filterChain)
+        throws IOException, ServletException {
+        if (servletRequest instanceof HttpServletRequest
+            && servletResponse instanceof HttpServletResponse) {
             HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
             HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
-            String contextPath = normalizeContextPath(EnvUtil.getProperty(NACOS_SERVER_CONTEXT_PATH, NACOS_SERVER_DEFAULT_CONTEXT_PATH));
+            String contextPath = normalizeContextPath(
+                EnvUtil.getProperty(NACOS_SERVER_CONTEXT_PATH, NACOS_SERVER_DEFAULT_CONTEXT_PATH));
             String indexPath = contextPath + "index.html";
             String requestUri = httpServletRequest.getRequestURI();
             if (requestUri.equals(contextPath) || requestUri.equals(indexPath)) {
@@ -79,8 +82,10 @@ public class NacosConsolePathTipFilter implements Filter {
         httpServletResponse.setContentType(MediaType.TEXT_PLAIN);
         String port = EnvUtil.getProperty(NACOS_CONSOLE_PORT, NACOS_CONSOLE_DEFAULT_PORT);
         String consoleContextPath = EnvUtil.getProperty(NACOS_CONSOLE_CONTEXT_PATH);
-        consoleContextPath = StringUtils.isBlank(consoleContextPath) ? NACOS_CONSOLE_DEFAULT_PATH : consoleContextPath;
-        httpServletResponse.getWriter().write(String.format("Nacos Console default port is %s, and the path is %s.", port, consoleContextPath));
+        consoleContextPath = StringUtils.isBlank(consoleContextPath) ? NACOS_CONSOLE_DEFAULT_PATH
+            : consoleContextPath;
+        httpServletResponse.getWriter().write(String.format(
+            "Nacos Console default port is %s, and the path is %s.", port, consoleContextPath));
     }
-
+    
 }

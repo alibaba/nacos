@@ -3,7 +3,6 @@
 export type McpProtocol = 'stdio' | 'mcp-sse' | 'mcp-streamable' | 'http' | 'dubbo' | 'off';
 export type McpStatus = 'ACTIVE' | 'DEPRECATED' | 'DELETED';
 export type McpSearchMode = 'accurate' | 'blur';
-export type McpImportType = 'json' | 'url' | 'file';
 export type McpEndpointType = 'REF' | 'DIRECT';
 
 // ===== Version =====
@@ -215,37 +214,4 @@ export interface McpCreateData {
 export interface McpUpdateData extends McpCreateData {
   latest?: boolean;
   overrideExisting?: boolean;
-}
-
-// ===== Import =====
-
-export interface McpImportData {
-  importType: McpImportType;
-  data: string;
-  namespaceId?: string;
-  overrideExisting?: boolean;
-  validateOnly?: boolean;
-  skipInvalid?: boolean;
-  selectedServers?: string[];
-  cursor?: string;
-  limit?: number;
-  search?: string;
-}
-
-export interface McpImportValidationItem {
-  name: string;
-  valid: boolean;
-  message?: string;
-}
-
-export interface McpImportValidationResult {
-  servers?: McpImportValidationItem[];
-  [key: string]: unknown;
-}
-
-export interface McpImportResponse {
-  success?: number;
-  skip?: number;
-  failed?: number;
-  [key: string]: unknown;
 }

@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClientPublisherInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClientServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSubscriberInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.ClientService;
@@ -27,7 +30,9 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.model.form.ClientServiceForm;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +53,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -79,7 +85,8 @@ class ClientControllerV3Test extends BaseTest {
     
     @BeforeEach
     public void before() {
-        when(clientManager.allClientId()).thenReturn(Arrays.asList("127.0.0.1:8080#test1", "test2#test2"));
+        when(clientManager.allClientId())
+            .thenReturn(Arrays.asList("127.0.0.1:8080#test1", "test2#test2"));
         when(clientManager.contains(anyString())).thenReturn(true);
         mockmvc = MockMvcBuilders.standaloneSetup(clientControllerV3).build();
         ipPortBasedClient = new IpPortBasedClient("127.0.0.1:8080#test1", false);
@@ -88,8 +95,10 @@ class ClientControllerV3Test extends BaseTest {
     
     @Test
     void testGetClientList() throws Exception {
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/list");
-        MockHttpServletResponse response = mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder =
+            MockMvcRequestBuilders.get(URL + "/list");
+        MockHttpServletResponse response =
+            mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         JsonNode jsonNode = JacksonUtils.toObj(response.getContentAsString()).get("data");
         assertEquals(0, jsonNode.size());
@@ -98,9 +107,11 @@ class ClientControllerV3Test extends BaseTest {
     @Test
     void testGetClientDetail() throws Exception {
         when(clientManager.getClient("test1")).thenReturn(ipPortBasedClient);
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL)
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder =
+            MockMvcRequestBuilders.get(URL)
                 .param("clientId", "test1");
-        MockHttpServletResponse response = mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
+        MockHttpServletResponse response =
+            mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
     
@@ -114,11 +125,37 @@ class ClientControllerV3Test extends BaseTest {
         when(clientServiceV2Impl.getPublishedServiceList("test1")).thenReturn(serviceList);
         
         Service service = Service.newService("test", "test", "test");
-        connectionBasedClient.addServiceInstance(service, new InstancePublishInfo("127.0.0.1", 8848));
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/publish/list")
+        connectionBasedClient.addServiceInstance(service,
+            new InstancePublishInfo("127.0.0.1", 8848));
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder =
+            MockMvcRequestBuilders.get(URL + "/publish/list")
                 .param("clientId", "test1");
         mockmvc.perform(mockHttpServletRequestBuilder)
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+    }
+    
+    @Test
+    void testGetSubscribeServiceList() throws Exception {
+        List<ClientServiceInfo> serviceList = new LinkedList<>();
+        serviceList.add(new ClientServiceInfo());
+        serviceList.get(0).setServiceName("test");
+        when(clientServiceV2Impl.getSubscribeServiceList("test1")).thenReturn(serviceList);
+        
+        Result<List<ClientServiceInfo>> actual =
+            clientControllerV3.getSubscribeServiceList("test1");
+        
+        assertEquals(1, actual.getData().size());
+        assertEquals("test", actual.getData().get(0).getServiceName());
+    }
+    
+    @Test
+    void testGetSubscribeServiceListWhenClientMissing() {
+        when(clientManager.contains("missing")).thenReturn(false);
+        
+        NacosApiException actual = assertThrows(NacosApiException.class,
+            () -> clientControllerV3.getSubscribeServiceList("missing"));
+        
+        assertEquals(404, actual.getErrCode());
     }
     
     @Test
@@ -133,14 +170,51 @@ class ClientControllerV3Test extends BaseTest {
         
         when(clientManager.getClient("test1")).thenReturn(connectionBasedClient);
         when(clientManager.getClient("test")).thenReturn(connectionBasedClient);
-        connectionBasedClient.addServiceInstance(service, new InstancePublishInfo("127.0.0.1", 8848));
+        connectionBasedClient.addServiceInstance(service,
+            new InstancePublishInfo("127.0.0.1", 8848));
         
-        when(clientServiceV2Impl.getPublishedClientList(baseTestKey, baseTestKey, baseTestKey, "127.0.0.1",
-                8848)).thenReturn(serviceList);
+        when(clientServiceV2Impl.getPublishedClientList(baseTestKey, baseTestKey, baseTestKey,
+            "127.0.0.1",
+            8848)).thenReturn(serviceList);
         MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(
-                        URL + "/service/publisher/list").param("namespaceId", baseTestKey).param("groupName", baseTestKey)
-                .param("serviceName", baseTestKey).param("ip", "127.0.0.1").param("port", "8848");
+            URL + "/service/publisher/list").param("namespaceId", baseTestKey)
+            .param("groupName", baseTestKey)
+            .param("serviceName", baseTestKey).param("ip", "127.0.0.1").param("port", "8848");
         mockmvc.perform(mockHttpServletRequestBuilder)
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+    }
+    
+    @Test
+    void testGetSubscribeClientList() throws Exception {
+        ClientServiceForm clientServiceForm = new ClientServiceForm();
+        clientServiceForm.setNamespaceId("namespace");
+        clientServiceForm.setGroupName("group");
+        clientServiceForm.setServiceName("service");
+        clientServiceForm.setIp("127.0.0.1");
+        clientServiceForm.setPort(8848);
+        List<ClientSubscriberInfo> subscriberList = new LinkedList<>();
+        subscriberList.add(new ClientSubscriberInfo());
+        subscriberList.get(0).setClientId("test1");
+        when(clientServiceV2Impl.getSubscribeClientList("namespace", "group", "service",
+            "127.0.0.1", 8848)).thenReturn(subscriberList);
+        
+        Result<List<ClientSubscriberInfo>> actual =
+            clientControllerV3.getSubscribeClientList(clientServiceForm);
+        
+        assertEquals(1, actual.getData().size());
+        assertEquals("test1", actual.getData().get(0).getClientId());
+    }
+    
+    @Test
+    void testGetResponsibleServer4Client() {
+        ObjectNode responsibleServer = JacksonUtils.createEmptyJsonNode();
+        responsibleServer.put("responsibleServer", "server-a");
+        when(clientServiceV2Impl.getResponsibleServer4Client("127.0.0.1", "8848"))
+            .thenReturn(responsibleServer);
+        
+        Result<ObjectNode> actual =
+            clientControllerV3.getResponsibleServer4Client("127.0.0.1", "8848");
+        
+        assertEquals("server-a", actual.getData().get("responsibleServer").asText());
     }
 }

@@ -16,23 +16,32 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.constructor.ConstructorException;
+import org.yaml.snakeyaml.nodes.MappingNode;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.Tag;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class YamlParserUtilTest {
     
     private static final String CONFIG_METADATA_STRING =
-            "metadata:\n" + "- dataId: testData1\n" + "  group: testGroup1\n" + "  type: text\n" + "- appName: testAppName\n"
-                    + "  dataId: testData2\n" + "  desc: test desc\n" + "  group: testGroup2\n" + "  type: yaml\n";
+        "metadata:\n" + "- dataId: testData1\n" + "  group: testGroup1\n" + "  type: text\n"
+            + "- appName: testAppName\n"
+            + "  dataId: testData2\n" + "  desc: test desc\n" + "  group: testGroup2\n"
+            + "  type: yaml\n";
     
     private ConfigMetadata.ConfigExportItem item1;
     
@@ -54,6 +63,11 @@ class YamlParserUtilTest {
     }
     
     @Test
+    void testConstructor() {
+        assertNotNull(new YamlParserUtil());
+    }
+    
+    @Test
     void testDumpObject() {
         ConfigMetadata configMetadata = new ConfigMetadata();
         List<ConfigMetadata.ConfigExportItem> configMetadataItems = new ArrayList<>();
@@ -67,7 +81,8 @@ class YamlParserUtilTest {
     
     @Test
     void testLoadObject() {
-        ConfigMetadata configMetadata = YamlParserUtil.loadObject(CONFIG_METADATA_STRING, ConfigMetadata.class);
+        ConfigMetadata configMetadata =
+            YamlParserUtil.loadObject(CONFIG_METADATA_STRING, ConfigMetadata.class);
         assertNotNull(configMetadata);
         
         List<ConfigMetadata.ConfigExportItem> metadataList = configMetadata.getMetadata();
@@ -84,6 +99,26 @@ class YamlParserUtilTest {
         assertThrows(ConstructorException.class, () -> {
             YamlParserUtil.loadObject("name: test", YamlTest.class);
         });
+    }
+    
+    @Test
+    void testConstructYamlConfigMetadataRejectsWrongTag() {
+        Node node = new MappingNode(new Tag("!wrong"), Collections.emptyList(),
+            DumperOptions.FlowStyle.BLOCK);
+        YamlParserUtil.ConstructYamlConfigMetadata construct =
+            new YamlParserUtil.ConstructYamlConfigMetadata();
+        
+        assertThrows(NacosRuntimeException.class, () -> construct.construct(node));
+    }
+    
+    @Test
+    void testConstructYamlConfigMetadataReturnsNullWhenNodeEmpty() {
+        Node node = new MappingNode(YamlParserUtil.YamlParserConstructor.CONFIG_METADATA_TAG,
+            Collections.emptyList(), DumperOptions.FlowStyle.BLOCK);
+        YamlParserUtil.ConstructYamlConfigMetadata construct =
+            new YamlParserUtil.ConstructYamlConfigMetadata();
+        
+        assertNull(construct.construct(node));
     }
     
     private static class YamlTest {

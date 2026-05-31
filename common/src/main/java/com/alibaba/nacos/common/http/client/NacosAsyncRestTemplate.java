@@ -62,7 +62,8 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param query        http query param
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void get(String url, Header header, Query query, Type responseType, Callback<T> callback) {
+    public <T> void get(String url, Header header, Query query, Type responseType,
+        Callback<T> callback) {
         execute(url, HttpMethod.GET, new RequestHttpEntity(header, query), responseType, callback);
     }
     
@@ -83,8 +84,9 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     public <T> void getLarge(String url, Header header, Query query, Object body, Type responseType,
-            Callback<T> callback) {
-        execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseType, callback);
+        Callback<T> callback) {
+        execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseType,
+            callback);
     }
     
     /**
@@ -101,8 +103,10 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void delete(String url, Header header, Query query, Type responseType, Callback<T> callback) {
-        execute(url, HttpMethod.DELETE, new RequestHttpEntity(header, query), responseType, callback);
+    public <T> void delete(String url, Header header, Query query, Type responseType,
+        Callback<T> callback) {
+        execute(url, HttpMethod.DELETE, new RequestHttpEntity(header, query), responseType,
+            callback);
     }
     
     /**
@@ -120,10 +124,12 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void delete(String url, Header header, String body, Type responseType, Callback<T> callback) {
+    public <T> void delete(String url, Header header, String body, Type responseType,
+        Callback<T> callback) {
         execute(url, HttpMethod.DELETE_LARGE,
-                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), Query.EMPTY, body),
-                responseType, callback);
+            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), Query.EMPTY,
+                body),
+            responseType, callback);
     }
     
     /**
@@ -143,8 +149,10 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void put(String url, Header header, Query query, Object body, Type responseType, Callback<T> callback) {
-        execute(url, HttpMethod.PUT, new RequestHttpEntity(header, query, body), responseType, callback);
+    public <T> void put(String url, Header header, Query query, Object body, Type responseType,
+        Callback<T> callback) {
+        execute(url, HttpMethod.PUT, new RequestHttpEntity(header, query, body), responseType,
+            callback);
     }
     
     /**
@@ -166,10 +174,11 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     public <T> void putJson(String url, Header header, Query query, String body, Type responseType,
-            Callback<T> callback) {
+        Callback<T> callback) {
         execute(url, HttpMethod.PUT,
-                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), query, body), responseType,
-                callback);
+            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), query, body),
+            responseType,
+            callback);
     }
     
     /**
@@ -187,9 +196,11 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void putJson(String url, Header header, String body, Type responseType, Callback<T> callback) {
-        execute(url, HttpMethod.PUT, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), body),
-                responseType, callback);
+    public <T> void putJson(String url, Header header, String body, Type responseType,
+        Callback<T> callback) {
+        execute(url, HttpMethod.PUT,
+            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), body),
+            responseType, callback);
     }
     
     /**
@@ -210,11 +221,13 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void putForm(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType,
-            Callback<T> callback) {
+    public <T> void putForm(String url, Header header, Query query, Map<String, String> bodyValues,
+        Type responseType,
+        Callback<T> callback) {
         execute(url, HttpMethod.PUT,
-                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
-                responseType, callback);
+            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+                query, bodyValues),
+            responseType, callback);
     }
     
     /**
@@ -232,11 +245,13 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void putForm(String url, Header header, Map<String, String> bodyValues, Type responseType,
-            Callback<T> callback) {
+    public <T> void putForm(String url, Header header, Map<String, String> bodyValues,
+        Type responseType,
+        Callback<T> callback) {
         execute(url, HttpMethod.PUT,
-                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues),
-                responseType, callback);
+            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+                bodyValues),
+            responseType, callback);
     }
     
     /**
@@ -256,8 +271,10 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void post(String url, Header header, Query query, Object body, Type responseType, Callback<T> callback) {
-        execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body), responseType, callback);
+    public <T> void post(String url, Header header, Query query, Object body, Type responseType,
+        Callback<T> callback) {
+        execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body), responseType,
+            callback);
     }
     
     /**
@@ -279,10 +296,11 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     public <T> void postJson(String url, Header header, Query query, String body, Type responseType,
-            Callback<T> callback) {
+        Callback<T> callback) {
         execute(url, HttpMethod.POST,
-                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), query, body), responseType,
-                callback);
+            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), query, body),
+            responseType,
+            callback);
     }
     
     /**
@@ -300,9 +318,11 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void postJson(String url, Header header, String body, Type responseType, Callback<T> callback) {
-        execute(url, HttpMethod.POST, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), body),
-                responseType, callback);
+    public <T> void postJson(String url, Header header, String body, Type responseType,
+        Callback<T> callback) {
+        execute(url, HttpMethod.POST,
+            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), body),
+            responseType, callback);
     }
     
     /**
@@ -323,11 +343,13 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void postForm(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType,
-            Callback<T> callback) {
+    public <T> void postForm(String url, Header header, Query query, Map<String, String> bodyValues,
+        Type responseType,
+        Callback<T> callback) {
         execute(url, HttpMethod.POST,
-                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
-                responseType, callback);
+            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+                query, bodyValues),
+            responseType, callback);
     }
     
     /**
@@ -345,20 +367,24 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void postForm(String url, Header header, Map<String, String> bodyValues, Type responseType,
-            Callback<T> callback) {
+    public <T> void postForm(String url, Header header, Map<String, String> bodyValues,
+        Type responseType,
+        Callback<T> callback) {
         execute(url, HttpMethod.POST,
-                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues),
-                responseType, callback);
+            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+                bodyValues),
+            responseType, callback);
     }
     
     @SuppressWarnings("unchecked")
-    private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type type,
-            Callback<T> callback) {
+    private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity,
+        Type type,
+        Callback<T> callback) {
         try {
             URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
             if (logger.isDebugEnabled()) {
-                logger.debug("HTTP method: {}, url: {}, body: {}", httpMethod, uri, requestEntity.getBody());
+                logger.debug("HTTP method: {}, url: {}, body: {}", httpMethod, uri,
+                    requestEntity.getBody());
             }
             ResponseHandler<T> responseHandler = super.selectResponseHandler(type);
             clientRequest.execute(uri, httpMethod, requestEntity, responseHandler, callback);

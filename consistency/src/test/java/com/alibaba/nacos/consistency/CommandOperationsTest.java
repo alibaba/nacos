@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CommandOperationsTest {
-
+    
     @Test
     void testExecuteDefault() {
         CommandOperations ops = new CommandOperations() {

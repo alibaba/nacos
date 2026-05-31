@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -64,28 +65,33 @@ public class CapacityControllerV3 {
     /**
      * Get capacity information.
      */
+    @Since("3.0.0")
     @GetMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
-            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+        signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Capacity> getCapacity(@RequestParam(required = false) String groupName,
-            @RequestParam(required = false) String namespaceId) throws NacosApiException {
+        @RequestParam(required = false) String namespaceId) throws NacosApiException {
         if (StringUtils.isBlank(groupName) && StringUtils.isBlank(namespaceId)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "At least one of the parameters (groupName or namespaceId) must be provided");
+                "At least one of the parameters (groupName or namespaceId) must be provided");
         }
         
         try {
             Capacity capacity = capacityService.getCapacityWithDefault(groupName, namespaceId);
             if (capacity == null) {
-                LOGGER.warn("[getCapacity] capacity not exist，need init groupName: {}, namespaceId: {}", groupName,
-                        namespaceId);
+                LOGGER.warn(
+                    "[getCapacity] capacity not exist，need init groupName: {}, namespaceId: {}",
+                    groupName,
+                    namespaceId);
                 capacityService.initCapacity(groupName, namespaceId);
                 capacity = capacityService.getCapacityWithDefault(groupName, namespaceId);
             }
             return Result.success(capacity);
         } catch (Exception e) {
-            LOGGER.error("[getCapacity] Failed to fetch capacity for groupName: {}, namespaceId: {}", groupName,
-                    namespaceId, e);
+            LOGGER.error(
+                "[getCapacity] Failed to fetch capacity for groupName: {}, namespaceId: {}",
+                groupName,
+                namespaceId, e);
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), e.getMessage(), null);
         }
     }
@@ -93,10 +99,12 @@ public class CapacityControllerV3 {
     /**
      * Modify group or capacity of namespaceId, and init record when capacity information are still initial.
      */
+    @Since("3.0.0")
     @PostMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
-            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> updateCapacity(UpdateCapacityForm updateCapacityForm) throws NacosApiException {
+        signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> updateCapacity(UpdateCapacityForm updateCapacityForm)
+        throws NacosApiException {
         updateCapacityForm.checkNamespaceIdAndGroupName(capacityService);
         updateCapacityForm.validate();
         
@@ -108,18 +116,24 @@ public class CapacityControllerV3 {
         Integer maxAggrSize = updateCapacityForm.getMaxAggrSize();
         
         try {
-            boolean isSuccess = capacityService.insertOrUpdateCapacity(groupName, namespaceId, quota, maxSize,
+            boolean isSuccess =
+                capacityService.insertOrUpdateCapacity(groupName, namespaceId, quota, maxSize,
                     maxAggrCount, maxAggrSize);
             if (isSuccess) {
                 return Result.success(true);
             } else {
                 return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
-                        String.format("Failed to update the capacity for groupName: %s, namespaceId: %s", groupName,
-                                namespaceId), null);
+                    String.format(
+                        "Failed to update the capacity for groupName: %s, namespaceId: %s",
+                        groupName,
+                        namespaceId),
+                    null);
             }
         } catch (Exception e) {
-            LOGGER.error("[updateCapacity] Failed to update the capacity for groupName: {}, namespaceId: {}", groupName,
-                    namespaceId, e);
+            LOGGER.error(
+                "[updateCapacity] Failed to update the capacity for groupName: {}, namespaceId: {}",
+                groupName,
+                namespaceId, e);
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), e.getMessage(), null);
         }
     }

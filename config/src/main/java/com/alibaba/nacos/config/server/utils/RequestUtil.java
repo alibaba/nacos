@@ -41,9 +41,11 @@ public class RequestUtil {
      * @return remote ip address.
      */
     public static String getRemoteIp(HttpServletRequest request) {
-        String remoteIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getSourceIp();
+        String remoteIp =
+            RequestContextHolder.getContext().getBasicContext().getAddressContext().getSourceIp();
         if (StringUtils.isBlank(remoteIp)) {
-            remoteIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getRemoteIp();
+            remoteIp = RequestContextHolder.getContext().getBasicContext().getAddressContext()
+                .getRemoteIp();
         }
         if (StringUtils.isBlank(remoteIp)) {
             remoteIp = WebUtils.getRemoteIp(request);
@@ -73,11 +75,12 @@ public class RequestUtil {
      * @return may be return null
      */
     public static String getSrcUserName(HttpServletRequest request) {
-        IdentityContext identityContext = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+        IdentityContext identityContext =
+            RequestContextHolder.getContext().getAuthContext().getIdentityContext();
         String result = StringUtils.EMPTY;
         if (null != identityContext) {
             result = (String) identityContext.getParameter(
-                    com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID);
+                com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID);
         }
         // If auth is disabled, get username from parameters by agreed key
         return StringUtils.isBlank(result) ? request.getParameter(Constants.USERNAME) : result;

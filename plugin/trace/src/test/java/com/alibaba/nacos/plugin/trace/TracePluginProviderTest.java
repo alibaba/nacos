@@ -18,9 +18,11 @@ package com.alibaba.nacos.plugin.trace;
 
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,34 +34,56 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @author WangzJi
  */
 class TracePluginProviderTest {
-
+    
     private TracePluginProvider provider;
-
+    
     @BeforeEach
     void setUp() {
         provider = new TracePluginProvider();
     }
-
+    
     @Test
     void getPluginTypeTest() {
         PluginType pluginType = provider.getPluginType();
-
+        
         assertNotNull(pluginType);
         assertEquals(PluginType.TRACE, pluginType);
         assertEquals("trace", pluginType.getType());
     }
-
+    
     @Test
     void getAllPluginsTest() {
         Map<String, NacosTraceSubscriber> plugins = provider.getAllPlugins();
-
+        
         assertNotNull(plugins);
     }
-
+    
     @Test
     void getOrderTest() {
         int order = provider.getOrder();
-
+        
         assertEquals(0, order);
+    }
+    
+    @Test
+    void testSubscriberDefaultExecutor() {
+        NacosTraceSubscriber subscriber = new NacosTraceSubscriber() {
+            
+            @Override
+            public String getName() {
+                return "test";
+            }
+            
+            @Override
+            public void onEvent(com.alibaba.nacos.common.trace.event.TraceEvent event) {
+            }
+            
+            @Override
+            public java.util.List<Class<? extends com.alibaba.nacos.common.trace.event.TraceEvent>> subscribeTypes() {
+                return Collections.emptyList();
+            }
+        };
+        
+        Assertions.assertNull(subscriber.executor());
     }
 }

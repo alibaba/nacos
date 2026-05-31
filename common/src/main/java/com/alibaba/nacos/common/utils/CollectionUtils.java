@@ -41,7 +41,7 @@ public final class CollectionUtils {
      * Constant to avoid repeated object creation.
      */
     private static final Integer INTEGER_ONE = 1;
-
+    
     private CollectionUtils() {
     }
     
@@ -118,7 +118,8 @@ public final class CollectionUtils {
             try {
                 return Array.get(object, index);
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Unsupported object type: " + object.getClass().getName());
+                throw new IllegalArgumentException(
+                    "Unsupported object type: " + object.getClass().getName());
             }
         }
     }
@@ -166,7 +167,8 @@ public final class CollectionUtils {
             try {
                 total = Array.getLength(object);
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Unsupported object type: " + object.getClass().getName());
+                throw new IllegalArgumentException(
+                    "Unsupported object type: " + object.getClass().getName());
             }
         }
         return total;
@@ -196,7 +198,8 @@ public final class CollectionUtils {
             try {
                 return Array.getLength(object) == 0;
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Unsupported object type: " + object.getClass().getName());
+                throw new IllegalArgumentException(
+                    "Unsupported object type: " + object.getClass().getName());
             }
         }
     }
@@ -270,7 +273,8 @@ public final class CollectionUtils {
      */
     public static <T> List<T> list(T... elements) {
         if (elements == null) {
-            throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
+            throw new IllegalArgumentException(
+                "Expected an array of elements (or empty array) but received a null.");
         }
         ArrayList<T> list = new ArrayList<>(elements.length);
         Collections.addAll(list, elements);
@@ -285,7 +289,8 @@ public final class CollectionUtils {
      */
     public static <T> Set<T> set(T... elements) {
         if (elements == null) {
-            throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
+            throw new IllegalArgumentException(
+                "Expected an array of elements (or empty array) but received a null.");
         } else {
             return new LinkedHashSet<>(Arrays.asList(elements));
         }
@@ -347,7 +352,7 @@ public final class CollectionUtils {
      */
     public static Map getCardinalityMap(final Collection coll) {
         Map count = new HashMap(coll.size());
-        for (Iterator it = coll.iterator(); it.hasNext(); ) {
+        for (Iterator it = coll.iterator(); it.hasNext();) {
             Object obj = it.next();
             Integer c = (Integer) (count.get(obj));
             if (c == null) {

@@ -97,8 +97,10 @@ public class ConfigInfoStateWrapper implements Serializable {
             return false;
         }
         ConfigInfoStateWrapper that = (ConfigInfoStateWrapper) o;
-        return id == that.id && lastModified == that.lastModified && Objects.equals(dataId, that.dataId)
-                && Objects.equals(group, that.group) && Objects.equals(tenant, that.tenant) && Objects.equals(md5,
+        return id == that.id && lastModified == that.lastModified
+            && Objects.equals(dataId, that.dataId)
+            && Objects.equals(group, that.group) && Objects.equals(tenant, that.tenant)
+            && Objects.equals(md5,
                 that.md5);
     }
     

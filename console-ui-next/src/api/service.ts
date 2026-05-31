@@ -7,6 +7,7 @@ import type {
   ServiceFormData,
   ClusterUpdateData,
   InstanceListResponse,
+  InstanceDeleteData,
   InstanceUpdateData,
   SubscriberListResponse,
 } from '@/types/service';
@@ -54,6 +55,10 @@ export const serviceApi = {
   // Update instance
   updateInstance: (data: InstanceUpdateData): ApiResult<string> =>
     client.put('v3/console/ns/instance', data) as ApiResult<string>,
+
+  // Delete instance
+  deleteInstance: (params: InstanceDeleteData): ApiResult<string> =>
+    client.delete('v3/console/ns/instance', { params }) as ApiResult<string>,
 
   // List subscribers
   listSubscribers: (params: {

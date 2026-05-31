@@ -31,5 +31,4 @@ public class RequestConstant {
     
     public static final String PORT_KEY = "port";
     
-    
 }

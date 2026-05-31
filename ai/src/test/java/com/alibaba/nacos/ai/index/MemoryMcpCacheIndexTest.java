@@ -176,7 +176,7 @@ class MemoryMcpCacheIndexTest {
         // 验证缓存大小不超过限制，并且缓存功能正常
         int finalSize = cache.getSize();
         assertTrue(finalSize <= props.getMaxSize(),
-                "Cache size " + finalSize + " should not exceed maxSize " + props.getMaxSize());
+            "Cache size " + finalSize + " should not exceed maxSize " + props.getMaxSize());
         
         // 验证缓存仍然可以正常工作
         if (finalSize > 0) {
@@ -530,7 +530,8 @@ class MemoryMcpCacheIndexTest {
     
     @Test
     void testShutdownTimeout() throws InterruptedException {
-        ScheduledExecutorService executorService = (ScheduledExecutorService) ReflectionTestUtils.getField(cache,
+        ScheduledExecutorService executorService =
+            (ScheduledExecutorService) ReflectionTestUtils.getField(cache,
                 "cleanupScheduler");
         executorService.shutdownNow();
         ScheduledExecutorService mockExecutorService = Mockito.mock(ScheduledExecutorService.class);
@@ -541,11 +542,13 @@ class MemoryMcpCacheIndexTest {
     
     @Test
     void testShutdownWithInterruptedException() throws InterruptedException {
-        ScheduledExecutorService executorService = (ScheduledExecutorService) ReflectionTestUtils.getField(cache,
+        ScheduledExecutorService executorService =
+            (ScheduledExecutorService) ReflectionTestUtils.getField(cache,
                 "cleanupScheduler");
         executorService.shutdownNow();
         ScheduledExecutorService mockExecutorService = Mockito.mock(ScheduledExecutorService.class);
-        when(mockExecutorService.awaitTermination(anyLong(), any())).thenThrow(new InterruptedException());
+        when(mockExecutorService.awaitTermination(anyLong(), any()))
+            .thenThrow(new InterruptedException());
         ReflectionTestUtils.setField(cache, "cleanupScheduler", mockExecutorService);
         cache.shutdown();
         verify(mockExecutorService).shutdownNow();
@@ -642,7 +645,8 @@ class MemoryMcpCacheIndexTest {
             
             // 轮询等待id1过期，避免固定sleep导致秒级边界抖动
             long deadline = System.currentTimeMillis() + 3000;
-            while (mixedCache.getMcpId("ns1", "name1") != null && System.currentTimeMillis() < deadline) {
+            while (mixedCache.getMcpId("ns1", "name1") != null
+                && System.currentTimeMillis() < deadline) {
                 Thread.sleep(50);
             }
             
@@ -759,7 +763,8 @@ class MemoryMcpCacheIndexTest {
             // Manually invoke cleanup — should return early due to shutdown flag
             invokeCleanupExpiredEntries(testCache);
         } finally {
-            ScheduledExecutorService cleanupScheduler = (ScheduledExecutorService) ReflectionTestUtils.getField(testCache,
+            ScheduledExecutorService cleanupScheduler =
+                (ScheduledExecutorService) ReflectionTestUtils.getField(testCache,
                     "cleanupScheduler");
             cleanupScheduler.shutdownNow();
         }

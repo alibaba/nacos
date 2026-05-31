@@ -57,7 +57,6 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH
 import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -77,8 +76,10 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
     
     @BeforeEach
     void before() {
-        configFuzzyWatchGroupKeyHolder = new ConfigFuzzyWatchGroupKeyHolder(rpcTransportClient, clientId);
-        doReturn(true).when(rpcTransportClient).isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH);
+        configFuzzyWatchGroupKeyHolder =
+            new ConfigFuzzyWatchGroupKeyHolder(rpcTransportClient, clientId);
+        Mockito.lenient().doReturn(true).when(rpcTransportClient)
+            .isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH);
     }
     
     @AfterEach
@@ -95,42 +96,51 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         
         AtomicInteger watcher1Flag = new AtomicInteger(0);
         AtomicInteger watcher2Flag = new AtomicInteger(0);
-        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(dataId + "*", group, new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-                watcher1Flag.incrementAndGet();
-            }
-        });
+        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(dataId + "*", group,
+            new AbstractFuzzyWatchEventWatcher() {
+                
+                @Override
+                public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                    watcher1Flag.incrementAndGet();
+                }
+            });
         
-        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(dataId + "*", group, new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-                watcher2Flag.incrementAndGet();
-            }
-        });
+        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(dataId + "*", group,
+            new AbstractFuzzyWatchEventWatcher() {
+                
+                @Override
+                public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                    watcher2Flag.incrementAndGet();
+                }
+            });
         
         String groupKey1 = GroupKey.getKeyTenant(dataId + 1, group, tenant);
         //build init notify add
         Set<ConfigFuzzyWatchSyncRequest.Context> contexts = new HashSet<>();
         contexts.add(ConfigFuzzyWatchSyncRequest.Context.build(groupKey1, ADD_CONFIG));
         String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataId + "*", group, tenant);
-        ConfigFuzzyWatchSyncRequest initNotifyRequest = ConfigFuzzyWatchSyncRequest.buildSyncRequest(
+        ConfigFuzzyWatchSyncRequest initNotifyRequest =
+            ConfigFuzzyWatchSyncRequest.buildSyncRequest(
                 FUZZY_WATCH_INIT_NOTIFY, contexts, groupKeyPattern, 1, 1);
         configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(initNotifyRequest);
         //check watcher notified
-        awaitCondition(() -> watcher1Flag.get() == 1, 3000L, "watcher1 should be notified once by init notify");
+        awaitCondition(() -> watcher1Flag.get() == 1, 3000L,
+            "watcher1 should be notified once by init notify");
         
         //build change notify add
         String changedGroupKey2Add = GroupKey.getKeyTenant(dataId + 2, group, tenant);
-        ConfigFuzzyWatchChangeNotifyRequest changedNotifyRequest = new ConfigFuzzyWatchChangeNotifyRequest(
+        ConfigFuzzyWatchChangeNotifyRequest changedNotifyRequest =
+            new ConfigFuzzyWatchChangeNotifyRequest(
                 changedGroupKey2Add, ADD_CONFIG);
         configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(changedNotifyRequest);
         
         //check watcher notified
-        awaitCondition(() -> watcher1Flag.get() == 2, 3000L, "watcher1 should be notified once by add notify");
+        awaitCondition(() -> watcher1Flag.get() == 2, 3000L,
+            "watcher1 should be notified once by add notify");
         
         //check not complete future timeout
-        ConfigFuzzyWatchContext configFuzzyWatchContext = configFuzzyWatchGroupKeyHolder.getFuzzyListenContext(
+        ConfigFuzzyWatchContext configFuzzyWatchContext =
+            configFuzzyWatchGroupKeyHolder.getFuzzyListenContext(
                 dataId + "*", group);
         Future<Set<String>> newFutureNotFinish = configFuzzyWatchContext.createNewFuture();
         try {
@@ -143,16 +153,19 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         }
         
         // build init finish notify
-        ConfigFuzzyWatchSyncRequest configFuzzyWatchSyncRequest = ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
+        ConfigFuzzyWatchSyncRequest configFuzzyWatchSyncRequest =
+            ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
                 groupKeyPattern);
-        configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(configFuzzyWatchSyncRequest);
+        configFuzzyWatchGroupKeyHolder
+            .handleFuzzyWatchSyncNotifyRequest(configFuzzyWatchSyncRequest);
         
         //check a completed future.
         Future<Set<String>> newFutureFinish = configFuzzyWatchContext.createNewFuture();
         try {
             Set<String> groupKeys = newFutureFinish.get(10L, TimeUnit.MILLISECONDS);
             Assertions.assertTrue(
-                    groupKeys != null && groupKeys.contains(groupKey1) && groupKeys.contains(changedGroupKey2Add));
+                groupKeys != null && groupKeys.contains(groupKey1)
+                    && groupKeys.contains(changedGroupKey2Add));
         } catch (Exception e) {
             Assertions.assertTrue(false);
         }
@@ -165,18 +178,22 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         //build change notify
         String changedGroupKey2Delete = changedGroupKey2Add;
         
-        ConfigFuzzyWatchChangeNotifyRequest changedNotifyRequestDelete = new ConfigFuzzyWatchChangeNotifyRequest(
+        ConfigFuzzyWatchChangeNotifyRequest changedNotifyRequestDelete =
+            new ConfigFuzzyWatchChangeNotifyRequest(
                 changedGroupKey2Delete, DELETE_CONFIG);
-        configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(changedNotifyRequestDelete);
+        configFuzzyWatchGroupKeyHolder
+            .handlerFuzzyWatchChangeNotifyRequest(changedNotifyRequestDelete);
         //check watcher notified delete
-        awaitCondition(() -> watcher1Flag.get() == 3, 3000L, "watcher1 should be notified once by delete notify");
+        awaitCondition(() -> watcher1Flag.get() == 3, 3000L,
+            "watcher1 should be notified once by delete notify");
         
         Future<Set<String>> newFuture = configFuzzyWatchContext.createNewFuture();
         
         try {
             Set<String> groupKeys = newFuture.get(10L, TimeUnit.MILLISECONDS);
             Assertions.assertTrue(
-                    groupKeys != null && groupKeys.contains(groupKey1) && !groupKeys.contains(changedGroupKey2Delete));
+                groupKeys != null && groupKeys.contains(groupKey1)
+                    && !groupKeys.contains(changedGroupKey2Delete));
         } catch (Exception e) {
             Assertions.assertTrue(false);
         }
@@ -185,13 +202,16 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         String groupKey1Delete = groupKey1;
         //build init notify add
         Set<ConfigFuzzyWatchSyncRequest.Context> contextsDelete = new HashSet<>();
-        contextsDelete.add(ConfigFuzzyWatchSyncRequest.Context.build(groupKey1Delete, DELETE_CONFIG));
-        ConfigFuzzyWatchSyncRequest deleteNotifyRequest = ConfigFuzzyWatchSyncRequest.buildSyncRequest(
+        contextsDelete
+            .add(ConfigFuzzyWatchSyncRequest.Context.build(groupKey1Delete, DELETE_CONFIG));
+        ConfigFuzzyWatchSyncRequest deleteNotifyRequest =
+            ConfigFuzzyWatchSyncRequest.buildSyncRequest(
                 FUZZY_WATCH_DIFF_SYNC_NOTIFY, contextsDelete, groupKeyPattern, 1, 1);
         configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(deleteNotifyRequest);
         
         //check watcher notified delete
-        awaitCondition(() -> watcher1Flag.get() == 4, 3000L, "watcher1 should be notified by sync delete");
+        awaitCondition(() -> watcher1Flag.get() == 4, 3000L,
+            "watcher1 should be notified by sync delete");
         
         Future<Set<String>> newFutureEmpty = configFuzzyWatchContext.createNewFuture();
         
@@ -210,34 +230,41 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
     void testExecuteConfigFuzzyListen() throws NacosException {
         when(rpcTransportClient.getTenant()).thenReturn(tenant);
         
-        ConfigFuzzyWatchContext configFuzzyWatchContext = configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("da1*",
+        ConfigFuzzyWatchContext configFuzzyWatchContext =
+            configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("da1*",
                 "group*", new AbstractFuzzyWatchEventWatcher() {
+                    
                     @Override
                     public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-                    
+                        
                     }
                 });
         configFuzzyWatchContext.setConsistentWithServer(true);
         
-        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("da2*", "group*", new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-            
-            }
-        });
+        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("da2*", "group*",
+            new AbstractFuzzyWatchEventWatcher() {
+                
+                @Override
+                public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                    
+                }
+            });
         
-        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("da3*", "group*", new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-            
-            }
-        });
+        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("da3*", "group*",
+            new AbstractFuzzyWatchEventWatcher() {
+                
+                @Override
+                public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                    
+                }
+            });
         
         RpcClient rpcClient = Mockito.mock(RpcClient.class);
         when(rpcTransportClient.ensureRpcClient(eq("0"))).thenReturn(rpcClient);
         ThreadPoolExecutor scheduledExecutorService = Mockito.mock(ThreadPoolExecutor.class);
         when(rpcTransportClient.getExecutor()).thenReturn(scheduledExecutorService);
-        when(scheduledExecutorService.submit(any(Runnable.class))).thenReturn(Mockito.mock(Future.class));
+        when(scheduledExecutorService.submit(any(Runnable.class)))
+            .thenReturn(Mockito.mock(Future.class));
         configFuzzyWatchGroupKeyHolder.executeConfigFuzzyListen();
         
         verify(scheduledExecutorService, times(2)).submit(ArgumentMatchers.any(Runnable.class));
@@ -249,11 +276,13 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         reset(rpcTransportClient);
         String envName = "name";
         String groupKeyPattern = "pattern";
-        ConfigFuzzyWatchContext configFuzzyWatchContext = new ConfigFuzzyWatchContext(envName, groupKeyPattern);
+        ConfigFuzzyWatchContext configFuzzyWatchContext =
+            new ConfigFuzzyWatchContext(envName, groupKeyPattern);
         configFuzzyWatchContext.refreshOverLimitTs();
         RpcClient rpcClient = Mockito.mock(RpcClient.class);
         
-        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class))).thenReturn(
+        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class)))
+            .thenReturn(
                 new ConfigFuzzyWatchResponse());
         configFuzzyWatchGroupKeyHolder.executeFuzzyWatchRequest(configFuzzyWatchContext, rpcClient);
         
@@ -265,22 +294,27 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
     @Test
     void testExecuteFuzzyWatchRequestRemove() throws NacosException {
         
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-            
-            }
-        };
-        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("*", "*", abstractFuzzyWatchEventWatcher);
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
+            new AbstractFuzzyWatchEventWatcher() {
+                
+                @Override
+                public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                    
+                }
+            };
+        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("*", "*",
+            abstractFuzzyWatchEventWatcher);
         configFuzzyWatchGroupKeyHolder.removeFuzzyWatcher("*", "*", abstractFuzzyWatchEventWatcher);
         
         RpcClient rpcClient = Mockito.mock(RpcClient.class);
-        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class))).thenReturn(
+        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class)))
+            .thenReturn(
                 new ConfigFuzzyWatchResponse());
         configFuzzyWatchGroupKeyHolder.executeFuzzyWatchRequest(
-                configFuzzyWatchGroupKeyHolder.getFuzzyListenContext("*", "*"), rpcClient);
+            configFuzzyWatchGroupKeyHolder.getFuzzyListenContext("*", "*"), rpcClient);
         
-        Assertions.assertTrue(configFuzzyWatchGroupKeyHolder.getFuzzyListenContext("*", "*") == null);
+        Assertions
+            .assertTrue(configFuzzyWatchGroupKeyHolder.getFuzzyListenContext("*", "*") == null);
         
     }
     
@@ -290,23 +324,26 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         AtomicBoolean patternOvrFlag = new AtomicBoolean(false);
         AtomicBoolean configCountOverFlag = new AtomicBoolean(false);
         
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-            
-            }
-            
-            @Override
-            public void onPatternOverLimit() {
-                patternOvrFlag.set(true);
-            }
-            
-            @Override
-            public void onConfigReachUpLimit() {
-                configCountOverFlag.set(true);
-            }
-        };
-        ConfigFuzzyWatchContext configFuzzyWatchContext = configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("*", "*",
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
+            new AbstractFuzzyWatchEventWatcher() {
+                
+                @Override
+                public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                    
+                }
+                
+                @Override
+                public void onPatternOverLimit() {
+                    patternOvrFlag.set(true);
+                }
+                
+                @Override
+                public void onConfigReachUpLimit() {
+                    configCountOverFlag.set(true);
+                }
+            };
+        ConfigFuzzyWatchContext configFuzzyWatchContext =
+            configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("*", "*",
                 abstractFuzzyWatchEventWatcher);
         
         RpcClient rpcClient = Mockito.mock(RpcClient.class);
@@ -314,13 +351,15 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         //test pattern over load
         ConfigFuzzyWatchResponse overloadResponse = new ConfigFuzzyWatchResponse();
         overloadResponse.setErrorInfo(FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(),
-                FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg());
-        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class))).thenReturn(
+            FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg());
+        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class)))
+            .thenReturn(
                 overloadResponse);
         configFuzzyWatchGroupKeyHolder.executeFuzzyWatchRequest(configFuzzyWatchContext, rpcClient);
         awaitCondition(configFuzzyWatchContext::patternLimitSuppressed, 3000L,
-                "pattern limit suppression should be set");
-        awaitCondition(patternOvrFlag::get, 3000L, "pattern over-limit callback should be triggered");
+            "pattern limit suppression should be set");
+        awaitCondition(patternOvrFlag::get, 3000L,
+            "pattern over-limit callback should be triggered");
         Assertions.assertTrue(configFuzzyWatchContext.patternLimitSuppressed());
         Assertions.assertTrue(!configFuzzyWatchContext.isConsistentWithServer());
         Assertions.assertTrue(patternOvrFlag.get());
@@ -329,11 +368,13 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         configFuzzyWatchContext.clearOverLimitTs();
         ConfigFuzzyWatchResponse countOverloadResponse = new ConfigFuzzyWatchResponse();
         countOverloadResponse.setErrorInfo(FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(),
-                FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg());
-        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class))).thenReturn(
+            FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg());
+        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class)))
+            .thenReturn(
                 countOverloadResponse);
         configFuzzyWatchGroupKeyHolder.executeFuzzyWatchRequest(configFuzzyWatchContext, rpcClient);
-        awaitCondition(configCountOverFlag::get, 3000L, "config count over-limit callback should be triggered");
+        awaitCondition(configCountOverFlag::get, 3000L,
+            "config count over-limit callback should be triggered");
         Assertions.assertTrue(configFuzzyWatchContext.patternLimitSuppressed());
         Assertions.assertTrue(!configFuzzyWatchContext.isConsistentWithServer());
         Assertions.assertTrue(configCountOverFlag.get());
@@ -348,29 +389,34 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         
         AtomicInteger watcherFlag = new AtomicInteger(0);
         
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
-            
-            @Override
-            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-                int get = watcherFlag.incrementAndGet();
-                if (get < 2) {
-                    System.out.println("times " + get + " fail");
-                    throw new RuntimeException("mock exception");
-                } else {
-                    System.out.println("times " + get + " success");
-                    
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
+            new AbstractFuzzyWatchEventWatcher() {
+                
+                @Override
+                public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                    int get = watcherFlag.incrementAndGet();
+                    if (get < 2) {
+                        System.out.println("times " + get + " fail");
+                        throw new RuntimeException("mock exception");
+                    } else {
+                        System.out.println("times " + get + " success");
+                        
+                    }
                 }
-            }
-        };
+            };
         
-        ConfigFuzzyWatchContext configFuzzyWatchContext = configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(
+        ConfigFuzzyWatchContext configFuzzyWatchContext =
+            configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(
                 "dataIdName*", "group", abstractFuzzyWatchEventWatcher);
         
-        ConfigFuzzyWatchChangeNotifyRequest configFuzzyWatchChangeNotifyRequest = new ConfigFuzzyWatchChangeNotifyRequest(
+        ConfigFuzzyWatchChangeNotifyRequest configFuzzyWatchChangeNotifyRequest =
+            new ConfigFuzzyWatchChangeNotifyRequest(
                 groupKey, ADD_CONFIG);
-        configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(configFuzzyWatchChangeNotifyRequest);
+        configFuzzyWatchGroupKeyHolder
+            .handlerFuzzyWatchChangeNotifyRequest(configFuzzyWatchChangeNotifyRequest);
         
-        awaitCondition(() -> watcherFlag.get() == 1, 3000L, "first notify should happen before retry sync");
+        awaitCondition(() -> watcherFlag.get() == 1, 3000L,
+            "first notify should happen before retry sync");
         
         //notify 1, fail
         configFuzzyWatchContext.syncFuzzyWatchers();
@@ -383,8 +429,9 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         //expect  2 times notified
         Assertions.assertEquals(2, watcherFlag.get());
     }
-
-    private void awaitCondition(BooleanSupplier condition, long timeoutMs, String message) throws InterruptedException {
+    
+    private void awaitCondition(BooleanSupplier condition, long timeoutMs, String message)
+        throws InterruptedException {
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
             TimeUnit.MILLISECONDS.sleep(20L);
@@ -394,15 +441,166 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
     
     @Test
     void testFuzzyWatchNotSupport() {
-        when(rpcTransportClient.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH)).thenReturn(false);
+        when(rpcTransportClient.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH))
+            .thenReturn(false);
         Assertions.assertThrows(NacosRuntimeException.class, () -> {
             configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("dataIdName*", "group",
-                    new AbstractFuzzyWatchEventWatcher() {
-                        
-                        @Override
-                        public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-                        }
-                    });
+                new AbstractFuzzyWatchEventWatcher() {
+                    
+                    @Override
+                    public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                    }
+                });
         });
+    }
+    
+    @Test
+    void testRegisterFuzzyWatcherWithExistingReceivedKeysPublishesInitEvents()
+        throws InterruptedException {
+        when(rpcTransportClient.getTenant()).thenReturn(tenant);
+        // First register and seed received group keys via change notify
+        AtomicInteger watcherFlag = new AtomicInteger(0);
+        AbstractFuzzyWatchEventWatcher watcher = new AbstractFuzzyWatchEventWatcher() {
+            
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                watcherFlag.incrementAndGet();
+            }
+        };
+        ConfigFuzzyWatchContext ctx =
+            configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("d*", "group", watcher);
+        // Inject a received group key
+        String groupKey = GroupKey.getKeyTenant("d1", "group", tenant);
+        configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(
+            new ConfigFuzzyWatchChangeNotifyRequest(groupKey, ADD_CONFIG));
+        awaitCondition(() -> ctx.getReceivedGroupKeys().contains(groupKey), 3000L,
+            "received group key should be added");
+        // Now register a NEW watcher that should receive init events for existing keys
+        AtomicInteger watcher2Flag = new AtomicInteger(0);
+        AbstractFuzzyWatchEventWatcher watcher2 = new AbstractFuzzyWatchEventWatcher() {
+            
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                watcher2Flag.incrementAndGet();
+            }
+        };
+        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("d*", "group", watcher2);
+        awaitCondition(() -> watcher2Flag.get() >= 1, 3000L,
+            "watcher2 should be init-notified for existing key");
+    }
+    
+    @Test
+    void testHandleFuzzyWatchSyncNotifyRequestDefaultCase() throws Exception {
+        when(rpcTransportClient.getTenant()).thenReturn(tenant);
+        // Register a watcher to create a context
+        configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("foo*", "group",
+            new AbstractFuzzyWatchEventWatcher() {
+                
+                @Override
+                public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                }
+            });
+        String pattern = FuzzyGroupKeyPattern.generatePattern("foo*", "group", tenant);
+        // Build a sync request with an unknown change type to hit the default branch
+        Set<ConfigFuzzyWatchSyncRequest.Context> contexts = new HashSet<>();
+        contexts.add(ConfigFuzzyWatchSyncRequest.Context.build(
+            GroupKey.getKeyTenant("foo1", "group", tenant), "UNKNOWN_TYPE"));
+        ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildSyncRequest(
+            FUZZY_WATCH_DIFF_SYNC_NOTIFY, contexts, pattern, 1, 1);
+        // Should not throw; default branch just warns
+        configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(request);
+    }
+    
+    @Test
+    void testRemoveFuzzyWatcherNoContextNoOp() {
+        // No registered watcher → context is null, removeFuzzyWatcher is a no-op
+        configFuzzyWatchGroupKeyHolder.removeFuzzyWatcher("nonexist*", "group", null);
+    }
+    
+    @Test
+    void testHandlerFuzzyWatchChangeNotifyRequestDeleteWithReceived()
+        throws InterruptedException {
+        when(rpcTransportClient.getTenant()).thenReturn(tenant);
+        AtomicInteger watcherFlag = new AtomicInteger(0);
+        ConfigFuzzyWatchContext ctx = configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("d*",
+            "group", new AbstractFuzzyWatchEventWatcher() {
+                
+                @Override
+                public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                    watcherFlag.incrementAndGet();
+                }
+            });
+        String groupKey = GroupKey.getKeyTenant("d1", "group", tenant);
+        // Add then delete
+        configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(
+            new ConfigFuzzyWatchChangeNotifyRequest(groupKey, ADD_CONFIG));
+        awaitCondition(() -> ctx.getReceivedGroupKeys().contains(groupKey), 3000L,
+            "received group key should be added");
+        configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(
+            new ConfigFuzzyWatchChangeNotifyRequest(groupKey, DELETE_CONFIG));
+        awaitCondition(() -> !ctx.getReceivedGroupKeys().contains(groupKey), 3000L,
+            "received group key should be removed after DELETE_CONFIG");
+    }
+    
+    @Test
+    void testOnEventDifferentClientUuidEarlyReturn() {
+        // Build event with a different clientUuid; onEvent should early return
+        ConfigFuzzyWatchNotifyEvent ev = ConfigFuzzyWatchNotifyEvent.buildEvent(
+            "g:d:t", "p", ADD_CONFIG, FUZZY_WATCH_INIT_NOTIFY, "other-uuid");
+        Assertions.assertDoesNotThrow(() -> configFuzzyWatchGroupKeyHolder.onEvent(ev));
+        ConfigFuzzyWatchLoadEvent loadEv = ConfigFuzzyWatchLoadEvent.buildEvent(
+            FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(), "p", "other-uuid");
+        Assertions.assertDoesNotThrow(
+            () -> configFuzzyWatchGroupKeyHolder.onEvent(loadEv));
+    }
+    
+    @Test
+    void testOnEventContextNullEarlyReturn() {
+        // Same clientUuid but no matching context → early return
+        ConfigFuzzyWatchNotifyEvent ev = ConfigFuzzyWatchNotifyEvent.buildEvent(
+            "g:d:t", "no-such-pattern", ADD_CONFIG, FUZZY_WATCH_INIT_NOTIFY,
+            clientId);
+        Assertions.assertDoesNotThrow(() -> configFuzzyWatchGroupKeyHolder.onEvent(ev));
+        ConfigFuzzyWatchLoadEvent loadEv = ConfigFuzzyWatchLoadEvent.buildEvent(
+            FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(), "no-such-pattern", clientId);
+        Assertions.assertDoesNotThrow(
+            () -> configFuzzyWatchGroupKeyHolder.onEvent(loadEv));
+    }
+    
+    @Test
+    void testExecuteFuzzyWatchRequestServerError() throws NacosException {
+        AbstractFuzzyWatchEventWatcher watcher = new AbstractFuzzyWatchEventWatcher() {
+            
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+            }
+        };
+        ConfigFuzzyWatchContext ctx = configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(
+            "ee*", "group", watcher);
+        RpcClient rpcClient = Mockito.mock(RpcClient.class);
+        ConfigFuzzyWatchResponse errorResponse = new ConfigFuzzyWatchResponse();
+        errorResponse.setErrorInfo(NacosException.SERVER_ERROR, "boom");
+        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class)))
+            .thenReturn(errorResponse);
+        // Should not throw; just logs the error
+        configFuzzyWatchGroupKeyHolder.executeFuzzyWatchRequest(ctx, rpcClient);
+        Assertions.assertFalse(ctx.isConsistentWithServer());
+    }
+    
+    @Test
+    void testExecuteFuzzyWatchRequestNonOverLimitNacosException() throws NacosException {
+        AbstractFuzzyWatchEventWatcher watcher = new AbstractFuzzyWatchEventWatcher() {
+            
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+            }
+        };
+        ConfigFuzzyWatchContext ctx = configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(
+            "ff*", "group", watcher);
+        RpcClient rpcClient = Mockito.mock(RpcClient.class);
+        when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class)))
+            .thenThrow(new NacosException(NacosException.SERVER_ERROR, "boom"));
+        // Should not throw; should retry via notifyFuzzyWatchSync
+        configFuzzyWatchGroupKeyHolder.executeFuzzyWatchRequest(ctx, rpcClient);
     }
 }

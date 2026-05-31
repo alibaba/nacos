@@ -63,7 +63,7 @@ public class NacosMcpRegistryService {
     private static final int DEFAULT_HTTP_PORT = 80;
     
     private static final int DEFAULT_HTTPS_PORT = 443;
-
+    
     private final McpServerOperationService mcpServerOperationService;
     
     private final NamespaceOperationService namespaceOperationService;
@@ -71,7 +71,7 @@ public class NacosMcpRegistryService {
     private final McpServerIndex mcpServerIndex;
     
     public NacosMcpRegistryService(McpServerOperationService mcpServerOperationService,
-            NamespaceOperationService namespaceOperationService, McpServerIndex mcpServerIndex) {
+        NamespaceOperationService namespaceOperationService, McpServerIndex mcpServerIndex) {
         this.mcpServerOperationService = mcpServerOperationService;
         this.namespaceOperationService = namespaceOperationService;
         this.mcpServerIndex = mcpServerIndex;
@@ -90,11 +90,12 @@ public class NacosMcpRegistryService {
         String namespaceId = listServerForm.getNamespaceId();
         String serverName = listServerForm.getServerName();
         Collection<String> namespaceIdList = StringUtils.isNotEmpty(namespaceId)
-                ? Collections.singletonList(namespaceId)
-                : fetchOrderedNamespaceList();
-
-        List<McpServerBasicInfo> servers = listMcpServerByNamespaceList(namespaceIdList, serverName, offset, limit);
-
+            ? Collections.singletonList(namespaceId)
+            : fetchOrderedNamespaceList();
+        
+        List<McpServerBasicInfo> servers =
+            listMcpServerByNamespaceList(namespaceIdList, serverName, offset, limit);
+        
         // Build detail list by fetching per-item detail via getServer for consistency
         List<ServerResponse> finalServers = servers.stream().map((item) -> {
             try {
@@ -110,11 +111,13 @@ public class NacosMcpRegistryService {
     
     private List<String> fetchOrderedNamespaceList() {
         return namespaceOperationService.getNamespaceList().stream()
-                .sorted(Comparator.comparing(Namespace::getNamespace)).map(Namespace::getNamespace).toList();
+            .sorted(Comparator.comparing(Namespace::getNamespace)).map(Namespace::getNamespace)
+            .toList();
     }
     
-    private List<McpServerBasicInfo> listMcpServerByNamespaceList(Collection<String> namespaceIdList, String serverName,
-            int offset, int limit) {
+    private List<McpServerBasicInfo> listMcpServerByNamespaceList(
+        Collection<String> namespaceIdList, String serverName,
+        int offset, int limit) {
         List<McpServerBasicInfo> result = new ArrayList<>();
         
         // 如果 limit <= 0，直接返回空
@@ -128,7 +131,8 @@ public class NacosMcpRegistryService {
             if (result.size() >= limit) {
                 break;
             }
-            Page<McpServerBasicInfo> countPage = mcpServerOperationService.listMcpServerWithPage(namespaceId, serverName,
+            Page<McpServerBasicInfo> countPage =
+                mcpServerOperationService.listMcpServerWithPage(namespaceId, serverName,
                     MCP_LIST_SEARCH_BLUR, 1, 1);
             int totalCount = countPage.getTotalCount();
             if (totalCount == 0) {
@@ -143,7 +147,8 @@ public class NacosMcpRegistryService {
             int pageNum = remainOffset / pageSize + 1;
             int pageOffset = remainOffset % pageSize;
             while (remaining > 0) {
-                Page<McpServerBasicInfo> dataPage = mcpServerOperationService.listMcpServerWithPage(namespaceId, serverName, 
+                Page<McpServerBasicInfo> dataPage =
+                    mcpServerOperationService.listMcpServerWithPage(namespaceId, serverName,
                         MCP_LIST_SEARCH_BLUR, pageNum, pageSize);
                 if (CollectionUtils.isEmpty(dataPage.getPageItems())) {
                     break;
@@ -173,9 +178,11 @@ public class NacosMcpRegistryService {
      * @return mcp server detail
      * @throws NacosException if nacos operation fails
      */
-    public ServerResponse getServer(String name, String namespaceId, String version) throws NacosException {
+    public ServerResponse getServer(String name, String namespaceId, String version)
+        throws NacosException {
         try {
-            McpServerDetailInfo mcpServerDetail = mcpServerOperationService.getMcpServerDetail(namespaceId, null, name,
+            McpServerDetailInfo mcpServerDetail =
+                mcpServerOperationService.getMcpServerDetail(namespaceId, null, name,
                     version);
             return buildServerResponse(mcpServerDetail);
         } catch (NacosException e) {
@@ -185,21 +192,24 @@ public class NacosMcpRegistryService {
             throw e;
         }
     }
-
+    
     /**
      * Get all versions of the specified MCP server.
      * @param namespaceId the namespaceId of mcp server, if not specified, search in all namespaces.
      * @param serverName the server name of mcp server.
      * @return all versions of the found MCP server as {@link McpRegistryServerList}
      */
-    public McpRegistryServerList getServerVersions(String namespaceId, String serverName) throws NacosException {
+    public McpRegistryServerList getServerVersions(String namespaceId, String serverName)
+        throws NacosException {
         try {
-            McpServerDetailInfo mcpServerDetail = mcpServerOperationService.getMcpServerDetail(namespaceId, null, serverName, null);
+            McpServerDetailInfo mcpServerDetail =
+                mcpServerOperationService.getMcpServerDetail(namespaceId, null, serverName, null);
             List<ServerVersionDetail> allVersions = mcpServerDetail.getAllVersions();
             allVersions.sort(Comparator.comparing(ServerVersionDetail::getVersion));
             List<ServerResponse> serverResponses = allVersions.stream().map((server) -> {
                 try {
-                    return mcpServerOperationService.getMcpServerDetail(namespaceId, null, serverName, server.getVersion());
+                    return mcpServerOperationService.getMcpServerDetail(namespaceId, null,
+                        serverName, server.getVersion());
                 } catch (NacosException e) {
                     throw new RuntimeException(e);
                 }
@@ -217,7 +227,7 @@ public class NacosMcpRegistryService {
             throw e;
         }
     }
-
+    
     /**
      * Get tools info about the given version of the mcp server.
      *
@@ -231,15 +241,17 @@ public class NacosMcpRegistryService {
         if (Objects.isNull(indexData)) {
             return null;
         }
-        McpServerDetailInfo mcpServerDetail = mcpServerOperationService.getMcpServerDetail(indexData.getNamespaceId(),
+        McpServerDetailInfo mcpServerDetail =
+            mcpServerOperationService.getMcpServerDetail(indexData.getNamespaceId(),
                 serverId, null, version);
         return mcpServerDetail.getToolSpec();
     }
-
+    
     /**
      * Prefer frontend endpoints, fallback to backend.
      */
-    private List<McpEndpointInfo> pickEndpoints(List<McpEndpointInfo> frontend, List<McpEndpointInfo> backend) {
+    private List<McpEndpointInfo> pickEndpoints(List<McpEndpointInfo> frontend,
+        List<McpEndpointInfo> backend) {
         if (CollectionUtils.isNotEmpty(frontend)) {
             return frontend;
         }
@@ -262,7 +274,7 @@ public class NacosMcpRegistryService {
             return remote;
         }).collect(Collectors.toList());
     }
-
+    
     /**
      * Build URL for endpoint, omitting default ports.
      * Default ports: 80 for http, 443 for https
@@ -270,18 +282,21 @@ public class NacosMcpRegistryService {
     private String buildUrl(McpEndpointInfo endpoint) {
         String protocol = endpoint.getProtocol();
         int port = endpoint.getPort();
-        boolean isDefaultHttpPort = Constants.PROTOCOL_TYPE_HTTP.equalsIgnoreCase(protocol) && port == DEFAULT_HTTP_PORT;
-        boolean isDefaultHttpsPort = Constants.PROTOCOL_TYPE_HTTPS.equalsIgnoreCase(protocol) && port == DEFAULT_HTTPS_PORT;
+        boolean isDefaultHttpPort =
+            Constants.PROTOCOL_TYPE_HTTP.equalsIgnoreCase(protocol) && port == DEFAULT_HTTP_PORT;
+        boolean isDefaultHttpsPort =
+            Constants.PROTOCOL_TYPE_HTTPS.equalsIgnoreCase(protocol) && port == DEFAULT_HTTPS_PORT;
         
         if (isDefaultHttpPort || isDefaultHttpsPort) {
             return String.format("%s://%s%s", protocol, endpoint.getAddress(), endpoint.getPath());
         }
-        return String.format("%s://%s:%d%s", protocol, endpoint.getAddress(), port, endpoint.getPath());
+        return String.format("%s://%s:%d%s", protocol, endpoint.getAddress(), port,
+            endpoint.getPath());
     }
-
+    
     private List<Remote> buildRemotes(McpServerDetailInfo mcpServerDetail) {
         List<McpEndpointInfo> endpoints = pickEndpoints(mcpServerDetail.getFrontendEndpoints(),
-                mcpServerDetail.getBackendEndpoints());
+            mcpServerDetail.getBackendEndpoints());
         if (CollectionUtils.isEmpty(endpoints)) {
             return null;
         }
@@ -305,7 +320,7 @@ public class NacosMcpRegistryService {
         result.setMeta(buildMeta(mcpServerDetail));
         return result;
     }
-
+    
     private McpRegistryServerDetail buildMcpServer(McpServerDetailInfo mcpServerDetail) {
         McpRegistryServerDetail server = new McpRegistryServerDetail();
         server.setName(mcpServerDetail.getName());
@@ -320,7 +335,7 @@ public class NacosMcpRegistryService {
         server.setRemotes(buildRemotes(mcpServerDetail));
         return server;
     }
-
+    
     private ServerResponse.Meta buildMeta(McpServerDetailInfo mcpServerDetail) {
         ServerResponse.Meta meta = new ServerResponse.Meta();
         OfficialMeta official = new OfficialMeta();
@@ -331,7 +346,8 @@ public class NacosMcpRegistryService {
             official.setPublishedAt(firstDetail.getRelease_date());
             ServerVersionDetail latestDetail = allVersions.get(allVersions.size() - 1);
             official.setUpdatedAt(latestDetail.getRelease_date());
-            official.setIsLatest(Objects.equals(versionDetail.getVersion(), latestDetail.getVersion()));
+            official
+                .setIsLatest(Objects.equals(versionDetail.getVersion(), latestDetail.getVersion()));
         }
         meta.setOfficial(official);
         return meta;

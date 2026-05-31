@@ -95,8 +95,9 @@ public class StsCredential {
     
     @Override
     public String toString() {
-        return "STSCredential{" + "accessKeyId='" + accessKeyId + '\'' + ", accessKeySecret='" + accessKeySecret
-                + '\'' + ", expiration=" + expiration + ", securityToken='" + securityToken + '\''
-                + ", lastUpdated=" + lastUpdated + ", code='" + code + '\'' + '}';
+        return "STSCredential{" + "accessKeyId='" + accessKeyId + '\'' + ", accessKeySecret='"
+            + accessKeySecret
+            + '\'' + ", expiration=" + expiration + ", securityToken='" + securityToken + '\''
+            + ", lastUpdated=" + lastUpdated + ", code='" + code + '\'' + '}';
     }
 }

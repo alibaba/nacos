@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,5 +125,10 @@ class TimerContextTest {
         TimerContext.run(consumer, o, "test", logger);
         verify(consumer).accept(o);
         verify(logger).debug(anyString(), any(Object[].class));
+    }
+    
+    @Test
+    void testConstructor() {
+        new TimerContext();
     }
 }

@@ -35,15 +35,16 @@ import java.io.IOException;
  * @version 1.0.0
  */
 public class FormSizeFilter implements Filter {
-
+    
     private final long maxFormSize;
-
+    
     public FormSizeFilter(long maxFormSize) {
         this.maxFormSize = maxFormSize;
     }
-
+    
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+        throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         if (exceededFormSize(req)) {
             HttpServletResponse resp = (HttpServletResponse) response;
@@ -52,7 +53,7 @@ public class FormSizeFilter implements Filter {
         }
         chain.doFilter(request, response);
     }
-
+    
     /**
      * Check the size of form parameters.
      *
@@ -60,7 +61,8 @@ public class FormSizeFilter implements Filter {
      */
     private boolean exceededFormSize(HttpServletRequest request) {
         String contentType = request.getContentType();
-        if (contentType == null || !MediaType.APPLICATION_FORM_URLENCODED.equals(MediaType.valueOf(contentType))) {
+        if (contentType == null
+            || !MediaType.APPLICATION_FORM_URLENCODED.equals(MediaType.valueOf(contentType))) {
             return false;
         }
         int contentLength = request.getContentLength();

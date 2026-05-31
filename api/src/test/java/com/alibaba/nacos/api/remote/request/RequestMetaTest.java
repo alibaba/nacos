@@ -71,23 +71,30 @@ class RequestMetaTest {
     
     @Test
     void testToString() {
-        String expected = "RequestMeta{connectionId='test-connection-id', clientIp='127.0.0.1', clientVersion='1.0.0', labels={env=dev}}";
+        String expected =
+            "RequestMeta{connectionId='test-connection-id', clientIp='127.0.0.1', clientVersion='1.0.0', labels={env=dev}}";
         assertEquals(expected, requestMeta.toString());
     }
     
     @Test
     void testGetConnectionAbilityForNonExist() {
-        assertEquals(AbilityStatus.UNKNOWN, requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+        assertEquals(AbilityStatus.UNKNOWN,
+            requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
         requestMeta.setAbilityTable(Collections.emptyMap());
-        assertEquals(AbilityStatus.UNKNOWN, requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+        assertEquals(AbilityStatus.UNKNOWN,
+            requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
     }
     
     @Test
     void testGetConnectionAbilityForExist() {
-        requestMeta.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.FALSE));
-        assertEquals(AbilityStatus.NOT_SUPPORTED, requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
-        requestMeta.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE));
-        assertEquals(AbilityStatus.SUPPORTED, requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+        requestMeta.setAbilityTable(
+            Collections.singletonMap(AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.FALSE));
+        assertEquals(AbilityStatus.NOT_SUPPORTED,
+            requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+        requestMeta.setAbilityTable(
+            Collections.singletonMap(AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE));
+        assertEquals(AbilityStatus.SUPPORTED,
+            requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
     }
     
     @Test

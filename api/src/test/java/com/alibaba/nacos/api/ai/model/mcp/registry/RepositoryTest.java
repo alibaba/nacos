@@ -45,7 +45,7 @@ class RepositoryTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"url\":\"https://github.com/test/repo\",\"source\":\"github\","
-                + "\"id\":\"test-repo-id\",\"subfolder\":\"sub/folder\"}";
+            + "\"id\":\"test-repo-id\",\"subfolder\":\"sub/folder\"}";
         
         Repository repository = mapper.readValue(json, Repository.class);
         assertNotNull(repository);

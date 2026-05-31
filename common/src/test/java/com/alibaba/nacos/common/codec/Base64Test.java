@@ -57,14 +57,19 @@ class Base64Test {
     
     @Test
     void testChunk() {
-        String a = "very large characters to test chunk encoding and see if the result is expected or not";
-        byte[] b1 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, Integer.MAX_VALUE);
-        byte[] b2 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), true, false, Integer.MAX_VALUE);
+        String a =
+            "very large characters to test chunk encoding and see if the result is expected or not";
+        byte[] b1 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false,
+            Integer.MAX_VALUE);
+        byte[] b2 =
+            Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), true, false, Integer.MAX_VALUE);
         String s1 = new String(b1);
         String s2 = new String(b2);
-        assertEquals(s1, "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0"
+        assertEquals(s1,
+            "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0"
                 + "aGUgcmVzdWx0IGlzIGV4cGVjdGVkIG9yIG5vdA==");
-        assertEquals(s2, "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0" + "\r\n"
+        assertEquals(s2,
+            "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0" + "\r\n"
                 + "aGUgcmVzdWx0IGlzIGV4cGVjdGVkIG9yIG5vdA==" + "\r\n");
         
         byte[] c1 = Base64.decodeBase64(b1);
@@ -78,8 +83,10 @@ class Base64Test {
     @Test
     void testUrlSafe() {
         String a = "aa~aa?";
-        byte[] b1 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, Integer.MAX_VALUE);
-        byte[] b2 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, true, Integer.MAX_VALUE);
+        byte[] b1 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false,
+            Integer.MAX_VALUE);
+        byte[] b2 =
+            Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, true, Integer.MAX_VALUE);
         String s1 = new String(b1);
         String s2 = new String(b2);
         assertEquals("YWF+YWE/", s1);
@@ -96,7 +103,8 @@ class Base64Test {
     @Test
     void testEncodeOverMaxLength() {
         assertThrows(IllegalArgumentException.class, () -> {
-            String a = "very large characters to test chunk encoding and see if the result is expected or not";
+            String a =
+                "very large characters to test chunk encoding and see if the result is expected or not";
             Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, 10);
         });
     }
@@ -157,7 +165,8 @@ class Base64Test {
             sb.append("abcdefghij");
         }
         String input = sb.toString();
-        byte[] encoded = Base64.encodeBase64(input.getBytes(StandardCharsets.UTF_8), true, false, Integer.MAX_VALUE);
+        byte[] encoded = Base64.encodeBase64(input.getBytes(StandardCharsets.UTF_8), true, false,
+            Integer.MAX_VALUE);
         String encodedStr = new String(encoded);
         assertTrue(encodedStr.contains("\r\n"));
         byte[] decoded = Base64.decodeBase64(encoded);

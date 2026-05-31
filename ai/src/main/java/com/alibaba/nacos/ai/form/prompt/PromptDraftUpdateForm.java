@@ -44,7 +44,7 @@ public class PromptDraftUpdateForm extends PromptForm {
         super.validate();
         if (StringUtils.isBlank(template)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'template' type String is not present");
+                "Required parameter 'template' type String is not present");
         }
     }
     

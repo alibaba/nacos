@@ -29,10 +29,12 @@ import io.grpc.netty.shaded.io.netty.channel.Channel;
  */
 public class NettyChannelHelper {
     
-    private static final ReferenceFieldUpdater<NettyServerStream, WriteQueue> WRITE_QUEUE_GETTER = Updaters.newReferenceFieldUpdater(
+    private static final ReferenceFieldUpdater<NettyServerStream, WriteQueue> WRITE_QUEUE_GETTER =
+        Updaters.newReferenceFieldUpdater(
             NettyServerStream.class, "writeQueue");
     
-    private static final ReferenceFieldUpdater<WriteQueue, Channel> CHANNEL_GETTER = Updaters.newReferenceFieldUpdater(
+    private static final ReferenceFieldUpdater<WriteQueue, Channel> CHANNEL_GETTER =
+        Updaters.newReferenceFieldUpdater(
             WriteQueue.class, "channel");
     
     public static Channel getChannel(final ServerStream stream) {

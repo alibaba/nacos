@@ -38,7 +38,8 @@ public class NacosLockFactory {
      */
     public static LockService createLockService(Properties properties) throws NacosException {
         try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.lock.NacosLockService");
+            Class<?> driverImplClass =
+                Class.forName("com.alibaba.nacos.client.lock.NacosLockService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             return (LockService) constructor.newInstance(properties);
         } catch (Throwable e) {

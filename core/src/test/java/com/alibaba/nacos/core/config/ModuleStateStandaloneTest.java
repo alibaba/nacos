@@ -45,17 +45,20 @@ class ModuleStateStandaloneTest {
     private ModuleStateHolder moduleStateHolder;
     
     @Test
-    void testStandaloneBuilder() throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    void testStandaloneBuilder() throws InvocationTargetException, InstantiationException,
+        IllegalAccessException, NoSuchMethodException {
         try (MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class)) {
             environment = new MockEnvironment();
             mockedStatic.when(EnvUtil::getEnvironment).thenReturn(environment);
             mockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
             
-            Constructor<ModuleStateHolder> constructor = ModuleStateHolder.class.getDeclaredConstructor();
+            Constructor<ModuleStateHolder> constructor =
+                ModuleStateHolder.class.getDeclaredConstructor();
             constructor.setAccessible(true);
             moduleStateHolder = constructor.newInstance();
             
-            assertFalse(moduleStateHolder.getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
+            assertFalse(
+                moduleStateHolder.getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
             assertFalse(moduleStateHolder.getModuleState(RaftSysConstants.RAFT_STATE).isPresent());
         }
     }

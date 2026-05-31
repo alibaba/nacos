@@ -50,7 +50,8 @@ class NamingEventTest {
     
     @Test
     void testNamingEventWithFullConstructor() {
-        NamingEvent event = new NamingEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST);
+        NamingEvent event =
+            new NamingEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST);
         assertEquals("serviceName", event.getServiceName());
         assertEquals("group", event.getGroupName());
         assertEquals("clusters", event.getClusters());

@@ -33,11 +33,14 @@ final class GrpcServerConstants {
     
     static final Attributes.Key<String> ATTR_TRANS_KEY_CONN_ID = Attributes.Key.create("conn_id");
     
-    static final Attributes.Key<String> ATTR_TRANS_KEY_REMOTE_IP = Attributes.Key.create("remote_ip");
+    static final Attributes.Key<String> ATTR_TRANS_KEY_REMOTE_IP =
+        Attributes.Key.create("remote_ip");
     
-    static final Attributes.Key<Integer> ATTR_TRANS_KEY_REMOTE_PORT = Attributes.Key.create("remote_port");
+    static final Attributes.Key<Integer> ATTR_TRANS_KEY_REMOTE_PORT =
+        Attributes.Key.create("remote_port");
     
-    static final Attributes.Key<Integer> ATTR_TRANS_KEY_LOCAL_PORT = Attributes.Key.create("local_port");
+    static final Attributes.Key<Integer> ATTR_TRANS_KEY_LOCAL_PORT =
+        Attributes.Key.create("local_port");
     
     static final Context.Key<String> CONTEXT_KEY_CONN_ID = Context.key("conn_id");
     
@@ -61,41 +64,47 @@ final class GrpcServerConstants {
         
         private static final String NACOS_REMOTE_SERVER_GRPC_PREFIX = "nacos.remote.server.grpc.";
         
-        private static final String NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX = NACOS_REMOTE_SERVER_GRPC_PREFIX + "sdk.";
+        private static final String NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX =
+            NACOS_REMOTE_SERVER_GRPC_PREFIX + "sdk.";
         
         private static final String NACOS_REMOTE_SERVER_GRPC_CLUSTER_PREFIX =
-                NACOS_REMOTE_SERVER_GRPC_PREFIX + "cluster.";
+            NACOS_REMOTE_SERVER_GRPC_PREFIX + "cluster.";
         
         @Deprecated
-        static final String MAX_INBOUND_MSG_SIZE_PROPERTY = NACOS_REMOTE_SERVER_GRPC_PREFIX + "maxinbound.message.size";
+        static final String MAX_INBOUND_MSG_SIZE_PROPERTY =
+            NACOS_REMOTE_SERVER_GRPC_PREFIX + "maxinbound.message.size";
         
         static final String SDK_MAX_INBOUND_MSG_SIZE_PROPERTY =
-                NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX + "max-inbound-message-size";
+            NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX + "max-inbound-message-size";
         
-        static final String SDK_KEEP_ALIVE_TIME_PROPERTY = NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX + "keep-alive-time";
+        static final String SDK_KEEP_ALIVE_TIME_PROPERTY =
+            NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX + "keep-alive-time";
         
         static final String SDK_KEEP_ALIVE_TIMEOUT_PROPERTY =
-                NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX + "keep-alive-timeout";
+            NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX + "keep-alive-timeout";
         
-        static final String SDK_PERMIT_KEEP_ALIVE_TIME = NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX + "permit-keep-alive-time";
+        static final String SDK_PERMIT_KEEP_ALIVE_TIME =
+            NACOS_REMOTE_SERVER_GRPC_SDK_PREFIX + "permit-keep-alive-time";
         
         static final String CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY =
-                NACOS_REMOTE_SERVER_GRPC_CLUSTER_PREFIX + "max-inbound-message-size";
+            NACOS_REMOTE_SERVER_GRPC_CLUSTER_PREFIX + "max-inbound-message-size";
         
         static final String CLUSTER_KEEP_ALIVE_TIME_PROPERTY =
-                NACOS_REMOTE_SERVER_GRPC_CLUSTER_PREFIX + "keep-alive-time";
+            NACOS_REMOTE_SERVER_GRPC_CLUSTER_PREFIX + "keep-alive-time";
         
         static final String CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY =
-                NACOS_REMOTE_SERVER_GRPC_CLUSTER_PREFIX + "keep-alive-timeout";
+            NACOS_REMOTE_SERVER_GRPC_CLUSTER_PREFIX + "keep-alive-timeout";
         
         static final String CLUSTER_PERMIT_KEEP_ALIVE_TIME =
-                NACOS_REMOTE_SERVER_GRPC_CLUSTER_PREFIX + "permit-keep-alive-time";
+            NACOS_REMOTE_SERVER_GRPC_CLUSTER_PREFIX + "permit-keep-alive-time";
         
         static final int DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE = 10 * 1024 * 1024;
         
-        static final long DEFAULT_GRPC_KEEP_ALIVE_TIME = TimeUnit.NANOSECONDS.toMillis(GrpcUtil.DEFAULT_SERVER_KEEPALIVE_TIME_NANOS);
+        static final long DEFAULT_GRPC_KEEP_ALIVE_TIME =
+            TimeUnit.NANOSECONDS.toMillis(GrpcUtil.DEFAULT_SERVER_KEEPALIVE_TIME_NANOS);
         
-        static final long DEFAULT_GRPC_KEEP_ALIVE_TIMEOUT = TimeUnit.NANOSECONDS.toMillis(GrpcUtil.DEFAULT_SERVER_KEEPALIVE_TIMEOUT_NANOS);
+        static final long DEFAULT_GRPC_KEEP_ALIVE_TIMEOUT =
+            TimeUnit.NANOSECONDS.toMillis(GrpcUtil.DEFAULT_SERVER_KEEPALIVE_TIMEOUT_NANOS);
         
         static final long DEFAULT_GRPC_PERMIT_KEEP_ALIVE_TIME = TimeUnit.MINUTES.toMillis(5L);
     }

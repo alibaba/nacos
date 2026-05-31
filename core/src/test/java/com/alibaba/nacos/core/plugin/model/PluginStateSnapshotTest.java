@@ -33,81 +33,82 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author WangzJi
  */
 class PluginStateSnapshotTest {
-
+    
     @Test
     void defaultConstructorTest() {
         PluginStateSnapshot snapshot = new PluginStateSnapshot();
-
+        
         assertNull(snapshot.getStates());
         assertNull(snapshot.getConfigs());
     }
-
+    
     @Test
     void setStatesTest() {
         PluginStateSnapshot snapshot = new PluginStateSnapshot();
-
+        
         Map<String, Boolean> states = new HashMap<>();
         states.put("trace:test1", true);
         states.put("auth:test2", false);
-
+        
         snapshot.setStates(states);
-
+        
         assertNotNull(snapshot.getStates());
         assertEquals(2, snapshot.getStates().size());
         assertTrue(snapshot.getStates().get("trace:test1"));
         assertFalse(snapshot.getStates().get("auth:test2"));
     }
-
+    
     @Test
     void setConfigsTest() {
         PluginStateSnapshot snapshot = new PluginStateSnapshot();
-
+        
         Map<String, String> config1 = new HashMap<>();
         config1.put("endpoint", "http://localhost:8080");
-
+        
         Map<String, String> config2 = new HashMap<>();
         config2.put("timeout", "5000");
-
+        
         Map<String, Map<String, String>> configs = new HashMap<>();
         configs.put("trace:otel", config1);
         configs.put("auth:custom", config2);
-
+        
         snapshot.setConfigs(configs);
-
+        
         assertNotNull(snapshot.getConfigs());
         assertEquals(2, snapshot.getConfigs().size());
-        assertEquals("http://localhost:8080", snapshot.getConfigs().get("trace:otel").get("endpoint"));
+        assertEquals("http://localhost:8080",
+            snapshot.getConfigs().get("trace:otel").get("endpoint"));
         assertEquals("5000", snapshot.getConfigs().get("auth:custom").get("timeout"));
     }
-
+    
     @Test
     void setStatesAndConfigsTest() {
         PluginStateSnapshot snapshot = new PluginStateSnapshot();
-
+        
         Map<String, Boolean> states = new HashMap<>();
         states.put("trace:test", true);
         snapshot.setStates(states);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-
+        
         Map<String, Map<String, String>> configs = new HashMap<>();
         configs.put("trace:test", config);
         snapshot.setConfigs(configs);
-
+        
         assertEquals(1, snapshot.getStates().size());
         assertEquals(1, snapshot.getConfigs().size());
         assertTrue(snapshot.getStates().get("trace:test"));
         assertEquals("value", snapshot.getConfigs().get("trace:test").get("key"));
     }
-
+    
     @Test
     void emptyStatesAndConfigsTest() {
         PluginStateSnapshot snapshot = new PluginStateSnapshot();
-
+        
         snapshot.setStates(new HashMap<>());
         snapshot.setConfigs(new HashMap<>());
-
+        
         assertNotNull(snapshot.getStates());
         assertNotNull(snapshot.getConfigs());
         assertEquals(0, snapshot.getStates().size());

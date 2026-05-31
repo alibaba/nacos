@@ -84,7 +84,8 @@ class HttpRequestInstanceBuilderTest {
         assertTrue(actual.isEphemeral());
         assertTrue(actual.isEnabled());
         assertTrue(actual.isHealthy());
-        assertThat(actual.getInstanceId(), is(IP + "#" + PORT + "#" + UtilsAndCommons.DEFAULT_CLUSTER_NAME + "#" + SERVICE));
+        assertThat(actual.getInstanceId(),
+            is(IP + "#" + PORT + "#" + UtilsAndCommons.DEFAULT_CLUSTER_NAME + "#" + SERVICE));
         assertThat(actual.getMetadata().size(), is(1));
         assertThat(actual.getMetadata().get("mock"), is("mock"));
         verify(request).getParameter("mock");

@@ -26,7 +26,8 @@ public class DeregisterServiceTraceEvent extends NamingTraceEvent {
     private static final long serialVersionUID = 7358195336881398548L;
     
     public DeregisterServiceTraceEvent(long eventTime, String serviceNamespace, String serviceGroup,
-            String serviceName) {
-        super("DEREGISTER_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+        String serviceName) {
+        super("DEREGISTER_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup,
+            serviceName);
     }
 }

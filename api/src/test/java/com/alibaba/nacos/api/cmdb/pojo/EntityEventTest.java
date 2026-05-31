@@ -51,7 +51,8 @@ class EntityEventTest {
     
     @Test
     void testDeserialization() throws JsonProcessingException {
-        String json = "{\"type\":\"ENTITY_REMOVE\",\"entityName\":\"test-entity\",\"entityType\":\"CMDB\"}";
+        String json =
+            "{\"type\":\"ENTITY_REMOVE\",\"entityName\":\"test-entity\",\"entityType\":\"CMDB\"}";
         EntityEvent entity = mapper.readValue(json, EntityEvent.class);
         assertEquals("test-entity", entity.getEntityName());
         assertEquals("CMDB", entity.getEntityType());

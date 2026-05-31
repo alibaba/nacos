@@ -45,7 +45,7 @@ public class SwitchDomainSnapshotOperation extends AbstractSnapshotOperation {
     private final Serializer serializer;
     
     public SwitchDomainSnapshotOperation(ReentrantReadWriteLock lock, SwitchManager switchManager,
-            Serializer serializer) {
+        Serializer serializer) {
         super(lock);
         this.switchManager = switchManager;
         this.serializer = serializer;
@@ -77,7 +77,8 @@ public class SwitchDomainSnapshotOperation extends AbstractSnapshotOperation {
         DiskUtils.decompress(sourceFile, readerPath, checksum);
         LocalFileMeta fileMeta = reader.getFileMeta(snapshotArchive);
         if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY)) {
-            if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
+            if (!Objects.equals(Long.toHexString(checksum.getValue()),
+                fileMeta.get(CHECK_SUM_KEY))) {
                 throw new IllegalArgumentException("Snapshot checksum failed");
             }
         }

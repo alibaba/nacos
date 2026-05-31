@@ -30,7 +30,7 @@ public class NacosConnectionControlRuleParser implements ConnectionControlRulePa
     @Override
     public ConnectionControlRule parseRule(String ruleContent) {
         return StringUtils.isBlank(ruleContent) ? new ConnectionControlRule()
-                : JacksonUtils.toObj(ruleContent, ConnectionControlRule.class);
+            : JacksonUtils.toObj(ruleContent, ConnectionControlRule.class);
     }
     
 }

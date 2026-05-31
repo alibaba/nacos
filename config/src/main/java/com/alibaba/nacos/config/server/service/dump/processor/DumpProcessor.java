@@ -44,7 +44,7 @@ public class DumpProcessor implements NacosTaskProcessor {
     final ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     public DumpProcessor(ConfigInfoPersistService configInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService) {
+        ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
@@ -60,7 +60,8 @@ public class DumpProcessor implements NacosTaskProcessor {
         String handleIp = dumpTask.getHandleIp();
         String grayName = dumpTask.getGrayName();
         
-        ConfigDumpEvent.ConfigDumpEventBuilder build = ConfigDumpEvent.builder().namespaceId(tenant).dataId(dataId)
+        ConfigDumpEvent.ConfigDumpEventBuilder build =
+            ConfigDumpEvent.builder().namespaceId(tenant).dataId(dataId)
                 .group(group).grayName(grayName).handleIp(handleIp);
         String type = "formal";
         if (StringUtils.isNotBlank(grayName)) {
@@ -69,7 +70,8 @@ public class DumpProcessor implements NacosTaskProcessor {
         LogUtil.DUMP_LOG.info("[dump] process {} task. groupKey={}", type, dumpTask.getGroupKey());
         
         if (StringUtils.isNotBlank(grayName)) {
-            ConfigInfoGrayWrapper cf = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
+            ConfigInfoGrayWrapper cf =
+                configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
                     grayName);
             build.remove(Objects.isNull(cf));
             build.content(Objects.isNull(cf) ? null : cf.getContent());

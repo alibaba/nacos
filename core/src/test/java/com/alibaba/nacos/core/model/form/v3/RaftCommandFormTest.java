@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link RaftCommandForm} unit test.
  */
 class RaftCommandFormTest {
-
+    
     @Test
     void validateShouldThrowWhenCommandMissing() {
         RaftCommandForm form = new RaftCommandForm();
@@ -82,7 +82,7 @@ class RaftCommandFormTest {
         NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
         assertTrue(exception.getErrMsg().contains("Raft command value is required"));
     }
-
+    
     @Test
     void gettersAndSetters() {
         RaftCommandForm form = new RaftCommandForm();
@@ -93,7 +93,7 @@ class RaftCommandFormTest {
         assertEquals("doSnapshot", form.getCommand());
         assertEquals("127.0.0.1:7848", form.getValue());
     }
-
+    
     @Test
     void toMapIncludesGroupIdWhenNotBlank() {
         RaftCommandForm form = new RaftCommandForm();
@@ -106,7 +106,7 @@ class RaftCommandFormTest {
         assertEquals("127.0.0.1:7848", map.get(JRaftConstants.COMMAND_VALUE));
         assertEquals(3, map.size());
     }
-
+    
     @Test
     void toMapOmitsGroupIdWhenBlank() {
         RaftCommandForm form = new RaftCommandForm();
@@ -119,7 +119,7 @@ class RaftCommandFormTest {
         assertEquals("127.0.0.1:7848", map.get(JRaftConstants.COMMAND_VALUE));
         assertEquals(2, map.size());
     }
-
+    
     @Test
     void toMapOmitsGroupIdWhenNull() {
         RaftCommandForm form = new RaftCommandForm();

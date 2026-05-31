@@ -15,6 +15,7 @@ const makeVersion = (version: string, status: string, gmtModified: number): Prom
   srcUser: 'user',
   gmtModified,
   publishPipelineInfo: null,
+  downloadCount: null,
 });
 
 describe('PromptVersionTimeline logic', () => {

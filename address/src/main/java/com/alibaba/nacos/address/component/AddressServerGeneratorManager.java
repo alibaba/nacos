@@ -61,10 +61,11 @@ public class AddressServerGeneratorManager {
      * @param ipArray array of ips
      * @return instance list
      */
-    public List<Instance> generateInstancesByIps(String serviceName, String rawProductName, String clusterName,
-            String[] ipArray) {
+    public List<Instance> generateInstancesByIps(String serviceName, String rawProductName,
+        String clusterName,
+        String[] ipArray) {
         if (StringUtils.isEmpty(serviceName) || StringUtils.isEmpty(clusterName) || ipArray == null
-                || ipArray.length == 0) {
+            || ipArray.length == 0) {
             return Collections.emptyList();
         }
         
@@ -88,7 +89,8 @@ public class AddressServerGeneratorManager {
     private String[] generateIpAndPort(String ip) {
         String[] result = InternetAddressUtil.splitIpPortStr(ip);
         if (result.length != InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
-            return new String[] {result[0], String.valueOf(AddressServerConstants.DEFAULT_SERVER_PORT)};
+            return new String[] {result[0],
+                String.valueOf(AddressServerConstants.DEFAULT_SERVER_PORT)};
         }
         return result;
     }
@@ -99,7 +101,8 @@ public class AddressServerGeneratorManager {
      * @param instanceList an instance set will generate string response to client.
      * @return the result of response to client
      */
-    public String generateResponseIps(List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList) {
+    public String generateResponseIps(
+        List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList) {
         
         StringBuilder ips = new StringBuilder();
         instanceList.forEach(instance -> {
@@ -122,6 +125,7 @@ public class AddressServerGeneratorManager {
             return rawServiceName;
         }
         
-        return Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + rawServiceName;
+        return Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP
+            + rawServiceName;
     }
 }

@@ -34,5 +34,5 @@ public interface PromptOptimizationService {
      * @param callback stream response callback
      */
     void optimizePromptStream(PromptOptimizationRequest request,
-                              StreamResponseCallback<PromptOptimizationResponse> callback);
+        StreamResponseCallback<PromptOptimizationResponse> callback);
 }

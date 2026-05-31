@@ -60,8 +60,8 @@ public class GrayRuleMatchHandler extends AbstractConfigQueryHandler {
             String md5 = matchedGray.getMd5();
             String encryptedDataKey = matchedGray.getEncryptedDataKey();
             String content = ConfigDiskServiceFactory.getInstance()
-                    .getGrayContent(request.getDataId(), request.getGroup(), request.getTenant(),
-                            matchedGray.getGrayName());
+                .getGrayContent(request.getDataId(), request.getGroup(), request.getTenant(),
+                    matchedGray.getGrayName());
             
             response.setContent(content);
             response.setMd5(md5);

@@ -32,13 +32,13 @@ import java.util.Map;
  */
 @Service
 public class PluginProxy {
-
+    
     private final PluginHandler pluginHandler;
-
+    
     public PluginProxy(PluginHandler pluginHandler) {
         this.pluginHandler = pluginHandler;
     }
-
+    
     /**
      * Get a list of plugins.
      *
@@ -49,7 +49,7 @@ public class PluginProxy {
     public List<PluginInfoVO> listPlugins(String pluginType) throws NacosException {
         return pluginHandler.listPlugins(pluginType);
     }
-
+    
     /**
      * Get plugin detail.
      *
@@ -58,10 +58,11 @@ public class PluginProxy {
      * @return plugin detail VO
      * @throws NacosException if there is an issue fetching the plugin detail
      */
-    public PluginDetailVO getPluginDetail(String pluginType, String pluginName) throws NacosException {
+    public PluginDetailVO getPluginDetail(String pluginType, String pluginName)
+        throws NacosException {
         return pluginHandler.getPluginDetail(pluginType, pluginName);
     }
-
+    
     /**
      * Update plugin enabled/disabled status.
      *
@@ -71,11 +72,12 @@ public class PluginProxy {
      * @param localOnly  whether only apply to local node
      * @throws NacosException if there is an issue updating the plugin status
      */
-    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
-            throws NacosException {
+    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled,
+        boolean localOnly)
+        throws NacosException {
         pluginHandler.updatePluginStatus(pluginType, pluginName, enabled, localOnly);
     }
-
+    
     /**
      * Update plugin configuration.
      *
@@ -86,10 +88,10 @@ public class PluginProxy {
      * @throws NacosException if there is an issue updating the plugin config
      */
     public void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config,
-            boolean localOnly) throws NacosException {
+        boolean localOnly) throws NacosException {
         pluginHandler.updatePluginConfig(pluginType, pluginName, config, localOnly);
     }
-
+    
     /**
      * Get plugin availability across cluster nodes.
      *
@@ -98,7 +100,8 @@ public class PluginProxy {
      * @return node availability map
      * @throws NacosException if there is an issue fetching the availability
      */
-    public Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName) throws NacosException {
+    public Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName)
+        throws NacosException {
         return pluginHandler.getPluginAvailability(pluginType, pluginName);
     }
 }

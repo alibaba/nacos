@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse;
@@ -37,12 +38,15 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH
  *
  * @author tanyongquan
  */
+@Since("3.0.0")
 @Component("namingFuzzyWatchRequestHandler")
-public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWatchRequest, NamingFuzzyWatchResponse> {
+public class NamingFuzzyWatchRequestHandler
+    extends RequestHandler<NamingFuzzyWatchRequest, NamingFuzzyWatchResponse> {
     
     private NamingFuzzyWatchContextService namingFuzzyWatchContextService;
     
-    public NamingFuzzyWatchRequestHandler(NamingFuzzyWatchContextService namingFuzzyWatchContextService) {
+    public NamingFuzzyWatchRequestHandler(
+        NamingFuzzyWatchContextService namingFuzzyWatchContextService) {
         this.namingFuzzyWatchContextService = namingFuzzyWatchContextService;
         NotifyCenter.registerToPublisher(ClientOperationEvent.ClientFuzzyWatchEvent.class, 1000);
         
@@ -50,37 +54,46 @@ public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWa
     
     @Override
     @Secured(action = ActionTypes.READ)
-    public NamingFuzzyWatchResponse handle(NamingFuzzyWatchRequest request, RequestMeta meta) throws NacosException {
+    public NamingFuzzyWatchResponse handle(NamingFuzzyWatchRequest request, RequestMeta meta)
+        throws NacosException {
         
         String groupKeyPattern = request.getGroupKeyPattern();
         switch (request.getWatchType()) {
             case WATCH_TYPE_WATCH:
                 try {
-                    namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, meta.getConnectionId());
+                    namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern,
+                        meta.getConnectionId());
                     NotifyCenter.publishEvent(
-                            new ClientOperationEvent.ClientFuzzyWatchEvent(groupKeyPattern, meta.getConnectionId(),
-                                    request.getReceivedGroupKeys(), request.isInitializing()));
+                        new ClientOperationEvent.ClientFuzzyWatchEvent(groupKeyPattern,
+                            meta.getConnectionId(),
+                            request.getReceivedGroupKeys(), request.isInitializing()));
                 } catch (NacosException nacosException) {
-                    NamingFuzzyWatchResponse namingFuzzyWatchResponse = new NamingFuzzyWatchResponse();
-                    namingFuzzyWatchResponse.setErrorInfo(nacosException.getErrCode(), nacosException.getErrMsg());
+                    NamingFuzzyWatchResponse namingFuzzyWatchResponse =
+                        new NamingFuzzyWatchResponse();
+                    namingFuzzyWatchResponse.setErrorInfo(nacosException.getErrCode(),
+                        nacosException.getErrMsg());
                     return namingFuzzyWatchResponse;
                 }
                 
-                boolean reachToUpLimit = namingFuzzyWatchContextService.reachToUpLimit(groupKeyPattern);
+                boolean reachToUpLimit =
+                    namingFuzzyWatchContextService.reachToUpLimit(groupKeyPattern);
                 if (reachToUpLimit) {
-                    NamingFuzzyWatchResponse namingFuzzyWatchResponse = new NamingFuzzyWatchResponse();
-                    namingFuzzyWatchResponse.setErrorInfo(FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(),
-                            FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg());
+                    NamingFuzzyWatchResponse namingFuzzyWatchResponse =
+                        new NamingFuzzyWatchResponse();
+                    namingFuzzyWatchResponse.setErrorInfo(
+                        FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(),
+                        FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg());
                     return namingFuzzyWatchResponse;
                 }
                 
                 return NamingFuzzyWatchResponse.buildSuccessResponse();
             case WATCH_TYPE_CANCEL_WATCH:
-                namingFuzzyWatchContextService.removeFuzzyWatchContext(groupKeyPattern, meta.getConnectionId());
+                namingFuzzyWatchContextService.removeFuzzyWatchContext(groupKeyPattern,
+                    meta.getConnectionId());
                 return NamingFuzzyWatchResponse.buildSuccessResponse();
             default:
                 throw new NacosException(NacosException.INVALID_PARAM,
-                        String.format("Unsupported request type %s", request.getWatchType()));
+                    String.format("Unsupported request type %s", request.getWatchType()));
         }
     }
 }

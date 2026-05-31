@@ -30,17 +30,20 @@ import com.alibaba.nacos.core.remote.grpc.negotiator.tls.ClusterDefaultTlsProtoc
  * @author stone-98
  * @date 2024/2/21
  */
-public class ClusterProtocolNegotiatorBuilderSingleton extends AbstractProtocolNegotiatorBuilderSingleton {
+public class ClusterProtocolNegotiatorBuilderSingleton
+    extends AbstractProtocolNegotiatorBuilderSingleton {
     
     /**
      * Property key for configuring the ProtocolNegotiator type for cluster communication.
      */
-    public static final String TYPE_PROPERTY_KEY = "nacos.remote.cluster.server.rpc.protocol.negotiator.type";
+    public static final String TYPE_PROPERTY_KEY =
+        "nacos.remote.cluster.server.rpc.protocol.negotiator.type";
     
     /**
      * Singleton instance of ClusterProtocolNegotiatorBuilderSingleton.
      */
-    private static final ClusterProtocolNegotiatorBuilderSingleton SINGLETON = new ClusterProtocolNegotiatorBuilderSingleton();
+    private static final ClusterProtocolNegotiatorBuilderSingleton SINGLETON =
+        new ClusterProtocolNegotiatorBuilderSingleton();
     
     /**
      * Constructs a new instance of ClusterProtocolNegotiatorBuilderSingleton. Sets up the type property key for

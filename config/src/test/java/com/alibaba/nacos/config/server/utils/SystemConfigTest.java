@@ -16,16 +16,59 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
+import java.lang.reflect.Method;
+import java.net.NetworkInterface;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mockStatic;
 
 class SystemConfigTest {
     
+    @AfterEach
+    void tearDown() {
+        System.clearProperty("nacos.server.ip");
+    }
+    
     @Test
     void testGetHostAddress() {
-        System.setProperty("nacos.server.ip", "127.0.0.1");
-        assertEquals("127.0.0.1", SystemConfig.LOCAL_IP);
+        assertNotNull(SystemConfig.LOCAL_IP);
+    }
+    
+    @Test
+    void testGetHostAddressFromSystemProperty() throws Exception {
+        System.setProperty("nacos.server.ip", "1.1.1.1");
+        
+        assertEquals("1.1.1.1", invokeGetHostAddress());
+    }
+    
+    @Test
+    void testGetHostAddressFromLocalNetwork() throws Exception {
+        System.clearProperty("nacos.server.ip");
+        
+        assertNotNull(invokeGetHostAddress());
+    }
+    
+    @Test
+    void testGetHostAddressWhenNetworkInterfaceThrowsException() {
+        System.clearProperty("nacos.server.ip");
+        try (MockedStatic<NetworkInterface> networkInterface = mockStatic(NetworkInterface.class)) {
+            networkInterface.when(NetworkInterface::getNetworkInterfaces)
+                .thenThrow(new RuntimeException("test"));
+            
+            assertDoesNotThrow(() -> assertNotNull(invokeGetHostAddress()));
+        }
+    }
+    
+    private String invokeGetHostAddress() throws Exception {
+        Method method = SystemConfig.class.getDeclaredMethod("getHostAddress");
+        method.setAccessible(true);
+        return (String) method.invoke(null);
     }
     
 }

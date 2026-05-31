@@ -35,7 +35,7 @@ class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
         String json = mapper.writeValueAsString(configBatchListenRequest);
         assertTrue(json.contains("\"listen\":" + "true"));
         assertTrue(json.contains(
-                "\"configListenContexts\":[{\"dataId\":\"test_data\",\"group\":\"group\",\"md5\":\"test_MD5\",\"tenant\":\"test_tenant\"}]"));
+            "\"configListenContexts\":[{\"dataId\":\"test_data\",\"group\":\"group\",\"md5\":\"test_MD5\",\"tenant\":\"test_tenant\"}]"));
         assertTrue(json.contains("\"module\":\"" + Constants.Config.CONFIG_MODULE));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
     }
@@ -44,8 +44,8 @@ class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{\"header1\":\"test_header1\"},\"listen\":true,"
-                + "\"configListenContexts\":[{\"group\":\"group\",\"md5\":\"test_MD5\","
-                + "\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}],\"module\":\"config\"}";
+            + "\"configListenContexts\":[{\"group\":\"group\",\"md5\":\"test_MD5\","
+            + "\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}],\"module\":\"config\"}";
         ConfigBatchListenRequest actual = mapper.readValue(json, ConfigBatchListenRequest.class);
         assertEquals(true, actual.isListen());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
@@ -57,7 +57,8 @@ class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
     void testConfigListenContextToString() {
         ConfigBatchListenRequest configBatchListenRequest = new ConfigBatchListenRequest();
         configBatchListenRequest.addConfigListenContext(GROUP, DATA_ID, TENANT, MD5);
-        assertEquals("ConfigListenContext{group='group', md5='test_MD5', dataId='test_data', tenant='test_tenant'}",
-                configBatchListenRequest.getConfigListenContexts().get(0).toString());
+        assertEquals(
+            "ConfigListenContext{group='group', md5='test_MD5', dataId='test_data', tenant='test_tenant'}",
+            configBatchListenRequest.getConfigListenContexts().get(0).toString());
     }
 }

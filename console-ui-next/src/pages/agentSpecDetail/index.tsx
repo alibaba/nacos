@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import Markdown from 'react-markdown';
@@ -87,10 +87,15 @@ import {
 export default function AgentSpecDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { name: routeName } = useParams<{ name: string }>();
   const agentSpecName = routeName ? decodeURIComponent(routeName) : '';
   const { currentNamespace } = useNamespaceStore();
-  const namespaceId = currentNamespace || 'public';
+  const namespaceId =
+    searchParams.get('namespaceId') ||
+    searchParams.get('namespace') ||
+    currentNamespace ||
+    'public';
 
   const {
     currentDetail,
@@ -124,6 +129,11 @@ export default function AgentSpecDetailPage() {
   const [createNodeType, setCreateNodeType] = useState('other');
   const [createNodePath, setCreateNodePath] = useState('');
   const [createNodeFallbackType, setCreateNodeFallbackType] = useState('other');
+
+  // Create draft dialog state
+  const [createDraftDialogOpen, setCreateDraftDialogOpen] = useState(false);
+  const [createDraftFromVersion, setCreateDraftFromVersion] = useState('');
+  const [createDraftTargetVersion, setCreateDraftTargetVersion] = useState('');
 
   const loadDetail = useCallback(() => {
     if (agentSpecName) {
@@ -230,16 +240,31 @@ export default function AgentSpecDetailPage() {
   // ===== Version lifecycle handlers =====
 
   const handleCreateDraft = async (basedOnVersion?: string) => {
+    if (!basedOnVersion) return;
+    const suggestedVersion = suggestNextVersionFromBase(basedOnVersion);
+    setCreateDraftFromVersion(basedOnVersion);
+    setCreateDraftTargetVersion(suggestedVersion);
+    setCreateDraftDialogOpen(true);
+  };
+
+  const handleConfirmCreateDraft = async () => {
+    const targetVersion = createDraftTargetVersion.trim();
+    const errorMsg = validateDraftTargetVersion(targetVersion, createDraftFromVersion);
+    if (errorMsg) {
+      toast.error(errorMsg);
+      return;
+    }
     setActionLoading(true);
     try {
       await agentSpecApi.createDraft({
         namespaceId,
         agentSpecName,
-        basedOnVersion,
+        basedOnVersion: createDraftFromVersion,
+        targetVersion: targetVersion || undefined,
       });
       toast.success(t('agentSpec.createDraftSuccess'));
+      setCreateDraftDialogOpen(false);
       await loadDetail();
-      // Switch to the newly created draft version
       const updated = useAgentSpecStore.getState().currentDetail;
       if (updated?.editingVersion) {
         setSelectedVersion(updated.editingVersion);
@@ -288,6 +313,35 @@ export default function AgentSpecDetailPage() {
       });
       toast.success(t('agentSpec.publishSuccess'));
       await loadDetail();
+    } catch {
+      await loadDetail();
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRedraft = async (version: string) => {
+    setActionLoading(true);
+    try {
+      await agentSpecApi.redraft({ namespaceId, agentSpecName, version });
+      toast.success(t('agentSpec.redraftSuccess'));
+      await loadDetail();
+      const response = await agentSpecApi.getVersion({ namespaceId, agentSpecName, version });
+      setDetailDocument(response.data);
+      const doc = response.data;
+      const docResource = doc?.resource || {};
+      const agentsEntry = Object.entries(docResource).find(([, r]) => {
+        const name = r.name.split('/').pop() || r.name;
+        return name.toUpperCase() === 'AGENTS.MD';
+      });
+      const agentsStr = agentsEntry?.[1]?.content || '';
+      const resEntries = Object.entries(docResource).filter(([key]) => key !== agentsEntry?.[0]);
+      setEditDescription(doc?.description ?? '');
+      setEditAgentsContent(agentsStr);
+      setEditResources(Object.fromEntries(resEntries));
+      setEditContent(doc?.content || '{}');
+      setEditVirtualFolders(new Set());
+      setIsEditingDraft(true);
     } catch {
       await loadDetail();
     } finally {
@@ -803,7 +857,8 @@ export default function AgentSpecDetailPage() {
                   <SelectContent>
                     {versionOptions.map((version) => {
                       const vPipeline = parsePipelineInfo(version.publishPipelineInfo);
-                      const isVersionPendingPublish = version.status === 'reviewing' && vPipeline?.status === 'APPROVED';
+                      const isVersionPendingPublish = (version.status === 'reviewed' && vPipeline?.status !== 'REJECTED') || (version.status === 'reviewing' && vPipeline?.status === 'APPROVED');
+                      const isVersionRejected = version.status === 'reviewed' && vPipeline?.status === 'REJECTED';
                       return (
                       <SelectItem key={version.version} value={version.version}>
                         <span className="flex items-center gap-2">
@@ -818,7 +873,12 @@ export default function AgentSpecDetailPage() {
                               {t('agentSpec.versionStatus.draft')}
                             </Badge>
                           )}
-                          {version.status === 'reviewing' && (
+                          {isVersionRejected && (
+                            <Badge className="bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 text-[10px] px-1 py-0 border-0">
+                              {t('agentSpec.versionStatus.rejected')}
+                            </Badge>
+                          )}
+                          {!isVersionRejected && (version.status === 'reviewing' || version.status === 'reviewed') && (
                             <Badge className={isVersionPendingPublish
                               ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
                               : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0'
@@ -1010,8 +1070,8 @@ export default function AgentSpecDetailPage() {
                     </>
                   )}
 
-                  {/* Reviewing actions */}
-                  {currentVersionStatus === 'reviewing' && (
+                  {/* Reviewing / Reviewed actions */}
+                  {(currentVersionStatus === 'reviewing' || currentVersionStatus === 'reviewed') && (
                     <>
                       <Button
                         size="sm"
@@ -1024,6 +1084,30 @@ export default function AgentSpecDetailPage() {
                           ? t('agentSpec.pipelineInProgress')
                           : t('agentSpec.publish')}
                       </Button>
+                      {currentVersionStatus === 'reviewed' && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            disabled={actionLoading}
+                            onClick={() => handleRedraft(selectedVersion)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            {t('agentSpec.redraft')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            disabled={actionLoading}
+                            onClick={handleDeleteDraft}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            {t('agentSpec.deleteDraft')}
+                          </Button>
+                        </>
+                      )}
                       {currentPipelineInfo && currentPipelineInfo.status === 'APPROVED' && (
                         <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact translationPrefix="agentSpec" />
                       )}
@@ -1420,6 +1504,41 @@ export default function AgentSpecDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ===== Create Draft Version Dialog ===== */}
+      <Dialog open={createDraftDialogOpen} onOpenChange={setCreateDraftDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('agentSpec.createDraftFrom')}</DialogTitle>
+            <DialogDescription>
+              {t('agentSpec.createDraftFromDesc', { version: createDraftFromVersion })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="create-draft-target-version">{t('agentSpec.newVersion')}</Label>
+            <Input
+              id="create-draft-target-version"
+              value={createDraftTargetVersion}
+              placeholder={t('agentSpec.newVersionPlaceholder')}
+              onChange={(e) => setCreateDraftTargetVersion(e.target.value)}
+              disabled={actionLoading}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateDraftDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleConfirmCreateDraft} disabled={actionLoading}>
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              {t('common.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1448,16 +1567,87 @@ function InfoCell({
   );
 }
 
+function parseSemver(version: string): { major: number; minor: number; patch: number } | null {
+  const match = version.trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) return null;
+  return { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]) };
+}
+
+function isSemverVersion(version: string): boolean {
+  return parseSemver(version) !== null;
+}
+
+function compareSemverVersion(a: string, b: string): number {
+  const pa = parseSemver(a);
+  const pb = parseSemver(b);
+  if (!pa || !pb) return 0;
+  if (pa.major !== pb.major) return pa.major - pb.major;
+  if (pa.minor !== pb.minor) return pa.minor - pb.minor;
+  return pa.patch - pb.patch;
+}
+
+function parseLegacyVersion(version: string): number | null {
+  const match = version.trim().match(/^[vV](\d+)$/);
+  if (!match) return null;
+  const parsed = Number(match[1]);
+  if (!Number.isInteger(parsed) || parsed <= 0) return null;
+  return parsed;
+}
+
+function isLegacyVersion(version: string): boolean {
+  return parseLegacyVersion(version) !== null;
+}
+
+function compareLegacyVersion(a: string, b: string): number {
+  const pa = parseLegacyVersion(a);
+  const pb = parseLegacyVersion(b);
+  if (pa === null || pb === null) return 0;
+  return pa - pb;
+}
+
+function suggestNextVersionFromBase(baseVersion: string): string {
+  const semver = parseSemver(baseVersion);
+  if (semver) {
+    return `${semver.major}.${semver.minor}.${semver.patch + 1}`;
+  }
+  const legacy = parseLegacyVersion(baseVersion);
+  if (legacy !== null) {
+    return `v${legacy + 1}`;
+  }
+  return baseVersion;
+}
+
+function validateDraftTargetVersion(targetVersion: string, basedOnVersion: string): string | null {
+  if (!targetVersion) return null;
+  const isTargetSemver = isSemverVersion(targetVersion);
+  const isTargetLegacy = isLegacyVersion(targetVersion);
+  if (!isTargetSemver && !isTargetLegacy) {
+    return 'Invalid version format. Expected x.y.z or vN';
+  }
+  if (basedOnVersion) {
+    const isBaseSemver = isSemverVersion(basedOnVersion);
+    const isBaseLegacy = isLegacyVersion(basedOnVersion);
+    if (isTargetSemver && isBaseSemver && compareSemverVersion(targetVersion, basedOnVersion) <= 0) {
+      return `Version must be greater than ${basedOnVersion}`;
+    }
+    if (isTargetLegacy && isBaseLegacy && compareLegacyVersion(targetVersion, basedOnVersion) <= 0) {
+      return `Version must be greater than ${basedOnVersion}`;
+    }
+  }
+  return null;
+}
+
 function StatusBadge({
   status,
   label,
 }: {
-  status?: 'draft' | 'reviewing' | 'online' | 'offline';
+  status?: 'draft' | 'reviewing' | 'reviewed' | 'online' | 'offline';
   label: string;
 }) {
   const statusStyles: Record<string, string> = {
     draft: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
     reviewing: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+    reviewed: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
     online: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
     offline: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
   };

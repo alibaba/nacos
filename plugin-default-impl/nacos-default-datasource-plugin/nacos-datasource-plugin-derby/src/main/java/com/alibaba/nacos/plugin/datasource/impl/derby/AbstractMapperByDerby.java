@@ -25,10 +25,10 @@ import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
  * @author blake.qiu
  **/
 public abstract class AbstractMapperByDerby extends AbstractMapper {
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedDerbylFunctionEnum.getFunctionByName(functionName);
     }
-
+    
 }

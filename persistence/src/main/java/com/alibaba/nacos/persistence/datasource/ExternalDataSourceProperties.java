@@ -76,8 +76,10 @@ public class ExternalDataSourceProperties {
         List<HikariDataSource> dataSources = new ArrayList<>();
         Binder.get(environment).bind("db", Bindable.ofInstance(this));
         Preconditions.checkArgument(Objects.nonNull(num), "db.num is null");
-        Preconditions.checkArgument(CollectionUtils.isNotEmpty(user), "db.user or db.user.[index] is null");
-        Preconditions.checkArgument(CollectionUtils.isNotEmpty(password), "db.password or db.password.[index] is null");
+        Preconditions.checkArgument(CollectionUtils.isNotEmpty(user),
+            "db.user or db.user.[index] is null");
+        Preconditions.checkArgument(CollectionUtils.isNotEmpty(password),
+            "db.password or db.password.[index] is null");
         for (int index = 0; index < num; index++) {
             int currentSize = index + 1;
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
@@ -96,7 +98,8 @@ public class ExternalDataSourceProperties {
             dataSources.add(ds);
             callback.accept(ds);
         }
-        Preconditions.checkArgument(CollectionUtils.isNotEmpty(dataSources), "no datasource available");
+        Preconditions.checkArgument(CollectionUtils.isNotEmpty(dataSources),
+            "no datasource available");
         return dataSources;
     }
     

@@ -32,7 +32,7 @@ class ModifyRequestTest {
         request.setExecuteNo(1);
         assertEquals("SQL{executeNo=1, sql='SELECT 1', args=[1, test]}", request.toString());
     }
-
+    
     @Test
     void testModifyRequestConstructorWithSql() {
         ModifyRequest request = new ModifyRequest("INSERT INTO t VALUES (?)");
@@ -41,7 +41,7 @@ class ModifyRequestTest {
         assertEquals(false, request.isRollBackOnUpdateFail());
         assertEquals(null, request.getArgs());
     }
-
+    
     @Test
     void testModifyRequestGettersSetters() {
         ModifyRequest request = new ModifyRequest();

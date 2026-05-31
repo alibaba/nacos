@@ -51,11 +51,15 @@ class ConsoleModuleStateBuilderTest {
     void build() {
         ModuleState state = builder.build();
         assertTrue((Boolean) state.getStates().get("console_ui_enabled"));
+        assertTrue((Boolean) state.getStates().get("ai_enabled"));
         assertEquals(ConsoleModuleStateBuilder.CONSOLE_MODULE, state.getModuleName());
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty("nacos.console.ui.enabled", "false");
+        environment.setProperty("nacos.extension.ai.enabled", "false");
         EnvUtil.setEnvironment(environment);
-        assertFalse((Boolean) builder.build().getStates().get("console_ui_enabled"));
+        ModuleState disabledState = builder.build();
+        assertFalse((Boolean) disabledState.getStates().get("console_ui_enabled"));
+        assertFalse((Boolean) disabledState.getStates().get("ai_enabled"));
     }
     
     @Test

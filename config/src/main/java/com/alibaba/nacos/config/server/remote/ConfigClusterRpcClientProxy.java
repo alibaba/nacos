@@ -46,9 +46,10 @@ public class ConfigClusterRpcClientProxy {
      * @param callBack callBack of config change sync.
      * @throws NacosException exception.
      */
-    public void syncConfigChange(Member member, ConfigChangeClusterSyncRequest request, RequestCallBack callBack)
-            throws NacosException {
-    
+    public void syncConfigChange(Member member, ConfigChangeClusterSyncRequest request,
+        RequestCallBack callBack)
+        throws NacosException {
+        
         clusterRpcClientProxy.asyncRequest(member, request, callBack);
         
     }

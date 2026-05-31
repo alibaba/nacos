@@ -46,7 +46,7 @@ public class McpToolOperationService {
     private final ConfigOperationService configOperationService;
     
     public McpToolOperationService(ConfigQueryChainService configQueryChainService,
-            ConfigOperationService configOperationService) {
+        ConfigOperationService configOperationService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
     }
@@ -58,16 +58,18 @@ public class McpToolOperationService {
      * @param toolSpecification mcp server included tools, see {@link McpTool}, optional
      * @throws NacosException any exception during handling
      */
-    public void refreshMcpTool(String namespaceId, McpServerBasicInfo serverBasicInfo, 
-                               McpToolSpecification toolSpecification)
-            throws NacosException {
+    public void refreshMcpTool(String namespaceId, McpServerBasicInfo serverBasicInfo,
+        McpToolSpecification toolSpecification)
+        throws NacosException {
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        ConfigFormV3 toolConfigForm = buildMcpToolConfigForm(namespaceId, serverBasicInfo, toolSpecification);
+        ConfigFormV3 toolConfigForm =
+            buildMcpToolConfigForm(namespaceId, serverBasicInfo, toolSpecification);
         configOperationService.publishConfig(toolConfigForm, configRequestInfo, null);
     }
     
     public McpToolSpecification getMcpTool(String namespaceId, String toolsDescriptionRef) {
-        ConfigQueryChainRequest request = buildQueryMcpToolRequest(namespaceId, toolsDescriptionRef);
+        ConfigQueryChainRequest request =
+            buildQueryMcpToolRequest(namespaceId, toolsDescriptionRef);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == response.getStatus()) {
             return null;
@@ -75,19 +77,24 @@ public class McpToolOperationService {
         return transferToMcpServerTool(response);
     }
     
-    public void deleteMcpTool(String namespaceId, String mcpServerId, String version) throws NacosException {
-        configOperationService.deleteConfig(McpConfigUtils.formatServerToolSpecDataId(mcpServerId, version),
-                Constants.MCP_SERVER_TOOL_GROUP, namespaceId, null, null, "nacos", null);
+    /** Delete MCP tool specification. */
+    public void deleteMcpTool(String namespaceId, String mcpServerId, String version)
+        throws NacosException {
+        configOperationService.deleteConfig(
+            McpConfigUtils.formatServerToolSpecDataId(mcpServerId, version),
+            Constants.MCP_SERVER_TOOL_GROUP, namespaceId, null, null, "nacos", null);
     }
     
-    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, McpServerBasicInfo mcpServerBasicInfo, 
-                                                McpToolSpecification toolSpecification) {
+    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId,
+        McpServerBasicInfo mcpServerBasicInfo,
+        McpToolSpecification toolSpecification) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
         configFormV3.setGroupName(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setGroup(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setNamespaceId(namespaceId);
-
-        String toolSpecDataId = McpConfigUtils.formatServerToolSpecDataId(mcpServerBasicInfo.getId(), 
+        
+        String toolSpecDataId =
+            McpConfigUtils.formatServerToolSpecDataId(mcpServerBasicInfo.getId(),
                 mcpServerBasicInfo.getVersionDetail().getVersion());
         configFormV3.setDataId(toolSpecDataId);
         
@@ -99,7 +106,8 @@ public class McpToolOperationService {
         return configFormV3;
     }
     
-    private ConfigQueryChainRequest buildQueryMcpToolRequest(String namespaceId, String toolsDescriptionRef) {
+    private ConfigQueryChainRequest buildQueryMcpToolRequest(String namespaceId,
+        String toolsDescriptionRef) {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setDataId(toolsDescriptionRef);
         request.setGroup(Constants.MCP_SERVER_TOOL_GROUP);

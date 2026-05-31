@@ -39,7 +39,9 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,7 +52,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -99,7 +103,7 @@ class ExternalDataSourceServiceImplTest {
             environment.setProperty("db.url.0", "1.1.1.1");
             environment.setProperty("db.url.1", "2.2.2.2");
             environment.setProperty("db.pool.config.driverClassName",
-                    "com.alibaba.nacos.persistence.datasource.mock.MockDriver");
+                "com.alibaba.nacos.persistence.datasource.mock.MockDriver");
             DatasourceConfiguration.setUseExternalDb(true);
             ExternalDataSourceServiceImpl service1 = new ExternalDataSourceServiceImpl();
             assertDoesNotThrow(service1::init);
@@ -137,12 +141,13 @@ class ExternalDataSourceServiceImplTest {
             environment.setProperty("db.password", "password");
             environment.setProperty("db.url.0", "1.1.1.1");
             environment.setProperty("db.pool.config.driverClassName",
-                    "com.alibaba.nacos.persistence.datasource.mock.MockDriver");
+                "com.alibaba.nacos.persistence.datasource.mock.MockDriver");
             DatasourceConfiguration.setUseExternalDb(true);
             HikariDataSource dataSource = mock(HikariDataSource.class);
             JdbcTemplate oldJt = mock(JdbcTemplate.class);
             ReflectionTestUtils.setField(service, "testJtList", Collections.singletonList(oldJt));
-            ReflectionTestUtils.setField(service, "dataSourceList", Collections.singletonList(dataSource));
+            ReflectionTestUtils.setField(service, "dataSourceList",
+                Collections.singletonList(dataSource));
             assertDoesNotThrow(service::reload);
             verify(jt).setDataSource(any(DataSource.class));
             verify(oldJt).setDataSource(null);
@@ -154,20 +159,45 @@ class ExternalDataSourceServiceImplTest {
     }
     
     @Test
+    void testReloadPropagatesIllegalStateException() {
+        try {
+            MockEnvironment environment = new MockEnvironment();
+            EnvUtil.setEnvironment(environment);
+            environment.setProperty("db.num", "1");
+            environment.setProperty("db.user", "user");
+            environment.setProperty("db.password", "password");
+            environment.setProperty("db.url.0", "1.1.1.1");
+            environment.setProperty("db.pool.config.driverClassName",
+                "com.alibaba.nacos.persistence.datasource.mock.MockDriver");
+            DatasourceConfiguration.setUseExternalDb(true);
+            ExternalDataSourceServiceImpl spyService = spy(service);
+            doThrow(new IllegalStateException("invalid postgresql schema")).when(spyService)
+                .validatePostgresqlTenantSchema();
+            assertThrows(IllegalStateException.class, spyService::reload);
+        } finally {
+            DatasourceConfiguration.setUseExternalDb(false);
+            EnvUtil.setEnvironment(null);
+        }
+    }
+    
+    @Test
     void testCheckMasterWritable() {
-        when(testMasterWritableJT.queryForObject(eq(" SELECT @@read_only "), eq(Integer.class))).thenReturn(0);
+        when(testMasterWritableJT.queryForObject(eq(" SELECT @@read_only "), eq(Integer.class)))
+            .thenReturn(0);
         assertTrue(service.checkMasterWritable());
     }
     
     @Test
     void testCheckMasterWritableWithoutResult() {
-        when(testMasterWritableJT.queryForObject(eq(" SELECT @@read_only "), eq(Integer.class))).thenReturn(null);
+        when(testMasterWritableJT.queryForObject(eq(" SELECT @@read_only "), eq(Integer.class)))
+            .thenReturn(null);
         assertFalse(service.checkMasterWritable());
     }
     
     @Test
     void testCheckMasterWritableWithException() {
-        when(testMasterWritableJT.queryForObject(eq(" SELECT @@read_only "), eq(Integer.class))).thenThrow(
+        when(testMasterWritableJT.queryForObject(eq(" SELECT @@read_only "), eq(Integer.class)))
+            .thenThrow(
                 new CannotGetJdbcConnectionException("test"));
         assertFalse(service.checkMasterWritable());
     }
@@ -196,7 +226,8 @@ class ExternalDataSourceServiceImplTest {
     void testGetHealthWithMasterDown() {
         HikariDataSource dataSource = mock(HikariDataSource.class);
         when(dataSource.getJdbcUrl()).thenReturn("1.1.1.1");
-        ReflectionTestUtils.setField(service, "dataSourceList", Collections.singletonList(dataSource));
+        ReflectionTestUtils.setField(service, "dataSourceList",
+            Collections.singletonList(dataSource));
         List<Boolean> isHealthList = new ArrayList<>();
         isHealthList.add(Boolean.FALSE);
         ReflectionTestUtils.setField(service, "isHealthList", isHealthList);
@@ -243,7 +274,8 @@ class ExternalDataSourceServiceImplTest {
         isHealthList.add(Boolean.FALSE);
         ReflectionTestUtils.setField(service, "isHealthList", isHealthList);
         
-        when(jt.queryForMap(anyString())).thenThrow(new EmptyResultDataAccessException("Expected exception", 1));
+        when(jt.queryForMap(anyString()))
+            .thenThrow(new EmptyResultDataAccessException("Expected exception", 1));
         service.new CheckDbHealthTask().run();
         assertEquals(1, isHealthList.size());
         assertTrue(isHealthList.get(0));
@@ -260,7 +292,7 @@ class ExternalDataSourceServiceImplTest {
         ReflectionTestUtils.setField(service, "isHealthList", isHealthList);
         
         when(jt.queryForMap(anyString())).thenThrow(
-                new UncategorizedSQLException("Expected exception", "", new SQLException()));
+            new UncategorizedSQLException("Expected exception", "", new SQLException()));
         service.new CheckDbHealthTask().run();
         assertEquals(1, isHealthList.size());
         assertFalse(isHealthList.get(0));
@@ -278,7 +310,7 @@ class ExternalDataSourceServiceImplTest {
         ReflectionTestUtils.setField(service, "masterIndex", 1);
         
         when(jt.queryForMap(anyString())).thenThrow(
-                new UncategorizedSQLException("Expected exception", "", new SQLException()));
+            new UncategorizedSQLException("Expected exception", "", new SQLException()));
         service.new CheckDbHealthTask().run();
         assertEquals(1, isHealthList.size());
         assertFalse(isHealthList.get(0));
@@ -287,9 +319,32 @@ class ExternalDataSourceServiceImplTest {
     @Test
     void testMasterSelectWithException() {
         HikariDataSource dataSource = mock(HikariDataSource.class);
-        ReflectionTestUtils.setField(service, "dataSourceList", Collections.singletonList(dataSource));
-        when(testMasterJT.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'")).thenThrow(
+        ReflectionTestUtils.setField(service, "dataSourceList",
+            Collections.singletonList(dataSource));
+        when(testMasterJT
+            .update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'"))
+            .thenThrow(
                 new NJdbcException("test"));
         assertDoesNotThrow(() -> service.new SelectMasterTask().run());
+    }
+    
+    @Test
+    void testValidatePostgresqlTenantSchemaSuccess() {
+        Map<String, Object> columnInfo = new HashMap<>();
+        columnInfo.put("is_nullable", "NO");
+        columnInfo.put("column_default", "''::character varying");
+        when(jt.queryForMap(anyString(), any())).thenReturn(columnInfo);
+        
+        assertDoesNotThrow(() -> service.validatePostgresqlTenantSchema(jt));
+    }
+    
+    @Test
+    void testValidatePostgresqlTenantSchemaFailWhenNullable() {
+        Map<String, Object> columnInfo = new HashMap<>();
+        columnInfo.put("is_nullable", "YES");
+        columnInfo.put("column_default", null);
+        when(jt.queryForMap(anyString(), any())).thenReturn(columnInfo);
+        
+        assertThrows(IllegalStateException.class, () -> service.validatePostgresqlTenantSchema(jt));
     }
 }

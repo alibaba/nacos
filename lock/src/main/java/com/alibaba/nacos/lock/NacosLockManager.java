@@ -39,12 +39,14 @@ public class NacosLockManager implements LockManager {
     
     private final Map<String, LockFactory> factoryMap;
     
-    private final ConcurrentHashMap<LockKey, AtomicLockService> atomicLockMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<LockKey, AtomicLockService> atomicLockMap =
+        new ConcurrentHashMap<>();
     
     public NacosLockManager() {
         Collection<LockFactory> factories = NacosServiceLoader.load(LockFactory.class);
         factoryMap = factories.stream()
-                .collect(Collectors.toConcurrentMap(LockFactory::getLockType, lockFactory -> lockFactory));
+            .collect(
+                Collectors.toConcurrentMap(LockFactory::getLockType, lockFactory -> lockFactory));
     }
     
     @Override

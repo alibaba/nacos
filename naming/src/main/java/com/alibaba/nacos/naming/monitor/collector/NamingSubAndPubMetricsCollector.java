@@ -38,15 +38,18 @@ public class NamingSubAndPubMetricsCollector {
     
     private static final long DELAY_SECONDS = 5;
     
-    private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
-        Thread thread = new Thread(r, "nacos.naming.monitor.NamingSubAndPubMetricsCollector");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private static ScheduledExecutorService executorService =
+        ExecutorFactory.newSingleScheduledExecutorService(r -> {
+            Thread thread = new Thread(r, "nacos.naming.monitor.NamingSubAndPubMetricsCollector");
+            thread.setDaemon(true);
+            return thread;
+        });
     
     @Autowired
-    public NamingSubAndPubMetricsCollector(ConnectionBasedClientManager connectionBasedClientManager,
-            EphemeralIpPortClientManager ephemeralIpPortClientManager, PersistentIpPortClientManager persistentIpPortClientManager) {
+    public NamingSubAndPubMetricsCollector(
+        ConnectionBasedClientManager connectionBasedClientManager,
+        EphemeralIpPortClientManager ephemeralIpPortClientManager,
+        PersistentIpPortClientManager persistentIpPortClientManager) {
         executorService.scheduleWithFixedDelay(() -> {
             int v1SubscriberCount = 0;
             int v1PublisherCount = 0;
@@ -66,7 +69,7 @@ public class NamingSubAndPubMetricsCollector {
             }
             MetricsMonitor.getNamingSubscriber("v1").set(v1SubscriberCount);
             MetricsMonitor.getNamingPublisher("v1").set(v1PublisherCount);
-    
+            
             int v2SubscriberCount = 0;
             int v2PublisherCount = 0;
             for (String clientId : connectionBasedClientManager.allClientId()) {

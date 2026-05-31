@@ -93,7 +93,9 @@ public class ConfigQueryResult implements Serializable {
     
     @Override
     public String toString() {
-        return "ConfigQueryResult{" + "content='" + (content != null ? content.substring(0, Math.min(50, content.length())) + "..." : "null") 
-                + '\'' + ", md5='" + md5 + '\'' + ", configType='" + configType + '\'' + '}';
+        return "ConfigQueryResult{" + "content='"
+            + (content != null ? content.substring(0, Math.min(50, content.length())) + "..."
+                : "null")
+            + '\'' + ", md5='" + md5 + '\'' + ", configType='" + configType + '\'' + '}';
     }
 }

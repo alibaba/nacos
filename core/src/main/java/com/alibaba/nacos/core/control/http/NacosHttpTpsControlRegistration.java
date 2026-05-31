@@ -32,7 +32,8 @@ import org.springframework.context.annotation.Configuration;
 public class NacosHttpTpsControlRegistration {
     
     @Bean
-    public FilterRegistrationBean<NacosHttpTpsFilter> tpsFilterRegistration(NacosHttpTpsFilter tpsFilter) {
+    public FilterRegistrationBean<NacosHttpTpsFilter> tpsFilterRegistration(
+        NacosHttpTpsFilter tpsFilter) {
         FilterRegistrationBean<NacosHttpTpsFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(tpsFilter);
         //nacos naming

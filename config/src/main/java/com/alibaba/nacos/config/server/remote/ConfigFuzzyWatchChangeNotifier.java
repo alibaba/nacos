@@ -55,8 +55,9 @@ public class ConfigFuzzyWatchChangeNotifier extends Subscriber<LocalDataChangeEv
      * @param connectionManager The manager for connections.
      * @param rpcPushService    The service for RPC push.
      */
-    public ConfigFuzzyWatchChangeNotifier(ConnectionManager connectionManager, RpcPushService rpcPushService,
-            ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
+    public ConfigFuzzyWatchChangeNotifier(ConnectionManager connectionManager,
+        RpcPushService rpcPushService,
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
         this.rpcPushService = rpcPushService;
         this.connectionManager = connectionManager;
         this.configFuzzyWatchContextService = configFuzzyWatchContextService;
@@ -69,21 +70,25 @@ public class ConfigFuzzyWatchChangeNotifier extends Subscriber<LocalDataChangeEv
         boolean exists = ConfigCacheService.getContentCache(event.groupKey) != null;
         //can not recognize add or update,  set config_changed here
         String changedType = exists ? CONFIG_CHANGED : DELETE_CONFIG;
-        boolean needNotify = configFuzzyWatchContextService.syncGroupKeyContext(event.groupKey, changedType);
+        boolean needNotify =
+            configFuzzyWatchContextService.syncGroupKeyContext(event.groupKey, changedType);
         if (needNotify) {
-            for (String clientId : configFuzzyWatchContextService.getMatchedClients(event.groupKey)) {
+            for (String clientId : configFuzzyWatchContextService
+                .getMatchedClients(event.groupKey)) {
                 Connection connection = connectionManager.getConnection(clientId);
                 if (null == connection) {
                     Loggers.REMOTE_PUSH.warn(
-                            "clientId not found, Config change notification not sent. clientId={},keyGroupPattern={}",
-                            clientId, event.groupKey);
+                        "clientId not found, Config change notification not sent. clientId={},keyGroupPattern={}",
+                        clientId, event.groupKey);
                     continue;
                 }
                 
-                ConfigFuzzyWatchChangeNotifyRequest request = new ConfigFuzzyWatchChangeNotifyRequest(event.groupKey,
+                ConfigFuzzyWatchChangeNotifyRequest request =
+                    new ConfigFuzzyWatchChangeNotifyRequest(event.groupKey,
                         changedType);
                 int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
-                FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask = new FuzzyWatchChangeNotifyTask(
+                FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask =
+                    new FuzzyWatchChangeNotifyTask(
                         connectionManager, rpcPushService, request, maxPushRetryTimes, clientId);
                 fuzzyWatchChangeNotifyTask.scheduleSelf();
             }

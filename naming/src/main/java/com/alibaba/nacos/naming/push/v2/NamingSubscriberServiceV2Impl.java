@@ -48,7 +48,8 @@ import java.util.stream.Stream;
  * @author xiweng.yy
  */
 @org.springframework.stereotype.Service
-public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements NamingSubscriberService {
+public class NamingSubscriberServiceV2Impl extends SmartSubscriber
+    implements NamingSubscriberService {
     
     private static final int PARALLEL_SIZE = 100;
     
@@ -59,11 +60,13 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     private final PushDelayTaskExecuteEngine delayTaskEngine;
     
     public NamingSubscriberServiceV2Impl(ClientManagerDelegate clientManager,
-            ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
-            NamingMetadataManager metadataManager, PushExecutorDelegate pushExecutor, SwitchDomain switchDomain) {
+        ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
+        NamingMetadataManager metadataManager, PushExecutorDelegate pushExecutor,
+        SwitchDomain switchDomain) {
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
-        this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
+        this.delayTaskEngine =
+            new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
                 metadataManager, pushExecutor, switchDomain);
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
         
@@ -92,9 +95,10 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
         Stream<Service> serviceStream = getServiceStream();
         String serviceNamePattern = NamingUtils.getServiceName(serviceName);
         String groupNamePattern = NamingUtils.getGroupName(serviceName);
-        serviceStream.filter(service -> service.getNamespace().equals(namespaceId) && service.getName()
+        serviceStream
+            .filter(service -> service.getNamespace().equals(namespaceId) && service.getName()
                 .contains(serviceNamePattern) && service.getGroup().contains(groupNamePattern))
-                .forEach(service -> result.addAll(getSubscribers(service)));
+            .forEach(service -> result.addAll(getSubscribers(service)));
         return result;
     }
     
@@ -115,15 +119,19 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     public void onEvent(Event event) {
         if (event instanceof ServiceEvent.ServiceChangedEvent) {
             // If service changed, push to all subscribers.
-            ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
+            ServiceEvent.ServiceChangedEvent serviceChangedEvent =
+                (ServiceEvent.ServiceChangedEvent) event;
             Service service = serviceChangedEvent.getService();
-            delayTaskEngine.addTask(service, new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay()));
+            delayTaskEngine.addTask(service,
+                new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay()));
             MetricsMonitor.incrementServiceChangeCount(service);
         } else if (event instanceof ServiceEvent.ServiceSubscribedEvent) {
             // If service is subscribed by one client, only push this client.
-            ServiceEvent.ServiceSubscribedEvent subscribedEvent = (ServiceEvent.ServiceSubscribedEvent) event;
+            ServiceEvent.ServiceSubscribedEvent subscribedEvent =
+                (ServiceEvent.ServiceSubscribedEvent) event;
             Service service = subscribedEvent.getService();
-            delayTaskEngine.addTask(service, new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay(),
+            delayTaskEngine.addTask(service,
+                new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay(),
                     subscribedEvent.getClientId()));
         }
     }

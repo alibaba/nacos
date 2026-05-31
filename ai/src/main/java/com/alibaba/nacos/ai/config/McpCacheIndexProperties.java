@@ -93,8 +93,10 @@ public class McpCacheIndexProperties {
     
     @Override
     public String toString() {
-        return "McpCacheIndexProperties{" + "enabled=" + enabled + ", maxSize=" + maxSize + ", expireTimeSeconds="
-                + expireTimeSeconds + ", cleanupIntervalSeconds=" + cleanupIntervalSeconds + ", syncIntervalSeconds="
-                + syncIntervalSeconds + '}';
+        return "McpCacheIndexProperties{" + "enabled=" + enabled + ", maxSize=" + maxSize
+            + ", expireTimeSeconds="
+            + expireTimeSeconds + ", cleanupIntervalSeconds=" + cleanupIntervalSeconds
+            + ", syncIntervalSeconds="
+            + syncIntervalSeconds + '}';
     }
-} 
+}

@@ -30,9 +30,11 @@ public class NacosLoggingProperties {
     
     private static final String NACOS_LOGGING_CONFIG_PROPERTY = "nacos.logging.config";
     
-    private static final String NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY = "nacos.logging.default.config.enabled";
+    private static final String NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY =
+        "nacos.logging.default.config.enabled";
     
-    private static final String NACOS_LOGGING_RELOAD_INTERVAL_PROPERTY = "nacos.logging.reload.interval.seconds";
+    private static final String NACOS_LOGGING_RELOAD_INTERVAL_PROPERTY =
+        "nacos.logging.reload.interval.seconds";
     
     private static final long DEFAULT_NACOS_LOGGING_RELOAD_INTERVAL = 10L;
     

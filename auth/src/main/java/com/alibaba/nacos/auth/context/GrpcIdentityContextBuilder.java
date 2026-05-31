@@ -51,7 +51,7 @@ public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Reques
     @Override
     public IdentityContext build(Request request) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
+            .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         IdentityContext result = new IdentityContext();
         getRemoteIp(request, result);
         if (!authPluginService.isPresent()) {
@@ -68,6 +68,7 @@ public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Reques
     }
     
     private void getRemoteIp(Request request, IdentityContext result) {
-        result.setParameter(Constants.Identity.REMOTE_IP, request.getHeader(Constants.Identity.X_REAL_IP));
+        result.setParameter(Constants.Identity.REMOTE_IP,
+            request.getHeader(Constants.Identity.X_REAL_IP));
     }
 }

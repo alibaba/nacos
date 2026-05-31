@@ -34,13 +34,14 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  */
 @Service
 public class ClientIpWhiteList {
-
-    public static final String CLIENT_IP_WHITELIST_METADATA = "com.alibaba.nacos.metadata.clientIpWhitelist";
-
+    
+    public static final String CLIENT_IP_WHITELIST_METADATA =
+        "com.alibaba.nacos.metadata.clientIpWhitelist";
+    
     private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<>(
-            new ArrayList<>());
-
-    private static Boolean isOpen = false;
+        new ArrayList<>());
+    
+    private static volatile boolean isOpen = false;
     
     /**
      * Judge whether specified client ip includes in the whitelist.
@@ -84,7 +85,7 @@ public class ClientIpWhiteList {
         DEFAULT_LOG.warn("[clientIpWhiteList] {}", content);
         try {
             AclInfo acl = JacksonUtils.toObj(content, AclInfo.class);
-            isOpen = acl.getIsOpen();
+            isOpen = Boolean.TRUE.equals(acl.getIsOpen());
             CLIENT_IP_WHITELIST.set(acl.getIps());
         } catch (Exception ioe) {
             DEFAULT_LOG.error("failed to load clientIpWhiteList, " + ioe.toString(), ioe);

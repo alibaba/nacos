@@ -41,36 +41,37 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class NacosRuntimeConnectionEjectorTest {
-
+    
     @Mock
     private ConnectionManager connectionManager;
-
+    
     @Mock
     private Connection connection;
-
+    
     @Mock
     private ConnectionMeta connectionMeta;
-
+    
     private NacosRuntimeConnectionEjector ejector;
-
+    
     @BeforeEach
     void setUp() {
         ejector = new NacosRuntimeConnectionEjector();
         ejector.setConnectionManager(connectionManager);
-        ReflectionTestUtils.setField(connectionManager, "connections", new ConcurrentHashMap<String, Connection>());
+        ReflectionTestUtils.setField(connectionManager, "connections",
+            new ConcurrentHashMap<String, Connection>());
     }
-
+    
     @Test
     void testGetName() {
         assertEquals("nacos", ejector.getName());
     }
-
+    
     @Test
     void testDoEjectWithEmptyConnections() {
         when(connectionManager.currentSdkClientCount()).thenReturn(0);
         ejector.doEject();
     }
-
+    
     @Test
     void testDoEjectOverLimitPath() {
         when(connectionManager.currentSdkClientCount()).thenReturn(0);
@@ -79,7 +80,7 @@ class NacosRuntimeConnectionEjectorTest {
         ejector.setRedirectAddress("127.0.0.1:8848");
         ejector.doEject();
     }
-
+    
     @Test
     void testEjectOutdatedConnectionWhenConnectionNull() {
         Map<String, Connection> connections = new ConcurrentHashMap<>();
@@ -91,12 +92,12 @@ class NacosRuntimeConnectionEjectorTest {
         ReflectionTestUtils.setField(connectionManager, "connections", connections);
         when(connectionManager.currentSdkClientCount()).thenReturn(1);
         when(connectionManager.getConnection("conn-1")).thenReturn(null);
-
+        
         ejector.doEject();
-
+        
         verify(connectionManager).unregister(eq("conn-1"));
     }
-
+    
     @Test
     void testEjectOutdatedConnectionWhenConnectionAlreadyClosed() throws NacosException {
         Map<String, Connection> connections = new ConcurrentHashMap<>();
@@ -109,12 +110,12 @@ class NacosRuntimeConnectionEjectorTest {
         when(connectionManager.currentSdkClientCount()).thenReturn(1);
         when(connectionManager.getConnection("conn-1")).thenReturn(connection);
         doThrow(new ConnectionAlreadyClosedException()).when(connection).asyncRequest(any(), any());
-
+        
         ejector.doEject();
-
+        
         verify(connectionManager).unregister(eq("conn-1"));
     }
-
+    
     @Test
     void testEjectOverLimitWithLoadSingleTrue() throws NacosException {
         when(connectionManager.currentSdkClientCount()).thenReturn(1);
@@ -125,17 +126,17 @@ class NacosRuntimeConnectionEjectorTest {
         when(connectionMeta.pushQueueBlockTimesLastOver(300000L)).thenReturn(false);
         when(connectionMeta.isSdkSource()).thenReturn(true);
         when(connectionManager.loadSingle(any(), eq("127.0.0.1:8848"))).thenReturn(true);
-
+        
         Map<String, Connection> connections = new ConcurrentHashMap<>();
         connections.put("c1", connection);
         connections.put("c2", connection);
         connections.put("c3", connection);
         ReflectionTestUtils.setField(connectionManager, "connections", connections);
-
+        
         ejector.setLoadClient(2);
         ejector.setRedirectAddress("127.0.0.1:8848");
         ejector.doEject();
-
+        
         verify(connectionManager, times(3)).loadSingle(any(), eq("127.0.0.1:8848"));
     }
 }

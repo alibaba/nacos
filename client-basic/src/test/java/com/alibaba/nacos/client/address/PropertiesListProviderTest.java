@@ -53,7 +53,7 @@ class PropertiesListProviderTest {
         NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         assertFalse(propertiesListProvider.match(properties));
         properties.setProperty(PropertyKeyConst.SERVER_ADDR,
-                "localhost:1111,http://127.0.0.1:2222;https://1.1.1.1:3333,2.2.2.2;http://3.3.3.3,https://4.4.4.4");
+            "localhost:1111,http://127.0.0.1:2222;https://1.1.1.1:3333,2.2.2.2;http://3.3.3.3,https://4.4.4.4");
         assertTrue(propertiesListProvider.match(properties));
         propertiesListProvider.init(properties, null);
         assertEquals(6, propertiesListProvider.getServerList().size());
@@ -64,9 +64,11 @@ class PropertiesListProviderTest {
         assertEquals("http://3.3.3.3", propertiesListProvider.getServerList().get(4));
         assertEquals("https://4.4.4.4", propertiesListProvider.getServerList().get(5));
         assertTrue(propertiesListProvider.isFixed());
-        assertEquals(Constants.Address.ADDRESS_SERVER_LIST_PROVIDER_ORDER, propertiesListProvider.getOrder());
-        assertEquals("fixed-localhost_1111-127.0.0.1_2222-1.1.1.1_3333-2.2.2.2_8848-3.3.3.3-4.4.4.4",
-                propertiesListProvider.getServerName());
+        assertEquals(Constants.Address.ADDRESS_SERVER_LIST_PROVIDER_ORDER,
+            propertiesListProvider.getOrder());
+        assertEquals(
+            "fixed-localhost_1111-127.0.0.1_2222-1.1.1.1_3333-2.2.2.2_8848-3.3.3.3-4.4.4.4",
+            propertiesListProvider.getServerName());
     }
     
     @Test

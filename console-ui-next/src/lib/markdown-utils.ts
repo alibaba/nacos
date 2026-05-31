@@ -5,6 +5,13 @@ export function stripFrontmatter(md: string): string {
   return md.replace(/^---[\s\S]*?---\s*/, '');
 }
 
+/**
+ * Returns true when markdown has non-empty body after removing frontmatter.
+ */
+export function hasNonFrontmatterMarkdownBody(md: string): boolean {
+  return stripFrontmatter(md || '').trim().length > 0;
+}
+
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
 
 /**
@@ -51,7 +58,8 @@ export function updateFrontmatterField(md: string, field: string, value: string)
     return line;
   });
   if (!found) {
-    updated.push(`${field}: ${value}`);
+    // Insert at the beginning of frontmatter so name always appears first
+    updated.unshift(`${field}: ${value}`);
   }
   return md.replace(FRONTMATTER_RE, `---\n${updated.join('\n')}\n---`);
 }

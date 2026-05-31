@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.core;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
@@ -43,17 +44,21 @@ import java.util.Map;
  */
 @InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 @Component
-public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadRequest, ServerReloadResponse> {
+@Since("2.0.0")
+public class ServerReloaderRequestHandler
+    extends RequestHandler<ServerReloadRequest, ServerReloadResponse> {
     
     @Autowired
     private ConnectionManager connectionManager;
     
     @Override
     @Secured(resource = "serverReload", signType = SignType.SPECIFIED, apiType = ApiType.INNER_API)
-    public ServerReloadResponse handle(ServerReloadRequest request, RequestMeta meta) throws NacosException {
+    public ServerReloadResponse handle(ServerReloadRequest request, RequestMeta meta)
+        throws NacosException {
         ServerReloadResponse response = new ServerReloadResponse();
-        Loggers.REMOTE.info("server reload request receive,reload count={},redirectServer={},requestIp={}",
-                request.getReloadCount(), request.getReloadServer(), meta.getClientIp());
+        Loggers.REMOTE.info(
+            "server reload request receive,reload count={},redirectServer={},requestIp={}",
+            request.getReloadCount(), request.getReloadServer(), meta.getClientIp());
         int reloadCount = request.getReloadCount();
         Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);

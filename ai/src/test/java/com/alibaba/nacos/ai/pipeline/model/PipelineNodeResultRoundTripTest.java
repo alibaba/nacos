@@ -37,9 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @since 3.2.0
  */
 class PipelineNodeResultRoundTripTest {
-
+    
     private static PipelineNodeResult node(String nodeId, boolean passed, String messageType,
-            List<Checkpoint> checkpoints) {
+        List<Checkpoint> checkpoints) {
         PipelineNodeResult result = new PipelineNodeResult();
         result.setNodeId(nodeId);
         result.setExecutedAt("2024-06-15T12:00:00Z");
@@ -50,20 +50,21 @@ class PipelineNodeResultRoundTripTest {
         result.setCheckpoints(checkpoints);
         return result;
     }
-
+    
     private static List<List<PipelineNodeResult>> sampleLists() {
         List<List<PipelineNodeResult>> lists = new ArrayList<>();
         lists.add(Collections.emptyList());
         lists.add(Collections.singletonList(node("n1", true, "text", null)));
         lists.add(Arrays.asList(
-                node("a", true, "json", Collections.singletonList(new Checkpoint("cp1", true))),
-                node("b", false, null, Collections.emptyList())));
+            node("a", true, "json", Collections.singletonList(new Checkpoint("cp1", true))),
+            node("b", false, null, Collections.emptyList())));
         lists.add(Arrays.asList(
-                node("x", false, "markdown", null),
-                node("y", true, "html", Arrays.asList(new Checkpoint("c1", false), new Checkpoint("c2", true)))));
+            node("x", false, "markdown", null),
+            node("y", true, "html",
+                Arrays.asList(new Checkpoint("c1", false), new Checkpoint("c2", true)))));
         return lists;
     }
-
+    
     /**
      * PipelineNodeResult JSON serialization round-trip.
      *
@@ -73,7 +74,9 @@ class PipelineNodeResultRoundTripTest {
     void jsonSerializationRoundTrip() {
         for (List<PipelineNodeResult> original : sampleLists()) {
             String json = JacksonUtils.toJson(original);
-            List<PipelineNodeResult> deserialized = JacksonUtils.toObj(json, new TypeReference<List<PipelineNodeResult>>() { });
+            List<PipelineNodeResult> deserialized =
+                JacksonUtils.toObj(json, new TypeReference<List<PipelineNodeResult>>() {
+                });
             assertEquals(original, deserialized);
         }
     }

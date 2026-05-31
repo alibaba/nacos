@@ -30,7 +30,7 @@ public class NacosWebBeanTypeFilter extends AbstractNacosWebBeanTypeFilter {
     
     @Override
     public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory)
-            throws IOException {
+        throws IOException {
         return super.isWebBean(metadataReader, metadataReaderFactory);
     }
 }

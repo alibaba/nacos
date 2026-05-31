@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class NamespaceTypeEnumTest {
-
+    
     @Test
     void testValues() {
         NamespaceTypeEnum[] values = NamespaceTypeEnum.values();
@@ -32,25 +32,26 @@ class NamespaceTypeEnumTest {
         assertEquals(NamespaceTypeEnum.CUSTOM, values[1]);
         assertEquals(NamespaceTypeEnum.AI_MCP, values[2]);
     }
-
+    
     @Test
     void testGlobal() {
         assertEquals(0, NamespaceTypeEnum.GLOBAL.getType());
         assertEquals("Global configuration", NamespaceTypeEnum.GLOBAL.getDescription());
     }
-
+    
     @Test
     void testCustom() {
         assertEquals(1, NamespaceTypeEnum.CUSTOM.getType());
-        assertEquals("Custom namespace for naming and config", NamespaceTypeEnum.CUSTOM.getDescription());
+        assertEquals("Custom namespace for naming and config",
+            NamespaceTypeEnum.CUSTOM.getDescription());
     }
-
+    
     @Test
     void testAiMcp() {
         assertEquals(2, NamespaceTypeEnum.AI_MCP.getType());
         assertEquals("Default private namespace", NamespaceTypeEnum.AI_MCP.getDescription());
     }
-
+    
     @Test
     void testValueOf() {
         assertEquals(NamespaceTypeEnum.GLOBAL, NamespaceTypeEnum.valueOf("GLOBAL"));

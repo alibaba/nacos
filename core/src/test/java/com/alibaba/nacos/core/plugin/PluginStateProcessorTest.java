@@ -54,132 +54,133 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class PluginStateProcessorTest {
-
+    
     @Mock
     private PluginManager pluginManager;
-
+    
     @Mock
     private PluginStatePersistenceService persistence;
-
+    
     @Mock
     private ProtocolManager protocolManager;
-
+    
     @Mock
     private CPProtocol cpProtocol;
-
+    
     private PluginStateProcessor processor;
-
+    
     private Serializer serializer;
-
+    
     @BeforeEach
     void setUp() {
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         doNothing().when(cpProtocol).addRequestProcessors(anyList());
-
+        
         processor = new PluginStateProcessor(pluginManager, persistence, protocolManager);
         serializer = SerializeFactory.getDefault();
     }
-
+    
     @Test
     void groupTest() {
         assertEquals("plugin_state", processor.group());
     }
-
+    
     @Test
     void onRequestTest() {
         ReadRequest request = ReadRequest.newBuilder().build();
-
+        
         Response response = processor.onRequest(request);
-
+        
         assertNotNull(response);
         assertTrue(response.getSuccess());
     }
-
+    
     @Test
     void onApplyChangeStateTest() throws Exception {
         PluginStateOperation operation = PluginStateOperation.builder()
-                .type(PluginStateOperation.OperationType.CHANGE_STATE)
-                .pluginId("trace:otel")
-                .enabled(false)
-                .build();
-
+            .type(PluginStateOperation.OperationType.CHANGE_STATE)
+            .pluginId("trace:otel")
+            .enabled(false)
+            .build();
+        
         byte[] data = serializer.serialize(operation);
         WriteRequest request = WriteRequest.newBuilder()
-                .setData(ByteString.copyFrom(data))
-                .build();
-
+            .setData(ByteString.copyFrom(data))
+            .build();
+        
         Response response = processor.onApply(request);
-
+        
         assertNotNull(response);
         assertTrue(response.getSuccess());
         verify(pluginManager, times(1)).applyStateChange("trace:otel", false);
         verify(persistence, times(1)).saveState("trace:otel", false);
     }
-
+    
     @Test
     void onApplyUpdateConfigTest() throws Exception {
         Map<String, String> config = new HashMap<>();
         config.put("endpoint", "http://localhost:8080");
         config.put("timeout", "5000");
-
+        
         PluginStateOperation operation = PluginStateOperation.builder()
-                .type(PluginStateOperation.OperationType.UPDATE_CONFIG)
-                .pluginId("trace:otel")
-                .config(config)
-                .build();
-
+            .type(PluginStateOperation.OperationType.UPDATE_CONFIG)
+            .pluginId("trace:otel")
+            .config(config)
+            .build();
+        
         byte[] data = serializer.serialize(operation);
         WriteRequest request = WriteRequest.newBuilder()
-                .setData(ByteString.copyFrom(data))
-                .build();
-
+            .setData(ByteString.copyFrom(data))
+            .build();
+        
         Response response = processor.onApply(request);
-
+        
         assertNotNull(response);
         assertTrue(response.getSuccess());
         verify(pluginManager, times(1)).applyConfigChange("trace:otel", config);
         verify(persistence, times(1)).saveConfig("trace:otel", config);
     }
-
+    
     @Test
     void onApplyInvalidDataTest() {
         WriteRequest request = WriteRequest.newBuilder()
-                .setData(ByteString.copyFrom(new byte[]{0, 1, 2, 3}))
-                .build();
-
+            .setData(ByteString.copyFrom(new byte[] {0, 1, 2, 3}))
+            .build();
+        
         Response response = processor.onApply(request);
-
+        
         assertNotNull(response);
         assertFalse(response.getSuccess());
         assertNotNull(response.getErrMsg());
     }
-
+    
     @Test
     void onApplyChangeStateWithNullEnabledTest() throws Exception {
         PluginStateOperation operation = PluginStateOperation.builder()
-                .type(PluginStateOperation.OperationType.CHANGE_STATE)
-                .pluginId("trace:otel")
-                .enabled(true)
-                .build();
+            .type(PluginStateOperation.OperationType.CHANGE_STATE)
+            .pluginId("trace:otel")
+            .enabled(true)
+            .build();
         operation.setEnabled(null);
-
+        
         byte[] data = serializer.serialize(operation);
         WriteRequest request = WriteRequest.newBuilder()
-                .setData(ByteString.copyFrom(data))
-                .build();
-
+            .setData(ByteString.copyFrom(data))
+            .build();
+        
         Response response = processor.onApply(request);
-
+        
         assertNotNull(response);
         assertFalse(response.getSuccess());
         assertNotNull(response.getErrMsg());
-        assertTrue(response.getErrMsg().contains("trace:otel") || response.getErrMsg().contains("CHANGE_STATE"));
+        assertTrue(response.getErrMsg().contains("trace:otel")
+            || response.getErrMsg().contains("CHANGE_STATE"));
     }
-
+    
     @Test
     void loadSnapshotOperateTest() {
         List<SnapshotOperation> operations = processor.loadSnapshotOperate();
-
+        
         assertNotNull(operations);
         assertEquals(1, operations.size());
         assertTrue(operations.get(0) instanceof PluginStateSnapshotOperation);

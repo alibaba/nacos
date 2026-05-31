@@ -25,12 +25,12 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.oracle.TrustedOracleFuncti
  * @author xiweng.yy
  */
 public class OracleDatabaseDialect extends AbstractDatabaseDialect {
-
+    
     @Override
     public String getType() {
         return DatabaseTypeConstant.ORACLE;
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedOracleFunctionEnum.getFunctionByName(functionName);

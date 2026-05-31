@@ -33,14 +33,15 @@ import java.util.Map;
  */
 @SuppressWarnings("all")
 public abstract class AbstractConsistencyProtocol<T extends Config, L extends RequestProcessor>
-        implements ConsistencyProtocol<T, L> {
+    implements ConsistencyProtocol<T, L> {
     
     protected final ProtocolMetaData metaData = new ProtocolMetaData();
     
     protected Map<String, L> processorMap = Collections.synchronizedMap(new HashMap<>());
     
     public void loadLogProcessor(List<L> logProcessors) {
-        logProcessors.forEach(logDispatcher -> processorMap.put(logDispatcher.group(), logDispatcher));
+        logProcessors
+            .forEach(logDispatcher -> processorMap.put(logDispatcher.group(), logDispatcher));
     }
     
     protected Map<String, L> allProcessor() {

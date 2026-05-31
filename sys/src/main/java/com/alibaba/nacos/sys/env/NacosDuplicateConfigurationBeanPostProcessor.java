@@ -27,19 +27,22 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author xiweng.yy
  */
-public class NacosDuplicateConfigurationBeanPostProcessor extends AbstractNacosDuplicateBeanPostProcessor {
+public class NacosDuplicateConfigurationBeanPostProcessor
+    extends AbstractNacosDuplicateBeanPostProcessor {
     
     public NacosDuplicateConfigurationBeanPostProcessor(ConfigurableApplicationContext context) {
         super(context);
     }
     
     @Override
-    protected boolean isReUsingBean(Class<?> beanClass, String beanName, BeanDefinition beanDefinition) {
+    protected boolean isReUsingBean(Class<?> beanClass, String beanName,
+        BeanDefinition beanDefinition) {
         return isConfiguration(beanClass);
     }
     
     private boolean isConfiguration(Class<?> beanClass) {
-        return null != beanClass.getAnnotation(Configuration.class) || null != beanClass.getAnnotation(
+        return null != beanClass.getAnnotation(Configuration.class)
+            || null != beanClass.getAnnotation(
                 AutoConfiguration.class);
     }
 }

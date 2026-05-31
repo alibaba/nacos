@@ -34,7 +34,8 @@ public class PropertiesUtil {
         return handleSpringBinder(environment, prefix, Properties.class);
     }
     
-    public static Map<String, Object> getPropertiesWithPrefixForMap(Environment environment, String prefix) {
+    public static Map<String, Object> getPropertiesWithPrefixForMap(Environment environment,
+        String prefix) {
         return handleSpringBinder(environment, prefix, Map.class);
     }
     
@@ -47,8 +48,10 @@ public class PropertiesUtil {
      * @param <T>         target class
      * @return binder object
      */
-    public static <T> T handleSpringBinder(Environment environment, String prefix, Class<T> targetClass) {
-        String prefixParam = prefix.endsWith(".") ? prefix.substring(0, prefix.length() - 1) : prefix;
+    public static <T> T handleSpringBinder(Environment environment, String prefix,
+        Class<T> targetClass) {
+        String prefixParam =
+            prefix.endsWith(".") ? prefix.substring(0, prefix.length() - 1) : prefix;
         return Binder.get(environment).bind(prefixParam, Bindable.of(targetClass)).orElse(null);
     }
 }

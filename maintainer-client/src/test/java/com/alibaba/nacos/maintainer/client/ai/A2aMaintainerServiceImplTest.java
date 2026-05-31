@@ -62,9 +62,11 @@ class A2aMaintainerServiceImplTest {
     void setUp() throws Exception {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-        AiMaintainerService aiMaintainerService = AiMaintainerFactory.createAiMaintainerService(properties);
+        AiMaintainerService aiMaintainerService =
+            AiMaintainerFactory.createAiMaintainerService(properties);
         
-        Field a2aServiceField = NacosAiMaintainerServiceImpl.class.getDeclaredField("a2aMaintainerService");
+        Field a2aServiceField =
+            NacosAiMaintainerServiceImpl.class.getDeclaredField("a2aMaintainerService");
         a2aServiceField.setAccessible(true);
         a2aService = (A2aMaintainerService) a2aServiceField.get(aiMaintainerService);
         
@@ -75,7 +77,8 @@ class A2aMaintainerServiceImplTest {
         Field contextField = AbstractAiDelegateMaintainerService.class.getDeclaredField("context");
         contextField.setAccessible(true);
         Object context = contextField.get(service);
-        Field clientHttpProxyField = AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
+        Field clientHttpProxyField =
+            AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
         clientHttpProxyField.setAccessible(true);
         clientHttpProxyField.set(context, clientHttpProxy);
     }
@@ -101,10 +104,11 @@ class A2aMaintainerServiceImplTest {
     @Test
     void testRegisterAgentV1ShouldFallbackOnOldServer() throws NacosException {
         NacosException legacyValidationError = new NacosException(NacosException.INVALID_PARAM,
-                "Required parameter `agentCard.protocolVersion` not present");
+            "Required parameter `agentCard.protocolVersion` not present");
         HttpRestResult<String> successResult = buildSuccessResult();
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenThrow(legacyValidationError)
-                .thenReturn(successResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenThrow(legacyValidationError)
+            .thenReturn(successResult);
         
         assertTrue(a2aService.registerAgent(buildV1AgentCard(), "public", "url"));
         verify(clientHttpProxy, times(2)).executeSyncHttpRequest(any(HttpRequest.class));
@@ -112,11 +116,12 @@ class A2aMaintainerServiceImplTest {
     
     @Test
     void testRegisterAgentShouldNotFallbackOnOtherErrors() throws NacosException {
-        NacosException otherError = new NacosException(NacosException.SERVER_ERROR, "Internal server error");
+        NacosException otherError =
+            new NacosException(NacosException.SERVER_ERROR, "Internal server error");
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenThrow(otherError);
         
         NacosException thrown = assertThrows(NacosException.class,
-                () -> a2aService.registerAgent(buildV1AgentCard(), "public", "url"));
+            () -> a2aService.registerAgent(buildV1AgentCard(), "public", "url"));
         assertEquals(NacosException.SERVER_ERROR, thrown.getErrCode());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
     }
@@ -133,10 +138,11 @@ class A2aMaintainerServiceImplTest {
     @Test
     void testUpdateAgentCardV1ShouldFallbackOnOldServer() throws NacosException {
         NacosException legacyValidationError = new NacosException(NacosException.INVALID_PARAM,
-                "Required parameter `agentCard.preferredTransport` not present");
+            "Required parameter `agentCard.preferredTransport` not present");
         HttpRestResult<String> successResult = buildSuccessResult();
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenThrow(legacyValidationError)
-                .thenReturn(successResult);
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenThrow(legacyValidationError)
+            .thenReturn(successResult);
         
         assertTrue(a2aService.updateAgentCard(buildV1AgentCard(), "public", true, "url"));
         verify(clientHttpProxy, times(2)).executeSyncHttpRequest(any(HttpRequest.class));
@@ -144,11 +150,13 @@ class A2aMaintainerServiceImplTest {
     
     @Test
     void testUpdateAgentCardShouldNotFallbackOnOtherErrors() throws NacosException {
-        NacosException conflictError = new NacosException(NacosException.CONFLICT, "Agent already exists");
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenThrow(conflictError);
+        NacosException conflictError =
+            new NacosException(NacosException.CONFLICT, "Agent already exists");
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenThrow(conflictError);
         
         NacosException thrown = assertThrows(NacosException.class,
-                () -> a2aService.updateAgentCard(buildV1AgentCard(), "public", true, "url"));
+            () -> a2aService.updateAgentCard(buildV1AgentCard(), "public", true, "url"));
         assertEquals(NacosException.CONFLICT, thrown.getErrCode());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
     }
@@ -184,7 +192,8 @@ class A2aMaintainerServiceImplTest {
         mockResult.setData(JacksonUtils.toJson(Result.success(Collections.singletonList(detail))));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
         
-        List<AgentVersionDetail> versions = a2aService.listAllVersionOfAgent("test-agent", "public");
+        List<AgentVersionDetail> versions =
+            a2aService.listAllVersionOfAgent("test-agent", "public");
         assertNotNull(versions);
         assertEquals(1, versions.size());
     }
@@ -198,7 +207,8 @@ class A2aMaintainerServiceImplTest {
         mockResult.setData(JacksonUtils.toJson(Result.success(page)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
         
-        Page<AgentCardVersionInfo> result = a2aService.searchAgentCardsByName("public", "test", 1, 10);
+        Page<AgentCardVersionInfo> result =
+            a2aService.searchAgentCardsByName("public", "test", 1, 10);
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
     }

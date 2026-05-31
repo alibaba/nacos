@@ -55,8 +55,10 @@ class ConfigTagsRelationMapperByMySqlTest {
     
     @Test
     void testFindConfigInfoLike4PageCountRows() {
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id WHERE "
+        MapperResult mapperResult =
+            configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
+        assertEquals(mapperResult.getSql(),
+            "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id WHERE "
                 + "a.tenant_id LIKE ?  AND "
                 + " ( b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  ) ");
         List<Object> list = CollectionUtils.list(tenantId);
@@ -66,8 +68,10 @@ class ConfigTagsRelationMapperByMySqlTest {
     
     @Test
     void testFindConfigInfo4PageCountRows() {
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfo4PageCountRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id "
+        MapperResult mapperResult =
+            configTagsRelationMapperByMySql.findConfigInfo4PageCountRows(context);
+        assertEquals(mapperResult.getSql(),
+            "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id "
                 + "WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
@@ -81,19 +85,22 @@ class ConfigTagsRelationMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
         
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfo4PageFetchRows(context);
+        MapperResult mapperResult =
+            configTagsRelationMapperByMySql.findConfigInfo4PageFetchRows(context);
         String sql = mapperResult.getSql();
         
         // 验证 SQL 包含子查询结构，确保能返回完整的标签信息
-        assertEquals(true, sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,"
+        assertEquals(true,
+            sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,"
                 + "c.md5,c.type,c.encrypted_data_key,c.c_desc"));
-        assertEquals(true, sql.contains("GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags"));
-        assertEquals(true, sql.contains("FROM ("));  // 子查询
-        assertEquals(true, sql.contains("SELECT DISTINCT a.id"));  // 内层查询
-        assertEquals(true, sql.contains("LEFT JOIN config_tags_relation d ON c.id=d.id"));  // 外层关联获取所有标签
-        assertEquals(true, sql.contains("b.tag_name IN"));  // 内层标签筛选条件
-        assertEquals(true, sql.contains("ORDER BY a.id"));  // 内层排序保证分页确定性
-
+        assertEquals(true,
+            sql.contains("GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags"));
+        assertEquals(true, sql.contains("FROM (")); // 子查询
+        assertEquals(true, sql.contains("SELECT DISTINCT a.id")); // 内层查询
+        assertEquals(true, sql.contains("LEFT JOIN config_tags_relation d ON c.id=d.id")); // 外层关联获取所有标签
+        assertEquals(true, sql.contains("b.tag_name IN")); // 内层标签筛选条件
+        assertEquals(true, sql.contains("ORDER BY a.id")); // 内层排序保证分页确定性
+        
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");
@@ -102,19 +109,22 @@ class ConfigTagsRelationMapperByMySqlTest {
         list.addAll(Arrays.asList(tagArr));
         assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
-
+    
     @Test
     void testFindConfigInfoLike4PageCountRowss() {
         context.putWhereParameter(FieldConstant.DATA_ID, "dataID1");
         context.putWhereParameter(FieldConstant.GROUP_ID, "groupID1");
         context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id "
+        MapperResult mapperResult =
+            configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
+        assertEquals(
+            "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id "
                 + "WHERE a.tenant_id LIKE ?  AND a.data_id LIKE ?  AND a.group_id LIKE ?  AND a.app_name = ?  "
                 + "AND a.content LIKE ?  AND "
                 + " ( b.tag_name LIKE ?  OR b.tag_name LIKE ? "
-                + " OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  ) ", mapperResult.getSql());
+                + " OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  ) ",
+            mapperResult.getSql());
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");
@@ -130,20 +140,23 @@ class ConfigTagsRelationMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, "groupID1");
         context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageFetchRows(context);
+        MapperResult mapperResult =
+            configTagsRelationMapperByMySql.findConfigInfoLike4PageFetchRows(context);
         String sql = mapperResult.getSql();
         
         // 验证 SQL 包含子查询结构，确保能返回完整的标签信息
-        assertEquals(true, sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,"
+        assertEquals(true,
+            sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,"
                 + "c.md5,c.encrypted_data_key,c.type,c.c_desc"));
-        assertEquals(true, sql.contains("GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags"));
-        assertEquals(true, sql.contains("FROM ("));  // 子查询
-        assertEquals(true, sql.contains("SELECT DISTINCT a.id"));  // 内层查询
-        assertEquals(true, sql.contains("LEFT JOIN config_tags_relation d ON c.id=d.id"));  // 外层关联获取所有标签
-        assertEquals(true, sql.contains("b.tag_name LIKE"));  // 内层标签筛选条件
+        assertEquals(true,
+            sql.contains("GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags"));
+        assertEquals(true, sql.contains("FROM (")); // 子查询
+        assertEquals(true, sql.contains("SELECT DISTINCT a.id")); // 内层查询
+        assertEquals(true, sql.contains("LEFT JOIN config_tags_relation d ON c.id=d.id")); // 外层关联获取所有标签
+        assertEquals(true, sql.contains("b.tag_name LIKE")); // 内层标签筛选条件
         assertEquals(true, sql.contains("LIKE"));
-        assertEquals(true, sql.contains("ORDER BY a.id"));  // 内层排序保证分页确定性
-
+        assertEquals(true, sql.contains("ORDER BY a.id")); // 内层排序保证分页确定性
+        
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");

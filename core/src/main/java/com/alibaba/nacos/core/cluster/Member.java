@@ -55,11 +55,12 @@ public class Member extends NacosMember implements Comparable<Member>, Cloneable
     public Member() {
         String prefix = "nacos.core.member.meta.";
         super.getExtendInfo().put(MemberMetaDataConstants.SITE_KEY,
-                EnvUtil.getProperty(prefix + MemberMetaDataConstants.SITE_KEY, "unknow"));
+            EnvUtil.getProperty(prefix + MemberMetaDataConstants.SITE_KEY, "unknow"));
         super.getExtendInfo().put(MemberMetaDataConstants.AD_WEIGHT,
-                EnvUtil.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
+            EnvUtil.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
         super.getExtendInfo()
-                .put(MemberMetaDataConstants.WEIGHT, EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
+            .put(MemberMetaDataConstants.WEIGHT,
+                EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
     }
     
     public boolean isGrpcReportEnabled() {

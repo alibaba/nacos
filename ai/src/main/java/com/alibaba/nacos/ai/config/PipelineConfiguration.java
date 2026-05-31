@@ -72,8 +72,9 @@ public class PipelineConfiguration {
     
     @Bean
     public PublishPipelineExecutor publishPipelineExecutor(PublishPipelineManager pipelineManager,
-            PipelineConfigProvider configProvider, PipelineExecutionRepository executionRepository,
-            ExecutorService pipelineExecutor) {
-        return new PublishPipelineExecutor(pipelineManager, configProvider, executionRepository, pipelineExecutor);
+        PipelineConfigProvider configProvider, PipelineExecutionRepository executionRepository,
+        ExecutorService pipelineExecutor) {
+        return new PublishPipelineExecutor(pipelineManager, configProvider, executionRepository,
+            pipelineExecutor);
     }
 }

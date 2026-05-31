@@ -85,6 +85,14 @@ if %FUNCTION_MODE% == "naming" (
     set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.functionMode=naming"
 )
 
+if %FUNCTION_MODE% == "microservice" (
+    set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.functionMode=microservice"
+)
+
+if %FUNCTION_MODE% == "ai" (
+    set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.functionMode=ai"
+)
+
 rem set JVM options for Java 9+
 for /f tokens^=2-5^ delims^=.-_+^" %%j in ('"%JAVA%" -fullversion 2^>^&1') do set "JAVA_MAJOR_VERSION=%%j"
 if %JAVA_MAJOR_VERSION% GEQ 9 (

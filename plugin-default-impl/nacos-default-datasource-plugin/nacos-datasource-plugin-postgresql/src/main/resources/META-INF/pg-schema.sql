@@ -29,7 +29,7 @@ CREATE TABLE "config_info" (
   "src_user" text ,
   "src_ip" varchar(20) ,
   "app_name" varchar(128) ,
-  "tenant_id" varchar(128) ,
+  "tenant_id" varchar(128) NOT NULL DEFAULT '',
   "c_desc" varchar(256) ,
   "c_use" varchar(64) ,
   "effect" varchar(64) ,
@@ -66,7 +66,7 @@ CREATE TABLE "config_info_gray" (
   "gmt_create" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "gmt_modified" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "app_name" varchar(128),
-  "tenant_id" varchar(128) DEFAULT '',
+  "tenant_id" varchar(128) NOT NULL DEFAULT '',
   "gray_name" varchar(128) NOT NULL,
   "gray_rule" text NOT NULL,
   "encrypted_data_key" varchar(256) NOT NULL DEFAULT ''
@@ -112,7 +112,7 @@ CREATE TABLE "config_tags_relation" (
   "tag_type" varchar(64) ,
   "data_id" varchar(255)  NOT NULL,
   "group_id" varchar(128)  NOT NULL,
-  "tenant_id" varchar(128) ,
+  "tenant_id" varchar(128) NOT NULL DEFAULT '',
   "nid" bigserial NOT NULL
 )
 ;
@@ -182,7 +182,7 @@ CREATE TABLE "his_config_info" (
   "src_user" text ,
   "src_ip" varchar(20) ,
   "op_type" char(10) ,
-  "tenant_id" varchar(128) ,
+  "tenant_id" varchar(128) NOT NULL DEFAULT '',
   "encrypted_data_key" text  NOT NULL,
   "publish_type" varchar(50) DEFAULT 'formal',
   "gray_name" varchar(50),

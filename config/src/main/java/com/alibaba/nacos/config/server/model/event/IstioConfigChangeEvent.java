@@ -29,8 +29,9 @@ public class IstioConfigChangeEvent extends ConfigDataChangeEvent {
     
     public final String type;
     
-    public IstioConfigChangeEvent(String dataId, String group, String tenant, long gmtModified, String content,
-            String type) {
+    public IstioConfigChangeEvent(String dataId, String group, String tenant, long gmtModified,
+        String content,
+        String type) {
         super(dataId, group, tenant, gmtModified);
         this.content = content;
         this.type = type;

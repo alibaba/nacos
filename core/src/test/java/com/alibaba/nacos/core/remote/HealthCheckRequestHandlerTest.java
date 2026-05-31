@@ -35,22 +35,24 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @date 2021-07-02 19:17
  */
 class HealthCheckRequestHandlerTest {
-
+    
     @Test
     void testHandle() {
         HealthCheckRequestHandler handler = new HealthCheckRequestHandler();
         HealthCheckResponse response = handler.handle(null, null);
         assertNotNull(response);
     }
-
+    
     @Test
     void testHandleRequestWhenFilterThrowsStillCallsHandle() throws NacosException {
         HealthCheckRequestHandler handler = new HealthCheckRequestHandler();
         RequestFilters filters = new RequestFilters();
         filters.registerFilter(new AbstractRequestFilter() {
+            
             @Override
-            protected Response filter(com.alibaba.nacos.api.remote.request.Request request, RequestMeta meta,
-                    Class handlerClazz) throws NacosException {
+            protected Response filter(com.alibaba.nacos.api.remote.request.Request request,
+                RequestMeta meta,
+                Class handlerClazz) throws NacosException {
                 throw new RuntimeException("filter throw");
             }
         });
@@ -58,15 +60,17 @@ class HealthCheckRequestHandlerTest {
         Response result = handler.handleRequest(null, null);
         assertNotNull(result);
     }
-
+    
     @Test
     void testHandleRequestWhenFilterReturnsErrorResponse() throws NacosException {
         HealthCheckRequestHandler handler = new HealthCheckRequestHandler();
         RequestFilters filters = new RequestFilters();
         filters.registerFilter(new AbstractRequestFilter() {
+            
             @Override
-            protected Response filter(com.alibaba.nacos.api.remote.request.Request request, RequestMeta meta,
-                    Class handlerClazz) throws NacosException {
+            protected Response filter(com.alibaba.nacos.api.remote.request.Request request,
+                RequestMeta meta,
+                Class handlerClazz) throws NacosException {
                 HealthCheckResponse err = new HealthCheckResponse();
                 err.setErrorInfo(403, "forbidden");
                 return err;

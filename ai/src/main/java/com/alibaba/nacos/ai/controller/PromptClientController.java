@@ -16,10 +16,12 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
 import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
 import com.alibaba.nacos.ai.service.prompt.PromptClientOperationService;
+import com.alibaba.nacos.ai.utils.PromptConvertUtils;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.annotation.NacosApi;
@@ -55,14 +57,17 @@ public class PromptClientController {
     /**
      * Query prompt by version/label/latest with priority version > label > latest.
      */
+    @Since("3.2.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public Result<Prompt> queryPrompt(PromptQueryForm form, HttpServletResponse response) throws NacosException {
+    public Result<Prompt> queryPrompt(PromptQueryForm form, HttpServletResponse response)
+        throws NacosException {
         form.validate();
         try {
-            PromptVersionInfo result = promptOperationService.queryPrompt(form.getNamespaceId(), form.getPromptKey(),
+            PromptVersionInfo result =
+                promptOperationService.queryPrompt(form.getNamespaceId(), form.getPromptKey(),
                     form.getVersion(), form.getLabel(), form.getMd5());
-            return Result.success(convertToClientPrompt(result));
+            return Result.success(PromptConvertUtils.toClientPrompt(result));
         } catch (NacosException ex) {
             if (ex.getErrCode() == NacosException.NOT_MODIFIED) {
                 response.setStatus(NacosException.NOT_MODIFIED);
@@ -70,14 +75,5 @@ public class PromptClientController {
             }
             throw ex;
         }
-    }
-    
-    private Prompt convertToClientPrompt(PromptVersionInfo versionInfo) {
-        Prompt prompt = new Prompt();
-        prompt.setPromptKey(versionInfo.getPromptKey());
-        prompt.setVersion(versionInfo.getVersion());
-        prompt.setTemplate(versionInfo.getTemplate());
-        prompt.setMd5(versionInfo.getMd5());
-        return prompt;
     }
 }

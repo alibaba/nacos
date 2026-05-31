@@ -61,7 +61,8 @@ class SubscriberInfoTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String jsonString = "{\"namespaceId\":\"namespaceId\",\"groupName\":\"groupName\",\"serviceName\":\"serviceName\","
+        String jsonString =
+            "{\"namespaceId\":\"namespaceId\",\"groupName\":\"groupName\",\"serviceName\":\"serviceName\","
                 + "\"ip\":\"1.1.1.1\",\"port\":8080,\"agent\":\"agent\",\"appName\":\"appName\"}";
         SubscriberInfo subscriberInfo1 = mapper.readValue(jsonString, SubscriberInfo.class);
         assertEquals(subscriberInfo.getNamespaceId(), subscriberInfo1.getNamespaceId());

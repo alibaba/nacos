@@ -35,7 +35,7 @@ public interface ConfigDiskService {
      * @throws IOException io exception.
      */
     void saveToDisk(String dataId, String group, String tenant, String content) throws IOException;
-
+    
     /**
      * Save gray information to disk.
      *
@@ -46,7 +46,8 @@ public interface ConfigDiskService {
      * @param content content.
      * @throws IOException io exception.
      */
-    void saveGrayToDisk(String dataId, String group, String tenant, String grayName, String content) throws IOException;
+    void saveGrayToDisk(String dataId, String group, String tenant, String grayName, String content)
+        throws IOException;
     
     /**
      * Deletes gray configuration files on disk.
@@ -68,7 +69,8 @@ public interface ConfigDiskService {
      * @return gray content, null if not exist.
      * @throws IOException io exception.
      */
-    String getGrayContent(String dataId, String group, String tenant, String grayName) throws IOException;
+    String getGrayContent(String dataId, String group, String tenant, String grayName)
+        throws IOException;
     
     /**
      * Deletes configuration files on disk.

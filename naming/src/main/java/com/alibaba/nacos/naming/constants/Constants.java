@@ -36,22 +36,26 @@ public final class Constants {
     /**
      * Time interval to clear empty services, unit: millisecond. default: 60000 ms.
      */
-    public static final String EMPTY_SERVICE_CLEAN_INTERVAL = "nacos.naming.clean.empty-service.interval";
+    public static final String EMPTY_SERVICE_CLEAN_INTERVAL =
+        "nacos.naming.clean.empty-service.interval";
     
     /**
      * Expiration time of empty service, unit: millisecond. default: 60000 ms.
      */
-    public static final String EMPTY_SERVICE_EXPIRED_TIME = "nacos.naming.clean.empty-service.expired-time";
+    public static final String EMPTY_SERVICE_EXPIRED_TIME =
+        "nacos.naming.clean.empty-service.expired-time";
     
     /**
      * Time interval to clear expired metadata, unit: millisecond. default: 5000 ms.
      */
-    public static final String EXPIRED_METADATA_CLEAN_INTERVAL = "nacos.naming.clean.expired-metadata.interval";
+    public static final String EXPIRED_METADATA_CLEAN_INTERVAL =
+        "nacos.naming.clean.expired-metadata.interval";
     
     /**
      * Expiration time of expired metadata, unit: millisecond. default: 60000 ms.
      */
-    public static final String EXPIRED_METADATA_EXPIRED_TIME = "nacos.naming.clean.expired-metadata.expired-time";
+    public static final String EXPIRED_METADATA_EXPIRED_TIME =
+        "nacos.naming.clean.expired-metadata.expired-time";
     
     /**
      * default: false.
@@ -62,7 +66,7 @@ public final class Constants {
      * default : true.
      */
     public static final String EXPIRE_INSTANCE = "nacos.naming.expireInstance";
-
+    
     /**
      * The custom instance id key.
      */

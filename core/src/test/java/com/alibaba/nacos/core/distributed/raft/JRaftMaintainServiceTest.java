@@ -61,7 +61,7 @@ class JRaftMaintainServiceTest {
     
     @Test
     void testExecuteStringArrayReturnsNotSupport() {
-        RestResult<String> result = maintainService.execute(new String[]{"a", "b"});
+        RestResult<String> result = maintainService.execute(new String[] {"a", "b"});
         assertFalse(result.ok());
         assertTrue(result.getData() == null || result.getMessage() != null);
     }
@@ -154,8 +154,10 @@ class JRaftMaintainServiceTest {
     @Test
     void testExecuteMapWithoutGroupIdReturnsFirstFailedResult() {
         when(raftServer.getCliService()).thenReturn(cliService);
-        JRaftServer.RaftGroupTuple tupleWithNullNode = new JRaftServer.RaftGroupTuple(null, null, null, null);
-        when(raftServer.getMultiRaftGroup()).thenReturn(Collections.singletonMap("g1", tupleWithNullNode));
+        JRaftServer.RaftGroupTuple tupleWithNullNode =
+            new JRaftServer.RaftGroupTuple(null, null, null, null);
+        when(raftServer.getMultiRaftGroup())
+            .thenReturn(Collections.singletonMap("g1", tupleWithNullNode));
         Map<String, String> args = new HashMap<>();
         args.put(JRaftConstants.COMMAND_NAME, "doSnapshot");
         args.put(JRaftConstants.COMMAND_VALUE, "127.0.0.1:7848");

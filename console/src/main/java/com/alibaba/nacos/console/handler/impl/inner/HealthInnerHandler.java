@@ -40,4 +40,3 @@ public class HealthInnerHandler implements HealthHandler {
         return Result.failure(result.getResultMessage());
     }
 }
-

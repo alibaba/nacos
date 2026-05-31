@@ -33,14 +33,14 @@ import java.util.Properties;
  * @since 3.2.0
  */
 public interface PublishPipelineServiceBuilder {
-
+    
     /**
      * Pipeline plugin identifier, corresponding to {@link PublishPipelineService#pipelineId()}.
      *
      * @return pipeline plugin id, e.g. "ai-review", "manual-confirm"
      */
     String pipelineId();
-
+    
     /**
      * Build a {@link PublishPipelineService} instance with the given configuration properties.
      *
@@ -53,4 +53,3 @@ public interface PublishPipelineServiceBuilder {
      */
     PublishPipelineService build(Properties properties);
 }
-

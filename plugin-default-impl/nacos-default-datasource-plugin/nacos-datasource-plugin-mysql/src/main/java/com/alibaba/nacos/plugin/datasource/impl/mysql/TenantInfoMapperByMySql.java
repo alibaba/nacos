@@ -26,7 +26,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
  **/
 
 public class TenantInfoMapperByMySql extends AbstractMapperByMysql implements TenantInfoMapper {
-
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;

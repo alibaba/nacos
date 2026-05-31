@@ -17,7 +17,8 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -57,95 +58,106 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 class SkillClientControllerTest {
-
+    
     private static final String SKILL_CLIENT_PATH = Constants.Skills.CLIENT_PATH;
-
+    
     private SkillClientController skillClientController;
-
+    
     private MockMvc mockMvc;
-
+    
     private ConfigurableEnvironment cachedEnvironment;
-
+    
     @Mock
-    private SkillOperationService skillOperationService;
-
+    private SkillClientOperationService skillClientOperationService;
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new StandardEnvironment());
-        skillClientController = new SkillClientController(skillOperationService);
+        skillClientController = new SkillClientController(skillClientOperationService);
         mockMvc = MockMvcBuilders.standaloneSetup(skillClientController).build();
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnvironment);
     }
-
+    
     @Test
     void testGetSkillWithoutName() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH);
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
-                "Skill name is required");
+            "Skill name is required");
     }
-
+    
     @Test
     void testGetSkillByNameSuccess() throws Exception {
+        when(skillClientOperationService.querySkill(eq("public"), eq("test-skill"), isNull(),
+            isNull(), isNull()))
+            .thenReturn(new SkillQueryResult(newSkill(), "md5-1", "v1"));
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
+            .param("name", "test-skill");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        // Response is a ZIP file
+        assertEquals("application/zip", response.getContentType());
+    }
+    
+    @Test
+    void testGetSkillByLabelSuccess() throws Exception {
+        when(skillClientOperationService.querySkill(eq("public"), eq("test-skill"), isNull(),
+            eq("stable"), isNull()))
+            .thenReturn(new SkillQueryResult(newSkill(), "md5-2", "v1"));
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
+            .param("name", "test-skill").param("label", "stable");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+    }
+    
+    @Test
+    void testGetSkillByVersionSuccess() throws Exception {
+        when(skillClientOperationService.querySkill(eq("public"), eq("test-skill"), eq("v2"),
+            isNull(), isNull()))
+            .thenReturn(new SkillQueryResult(newSkill(), "md5-3", "v2"));
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
+            .param("name", "test-skill").param("version", "v2");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+    }
+    
+    @Test
+    void testGetSkillWithNamespaceId() throws Exception {
+        when(skillClientOperationService.querySkill(eq("custom-ns"), eq("test-skill"), isNull(),
+            isNull(), isNull()))
+            .thenReturn(new SkillQueryResult(newSkill(), "md5-4", "v1"));
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
+            .param("name", "test-skill").param("namespaceId", "custom-ns");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+    }
+    
+    @Test
+    void testGetSkillNotModified() throws Exception {
+        when(skillClientOperationService.querySkill(eq("public"), eq("test-skill"), isNull(),
+            isNull(), eq("md5-cached")))
+            .thenReturn(SkillQueryResult.notModified("md5-cached", "v1"));
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
+            .param("name", "test-skill").param("md5", "md5-cached");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(304, response.getStatus());
+    }
+    
+    private static Skill newSkill() {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setDescription("desc");
         skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
-        when(skillOperationService.querySkill(eq("public"), eq("test-skill"), isNull(), isNull()))
-                .thenReturn(skill);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
-                .param("name", "test-skill");
-        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        assertEquals(200, response.getStatus());
-        // Response is a ZIP file
-        assertEquals("application/octet-stream", response.getContentType());
+        return skill;
     }
-
-    @Test
-    void testGetSkillByLabelSuccess() throws Exception {
-        Skill skill = new Skill();
-        skill.setName("test-skill");
-        skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
-        when(skillOperationService.querySkill(eq("public"), eq("test-skill"), isNull(), eq("stable")))
-                .thenReturn(skill);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
-                .param("name", "test-skill").param("label", "stable");
-        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        assertEquals(200, response.getStatus());
-    }
-
-    @Test
-    void testGetSkillByVersionSuccess() throws Exception {
-        Skill skill = new Skill();
-        skill.setName("test-skill");
-        skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
-        when(skillOperationService.querySkill(eq("public"), eq("test-skill"), eq("v2"), isNull()))
-                .thenReturn(skill);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
-                .param("name", "test-skill").param("version", "v2");
-        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        assertEquals(200, response.getStatus());
-    }
-
-    @Test
-    void testGetSkillWithNamespaceId() throws Exception {
-        Skill skill = new Skill();
-        skill.setName("test-skill");
-        skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
-        when(skillOperationService.querySkill(eq("custom-ns"), eq("test-skill"), isNull(), isNull()))
-                .thenReturn(skill);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
-                .param("name", "test-skill").param("namespaceId", "custom-ns");
-        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
-        assertEquals(200, response.getStatus());
-    }
-
-    private void assertServletException(Class<? extends Exception> expectedException, Executable executable,
-            String expectedMessage) throws Throwable {
+    
+    private void assertServletException(Class<? extends Exception> expectedException,
+        Executable executable,
+        String expectedMessage) throws Throwable {
         try {
             executable.execute();
         } catch (ServletException e) {
@@ -153,7 +165,8 @@ class SkillClientControllerTest {
             if (expectedMessage != null) {
                 assertNotNull(e.getCause().getMessage());
                 assertTrue(e.getCause().getMessage().contains(expectedMessage),
-                        "Expected message containing '" + expectedMessage + "', got: " + e.getCause().getMessage());
+                    "Expected message containing '" + expectedMessage + "', got: "
+                        + e.getCause().getMessage());
             }
         }
     }

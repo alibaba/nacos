@@ -48,94 +48,121 @@ import java.util.Map;
 @ConditionalOnMissingBean(value = ConfigHandler.class, ignored = ConfigNoopHandler.class)
 public class ConfigNoopHandler implements ConfigHandler {
     
-    private static final String MCP_NOT_ENABLED_MESSAGE = "Current functionMode is `naming`, config module is disabled.";
+    private static final String MCP_NOT_ENABLED_MESSAGE =
+        "Current functionMode is `naming`, config module is disabled.";
     
     @Override
-    public Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId, String group,
-            String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId,
+        String group,
+        String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
-            String srcUser) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag,
+        String clientIp,
+        String srcUser) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId,
-            String group, String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize,
+        String dataId,
+        String group, String namespaceId, Map<String, Object> configAdvanceInfo)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, boolean aggregation)
-            throws Exception {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId,
+        boolean aggregation)
+        throws Exception {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, boolean aggregation)
-            throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
+        boolean aggregation)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,
-            List<Long> ids) throws Exception {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId,
+        String appName,
+        List<Long> ids) throws Exception {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public Result<Map<String, Object>> importAndPublishConfig(String srcUser, String namespaceId,
-            SameConfigPolicy policy, MultipartFile file, String srcIp, String requestIpApp) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+        SameConfigPolicy policy, MultipartFile file, String srcIp, String requestIpApp)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
-            List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
-            String requestIpApp) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+        List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
+        String requestIpApp) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp,
-            String requestIpApp, String srcUser) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public boolean removeBetaConfig(String dataId, String group, String namespaceId,
+        String remoteIp,
+        String requestIpApp, String srcUser) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public ConfigGrayInfo queryBetaConfig(String dataId, String group, String namespaceId) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public ConfigGrayInfo queryBetaConfig(String dataId, String group, String namespaceId)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
 }

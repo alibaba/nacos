@@ -47,8 +47,10 @@ public class PushResult {
     
     private final boolean isPushToAll;
     
-    private PushResult(boolean pushSuccess, String subscribeClientId, Service service, ServiceInfo data,
-            Subscriber subscriber, long networkCost, long allCost, long sla, Throwable exception, boolean isPushToAll) {
+    private PushResult(boolean pushSuccess, String subscribeClientId, Service service,
+        ServiceInfo data,
+        Subscriber subscriber, long networkCost, long allCost, long sla, Throwable exception,
+        boolean isPushToAll) {
         this.pushSuccess = pushSuccess;
         this.subscribeClientId = subscribeClientId;
         this.service = service;
@@ -61,16 +63,25 @@ public class PushResult {
         this.isPushToAll = isPushToAll;
     }
     
-    public static PushResult pushSuccess(Service service, String subscribeClientId, ServiceInfo data,
-            Subscriber subscriber, long networkCost, long allCost, long sla, boolean isPushToAll) {
-        return new PushResult(true, subscribeClientId, service, data, subscriber, networkCost, allCost, sla, null,
-                isPushToAll);
+    /**
+     * Build a successful push result.
+     */
+    public static PushResult pushSuccess(Service service, String subscribeClientId,
+        ServiceInfo data,
+        Subscriber subscriber, long networkCost, long allCost, long sla, boolean isPushToAll) {
+        return new PushResult(true, subscribeClientId, service, data, subscriber, networkCost,
+            allCost, sla, null,
+            isPushToAll);
     }
     
+    /**
+     * Build a failed push result.
+     */
     public static PushResult pushFailed(Service service, String subscribeClientId, ServiceInfo data,
-            Subscriber subscriber, long allCost, Throwable exception, boolean isPushToAll) {
-        return new PushResult(false, subscribeClientId, service, data, subscriber, -1, allCost, -1, exception,
-                isPushToAll);
+        Subscriber subscriber, long allCost, Throwable exception, boolean isPushToAll) {
+        return new PushResult(false, subscribeClientId, service, data, subscriber, -1, allCost, -1,
+            exception,
+            isPushToAll);
     }
     
     public boolean isPushSuccess() {

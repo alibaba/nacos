@@ -37,22 +37,24 @@ public class InetAddressValidator {
     private static final int FIVE = 5;
     
     private static final Pattern IPV4_PATTERN = Pattern
-            .compile("^" + "(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)" + "(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}" + "$");
+        .compile("^" + "(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)"
+            + "(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}" + "$");
     
     private static final Pattern IPV6_STD_PATTERN = Pattern
-            .compile("^" + "(?:[0-9a-fA-F]{1,4}:){7}" + "[0-9a-fA-F]{1,4}" + "$");
+        .compile("^" + "(?:[0-9a-fA-F]{1,4}:){7}" + "[0-9a-fA-F]{1,4}" + "$");
     
     private static final Pattern IPV6_HEX_COMPRESSED_PATTERN = Pattern
-            .compile("^" + "(" + "(?:[0-9A-Fa-f]{1,4}" + "(?::[0-9A-Fa-f]{1,4})*)?" + ")" + "::"
-                    
-                    + "(" + "(?:[0-9A-Fa-f]{1,4}" + "(?::[0-9A-Fa-f]{1,4})*)?" + ")" + "$");
+        .compile("^" + "(" + "(?:[0-9A-Fa-f]{1,4}" + "(?::[0-9A-Fa-f]{1,4})*)?" + ")" + "::"
+            
+            + "(" + "(?:[0-9A-Fa-f]{1,4}" + "(?::[0-9A-Fa-f]{1,4})*)?" + ")" + "$");
     
     private static final Pattern IPV6_MIXED_COMPRESSED_REGEX = Pattern.compile(
-            "^" + "(" + "(?:[0-9A-Fa-f]{1,4}" + "(?::[0-9A-Fa-f]{1,4})*)?" + ")" + "::" + "(" + "(?:[0-9A-Fa-f]{1,4}:"
-                    + "(?:[0-9A-Fa-f]{1,4}:)*)?" + ")" + "$");
+        "^" + "(" + "(?:[0-9A-Fa-f]{1,4}" + "(?::[0-9A-Fa-f]{1,4})*)?" + ")" + "::" + "("
+            + "(?:[0-9A-Fa-f]{1,4}:"
+            + "(?:[0-9A-Fa-f]{1,4}:)*)?" + ")" + "$");
     
     private static final Pattern IPV6_MIXED_UNCOMPRESSED_REGEX = Pattern
-            .compile("^" + "(?:[0-9a-fA-F]{1,4}:){6}" + "$");
+        .compile("^" + "(?:[0-9a-fA-F]{1,4}:){6}" + "$");
     
     /**
      * Check if <code>input</code> is a valid IPv4 address. The format is 'xxx.xxx.xxx.xxx'. Four blocks of integer
@@ -95,8 +97,9 @@ public class InetAddressValidator {
      * @return true if <code>input</code> is in correct IPv6 notation.
      */
     public static boolean isIpv6Address(final String input) {
-        return isIpv6StdAddress(input) || isIpv6HexCompressedAddress(input) || isLinkLocalIpv6WithZoneIndex(input)
-                || isIpv6Ipv4MappedAddress(input) || isIpv6MixedAddress(input);
+        return isIpv6StdAddress(input) || isIpv6HexCompressedAddress(input)
+            || isLinkLocalIpv6WithZoneIndex(input)
+            || isIpv6Ipv4MappedAddress(input) || isIpv6MixedAddress(input);
     }
     
     /**
@@ -122,7 +125,8 @@ public class InetAddressValidator {
             return ipv4PartValid;
         }
         
-        boolean ipV6UncompressedDetected = IPV6_MIXED_UNCOMPRESSED_REGEX.matcher(ipV6Part).matches();
+        boolean ipV6UncompressedDetected =
+            IPV6_MIXED_UNCOMPRESSED_REGEX.matcher(ipV6Part).matches();
         boolean ipV6CompressedDetected = IPV6_MIXED_COMPRESSED_REGEX.matcher(ipV6Part).matches();
         
         return ipv4PartValid && (ipV6UncompressedDetected || ipV6CompressedDetected);
@@ -136,7 +140,8 @@ public class InetAddressValidator {
      * @return true if <code>input</code> is in correct IPv6 notation containing an IPv4 address
      */
     public static boolean isIpv6Ipv4MappedAddress(final String input) {
-        if (input.length() > SEVEN && input.substring(ZERO, SEVEN).equalsIgnoreCase(DOUBLE_COLON_FFFF)) {
+        if (input.length() > SEVEN
+            && input.substring(ZERO, SEVEN).equalsIgnoreCase(DOUBLE_COLON_FFFF)) {
             String lowerPart = input.substring(SEVEN);
             return isIpv4Address(lowerPart);
         }

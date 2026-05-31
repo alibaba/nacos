@@ -21,6 +21,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.OperationType;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfoDetail;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -32,6 +33,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +42,9 @@ import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -59,13 +65,13 @@ class HistoryServiceTest {
     private static final String TEST_TENANT = "";
     
     private static final String TEST_CONTENT = "test config";
-
+    
     private static final String TEST_UPDATED_CONTENT = "test config updated";
-
+    
     private static final String TEST_OP_TYPE = OperationType.UPDATE.getValue();
-
+    
     private static final String TEST_MD5 = "77963b7a931377ad4ab5ad6a9cd718aa";
-
+    
     private static final String TEST_UPDATED_MD5 = "3ba1e44fa18519221f6c70afc0e8ae84";
     
     private HistoryService historyService;
@@ -75,13 +81,14 @@ class HistoryServiceTest {
     
     @Mock
     private ConfigInfoPersistService configInfoPersistService;
-
+    
     @Mock
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     @BeforeEach
     void setUp() throws Exception {
-        this.historyService = new HistoryService(historyConfigInfoPersistService, configInfoPersistService, configInfoGrayPersistService);
+        this.historyService = new HistoryService(historyConfigInfoPersistService,
+            configInfoPersistService, configInfoGrayPersistService);
     }
     
     @Test
@@ -101,11 +108,14 @@ class HistoryServiceTest {
         page.setPagesAvailable(2);
         page.setPageItems(configHistoryInfoList);
         
-        when(historyConfigInfoPersistService.findConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10)).thenReturn(page);
+        when(historyConfigInfoPersistService.findConfigHistory(TEST_DATA_ID, TEST_GROUP,
+            TEST_TENANT, 1, 10)).thenReturn(page);
         
-        Page<ConfigHistoryInfo> pageResult = historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10);
+        Page<ConfigHistoryInfo> pageResult =
+            historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10);
         
-        verify(historyConfigInfoPersistService).findConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10);
+        verify(historyConfigInfoPersistService).findConfigHistory(TEST_DATA_ID, TEST_GROUP,
+            TEST_TENANT, 1, 10);
         
         List<ConfigHistoryInfo> resultList = pageResult.getPageItems();
         ConfigHistoryInfo resConfigHistoryInfo = resultList.get(0);
@@ -129,7 +139,8 @@ class HistoryServiceTest {
         
         when(historyConfigInfoPersistService.detailConfigHistory(1L)).thenReturn(configHistoryInfo);
         
-        ConfigHistoryInfo resConfigHistoryInfo = historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
+        ConfigHistoryInfo resConfigHistoryInfo =
+            historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
         
         verify(historyConfigInfoPersistService).detailConfigHistory(1L);
         
@@ -150,9 +161,11 @@ class HistoryServiceTest {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyConfigInfoPersistService.detailPreviousConfigHistory(1L)).thenReturn(configHistoryInfo);
+        when(historyConfigInfoPersistService.detailPreviousConfigHistory(1L))
+            .thenReturn(configHistoryInfo);
         
-        ConfigHistoryInfo resConfigHistoryInfo = historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
+        ConfigHistoryInfo resConfigHistoryInfo =
+            historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
         
         verify(historyConfigInfoPersistService).detailPreviousConfigHistory(1L);
         
@@ -170,7 +183,8 @@ class HistoryServiceTest {
         configInfoWrapper.setContent("test");
         List<ConfigInfoWrapper> configInfoWrappers = Collections.singletonList(configInfoWrapper);
         
-        when(configInfoPersistService.queryConfigInfoByNamespace("test")).thenReturn(configInfoWrappers);
+        when(configInfoPersistService.queryConfigInfoByNamespace("test"))
+            .thenReturn(configInfoWrappers);
         
         List<ConfigInfoWrapper> actualList = historyService.getConfigListByNamespace("test");
         
@@ -182,7 +196,7 @@ class HistoryServiceTest {
         assertEquals(configInfoWrapper.getGroup(), actualConfigInfoWrapper.getGroup());
         assertEquals(configInfoWrapper.getContent(), actualConfigInfoWrapper.getContent());
     }
-
+    
     @Test
     void testGetConfigHistoryInfoPair() throws Exception {
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
@@ -196,9 +210,9 @@ class HistoryServiceTest {
         configHistoryInfo.setGrayName(StringUtils.EMPTY);
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
-
+        
         when(historyConfigInfoPersistService.detailConfigHistory(1L)).thenReturn(configHistoryInfo);
-
+        
         ConfigHistoryInfo nextHistoryInfo = new ConfigHistoryInfo();
         nextHistoryInfo.setDataId(TEST_DATA_ID);
         nextHistoryInfo.setGroup(TEST_GROUP);
@@ -210,19 +224,190 @@ class HistoryServiceTest {
         nextHistoryInfo.setGrayName(StringUtils.EMPTY);
         nextHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         nextHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
-
-        when(historyConfigInfoPersistService.getNextHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, Constants.FORMAL,
-                StringUtils.EMPTY, 1L)).thenReturn(nextHistoryInfo);
-
-        ConfigHistoryInfoDetail resConfigHistoryInfoDetail = historyService.getConfigHistoryInfoDetail(TEST_DATA_ID, TEST_GROUP,
+        
+        when(historyConfigInfoPersistService.getNextHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+            TEST_TENANT, Constants.FORMAL,
+            StringUtils.EMPTY, 1L)).thenReturn(nextHistoryInfo);
+        
+        ConfigHistoryInfoDetail resConfigHistoryInfoDetail =
+            historyService.getConfigHistoryInfoDetail(TEST_DATA_ID, TEST_GROUP,
                 TEST_TENANT, 1L);
-
-        verify(historyConfigInfoPersistService).getNextHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, Constants.FORMAL,
-                StringUtils.EMPTY, 1L);
-
+        
+        verify(historyConfigInfoPersistService).getNextHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+            TEST_TENANT, Constants.FORMAL,
+            StringUtils.EMPTY, 1L);
+        
         assertEquals(nextHistoryInfo.getDataId(), resConfigHistoryInfoDetail.getDataId());
         assertEquals(nextHistoryInfo.getGroup(), resConfigHistoryInfoDetail.getGroup());
         assertEquals(nextHistoryInfo.getMd5(), resConfigHistoryInfoDetail.getUpdatedMd5());
         assertEquals(nextHistoryInfo.getContent(), resConfigHistoryInfoDetail.getUpdatedContent());
+    }
+    
+    @Test
+    void testGetConfigHistoryInfoReturnsNull() throws Exception {
+        when(historyConfigInfoPersistService.detailConfigHistory(999L))
+            .thenReturn(null);
+        assertNull(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+            TEST_TENANT, 999L));
+    }
+    
+    @Test
+    void testGetConfigHistoryInfoPermissionDenied() {
+        ConfigHistoryInfo info = new ConfigHistoryInfo();
+        info.setDataId("other");
+        info.setGroup(TEST_GROUP);
+        info.setTenant(TEST_TENANT);
+        when(historyConfigInfoPersistService.detailConfigHistory(1L))
+            .thenReturn(info);
+        assertThrows(AccessException.class,
+            () -> historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+                TEST_TENANT, 1L));
+    }
+    
+    @Test
+    void testGetPreviousConfigHistoryInfoReturnsNull() throws Exception {
+        when(historyConfigInfoPersistService.detailPreviousConfigHistory(999L))
+            .thenReturn(null);
+        assertNull(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID,
+            TEST_GROUP, TEST_TENANT, 999L));
+    }
+    
+    @Test
+    void testGetPreviousConfigHistoryInfoPermissionDenied() {
+        ConfigHistoryInfo info = new ConfigHistoryInfo();
+        info.setDataId(TEST_DATA_ID);
+        info.setGroup("otherGroup");
+        info.setTenant(TEST_TENANT);
+        when(historyConfigInfoPersistService.detailPreviousConfigHistory(1L))
+            .thenReturn(info);
+        assertThrows(AccessException.class,
+            () -> historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID,
+                TEST_GROUP, TEST_TENANT, 1L));
+    }
+    
+    @Test
+    void testGetConfigHistoryInfoDetailReturnsNull() throws Exception {
+        when(historyConfigInfoPersistService.detailConfigHistory(999L))
+            .thenReturn(null);
+        assertNull(historyService.getConfigHistoryInfoDetail(TEST_DATA_ID,
+            TEST_GROUP, TEST_TENANT, 999L));
+    }
+    
+    @Test
+    void testGetConfigHistoryInfoDetailInsert() throws Exception {
+        ConfigHistoryInfo info = new ConfigHistoryInfo();
+        info.setDataId(TEST_DATA_ID);
+        info.setGroup(TEST_GROUP);
+        info.setTenant(TEST_TENANT);
+        info.setOpType(OperationType.INSERT.getValue());
+        info.setContent(TEST_CONTENT);
+        info.setMd5(TEST_MD5);
+        info.setPublishType(Constants.FORMAL);
+        info.setGrayName(StringUtils.EMPTY);
+        info.setCreatedTime(new Timestamp(new Date().getTime()));
+        info.setLastModifiedTime(new Timestamp(new Date().getTime()));
+        when(historyConfigInfoPersistService.detailConfigHistory(1L))
+            .thenReturn(info);
+        
+        ConfigHistoryInfoDetail detail =
+            historyService.getConfigHistoryInfoDetail(TEST_DATA_ID, TEST_GROUP,
+                TEST_TENANT, 1L);
+        assertNotNull(detail);
+        assertEquals(TEST_CONTENT, detail.getUpdatedContent());
+        assertEquals(StringUtils.EMPTY, detail.getOriginalContent());
+    }
+    
+    @Test
+    void testGetConfigHistoryInfoDetailDelete() throws Exception {
+        ConfigHistoryInfo info = new ConfigHistoryInfo();
+        info.setDataId(TEST_DATA_ID);
+        info.setGroup(TEST_GROUP);
+        info.setTenant(TEST_TENANT);
+        info.setOpType(OperationType.DELETE.getValue());
+        info.setContent(TEST_CONTENT);
+        info.setMd5(TEST_MD5);
+        info.setExtInfo("ext");
+        info.setPublishType(Constants.FORMAL);
+        info.setGrayName(StringUtils.EMPTY);
+        info.setCreatedTime(new Timestamp(new Date().getTime()));
+        info.setLastModifiedTime(new Timestamp(new Date().getTime()));
+        when(historyConfigInfoPersistService.detailConfigHistory(1L))
+            .thenReturn(info);
+        
+        ConfigHistoryInfoDetail detail =
+            historyService.getConfigHistoryInfoDetail(TEST_DATA_ID, TEST_GROUP,
+                TEST_TENANT, 1L);
+        assertNotNull(detail);
+        assertEquals(TEST_CONTENT, detail.getOriginalContent());
+        assertEquals(TEST_MD5, detail.getOriginalMd5());
+    }
+    
+    @Test
+    void testGetConfigHistoryInfoDetailUpdateWithNoNext() throws Exception {
+        ConfigHistoryInfo info = new ConfigHistoryInfo();
+        info.setDataId(TEST_DATA_ID);
+        info.setGroup(TEST_GROUP);
+        info.setTenant(TEST_TENANT);
+        info.setOpType(OperationType.UPDATE.getValue());
+        info.setContent(TEST_CONTENT);
+        info.setMd5(TEST_MD5);
+        info.setPublishType(Constants.FORMAL);
+        info.setGrayName(StringUtils.EMPTY);
+        info.setCreatedTime(new Timestamp(new Date().getTime()));
+        info.setLastModifiedTime(new Timestamp(new Date().getTime()));
+        when(historyConfigInfoPersistService.detailConfigHistory(1L))
+            .thenReturn(info);
+        when(historyConfigInfoPersistService.getNextHistoryInfo(
+            TEST_DATA_ID, TEST_GROUP, TEST_TENANT, Constants.FORMAL,
+            StringUtils.EMPTY, 1L)).thenReturn(null);
+        
+        ConfigInfoWrapper currentConfig = new ConfigInfoWrapper();
+        currentConfig.setContent(TEST_UPDATED_CONTENT);
+        currentConfig.setMd5(TEST_UPDATED_MD5);
+        when(configInfoPersistService.findConfigInfo(TEST_DATA_ID, TEST_GROUP,
+            TEST_TENANT)).thenReturn(currentConfig);
+        
+        ConfigHistoryInfoDetail detail =
+            historyService.getConfigHistoryInfoDetail(TEST_DATA_ID, TEST_GROUP,
+                TEST_TENANT, 1L);
+        assertNotNull(detail);
+        assertEquals(TEST_UPDATED_CONTENT, detail.getUpdatedContent());
+        assertEquals(TEST_CONTENT, detail.getOriginalContent());
+    }
+    
+    @Test
+    void testGetConfigHistoryInfoDetailUpdateGrayWithNoNext() throws Exception {
+        ConfigHistoryInfo info = new ConfigHistoryInfo();
+        info.setDataId(TEST_DATA_ID);
+        info.setGroup(TEST_GROUP);
+        info.setTenant(TEST_TENANT);
+        info.setOpType(OperationType.UPDATE.getValue());
+        info.setContent(TEST_CONTENT);
+        info.setMd5(TEST_MD5);
+        info.setPublishType("gray");
+        info.setGrayName("beta");
+        info.setCreatedTime(new Timestamp(new Date().getTime()));
+        info.setLastModifiedTime(new Timestamp(new Date().getTime()));
+        when(historyConfigInfoPersistService.detailConfigHistory(2L))
+            .thenReturn(info);
+        when(historyConfigInfoPersistService.getNextHistoryInfo(
+            TEST_DATA_ID, TEST_GROUP, TEST_TENANT, "gray",
+            "beta", 2L)).thenReturn(null);
+        
+        ConfigInfoGrayWrapper grayConfig = new ConfigInfoGrayWrapper();
+        grayConfig.setContent(TEST_UPDATED_CONTENT);
+        grayConfig.setMd5(TEST_UPDATED_MD5);
+        grayConfig.setEncryptedDataKey("grayKey");
+        when(configInfoGrayPersistService.findConfigInfo4Gray(
+            TEST_DATA_ID, TEST_GROUP, TEST_TENANT, "beta"))
+            .thenReturn(grayConfig);
+        
+        ConfigHistoryInfoDetail detail =
+            historyService.getConfigHistoryInfoDetail(TEST_DATA_ID, TEST_GROUP,
+                TEST_TENANT, 2L);
+        assertNotNull(detail);
+        assertEquals(TEST_UPDATED_CONTENT, detail.getUpdatedContent());
+        assertEquals(TEST_UPDATED_MD5, detail.getUpdatedMd5());
+        assertEquals(TEST_CONTENT, detail.getOriginalContent());
     }
 }

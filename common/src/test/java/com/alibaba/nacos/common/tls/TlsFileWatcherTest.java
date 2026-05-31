@@ -32,12 +32,14 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -65,8 +67,10 @@ class TlsFileWatcherTest {
     
     @BeforeAll
     static void setUpBeforeClass()
-            throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        watchFilesMapField = TlsFileWatcher.getInstance().getClass().getDeclaredField("watchFilesMap");
+        throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
+        InvocationTargetException {
+        watchFilesMapField =
+            TlsFileWatcher.getInstance().getClass().getDeclaredField("watchFilesMap");
         watchFilesMapField.setAccessible(true);
         
         fileMd5MapField = TlsFileWatcher.getInstance().getClass().getDeclaredField("fileMd5Map");
@@ -90,7 +94,8 @@ class TlsFileWatcherTest {
             runnable.run();
             return null;
         };
-        doAnswer(answer).when(executorService).scheduleAtFixedRate(any(), anyLong(), anyLong(), any());
+        doAnswer(answer).when(executorService).scheduleAtFixedRate(any(), anyLong(), anyLong(),
+            any());
     }
     
     @AfterEach
@@ -128,10 +133,12 @@ class TlsFileWatcherTest {
     }
     
     @Test
-    void testStartGivenTlsFileNotChangeThenNoNotify() throws IllegalAccessException, InterruptedException, IOException {
+    void testStartGivenTlsFileNotChangeThenNoNotify()
+        throws IllegalAccessException, InterruptedException, IOException {
         // given
         AtomicBoolean notified = new AtomicBoolean(false);
-        TlsFileWatcher.getInstance().addFileChangeListener(filePath -> notified.set(true), tempFile.getPath());
+        TlsFileWatcher.getInstance().addFileChangeListener(filePath -> notified.set(true),
+            tempFile.getPath());
         
         // when
         TlsFileWatcher.getInstance().start();
@@ -141,7 +148,8 @@ class TlsFileWatcherTest {
     }
     
     @Test
-    void testStartGivenTlsFileChangeThenNotifyTheChangeFilePath() throws IllegalAccessException, IOException {
+    void testStartGivenTlsFileChangeThenNotifyTheChangeFilePath()
+        throws IllegalAccessException, IOException {
         // given
         AtomicBoolean notified = new AtomicBoolean(false);
         AtomicReference<String> changedFilePath = new AtomicReference<>();
@@ -149,7 +157,8 @@ class TlsFileWatcherTest {
             notified.set(true);
             changedFilePath.set(filePath);
         }, tempFile.getPath());
-        ((Map<String, String>) fileMd5MapField.get(TlsFileWatcher.getInstance())).put("test.txt", "");
+        ((Map<String, String>) fileMd5MapField.get(TlsFileWatcher.getInstance())).put("test.txt",
+            "");
         
         // when
         TlsFileWatcher.getInstance().start();
@@ -165,5 +174,11 @@ class TlsFileWatcherTest {
         TlsFileWatcher.getInstance().start();
         
         verify(executorService, times(1)).scheduleAtFixedRate(any(), anyLong(), anyLong(), any());
+    }
+    
+    @Test
+    void testFileMd5MapIsConcurrentHashMap() throws IllegalAccessException {
+        Map<?, ?> md5Map = (Map<?, ?>) fileMd5MapField.get(TlsFileWatcher.getInstance());
+        assertInstanceOf(ConcurrentHashMap.class, md5Map);
     }
 }

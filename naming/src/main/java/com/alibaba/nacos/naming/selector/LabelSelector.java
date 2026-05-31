@@ -62,43 +62,43 @@ public class LabelSelector<T extends Instance> extends AbstractCmdbSelector<T> {
     protected List<T> doSelect(CmdbContext<T> context) {
         if (CollectionUtils.isEmpty(labels)) {
             return context.getProviders()
-                    .stream()
-                    .map(CmdbContext.CmdbInstance::getInstance)
-                    .collect(Collectors.toList());
+                .stream()
+                .map(CmdbContext.CmdbInstance::getInstance)
+                .collect(Collectors.toList());
         }
         CmdbContext.CmdbInstance<T> consumer = context.getConsumer();
         Map<String, String> consumerLabels = Optional.ofNullable(consumer.getEntity())
-                .map(Entity::getLabels)
-                .orElse(Collections.emptyMap());
+            .map(Entity::getLabels)
+            .orElse(Collections.emptyMap());
         
         // filter the instance if consumer and providers' label values equals.
         List<T> result = context.getProviders()
-                .stream()
-                .filter(ci -> {
-                    Entity providerEntity = ci.getEntity();
-                    if (Objects.isNull(providerEntity)) {
-                        return false;
-                    }
-                    Map<String, String> providerLabels = Optional.ofNullable(ci.getEntity().getLabels())
-                            .orElse(Collections.emptyMap());
-                    return labels.stream()
-                            .allMatch(label -> {
-                                String consumerLabelValue = consumerLabels.get(label);
-                                if (StringUtils.isBlank(consumerLabelValue)) {
-                                    return false;
-                                }
-                                return Objects.equals(consumerLabelValue, providerLabels.get(label));
-                            });
-                })
-                .map(CmdbContext.CmdbInstance::getInstance)
-                .collect(Collectors.toList());
+            .stream()
+            .filter(ci -> {
+                Entity providerEntity = ci.getEntity();
+                if (Objects.isNull(providerEntity)) {
+                    return false;
+                }
+                Map<String, String> providerLabels = Optional.ofNullable(ci.getEntity().getLabels())
+                    .orElse(Collections.emptyMap());
+                return labels.stream()
+                    .allMatch(label -> {
+                        String consumerLabelValue = consumerLabels.get(label);
+                        if (StringUtils.isBlank(consumerLabelValue)) {
+                            return false;
+                        }
+                        return Objects.equals(consumerLabelValue, providerLabels.get(label));
+                    });
+            })
+            .map(CmdbContext.CmdbInstance::getInstance)
+            .collect(Collectors.toList());
         
         // if none match, then return all providers.
         if (CollectionUtils.isEmpty(result)) {
             return context.getProviders()
-                    .stream()
-                    .map(CmdbContext.CmdbInstance::getInstance)
-                    .collect(Collectors.toList());
+                .stream()
+                .map(CmdbContext.CmdbInstance::getInstance)
+                .collect(Collectors.toList());
         }
         return result;
     }

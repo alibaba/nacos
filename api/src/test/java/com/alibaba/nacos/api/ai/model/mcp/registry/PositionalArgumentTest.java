@@ -49,7 +49,7 @@ class PositionalArgumentTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"type\":\"positional\",\"valueHint\":\"testHint\",\"value\":\"testValue\","
-                + "\"description\":\"test description\",\"isRequired\":true,\"isRepeated\":false}";
+            + "\"description\":\"test description\",\"isRequired\":true,\"isRepeated\":false}";
         
         PositionalArgument positionalArgument = mapper.readValue(json, PositionalArgument.class);
         assertNotNull(positionalArgument);

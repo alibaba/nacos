@@ -31,15 +31,16 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class ControlPluginProvider implements PluginProvider<ControlManagerBuilder> {
-
+    
     @Override
     public PluginType getPluginType() {
         return PluginType.CONTROL;
     }
-
+    
     @Override
     public Map<String, ControlManagerBuilder> getAllPlugins() {
-        Collection<ControlManagerBuilder> builders = NacosServiceLoader.load(ControlManagerBuilder.class);
+        Collection<ControlManagerBuilder> builders =
+            NacosServiceLoader.load(ControlManagerBuilder.class);
         Map<String, ControlManagerBuilder> result = new HashMap<>(builders.size());
         for (ControlManagerBuilder builder : builders) {
             result.put(builder.getName(), builder);

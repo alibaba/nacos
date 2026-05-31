@@ -28,7 +28,7 @@ import java.util.Properties;
  * @author xiweng.yy
  */
 public interface VisibilityService {
-
+    
     /**
      * Initialize service with external properties.
      *
@@ -50,13 +50,16 @@ public interface VisibilityService {
      * @param resourceType resource type, such as skill / agentspec
      * @return default scope for new resource
      */
-    default String resolveDefaultScopeForCreate(String identity, String apiType, String resourceType) {
+    default String resolveDefaultScopeForCreate(String identity, String apiType,
+        String resourceType) {
         return VisibilityConstants.SCOPE_PRIVATE;
     }
     
-    ValidationResult validateVisibility(String identity, String action, String apiType, VisibilityResource resource);
+    ValidationResult validateVisibility(String identity, String action, String apiType,
+        VisibilityResource resource);
     
-    QueryAdvisor adviseQuery(String identity, String action, String apiType, VisibilityQueryContext context);
+    QueryAdvisor adviseQuery(String identity, String action, String apiType,
+        VisibilityQueryContext context);
     
     String getVisibilityServiceName();
 }

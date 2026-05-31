@@ -71,7 +71,8 @@ public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiato
     @Override
     public NacosGrpcProtocolNegotiator build() {
         Properties properties = EnvUtil.getProperties();
-        RpcServerTlsConfig config = RpcServerTlsConfigFactory.getInstance().createSdkConfig(properties);
+        RpcServerTlsConfig config =
+            RpcServerTlsConfigFactory.getInstance().createSdkConfig(properties);
         if (config.getEnableTls()) {
             SslContext sslContext = DefaultTlsContextBuilder.getSslContext(config);
             return new OptionalTlsProtocolNegotiator(sslContext, config);

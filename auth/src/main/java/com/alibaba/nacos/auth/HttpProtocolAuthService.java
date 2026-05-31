@@ -66,7 +66,9 @@ public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpSer
         }
         String type = secured.signType();
         if (!resourceParserMap.containsKey(type)) {
-            Loggers.AUTH.warn("Can't find Http request resourceParser for type {} use specified resource parser", type);
+            Loggers.AUTH.warn(
+                "Can't find Http request resourceParser for type {} use specified resource parser",
+                type);
             return useSpecifiedParserToParse(secured, request);
         }
         return resourceParserMap.get(type).parse(request, secured);

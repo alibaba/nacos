@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
@@ -43,6 +44,7 @@ import org.springframework.stereotype.Component;
  *
  * @author xiweng.yy
  */
+@Since("2.0.0")
 @Component
 public class InstanceRequestHandler extends RequestHandler<InstanceRequest, InstanceResponse> {
     
@@ -54,12 +56,15 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     
     @Override
     @NamespaceValidation
-    @TpsControl(pointName = "RemoteNamingInstanceRegisterDeregister", name = "RemoteNamingInstanceRegisterDeregister")
+    @TpsControl(pointName = "RemoteNamingInstanceRegisterDeregister",
+        name = "RemoteNamingInstanceRegisterDeregister")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(rpcExtractor = InstanceRequestParamExtractor.class)
-    public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
-        Service service = Service.newService(request.getNamespace(), request.getGroupName(), request.getServiceName(),
-                true);
+    public InstanceResponse handle(InstanceRequest request, RequestMeta meta)
+        throws NacosException {
+        Service service = Service.newService(request.getNamespace(), request.getGroupName(),
+            request.getServiceName(),
+            true);
         InstanceUtil.setInstanceIdIfEmpty(request.getInstance(), service.getGroupedServiceName());
         switch (request.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
@@ -68,25 +73,32 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
                 return deregisterInstance(service, request, meta);
             default:
                 throw new NacosException(NacosException.INVALID_PARAM,
-                        String.format("Unsupported request type %s", request.getType()));
+                    String.format("Unsupported request type %s", request.getType()));
         }
     }
     
-    private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta)
-            throws NacosException {
-        clientOperationService.registerInstance(service, request.getInstance(), meta.getConnectionId());
+    private InstanceResponse registerInstance(Service service, InstanceRequest request,
+        RequestMeta meta)
+        throws NacosException {
+        clientOperationService.registerInstance(service, request.getInstance(),
+            meta.getConnectionId());
         NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(), service.getGroup(),
-                service.getName(), request.getInstance().getIp(), request.getInstance().getPort()));
+            NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(),
+            service.getGroup(),
+            service.getName(), request.getInstance().getIp(), request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
     
-    private InstanceResponse deregisterInstance(Service service, InstanceRequest request, RequestMeta meta) {
-        clientOperationService.deregisterInstance(service, request.getInstance(), meta.getConnectionId());
+    private InstanceResponse deregisterInstance(Service service, InstanceRequest request,
+        RequestMeta meta) {
+        clientOperationService.deregisterInstance(service, request.getInstance(),
+            meta.getConnectionId());
         NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, DeregisterInstanceReason.REQUEST,
-                service.getNamespace(), service.getGroup(), service.getName(), request.getInstance().getIp(),
-                request.getInstance().getPort()));
+            NamingRequestUtil.getSourceIpForGrpcRequest(meta), true,
+            DeregisterInstanceReason.REQUEST,
+            service.getNamespace(), service.getGroup(), service.getName(),
+            request.getInstance().getIp(),
+            request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
     

@@ -34,7 +34,8 @@ class RestResultResponseHandlerTest {
     
     @Test
     void testConvertResult() throws Exception {
-        RestResult<String> testCase = RestResult.<String>builder().withCode(200).withData("ok").withMsg("msg").build();
+        RestResult<String> testCase =
+            RestResult.<String>builder().withCode(200).withData("ok").withMsg("msg").build();
         InputStream inputStream = new ByteArrayInputStream(JacksonUtils.toJsonBytes(testCase));
         HttpClientResponse response = mock(HttpClientResponse.class);
         when(response.getBody()).thenReturn(inputStream);

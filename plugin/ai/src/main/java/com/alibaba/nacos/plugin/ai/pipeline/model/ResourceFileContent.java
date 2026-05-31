@@ -23,44 +23,43 @@ package com.alibaba.nacos.plugin.ai.pipeline.model;
  * @since 3.2.0
  */
 public class ResourceFileContent {
-
+    
     /**
      * File path, e.g. "templates/config_check.json", "SKILL.md".
      */
     private String filePath;
-
+    
     /**
      * File content (text).
      */
     private String content;
-
+    
     public ResourceFileContent() {
     }
-
+    
     public ResourceFileContent(String filePath, String content) {
         this.filePath = filePath;
         this.content = content;
     }
-
+    
     public String getFilePath() {
         return filePath;
     }
-
+    
     public void setFilePath(String filePath) {
         this.filePath = filePath;
     }
-
+    
     public String getContent() {
         return content;
     }
-
+    
     public void setContent(String content) {
         this.content = content;
     }
-
+    
     @Override
     public String toString() {
         return "ResourceFileContent{filePath='" + filePath + "'}";
     }
 }
-

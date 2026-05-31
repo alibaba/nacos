@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RequestMappingInfoTest {
-
+    
     @Test
     void testSetAndGetParamRequestCondition() {
         RequestMappingInfo info = new RequestMappingInfo();
@@ -38,16 +38,17 @@ class RequestMappingInfoTest {
         info.setParamRequestCondition(paramCondition);
         assertEquals(paramCondition, info.getParamRequestCondition());
     }
-
+    
     @Test
     void testSetPathRequestCondition() {
         RequestMappingInfo info = new RequestMappingInfo();
-        PathRequestCondition pathCondition = new PathRequestCondition("GET" + REQUEST_PATH_SEPARATOR + "/nacos/v1/ns/instance");
+        PathRequestCondition pathCondition =
+            new PathRequestCondition("GET" + REQUEST_PATH_SEPARATOR + "/nacos/v1/ns/instance");
         info.setPathRequestCondition(pathCondition);
         assertNotNull(info.toString());
         assertTrue(info.toString().contains("pathRequestCondition"));
     }
-
+    
     @Test
     void testToString() {
         RequestMappingInfo info = new RequestMappingInfo();
@@ -57,21 +58,21 @@ class RequestMappingInfoTest {
         assertTrue(s.contains("RequestMappingInfo"));
         assertTrue(s.contains("paramRequestCondition"));
     }
-
+    
     @Test
     void testRequestMappingInfoComparatorOrdersByParamExpressionSizeDescending() {
         RequestMappingInfo infoFew = new RequestMappingInfo();
         infoFew.setParamRequestCondition(new ParamRequestCondition("a=1"));
         RequestMappingInfo infoMore = new RequestMappingInfo();
         infoMore.setParamRequestCondition(new ParamRequestCondition("a=1", "b=2", "c=3"));
-
+        
         RequestMappingInfo.RequestMappingInfoComparator comparator =
-                new RequestMappingInfo.RequestMappingInfoComparator();
+            new RequestMappingInfo.RequestMappingInfoComparator();
         assertTrue(comparator.compare(infoMore, infoFew) < 0);
         assertTrue(comparator.compare(infoFew, infoMore) > 0);
         assertEquals(0, comparator.compare(infoFew, infoFew));
     }
-
+    
     @Test
     void testRequestMappingInfoComparatorSortList() {
         RequestMappingInfo info0 = new RequestMappingInfo();
@@ -80,7 +81,7 @@ class RequestMappingInfoTest {
         info2.setParamRequestCondition(new ParamRequestCondition("a=1", "b=2"));
         RequestMappingInfo info1 = new RequestMappingInfo();
         info1.setParamRequestCondition(new ParamRequestCondition("x=1"));
-
+        
         List<RequestMappingInfo> list = Arrays.asList(info0, info2, info1);
         list.sort(new RequestMappingInfo.RequestMappingInfoComparator());
         assertEquals(2, list.get(0).getParamRequestCondition().getExpressions().size());

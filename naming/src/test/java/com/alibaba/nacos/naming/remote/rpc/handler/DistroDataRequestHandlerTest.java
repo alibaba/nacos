@@ -32,6 +32,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static com.alibaba.nacos.consistency.DataOperation.ADD;
+import static com.alibaba.nacos.consistency.DataOperation.CHANGE;
 import static com.alibaba.nacos.consistency.DataOperation.DELETE;
 import static com.alibaba.nacos.consistency.DataOperation.QUERY;
 import static com.alibaba.nacos.consistency.DataOperation.SNAPSHOT;
@@ -60,28 +61,73 @@ class DistroDataRequestHandlerTest {
         DistroDataRequest distroDataRequest = new DistroDataRequest();
         distroDataRequest.setDataOperation(VERIFY);
         RequestMeta requestMeta = new RequestMeta();
-        DistroDataResponse response = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertEquals(response.getErrorCode(), ResponseCode.FAIL.getCode());
         
         DistroData distroData = new DistroData();
         Mockito.when(distroProtocol.onSnapshot(Mockito.any())).thenReturn(distroData);
         distroDataRequest.setDataOperation(SNAPSHOT);
-        DistroDataResponse response1 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response1 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertEquals(response1.getDistroData(), distroData);
         
         distroDataRequest.setDataOperation(DELETE);
         Mockito.when(distroProtocol.onReceive(Mockito.any())).thenReturn(false);
-        DistroDataResponse response2 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response2 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertEquals(response2.getErrorCode(), ResponseCode.FAIL.getCode());
         
         distroDataRequest.setDataOperation(QUERY);
         Mockito.when(distroProtocol.onQuery(Mockito.any())).thenReturn(distroData);
         distroDataRequest.setDistroData(new DistroData());
-        DistroDataResponse response3 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response3 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertEquals(response3.getDistroData(), distroData);
         
         distroDataRequest.setDataOperation(ADD);
-        DistroDataResponse response4 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        DistroDataResponse response4 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
         assertNull(response4.getDistroData());
+    }
+    
+    @Test
+    void testHandleVerifySuccess() throws NacosException {
+        Mockito.when(distroProtocol.onVerify(Mockito.any(), Mockito.eq("1.1.1.1")))
+            .thenReturn(true);
+        DistroDataRequest distroDataRequest = new DistroDataRequest();
+        distroDataRequest.setDataOperation(VERIFY);
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp("1.1.1.1");
+        
+        DistroDataResponse response =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        
+        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+    }
+    
+    @Test
+    void testHandleChangeSuccess() throws NacosException {
+        Mockito.when(distroProtocol.onReceive(Mockito.any())).thenReturn(true);
+        DistroDataRequest distroDataRequest = new DistroDataRequest();
+        distroDataRequest.setDataOperation(CHANGE);
+        distroDataRequest.setDistroData(new DistroData());
+        
+        DistroDataResponse response =
+            distroDataRequestHandler.handle(distroDataRequest, new RequestMeta());
+        
+        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+    }
+    
+    @Test
+    void testHandleException() throws NacosException {
+        DistroDataRequest distroDataRequest = new DistroDataRequest();
+        
+        DistroDataResponse response =
+            distroDataRequestHandler.handle(distroDataRequest, new RequestMeta());
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(ResponseCode.FAIL.getCode(), response.getErrorCode());
+        assertEquals("handle distro request with exception", response.getMessage());
     }
 }

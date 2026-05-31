@@ -51,8 +51,6 @@ public final class DiskUtils {
     
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     
-    private static final CharsetDecoder DECODER = CHARSET.newDecoder();
-    
     /**
      * read this file content.
      *
@@ -60,19 +58,34 @@ public final class DiskUtils {
      * @return content
      */
     public static String readFile(File file) {
+        // CharsetDecoder is documented as not safe for concurrent use, so allocate one per call
+        // instead of sharing a static instance across threads.
+        CharsetDecoder decoder = CHARSET.newDecoder();
         try (FileChannel fileChannel = new FileInputStream(file).getChannel()) {
             StringBuilder text = new StringBuilder();
             ByteBuffer buffer = ByteBuffer.allocate(4096);
             CharBuffer charBuffer = CharBuffer.allocate(4096);
             while (fileChannel.read(buffer) != -1) {
                 buffer.flip();
-                DECODER.decode(buffer, charBuffer, false);
+                decoder.decode(buffer, charBuffer, false);
                 charBuffer.flip();
                 while (charBuffer.hasRemaining()) {
                     text.append(charBuffer.get());
                 }
-                buffer.clear();
+                // compact() preserves any bytes the decoder did not consume - typically the leading
+                // bytes of a multi-byte UTF-8 character that straddles the 4096-byte chunk boundary.
+                // The previous clear() silently discarded those bytes, corrupting any non-ASCII
+                // content longer than one chunk.
+                buffer.compact();
                 charBuffer.clear();
+            }
+            // Flush the trailing partial input and any decoder state once the stream is exhausted.
+            buffer.flip();
+            decoder.decode(buffer, charBuffer, true);
+            decoder.flush(charBuffer);
+            charBuffer.flip();
+            while (charBuffer.hasRemaining()) {
+                text.append(charBuffer.get());
             }
             return text.toString();
         } catch (IOException e) {
@@ -96,7 +109,8 @@ public final class DiskUtils {
         } catch (IOException ioe) {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUOTA_CN) || errMsg
+                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg)
+                    || errMsg.contains(DISK_QUOTA_CN) || errMsg
                         .contains(DISK_QUOTA_EN)) {
                     LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);

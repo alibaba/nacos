@@ -25,8 +25,9 @@ import com.alibaba.nacos.common.notify.SlowEvent;
  */
 public class ChangeNotifyBlockEvent extends SlowEvent {
     
-    public ChangeNotifyBlockEvent(String listener, String dataId, String group, String tenant, long startTime,
-            long currentTime, String blockStack) {
+    public ChangeNotifyBlockEvent(String listener, String dataId, String group, String tenant,
+        long startTime,
+        long currentTime, String blockStack) {
         this.listener = listener;
         this.dataId = dataId;
         this.group = group;
@@ -100,8 +101,10 @@ public class ChangeNotifyBlockEvent extends SlowEvent {
     
     @Override
     public String toString() {
-        return "ChangeNotifyBlockEvent{" + "listener='" + listener + '\'' + ", dataId='" + dataId + '\'' + ", group='"
-                + group + '\'' + ", tenant='" + tenant + '\'' + ", startTime=" + startTime + ", currentTime="
-                + currentTime + ", blockStack='" + blockStack + '\'' + '}';
+        return "ChangeNotifyBlockEvent{" + "listener='" + listener + '\'' + ", dataId='" + dataId
+            + '\'' + ", group='"
+            + group + '\'' + ", tenant='" + tenant + '\'' + ", startTime=" + startTime
+            + ", currentTime="
+            + currentTime + ", blockStack='" + blockStack + '\'' + '}';
     }
 }

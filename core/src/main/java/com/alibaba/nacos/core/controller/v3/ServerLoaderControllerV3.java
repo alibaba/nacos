@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
@@ -63,8 +64,10 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
+    @Since("3.0.0")
     @GetMapping("/current")
-    @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3 + "/loader", action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3 + "/loader", action = ActionTypes.READ,
+        apiType = ApiType.ADMIN_API)
     public Result<Map<String, Connection>> currentClients() {
         return Result.success(serverLoaderService.getAllClients());
     }
@@ -75,10 +78,11 @@ public class ServerLoaderControllerV3 {
      * @return state json.
      */
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3
-            + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+        + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Since("3.0.0")
     @PostMapping("/reloadCurrent")
     public Result<String> reloadCount(@RequestParam Integer count,
-            @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
+        @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         serverLoaderService.reloadCount(count, redirectAddress);
         return Result.success();
     }
@@ -89,15 +93,17 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
+    @Since("3.0.0")
     @PostMapping("/smartReloadCluster")
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3
-            + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+        + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> smartReload(HttpServletRequest request,
-            @RequestParam(value = "loaderFactor", defaultValue = "0.1f") String loaderFactorStr) {
+        @RequestParam(value = "loaderFactor", defaultValue = "0.1f") String loaderFactorStr) {
         LOGGER.info("Smart reload request receive,requestIp={}", WebUtils.getRemoteIp(request));
         float loaderFactor = Float.parseFloat(loaderFactorStr);
         if (!serverLoaderService.smartReload(loaderFactor)) {
-            return Result.failure(ErrorCode.SERVER_ERROR, "Smart reload failed, please try again later.");
+            return Result.failure(ErrorCode.SERVER_ERROR,
+                "Smart reload failed, please try again later.");
         }
         return Result.success();
     }
@@ -107,11 +113,12 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
+    @Since("3.0.0")
     @PostMapping("/reloadClient")
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3
-            + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+        + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> reloadSingle(@RequestParam String connectionId,
-            @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
+        @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         serverLoaderService.reloadClient(connectionId, redirectAddress);
         return Result.success();
     }
@@ -121,8 +128,10 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
+    @Since("3.0.0")
     @GetMapping("/cluster")
-    @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3 + "/loader", action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3 + "/loader", action = ActionTypes.READ,
+        apiType = ApiType.ADMIN_API)
     public Result<ServerLoaderMetrics> loaderMetrics() {
         return Result.success(serverLoaderService.getServerLoaderMetrics());
     }

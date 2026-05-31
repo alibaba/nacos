@@ -43,6 +43,6 @@ public class LongPollingConnectionMetricsCollector implements ConnectionMetricsC
     @Override
     public int getCountForIp(String ip) {
         return ApplicationUtils.getBean(LongPollingService.class).allSubs.stream()
-                .filter(a -> a.ip.equalsIgnoreCase(ip)).collect(Collectors.toList()).size();
+            .filter(a -> a.ip.equalsIgnoreCase(ip)).collect(Collectors.toList()).size();
     }
 }

@@ -60,8 +60,9 @@ public class ConfigFuzzyWatchEvent extends Event {
      * @param groupKeyPattern         Pattern for matching group keys
      * @param isInitializing          Flag indicating whether the client is initializing
      */
-    public ConfigFuzzyWatchEvent(String connectionId, Set<String> clientExistingGroupKeys, String groupKeyPattern,
-            boolean isInitializing) {
+    public ConfigFuzzyWatchEvent(String connectionId, Set<String> clientExistingGroupKeys,
+        String groupKeyPattern,
+        boolean isInitializing) {
         this.connectionId = connectionId;
         this.clientExistingGroupKeys = clientExistingGroupKeys;
         this.groupKeyPattern = groupKeyPattern;

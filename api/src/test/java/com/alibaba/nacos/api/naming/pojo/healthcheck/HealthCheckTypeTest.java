@@ -33,7 +33,8 @@ class HealthCheckTypeTest {
         assertEquals(Tcp.class, HealthCheckType.ofHealthCheckerClass("TCP"));
         assertEquals(Http.class, HealthCheckType.ofHealthCheckerClass("HTTP"));
         assertEquals(Mysql.class, HealthCheckType.ofHealthCheckerClass("MYSQL"));
-        assertEquals(AbstractHealthChecker.None.class, HealthCheckType.ofHealthCheckerClass("NONE"));
+        assertEquals(AbstractHealthChecker.None.class,
+            HealthCheckType.ofHealthCheckerClass("NONE"));
     }
     
     @Test
@@ -50,7 +51,8 @@ class HealthCheckTypeTest {
     @Test
     void testGetLoadedHealthCheckerClasses() {
         HealthCheckType.registerHealthChecker(TestChecker.TYPE, TestChecker.class);
-        List<Class<? extends AbstractHealthChecker>> actual = HealthCheckType.getLoadedHealthCheckerClasses();
+        List<Class<? extends AbstractHealthChecker>> actual =
+            HealthCheckType.getLoadedHealthCheckerClasses();
         assertEquals(5, actual.size());
     }
 }

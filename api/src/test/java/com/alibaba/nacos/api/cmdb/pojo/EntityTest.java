@@ -52,7 +52,8 @@ class EntityTest {
     
     @Test
     void testDeserialization() throws JsonProcessingException {
-        String json = "{\"type\":\"service\",\"name\":\"test-entity\",\"labels\":{\"test-label-key\":\"test-label-value\"}}";
+        String json =
+            "{\"type\":\"service\",\"name\":\"test-entity\",\"labels\":{\"test-label-key\":\"test-label-value\"}}";
         Entity entity = mapper.readValue(json, Entity.class);
         assertEquals("test-entity", entity.getName());
         assertEquals(PreservedEntityTypes.service.name(), entity.getType());

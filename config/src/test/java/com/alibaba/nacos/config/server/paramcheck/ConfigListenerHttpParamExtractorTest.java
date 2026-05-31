@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.paramcheck;
 
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,8 @@ import java.util.List;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -44,23 +47,58 @@ class ConfigListenerHttpParamExtractorTest {
     @Test
     void testNormal() {
         String listenerConfigsString = getListenerConfigsString();
-        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs"))).thenReturn(listenerConfigsString);
+        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs")))
+            .thenReturn(listenerConfigsString);
         configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
         configListenerHttpParamExtractor.extractParam(httpServletRequest);
     }
     
     @Test
+    void testBlankListeningConfigsReturnEmptyParams() {
+        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs"))).thenReturn(" ");
+        configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
+        
+        List<ParamInfo> result = configListenerHttpParamExtractor.extractParam(httpServletRequest);
+        
+        assertTrue(result.isEmpty());
+    }
+    
+    @Test
+    void testDecodedBlankListeningConfigsReturnEmptyParams() {
+        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs")))
+            .thenReturn("%20%20");
+        configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
+        
+        List<ParamInfo> result = configListenerHttpParamExtractor.extractParam(httpServletRequest);
+        
+        assertTrue(result.isEmpty());
+    }
+    
+    @Test
+    void testExtractNamespaceFromFourWords() {
+        String listenerConfigsString = "dataId" + WORD_SEPARATOR + "group"
+            + WORD_SEPARATOR + "md5" + WORD_SEPARATOR + "namespace";
+        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs")))
+            .thenReturn(listenerConfigsString);
+        configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
+        
+        List<ParamInfo> result = configListenerHttpParamExtractor.extractParam(httpServletRequest);
+        
+        assertEquals(1, result.size());
+        assertEquals("dataId", result.get(0).getDataId());
+        assertEquals("group", result.get(0).getGroup());
+        assertEquals("namespace", result.get(0).getNamespaceId());
+    }
+    
+    @Test
     void testError() {
         String listenerConfigsString = getErrorListenerConfigsString();
-        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs"))).thenReturn(listenerConfigsString);
+        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs")))
+            .thenReturn(listenerConfigsString);
         configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
-        try {
-            configListenerHttpParamExtractor.extractParam(httpServletRequest);
-            assertTrue(false);
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-            assertTrue(throwable instanceof IllegalArgumentException);
-        }
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> configListenerHttpParamExtractor.extractParam(httpServletRequest));
     }
     
     private String getListenerConfigsString() {
@@ -84,7 +122,8 @@ class ConfigListenerHttpParamExtractorTest {
         configInfo4.setGroup("1234445");
         configInfo4.setMd5("12345");
         configInfo4.setTenant(null);
-        List<ConfigInfo> configInfoList = Arrays.asList(configInfo4, configInfo3, configInfo2, configInfo1);
+        List<ConfigInfo> configInfoList =
+            Arrays.asList(configInfo4, configInfo3, configInfo2, configInfo1);
         StringBuilder sb = new StringBuilder();
         for (ConfigInfo configInfo : configInfoList) {
             sb.append(configInfo.getDataId()).append(WORD_SEPARATOR);

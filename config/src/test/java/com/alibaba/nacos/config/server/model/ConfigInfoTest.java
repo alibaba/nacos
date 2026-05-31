@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.env.StandardEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigInfoTest {
     
@@ -89,6 +90,63 @@ class ConfigInfoTest {
         assertEquals("DEFAULT_GROUP", configAllInfo.getGroup());
         assertEquals("继承的描述字段", configAllInfo.getDesc());
         assertEquals("inherited,tags", configAllInfo.getConfigTags());
+    }
+    
+    @Test
+    void testConstructorWithAppName() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "appName", "content");
+        
+        assertEquals("dataId", configInfo.getDataId());
+        assertEquals("group", configInfo.getGroup());
+        assertEquals("appName", configInfo.getAppName());
+        assertEquals("content", configInfo.getContent());
+    }
+    
+    @Test
+    void testToString() {
+        ConfigInfo configInfo = new ConfigInfo("dataId", "group", "tenant", "app", "content");
+        configInfo.setId(1L);
+        configInfo.setMd5("md5");
+        configInfo.setType("text");
+        configInfo.setDesc("desc");
+        configInfo.setConfigTags("tag");
+        
+        String result = configInfo.toString();
+        
+        assertTrue(result.contains("id=1"));
+        assertTrue(result.contains("dataId='dataId'"));
+        assertTrue(result.contains("tenant='tenant'"));
+        assertTrue(result.contains("configTags='tag'"));
+    }
+    
+    @Test
+    void testConfigInfo4BetaAccessorsAndEqualityDelegate() {
+        ConfigInfo4Beta configInfo = new ConfigInfo4Beta("dataId", "group", "appName",
+            "content", "1.1.1.1");
+        ConfigInfo4Beta sameConfigInfo = new ConfigInfo4Beta("dataId", "group", "appName",
+            "content", "2.2.2.2");
+        
+        assertEquals("1.1.1.1", configInfo.getBetaIps());
+        configInfo.setBetaIps("3.3.3.3");
+        
+        assertEquals("3.3.3.3", configInfo.getBetaIps());
+        assertEquals(configInfo, sameConfigInfo);
+        assertEquals(configInfo.hashCode(), sameConfigInfo.hashCode());
+    }
+    
+    @Test
+    void testConfigInfo4TagAccessorsAndEqualityDelegate() {
+        ConfigInfo4Tag configInfo = new ConfigInfo4Tag("dataId", "group", "tagA",
+            "appName", "content");
+        ConfigInfo4Tag sameConfigInfo = new ConfigInfo4Tag("dataId", "group", "tagB",
+            "appName", "content");
+        
+        assertEquals("tagA", configInfo.getTag());
+        configInfo.setTag("tagC");
+        
+        assertEquals("tagC", configInfo.getTag());
+        assertEquals(configInfo, sameConfigInfo);
+        assertEquals(configInfo.hashCode(), sameConfigInfo.hashCode());
     }
     
 }

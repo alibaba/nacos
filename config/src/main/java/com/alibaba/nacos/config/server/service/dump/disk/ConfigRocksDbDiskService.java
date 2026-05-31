@@ -81,7 +81,8 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         
     }
     
-    private byte[] getKeyByte(String dataId, String group, String tenant, String tag) throws IOException {
+    private byte[] getKeyByte(String dataId, String group, String tenant, String tag)
+        throws IOException {
         String[] keys = new String[] {dataId, group, tenant, tag};
         return getKeyByte(keys);
     }
@@ -120,10 +121,12 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     /**
      * save config to disk.
      */
-    public void saveToDiskInner(String type, String dataId, String group, String tenant, String tag, String content)
-            throws IOException {
+    public void saveToDiskInner(String type, String dataId, String group, String tenant, String tag,
+        String content)
+        throws IOException {
         try {
-            initAndGetDB(type).put(getKeyByte(dataId, group, tenant, tag), content.getBytes(ENCODE_UTF8));
+            initAndGetDB(type).put(getKeyByte(dataId, group, tenant, tag),
+                content.getBytes(ENCODE_UTF8));
         } catch (RocksDBException e) {
             throw new IOException(e);
         }
@@ -132,18 +135,21 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     /**
      * save config to disk.
      */
-    public void saveToDiskInner(String type, String dataId, String group, String tenant, String content)
-            throws IOException {
+    public void saveToDiskInner(String type, String dataId, String group, String tenant,
+        String content)
+        throws IOException {
         saveToDiskInner(type, dataId, group, tenant, null, content);
     }
     
     /**
      * save config to disk.
      */
-    public void saveGrayToDiskInner(String type, String dataId, String group, String tenant, String grayName,
-            String content) throws IOException {
+    public void saveGrayToDiskInner(String type, String dataId, String group, String tenant,
+        String grayName,
+        String content) throws IOException {
         try {
-            initAndGetDB(type).put(getKeyByte(dataId, group, tenant, grayName), content.getBytes(ENCODE_UTF8));
+            initAndGetDB(type).put(getKeyByte(dataId, group, tenant, grayName),
+                content.getBytes(ENCODE_UTF8));
         } catch (RocksDBException e) {
             throw new IOException(e);
         }
@@ -152,15 +158,17 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     /**
      * Save configuration information to disk.
      */
-    public void saveToDisk(String dataId, String group, String tenant, String content) throws IOException {
+    public void saveToDisk(String dataId, String group, String tenant, String content)
+        throws IOException {
         saveToDiskInner(BASE_DIR, dataId, group, tenant, content);
     }
     
     /**
      * Save tag information to disk.
      */
-    public void saveGrayToDisk(String dataId, String group, String tenant, String grayName, String content)
-            throws IOException {
+    public void saveGrayToDisk(String dataId, String group, String tenant, String grayName,
+        String content)
+        throws IOException {
         saveGrayToDiskInner(GRAY_DIR, dataId, group, tenant, grayName, content);
         
     }
@@ -210,7 +218,8 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         }
     }
     
-    private String getContentInner(String type, String dataId, String group, String tenant) throws IOException {
+    private String getContentInner(String type, String dataId, String group, String tenant)
+        throws IOException {
         byte[] bytes = null;
         try {
             bytes = initAndGetDB(type).get(getKeyByte(dataId, group, tenant, null));
@@ -221,8 +230,9 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         }
     }
     
-    private String getGrayInner(String type, String dataId, String group, String tenant, String grayName)
-            throws IOException {
+    private String getGrayInner(String type, String dataId, String group, String tenant,
+        String grayName)
+        throws IOException {
         byte[] bytes = null;
         try {
             bytes = initAndGetDB(type).get(getKeyByte(dataId, group, tenant, grayName));
@@ -232,28 +242,33 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         }
     }
     
-    private void removeContentInner(String type, String dataId, String group, String tenant, String tag) {
+    private void removeContentInner(String type, String dataId, String group, String tenant,
+        String tag) {
         try {
             initAndGetDB(type).delete(getKeyByte(dataId, group, tenant, tag));
         } catch (Exception e) {
-            LogUtil.DEFAULT_LOG.warn("Remove dir=[{}] config fail,dataId={},group={},tenant={},error={}", type, dataId,
-                    group, tenant, e.getCause());
+            LogUtil.DEFAULT_LOG.warn(
+                "Remove dir=[{}] config fail,dataId={},group={},tenant={},error={}", type, dataId,
+                group, tenant, e.getCause());
         }
     }
     
-    private void removeGrayInner(String type, String dataId, String group, String tenant, String grayName) {
+    private void removeGrayInner(String type, String dataId, String group, String tenant,
+        String grayName) {
         try {
             initAndGetDB(type).delete(getKeyByte(dataId, group, tenant, grayName));
         } catch (Exception e) {
-            LogUtil.DEFAULT_LOG.warn("Remove dir=[{}] config fail,dataId={},group={},tenant={},error={}", type, dataId,
-                    group, tenant, e.getCause());
+            LogUtil.DEFAULT_LOG.warn(
+                "Remove dir=[{}] config fail,dataId={},group={},tenant={},error={}", type, dataId,
+                group, tenant, e.getCause());
         }
     }
     
     /**
      * Returns the path of the gray content cache file in server.
      */
-    public String getGrayContent(String dataId, String group, String tenant, String grayName) throws IOException {
+    public String getGrayContent(String dataId, String group, String tenant, String grayName)
+        throws IOException {
         return getGrayInner(GRAY_DIR, dataId, group, tenant, grayName);
     }
     
@@ -261,7 +276,8 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         return getContentInner(BASE_DIR, dataId, group, tenant);
     }
     
-    public String getLocalConfigMd5(String dataId, String group, String tenant, String encode) throws IOException {
+    public String getLocalConfigMd5(String dataId, String group, String tenant, String encode)
+        throws IOException {
         return MD5Utils.md5Hex(getContentInner(BASE_DIR, dataId, group, tenant), encode);
     }
     
@@ -304,12 +320,14 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
             } else {
                 formalWriteBufferSizeMB = 256;
             }
-            LogUtil.DEFAULT_LOG.info("init formal rocksdb write buffer size {}M for dir {}, maxHeapSize={}M",
-                    formalWriteBufferSizeMB, dir, maxHeapSizeMB);
+            LogUtil.DEFAULT_LOG.info(
+                "init formal rocksdb write buffer size {}M for dir {}, maxHeapSize={}M",
+                formalWriteBufferSizeMB, dir, maxHeapSizeMB);
             return formalWriteBufferSizeMB;
         } else {
-            LogUtil.DEFAULT_LOG.info("init default rocksdb write buffer size {}M for dir {}, maxHeapSize={}M",
-                    DEFAULT_WRITE_BUFFER_MB, dir, maxHeapSizeMB);
+            LogUtil.DEFAULT_LOG.info(
+                "init default rocksdb write buffer size {}M for dir {}, maxHeapSize={}M",
+                DEFAULT_WRITE_BUFFER_MB, dir, maxHeapSizeMB);
             return DEFAULT_WRITE_BUFFER_MB;
         }
         

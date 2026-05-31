@@ -59,19 +59,20 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
         this.logger = logger;
         setProperties(properties);
         this.redoExecutor = new ScheduledThreadPoolExecutor(redoThreadCount,
-                new NameThreadFactory(String.format(REDO_THREAD_NAME_PATTERN, module)));
+            new NameThreadFactory(String.format(REDO_THREAD_NAME_PATTERN, module)));
         this.redoDataMap = new ConcurrentHashMap<>(2);
     }
     
     private void setProperties(NacosClientProperties properties) {
-        redoDelayTime = properties.getLong(PropertyKeyConst.REDO_DELAY_TIME, Constants.DEFAULT_REDO_DELAY_TIME);
+        redoDelayTime = properties.getLong(PropertyKeyConst.REDO_DELAY_TIME,
+            Constants.DEFAULT_REDO_DELAY_TIME);
         redoThreadCount = properties.getInteger(PropertyKeyConst.REDO_DELAY_THREAD_COUNT,
-                Constants.DEFAULT_REDO_THREAD_COUNT);
+            Constants.DEFAULT_REDO_THREAD_COUNT);
     }
     
     protected void startRedoTask() {
         this.redoExecutor.scheduleWithFixedDelay(buildRedoTask(), redoDelayTime, redoDelayTime,
-                TimeUnit.MILLISECONDS);
+            TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -120,7 +121,7 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
      */
     public <T> void cachedRedoData(String key, RedoData<T> redoData, Class<T> clazz) {
         Map<String, RedoData<?>> actualRedoData = this.redoDataMap.computeIfAbsent(clazz,
-                k -> new ConcurrentHashMap<>(2));
+            k -> new ConcurrentHashMap<>(2));
         synchronized (actualRedoData) {
             actualRedoData.put(key, redoData);
         }
@@ -134,7 +135,7 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
      */
     public <T> void removeRedoData(String key, Class<T> clazz) {
         Map<String, RedoData<?>> actualRedoData = this.redoDataMap.computeIfAbsent(clazz,
-                k -> new ConcurrentHashMap<>(2));
+            k -> new ConcurrentHashMap<>(2));
         synchronized (actualRedoData) {
             RedoData<?> redoData = actualRedoData.get(key);
             if (null != redoData && !redoData.isExpectedRegistered()) {
@@ -151,7 +152,7 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
      */
     public <T> void dataRegistered(String key, Class<T> clazz) {
         Map<String, RedoData<?>> actualRedoData = this.redoDataMap.computeIfAbsent(clazz,
-                k -> new ConcurrentHashMap<>(2));
+            k -> new ConcurrentHashMap<>(2));
         synchronized (actualRedoData) {
             RedoData<?> redoData = actualRedoData.get(key);
             if (null != redoData) {
@@ -168,7 +169,7 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
      */
     public <T> void dataDeregister(String key, Class<T> clazz) {
         Map<String, RedoData<?>> actualRedoData = this.redoDataMap.computeIfAbsent(clazz,
-                k -> new ConcurrentHashMap<>(2));
+            k -> new ConcurrentHashMap<>(2));
         synchronized (actualRedoData) {
             RedoData<?> redoData = actualRedoData.get(key);
             if (null != redoData) {
@@ -186,7 +187,7 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
      */
     public <T> void dataDeregistered(String key, Class<T> clazz) {
         Map<String, RedoData<?>> actualRedoData = this.redoDataMap.computeIfAbsent(clazz,
-                k -> new ConcurrentHashMap<>(2));
+            k -> new ConcurrentHashMap<>(2));
         synchronized (actualRedoData) {
             RedoData<?> redoData = actualRedoData.get(key);
             if (null != redoData) {
@@ -204,7 +205,7 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
      */
     public boolean isDataRegistered(String key, Class<?> clazz) {
         Map<String, RedoData<?>> actualRedoData = this.redoDataMap.computeIfAbsent(clazz,
-                k -> new ConcurrentHashMap<>(2));
+            k -> new ConcurrentHashMap<>(2));
         synchronized (actualRedoData) {
             RedoData<?> redoData = actualRedoData.get(key);
             return null != redoData && redoData.isRegistered();
@@ -219,7 +220,7 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
     public <T> Set<RedoData<T>> findRedoData(Class<T> clazz) {
         Set<RedoData<T>> result = new HashSet<>();
         Map<String, RedoData<?>> actualRedoData = this.redoDataMap.computeIfAbsent(clazz,
-                k -> new ConcurrentHashMap<>(2));
+            k -> new ConcurrentHashMap<>(2));
         synchronized (actualRedoData) {
             for (RedoData<?> each : actualRedoData.values()) {
                 if (each.isNeedRedo()) {
@@ -239,7 +240,7 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
      */
     public <T> RedoData<T> getRedoData(String key, Class<?> clazz) {
         Map<String, RedoData<?>> actualRedoData = this.redoDataMap.computeIfAbsent(clazz,
-                k -> new ConcurrentHashMap<>(2));
+            k -> new ConcurrentHashMap<>(2));
         synchronized (actualRedoData) {
             return (RedoData<T>) actualRedoData.get(key);
         }

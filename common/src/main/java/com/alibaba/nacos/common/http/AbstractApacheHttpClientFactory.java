@@ -38,24 +38,25 @@ public abstract class AbstractApacheHttpClientFactory extends AbstractHttpClient
         final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
         final RequestConfig defaultConfig = getRequestConfig();
         // in latest version of Apache Http Components all client settings have been moved into manager
-        PoolingHttpClientConnectionManager poolingManager = PoolingHttpClientConnectionManagerBuilder
+        PoolingHttpClientConnectionManager poolingManager =
+            PoolingHttpClientConnectionManagerBuilder
                 .create()
                 .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
                 .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
                 .setDefaultConnectionConfig(ConnectionConfig
-                        .custom()
-                        .setTimeToLive(Timeout.of(originalRequestConfig.getConnTimeToLive(),
-                                originalRequestConfig.getConnTimeToLiveTimeUnit()))
-                        .build())
+                    .custom()
+                    .setTimeToLive(Timeout.of(originalRequestConfig.getConnTimeToLive(),
+                        originalRequestConfig.getConnTimeToLiveTimeUnit()))
+                    .build())
                 .build();
         return new NacosRestTemplate(assignLogger(), new DefaultHttpClientRequest(
-                HttpClients.custom()
-                        .addRequestInterceptorLast(new RequestContent(true))
-                        .setDefaultRequestConfig(defaultConfig)
-                        .setUserAgent(originalRequestConfig.getUserAgent())
-                        .setConnectionManager(poolingManager)
-                        .build(),
-                defaultConfig));
+            HttpClients.custom()
+                .addRequestInterceptorLast(new RequestContent(true))
+                .setDefaultRequestConfig(defaultConfig)
+                .setUserAgent(originalRequestConfig.getUserAgent())
+                .setConnectionManager(poolingManager)
+                .build(),
+            defaultConfig));
     }
     
 }
