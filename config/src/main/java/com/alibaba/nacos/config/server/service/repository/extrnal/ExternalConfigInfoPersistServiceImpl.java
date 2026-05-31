@@ -235,11 +235,21 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             if (configInfoState == null) {
-                return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                try {
+                    return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                } catch (DataIntegrityViolationException e) {
+                    // Concurrent insert: another thread already inserted the record.
+                    // Fall back to update for idempotency. (#14981)
+                    LogUtil.DEFAULT_LOG.warn(
+                        "Insert config failed due to unique constraint, fall back to update. "
+                            + "dataId={}, group={}, tenant={}",
+                        configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
+                    return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
+                }
             } else {
                 return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
             }
-            
+
         } catch (Exception exception) {
             LogUtil.FATAL_LOG.error("[db-error] try to update or add config failed, {}",
                 exception.getMessage(),
@@ -247,7 +257,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             throw exception;
         }
     }
-    
+
     @Override
     public ConfigOperateResult insertOrUpdateCas(String srcIp, String srcUser,
         ConfigInfo configInfo,
@@ -257,11 +267,21 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             if (configInfoState == null) {
-                return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                try {
+                    return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                } catch (DataIntegrityViolationException e) {
+                    // Concurrent insert: another thread already inserted the record.
+                    // Fall back to update for idempotency. (#14981)
+                    LogUtil.DEFAULT_LOG.warn(
+                        "Insert config failed due to unique constraint, fall back to update. "
+                            + "dataId={}, group={}, tenant={}",
+                        configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
+                    return updateConfigInfoCas(configInfo, srcIp, srcUser, configAdvanceInfo);
+                }
             } else {
                 return updateConfigInfoCas(configInfo, srcIp, srcUser, configAdvanceInfo);
             }
-            
+
         } catch (Exception exception) {
             LogUtil.FATAL_LOG.error("[db-error] try to update or add config failed, {}",
                 exception.getMessage(),
