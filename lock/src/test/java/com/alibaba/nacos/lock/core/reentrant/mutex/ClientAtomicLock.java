@@ -41,22 +41,25 @@ public class ClientAtomicLock extends AbstractAtomicLock {
     }
     
     @Override
-    public Boolean tryLock(LockInfo lockInfo) {
+    protected Boolean doTryLock(LockInfo lockInfo) {
         String nacosClientId = (String) lockInfo.getParams().get("nacosClientId");
         if (nacosClientId == null) {
             return false;
         }
         return state.compareAndSet(EMPTY, nacosClientId) || state.get().equals(nacosClientId);
     }
-    
+
     @Override
-    public Boolean unLock(LockInfo lockInfo) {
+    protected Boolean doUnLock(LockInfo lockInfo) {
         String nacosClientId = (String) lockInfo.getParams().get("nacosClientId");
         return state.compareAndSet(nacosClientId, EMPTY);
     }
     
     @Override
     public Boolean autoExpire() {
+        if (this.expireTimestamp == null) {
+            return false;
+        }
         return System.currentTimeMillis() >= this.expireTimestamp;
     }
     

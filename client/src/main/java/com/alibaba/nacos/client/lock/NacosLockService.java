@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.lock;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.lock.LockService;
+import com.alibaba.nacos.api.lock.common.LockConstants;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.security.SecurityProxy;
 
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -42,9 +44,13 @@ import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO
 public class NacosLockService implements LockService {
     
     private final LockGrpcClient lockGrpcClient;
-    
+
     private final SecurityProxy securityProxy;
-    
+
+    private final NacosLockWatchdog watchdog;
+
+    private final String clientId;
+
     private ScheduledExecutorService executorService;
     
     public NacosLockService(Properties properties) throws NacosException {
@@ -55,6 +61,8 @@ public class NacosLockService implements LockService {
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(nacosClientProperties);
         this.lockGrpcClient = new LockGrpcClient(nacosClientProperties, serverListManager, securityProxy);
+        this.watchdog = new NacosLockWatchdog();
+        this.clientId = UUID.randomUUID().toString();
     }
     
     private void initSecurityProxy(NacosClientProperties properties) {
@@ -84,17 +92,51 @@ public class NacosLockService implements LockService {
     public Boolean remoteTryLock(LockInstance instance) throws NacosException {
         return lockGrpcClient.lock(instance);
     }
-    
+
     @Override
     public Boolean remoteReleaseLock(LockInstance instance) throws NacosException {
         return lockGrpcClient.unLock(instance);
     }
-    
+
+    @Override
+    public Boolean renew(LockInstance instance) throws NacosException {
+        return lockGrpcClient.renew(instance);
+    }
+
+    /**
+     * Get a JUC-style reentrant distributed lock.
+     *
+     * @param key lock key
+     * @return NacosLock implementing java.util.concurrent.locks.Lock
+     */
+    public NacosLock getReentrantLock(String key) {
+        return new NacosLock(key, LockConstants.REENTRANT_LOCK_TYPE, lockGrpcClient, watchdog, clientId);
+    }
+
+    /**
+     * Get a JUC-style non-reentrant distributed lock.
+     *
+     * @param key lock key
+     * @return NacosLock implementing java.util.concurrent.locks.Lock
+     */
+    public NacosLock getNonReentrantLock(String key) {
+        return new NacosLock(key, LockConstants.NON_REENTRANT_LOCK_TYPE, lockGrpcClient, watchdog, clientId);
+    }
+
     @Override
     public void shutdown() throws NacosException {
         lockGrpcClient.shutdown();
+        watchdog.shutdown();
         if (null != executorService) {
             executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }

@@ -35,7 +35,11 @@ public enum LockOperationEnum implements Serializable {
     /**
      * Expire.
      */
-    EXPIRE;
-    
+    EXPIRE,
+    /**
+     * Renew (watchdog heartbeat).
+     */
+    RENEW;
+
     private static final long serialVersionUID = -241044344531890549L;
 }

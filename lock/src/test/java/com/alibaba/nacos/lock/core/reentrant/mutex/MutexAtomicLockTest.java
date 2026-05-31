@@ -47,6 +47,7 @@ public class MutexAtomicLockTest {
         Mockito.when(lockManager.getMutexLock(Mockito.any())).thenReturn(new MutexAtomicLock("key"));
         AtomicLockService lock = lockManager.getMutexLock(new LockKey(LockConstants.NACOS_LOCK_TYPE, "key"));
         LockInfo lockInfo = new LockInfo();
+        lockInfo.setOwner("test-owner");
         lockInfo.setEndTime(System.currentTimeMillis() + 2_000_000);
         assertTrue(lock.tryLock(lockInfo));
         assertTrue(lock.unLock(lockInfo));
@@ -59,11 +60,13 @@ public class MutexAtomicLockTest {
         AtomicLockService lock = lockManager.getMutexLock(new LockKey(LockConstants.NACOS_LOCK_TYPE, "key"));
         
         LockInfo lockInfo = new LockInfo();
+        lockInfo.setOwner("test-owner");
         lockInfo.setEndTime(System.currentTimeMillis() - 2_000_000);
         assertTrue(lock.tryLock(lockInfo));
         assertTrue(lock.autoExpire());
-        
+
         LockInfo lockInstanceAuto = new LockInfo();
+        lockInstanceAuto.setOwner("test-owner-2");
         lockInstanceAuto.setEndTime(System.currentTimeMillis() + 2_000_000);
         assertTrue(lock.tryLock(lockInstanceAuto));
     }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.lock.service.impl;
 
 import com.alibaba.nacos.api.lock.common.LockConstants;
 import com.alibaba.nacos.api.lock.model.LockInstance;
+import com.alibaba.nacos.api.lock.model.LockResult;
 import com.alibaba.nacos.api.lock.remote.LockOperationEnum;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -85,9 +86,9 @@ public class LockOperationServiceImplTest {
      * build test service.
      */
     public void buildService() {
-        mockedStatic.when(() -> ApplicationUtils.getBean(ProtocolManager.class)).thenReturn(protocolManager);
         Mockito.when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
-        lockOperationService = Mockito.spy(new LockOperationServiceImpl(lockManager));
+        lockOperationService = Mockito.spy(new LockOperationServiceImpl(lockManager, protocolManager));
+        lockOperationService.init();
     }
     
     @Test
@@ -113,7 +114,7 @@ public class LockOperationServiceImplTest {
             return getResponse();
         });
         LockInstance lockInstance = new LockInstance("key", -1L, LockConstants.NACOS_LOCK_TYPE);
-        lockOperationService.lock(lockInstance);
+        lockOperationService.lock(lockInstance, "test-connection-id");
     }
     
     @Test
@@ -132,7 +133,7 @@ public class LockOperationServiceImplTest {
             return getResponse();
         });
         LockInstance lockInstance = new LockInstance("key", 1_000L, LockConstants.NACOS_LOCK_TYPE);
-        lockOperationService.lock(lockInstance);
+        lockOperationService.lock(lockInstance, "test-connection-id");
     }
     
     @Test
@@ -152,7 +153,7 @@ public class LockOperationServiceImplTest {
         });
         LockInstance lockInstance = new LockInstance("key", PropertiesConstant.MAX_AUTO_EXPIRE_TIME + 1_000L,
                 LockConstants.NACOS_LOCK_TYPE);
-        lockOperationService.lock(lockInstance);
+        lockOperationService.lock(lockInstance, "test-connection-id");
     }
     
     @Test
@@ -160,11 +161,12 @@ public class LockOperationServiceImplTest {
         buildService();
         Mockito.when(lockManager.getMutexLock(new LockKey(LockConstants.NACOS_LOCK_TYPE, "key")))
                 .thenReturn(new MutexAtomicLock("key"));
-        
+
         WriteRequest request = getRequest(LockOperationEnum.ACQUIRE);
         Response response = lockOperationService.onApply(request);
         assertTrue(response.getSuccess());
-        assertTrue(serializer.<Boolean>deserialize(response.getData().toByteArray()));
+        LockResult result = serializer.deserialize(response.getData().toByteArray());
+        assertTrue(result.isSuccess());
     }
     
     public WriteRequest getRequest(LockOperationEnum lockOperationEnum) {
@@ -180,7 +182,7 @@ public class LockOperationServiceImplTest {
     }
     
     public Response getResponse() {
-        return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(true))).build();
+        return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(LockResult.success(1)))).build();
     }
     
     @AfterAll

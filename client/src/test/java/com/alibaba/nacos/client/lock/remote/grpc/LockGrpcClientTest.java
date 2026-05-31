@@ -43,6 +43,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -87,35 +88,35 @@ class LockGrpcClientTest {
     @Test
     void lockWithNacosException() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenThrow(new NacosException(NacosException.SERVER_ERROR, "test"));
+        when(rpcClient.request(any(AbstractLockRequest.class), anyLong())).thenThrow(new NacosException(NacosException.SERVER_ERROR, "test"));
         assertThrows(NacosException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "test");
     }
     
     @Test
     void lockWithOtherException() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenThrow(new RuntimeException("test"));
+        when(rpcClient.request(any(AbstractLockRequest.class), anyLong())).thenThrow(new RuntimeException("test"));
         assertThrows(NacosException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "Request nacos server failed: test");
     }
     
     @Test
     void lockWithUnexpectedResponse() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenReturn(new ServerCheckResponse());
+        when(rpcClient.request(any(AbstractLockRequest.class), anyLong())).thenReturn(new ServerCheckResponse());
         assertThrows(NacosException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "Server return invalid response");
     }
     
     @Test
     void lockFailed() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenReturn(ErrorResponse.build(500, "test fail code"));
+        when(rpcClient.request(any(AbstractLockRequest.class), anyLong())).thenReturn(ErrorResponse.build(500, "test fail code"));
         assertThrows(NacosException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "test fail code");
     }
     
     @Test
     void lockSuccess() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenReturn(new LockOperationResponse(true));
+        when(rpcClient.request(any(AbstractLockRequest.class), anyLong())).thenReturn(new LockOperationResponse(true));
         assertTrue(lockGrpcClient.lock(NLockFactory.getLock("test", -1L)));
     }
     
@@ -128,7 +129,7 @@ class LockGrpcClientTest {
     @Test
     void unlockSuccess() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenReturn(new LockOperationResponse(true));
+        when(rpcClient.request(any(AbstractLockRequest.class), anyLong())).thenReturn(new LockOperationResponse(true));
         assertTrue(lockGrpcClient.unLock(NLockFactory.getLock("test", -1L)));
     }
 }

@@ -64,7 +64,7 @@ public class LockManagerTest {
         Field factoryMap = NacosLockManager.class.getDeclaredField("factoryMap");
         factoryMap.setAccessible(true);
         Map<String, LockFactory> map = (Map<String, LockFactory>) factoryMap.get(lockManager);
-        assertEquals(2, map.size());
+        assertEquals(4, map.size());
     }
     
     @Test

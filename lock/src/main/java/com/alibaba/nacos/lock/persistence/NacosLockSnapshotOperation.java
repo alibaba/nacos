@@ -25,7 +25,9 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.lock.LockManager;
+import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
+import com.alibaba.nacos.lock.core.reentrant.mutex.MutexAtomicLock;
 import com.alibaba.nacos.lock.model.LockKey;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.TimerContext;
@@ -144,9 +146,40 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
     
     private void loadSnapshot(byte[] snapshotBytes) {
         ConcurrentHashMap<LockKey, AtomicLockService> newData = serializer.deserialize(snapshotBytes);
+
+        // Initialize transient fields for all deserialized locks
+        // Hessian deserialization does not call readObject(), so transient fields remain null
+        for (AtomicLockService lockService : newData.values()) {
+            if (lockService instanceof AbstractAtomicLock) {
+                ((AbstractAtomicLock) lockService).initTransientFields();
+            }
+        }
+
         ConcurrentHashMap<LockKey, AtomicLockService> lockMap = lockManager.showLocks();
         //loadSnapshot
         lockMap.putAll(newData);
+        migrateMutexAtomicLocks(lockMap);
+    }
+
+    /**
+     * Migrate old-format MutexAtomicLock entries to the new owner-based model.
+     *
+     * <p>Called after Hessian deserialization to handle backward compatibility.
+     * Old MutexAtomicLock used AtomicInteger state (EMPTY=0/FULL=1); new version
+     * uses owner/reentrantCount from AbstractAtomicLock.
+     *
+     * @param lockMap the lock map containing deserialized locks
+     */
+    private void migrateMutexAtomicLocks(ConcurrentHashMap<LockKey, AtomicLockService> lockMap) {
+        for (AtomicLockService lockService : lockMap.values()) {
+            if (lockService instanceof MutexAtomicLock) {
+                try {
+                    ((MutexAtomicLock) lockService).migrateFromLegacy();
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to migrate MutexAtomicLock during snapshot load", e);
+                }
+            }
+        }
     }
     
     protected String getSnapshotSaveTag() {
