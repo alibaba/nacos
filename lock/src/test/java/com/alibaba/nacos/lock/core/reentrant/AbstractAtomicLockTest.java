@@ -1,0 +1,128 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.lock.core.reentrant;
+
+import com.alibaba.nacos.lock.core.reentrant.mutex.MutexAtomicLock;
+import com.alibaba.nacos.lock.model.LockInfo;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * Unit tests for AbstractAtomicLock.
+ *
+ * @author DHX
+ * @date 2026/05/31
+ */
+class AbstractAtomicLockTest {
+
+    private MutexAtomicLock lock;
+
+    @BeforeEach
+    void setUp() {
+        lock = new MutexAtomicLock("test-key");
+    }
+
+    @Test
+    void testAddWaiter() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 5000);
+        int position = lock.addWaiter(lockInfo);
+        assertEquals(0, position);
+        assertEquals(1, lock.getWaitQueue().size());
+    }
+
+    @Test
+    void testRemoveWaiterByConnection() {
+        LockInfo waiter1 = createLockInfo("owner-1", "conn-1", 5000);
+        LockInfo waiter2 = createLockInfo("owner-2", "conn-2", 5000);
+        LockInfo waiter3 = createLockInfo("owner-3", "conn-1", 5000);
+
+        lock.addWaiter(waiter1);
+        lock.addWaiter(waiter2);
+        lock.addWaiter(waiter3);
+
+        assertEquals(3, lock.getWaitQueue().size());
+
+        lock.removeWaiterByConnection("conn-1");
+
+        assertEquals(1, lock.getWaitQueue().size());
+        assertEquals("owner-2", lock.getWaitQueue().get(0).getOwner());
+    }
+
+    @Test
+    void testRemoveWaiterByConnectionEmpty() {
+        lock.removeWaiterByConnection("conn-1");
+        assertEquals(0, lock.getWaitQueue().size());
+    }
+
+    @Test
+    void testPollFirstWaiter() {
+        LockInfo waiter1 = createLockInfo("owner-1", "conn-1", 5000);
+        LockInfo waiter2 = createLockInfo("owner-2", "conn-2", 5000);
+
+        lock.addWaiter(waiter1);
+        lock.addWaiter(waiter2);
+
+        var entry = lock.pollFirstWaiter();
+        assertEquals("owner-1", entry.getOwner());
+        assertEquals(1, lock.getWaitQueue().size());
+    }
+
+    @Test
+    void testPollFirstWaiterEmpty() {
+        var entry = lock.pollFirstWaiter();
+        assertEquals(null, entry);
+    }
+
+    @Test
+    void testClearWaiters() {
+        LockInfo waiter1 = createLockInfo("owner-1", "conn-1", 5000);
+        LockInfo waiter2 = createLockInfo("owner-2", "conn-2", 5000);
+
+        lock.addWaiter(waiter1);
+        lock.addWaiter(waiter2);
+
+        assertEquals(2, lock.getWaitQueue().size());
+
+        lock.clearWaiters();
+
+        assertEquals(0, lock.getWaitQueue().size());
+    }
+
+    @Test
+    void testWaiterExpiration() throws InterruptedException {
+        LockInfo expiredWaiter = createLockInfo("owner-1", "conn-1", 50);
+        LockInfo validWaiter = createLockInfo("owner-2", "conn-2", 5000);
+
+        lock.addWaiter(expiredWaiter);
+        Thread.sleep(100);
+        lock.addWaiter(validWaiter);
+
+        var entry = lock.pollFirstWaiter();
+        assertEquals("owner-2", entry.getOwner());
+    }
+
+    private LockInfo createLockInfo(String owner, String connectionId, long waitTimeMs) {
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setOwner(owner);
+        lockInfo.setConnectionId(connectionId);
+        lockInfo.setWaitTimeMs(waitTimeMs);
+        lockInfo.setEndTime(System.currentTimeMillis() + 30000);
+        return lockInfo;
+    }
+}

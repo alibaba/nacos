@@ -16,27 +16,405 @@
 
 package com.alibaba.nacos.lock.core.reentrant;
 
+import com.alibaba.nacos.lock.model.LockInfo;
+import com.alibaba.nacos.lock.model.WaitEntry;
+
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * abstract atomic lock.
+ * Abstract atomic lock with owner tracking, reentrant count, and wait queue.
+ *
+ * <p>Subclasses implement {@link #doTryLock(LockInfo)} and {@link #doUnLock(LockInfo)}
+ * to define reentrant vs non-reentrant behavior. Common logic (owner check,
+ * expiry, wait queue, renew, forceRelease) is handled in this base class.
  *
  * @author 985492783@qq.com
  * @description AtomicLock
  * @date 2023/7/10 14:50
  */
 public abstract class AbstractAtomicLock implements AtomicLockService, Serializable {
-    
+
     private static final long serialVersionUID = -3460985546856855524L;
-    
+
     private final String key;
-    
+
+    private String owner;
+
+    private String connectionId;
+
+    private int reentrantCount;
+
+    private long expiredTimestamp;
+
+    private final LinkedList<WaitEntry> waitQueue = new LinkedList<>();
+
+    /**
+     * ReentrantLock for thread-safe access to lock state.
+     *
+     * <p>Replaces synchronized keyword to provide better fairness control and
+     * avoid priority inversion when LockExpireScanner holds the monitor while
+     * clients try to acquire locks.
+     *
+     * <p>Marked as transient because ReentrantLock is not serializable.
+     * Must be reinitialized after deserialization via readObject().
+     */
+    private transient ReentrantLock lock = new ReentrantLock();
+
     public AbstractAtomicLock(String key) {
         this.key = key;
     }
-    
+
+    /**
+     * Initialize transient fields after deserialization.
+     *
+     * <p>Must be called after Hessian (or any non-standard) deserialization,
+     * because Hessian does not invoke readObject(). The transient ReentrantLock
+     * field must be reinitialized to avoid NullPointerException.
+     */
+    public void initTransientFields() {
+        if (this.lock == null) {
+            this.lock = new ReentrantLock();
+        }
+    }
+
     @Override
     public String getKey() {
         return key;
+    }
+
+    public String getOwner() {
+        lock.lock();
+        try {
+            return owner;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public String getConnectionId() {
+        lock.lock();
+        try {
+            return connectionId;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public int getReentrantCount() {
+        lock.lock();
+        try {
+            return reentrantCount;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public long getExpiredTimestamp() {
+        lock.lock();
+        try {
+            return expiredTimestamp;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    protected void setOwner(String owner) {
+        lock.lock();
+        try {
+            this.owner = owner;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    protected void setConnectionId(String connectionId) {
+        lock.lock();
+        try {
+            this.connectionId = connectionId;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    protected void setReentrantCount(int count) {
+        lock.lock();
+        try {
+            this.reentrantCount = count;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    protected void setExpiredTimestamp(long timestamp) {
+        lock.lock();
+        try {
+            this.expiredTimestamp = timestamp;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public List<WaitEntry> getWaitQueue() {
+        lock.lock();
+        try {
+            return new ArrayList<>(waitQueue);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Remove all waiters associated with the given connection.
+     *
+     * @param connectionId the gRPC connection ID
+     */
+    public void removeWaiterByConnection(String connectionId) {
+        lock.lock();
+        try {
+            waitQueue.removeIf(w -> connectionId.equals(w.getConnectionId()));
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Add a waiter to the queue when lock acquisition fails.
+     *
+     * @param lockInfo lock request info with connectionId and waitTimeMs
+     * @return position in queue (0-based)
+     */
+    public int addWaiter(LockInfo lockInfo) {
+        lock.lock();
+        try {
+            long now = System.currentTimeMillis();
+            long deadline = lockInfo.getWaitTimeMs() > 0 ? now + lockInfo.getWaitTimeMs() : 0;
+            WaitEntry entry = new WaitEntry(lockInfo.getOwner(), lockInfo.getConnectionId(), now, deadline);
+            waitQueue.add(entry);
+            return waitQueue.size() - 1;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Peek at the first non-expired waiter without removing it from the queue.
+     * Expired entries encountered are discarded.
+     *
+     * @return first non-expired waiter, or null if queue is empty
+     */
+    public WaitEntry peekFirstWaiter() {
+        lock.lock();
+        try {
+            while (!waitQueue.isEmpty()) {
+                WaitEntry entry = waitQueue.peek();
+                if (!entry.isExpired()) {
+                    return entry;
+                }
+                waitQueue.poll();
+            }
+            return null;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Check if there are any non-expired waiters in the queue.
+     *
+     * @return true if at least one non-expired waiter exists
+     */
+    public boolean hasWaiters() {
+        return peekFirstWaiter() != null;
+    }
+
+    /**
+     * Remove and return the first waiter from the queue.
+     *
+     * @return first waiter, or null if queue is empty
+     */
+    public WaitEntry pollFirstWaiter() {
+        lock.lock();
+        try {
+            while (!waitQueue.isEmpty()) {
+                WaitEntry entry = waitQueue.poll();
+                if (!entry.isExpired()) {
+                    return entry;
+                }
+            }
+            return null;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Clear all waiters from the queue.
+     */
+    public void clearWaiters() {
+        lock.lock();
+        try {
+            waitQueue.clear();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Remove and return all waiters from the queue.
+     *
+     * @return list of all waiters (may be empty)
+     */
+    public List<WaitEntry> drainAllWaiters() {
+        lock.lock();
+        try {
+            List<WaitEntry> result = new ArrayList<>(waitQueue);
+            waitQueue.clear();
+            return result;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Remove and return all expired waiters from the queue.
+     *
+     * @return list of expired waiters (may be empty)
+     */
+    public List<WaitEntry> removeExpiredWaiters() {
+        lock.lock();
+        try {
+            List<WaitEntry> expired = new ArrayList<>();
+            Iterator<WaitEntry> iterator = waitQueue.iterator();
+            while (iterator.hasNext()) {
+                WaitEntry entry = iterator.next();
+                if (entry.isExpired()) {
+                    expired.add(entry);
+                    iterator.remove();
+                }
+            }
+            return expired;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Boolean autoExpire() {
+        lock.lock();
+        try {
+            if (expiredTimestamp > 0 && System.currentTimeMillis() > expiredTimestamp) {
+                owner = null;
+                reentrantCount = 0;
+                expiredTimestamp = 0;
+                return true;
+            }
+            return false;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Boolean isClear() {
+        lock.lock();
+        try {
+            return owner == null;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Boolean renew(LockInfo lockInfo) {
+        lock.lock();
+        try {
+            if (lockInfo == null || lockInfo.getOwner() == null) {
+                return false;
+            }
+            if (!lockInfo.getOwner().equals(owner)) {
+                return false;
+            }
+            expiredTimestamp = lockInfo.getEndTime();
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Boolean forceRelease() {
+        lock.lock();
+        try {
+            if (owner == null) {
+                return false;
+            }
+            owner = null;
+            reentrantCount = 0;
+            expiredTimestamp = 0;
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Subclass hook for lock acquisition logic. Called after common checks.
+     *
+     * @param lockInfo lock request info
+     * @return true if acquired
+     */
+    protected abstract Boolean doTryLock(LockInfo lockInfo);
+
+    /**
+     * Subclass hook for unlock logic. Called after owner verification.
+     *
+     * @param lockInfo lock info with owner
+     * @return true if released
+     */
+    protected abstract Boolean doUnLock(LockInfo lockInfo);
+
+    @Override
+    public Boolean tryLock(LockInfo lockInfo) {
+        lock.lock();
+        try {
+            if (lockInfo == null) {
+                return false;
+            }
+            autoExpire();
+            return doTryLock(lockInfo);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Unlock the lock with owner verification.
+     *
+     * <p>If lockInfo.getOwner() is null, owner verification is bypassed.
+     * This is intentional for system-level releases (e.g., expire scanner,
+     * connection cleanup) where the original owner may not be known.
+     *
+     * @param lockInfo lock info with owner (may be null for system releases)
+     * @return true if unlocked successfully, false if owner mismatch or lockInfo is null
+     */
+    @Override
+    public Boolean unLock(LockInfo lockInfo) {
+        lock.lock();
+        try {
+            if (lockInfo == null) {
+                return false;
+            }
+            if (lockInfo.getOwner() != null && !lockInfo.getOwner().equals(owner)) {
+                return false;
+            }
+            return doUnLock(lockInfo);
+        } finally {
+            lock.unlock();
+        }
     }
 }

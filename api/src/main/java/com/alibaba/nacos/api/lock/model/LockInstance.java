@@ -39,13 +39,17 @@ public class LockInstance implements Serializable {
     private Map<String, ? extends Serializable> params;
     
     private String lockType;
-    
+
+    private String owner;
+
+    private long waitTimeMs = -1L;
+
     public LockInstance(String key, Long expiredTime, String lockType) {
         this.key = key;
         this.expiredTime = expiredTime;
         this.lockType = lockType;
     }
-    
+
     public LockInstance() {
     }
     
@@ -108,5 +112,33 @@ public class LockInstance implements Serializable {
     
     public void setLockType(String lockType) {
         this.lockType = lockType;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public long getWaitTimeMs() {
+        return waitTimeMs;
+    }
+
+    public void setWaitTimeMs(long waitTimeMs) {
+        this.waitTimeMs = waitTimeMs;
+    }
+
+    @Override
+    public String toString() {
+        return "LockInstance{"
+                + "key='" + key + '\''
+                + ", expiredTime=" + expiredTime
+                + ", params=" + params
+                + ", lockType='" + lockType + '\''
+                + ", owner='" + owner + '\''
+                + ", waitTimeMs=" + waitTimeMs
+                + '}';
     }
 }
