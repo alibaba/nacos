@@ -169,6 +169,13 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         migrateMutexAtomicLocks(lockMap);
     }
 
+    private ConcurrentHashMap<LockKey, AtomicLockService> getRawLockMap() {
+        if (lockManager instanceof NacosLockManager nacosLockManager) {
+            return nacosLockManager.getRawLockMap();
+        }
+        throw new IllegalStateException("LockManager must be NacosLockManager for snapshot operations");
+    }
+
     /**
      * Migrate old-format MutexAtomicLock entries to the new owner-based model.
      *
@@ -178,13 +185,6 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
      *
      * @param lockMap the lock map containing deserialized locks
      */
-    private ConcurrentHashMap<LockKey, AtomicLockService> getRawLockMap() {
-        if (lockManager instanceof NacosLockManager nacosLockManager) {
-            return nacosLockManager.getRawLockMap();
-        }
-        throw new IllegalStateException("LockManager must be NacosLockManager for snapshot operations");
-    }
-
     private void migrateMutexAtomicLocks(ConcurrentHashMap<LockKey, AtomicLockService> lockMap) {
         for (AtomicLockService lockService : lockMap.values()) {
             if (lockService instanceof MutexAtomicLock) {

@@ -20,7 +20,6 @@ import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.model.LockKey;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * lock manager.
