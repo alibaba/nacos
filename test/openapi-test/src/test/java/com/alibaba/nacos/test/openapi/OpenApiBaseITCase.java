@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
@@ -60,7 +61,7 @@ public abstract class OpenApiBaseITCase {
     @BeforeEach
     public void setUpOpenApiBase() throws Exception {
         logger = LoggerFactory.getLogger(getClass());
-        httpClient = HttpClientBuilder.create().build();
+        httpClient = HttpClientBuilder.create().disableAutomaticRetries().build();
         nacosRestTemplate = new NacosRestTemplate(logger,
                 new DefaultHttpClientRequest(httpClient, RequestConfig.DEFAULT));
     }
@@ -99,8 +100,16 @@ public abstract class OpenApiBaseITCase {
         return getRaw(path + "?" + query.toQueryUrl());
     }
     
+    protected ByteResponse getRawBytes(String path, Query query) throws Exception {
+        return executeRawBytes(new HttpGet(url(path + "?" + query.toQueryUrl())));
+    }
+    
     protected HttpResponse postRaw(String path, Query query) throws Exception {
         return executeRaw(new HttpPost(url(path + "?" + query.toQueryUrl())));
+    }
+    
+    protected HttpResponse putRaw(String path, Query query) throws Exception {
+        return executeRaw(new HttpPut(url(path + "?" + query.toQueryUrl())));
     }
     
     protected HttpResponse deleteRaw(String path, Query query) throws Exception {
@@ -111,6 +120,18 @@ public abstract class OpenApiBaseITCase {
         HttpClientResponseHandler<HttpResponse> responseHandler = response -> {
             String body = null == response.getEntity() ? "" : EntityUtils.toString(response.getEntity());
             return new HttpResponse(response.getCode(), body);
+        };
+        return httpClient.execute(request, responseHandler);
+    }
+    
+    protected ByteResponse executeRawBytes(ClassicHttpRequest request) throws Exception {
+        HttpClientResponseHandler<ByteResponse> responseHandler = response -> {
+            byte[] body = null == response.getEntity() ? new byte[0] : EntityUtils.toByteArray(response.getEntity());
+            String contentType = null == response.getEntity() || null == response.getEntity().getContentType()
+                    ? null : response.getEntity().getContentType();
+            String contentDisposition = null == response.getFirstHeader("Content-Disposition") ? null
+                    : response.getFirstHeader("Content-Disposition").getValue();
+            return new ByteResponse(response.getCode(), body, contentType, contentDisposition);
         };
         return httpClient.execute(request, responseHandler);
     }
@@ -170,5 +191,8 @@ public abstract class OpenApiBaseITCase {
     }
     
     protected record HttpResponse(int code, String body) {
+    }
+    
+    protected record ByteResponse(int code, byte[] body, String contentType, String contentDisposition) {
     }
 }
