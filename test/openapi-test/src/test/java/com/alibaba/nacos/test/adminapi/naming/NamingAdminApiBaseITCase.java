@@ -48,6 +48,14 @@ public abstract class NamingAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected static final String ADMIN_CLUSTER_PATH = nacosPath(UtilsAndCommons.CLUSTER_CONTROLLER_V3_ADMIN_PATH);
 
+    protected static final String ADMIN_HEALTH_PATH = nacosPath(UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH);
+
+    protected static final String ADMIN_HEALTH_INSTANCE_PATH = ADMIN_HEALTH_PATH + "/instance";
+
+    protected static final String ADMIN_CLIENT_PATH = nacosPath(UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH);
+
+    protected static final String ADMIN_OPERATOR_PATH = nacosPath(UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH);
+
     protected static final String DEFAULT_NAMESPACE = "public";
 
     protected static final String DEFAULT_GROUP = "DEFAULT_GROUP";
@@ -119,6 +127,31 @@ public abstract class NamingAdminApiBaseITCase extends OpenApiBaseITCase {
         addIfNotBlank(query, "useInstancePort4Check", useInstancePort4Check);
         addIfNotBlank(query, "healthChecker", healthChecker);
         addIfNotBlank(query, "metadata", metadata);
+        return query;
+    }
+
+    protected Query healthQuery(String serviceName, String groupName, String namespaceId, String ip, int port,
+            String clusterName, String healthy) {
+        Query query = instanceQuery(serviceName, groupName, namespaceId, ip, port, clusterName);
+        addIfNotBlank(query, "healthy", healthy);
+        return query;
+    }
+
+    protected Query clientServiceQuery(String serviceName, String groupName, String namespaceId, String ip,
+            Integer port) {
+        Query query = serviceQuery(serviceName, groupName, namespaceId);
+        addIfNotBlank(query, "ip", ip);
+        if (null != port) {
+            query.addParam("port", String.valueOf(port));
+        }
+        return query;
+    }
+
+    protected Query switchQuery(String entry, String value, String debug) {
+        Query query = Query.newInstance();
+        addIfNotBlank(query, "entry", entry);
+        addIfNotBlank(query, "value", value);
+        addIfNotBlank(query, "debug", debug);
         return query;
     }
 
@@ -195,7 +228,14 @@ public abstract class NamingAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected void deregisterInstanceQuietly(String serviceName, String groupName, String namespaceId, String ip,
             int port, String clusterName) throws Exception {
-        deleteQuietly(ADMIN_INSTANCE_PATH, instanceQuery(serviceName, groupName, namespaceId, ip, port, clusterName));
+        deregisterInstanceQuietly(serviceName, groupName, namespaceId, ip, port, clusterName, null);
+    }
+
+    protected void deregisterInstanceQuietly(String serviceName, String groupName, String namespaceId, String ip,
+            int port, String clusterName, String ephemeral) throws Exception {
+        Query query = instanceQuery(serviceName, groupName, namespaceId, ip, port, clusterName);
+        addIfNotBlank(query, "ephemeral", ephemeral);
+        deleteQuietly(ADMIN_INSTANCE_PATH, query);
     }
 
     protected void assertServiceDetail(JsonNode data, String serviceName, String groupName, String namespaceId,
@@ -302,6 +342,20 @@ public abstract class NamingAdminApiBaseITCase extends OpenApiBaseITCase {
         }
         throw new AssertionError("Expected instance metadata " + metadataKey + " to be missing, last instance="
                 + instance);
+    }
+
+    protected JsonNode waitUntilInstanceHealthy(String serviceName, String groupName, String namespaceId,
+            String clusterName, String ip, int port, boolean healthy) throws Exception {
+        JsonNode instance = MissingNode.getInstance();
+        int retryTime = 20;
+        while (retryTime-- > 0) {
+            instance = getInstanceDetail(serviceName, groupName, namespaceId, ip, port, clusterName);
+            if (healthy == instance.path("healthy").asBoolean(!healthy)) {
+                return instance;
+            }
+            TimeUnit.MILLISECONDS.sleep(100);
+        }
+        throw new AssertionError("Expected instance healthy=" + healthy + ", last instance=" + instance);
     }
 
     protected void assertInstance(JsonNode instance, String serviceName, String groupName, String ip, int port,
