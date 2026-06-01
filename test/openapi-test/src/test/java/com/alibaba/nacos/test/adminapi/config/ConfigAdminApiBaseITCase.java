@@ -39,32 +39,44 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author xiweng.yy
  */
 public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
-    
+
     protected static final String ADMIN_CONFIG_PATH = nacosPath(Constants.CONFIG_ADMIN_V3_PATH);
-    
+
     protected static final String ADMIN_CONFIG_LIST_PATH = ADMIN_CONFIG_PATH + "/list";
-    
+
+    protected static final String ADMIN_CONFIG_BATCH_PATH = ADMIN_CONFIG_PATH + "/batch";
+
+    protected static final String ADMIN_CONFIG_LISTENER_PATH = ADMIN_CONFIG_PATH + "/listener";
+
     protected static final String ADMIN_CONFIG_METADATA_PATH = ADMIN_CONFIG_PATH + "/metadata";
-    
+
+    protected static final String ADMIN_HISTORY_PATH = nacosPath(Constants.HISTORY_ADMIN_V3_PATH);
+
+    protected static final String ADMIN_HISTORY_LIST_PATH = ADMIN_HISTORY_PATH + "/list";
+
+    protected static final String ADMIN_HISTORY_CONFIGS_PATH = ADMIN_HISTORY_PATH + "/configs";
+
+    protected static final String ADMIN_LISTENER_PATH = nacosPath(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH);
+
     protected static final String DEFAULT_NAMESPACE = "public";
-    
+
     protected static final String TEST_GROUP = "openapi_it_group";
-    
+
     protected static final String DEFAULT_TYPE = ConfigType.getDefaultType().getType();
-    
+
     protected String randomDataId(String scenario) {
         return "openapi_it_admin_" + scenario + "_" + UUID.randomUUID();
     }
-    
+
     protected String randomGroupName(String scenario) {
         return TEST_GROUP + "_" + scenario + "_" + UUID.randomUUID();
     }
-    
+
     protected JsonNode publishConfig(String dataId, String groupName, String namespaceId, String content)
             throws Exception {
         return publishConfig(dataId, groupName, namespaceId, content, DEFAULT_TYPE, "", "");
     }
-    
+
     protected JsonNode publishConfig(String dataId, String groupName, String namespaceId, String content,
             String type, String description, String configTags) throws Exception {
         JsonNode root = postFormOk(ADMIN_CONFIG_PATH,
@@ -72,11 +84,11 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
         assertTrue(root.get("data").asBoolean(), root.toString());
         return root;
     }
-    
+
     protected JsonNode queryConfig(String dataId, String groupName, String namespaceId) throws Exception {
         return getJsonOk(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, namespaceId));
     }
-    
+
     protected JsonNode updateConfigMetadata(String dataId, String groupName, String namespaceId,
             String description, String configTags) throws Exception {
         JsonNode root = putFormOk(ADMIN_CONFIG_METADATA_PATH,
@@ -84,17 +96,17 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
         assertTrue(root.get("data").asBoolean(), root.toString());
         return root;
     }
-    
+
     protected JsonNode deleteConfig(String dataId, String groupName, String namespaceId) throws Exception {
         JsonNode root = deleteJsonOk(ADMIN_CONFIG_PATH, configDeleteQuery(dataId, groupName, namespaceId));
         assertTrue(root.get("data").asBoolean(), root.toString());
         return root;
     }
-    
+
     protected void deleteConfigQuietly(String dataId, String groupName, String namespaceId) throws Exception {
         deleteQuietly(ADMIN_CONFIG_PATH, configDeleteQuery(dataId, groupName, namespaceId));
     }
-    
+
     protected Query configQuery(String dataId, String groupName, String namespaceId) {
         Query query = Query.newInstance();
         addIfNotBlank(query, "dataId", dataId);
@@ -102,7 +114,7 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
         addIfNotBlank(query, "namespaceId", namespaceId);
         return query;
     }
-    
+
     protected Query listQuery(String dataId, String groupName, String namespaceId, int pageNo, int pageSize) {
         Query query = configQuery(dataId, groupName, namespaceId);
         query.addParam("search", "blur");
@@ -110,7 +122,14 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
         query.addParam("pageSize", String.valueOf(pageSize));
         return query;
     }
-    
+
+    protected Query historyQuery(String dataId, String groupName, String namespaceId, int pageNo, int pageSize) {
+        Query query = configQuery(dataId, groupName, namespaceId);
+        query.addParam("pageNo", String.valueOf(pageNo));
+        query.addParam("pageSize", String.valueOf(pageSize));
+        return query;
+    }
+
     protected void assertConfigDetail(JsonNode data, String dataId, String groupName, String namespaceId,
             String content, String type) throws Exception {
         assertEquals(dataId, data.get("dataId").asText(), data.toString());
@@ -123,7 +142,7 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
         assertTrue(data.get("createTime").asLong() > 0L, data.toString());
         assertTrue(data.get("modifyTime").asLong() > 0L, data.toString());
     }
-    
+
     protected void assertConfigMetadata(JsonNode data, String description, String configTags) {
         assertEquals(description, data.get("desc").asText(), data.toString());
         if (configTags.isEmpty()) {
@@ -133,17 +152,34 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
             assertEquals(configTags, data.get("configTags").asText(), data.toString());
         }
     }
-    
+
     protected void assertPageContainsConfig(JsonNode page, String dataId, String groupName, String contentMd5) {
         JsonNode found = findConfig(page, dataId, groupName);
         assertFalse(found.isMissingNode(), page.toString());
         assertEquals(contentMd5, found.get("md5").asText(), found.toString());
     }
-    
+
     protected void assertPageNotContainsConfig(JsonNode page, String dataId, String groupName) {
         assertTrue(findConfig(page, dataId, groupName).isMissingNode(), page.toString());
     }
-    
+
+    protected void assertArrayContainsConfig(JsonNode items, String dataId, String groupName, String contentMd5) {
+        JsonNode found = findConfigInArray(items, dataId, groupName);
+        assertFalse(found.isMissingNode(), items.toString());
+        assertEquals(contentMd5, found.get("md5").asText(), found.toString());
+    }
+
+    protected JsonNode assertArrayContainsConfig(JsonNode items, String dataId, String groupName) {
+        JsonNode found = findConfigInArray(items, dataId, groupName);
+        assertFalse(found.isMissingNode(), items.toString());
+        return found;
+    }
+
+    protected void assertListenerInfo(JsonNode data, String queryType) {
+        assertEquals(queryType, data.get("queryType").asText(), data.toString());
+        assertTrue(data.get("listenersStatus").isObject(), data.toString());
+    }
+
     protected JsonNode findConfig(JsonNode page, String dataId, String groupName) {
         for (JsonNode item : page.get("pageItems")) {
             if (dataId.equals(item.get("dataId").asText())
@@ -153,17 +189,27 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
         }
         return MissingNode.getInstance();
     }
-    
+
+    protected JsonNode findConfigInArray(JsonNode items, String dataId, String groupName) {
+        for (JsonNode item : items) {
+            if (dataId.equals(item.get("dataId").asText())
+                    && groupName.equals(item.get("groupName").asText())) {
+                return item;
+            }
+        }
+        return MissingNode.getInstance();
+    }
+
     protected static String md5(String content) throws Exception {
         return MD5Utils.md5Hex(content, StandardCharsets.UTF_8.name());
     }
-    
+
     private Query configDeleteQuery(String dataId, String groupName, String namespaceId) {
         Query query = configQuery(dataId, groupName, namespaceId);
         query.addParam("tag", "");
         return query;
     }
-    
+
     private static Map<String, String> buildPublishForm(String dataId, String groupName, String namespaceId,
             String content, String type, String description, String configTags) {
         Map<String, String> form = new LinkedHashMap<>();
@@ -184,7 +230,7 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
         form.put("schema", "");
         return form;
     }
-    
+
     private static Map<String, String> buildMetadataForm(String dataId, String groupName, String namespaceId,
             String description, String configTags) {
         Map<String, String> form = new LinkedHashMap<>();
