@@ -44,6 +44,9 @@ public abstract class CoreAdminApiBaseITCase extends OpenApiBaseITCase {
     protected static final String ADMIN_CORE_OPS_PATH =
             nacosPath(Commons.NACOS_ADMIN_CORE_CONTEXT_V3 + "/ops");
 
+    protected static final String ADMIN_CORE_STATE_PATH =
+            nacosPath(Commons.NACOS_ADMIN_CORE_CONTEXT_V3 + "/state");
+
     protected String randomNamespaceId(String scenario) {
         return "openapi_it_admin_" + scenario + "_" + UUID.randomUUID();
     }
