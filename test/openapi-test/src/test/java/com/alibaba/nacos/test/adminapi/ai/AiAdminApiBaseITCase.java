@@ -98,6 +98,21 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     protected static final String ADMIN_AGENT_SPEC_VERSION_META_PATH =
             ADMIN_AGENT_SPEC_PATH + "/version/meta";
 
+    protected static final String ADMIN_IMPORT_PATH =
+            nacosPath(Constants.AI_RESOURCE_IMPORT_ADMIN_PATH);
+
+    protected static final String ADMIN_IMPORT_SOURCES_PATH = ADMIN_IMPORT_PATH + "/sources";
+
+    protected static final String ADMIN_IMPORT_SEARCH_PATH = ADMIN_IMPORT_PATH + "/search";
+
+    protected static final String ADMIN_IMPORT_VALIDATE_PATH = ADMIN_IMPORT_PATH + "/validate";
+
+    protected static final String ADMIN_IMPORT_EXECUTE_PATH = ADMIN_IMPORT_PATH + "/execute";
+
+    protected static final String IMPORT_RESOURCE_TYPE_MCP = "mcp";
+
+    protected static final String IMPORT_RESOURCE_TYPE_SKILL = "skill";
+
     protected String randomAiName(String scenario) {
         return "oit-" + scenario + "-" + UUID.randomUUID().toString().substring(0, 8);
     }
@@ -554,6 +569,59 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         return MissingNode.getInstance();
     }
 
+    protected Query importSourceQuery(String resourceType) {
+        Query query = Query.newInstance();
+        addIfNotBlank(query, "resourceType", resourceType);
+        return query;
+    }
+
+    protected Map<String, String> importSearchForm(String resourceType, String sourceId,
+            String query, Integer limit, String options) {
+        Map<String, String> form = importSourceForm(resourceType, sourceId);
+        addIfNotBlank(form, "query", query);
+        if (null != limit) {
+            form.put("limit", String.valueOf(limit));
+        }
+        addIfNotBlank(form, "options", options);
+        return form;
+    }
+
+    protected Map<String, String> importValidateForm(String resourceType, String sourceId,
+            String selectedItems, String options, boolean overwriteExisting) {
+        Map<String, String> form = importSourceForm(resourceType, sourceId);
+        addIfNotBlank(form, "selectedItems", selectedItems);
+        addIfNotBlank(form, "options", options);
+        form.put("overwriteExisting", String.valueOf(overwriteExisting));
+        return form;
+    }
+
+    protected Map<String, String> importExecuteForm(String resourceType, String sourceId,
+            String selectedItems, String options, boolean overwriteExisting,
+            boolean skipInvalid) {
+        Map<String, String> form = importValidateForm(resourceType, sourceId, selectedItems,
+                options, overwriteExisting);
+        form.put("skipInvalid", String.valueOf(skipInvalid));
+        form.put("validationToken", "openapi-it-token");
+        return form;
+    }
+
+    protected String importSelectedItemsJson(String externalId, String name, String version) {
+        Map<String, String> metadata = new LinkedHashMap<>();
+        metadata.put("source", "openapi-it");
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("externalId", externalId);
+        item.put("name", name);
+        item.put("version", version);
+        item.put("metadata", metadata);
+        return JacksonUtils.toJson(Collections.singletonList(item));
+    }
+
+    protected String importOptionsJson() {
+        Map<String, String> options = new LinkedHashMap<>();
+        options.put("scenario", "openapi-it");
+        return JacksonUtils.toJson(options);
+    }
+
     protected byte[] buildAgentSpecZip(String agentSpecName, String version, String description,
             String scenario, String soulContent) throws Exception {
         Map<String, String> entries = new LinkedHashMap<>();
@@ -659,6 +727,14 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("namespaceId", DEFAULT_NAMESPACE);
         form.put("agentSpecName", agentSpecName);
+        return form;
+    }
+
+    protected Map<String, String> importSourceForm(String resourceType, String sourceId) {
+        Map<String, String> form = new LinkedHashMap<>();
+        addIfNotBlank(form, "namespaceId", DEFAULT_NAMESPACE);
+        addIfNotBlank(form, "resourceType", resourceType);
+        addIfNotBlank(form, "sourceId", sourceId);
         return form;
     }
 
