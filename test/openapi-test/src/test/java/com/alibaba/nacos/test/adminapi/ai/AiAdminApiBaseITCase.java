@@ -88,6 +88,16 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     protected static final String ADMIN_SKILL_VERSION_DOWNLOAD_PATH =
             ADMIN_SKILL_PATH + "/version/download";
 
+    protected static final String ADMIN_AGENT_SPEC_PATH = nacosPath(Constants.AgentSpecs.ADMIN_PATH);
+
+    protected static final String ADMIN_AGENT_SPEC_LIST_PATH = ADMIN_AGENT_SPEC_PATH + "/list";
+
+    protected static final String ADMIN_AGENT_SPEC_VERSION_PATH =
+            ADMIN_AGENT_SPEC_PATH + "/version";
+
+    protected static final String ADMIN_AGENT_SPEC_VERSION_META_PATH =
+            ADMIN_AGENT_SPEC_PATH + "/version/meta";
+
     protected String randomAiName(String scenario) {
         return "oit-" + scenario + "-" + UUID.randomUUID().toString().substring(0, 8);
     }
@@ -437,6 +447,140 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         return result;
     }
 
+    protected Query agentSpecQuery(String agentSpecName) {
+        return Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                .addParam("agentSpecName", agentSpecName);
+    }
+
+    protected Query agentSpecVersionQuery(String agentSpecName, String version) {
+        Query query = agentSpecQuery(agentSpecName);
+        addIfNotBlank(query, "version", version);
+        return query;
+    }
+
+    protected Map<String, String> agentSpecDraftForm(String agentSpecName, String targetVersion) {
+        Map<String, String> form = agentSpecQueryForm(agentSpecName);
+        form.put("targetVersion", targetVersion);
+        return form;
+    }
+
+    protected Map<String, String> agentSpecForkForm(String agentSpecName, String targetVersion,
+            String basedOnVersion) {
+        Map<String, String> form = agentSpecDraftForm(agentSpecName, targetVersion);
+        form.put("basedOnVersion", basedOnVersion);
+        return form;
+    }
+
+    protected Map<String, String> agentSpecUpdateForm(String agentSpecName, String version,
+            String description, String scenario, String soulContent) {
+        Map<String, String> form = new LinkedHashMap<>();
+        form.put("agentSpecCard", buildAgentSpecCard(agentSpecName, version, description,
+                scenario, soulContent));
+        return form;
+    }
+
+    protected Map<String, String> agentSpecPublishForm(String agentSpecName, String version) {
+        Map<String, String> form = agentSpecQueryForm(agentSpecName);
+        form.put("version", version);
+        form.put("updateLatestLabel", "true");
+        return form;
+    }
+
+    protected Map<String, String> agentSpecLabelsForm(String agentSpecName, String labels) {
+        Map<String, String> form = agentSpecQueryForm(agentSpecName);
+        form.put("labels", labels);
+        return form;
+    }
+
+    protected Map<String, String> agentSpecBizTagsForm(String agentSpecName, String bizTags) {
+        Map<String, String> form = agentSpecQueryForm(agentSpecName);
+        form.put("bizTags", bizTags);
+        return form;
+    }
+
+    protected Map<String, String> agentSpecScopeForm(String agentSpecName, String scope) {
+        Map<String, String> form = agentSpecQueryForm(agentSpecName);
+        form.put("scope", scope);
+        return form;
+    }
+
+    protected Map<String, String> agentSpecOnlineForm(String agentSpecName, String version,
+            String scope) {
+        Map<String, String> form = agentSpecQueryForm(agentSpecName);
+        addIfNotBlank(form, "version", version);
+        addIfNotBlank(form, "scope", scope);
+        return form;
+    }
+
+    protected void deleteAgentSpecQuietly(String agentSpecName) throws Exception {
+        deleteQuietly(ADMIN_AGENT_SPEC_PATH, agentSpecQuery(agentSpecName));
+    }
+
+    protected void assertAgentSpecContent(JsonNode data, String agentSpecName, String version,
+            String description, String scenario, String soulContent) {
+        assertEquals(DEFAULT_NAMESPACE, data.get("namespaceId").asText(), data.toString());
+        assertEquals(agentSpecName, data.get("name").asText(), data.toString());
+        assertEquals(description, data.get("description").asText(), data.toString());
+        JsonNode manifest = JacksonUtils.toObj(data.get("content").asText());
+        assertEquals(agentSpecName, manifest.get("worker").get("suggested_name").asText(),
+                data.toString());
+        assertEquals(version, manifest.get("version").asText(), data.toString());
+        assertEquals(scenario, manifest.get("scenario").asText(), data.toString());
+        JsonNode resource = findSkillResource(data.get("resource"), "config", "SOUL.md");
+        assertNotNull(resource, data.toString());
+        assertEquals(soulContent, resource.get("content").asText(), data.toString());
+    }
+
+    protected void assertAgentSpecMetaContent(JsonNode data, String agentSpecName, String version,
+            String description, String scenario) {
+        assertEquals(DEFAULT_NAMESPACE, data.get("namespaceId").asText(), data.toString());
+        assertEquals(agentSpecName, data.get("name").asText(), data.toString());
+        assertEquals(description, data.get("description").asText(), data.toString());
+        JsonNode manifest = JacksonUtils.toObj(data.get("content").asText());
+        assertEquals(version, manifest.get("version").asText(), data.toString());
+        assertEquals(scenario, manifest.get("scenario").asText(), data.toString());
+        JsonNode resource = findSkillResource(data.get("resource"), "config", "SOUL.md");
+        assertNotNull(resource, data.toString());
+        assertTrue(resource.path("content").isNull() || resource.path("content").isMissingNode(),
+                data.toString());
+    }
+
+    protected JsonNode findAgentSpecVersionSummary(JsonNode agentSpecMeta, String version) {
+        for (JsonNode item : agentSpecMeta.get("versions")) {
+            if (version.equals(item.get("version").asText())) {
+                return item;
+            }
+        }
+        return MissingNode.getInstance();
+    }
+
+    protected byte[] buildAgentSpecZip(String agentSpecName, String version, String description,
+            String scenario, String soulContent) throws Exception {
+        Map<String, String> entries = new LinkedHashMap<>();
+        entries.put("manifest.json", buildAgentSpecManifest(agentSpecName, version, description,
+                scenario));
+        entries.put("config/SOUL.md", soulContent);
+        return zipEntries(entries);
+    }
+
+    protected byte[] buildAgentSpecSeedArchive(Map<String, String> agentSpecNameToScenario)
+            throws Exception {
+        Map<String, String> entries = new LinkedHashMap<>();
+        agentSpecNameToScenario.forEach((agentSpecName, scenario) -> {
+            String root = "openapi/" + agentSpecName;
+            entries.put(root + "/manifest.json", buildAgentSpecManifest(agentSpecName, "0.0.1",
+                    "uploaded seed " + agentSpecName, scenario));
+            entries.put(root + "/config/SOUL.md", "seed soul for " + agentSpecName);
+        });
+        return zipEntries(entries);
+    }
+
+    protected byte[] buildZipWithoutAgentSpecManifest() throws Exception {
+        Map<String, String> entries = new LinkedHashMap<>();
+        entries.put("config/SOUL.md", "soul without manifest");
+        return zipEntries(entries);
+    }
+
     private String mcpServerSpecification(String mcpName, String version, String description) {
         Map<String, Object> versionDetail = new LinkedHashMap<>();
         versionDetail.put("version", version);
@@ -511,6 +655,13 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         return form;
     }
 
+    protected Map<String, String> agentSpecQueryForm(String agentSpecName) {
+        Map<String, String> form = new LinkedHashMap<>();
+        form.put("namespaceId", DEFAULT_NAMESPACE);
+        form.put("agentSpecName", agentSpecName);
+        return form;
+    }
+
     private String promptVariables() {
         Map<String, String> variable = new LinkedHashMap<>();
         variable.put("name", "name");
@@ -532,6 +683,36 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         resources.put("references::guide.md", guide);
         card.put("resource", resources);
         return JacksonUtils.toJson(card);
+    }
+
+    private String buildAgentSpecCard(String agentSpecName, String version, String description,
+            String scenario, String soulContent) {
+        Map<String, Object> card = new LinkedHashMap<>();
+        card.put("name", agentSpecName);
+        card.put("description", description);
+        card.put("bizTags", "[\"openapi-it\"]");
+        card.put("content", buildAgentSpecManifest(agentSpecName, version, description, scenario));
+        Map<String, Object> soul = new LinkedHashMap<>();
+        soul.put("name", "SOUL.md");
+        soul.put("type", "config");
+        soul.put("content", soulContent);
+        Map<String, Object> resources = new LinkedHashMap<>();
+        resources.put("config_SOUL__md", soul);
+        card.put("resource", resources);
+        return JacksonUtils.toJson(card);
+    }
+
+    private String buildAgentSpecManifest(String agentSpecName, String version, String description,
+            String scenario) {
+        Map<String, Object> worker = new LinkedHashMap<>();
+        worker.put("suggested_name", agentSpecName);
+        Map<String, Object> manifest = new LinkedHashMap<>();
+        manifest.put("version", version);
+        manifest.put("description", description);
+        manifest.put("scenario", scenario);
+        manifest.put("tags", Collections.singletonList("openapi-it"));
+        manifest.put("worker", worker);
+        return JacksonUtils.toJson(manifest);
     }
 
     private String skillMarkdown(String skillName, String version, String body) {
