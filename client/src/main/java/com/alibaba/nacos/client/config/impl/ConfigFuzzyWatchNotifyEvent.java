@@ -63,8 +63,9 @@ public class ConfigFuzzyWatchNotifyEvent extends Event {
      * @param groupKey    The groupKey of the configuration.
      * @param changedType The type of notification.
      */
-    private ConfigFuzzyWatchNotifyEvent(String groupKey, String changedType, String syncType, String groupKeyPattern,
-            String clientUuid, String watcherUuid) {
+    private ConfigFuzzyWatchNotifyEvent(String groupKey, String changedType, String syncType,
+        String groupKeyPattern,
+        String clientUuid, String watcherUuid) {
         this.groupKey = groupKey;
         this.syncType = syncType;
         this.changedType = changedType;
@@ -80,7 +81,7 @@ public class ConfigFuzzyWatchNotifyEvent extends Event {
      * @return A new FuzzyListenNotifyEvent instance.
      */
     public static ConfigFuzzyWatchNotifyEvent buildEvent(String groupKey,
-            String groupKeyPattern, String changedType, String syncType, String clientUuid) {
+        String groupKeyPattern, String changedType, String syncType, String clientUuid) {
         return buildEvent(groupKey, groupKeyPattern, changedType, syncType, clientUuid, null);
     }
     
@@ -91,8 +92,10 @@ public class ConfigFuzzyWatchNotifyEvent extends Event {
      * @return A new FuzzyListenNotifyEvent instance.
      */
     public static ConfigFuzzyWatchNotifyEvent buildEvent(String groupKey,
-            String groupKeyPattern, String changedType, String syncType, String clientUuid, String watcherUuid) {
-        ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent = new ConfigFuzzyWatchNotifyEvent(groupKey, changedType,
+        String groupKeyPattern, String changedType, String syncType, String clientUuid,
+        String watcherUuid) {
+        ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent =
+            new ConfigFuzzyWatchNotifyEvent(groupKey, changedType,
                 syncType, groupKeyPattern, clientUuid, watcherUuid);
         return configFuzzyWatchNotifyEvent;
     }

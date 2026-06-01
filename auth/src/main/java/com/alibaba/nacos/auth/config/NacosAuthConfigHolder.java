@@ -81,7 +81,8 @@ public class NacosAuthConfigHolder {
      * @return nacos auth system type
      */
     public String getNacosAuthSystemType() {
-        return nacosAuthConfigMap.values().stream().findFirst().map(NacosAuthConfig::getNacosAuthSystemType)
-                .orElse(null);
+        return nacosAuthConfigMap.values().stream().findFirst()
+            .map(NacosAuthConfig::getNacosAuthSystemType)
+            .orElse(null);
     }
 }

@@ -31,28 +31,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author WangzJi
  */
 class CriticalPluginConfigTest {
-
+    
     @Test
     void isCriticalAuthNacosTest() {
         // Auth plugins are NOT critical - users can disable default auth to use custom plugins
         assertFalse(CriticalPluginConfig.isCritical("auth:nacos"));
     }
-
+    
     @Test
     void isCriticalDatasourceDialectMysqlTest() {
         assertTrue(CriticalPluginConfig.isCritical("datasource-dialect:mysql"));
     }
-
+    
     @Test
     void isCriticalDatasourceDialectDerbyTest() {
         assertTrue(CriticalPluginConfig.isCritical("datasource-dialect:derby"));
     }
-
+    
     @Test
     void isCriticalDatasourceDialectPostgresqlTest() {
         assertTrue(CriticalPluginConfig.isCritical("datasource-dialect:postgresql"));
     }
-
+    
     @Test
     void isCriticalNonCriticalPluginTest() {
         assertFalse(CriticalPluginConfig.isCritical("trace:test"));
@@ -61,26 +61,26 @@ class CriticalPluginConfigTest {
         assertFalse(CriticalPluginConfig.isCritical("ai-pipeline:skill-scanner"));
         assertTrue(CriticalPluginConfig.isCritical("ai-storage:nacos_config"));
     }
-
+    
     @Test
     void isCriticalNonExistentPluginTest() {
         assertFalse(CriticalPluginConfig.isCritical("nonexistent:plugin"));
     }
-
+    
     @Test
     void isCriticalNullPluginIdTest() {
         assertFalse(CriticalPluginConfig.isCritical(null));
     }
-
+    
     @Test
     void isCriticalEmptyPluginIdTest() {
         assertFalse(CriticalPluginConfig.isCritical(""));
     }
-
+    
     @Test
     void getCriticalPluginsTest() {
         Set<String> criticalPlugins = CriticalPluginConfig.getCriticalPlugins();
-
+        
         assertNotNull(criticalPlugins);
         assertEquals(4, criticalPlugins.size());
         assertTrue(criticalPlugins.contains("datasource-dialect:mysql"));
@@ -88,11 +88,11 @@ class CriticalPluginConfigTest {
         assertTrue(criticalPlugins.contains("datasource-dialect:postgresql"));
         assertTrue(criticalPlugins.contains("ai-storage:nacos_config"));
     }
-
+    
     @Test
     void getCriticalPluginsIsUnmodifiableTest() {
         Set<String> criticalPlugins = CriticalPluginConfig.getCriticalPlugins();
-
+        
         try {
             criticalPlugins.add("test:plugin");
             assertTrue(false, "Expected UnsupportedOperationException");
@@ -100,7 +100,7 @@ class CriticalPluginConfigTest {
             assertTrue(true);
         }
     }
-
+    
     @Test
     void isCriticalCaseSensitiveTest() {
         // Critical plugin check is case-sensitive

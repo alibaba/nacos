@@ -97,7 +97,7 @@ public abstract class Connection implements Requester {
     
     @Override
     public String toString() {
-        return "Connection{" + "traced=" + traced + ", abilities=" + abilityTable + ", metaInfo=" + metaInfo + '}';
+        return "Connection{" + "traced=" + traced + ", abilities=" + abilityTable + ", metaInfo="
+            + metaInfo + '}';
     }
 }
-

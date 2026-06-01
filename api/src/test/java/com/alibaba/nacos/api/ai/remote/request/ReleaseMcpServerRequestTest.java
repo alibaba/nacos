@@ -70,19 +70,21 @@ class ReleaseMcpServerRequestTest extends BasicRequestTest {
         assertTrue(json.contains("\"endpointSpecification\":{"));
         assertTrue(json.contains("\"type\":\"DIRECT\""));
         assertTrue(json.contains(String.format("\"mcpId\":\"%s\"", id)));
-        assertTrue(json.contains(String.format("\"protocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
-        assertTrue(json.contains(String.format("\"frontProtocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
+        assertTrue(json
+            .contains(String.format("\"protocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
+        assertTrue(json.contains(
+            String.format("\"frontProtocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
     }
     
     @Test
     void testDeserialize() throws Exception {
         String json =
-                "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"mcpId\":\"bbd8036e-4f17-4ed8-befc-a08b6fd5978d\","
-                        + "\"mcpName\":\"testMcpName\",\"serverSpecification\":{\"name\":\"testServerName\",\"protocol\":\"stdio\","
-                        + "\"frontProtocol\":\"stdio\",\"enabled\":true},\"toolSpecification\":{\"tools\":[],\"toolsMeta\":{},"
-                        + "\"securitySchemes\":[]},\"resourceSpecification\":{\"resources\":[{}],\"resourceTemplates\":[],\"extensions\":{}},"
-                        + "\"endpointSpecification\":{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\","
-                        + "\"port\":\"8848\"}},\"module\":\"ai\"}";
+            "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"mcpId\":\"bbd8036e-4f17-4ed8-befc-a08b6fd5978d\","
+                + "\"mcpName\":\"testMcpName\",\"serverSpecification\":{\"name\":\"testServerName\",\"protocol\":\"stdio\","
+                + "\"frontProtocol\":\"stdio\",\"enabled\":true},\"toolSpecification\":{\"tools\":[],\"toolsMeta\":{},"
+                + "\"securitySchemes\":[]},\"resourceSpecification\":{\"resources\":[{}],\"resourceTemplates\":[],\"extensions\":{}},"
+                + "\"endpointSpecification\":{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\","
+                + "\"port\":\"8848\"}},\"module\":\"ai\"}";
         ReleaseMcpServerRequest result = mapper.readValue(json, ReleaseMcpServerRequest.class);
         assertNotNull(result);
         assertEquals("1", result.getRequestId());

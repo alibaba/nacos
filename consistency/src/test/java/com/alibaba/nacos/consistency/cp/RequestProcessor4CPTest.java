@@ -30,9 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 class RequestProcessor4CPTest {
-
+    
     private static final String TEST_GROUP = "test-cp-group";
-
+    
     @Test
     void testLoadSnapshotOperate() {
         ConcreteRequestProcessor4CP processor = new ConcreteRequestProcessor4CP();
@@ -40,46 +40,46 @@ class RequestProcessor4CPTest {
         assertNotNull(operations);
         assertTrue(operations.isEmpty());
     }
-
+    
     @Test
     void testOnError() {
         ConcreteRequestProcessor4CP processor = new ConcreteRequestProcessor4CP();
         processor.onError(new RuntimeException("test error"));
         // Inherited default onError - should not throw
     }
-
+    
     @Test
     void testOnRequest() {
         ConcreteRequestProcessor4CP processor = new ConcreteRequestProcessor4CP();
         Response response = processor.onRequest(ReadRequest.getDefaultInstance());
         assertNotNull(response);
     }
-
+    
     @Test
     void testOnApply() {
         ConcreteRequestProcessor4CP processor = new ConcreteRequestProcessor4CP();
         Response response = processor.onApply(WriteRequest.getDefaultInstance());
         assertNotNull(response);
     }
-
+    
     @Test
     void testGroup() {
         ConcreteRequestProcessor4CP processor = new ConcreteRequestProcessor4CP();
         assertEquals(TEST_GROUP, processor.group());
     }
-
+    
     private static class ConcreteRequestProcessor4CP extends RequestProcessor4CP {
-
+        
         @Override
         public Response onRequest(ReadRequest request) {
             return Response.getDefaultInstance();
         }
-
+        
         @Override
         public Response onApply(WriteRequest log) {
             return Response.getDefaultInstance();
         }
-
+        
         @Override
         public String group() {
             return TEST_GROUP;

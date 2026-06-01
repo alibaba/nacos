@@ -62,7 +62,8 @@ class FailoverReactorTest {
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
         failoverReactor = new FailoverReactor(holder, UUID.randomUUID().toString());
-        Field failoverDataSourceField = FailoverReactor.class.getDeclaredField("failoverDataSource");
+        Field failoverDataSourceField =
+            FailoverReactor.class.getDeclaredField("failoverDataSource");
         failoverDataSourceField.setAccessible(true);
         failoverDataSourceField.set(failoverReactor, failoverDataSource);
     }
@@ -70,8 +71,9 @@ class FailoverReactorTest {
     @AfterEach
     void tearDown() throws NacosException {
         failoverReactor.shutdown();
-        Gauge gauge = Metrics.globalRegistry.find("nacos_naming_client_failover_instances").tag("service_name", "g@@s1")
-                .gauge();
+        Gauge gauge = Metrics.globalRegistry.find("nacos_naming_client_failover_instances")
+            .tag("service_name", "g@@s1")
+            .gauge();
         if (gauge != null) {
             Metrics.globalRegistry.remove(gauge);
         }
@@ -81,43 +83,45 @@ class FailoverReactorTest {
     void testIsFailoverSwitch() throws NacosException {
         assertFalse(failoverReactor.isFailoverSwitch());
     }
-
+    
     @Test
     void testIsFailoverSwitchByServiceNameWhenDisabled() {
         assertFalse(failoverReactor.isFailoverSwitch("non-existent-service"));
     }
-
+    
     @Test
     void testIsFailoverSwitchByServiceNameWhenServiceNotInMap()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         Field field = FailoverReactor.class.getDeclaredField("failoverSwitchEnable");
         field.setAccessible(true);
         field.set(failoverReactor, true);
         assertFalse(failoverReactor.isFailoverSwitch("non-existent-service"));
     }
-
+    
     @Test
     void testIsFailoverSwitchByServiceNameWhenServiceHasInstances()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         Field switchField = FailoverReactor.class.getDeclaredField("failoverSwitchEnable");
         switchField.setAccessible(true);
         switchField.set(failoverReactor, true);
         ServiceInfo serviceInfo = new ServiceInfo("test@@service");
         serviceInfo.addHost(new Instance());
-        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put("test@@service",
-                serviceInfo);
+        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put(
+            "test@@service",
+            serviceInfo);
         assertTrue(failoverReactor.isFailoverSwitch("test@@service"));
     }
-
+    
     @Test
     void testIsFailoverSwitchByServiceNameWhenServiceHasNoInstances()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         Field switchField = FailoverReactor.class.getDeclaredField("failoverSwitchEnable");
         switchField.setAccessible(true);
         switchField.set(failoverReactor, true);
         ServiceInfo serviceInfo = new ServiceInfo("test@@empty");
-        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put("test@@empty",
-                serviceInfo);
+        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put(
+            "test@@empty",
+            serviceInfo);
         assertFalse(failoverReactor.isFailoverSwitch("test@@empty"));
     }
     
@@ -153,16 +157,20 @@ class FailoverReactorTest {
         when(failoverDataSource.getFailoverData()).thenReturn(null);
         // waiting refresh thread work
         TimeUnit.MILLISECONDS.sleep(5500);
-        assertTrue(((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).isEmpty());
+        assertTrue(
+            ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>()))
+                .isEmpty());
     }
     
     @Test
-    void testRefreshFromEnabledToDisabled() throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+    void testRefreshFromEnabledToDisabled()
+        throws InterruptedException, NoSuchFieldException, IllegalAccessException {
         // make sure the first no delay refresh thread finished.
         TimeUnit.MILLISECONDS.sleep(500);
         FailoverSwitch mockFailoverSwitch = new FailoverSwitch(false);
         when(failoverDataSource.getSwitch()).thenReturn(mockFailoverSwitch);
-        Field failoverSwitchEnableField = FailoverReactor.class.getDeclaredField("failoverSwitchEnable");
+        Field failoverSwitchEnableField =
+            FailoverReactor.class.getDeclaredField("failoverSwitchEnable");
         failoverSwitchEnableField.setAccessible(true);
         failoverSwitchEnableField.set(failoverReactor, true);
         Map<String, ServiceInfo> map = new HashMap<>();
@@ -181,9 +189,10 @@ class FailoverReactorTest {
     
     @Test
     void testFailoverServiceCntMetrics()
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put("g@@s1",
-                new ServiceInfo());
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put(
+            "g@@s1",
+            new ServiceInfo());
         Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetrics");
         method.setAccessible(true);
         method.invoke(failoverReactor);
@@ -192,13 +201,16 @@ class FailoverReactorTest {
     
     @Test
     void testFailoverServiceCntMetricsClear()
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException,
+        NoSuchFieldException {
         String serviceName = "g@@s1";
         List<Tag> tags = new ArrayList<>();
         tags.add(new ImmutableTag("service_name", serviceName));
-        Gauge.builder("nacos_naming_client_failover_instances", () -> 1).tags(tags).register(Metrics.globalRegistry);
-        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put(serviceName,
-                new ServiceInfo());
+        Gauge.builder("nacos_naming_client_failover_instances", () -> 1).tags(tags)
+            .register(Metrics.globalRegistry);
+        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put(
+            serviceName,
+            new ServiceInfo());
         Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetricsClear");
         method.setAccessible(true);
         method.invoke(failoverReactor);

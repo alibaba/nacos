@@ -25,7 +25,7 @@ import com.alibaba.nacos.naming.monitor.NamingTpsMonitor;
  * @author xiweng.yy
  */
 public class NacosMonitorPushResultHook implements PushResultHook {
-
+    
     @Override
     public void pushSuccess(PushResult result) {
         MetricsMonitor.incrementPush();
@@ -34,9 +34,10 @@ public class NacosMonitorPushResultHook implements PushResultHook {
         if (null == result.getData().getHosts() || !result.getData().validate()) {
             MetricsMonitor.incrementEmptyPush();
         }
-        NamingTpsMonitor.rpcPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
+        NamingTpsMonitor.rpcPushSuccess(result.getSubscribeClientId(),
+            result.getSubscriber().getIp());
     }
-
+    
     @Override
     public void pushFailed(PushResult result) {
         MetricsMonitor.incrementPush();

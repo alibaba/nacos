@@ -57,19 +57,25 @@ class JacksonUtilsTest {
         assertEquals("null", JacksonUtils.toJson(null));
         assertEquals("\"string\"", JacksonUtils.toJson("string"));
         assertEquals("30", JacksonUtils.toJson(new BigDecimal(30)));
-        assertEquals("{\"key\":\"value\"}", JacksonUtils.toJson(Collections.singletonMap("key", "value")));
+        assertEquals("{\"key\":\"value\"}",
+            JacksonUtils.toJson(Collections.singletonMap("key", "value")));
         assertEquals("[{\"key\":\"value\"}]",
-                JacksonUtils.toJson(Collections.singletonList(Collections.singletonMap("key", "value"))));
-        assertEquals("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}", JacksonUtils.toJson(new TestOfAtomicObject()));
+            JacksonUtils
+                .toJson(Collections.singletonList(Collections.singletonMap("key", "value"))));
+        assertEquals("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}",
+            JacksonUtils.toJson(new TestOfAtomicObject()));
         assertEquals("{\"date\":1626192000000}", JacksonUtils.toJson(new TestOfDate()));
         // only public
-        assertEquals("{\"publicAccessModifier\":\"public\"}", JacksonUtils.toJson(new TestOfAccessModifier()));
+        assertEquals("{\"publicAccessModifier\":\"public\"}",
+            JacksonUtils.toJson(new TestOfAccessModifier()));
         // getter is also recognized
-        assertEquals("{\"value\":\"value\",\"key\":\"key\"}", JacksonUtils.toJson(new TestOfGetter()));
+        assertEquals("{\"value\":\"value\",\"key\":\"key\"}",
+            JacksonUtils.toJson(new TestOfGetter()));
         // annotation available
         assertEquals(
-                "{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\",\"subField\":\"subField\","
-                        + "\"camelCase\":\"value\"}", JacksonUtils.toJson(new TestOfAnnotationSub()));
+            "{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\",\"subField\":\"subField\","
+                + "\"camelCase\":\"value\"}",
+            JacksonUtils.toJson(new TestOfAnnotationSub()));
     }
     
     @Test
@@ -85,21 +91,26 @@ class JacksonUtilsTest {
         assertArrayEquals("null".getBytes(), JacksonUtils.toJsonBytes(null));
         assertArrayEquals("\"string\"".getBytes(), JacksonUtils.toJsonBytes("string"));
         assertArrayEquals("30".getBytes(), JacksonUtils.toJsonBytes(new BigDecimal(30)));
-        assertArrayEquals("{\"key\":\"value\"}".getBytes(), JacksonUtils.toJsonBytes(Collections.singletonMap("key", "value")));
+        assertArrayEquals("{\"key\":\"value\"}".getBytes(),
+            JacksonUtils.toJsonBytes(Collections.singletonMap("key", "value")));
         assertArrayEquals("[{\"key\":\"value\"}]".getBytes(),
-                JacksonUtils.toJsonBytes(Collections.singletonList(Collections.singletonMap("key", "value"))));
+            JacksonUtils
+                .toJsonBytes(Collections.singletonList(Collections.singletonMap("key", "value"))));
         assertArrayEquals("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes(),
-                JacksonUtils.toJsonBytes(new TestOfAtomicObject()));
-        assertArrayEquals("{\"date\":1626192000000}".getBytes(), JacksonUtils.toJsonBytes(new TestOfDate()));
+            JacksonUtils.toJsonBytes(new TestOfAtomicObject()));
+        assertArrayEquals("{\"date\":1626192000000}".getBytes(),
+            JacksonUtils.toJsonBytes(new TestOfDate()));
         // only public
         assertArrayEquals("{\"publicAccessModifier\":\"public\"}".getBytes(),
-                JacksonUtils.toJsonBytes(new TestOfAccessModifier()));
+            JacksonUtils.toJsonBytes(new TestOfAccessModifier()));
         // getter is also recognized
-        assertArrayEquals("{\"value\":\"value\",\"key\":\"key\"}".getBytes(), JacksonUtils.toJsonBytes(new TestOfGetter()));
+        assertArrayEquals("{\"value\":\"value\",\"key\":\"key\"}".getBytes(),
+            JacksonUtils.toJsonBytes(new TestOfGetter()));
         // annotation available
         assertArrayEquals(
-                ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\",\"subField\":\"subField\","
-                        + "\"camelCase\":\"value\"}").getBytes(), JacksonUtils.toJsonBytes(new TestOfAnnotationSub()));
+            ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\",\"subField\":\"subField\","
+                + "\"camelCase\":\"value\"}").getBytes(),
+            JacksonUtils.toJsonBytes(new TestOfAnnotationSub()));
     }
     
     @Test
@@ -118,19 +129,25 @@ class JacksonUtilsTest {
         assertNull(JacksonUtils.toObj("null".getBytes(), Object.class));
         assertEquals("string", JacksonUtils.toObj("\"string\"".getBytes(), String.class));
         assertEquals(new BigDecimal(30), JacksonUtils.toObj("30".getBytes(), BigDecimal.class));
-        assertEquals(Collections.singletonMap("key", "value"), JacksonUtils.toObj("{\"key\":\"value\"}".getBytes(), Map.class));
+        assertEquals(Collections.singletonMap("key", "value"),
+            JacksonUtils.toObj("{\"key\":\"value\"}".getBytes(), Map.class));
         assertEquals(Collections.singletonList(Collections.singletonMap("key", "value")),
-                JacksonUtils.toObj("[{\"key\":\"value\"}]".getBytes(), List.class));
+            JacksonUtils.toObj("[{\"key\":\"value\"}]".getBytes(), List.class));
         assertEquals(new TestOfAtomicObject(),
-                JacksonUtils.toObj("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes(), TestOfAtomicObject.class));
-        assertEquals(new TestOfDate(), JacksonUtils.toObj("{\"date\":1626192000000}".getBytes(), TestOfDate.class));
+            JacksonUtils.toObj("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes(),
+                TestOfAtomicObject.class));
+        assertEquals(new TestOfDate(),
+            JacksonUtils.toObj("{\"date\":1626192000000}".getBytes(), TestOfDate.class));
         assertEquals(new TestOfAccessModifier(),
-                JacksonUtils.toObj("{\"publicAccessModifier\":\"public\"}".getBytes(), TestOfAccessModifier.class));
+            JacksonUtils.toObj("{\"publicAccessModifier\":\"public\"}".getBytes(),
+                TestOfAccessModifier.class));
         assertEquals(new TestOfGetter(),
-                JacksonUtils.toObj("{\"value\":\"value\",\"key\":\"key\"}".getBytes(), TestOfGetter.class));
+            JacksonUtils.toObj("{\"value\":\"value\",\"key\":\"key\"}".getBytes(),
+                TestOfGetter.class));
         assertEquals(new TestOfAnnotationSub(), JacksonUtils.toObj(
-                ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\","
-                        + "\"subField\":\"subField\",\"camelCase\":\"value\"}").getBytes(), TestOfAnnotation.class));
+            ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\","
+                + "\"subField\":\"subField\",\"camelCase\":\"value\"}").getBytes(),
+            TestOfAnnotation.class));
     }
     
     /**
@@ -148,11 +165,13 @@ class JacksonUtilsTest {
      */
     @Test
     void testToObject3() {
-        assertEquals(Collections.singletonMap("key", "value"), JacksonUtils.toObj("{\"key\":\"value\"}".getBytes(),
+        assertEquals(Collections.singletonMap("key", "value"),
+            JacksonUtils.toObj("{\"key\":\"value\"}".getBytes(),
                 TypeUtils.parameterize(Map.class, String.class, String.class)));
         assertEquals(Collections.singletonList(Collections.singletonMap("key", "value")),
-                JacksonUtils.toObj("[{\"key\":\"value\"}]".getBytes(),
-                        TypeUtils.parameterize(List.class, TypeUtils.parameterize(Map.class, String.class, String.class))));
+            JacksonUtils.toObj("[{\"key\":\"value\"}]".getBytes(),
+                TypeUtils.parameterize(List.class,
+                    TypeUtils.parameterize(Map.class, String.class, String.class))));
     }
     
     /**
@@ -161,7 +180,8 @@ class JacksonUtilsTest {
     @Test
     void testToObject4() {
         assertThrows(Exception.class, () -> {
-            JacksonUtils.toObj("{not_A}Json:String}".getBytes(), TypeUtils.parameterize(Map.class, String.class, String.class));
+            JacksonUtils.toObj("{not_A}Json:String}".getBytes(),
+                TypeUtils.parameterize(Map.class, String.class, String.class));
         });
     }
     
@@ -171,7 +191,8 @@ class JacksonUtilsTest {
     @Test
     void testToObject5() {
         assertThrows(Exception.class, () -> {
-            JacksonUtils.toObj("{\"key\":\"value\"}".getBytes(), Object.class.getGenericSuperclass());
+            JacksonUtils.toObj("{\"key\":\"value\"}".getBytes(),
+                Object.class.getGenericSuperclass());
         });
     }
     
@@ -181,27 +202,37 @@ class JacksonUtilsTest {
     @Test
     void testToObject6() {
         assertNull(JacksonUtils.toObj(new ByteArrayInputStream("null".getBytes()), Object.class));
-        assertEquals("string", JacksonUtils.toObj(new ByteArrayInputStream("\"string\"".getBytes()), String.class));
-        assertEquals(new BigDecimal(30), JacksonUtils.toObj(new ByteArrayInputStream("30".getBytes()), BigDecimal.class));
+        assertEquals("string",
+            JacksonUtils.toObj(new ByteArrayInputStream("\"string\"".getBytes()), String.class));
+        assertEquals(new BigDecimal(30),
+            JacksonUtils.toObj(new ByteArrayInputStream("30".getBytes()), BigDecimal.class));
         assertEquals(Collections.singletonMap("key", "value"),
-                JacksonUtils.toObj(new ByteArrayInputStream("{\"key\":\"value\"}".getBytes()), Map.class));
+            JacksonUtils.toObj(new ByteArrayInputStream("{\"key\":\"value\"}".getBytes()),
+                Map.class));
         assertEquals(Collections.singletonList(Collections.singletonMap("key", "value")),
-                JacksonUtils.toObj(new ByteArrayInputStream("[{\"key\":\"value\"}]".getBytes()), List.class));
+            JacksonUtils.toObj(new ByteArrayInputStream("[{\"key\":\"value\"}]".getBytes()),
+                List.class));
         assertEquals(new TestOfAtomicObject(),
-                JacksonUtils.toObj(new ByteArrayInputStream("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes()),
-                        TestOfAtomicObject.class));
+            JacksonUtils.toObj(
+                new ByteArrayInputStream(
+                    "{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes()),
+                TestOfAtomicObject.class));
         assertEquals(new TestOfDate(),
-                JacksonUtils.toObj(new ByteArrayInputStream("{\"date\":1626192000000}".getBytes()), TestOfDate.class));
+            JacksonUtils.toObj(new ByteArrayInputStream("{\"date\":1626192000000}".getBytes()),
+                TestOfDate.class));
         assertEquals(new TestOfAccessModifier(),
-                JacksonUtils.toObj(new ByteArrayInputStream("{\"publicAccessModifier\":\"public\"}".getBytes()),
-                        TestOfAccessModifier.class));
+            JacksonUtils.toObj(
+                new ByteArrayInputStream("{\"publicAccessModifier\":\"public\"}".getBytes()),
+                TestOfAccessModifier.class));
         assertEquals(new TestOfGetter(),
-                JacksonUtils.toObj(new ByteArrayInputStream("{\"value\":\"value\",\"key\":\"key\"}".getBytes()),
-                        TestOfGetter.class));
+            JacksonUtils.toObj(
+                new ByteArrayInputStream("{\"value\":\"value\",\"key\":\"key\"}".getBytes()),
+                TestOfGetter.class));
         assertEquals(new TestOfAnnotationSub(), JacksonUtils.toObj((new ByteArrayInputStream(
-                        ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\","
-                                + "\"date\":\"2021-07-14\",\"subField\":\"subField\",\"camelCase\":\"value\"}").getBytes())),
-                TestOfAnnotation.class));
+            ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\","
+                + "\"date\":\"2021-07-14\",\"subField\":\"subField\",\"camelCase\":\"value\"}")
+                .getBytes())),
+            TestOfAnnotation.class));
     }
     
     /**
@@ -220,7 +251,8 @@ class JacksonUtilsTest {
     @Test
     void testToObject8() {
         assertThrows(Exception.class, () -> {
-            JacksonUtils.toObj(new ByteArrayInputStream("{not_A}Json:String}".getBytes()), Object.class);
+            JacksonUtils.toObj(new ByteArrayInputStream("{not_A}Json:String}".getBytes()),
+                Object.class);
         });
     }
     
@@ -231,32 +263,40 @@ class JacksonUtilsTest {
     void testToObject9() {
         assertNull(JacksonUtils.toObj("null".getBytes(), new TypeReference<Object>() {
         }));
-        assertEquals("string", JacksonUtils.toObj("\"string\"".getBytes(), new TypeReference<String>() {
-        }));
-        assertEquals(new BigDecimal(30), JacksonUtils.toObj("30".getBytes(), new TypeReference<BigDecimal>() {
-        }));
+        assertEquals("string",
+            JacksonUtils.toObj("\"string\"".getBytes(), new TypeReference<String>() {
+            }));
+        assertEquals(new BigDecimal(30),
+            JacksonUtils.toObj("30".getBytes(), new TypeReference<BigDecimal>() {
+            }));
         assertEquals(Collections.singletonMap("key", "value"),
-                JacksonUtils.toObj("{\"key\":\"value\"}".getBytes(), new TypeReference<Map<String, String>>() {
+            JacksonUtils.toObj("{\"key\":\"value\"}".getBytes(),
+                new TypeReference<Map<String, String>>() {
                 }));
         assertEquals(Collections.singletonList(Collections.singletonMap("key", "value")),
-                JacksonUtils.toObj("[{\"key\":\"value\"}]".getBytes(), new TypeReference<List<Map<String, String>>>() {
+            JacksonUtils.toObj("[{\"key\":\"value\"}]".getBytes(),
+                new TypeReference<List<Map<String, String>>>() {
                 }));
-        assertEquals(new TestOfAtomicObject(), JacksonUtils.toObj("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes(),
+        assertEquals(new TestOfAtomicObject(),
+            JacksonUtils.toObj("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes(),
                 new TypeReference<TestOfAtomicObject>() {
                 }));
-        assertEquals(new TestOfDate(), JacksonUtils.toObj("{\"date\":1626192000000}".getBytes(), new TypeReference<TestOfDate>() {
-        }));
+        assertEquals(new TestOfDate(), JacksonUtils.toObj("{\"date\":1626192000000}".getBytes(),
+            new TypeReference<TestOfDate>() {
+            }));
         assertEquals(new TestOfAccessModifier(),
-                JacksonUtils.toObj("{\"publicAccessModifier\":\"public\"}".getBytes(), new TypeReference<TestOfAccessModifier>() {
+            JacksonUtils.toObj("{\"publicAccessModifier\":\"public\"}".getBytes(),
+                new TypeReference<TestOfAccessModifier>() {
                 }));
         assertEquals(new TestOfGetter(),
-                JacksonUtils.toObj("{\"value\":\"value\",\"key\":\"key\"}".getBytes(), new TypeReference<TestOfGetter>() {
+            JacksonUtils.toObj("{\"value\":\"value\",\"key\":\"key\"}".getBytes(),
+                new TypeReference<TestOfGetter>() {
                 }));
         assertEquals(new TestOfAnnotationSub(), JacksonUtils.toObj(
-                ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\","
-                        + "\"subField\":\"subField\",\"camelCase\":\"value\"}").getBytes(),
-                new TypeReference<TestOfAnnotation>() {
-                }));
+            ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\","
+                + "\"subField\":\"subField\",\"camelCase\":\"value\"}").getBytes(),
+            new TypeReference<TestOfAnnotation>() {
+            }));
     }
     
     /**
@@ -276,11 +316,12 @@ class JacksonUtilsTest {
     @Test
     void testToObject11() {
         assertEquals(Collections.singletonMap("key", "value"),
-                JacksonUtils.toObj(new ByteArrayInputStream("{\"key\":\"value\"}".getBytes()),
-                        TypeUtils.parameterize(Map.class, String.class, String.class)));
+            JacksonUtils.toObj(new ByteArrayInputStream("{\"key\":\"value\"}".getBytes()),
+                TypeUtils.parameterize(Map.class, String.class, String.class)));
         assertEquals(Collections.singletonList(Collections.singletonMap("key", "value")),
-                JacksonUtils.toObj(new ByteArrayInputStream("[{\"key\":\"value\"}]".getBytes()),
-                        TypeUtils.parameterize(List.class, TypeUtils.parameterize(Map.class, String.class, String.class))));
+            JacksonUtils.toObj(new ByteArrayInputStream("[{\"key\":\"value\"}]".getBytes()),
+                TypeUtils.parameterize(List.class,
+                    TypeUtils.parameterize(Map.class, String.class, String.class))));
     }
     
     /**
@@ -290,7 +331,7 @@ class JacksonUtilsTest {
     void testToObject12() {
         assertThrows(Exception.class, () -> {
             JacksonUtils.toObj(new ByteArrayInputStream("{not_A}Json:String}".getBytes()),
-                    TypeUtils.parameterize(Map.class, String.class, String.class));
+                TypeUtils.parameterize(Map.class, String.class, String.class));
         });
     }
     
@@ -300,7 +341,8 @@ class JacksonUtilsTest {
     @Test
     void testToObject13() {
         assertThrows(Exception.class, () -> {
-            JacksonUtils.toObj(new ByteArrayInputStream("{\"key\":\"value\"}".getBytes()), Object.class.getGenericSuperclass());
+            JacksonUtils.toObj(new ByteArrayInputStream("{\"key\":\"value\"}".getBytes()),
+                Object.class.getGenericSuperclass());
         });
     }
     
@@ -323,7 +365,8 @@ class JacksonUtilsTest {
         assertEquals("string", JacksonUtils.toObj("\"string\"").asText());
         assertEquals(30, JacksonUtils.toObj("30").asInt());
         assertEquals("value", JacksonUtils.toObj("{\"key\":\"value\"}").get("key").asText());
-        assertEquals("value", JacksonUtils.toObj("[{\"key\":\"value\"}]").get(0).get("key").asText());
+        assertEquals("value",
+            JacksonUtils.toObj("[{\"key\":\"value\"}]").get(0).get("key").asText());
         
         JsonNode jsonNode = JacksonUtils.toObj("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}");
         assertEquals(0L, jsonNode.get("aLong").asLong());
@@ -345,8 +388,9 @@ class JacksonUtilsTest {
         JacksonUtils.registerSubtype(TestOfChild.class, "JacksonUtilsTest$TestOfChild");
         
         assertEquals(new TestOfChild(), JacksonUtils.toObj(
-                "{\"@type\":\"JacksonUtilsTest$TestOfChild\",\"parentField\":\"parentValue\"," + "\"childField\":\"childValue\"}",
-                TestOfParent.class));
+            "{\"@type\":\"JacksonUtilsTest$TestOfChild\",\"parentField\":\"parentValue\","
+                + "\"childField\":\"childValue\"}",
+            TestOfParent.class));
     }
     
     @Test
@@ -364,7 +408,8 @@ class JacksonUtilsTest {
     
     @Test
     void testTransferToJsonNode() {
-        JsonNode jsonNode1 = JacksonUtils.transferToJsonNode(Collections.singletonMap("key", "value"));
+        JsonNode jsonNode1 =
+            JacksonUtils.transferToJsonNode(Collections.singletonMap("key", "value"));
         assertEquals("value", jsonNode1.get("key").asText());
         
         JsonNode jsonNode2 = JacksonUtils.transferToJsonNode(new TestOfAtomicObject());
@@ -375,7 +420,8 @@ class JacksonUtilsTest {
     
     @Test
     void testConstructJavaType() {
-        assertEquals("java.lang.String", JacksonUtils.constructJavaType(String.class).getRawClass().getName());
+        assertEquals("java.lang.String",
+            JacksonUtils.constructJavaType(String.class).getRawClass().getName());
         assertTrue(JacksonUtils.constructJavaType(String.class).isFinal());
     }
     
@@ -402,9 +448,11 @@ class JacksonUtilsTest {
         
         // here is a verification to compare with the old implementation
         byte[] bytesFromOldImplementation = ByteUtils.toBytes(JacksonUtils.toJson(restResult));
-        String jsonFromBytesOldImplementation = new String(bytesFromOldImplementation, Charset.forName(Constants.ENCODE));
+        String jsonFromBytesOldImplementation =
+            new String(bytesFromOldImplementation, Charset.forName(Constants.ENCODE));
         assertTrue(jsonFromBytesOldImplementation.contains("\"code\":0"));
-        assertTrue(jsonFromBytesOldImplementation.contains("\"data\":{\"string\":\"你好，中国！\",\"integer\":999}"));
+        assertTrue(jsonFromBytesOldImplementation
+            .contains("\"data\":{\"string\":\"你好，中国！\",\"integer\":999}"));
     }
     
     @Test
@@ -465,10 +513,12 @@ class JacksonUtilsTest {
             
             TestOfAtomicObject that = (TestOfAtomicObject) o;
             
-            if (aLong != null ? !(aLong.longValue() == that.aLong.longValue()) : that.aLong != null) {
+            if (aLong != null ? !(aLong.longValue() == that.aLong.longValue())
+                : that.aLong != null) {
                 return false;
             }
-            if (aInteger != null ? !(aInteger.intValue() == that.aInteger.intValue()) : that.aInteger != null) {
+            if (aInteger != null ? !(aInteger.intValue() == that.aInteger.intValue())
+                : that.aInteger != null) {
                 return false;
             }
             return aBoolean != null ? aBoolean.get() == that.aBoolean.get() : that.aBoolean == null;
@@ -504,28 +554,35 @@ class JacksonUtilsTest {
             
             TestOfAccessModifier that = (TestOfAccessModifier) o;
             
-            if (publicAccessModifier != null ? !publicAccessModifier.equals(that.publicAccessModifier)
-                    : that.publicAccessModifier != null) {
+            if (publicAccessModifier != null
+                ? !publicAccessModifier.equals(that.publicAccessModifier)
+                : that.publicAccessModifier != null) {
                 return false;
             }
-            if (protectedAccessModifier != null ? !protectedAccessModifier.equals(that.protectedAccessModifier)
-                    : that.protectedAccessModifier != null) {
+            if (protectedAccessModifier != null
+                ? !protectedAccessModifier.equals(that.protectedAccessModifier)
+                : that.protectedAccessModifier != null) {
                 return false;
             }
-            if (defaultAccessModifier != null ? !defaultAccessModifier.equals(that.defaultAccessModifier)
-                    : that.defaultAccessModifier != null) {
+            if (defaultAccessModifier != null
+                ? !defaultAccessModifier.equals(that.defaultAccessModifier)
+                : that.defaultAccessModifier != null) {
                 return false;
             }
-            return privateAccessModifier != null ? privateAccessModifier.equals(that.privateAccessModifier)
-                    : that.privateAccessModifier == null;
+            return privateAccessModifier != null
+                ? privateAccessModifier.equals(that.privateAccessModifier)
+                : that.privateAccessModifier == null;
         }
         
         @Override
         public int hashCode() {
             int result = publicAccessModifier != null ? publicAccessModifier.hashCode() : 0;
-            result = 31 * result + (protectedAccessModifier != null ? protectedAccessModifier.hashCode() : 0);
-            result = 31 * result + (defaultAccessModifier != null ? defaultAccessModifier.hashCode() : 0);
-            result = 31 * result + (privateAccessModifier != null ? privateAccessModifier.hashCode() : 0);
+            result = 31 * result
+                + (protectedAccessModifier != null ? protectedAccessModifier.hashCode() : 0);
+            result = 31 * result
+                + (defaultAccessModifier != null ? defaultAccessModifier.hashCode() : 0);
+            result = 31 * result
+                + (privateAccessModifier != null ? privateAccessModifier.hashCode() : 0);
             return result;
         }
     }
@@ -555,7 +612,8 @@ class JacksonUtilsTest {
             if (getKey() != null ? !getKey().equals(that.getKey()) : that.getKey() != null) {
                 return false;
             }
-            return getValue() != null ? getValue().equals(that.getValue()) : that.getValue() == null;
+            return getValue() != null ? getValue().equals(that.getValue())
+                : that.getValue() == null;
         }
         
         @Override
@@ -621,13 +679,15 @@ class JacksonUtilsTest {
             if (date != null ? !date.equals(that.date) : that.date != null) {
                 return false;
             }
-            if (underScore != null ? !underScore.equals(that.underScore) : that.underScore != null) {
+            if (underScore != null ? !underScore.equals(that.underScore)
+                : that.underScore != null) {
                 return false;
             }
             if (ignore != null ? !ignore.equals(that.ignore) : that.ignore != null) {
                 return false;
             }
-            return nullString != null ? nullString.equals(that.nullString) : that.nullString == null;
+            return nullString != null ? nullString.equals(that.nullString)
+                : that.nullString == null;
         }
         
         @Override
@@ -685,7 +745,8 @@ class JacksonUtilsTest {
             
             TestOfParent that = (TestOfParent) o;
             
-            return parentField != null ? parentField.equals(that.parentField) : that.parentField == null;
+            return parentField != null ? parentField.equals(that.parentField)
+                : that.parentField == null;
         }
         
         @Override
@@ -712,7 +773,8 @@ class JacksonUtilsTest {
             
             TestOfChild that = (TestOfChild) o;
             
-            return childField != null ? childField.equals(that.childField) : that.childField == null;
+            return childField != null ? childField.equals(that.childField)
+                : that.childField == null;
         }
         
         @Override

@@ -36,7 +36,7 @@ public class ConfigConnectionEventListener extends ClientConnectionEventListener
     final ConfigFuzzyWatchContextService configFuzzyWatchContextService;
     
     public ConfigConnectionEventListener(ConfigChangeListenContext configChangeListenContext,
-            ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
         this.configChangeListenContext = configChangeListenContext;
         this.configFuzzyWatchContextService = configFuzzyWatchContextService;
     }
@@ -49,7 +49,8 @@ public class ConfigConnectionEventListener extends ClientConnectionEventListener
     @Override
     public void clientDisConnected(Connection connect) {
         String connectionId = connect.getMetaInfo().getConnectionId();
-        Loggers.REMOTE_DIGEST.info("[{}]client disconnected,clear config listen context", connectionId);
+        Loggers.REMOTE_DIGEST.info("[{}]client disconnected,clear config listen context",
+            connectionId);
         configChangeListenContext.clearContextForConnectionId(connectionId);
         configFuzzyWatchContextService.clearFuzzyWatchContext(connectionId);
     }

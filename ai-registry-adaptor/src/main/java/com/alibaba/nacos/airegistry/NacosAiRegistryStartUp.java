@@ -25,11 +25,11 @@ import org.slf4j.Logger;
  * @author xinluo
  */
 public class NacosAiRegistryStartUp extends AbstractNacosStartUp {
-
+    
     public NacosAiRegistryStartUp() {
         super(NacosStartUp.AI_REGISTRY_START_UP_PHASE);
     }
-
+    
     /**
      * Get phase name in starting info.
      *
@@ -39,7 +39,7 @@ public class NacosAiRegistryStartUp extends AbstractNacosStartUp {
     protected String getPhaseNameInStartingInfo() {
         return "Nacos AI Registry";
     }
-
+    
     /**
      * Log started info for current Nacos Server.
      *

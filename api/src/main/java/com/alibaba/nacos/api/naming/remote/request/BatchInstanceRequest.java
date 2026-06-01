@@ -38,7 +38,7 @@ public class BatchInstanceRequest extends AbstractNamingRequest {
     }
     
     public BatchInstanceRequest(String namespace, String serviceName, String groupName, String type,
-            List<Instance> instances) {
+        List<Instance> instances) {
         super(namespace, serviceName, groupName);
         this.type = type;
         this.instances = instances;

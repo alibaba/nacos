@@ -38,7 +38,8 @@ public class MysqlPageHandlerAdapter implements PageHandlerAdapter {
     }
     
     @Override
-    public OffsetFetchResult addOffsetAndFetchNext(String fetchSql, Object[] arg, int pageNo, int pageSize) {
+    public OffsetFetchResult addOffsetAndFetchNext(String fetchSql, Object[] arg, int pageNo,
+        int pageSize) {
         if (!fetchSql.contains(AuthPageConstant.LIMIT)) {
             fetchSql += " " + AuthPageConstant.LIMIT_SIZE;
             List<Object> newArgsList = new ArrayList<>(Arrays.asList(arg));

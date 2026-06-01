@@ -44,10 +44,11 @@ class AgentSpecUtilsPropertyTest {
      * <p><b>Validates: Requirements 4.2</b></p>
      */
     @Property
-    void buildAgentSpecGroupStartsWithPrefixAndDecodes(@ForAll("nonBlankStrings") String agentSpecName) {
+    void buildAgentSpecGroupStartsWithPrefixAndDecodes(
+        @ForAll("nonBlankStrings") String agentSpecName) {
         String result = AgentSpecUtils.buildAgentSpecGroup(agentSpecName);
         assertTrue(result.startsWith(PREFIX),
-                "buildAgentSpecGroup result should start with 'agentspec__', got: " + result);
+            "buildAgentSpecGroup result should start with 'agentspec__', got: " + result);
         String[] parts = AgentSpecUtils.decodeAgentSpecGroupToNameAndVersion(result);
         assertEquals(agentSpecName, parts[0]);
         assertNull(parts[1]);
@@ -61,11 +62,11 @@ class AgentSpecUtilsPropertyTest {
      */
     @Property
     void buildAgentSpecVersionGroupStartsWithPrefixAndDecodes(
-            @ForAll("nonBlankStrings") String agentSpecName,
-            @ForAll("nonBlankStrings") String version) {
+        @ForAll("nonBlankStrings") String agentSpecName,
+        @ForAll("nonBlankStrings") String version) {
         String result = AgentSpecUtils.buildAgentSpecVersionGroup(agentSpecName, version);
         assertTrue(result.startsWith(PREFIX),
-                "buildAgentSpecVersionGroup result should start with 'agentspec__', got: " + result);
+            "buildAgentSpecVersionGroup result should start with 'agentspec__', got: " + result);
         String[] parts = AgentSpecUtils.decodeAgentSpecGroupToNameAndVersion(result);
         assertEquals(agentSpecName, parts[0]);
         assertEquals(version, parts[1]);
@@ -74,7 +75,7 @@ class AgentSpecUtilsPropertyTest {
     @Provide
     Arbitrary<String> nonBlankStrings() {
         return Arbitraries.strings().alpha().numeric().withChars('-', '_', '.')
-                .ofMinLength(1).ofMaxLength(50)
-                .filter(s -> !s.trim().isEmpty());
+            .ofMinLength(1).ofMaxLength(50)
+            .filter(s -> !s.trim().isEmpty());
     }
 }

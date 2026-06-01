@@ -46,20 +46,23 @@ public class PushExecutorDelegate implements PushExecutor {
     
     @Override
     public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
-            NamingPushCallback callBack) {
-        getPushExecuteService(clientId, subscriber).doPushWithCallback(clientId, subscriber, data, callBack);
+        NamingPushCallback callBack) {
+        getPushExecuteService(clientId, subscriber).doPushWithCallback(clientId, subscriber, data,
+            callBack);
     }
     
     @Override
-    public void doFuzzyWatchNotifyPushWithCallBack(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest,
-            PushCallBack callBack) {
+    public void doFuzzyWatchNotifyPushWithCallBack(String clientId,
+        AbstractFuzzyWatchNotifyRequest watchNotifyRequest,
+        PushCallBack callBack) {
         // only support fuzzy watch by rpc
-        rpcPushExecuteService.doFuzzyWatchNotifyPushWithCallBack(clientId, watchNotifyRequest, callBack);
+        rpcPushExecuteService.doFuzzyWatchNotifyPushWithCallBack(clientId, watchNotifyRequest,
+            callBack);
     }
     
     private PushExecutor getPushExecuteService(String clientId, Subscriber subscriber) {
         Optional<SpiPushExecutor> result = SpiImplPushExecutorHolder.getInstance()
-                .findPushExecutorSpiImpl(clientId, subscriber);
+            .findPushExecutorSpiImpl(clientId, subscriber);
         if (result.isPresent()) {
             return result.get();
         }

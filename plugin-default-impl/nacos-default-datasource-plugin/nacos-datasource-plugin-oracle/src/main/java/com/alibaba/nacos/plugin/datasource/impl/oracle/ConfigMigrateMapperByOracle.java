@@ -28,61 +28,66 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  *
  * @author liam.fu
  **/
-public class ConfigMigrateMapperByOracle extends AbstractMapperByOracle implements ConfigMigrateMapper {
-
+public class ConfigMigrateMapperByOracle extends AbstractMapperByOracle
+    implements ConfigMigrateMapper {
+    
     @Override
     public MapperResult findConfigIdNeedInsertMigrate(MapperContext context) {
         String sql = "SELECT ci.id FROM config_info ci WHERE ci.tenant_id = '' AND NOT EXISTS "
-                + " ( SELECT 1 FROM config_info ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id AND ci2.tenant_id = 'public' )"
-                + " AND ci.id > ?" + " ORDER BY ci.id FETCH FIRST ? ROWS ONLY";
+            + " ( SELECT 1 FROM config_info ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id AND ci2.tenant_id = 'public' )"
+            + " AND ci.id > ?" + " ORDER BY ci.id FETCH FIRST ? ROWS ONLY";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                context.getPageSize()));
     }
-
+    
     @Override
     public MapperResult findConfigNeedUpdateMigrate(MapperContext context) {
         String sql = "SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id"
-                + " FROM config_info ci WHERE ci.tenant_id = ? AND "
-                + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
-                + " ( SELECT 1 FROM config_info ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
-                + " AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
-                + " AND ci2.gmt_modified < ci.gmt_modified )"
-                + " AND id > ?" + " ORDER BY id FETCH FIRST ? ROWS ONLY";
+            + " FROM config_info ci WHERE ci.tenant_id = ? AND "
+            + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
+            + " ( SELECT 1 FROM config_info ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
+            + " AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
+            + " AND ci2.gmt_modified < ci.gmt_modified )"
+            + " AND id > ?" + " ORDER BY id FETCH FIRST ? ROWS ONLY";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER),
-                        context.getWhereParameter(FieldConstant.TARGET_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER), context.getWhereParameter(FieldConstant.ID),
-                        context.getPageSize()));
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
+                context.getWhereParameter(FieldConstant.SRC_USER),
+                context.getWhereParameter(FieldConstant.TARGET_TENANT),
+                context.getWhereParameter(FieldConstant.SRC_USER),
+                context.getWhereParameter(FieldConstant.ID),
+                context.getPageSize()));
     }
-
+    
     @Override
     public MapperResult findConfigGrayNeedUpdateMigrate(MapperContext context) {
         String sql = "SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id, ci.gray_name "
-                + " FROM config_info_gray ci WHERE ci.tenant_id = ? AND "
-                + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
-                + " ( SELECT 1 FROM config_info_gray ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
-                + " AND ci2.gray_name = ci.gray_name AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
-                + " AND ci2.gmt_modified < ci.gmt_modified )"
-                + " AND ci.id > ?" + " ORDER BY ci.id FETCH FIRST ? ROWS ONLY";
+            + " FROM config_info_gray ci WHERE ci.tenant_id = ? AND "
+            + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
+            + " ( SELECT 1 FROM config_info_gray ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
+            + " AND ci2.gray_name = ci.gray_name AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
+            + " AND ci2.gmt_modified < ci.gmt_modified )"
+            + " AND ci.id > ?" + " ORDER BY ci.id FETCH FIRST ? ROWS ONLY";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER),
-                        context.getWhereParameter(FieldConstant.TARGET_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER), context.getWhereParameter(FieldConstant.ID),
-                        context.getPageSize()));
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
+                context.getWhereParameter(FieldConstant.SRC_USER),
+                context.getWhereParameter(FieldConstant.TARGET_TENANT),
+                context.getWhereParameter(FieldConstant.SRC_USER),
+                context.getWhereParameter(FieldConstant.ID),
+                context.getPageSize()));
     }
-
+    
     @Override
     public MapperResult findConfigGrayIdNeedInsertMigrate(MapperContext context) {
         String sql = "SELECT ci.id FROM config_info_gray ci WHERE ci.tenant_id = '' AND NOT EXISTS "
-                + " ( SELECT 1 FROM config_info_gray ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id"
-                + " AND ci2.tenant_id = 'public' AND ci2.gray_name = ci.gray_name )" + " AND ci.id > ?"
-                + " ORDER BY ci.id FETCH FIRST ? ROWS ONLY";
+            + " ( SELECT 1 FROM config_info_gray ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id"
+            + " AND ci2.tenant_id = 'public' AND ci2.gray_name = ci.gray_name )" + " AND ci.id > ?"
+            + " ORDER BY ci.id FETCH FIRST ? ROWS ONLY";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                context.getPageSize()));
     }
-
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.ORACLE;

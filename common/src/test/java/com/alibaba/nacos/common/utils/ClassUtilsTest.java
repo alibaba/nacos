@@ -79,7 +79,8 @@ class ClassUtilsTest {
     }
     
     @Test
-    void testForNameFromPrimitive() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
+    void testForNameFromPrimitive()
+        throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
         Field field = ClassUtils.class.getDeclaredField("PRIMITIVE_TYPE_NAME_MAP");
         field.setAccessible(true);
         Map<String, Class<?>> map = (Map<String, Class<?>>) field.get(null);
@@ -103,13 +104,16 @@ class ClassUtilsTest {
         Class noPackageClass = ClassUtils.forName("ClassUtilsTestMockClass", null);
         assertEquals("", ClassUtils.classPackageAsResourcePath(null));
         assertEquals("", ClassUtils.classPackageAsResourcePath(noPackageClass));
-        assertEquals("com/alibaba/nacos/common/utils", ClassUtils.classPackageAsResourcePath(ClassUtilsTest.class));
+        assertEquals("com/alibaba/nacos/common/utils",
+            ClassUtils.classPackageAsResourcePath(ClassUtilsTest.class));
     }
     
     @Test
     void testConvertClassNameAndClassPath() {
         String name = ClassUtilsTest.class.getName();
-        assertEquals("com/alibaba/nacos/common/utils/ClassUtilsTest", ClassUtils.convertClassNameToResourcePath(name));
-        assertEquals(name, ClassUtils.resourcePathToConvertClassName("com/alibaba/nacos/common/utils/ClassUtilsTest"));
+        assertEquals("com/alibaba/nacos/common/utils/ClassUtilsTest",
+            ClassUtils.convertClassNameToResourcePath(name));
+        assertEquals(name, ClassUtils
+            .resourcePathToConvertClassName("com/alibaba/nacos/common/utils/ClassUtilsTest"));
     }
 }

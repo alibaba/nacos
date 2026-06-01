@@ -57,7 +57,7 @@ class ConfigRemoveRequestHandlerTest {
     @BeforeEach
     void setUp() throws Exception {
         configRemoveRequestHandler = new ConfigRemoveRequestHandler(configInfoPersistService,
-                configInfoGrayPersistService, configOperationService);
+            configInfoGrayPersistService, configOperationService);
     }
     
     @Test
@@ -71,25 +71,26 @@ class ConfigRemoveRequestHandlerTest {
         meta.setClientIp("1.1.1.1");
         
         when(configOperationService.deleteConfig(
-                anyString(),
-                anyString(),
-                anyString(),
-                isNull(),
-                eq("1.1.1.1"),
-                isNull(),
-                eq(Constants.RPC))).thenReturn(true);
-
-        ConfigRemoveResponse response = configRemoveRequestHandler.handle(configRemoveRequest, meta);
-
+            anyString(),
+            anyString(),
+            anyString(),
+            isNull(),
+            eq("1.1.1.1"),
+            isNull(),
+            eq(Constants.RPC))).thenReturn(true);
+        
+        ConfigRemoveResponse response =
+            configRemoveRequestHandler.handle(configRemoveRequest, meta);
+        
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         verify(configOperationService, times(1)).deleteConfig(
-                anyString(),
-                anyString(),
-                anyString(),
-                isNull(),
-                eq("1.1.1.1"),
-                isNull(),
-                eq(Constants.RPC));
+            anyString(),
+            anyString(),
+            anyString(),
+            isNull(),
+            eq("1.1.1.1"),
+            isNull(),
+            eq(Constants.RPC));
     }
     
     @Test
@@ -103,15 +104,16 @@ class ConfigRemoveRequestHandlerTest {
         meta.setClientIp("1.1.1.1");
         
         when(configOperationService.deleteConfig(
-                anyString(),
-                anyString(),
-                anyString(),
-                isNull(),
-                eq("1.1.1.1"),
-                isNull(),
-                eq(Constants.RPC))).thenThrow(new RuntimeException("test exception"));
+            anyString(),
+            anyString(),
+            anyString(),
+            isNull(),
+            eq("1.1.1.1"),
+            isNull(),
+            eq(Constants.RPC))).thenThrow(new RuntimeException("test exception"));
         
-        ConfigRemoveResponse response = configRemoveRequestHandler.handle(configRemoveRequest, meta);
+        ConfigRemoveResponse response =
+            configRemoveRequestHandler.handle(configRemoveRequest, meta);
         
         assertNotEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         assertTrue(response.getMessage().contains("test exception"));

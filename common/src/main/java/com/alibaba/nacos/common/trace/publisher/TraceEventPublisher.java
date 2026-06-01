@@ -38,25 +38,27 @@ import java.util.concurrent.Executor;
  * @author yanda
  */
 public class TraceEventPublisher extends Thread implements ShardedEventPublisher {
-
+    
     private static final String THREAD_NAME = "trace.publisher-";
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.trace.publisher");
-
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger("com.alibaba.nacos.common.trace.publisher");
+    
     private static final int DEFAULT_WAIT_TIME = 60;
-
-    private final Map<Class<? extends Event>, Set<Subscriber<? extends Event>>> subscribes = new ConcurrentHashMap<>();
-
+    
+    private final Map<Class<? extends Event>, Set<Subscriber<? extends Event>>> subscribes =
+        new ConcurrentHashMap<>();
+    
     private volatile boolean initialized = false;
-
+    
     private volatile boolean shutdown = false;
-
+    
     private int queueMaxSize = -1;
-
+    
     private BlockingQueue<Event> queue;
-
+    
     private String publisherName;
-
+    
     @Override
     public void init(Class<? extends Event> type, int bufferSize) {
         this.queueMaxSize = bufferSize;
@@ -67,27 +69,28 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
         super.start();
         initialized = true;
     }
-
+    
     @Override
     public long currentEventSize() {
         return this.queue.size();
     }
-
+    
     @Override
     public void addSubscriber(Subscriber subscriber) {
         addSubscriber(subscriber, subscriber.subscribeType());
     }
-
+    
     @Override
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
-        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>()).add(subscriber);
+        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>())
+            .add(subscriber);
     }
-
+    
     @Override
     public void removeSubscriber(Subscriber subscriber) {
         removeSubscriber(subscriber, subscriber.subscribeType());
     }
-
+    
     @Override
     public void removeSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
         subscribes.computeIfPresent(subscribeType, (inputType, subscribers) -> {
@@ -95,17 +98,18 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
             return subscribers.isEmpty() ? null : subscribers;
         });
     }
-
+    
     @Override
     public boolean publish(Event event) {
         checkIsStart();
         boolean success = this.queue.offer(event);
         if (!success) {
-            LOGGER.warn("Trace Event Publish failed, event : {}, publish queue size : {}", event, currentEventSize());
+            LOGGER.warn("Trace Event Publish failed, event : {}, publish queue size : {}", event,
+                currentEventSize());
         }
         return true;
     }
-
+    
     @Override
     public void notifySubscriber(Subscriber subscriber, Event event) {
         if (LOGGER.isDebugEnabled()) {
@@ -123,24 +127,25 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
             }
         }
     }
-
+    
     @Override
     public void shutdown() throws NacosException {
         this.shutdown = true;
         this.queue.clear();
     }
-
+    
     @Override
     public void run() {
         try {
             waitSubscriberForInit();
             handleEvents();
         } catch (Exception e) {
-            LOGGER.error("Trace Event Publisher {}, stop to handle event due to unexpected exception: ",
-                    this.publisherName, e);
+            LOGGER.error(
+                "Trace Event Publisher {}, stop to handle event due to unexpected exception: ",
+                this.publisherName, e);
         }
     }
-
+    
     private void waitSubscriberForInit() {
         // To ensure that messages are not lost, enable EventHandler when
         // waiting for the first Subscriber to register
@@ -151,26 +156,28 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
             ThreadUtils.sleep(1000L);
         }
     }
-
+    
     private void handleEvents() {
         while (!shutdown) {
             try {
                 final Event event = queue.take();
                 handleEvent(event);
             } catch (InterruptedException e) {
-                LOGGER.warn("Trace Event Publisher {} take event from queue failed:", this.publisherName, e);
+                LOGGER.warn("Trace Event Publisher {} take event from queue failed:",
+                    this.publisherName, e);
                 // set the interrupted flag
                 Thread.currentThread().interrupt();
             }
         }
     }
-
+    
     private void handleEvent(Event event) {
         Class<? extends Event> eventType = event.getClass();
         Set<Subscriber<? extends Event>> subscribers = subscribes.get(eventType);
         if (null == subscribers) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[NotifyCenter] No subscribers for slow event {}", eventType.getName());
+                LOGGER.debug("[NotifyCenter] No subscribers for slow event {}",
+                    eventType.getName());
             }
             return;
         }
@@ -178,15 +185,16 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
             notifySubscriber(subscriber, event);
         }
     }
-
+    
     void checkIsStart() {
         if (!initialized) {
             throw new IllegalStateException("Publisher does not start");
         }
     }
-
+    
     public String getStatus() {
-        return String.format("Publisher %-30s: shutdown=%5s, queue=%7d/%-7d", publisherName, shutdown,
-                currentEventSize(), queueMaxSize);
+        return String.format("Publisher %-30s: shutdown=%5s, queue=%7d/%-7d", publisherName,
+            shutdown,
+            currentEventSize(), queueMaxSize);
     }
 }

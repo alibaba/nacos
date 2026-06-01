@@ -52,6 +52,17 @@ export const skillApi = {
     }) as ApiResult<string>;
   },
 
+  /** Batch upload skills from a multi-skill ZIP archive */
+  batchUpload: (namespaceId: string, file: File): ApiResult<{ succeeded: string[]; failed: { name: string; reason: string }[] }> => {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('namespaceId', namespaceId);
+    return client.post(`${BASE}/upload/batch`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    }) as ApiResult<{ succeeded: string[]; failed: { name: string; reason: string }[] }>;
+  },
+
   /** Delete skill */
   delete: (params: {
     namespaceId?: string;
@@ -66,6 +77,8 @@ export const skillApi = {
     basedOnVersion?: string;
     targetVersion?: string;
     skillCard?: string;
+    /** Version-level commit message (optional; not the skill description in SKILL.md) */
+    commitMsg?: string;
   }): ApiResult<string> =>
     client.post(`${BASE}/draft`, data, { timeout: 60000 }) as ApiResult<string>,
 
@@ -74,6 +87,8 @@ export const skillApi = {
     namespaceId?: string;
     skillCard: string;
     setAsLatest?: boolean;
+    /** Version-level commit message (optional; not the skill description) */
+    commitMsg?: string;
   }): ApiResult<string> =>
     client.put(`${BASE}/draft`, data) as ApiResult<string>,
 
@@ -109,6 +124,14 @@ export const skillApi = {
     updateLatestLabel?: boolean;
   }): ApiResult<string> =>
     client.post(`${BASE}/force-publish`, data) as ApiResult<string>,
+
+  /** Re-edit a reviewed version (transitions back to draft) */
+  redraft: (data: {
+    namespaceId?: string;
+    skillName: string;
+    version: string;
+  }): ApiResult<string> =>
+    client.post(`${BASE}/redraft`, data) as ApiResult<string>,
 
   /** Update labels */
   updateLabels: (data: {

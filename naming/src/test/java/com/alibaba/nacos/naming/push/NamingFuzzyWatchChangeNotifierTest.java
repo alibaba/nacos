@@ -52,7 +52,8 @@ public class NamingFuzzyWatchChangeNotifierTest {
     
     @BeforeEach
     void before() {
-        namingFuzzyWatchChangeNotifier = new NamingFuzzyWatchChangeNotifier(namingFuzzyWatchContextService,
+        namingFuzzyWatchChangeNotifier =
+            new NamingFuzzyWatchChangeNotifier(namingFuzzyWatchContextService,
                 fuzzyWatchPushDelayTaskEngine);
     }
     
@@ -64,7 +65,8 @@ public class NamingFuzzyWatchChangeNotifierTest {
     void testServiceChangedEvent() {
         Service service = Service.newService("namespace12", "group", "service12345");
         
-        when(namingFuzzyWatchContextService.syncServiceContext(eq(service), eq(ADD_SERVICE))).thenReturn(true);
+        when(namingFuzzyWatchContextService.syncServiceContext(eq(service), eq(ADD_SERVICE)))
+            .thenReturn(true);
         
         Set set = new HashSet();
         set.add("2345123");
@@ -72,12 +74,13 @@ public class NamingFuzzyWatchChangeNotifierTest {
         set.add("234535");
         
         when(namingFuzzyWatchContextService.getFuzzyWatchedClients(eq(service))).thenReturn(set);
-    
-        ServiceEvent.ServiceChangedEvent serviceChangedEvent = new ServiceEvent.ServiceChangedEvent(service,
+        
+        ServiceEvent.ServiceChangedEvent serviceChangedEvent =
+            new ServiceEvent.ServiceChangedEvent(service,
                 ADD_SERVICE);
         namingFuzzyWatchChangeNotifier.onEvent(serviceChangedEvent);
         
         verify(fuzzyWatchPushDelayTaskEngine, times(set.size())).addTask(anyString(),
-                any(FuzzyWatchChangeNotifyTask.class));
+            any(FuzzyWatchChangeNotifyTask.class));
     }
 }

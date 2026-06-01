@@ -75,7 +75,8 @@ class ServiceRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void deleteService() throws Exception {
         serviceRemoteHandler.deleteService(TEST_NAMESPACE_ID, TEST_SERVICE_NAME, TEST_GROUP_NAME);
-        verify(namingMaintainerService).removeService(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME);
+        verify(namingMaintainerService).removeService(TEST_NAMESPACE_ID, TEST_GROUP_NAME,
+            TEST_SERVICE_NAME);
     }
     
     @Test
@@ -105,9 +106,11 @@ class ServiceRemoteHandlerTest extends AbstractRemoteHandlerTest {
         mockPage.setPagesAvailable(1);
         mockPage.setPageNumber(1);
         mockPage.setPageItems(Collections.singletonList(new SubscriberInfo()));
-        when(namingMaintainerService.getSubscribers(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, 1, 1,
-                true)).thenReturn(mockPage);
-        Page<SubscriberInfo> actual = serviceRemoteHandler.getSubscribers(1, 1, TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
+        when(namingMaintainerService.getSubscribers(TEST_NAMESPACE_ID, TEST_GROUP_NAME,
+            TEST_SERVICE_NAME, 1, 1,
+            true)).thenReturn(mockPage);
+        Page<SubscriberInfo> actual =
+            serviceRemoteHandler.getSubscribers(1, 1, TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
                 TEST_GROUP_NAME, true);
         assertEquals(mockPage.getPageNumber(), actual.getPageNumber());
         assertEquals(mockPage.getPagesAvailable(), actual.getPagesAvailable());
@@ -118,9 +121,11 @@ class ServiceRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void getServiceListWithInstances() throws NacosException {
         Page<ServiceDetailInfo> mockPage = new Page<>();
-        when(namingMaintainerService.listServicesWithDetail(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, 1,
-                1)).thenReturn(mockPage);
-        Page<ServiceDetailInfo> actual = (Page<ServiceDetailInfo>) serviceRemoteHandler.getServiceList(true,
+        when(namingMaintainerService.listServicesWithDetail(TEST_NAMESPACE_ID, TEST_GROUP_NAME,
+            TEST_SERVICE_NAME, 1,
+            1)).thenReturn(mockPage);
+        Page<ServiceDetailInfo> actual =
+            (Page<ServiceDetailInfo>) serviceRemoteHandler.getServiceList(true,
                 TEST_NAMESPACE_ID, 1, 1, TEST_SERVICE_NAME, TEST_GROUP_NAME, false);
         assertEquals(mockPage, actual);
     }
@@ -128,9 +133,11 @@ class ServiceRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void getServiceListWithoutInstance() throws NacosException {
         Page<ServiceView> mockPage = new Page<>();
-        when(namingMaintainerService.listServices(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, false, 1,
-                1)).thenReturn(mockPage);
-        Page<ServiceDetailInfo> actual = (Page<ServiceDetailInfo>) serviceRemoteHandler.getServiceList(false,
+        when(namingMaintainerService.listServices(TEST_NAMESPACE_ID, TEST_GROUP_NAME,
+            TEST_SERVICE_NAME, false, 1,
+            1)).thenReturn(mockPage);
+        Page<ServiceDetailInfo> actual =
+            (Page<ServiceDetailInfo>) serviceRemoteHandler.getServiceList(false,
                 TEST_NAMESPACE_ID, 1, 1, TEST_SERVICE_NAME, TEST_GROUP_NAME, false);
         assertEquals(mockPage, actual);
     }
@@ -139,16 +146,18 @@ class ServiceRemoteHandlerTest extends AbstractRemoteHandlerTest {
     void getServiceDetail() throws NacosException {
         ServiceDetailInfo mockServiceDetailInfo = new ServiceDetailInfo();
         when(namingMaintainerService.getServiceDetail(TEST_NAMESPACE_ID, TEST_GROUP_NAME,
-                TEST_SERVICE_NAME)).thenReturn(mockServiceDetailInfo);
-        ServiceDetailInfo actual = serviceRemoteHandler.getServiceDetail(TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
+            TEST_SERVICE_NAME)).thenReturn(mockServiceDetailInfo);
+        ServiceDetailInfo actual =
+            serviceRemoteHandler.getServiceDetail(TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
                 TEST_GROUP_NAME);
         assertEquals(mockServiceDetailInfo, actual);
     }
     
     @Test
     void updateClusterMetadata() throws Exception {
-        serviceRemoteHandler.updateClusterMetadata(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME,
-                Constants.DEFAULT_CLUSTER_NAME, new ClusterMetadata());
+        serviceRemoteHandler.updateClusterMetadata(TEST_NAMESPACE_ID, TEST_GROUP_NAME,
+            TEST_SERVICE_NAME,
+            Constants.DEFAULT_CLUSTER_NAME, new ClusterMetadata());
         verify(namingMaintainerService).updateCluster(any(Service.class), any(ClusterInfo.class));
     }
 }

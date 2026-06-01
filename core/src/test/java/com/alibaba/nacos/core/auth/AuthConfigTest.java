@@ -54,7 +54,8 @@ class AuthConfigTest {
     @Test
     void testAuthAdminFilterRegistration() {
         AuthConfig config = new AuthConfig();
-        FilterRegistrationBean<AuthAdminFilter> filter = config.authAdminFilterRegistration(authAdminFilter);
+        FilterRegistrationBean<AuthAdminFilter> filter =
+            config.authAdminFilterRegistration(authAdminFilter);
         assertNotNull(filter);
         assertTrue(filter.getFilter() instanceof AuthAdminFilter);
         assertTrue(filter.getUrlPatterns().contains("/*"));

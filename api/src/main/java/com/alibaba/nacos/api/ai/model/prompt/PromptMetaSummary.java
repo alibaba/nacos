@@ -64,6 +64,11 @@ public class PromptMetaSummary implements Serializable {
      */
     private Map<String, String> labels;
     
+    /**
+     * Total download count of this prompt (sum of all versions).
+     */
+    private Long downloadCount;
+    
     public int getSchemaVersion() {
         return schemaVersion;
     }
@@ -150,5 +155,13 @@ public class PromptMetaSummary implements Serializable {
     
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
+    }
+    
+    public Long getDownloadCount() {
+        return downloadCount;
+    }
+    
+    public void setDownloadCount(Long downloadCount) {
+        this.downloadCount = downloadCount;
     }
 }

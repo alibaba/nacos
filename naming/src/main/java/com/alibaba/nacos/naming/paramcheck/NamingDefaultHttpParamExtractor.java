@@ -44,7 +44,8 @@ public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         String serviceName = getAliasServiceName(request);
         String groupName = getAliasGroupName(request);
         String groupServiceName = serviceName;
-        if (StringUtils.isNotBlank(groupServiceName) && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+        if (StringUtils.isNotBlank(groupServiceName)
+            && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
             String[] splits = groupServiceName.split(Constants.SERVICE_INFO_SPLITER, 2);
             groupName = splits[0];
             serviceName = splits[1];

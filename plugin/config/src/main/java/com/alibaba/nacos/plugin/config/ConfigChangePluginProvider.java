@@ -29,12 +29,12 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class ConfigChangePluginProvider implements PluginProvider<ConfigChangePluginService> {
-
+    
     @Override
     public PluginType getPluginType() {
         return PluginType.CONFIG_CHANGE;
     }
-
+    
     @Override
     public Map<String, ConfigChangePluginService> getAllPlugins() {
         return ConfigChangePluginManager.getInstance().getAllPlugins();

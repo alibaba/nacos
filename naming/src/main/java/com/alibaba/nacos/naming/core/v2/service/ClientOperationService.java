@@ -43,7 +43,8 @@ public interface ClientOperationService {
      * @param clientId id of client
      * @throws NacosException throws NacosException
      */
-    void registerInstance(Service service, Instance instance, String clientId) throws NacosException;
+    void registerInstance(Service service, Instance instance, String clientId)
+        throws NacosException;
     
     /**
      * Batch register instance to service.
@@ -71,7 +72,7 @@ public interface ClientOperationService {
      * @param clientId   id of client
      */
     default void subscribeService(Service service, Subscriber subscriber, String clientId) {
-    
+        
     }
     
     /**
@@ -82,7 +83,7 @@ public interface ClientOperationService {
      * @param clientId   id of client
      */
     default void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
-    
+        
     }
     
     double EPSILON = 1e-10;
@@ -108,7 +109,8 @@ public interface ClientOperationService {
         if (!instance.isEnabled()) {
             extendDatum.put(Constants.PUBLISH_INSTANCE_ENABLE, instance.isEnabled());
         }
-        String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
+        String clusterName =
+            StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
                 : instance.getClusterName();
         result.setHealthy(instance.isHealthy());
         result.setCluster(clusterName);

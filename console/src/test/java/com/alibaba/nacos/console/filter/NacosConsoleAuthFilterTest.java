@@ -56,6 +56,6 @@ class NacosConsoleAuthFilterTest {
     @Test
     void checkServerIdentity() {
         assertEquals(ServerIdentityResult.noMatched().getStatus(),
-                consoleAuthFilter.checkServerIdentity(null, null).getStatus());
+            consoleAuthFilter.checkServerIdentity(null, null).getStatus());
     }
 }

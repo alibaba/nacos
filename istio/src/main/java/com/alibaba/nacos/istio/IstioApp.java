@@ -29,7 +29,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @SpringBootApplication
 public class IstioApp {
-
+    
     public static void main(String[] args) {
         SpringApplication.run(IstioApp.class, args);
     }

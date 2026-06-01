@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.UuidUtils;
  * @author special.fy
  */
 public class NonceGenerator {
-
+    
     public static String generateNonce() {
         return UuidUtils.generateUuid().replace("-", "");
     }

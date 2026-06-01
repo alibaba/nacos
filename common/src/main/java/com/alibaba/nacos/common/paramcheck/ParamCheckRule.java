@@ -58,14 +58,14 @@ public class ParamCheckRule {
     public int maxMetadataLength = 1024;
     
     public String agentNamePatternString = "^[\\x20-\\x7E]+$";
- 
+    
     public int maxAgentNameLength = 64;
     
     public String skillNamePatternString = "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$";
     
     public int maxSkillNameLength = 64;
-
+    
     public String mcpNamePatternString = "^[a-zA-Z0-9-_\\/\\.]+$";
-
+    
     public int maxMcpNameLength = 128;
 }

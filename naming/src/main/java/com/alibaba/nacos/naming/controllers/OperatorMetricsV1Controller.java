@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
@@ -34,8 +35,9 @@ import org.springframework.web.bind.annotation.RestController;
  * @author xiweng.yy
  */
 @RestController
-@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
-        UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
+@RequestMapping({
+    UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
+    UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 @ConditionalOnMissingClass("com.alibaba.nacos.legacy.adapter.naming.OperatorController")
 public class OperatorMetricsV1Controller {
     
@@ -45,8 +47,10 @@ public class OperatorMetricsV1Controller {
     /**
      * Get metrics (only status). Kept for old clients; full metrics available at v3 API.
      */
+    @Since("3.2.0")
     @GetMapping("/metrics")
-    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
+    @Compatibility(apiType = ApiType.OPEN_API,
+        alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
     public ObjectNode metrics() {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("status", ServerStatus.UP.name());

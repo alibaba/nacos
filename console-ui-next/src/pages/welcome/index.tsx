@@ -13,6 +13,8 @@ export default function WelcomePage() {
 
     if (functionMode === 'naming') {
       navigate(`/serviceManagement${qs}`, { replace: true });
+    } else if (functionMode === 'ai') {
+      navigate(`/skill${qs}`, { replace: true });
     } else {
       navigate(`/configurationManagement${qs}`, { replace: true });
     }

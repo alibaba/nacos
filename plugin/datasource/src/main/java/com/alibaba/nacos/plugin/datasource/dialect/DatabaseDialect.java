@@ -21,13 +21,13 @@ package com.alibaba.nacos.plugin.datasource.dialect;
  * @author Long Yu
  */
 public interface DatabaseDialect {
-
+    
     /**
      * get database type.
      * @return return database type name
      */
     public String getType();
-
+    
     /**
      * get frist index page param.
      * @param page current pageNo
@@ -35,7 +35,7 @@ public interface DatabaseDialect {
      * @return offset val or maxRange
      */
     public int getPagePrevNum(int page, int pageSize);
-
+    
     /**
      * get second index page param.
      * @param page current pageNo
@@ -43,21 +43,21 @@ public interface DatabaseDialect {
      * @return limit val or minRange
      */
     public int getPageLastNum(int page, int pageSize);
-
+    
     /**
      * get page limit top data sql,contain  placeholder.
      * @param sql orign sql
      * @return append limit sql
      */
     public String getLimitTopSqlWithMark(String sql);
-
+    
     /**
      * get page limit page data sql,contain  placeholder.
      * @param sql orign sql
      * @return append limit sql
      */
     public String getLimitPageSqlWithMark(String sql);
-
+    
     /**
      * get page limit page data sql,using number.
      * @param sql orign sql
@@ -75,13 +75,13 @@ public interface DatabaseDialect {
      * @return contain page number param sql
      */
     public String getLimitPageSqlWithOffset(String sql, int startOffset, int pageSize);
-
+    
     /**
      * get database return primary keys.
      * @return
      */
     public String[] getReturnPrimaryKeys();
-
+    
     /**
      * Get the function corresponding to the dialect according to the function name
      * @author Mr.Muzhi

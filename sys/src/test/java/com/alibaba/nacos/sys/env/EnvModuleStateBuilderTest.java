@@ -42,8 +42,10 @@ class EnvModuleStateBuilderTest {
     void testBuild() {
         ModuleState actual = new EnvModuleStateBuilder().build();
         assertEquals(Constants.SYS_MODULE, actual.getModuleName());
-        assertEquals(EnvUtil.STANDALONE_MODE_ALONE, actual.getStates().get(Constants.STARTUP_MODE_STATE));
-        assertNull(actual.getStates().get(Constants.FUNCTION_MODE_STATE), EnvUtil.FUNCTION_MODE_NAMING);
+        assertEquals(EnvUtil.STANDALONE_MODE_ALONE,
+            actual.getStates().get(Constants.STARTUP_MODE_STATE));
+        assertNull(actual.getStates().get(Constants.FUNCTION_MODE_STATE),
+            EnvUtil.FUNCTION_MODE_NAMING);
         assertEquals(VersionUtils.version, actual.getStates().get(Constants.NACOS_VERSION));
     }
 }

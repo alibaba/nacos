@@ -86,13 +86,17 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
     
     @Override
     protected void getConfigFromEnv() {
-        maxPushRetryTimes = EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
+        maxPushRetryTimes =
+            EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
         pushTimeout = EnvUtil.getProperty("nacos.config.push.timeout", Long.class, 3000L);
         batchSize = EnvUtil.getProperty("nacos.config.push.batchSize", Integer.class, 20);
-        derbyOpsEnabled = EnvUtil.getProperty("nacos.config.derby.ops.enabled", Boolean.class, false);
+        derbyOpsEnabled =
+            EnvUtil.getProperty("nacos.config.derby.ops.enabled", Boolean.class, false);
         
-        maxPatternCount = EnvUtil.getProperty("nacos.config.fuzzy.watch.max.pattern.count", Integer.class, 20);
-        maxMatchedConfigCount = EnvUtil.getProperty("nacos.config.fuzzy.watch.max.pattern.match.config.count",
+        maxPatternCount =
+            EnvUtil.getProperty("nacos.config.fuzzy.watch.max.pattern.count", Integer.class, 20);
+        maxMatchedConfigCount =
+            EnvUtil.getProperty("nacos.config.fuzzy.watch.max.pattern.match.config.count",
                 Integer.class, 500);
     }
     
@@ -103,7 +107,8 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
     
     @Override
     public String toString() {
-        return "ConfigCommonConfig{" + "maxPushRetryTimes=" + maxPushRetryTimes + ", derbyOpsEnabled=" + derbyOpsEnabled
-                + '}';
+        return "ConfigCommonConfig{" + "maxPushRetryTimes=" + maxPushRetryTimes
+            + ", derbyOpsEnabled=" + derbyOpsEnabled
+            + '}';
     }
 }

@@ -30,31 +30,36 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  *
  * @author Long Yu
  **/
-public class HistoryConfigInfoMapperByPostgresql extends AbstractMapper implements HistoryConfigInfoMapper {
+public class HistoryConfigInfoMapperByPostgresql extends AbstractMapper
+    implements HistoryConfigInfoMapper {
     
     @Override
     public MapperResult removeConfigHistory(MapperContext context) {
-        String sql = "WITH temp_table as (SELECT id FROM his_config_info WHERE gmt_modified < ? LIMIT ? ) "
+        String sql =
+            "WITH temp_table as (SELECT id FROM his_config_info WHERE gmt_modified < ? LIMIT ? ) "
                 + "DELETE FROM his_config_info WHERE id in (SELECT id FROM temp_table) ";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+        return new MapperResult(sql,
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
                 context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
-
+    
     @Override
     public MapperResult pageFindConfigHistoryFetchRows(MapperContext context) {
         String sql =
-                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,ext_info,publish_type,gray_name,gmt_create,gmt_modified "
+            "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,ext_info,publish_type,gray_name,gmt_create,gmt_modified "
                 + "FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC LIMIT "
                 + context.getPageSize() + " OFFSET " + context.getStartRow();
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
-                context.getWhereParameter(FieldConstant.GROUP_ID), context.getWhereParameter(FieldConstant.TENANT_ID)));
+        return new MapperResult(sql,
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
+                context.getWhereParameter(FieldConstant.GROUP_ID),
+                context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
     
     @Override
     public String getDataSource() {
         return DatabaseTypeConstant.POSTGRESQL;
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedPostgresqlFunctionEnum.getFunctionByName(functionName);

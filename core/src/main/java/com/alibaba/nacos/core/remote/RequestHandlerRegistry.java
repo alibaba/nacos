@@ -74,7 +74,8 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
     
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        Map<String, RequestHandler> beansOfType = event.getApplicationContext().getBeansOfType(RequestHandler.class);
+        Map<String, RequestHandler> beansOfType =
+            event.getApplicationContext().getBeansOfType(RequestHandler.class);
         Collection<RequestHandler> values = beansOfType.values();
         for (RequestHandler requestHandler : values) {
             
@@ -93,16 +94,19 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
             //register tps control.
             try {
                 Method method = clazz.getMethod("handle", Request.class, RequestMeta.class);
-                if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
+                if (method.isAnnotationPresent(TpsControl.class)
+                    && TpsControlConfig.isTpsControlEnabled()) {
                     TpsControl tpsControl = method.getAnnotation(TpsControl.class);
                     String pointName = tpsControl.pointName();
-                    ControlManagerCenter.getInstance().getTpsControlManager().registerTpsPoint(pointName);
+                    ControlManagerCenter.getInstance().getTpsControlManager()
+                        .registerTpsPoint(pointName);
                 }
             } catch (Exception e) {
                 //ignore.
             }
             
-            Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
+            Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass())
+                .getActualTypeArguments()[0];
             
             //register invoke source.
             try {

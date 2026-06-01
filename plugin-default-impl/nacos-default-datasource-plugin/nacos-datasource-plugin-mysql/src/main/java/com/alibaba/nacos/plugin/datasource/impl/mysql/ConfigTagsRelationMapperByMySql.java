@@ -34,7 +34,8 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql implements ConfigTagsRelationMapper {
+public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql
+    implements ConfigTagsRelationMapper {
     
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
@@ -79,7 +80,8 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
         innerWhere.append(") ");
         
         // 使用子查询分离筛选逻辑和标签聚合逻辑
-        final String sql = "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.type,c.encrypted_data_key,c.c_desc,"
+        final String sql =
+            "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.type,c.encrypted_data_key,c.c_desc,"
                 + "GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags "
                 + "FROM ("
                 + "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc "
@@ -104,7 +106,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
         
         // 构建内层查询：根据标签条件筛选配置
         WhereBuilder innerWhere = new WhereBuilder(
-                "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
+            "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
                 + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
         
         innerWhere.like("a.tenant_id", tenant);
@@ -139,7 +141,8 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
         MapperResult innerResult = innerWhere.build();
         
         // 构建外层查询：获取筛选出的配置的完整标签信息
-        final String sql = "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,c.type,c.c_desc,"
+        final String sql =
+            "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,c.type,c.c_desc,"
                 + "GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags "
                 + "FROM (" + innerResult.getSql() + ") c "
                 + "LEFT JOIN config_tags_relation d ON c.id=d.id "

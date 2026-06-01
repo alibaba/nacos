@@ -35,100 +35,113 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.HashMap;
 import java.util.Map;
 
-final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService implements McpMaintainerService {
-
+final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
+    implements McpMaintainerService {
+    
     private static final String SEARCH_BLUR = "blur";
-
+    
     private static final String SEARCH_ACCURATE = "accurate";
-
+    
     McpMaintainerServiceImpl(AiMaintainerHttpContext context) {
         super(context);
     }
-
+    
     @Override
-    public Page<McpServerBasicInfo> listMcpServer(String namespaceId, String mcpName, int pageNo, int pageSize)
-            throws NacosException {
+    public Page<McpServerBasicInfo> listMcpServer(String namespaceId, String mcpName, int pageNo,
+        int pageSize)
+        throws NacosException {
         return queryServerPage(namespaceId, mcpName, pageNo, pageSize, SEARCH_ACCURATE);
     }
-
+    
     @Override
-    public Page<McpServerBasicInfo> searchMcpServer(String namespaceId, String mcpName, int pageNo, int pageSize)
-            throws NacosException {
+    public Page<McpServerBasicInfo> searchMcpServer(String namespaceId, String mcpName, int pageNo,
+        int pageSize)
+        throws NacosException {
         return queryServerPage(namespaceId, mcpName, pageNo, pageSize, SEARCH_BLUR);
     }
-
+    
     @Override
-    public McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String mcpId, String version)
-            throws NacosException {
+    public McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String mcpId,
+        String version)
+        throws NacosException {
         namespaceId = resolveMcpNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(4);
         params.put("mcpName", mcpName);
         params.put("mcpId", mcpId);
         params.put("version", version);
         params.put("namespaceId", namespaceId);
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
                 .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<McpServerDetailInfo> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<McpServerDetailInfo>>() {
-                });
+            new TypeReference<Result<McpServerDetailInfo>>() {
+            });
         return result.getData();
     }
-
+    
     @Override
     public String createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpec,
-            McpToolSpecification toolSpec, McpEndpointSpec endpointSpec) throws NacosException {
+        McpToolSpecification toolSpec, McpEndpointSpec endpointSpec) throws NacosException {
         namespaceId = resolveMcpNamespace(namespaceId);
         Map<String, String> params = buildFullParameters(serverSpec, toolSpec, endpointSpec);
         params.put("namespaceId", namespaceId);
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
                 .setHttpMethod(HttpMethod.POST).setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            });
         return result.getData();
     }
-
+    
     @Override
-    public boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest, McpServerBasicInfo serverSpec,
-            McpToolSpecification toolSpec, McpEndpointSpec endpointSpec, boolean overrideExisting)
-            throws NacosException {
+    public boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest,
+        McpServerBasicInfo serverSpec,
+        McpToolSpecification toolSpec, McpEndpointSpec endpointSpec, boolean overrideExisting)
+        throws NacosException {
         namespaceId = resolveMcpNamespace(namespaceId);
         Map<String, String> params = buildFullParameters(serverSpec, toolSpec, endpointSpec);
         params.put("latest", String.valueOf(isLatest));
         params.put("namespaceId", namespaceId);
         params.put("overrideExisting", String.valueOf(overrideExisting));
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
                 .setHttpMethod(HttpMethod.PUT).setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-
+    
     @Override
     public boolean deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version)
-            throws NacosException {
+        throws NacosException {
         namespaceId = resolveMcpNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(4);
         params.put("mcpName", mcpName);
         params.put("mcpId", mcpId);
         params.put("version", version);
         params.put("namespaceId", namespaceId);
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
                 .setHttpMethod(HttpMethod.DELETE).setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-
-    private Page<McpServerBasicInfo> queryServerPage(String namespaceId, String mcpName, int pageNo, int pageSize,
-            String search) throws NacosException {
+    
+    private Page<McpServerBasicInfo> queryServerPage(String namespaceId, String mcpName, int pageNo,
+        int pageSize,
+        String search) throws NacosException {
         namespaceId = resolveMcpNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(8);
         params.put("pageNo", String.valueOf(pageNo));
@@ -136,18 +149,21 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         params.put("search", search);
         params.put("mcpName", mcpName);
         params.put("namespaceId", namespaceId);
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
-                .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH + "/list")
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH + "/list")
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Page<McpServerBasicInfo>> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<Page<McpServerBasicInfo>>>() {
-                });
+            new TypeReference<Result<Page<McpServerBasicInfo>>>() {
+            });
         return result.getData();
     }
-
-    private Map<String, String> buildFullParameters(McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
-            McpEndpointSpec endpointSpec) {
+    
+    private Map<String, String> buildFullParameters(McpServerBasicInfo serverSpec,
+        McpToolSpecification toolSpec,
+        McpEndpointSpec endpointSpec) {
         Map<String, String> params = new HashMap<>(4);
         params.put("mcpName", serverSpec.getName());
         params.put("serverSpecification", JacksonUtils.toJson(serverSpec));
@@ -159,7 +175,7 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         }
         return params;
     }
-
+    
     private String resolveMcpNamespace(String namespaceId) {
         if (com.alibaba.nacos.common.utils.StringUtils.isBlank(namespaceId)) {
             return AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;

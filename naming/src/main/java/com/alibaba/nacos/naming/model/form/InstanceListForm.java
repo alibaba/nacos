@@ -53,7 +53,7 @@ public class InstanceListForm implements NacosForm {
         fillDefaultValue();
         if (StringUtils.isBlank(serviceName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'serviceName' type String is not present");
+                "Required parameter 'serviceName' type String is not present");
         }
     }
     
@@ -124,9 +124,11 @@ public class InstanceListForm implements NacosForm {
             return false;
         }
         InstanceListForm that = (InstanceListForm) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(groupName, that.groupName)
-                && Objects.equals(serviceName, that.serviceName) && Objects.equals(clusterName, that.clusterName)
-                && Objects.equals(healthyOnly, that.healthyOnly);
+        return Objects.equals(namespaceId, that.namespaceId)
+            && Objects.equals(groupName, that.groupName)
+            && Objects.equals(serviceName, that.serviceName)
+            && Objects.equals(clusterName, that.clusterName)
+            && Objects.equals(healthyOnly, that.healthyOnly);
     }
     
     @Override

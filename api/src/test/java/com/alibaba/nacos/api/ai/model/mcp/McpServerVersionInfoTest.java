@@ -40,7 +40,8 @@ class McpServerVersionInfoTest extends BasicRequestTest {
         mcpServerVersionInfo.getVersionDetail().setVersion("1.0.0");
         mcpServerVersionInfo.getVersionDetail().setRelease_date("2023-07-01T00:00:00Z");
         mcpServerVersionInfo.getVersionDetail().setIs_latest(true);
-        mcpServerVersionInfo.setVersions(Collections.singletonList(mcpServerVersionInfo.getVersionDetail()));
+        mcpServerVersionInfo
+            .setVersions(Collections.singletonList(mcpServerVersionInfo.getVersionDetail()));
         
         String json = mapper.writeValueAsString(mcpServerVersionInfo);
         assertNotNull(json);
@@ -56,17 +57,20 @@ class McpServerVersionInfoTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"b646506e-901b-41a1-8790-a4378d11055e\",\"name\":\"testVersionInfo\",\"versionDetail\":"
+        String json =
+            "{\"id\":\"b646506e-901b-41a1-8790-a4378d11055e\",\"name\":\"testVersionInfo\",\"versionDetail\":"
                 + "{\"version\":\"1.0.0\",\"release_date\":\"2023-07-01T00:00:00Z\",\"is_latest\":true},\"enabled\":true,"
                 + "\"latestPublishedVersion\":\"1.0.0\",\"versionDetails\":[{\"version\":\"1.0.0\",\"release_date\":"
                 + "\"2023-07-01T00:00:00Z\",\"is_latest\":true}]}";
-        McpServerVersionInfo mcpServerVersionInfo = mapper.readValue(json, McpServerVersionInfo.class);
+        McpServerVersionInfo mcpServerVersionInfo =
+            mapper.readValue(json, McpServerVersionInfo.class);
         assertNotNull(mcpServerVersionInfo);
         assertEquals("b646506e-901b-41a1-8790-a4378d11055e", mcpServerVersionInfo.getId());
         assertEquals("testVersionInfo", mcpServerVersionInfo.getName());
         assertNotNull(mcpServerVersionInfo.getVersionDetail());
         assertEquals("1.0.0", mcpServerVersionInfo.getVersionDetail().getVersion());
-        assertEquals("2023-07-01T00:00:00Z", mcpServerVersionInfo.getVersionDetail().getRelease_date());
+        assertEquals("2023-07-01T00:00:00Z",
+            mcpServerVersionInfo.getVersionDetail().getRelease_date());
         assertTrue(mcpServerVersionInfo.getVersionDetail().getIs_latest());
         assertTrue(mcpServerVersionInfo.isEnabled());
         assertEquals("1.0.0", mcpServerVersionInfo.getLatestPublishedVersion());

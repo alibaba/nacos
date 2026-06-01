@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { configApi } from '@/api/config';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { MonacoEditor } from '@/components/config/MonacoEditor';
+import { DiffEditor } from '@/components/config/DiffEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,11 +31,46 @@ import {
 } from '@/components/ui/select';
 import { CONFIG_TYPES, type ConfigType, type ConfigBetaInfo, type Config } from '@/types/config';
 
+interface ConfigEditorSnapshot {
+  dataId: string;
+  groupName: string;
+  content: string;
+  desc: string;
+  appName: string;
+  configTags: string;
+  type: ConfigType;
+}
+
+const isSameConfigEditorSnapshot = (
+  current: ConfigEditorSnapshot,
+  loaded: ConfigEditorSnapshot,
+) => current.dataId === loaded.dataId
+  && current.groupName === loaded.groupName
+  && current.content === loaded.content
+  && current.desc === loaded.desc
+  && current.appName === loaded.appName
+  && current.configTags === loaded.configTags
+  && current.type === loaded.type;
+
+const getConfigurationManagementPath = (namespaceId: string) => {
+  const params = new URLSearchParams();
+  if (namespaceId) {
+    params.set('namespace', namespaceId);
+  }
+  const query = params.toString();
+  return query ? `/configurationManagement?${query}` : '/configurationManagement';
+};
+
+const isConfigLoadAuthFailure = (error: unknown) => {
+  const status = (error as { response?: { status?: number } }).response?.status;
+  return status === 401 || status === 403;
+};
+
 export default function ConfigEditorPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t } = useTranslation();
-  const { currentNamespace } = useNamespaceStore();
+  const { currentNamespace, setNamespaceChangeGuard } = useNamespaceStore();
 
   const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -56,19 +92,54 @@ export default function ConfigEditorPage() {
   const [betaLoading, setBetaLoading] = useState(false);
   const [betaPublishing, setBetaPublishing] = useState(false);
   const [stopBetaDialogOpen, setStopBetaDialogOpen] = useState(false);
+  const [loadedSnapshot, setLoadedSnapshot] = useState<ConfigEditorSnapshot | null>(null);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
 
   const urlDataId = searchParams.get('dataId') || '';
   const urlGroup = searchParams.get('group') || '';
   const urlNamespace = searchParams.get('namespace') || currentNamespace;
   const isEditing = !!(urlDataId && urlGroup);
 
-  useEffect(() => {
-    if (urlDataId && urlGroup) {
-      loadConfig();
-    }
-  }, [urlDataId, urlGroup, urlNamespace]);
+  const currentSnapshot = useMemo<ConfigEditorSnapshot>(() => ({
+    dataId,
+    groupName,
+    content,
+    desc,
+    appName,
+    configTags,
+    type,
+  }), [appName, configTags, content, dataId, desc, groupName, type]);
 
-  const loadConfig = async () => {
+  const hasUnsavedChanges = loadedSnapshot !== null
+    && !isSameConfigEditorSnapshot(currentSnapshot, loadedSnapshot);
+
+  const clearEditorState = useCallback(() => {
+    setDataId('');
+    setGroupName('');
+    setContent('');
+    setDesc('');
+    setAppName('');
+    setConfigTags('');
+    setType('text');
+    setActiveTab('production');
+    setBetaContent('');
+    setBetaIps('');
+    setBetaExists(false);
+    setBetaLoading(false);
+    setStopBetaDialogOpen(false);
+    setLoadedSnapshot(null);
+    setPublishConfirmOpen(false);
+  }, []);
+
+  const redirectToConfigList = useCallback((showMissingMessage = false) => {
+    clearEditorState();
+    if (showMissingMessage) {
+      toast.error(t('config.notFoundInNamespace'));
+    }
+    navigate(getConfigurationManagementPath(urlNamespace), { replace: true });
+  }, [clearEditorState, navigate, t, urlNamespace]);
+
+  const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
       const result = await configApi.get({
@@ -79,22 +150,61 @@ export default function ConfigEditorPage() {
       // Response interceptor already unwraps response.data
       const config = (result as unknown as { data: Config }).data;
       if (config) {
-        setDataId(config.dataId);
-        setGroupName(config.groupName);
-        setContent(config.content || '');
-        setDesc(config.desc || '');
-        setAppName(config.appName || '');
-        setConfigTags(config.configTags || '');
-        setType(config.type || 'text');
+        const nextSnapshot: ConfigEditorSnapshot = {
+          dataId: config.dataId,
+          groupName: config.groupName,
+          content: config.content || '',
+          desc: config.desc || '',
+          appName: config.appName || '',
+          configTags: config.configTags || '',
+          type: config.type || 'text',
+        };
+        setDataId(nextSnapshot.dataId);
+        setGroupName(nextSnapshot.groupName);
+        setContent(nextSnapshot.content);
+        setDesc(nextSnapshot.desc);
+        setAppName(nextSnapshot.appName);
+        setConfigTags(nextSnapshot.configTags);
+        setType(nextSnapshot.type);
+        setActiveTab('production');
+        setBetaContent('');
+        setBetaIps('');
+        setBetaExists(false);
+        setLoadedSnapshot(nextSnapshot);
       } else {
-        toast.error(t('common.failed'));
+        redirectToConfigList(true);
       }
-    } catch {
-      toast.error(t('common.failed'));
+    } catch (error) {
+      if (isConfigLoadAuthFailure(error)) {
+        clearEditorState();
+        return;
+      }
+      redirectToConfigList();
     } finally {
       setLoading(false);
     }
-  };
+  }, [clearEditorState, redirectToConfigList, urlDataId, urlGroup, urlNamespace]);
+
+  useEffect(() => {
+    if (urlDataId && urlGroup) {
+      loadConfig();
+    }
+  }, [loadConfig, urlDataId, urlGroup]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setNamespaceChangeGuard(null);
+      return () => setNamespaceChangeGuard(null);
+    }
+
+    setNamespaceChangeGuard(() => {
+      if (!hasUnsavedChanges) {
+        return true;
+      }
+      return window.confirm(t('config.unsavedNamespaceSwitchConfirm'));
+    });
+    return () => setNamespaceChangeGuard(null);
+  }, [hasUnsavedChanges, isEditing, setNamespaceChangeGuard, t]);
 
   const loadBeta = async () => {
     setBetaLoading(true);
@@ -141,12 +251,7 @@ export default function ConfigEditorPage() {
     navigate(`/configdetail?dataId=${encodeURIComponent(urlDataId)}&group=${encodeURIComponent(urlGroup)}&namespace=${encodeURIComponent(urlNamespace)}`);
   };
 
-  const handleSubmit = async () => {
-    if (!content.trim()) {
-      toast.error(t('config.contentRequired'));
-      return;
-    }
-
+  const publishConfig = async () => {
     setPublishing(true);
     try {
       await configApi.publish({
@@ -160,12 +265,27 @@ export default function ConfigEditorPage() {
         namespaceId: urlNamespace,
       });
       toast.success(t('config.publishSuccess'));
+      setPublishConfirmOpen(false);
       navigate(`/configdetail?dataId=${encodeURIComponent(dataId)}&group=${encodeURIComponent(groupName)}&namespace=${encodeURIComponent(urlNamespace)}`);
     } catch {
       toast.error(t('config.publishFailed'));
     } finally {
       setPublishing(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!content.trim()) {
+      toast.error(t('config.contentRequired'));
+      return;
+    }
+
+    if (isEditing && loadedSnapshot && loadedSnapshot.content !== content) {
+      setPublishConfirmOpen(true);
+      return;
+    }
+
+    await publishConfig();
   };
 
   const handleBetaPublish = async () => {
@@ -429,6 +549,59 @@ export default function ConfigEditorPage() {
             </Button>
             <Button variant="destructive" onClick={handleStopBeta}>
               {t('common.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Publish Diff Confirmation Dialog */}
+      <Dialog
+        open={publishConfirmOpen}
+        onOpenChange={(open) => {
+          if (!publishing) {
+            setPublishConfirmOpen(open);
+          }
+        }}
+      >
+        <DialogContent className="max-w-[90vw] w-[90vw]">
+          <DialogHeader>
+            <DialogTitle>{t('config.publishConfirmTitle')}</DialogTitle>
+            <DialogDescription>{t('config.publishConfirmDescription')}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 rounded-md border bg-muted/40 p-4 text-sm md:grid-cols-3">
+            <div>
+              <div className="text-muted-foreground">{t('config.dataId')}</div>
+              <div className="font-medium break-all">{dataId}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">{t('config.group')}</div>
+              <div className="font-medium break-all">{groupName}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">{t('common.namespace')}</div>
+              <div className="font-medium break-all">{urlNamespace || 'public'}</div>
+            </div>
+          </div>
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{t('config.currentPublishedContent')}</span>
+            <span>{t('config.pendingPublishContent')}</span>
+          </div>
+          <DiffEditor
+            original={loadedSnapshot?.content || ''}
+            modified={content}
+            language={type}
+            height="500px"
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPublishConfirmOpen(false)}
+              disabled={publishing}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={publishConfig} disabled={publishing}>
+              {publishing ? t('common.loading') : t('config.publish')}
             </Button>
           </DialogFooter>
         </DialogContent>

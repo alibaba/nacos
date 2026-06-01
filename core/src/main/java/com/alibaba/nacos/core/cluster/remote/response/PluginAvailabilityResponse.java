@@ -26,36 +26,36 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @since 3.2.0
  */
 public class PluginAvailabilityResponse extends Response {
-
+    
     private String pluginId;
-
+    
     private boolean available;
-
+    
     private java.util.Map<String, Boolean> pluginAvailabilityMap;
-
+    
     public PluginAvailabilityResponse() {
     }
-
+    
     public String getPluginId() {
         return pluginId;
     }
-
+    
     public void setPluginId(String pluginId) {
         this.pluginId = pluginId;
     }
-
+    
     public boolean isAvailable() {
         return available;
     }
-
+    
     public void setAvailable(boolean available) {
         this.available = available;
     }
-
+    
     public java.util.Map<String, Boolean> getPluginAvailabilityMap() {
         return pluginAvailabilityMap;
     }
-
+    
     public void setPluginAvailabilityMap(java.util.Map<String, Boolean> pluginAvailabilityMap) {
         this.pluginAvailabilityMap = pluginAvailabilityMap;
     }

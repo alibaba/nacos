@@ -82,30 +82,37 @@ class ServiceDetailInfoTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String jsonString = "{\"namespaceId\":\"testNs\",\"serviceName\":\"testS\",\"groupName\":\"testG\","
+        String jsonString =
+            "{\"namespaceId\":\"testNs\",\"serviceName\":\"testS\",\"groupName\":\"testG\","
                 + "\"clusterMap\":{\"testC\":{\"clusterName\":\"testC\",\"healthChecker\":{\"type\":\"NONE\"},"
                 + "\"metadata\":{\"testKey\":\"testValue\"},\"hosts\":[],\"healthyCheckPort\":8080,\"useInstancePortForCheck\":false}},"
                 + "\"metadata\":{\"testKey\":\"testValue\"},"
                 + "\"protectThreshold\":0.5,\"selector\":null,\"ephemeral\":false}";
-        ServiceDetailInfo serviceDetailInfo1 = mapper.readValue(jsonString, ServiceDetailInfo.class);
+        ServiceDetailInfo serviceDetailInfo1 =
+            mapper.readValue(jsonString, ServiceDetailInfo.class);
         assertEquals(serviceDetailInfo.getNamespaceId(), serviceDetailInfo1.getNamespaceId());
         assertEquals(serviceDetailInfo.getGroupName(), serviceDetailInfo1.getGroupName());
         assertEquals(serviceDetailInfo.getServiceName(), serviceDetailInfo1.getServiceName());
         assertEquals(serviceDetailInfo.isEphemeral(), serviceDetailInfo1.isEphemeral());
-        assertEquals(serviceDetailInfo.getProtectThreshold(), serviceDetailInfo1.getProtectThreshold());
+        assertEquals(serviceDetailInfo.getProtectThreshold(),
+            serviceDetailInfo1.getProtectThreshold());
         assertEquals(serviceDetailInfo.getMetadata(), serviceDetailInfo1.getMetadata());
         assertEquals(serviceDetailInfo.getSelector(), serviceDetailInfo1.getSelector());
-        assertEquals(serviceDetailInfo.getClusterMap().size(), serviceDetailInfo1.getClusterMap().size());
-        assertEquals(serviceDetailInfo.getClusterMap().keySet(), serviceDetailInfo1.getClusterMap().keySet());
+        assertEquals(serviceDetailInfo.getClusterMap().size(),
+            serviceDetailInfo1.getClusterMap().size());
+        assertEquals(serviceDetailInfo.getClusterMap().keySet(),
+            serviceDetailInfo1.getClusterMap().keySet());
         for (Map.Entry<String, ClusterInfo> entry : serviceDetailInfo.getClusterMap().entrySet()) {
             ClusterInfo clusterInfo = entry.getValue();
             ClusterInfo clusterInfo1 = serviceDetailInfo1.getClusterMap().get(entry.getKey());
             assertEquals(clusterInfo.getClusterName(), clusterInfo1.getClusterName());
-            assertEquals(clusterInfo.getHealthChecker().getType(), clusterInfo1.getHealthChecker().getType());
+            assertEquals(clusterInfo.getHealthChecker().getType(),
+                clusterInfo1.getHealthChecker().getType());
             assertEquals(clusterInfo.getMetadata(), clusterInfo1.getMetadata());
             assertEquals(clusterInfo.getHosts(), clusterInfo1.getHosts());
             assertEquals(clusterInfo.getHealthyCheckPort(), clusterInfo1.getHealthyCheckPort());
-            assertEquals(clusterInfo.isUseInstancePortForCheck(), clusterInfo1.isUseInstancePortForCheck());
+            assertEquals(clusterInfo.isUseInstancePortForCheck(),
+                clusterInfo1.isUseInstancePortForCheck());
         }
     }
     

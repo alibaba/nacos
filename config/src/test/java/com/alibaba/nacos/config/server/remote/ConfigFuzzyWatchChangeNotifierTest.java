@@ -72,7 +72,8 @@ public class ConfigFuzzyWatchChangeNotifierTest {
     void setUp() throws IOException {
         tMockedStatic = Mockito.mockStatic(ConfigExecutor.class);
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
-        configFuzzyWatchChangeNotifier = new ConfigFuzzyWatchChangeNotifier(connectionManager, rpcPushService,
+        configFuzzyWatchChangeNotifier =
+            new ConfigFuzzyWatchChangeNotifier(connectionManager, rpcPushService,
                 configFuzzyWatchContextService);
     }
     
@@ -80,15 +81,16 @@ public class ConfigFuzzyWatchChangeNotifierTest {
     void testOnConfigAdd() {
         
         String groupKey = GroupKey.getKeyTenant("data1234", "group", "tnnt1234");
-        when(configFuzzyWatchContextService.syncGroupKeyContext(eq(groupKey), eq(CONFIG_CHANGED))).thenReturn(true);
+        when(configFuzzyWatchContextService.syncGroupKeyContext(eq(groupKey), eq(CONFIG_CHANGED)))
+            .thenReturn(true);
         
         CacheItem cacheItem = Mockito.mock(CacheItem.class);
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentCache(eq(groupKey)))
-                .thenReturn(cacheItem);
+            .thenReturn(cacheItem);
         
         String connectionId = "123456";
         when(configFuzzyWatchContextService.getMatchedClients(eq(groupKey))).thenReturn(
-                Collections.singleton(connectionId));
+            Collections.singleton(connectionId));
         GrpcConnection grpcConnection = Mockito.mock(GrpcConnection.class);
         when(connectionManager.getConnection(eq(connectionId))).thenReturn(grpcConnection);
         
@@ -96,8 +98,10 @@ public class ConfigFuzzyWatchChangeNotifierTest {
         configFuzzyWatchChangeNotifier.onEvent(localDataChangeEvent);
         
         tMockedStatic.verify(
-                () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchChangeNotifyTask.class), eq(0L),
-                        eq(TimeUnit.SECONDS)), times(1));
+            () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchChangeNotifyTask.class),
+                eq(0L),
+                eq(TimeUnit.SECONDS)),
+            times(1));
         
     }
     
@@ -105,23 +109,26 @@ public class ConfigFuzzyWatchChangeNotifierTest {
     void testOnEmptyConnection() {
         
         String groupKey = GroupKey.getKeyTenant("data1234", "group", "tnnt1234");
-        when(configFuzzyWatchContextService.syncGroupKeyContext(eq(groupKey), eq(CONFIG_CHANGED))).thenReturn(true);
+        when(configFuzzyWatchContextService.syncGroupKeyContext(eq(groupKey), eq(CONFIG_CHANGED)))
+            .thenReturn(true);
         
         CacheItem cacheItem = Mockito.mock(CacheItem.class);
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentCache(eq(groupKey)))
-                .thenReturn(cacheItem);
+            .thenReturn(cacheItem);
         
         String connectionId = "123456";
         when(configFuzzyWatchContextService.getMatchedClients(eq(groupKey))).thenReturn(
-                Collections.singleton(connectionId));
+            Collections.singleton(connectionId));
         when(connectionManager.getConnection(eq(connectionId))).thenReturn(null);
         
         LocalDataChangeEvent localDataChangeEvent = new LocalDataChangeEvent(groupKey);
         configFuzzyWatchChangeNotifier.onEvent(localDataChangeEvent);
         
         tMockedStatic.verify(
-                () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchChangeNotifyTask.class), eq(0L),
-                        eq(TimeUnit.SECONDS)), times(0));
+            () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchChangeNotifyTask.class),
+                eq(0L),
+                eq(TimeUnit.SECONDS)),
+            times(0));
         
     }
     

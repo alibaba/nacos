@@ -29,12 +29,12 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class TracePluginProvider implements PluginProvider<NacosTraceSubscriber> {
-
+    
     @Override
     public PluginType getPluginType() {
         return PluginType.TRACE;
     }
-
+    
     @Override
     public Map<String, NacosTraceSubscriber> getAllPlugins() {
         return NacosTracePluginManager.getInstance().getAllPlugins();

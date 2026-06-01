@@ -57,11 +57,13 @@ class InstanceRequestHandlerTest {
         instanceRequest.setInstance(instance);
         RequestMeta requestMeta = new RequestMeta();
         instanceRequestHandler.handle(instanceRequest, requestMeta);
-        Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(),
+            Mockito.anyString());
         
         instanceRequest.setType(NamingRemoteConstants.DE_REGISTER_INSTANCE);
         instanceRequestHandler.handle(instanceRequest, requestMeta);
-        Mockito.verify(clientOperationService).deregisterInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(clientOperationService).deregisterInstance(Mockito.any(), Mockito.any(),
+            Mockito.anyString());
         
         instanceRequest.setType("xxx");
         try {

@@ -60,12 +60,14 @@ class AgentCardVersionInfoTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"protocolVersion\":\"1.0\",\"name\":\"test agent\",\"description\":\"test description\","
+        String json =
+            "{\"protocolVersion\":\"1.0\",\"name\":\"test agent\",\"description\":\"test description\","
                 + "\"version\":\"1.0.0\",\"iconUrl\":\"http://test.com/icon.png\","
                 + "\"latestPublishedVersion\":\"2.0.0\",\"registrationType\":\"URL\","
                 + "\"versionDetails\":[{\"version\":\"1.0.0\",\"latest\":true}]}";
         
-        AgentCardVersionInfo agentCardVersionInfo = mapper.readValue(json, AgentCardVersionInfo.class);
+        AgentCardVersionInfo agentCardVersionInfo =
+            mapper.readValue(json, AgentCardVersionInfo.class);
         assertNotNull(agentCardVersionInfo);
         assertEquals("1.0", agentCardVersionInfo.getProtocolVersion());
         assertEquals("test agent", agentCardVersionInfo.getName());

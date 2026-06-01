@@ -71,7 +71,8 @@ public class TopNConfig extends AbstractDynamicConfig {
     
     @Override
     public String toString() {
-        return "TopNConfig{" + "enabled=" + enabled + ", topNCount=" + countOfTopN + ", internalMs=" + internalMs + '}';
+        return "TopNConfig{" + "enabled=" + enabled + ", topNCount=" + countOfTopN + ", internalMs="
+            + internalMs + '}';
     }
     
     public static TopNConfig getInstance() {

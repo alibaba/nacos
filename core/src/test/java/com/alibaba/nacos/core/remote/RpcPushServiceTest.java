@@ -48,34 +48,35 @@ import static org.mockito.Mockito.verify;
  */
 @ExtendWith(MockitoExtension.class)
 class RpcPushServiceTest {
-
+    
     @InjectMocks
     private RpcPushService rpcPushService;
-
+    
     @Mock
     private ConnectionManager connectionManager;
-
+    
     @Mock
     private GrpcConnection grpcConnection;
-
+    
     private String connectId = UUID.randomUUID().toString();
-
+    
     @Test
     void testPushWithCallbackWhenConnectionNull() {
         try {
             Mockito.when(connectionManager.getConnection(Mockito.any())).thenReturn(null);
             final boolean[] onSuccessCalled = {false};
             rpcPushService.pushWithCallback(connectId, null, new PushCallBack() {
+                
                 @Override
                 public long getTimeout() {
                     return 0;
                 }
-
+                
                 @Override
                 public void onSuccess() {
                     onSuccessCalled[0] = true;
                 }
-
+                
                 @Override
                 public void onFail(Throwable e) {
                     fail(e.getMessage());
@@ -87,7 +88,7 @@ class RpcPushServiceTest {
             fail(e.getMessage());
         }
     }
-
+    
     @Test
     void testPushWithCallbackWhenConnectionNonNullResponseSuccess() throws Exception {
         Mockito.when(connectionManager.getConnection(connectId)).thenReturn(grpcConnection);
@@ -98,16 +99,17 @@ class RpcPushServiceTest {
         }).when(grpcConnection).asyncRequest(any(), any());
         final boolean[] onSuccessCalled = {false};
         rpcPushService.pushWithCallback(connectId, null, new PushCallBack() {
+            
             @Override
             public long getTimeout() {
                 return 1000L;
             }
-
+            
             @Override
             public void onSuccess() {
                 onSuccessCalled[0] = true;
             }
-
+            
             @Override
             public void onFail(Throwable e) {
                 fail(e.getMessage());
@@ -115,7 +117,7 @@ class RpcPushServiceTest {
         }, null);
         assertTrue(onSuccessCalled[0]);
     }
-
+    
     @Test
     void testPushWithCallbackWhenResponseFail() throws Exception {
         Mockito.when(connectionManager.getConnection(connectId)).thenReturn(grpcConnection);
@@ -128,16 +130,17 @@ class RpcPushServiceTest {
         }).when(grpcConnection).asyncRequest(any(), any());
         final boolean[] onFailCalled = {false};
         rpcPushService.pushWithCallback(connectId, null, new PushCallBack() {
+            
             @Override
             public long getTimeout() {
                 return 1000L;
             }
-
+            
             @Override
             public void onSuccess() {
                 fail("expected onFail");
             }
-
+            
             @Override
             public void onFail(Throwable e) {
                 onFailCalled[0] = true;
@@ -145,23 +148,25 @@ class RpcPushServiceTest {
         }, null);
         assertTrue(onFailCalled[0]);
     }
-
+    
     @Test
     void testPushWithCallbackWhenAsyncThrowsConnectionAlreadyClosed() throws Exception {
         Mockito.when(connectionManager.getConnection(connectId)).thenReturn(grpcConnection);
-        doThrow(new ConnectionAlreadyClosedException()).when(grpcConnection).asyncRequest(any(), any());
+        doThrow(new ConnectionAlreadyClosedException()).when(grpcConnection).asyncRequest(any(),
+            any());
         final boolean[] onSuccessCalled = {false};
         rpcPushService.pushWithCallback(connectId, null, new PushCallBack() {
+            
             @Override
             public long getTimeout() {
                 return 1000L;
             }
-
+            
             @Override
             public void onSuccess() {
                 onSuccessCalled[0] = true;
             }
-
+            
             @Override
             public void onFail(Throwable e) {
                 fail(e.getMessage());
@@ -170,23 +175,24 @@ class RpcPushServiceTest {
         assertTrue(onSuccessCalled[0]);
         verify(connectionManager).unregister(connectId);
     }
-
+    
     @Test
     void testPushWithCallbackWhenAsyncThrowsException() throws Exception {
         Mockito.when(connectionManager.getConnection(connectId)).thenReturn(grpcConnection);
         doThrow(new RuntimeException("send error")).when(grpcConnection).asyncRequest(any(), any());
         final boolean[] onFailCalled = {false};
         rpcPushService.pushWithCallback(connectId, null, new PushCallBack() {
+            
             @Override
             public long getTimeout() {
                 return 1000L;
             }
-
+            
             @Override
             public void onSuccess() {
                 fail("expected onFail");
             }
-
+            
             @Override
             public void onFail(Throwable e) {
                 onFailCalled[0] = true;
@@ -194,7 +200,7 @@ class RpcPushServiceTest {
         }, null);
         assertTrue(onFailCalled[0]);
     }
-
+    
     @Test
     void testPushWithCallbackWhenCallbackOnExceptionInvoked() throws Exception {
         Mockito.when(connectionManager.getConnection(connectId)).thenReturn(grpcConnection);
@@ -207,16 +213,17 @@ class RpcPushServiceTest {
         final boolean[] onFailCalled = {false};
         final Throwable[] captured = {null};
         rpcPushService.pushWithCallback(connectId, null, new PushCallBack() {
+            
             @Override
             public long getTimeout() {
                 return 1000L;
             }
-
+            
             @Override
             public void onSuccess() {
                 fail("expected onFail");
             }
-
+            
             @Override
             public void onFail(Throwable e) {
                 onFailCalled[0] = true;
@@ -226,28 +233,29 @@ class RpcPushServiceTest {
         assertTrue(onFailCalled[0]);
         assertTrue(captured[0] == expectedEx);
     }
-
+    
     @Test
     void testPushWithoutAckWhenConnectionNull() {
         Mockito.when(connectionManager.getConnection(connectId)).thenReturn(null);
         rpcPushService.pushWithoutAck(connectId, null);
     }
-
+    
     @Test
     void testPushWithoutAck() {
         Mockito.when(connectionManager.getConnection(Mockito.any())).thenReturn(grpcConnection);
         try {
             Mockito.when(grpcConnection.request(Mockito.any(), Mockito.eq(3000L)))
-                    .thenThrow(ConnectionAlreadyClosedException.class);
+                .thenThrow(ConnectionAlreadyClosedException.class);
             rpcPushService.pushWithoutAck(connectId, null);
-
-            Mockito.when(grpcConnection.request(Mockito.any(), Mockito.eq(3000L))).thenThrow(NacosException.class);
+            
+            Mockito.when(grpcConnection.request(Mockito.any(), Mockito.eq(3000L)))
+                .thenThrow(NacosException.class);
             rpcPushService.pushWithoutAck(connectId, null);
         } catch (Exception e) {
             e.printStackTrace();
             fail(e.getMessage());
         }
-
+        
         try {
             Mockito.when(grpcConnection.request(Mockito.any(), Mockito.eq(3000L))).thenReturn(null);
             rpcPushService.pushWithoutAck(connectId, null);

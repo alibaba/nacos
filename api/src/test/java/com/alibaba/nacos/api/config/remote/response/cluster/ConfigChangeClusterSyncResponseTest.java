@@ -46,6 +46,6 @@ public class ConfigChangeClusterSyncResponseTest extends BasedConfigResponseTest
     
     @Override
     public void testSerializeFailResponse() throws JsonProcessingException {
-    
+        
     }
 }

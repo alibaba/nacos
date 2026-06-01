@@ -48,6 +48,7 @@ class MainLayout extends React.Component {
     getState: PropTypes.func,
     functionMode: PropTypes.string,
     authEnabled: PropTypes.string,
+    aiEnabled: PropTypes.bool,
     children: PropTypes.oneOfType([PropTypes.array, PropTypes.node]),
     consoleUiEnable: PropTypes.string,
     getNotice: PropTypes.func,
@@ -108,7 +109,7 @@ class MainLayout extends React.Component {
   }
 
   defaultOpenKeys() {
-    const MenuData = getMenuData(this.props.functionMode);
+    const MenuData = getMenuData(this.props.functionMode, this.props.aiEnabled);
     for (let i = 0, len = MenuData.length; i < len; i++) {
       const { children } = MenuData[i];
       if (children && children.filter(({ url }) => url === this.props.location.pathname).length) {
@@ -119,7 +120,7 @@ class MainLayout extends React.Component {
 
   isShowGoBack() {
     const urls = [];
-    const MenuData = getMenuData(this.props.functionMode);
+    const MenuData = getMenuData(this.props.functionMode, this.props.aiEnabled);
     MenuData.forEach(item => {
       if (item.url) urls.push(item.url);
       if (item.children) item.children.forEach(({ url }) => urls.push(url));
@@ -133,11 +134,12 @@ class MainLayout extends React.Component {
       version,
       functionMode,
       authEnabled,
+      aiEnabled,
       consoleUiEnable,
       startupMode,
     } = this.props;
     const { visible } = this.state;
-    const MenuData = getMenuData(functionMode);
+    const MenuData = getMenuData(functionMode, aiEnabled);
     return (
       <section
         className="next-shell next-shell-desktop next-shell-brand"

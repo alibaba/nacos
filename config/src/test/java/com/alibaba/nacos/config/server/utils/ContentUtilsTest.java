@@ -26,6 +26,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ContentUtilsTest {
     
     @Test
+    void testVerifyIncrementPubContentNull() {
+        try {
+            ContentUtils.verifyIncrementPubContent(null);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertNotNull(e.toString());
+        }
+    }
+    
+    @Test
     void testVerifyIncrementPubContent() {
         
         String content = "";
@@ -60,6 +70,11 @@ class ContentUtilsTest {
             assertNotNull(e.toString());
         }
         
+    }
+    
+    @Test
+    void testVerifyIncrementPubContentAllowsPlainContent() {
+        ContentUtils.verifyIncrementPubContent("plain-content");
     }
     
     @Test
@@ -100,9 +115,11 @@ class ContentUtilsTest {
         String result = ContentUtils.truncateContent(content);
         assertEquals(content, result);
         
-        String content2 = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+        String content2 =
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
         String result2 = ContentUtils.truncateContent(content2);
-        String expected = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv...";
+        String expected =
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv...";
         assertEquals(expected, result2);
         
         assertEquals("", ContentUtils.truncateContent(null));

@@ -23,6 +23,7 @@ package com.alibaba.nacos.plugin.control.tps;
  * @version $Id: MonitorType.java, v 0.1 2021年01月12日 20:38 PM liuzunfei Exp $
  */
 public enum MonitorType {
+    
     // monitor mode.
     MONITOR("monitor", "only monitor ,not reject  request."),
     //intercept mode.

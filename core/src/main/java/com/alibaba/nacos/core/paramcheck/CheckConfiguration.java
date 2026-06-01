@@ -33,7 +33,8 @@ import org.springframework.context.annotation.Configuration;
 public class CheckConfiguration {
     
     @Bean
-    public FilterRegistrationBean<ParamCheckerFilter> checkerFilterRegistration(ParamCheckerFilter checkerFilter) {
+    public FilterRegistrationBean<ParamCheckerFilter> checkerFilterRegistration(
+        ParamCheckerFilter checkerFilter) {
         FilterRegistrationBean<ParamCheckerFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(checkerFilter);
         registration.addUrlPatterns("/*");

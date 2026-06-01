@@ -33,9 +33,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class InstanceMetadataSnapshotOperation extends AbstractMetadataSnapshotOperation {
     
-    private static final String SNAPSHOT_SAVE = InstanceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE";
+    private static final String SNAPSHOT_SAVE =
+        InstanceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE";
     
-    private static final String SNAPSHOT_LOAD = InstanceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD";
+    private static final String SNAPSHOT_LOAD =
+        InstanceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD";
     
     private static final String SNAPSHOT_ARCHIVE = "instance_metadata.zip";
     
@@ -43,7 +45,8 @@ public class InstanceMetadataSnapshotOperation extends AbstractMetadataSnapshotO
     
     private final Serializer serializer;
     
-    public InstanceMetadataSnapshotOperation(NamingMetadataManager metadataManager, ReentrantReadWriteLock lock) {
+    public InstanceMetadataSnapshotOperation(NamingMetadataManager metadataManager,
+        ReentrantReadWriteLock lock) {
         super(lock);
         this.metadataManager = metadataManager;
         this.serializer = SerializeFactory.getDefault();
@@ -51,7 +54,8 @@ public class InstanceMetadataSnapshotOperation extends AbstractMetadataSnapshotO
     
     @Override
     protected InputStream dumpSnapshot() {
-        Map<Service, ConcurrentMap<String, InstanceMetadata>> snapshot = metadataManager.getInstanceMetadataSnapshot();
+        Map<Service, ConcurrentMap<String, InstanceMetadata>> snapshot =
+            metadataManager.getInstanceMetadataSnapshot();
         return new ByteArrayInputStream(serializer.serialize(snapshot));
     }
     

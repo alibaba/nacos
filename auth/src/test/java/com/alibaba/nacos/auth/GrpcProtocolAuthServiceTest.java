@@ -189,33 +189,38 @@ class GrpcProtocolAuthServiceTest {
     @Test
     void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
-        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE).isSuccess());
+        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE)
+            .isSuccess());
     }
     
     @Test
     void testValidateIdentityWithPlugin() throws AccessException {
-        Mockito.when(authConfig.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        Mockito.when(authConfig.getNacosAuthSystemType())
+            .thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
-        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE).isSuccess());
+        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE)
+            .isSuccess());
     }
     
     @Test
     void testValidateAuthorityWithoutPlugin() throws AccessException {
         assertTrue(protocolAuthService.validateAuthority(new IdentityContext(),
-                new Permission(Resource.EMPTY_RESOURCE, "")).isSuccess());
+            new Permission(Resource.EMPTY_RESOURCE, "")).isSuccess());
     }
     
     @Test
     void testValidateAuthorityWithPlugin() throws AccessException {
-        Mockito.when(authConfig.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        Mockito.when(authConfig.getNacosAuthSystemType())
+            .thenReturn(MockAuthPluginService.TEST_PLUGIN);
         assertFalse(protocolAuthService.validateAuthority(new IdentityContext(),
-                new Permission(Resource.EMPTY_RESOURCE, "")).isSuccess());
+            new Permission(Resource.EMPTY_RESOURCE, "")).isSuccess());
     }
     
     @Test
     @Secured(signType = SignType.CONFIG)
     void testEnabledAuthWithPlugin() throws NoSuchMethodException {
-        Mockito.when(authConfig.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        Mockito.when(authConfig.getNacosAuthSystemType())
+            .thenReturn(MockAuthPluginService.TEST_PLUGIN);
         Secured secured = getMethodSecure("testEnabledAuthWithPlugin");
         assertTrue(protocolAuthService.enableAuth(secured));
     }
@@ -232,17 +237,20 @@ class GrpcProtocolAuthServiceTest {
     @Secured(apiType = ApiType.INNER_API)
     void testCheckServerIdentityWithoutIdentityConfig() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testCheckServerIdentityWithoutIdentityConfig");
-        ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        ServerIdentityResult result =
+            protocolAuthService.checkServerIdentity(namingRequest, secured);
         assertEquals(ServerIdentityResult.ResultStatus.FAIL, result.getStatus());
-        assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
-                        + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
-                result.getMessage());
+        assertEquals(
+            "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
+            result.getMessage());
         when(authConfig.getServerIdentityKey()).thenReturn("1");
         result = protocolAuthService.checkServerIdentity(namingRequest, secured);
         assertEquals(ServerIdentityResult.ResultStatus.FAIL, result.getStatus());
-        assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
-                        + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
-                result.getMessage());
+        assertEquals(
+            "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
+            result.getMessage());
     }
     
     @Test
@@ -251,7 +259,8 @@ class GrpcProtocolAuthServiceTest {
         Secured secured = getMethodSecure("testCheckServerIdentityNotMatched");
         when(authConfig.getServerIdentityKey()).thenReturn("1");
         when(authConfig.getServerIdentityValue()).thenReturn("2");
-        ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        ServerIdentityResult result =
+            protocolAuthService.checkServerIdentity(namingRequest, secured);
         assertEquals(ServerIdentityResult.ResultStatus.NOT_MATCHED, result.getStatus());
         namingRequest.putHeader("1", "3");
         result = protocolAuthService.checkServerIdentity(namingRequest, secured);
@@ -265,7 +274,8 @@ class GrpcProtocolAuthServiceTest {
         when(authConfig.getServerIdentityValue()).thenReturn("2");
         namingRequest.putHeader("1", "2");
         Secured secured = getMethodSecure("testCheckServerIdentityMatched");
-        ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        ServerIdentityResult result =
+            protocolAuthService.checkServerIdentity(namingRequest, secured);
         assertEquals(ServerIdentityResult.ResultStatus.MATCHED, result.getStatus());
     }
     
@@ -274,7 +284,8 @@ class GrpcProtocolAuthServiceTest {
     void testCheckServerIdentityForOtherTypeApi() throws NoSuchMethodException {
         namingRequest.putHeader("1", "2");
         Secured secured = getMethodSecure("testCheckServerIdentityForOtherTypeApi");
-        ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        ServerIdentityResult result =
+            protocolAuthService.checkServerIdentity(namingRequest, secured);
         assertEquals(ServerIdentityResult.ResultStatus.NOT_MATCHED, result.getStatus());
     }
     

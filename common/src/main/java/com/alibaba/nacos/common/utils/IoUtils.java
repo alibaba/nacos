@@ -17,6 +17,8 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -45,6 +47,8 @@ import java.util.zip.GZIPOutputStream;
  */
 public class IoUtils {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(IoUtils.class);
+    
     private IoUtils() {
     }
     
@@ -56,7 +60,7 @@ public class IoUtils {
      */
     public static byte[] tryDecompress(InputStream raw) throws IOException {
         try (GZIPInputStream gis = new GZIPInputStream(raw);
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             copy(gis, out);
             return out.toByteArray();
         }
@@ -91,13 +95,15 @@ public class IoUtils {
         try (GZIPOutputStream gzip = new GZIPOutputStream(out)) {
             gzip.write(str.getBytes(encoding));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn("Failed to compress string with GZIP (encoding={}, length={}); "
+                + "callers will receive a possibly-incomplete byte[]", encoding, str.length(), e);
         }
         return out.toByteArray();
     }
     
     private static BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);
+        return reader instanceof BufferedReader ? (BufferedReader) reader
+            : new BufferedReader(reader);
     }
     
     /**
@@ -108,7 +114,8 @@ public class IoUtils {
      * @param encoding encoding of string
      * @throws IOException io exception
      */
-    public static void writeStringToFile(File file, String data, String encoding) throws IOException {
+    public static void writeStringToFile(File file, String data, String encoding)
+        throws IOException {
         try (OutputStream os = new FileOutputStream(file)) {
             os.write(data.getBytes(encoding));
             os.flush();
@@ -151,7 +158,7 @@ public class IoUtils {
             return StringUtils.EMPTY;
         }
         return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
-                : toString(new InputStreamReader(input, encoding));
+            : toString(new InputStreamReader(input, encoding));
     }
     
     /**
@@ -178,7 +185,7 @@ public class IoUtils {
     public static long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1 << 12];
         long count = 0;
-        for (int n = 0; (n = input.read(buffer)) >= 0; ) {
+        for (int n = 0; (n = input.read(buffer)) >= 0;) {
             output.write(buffer, 0, n);
             count += n;
         }
@@ -318,4 +325,3 @@ public class IoUtils {
         Arrays.stream(closeable).forEach(IoUtils::closeQuietly);
     }
 }
-

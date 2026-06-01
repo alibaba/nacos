@@ -107,54 +107,65 @@ class GrpcServerTest {
         field.setAccessible(true);
         ReflectionUtils.setField(field, grpcSdkServer, mock);
         GrpcRequestAcceptor mockAcceptor = Mockito.mock(GrpcRequestAcceptor.class);
-        Field fieldGrpcAcceptor = ReflectionUtils.findField(GrpcSdkServer.class, "grpcCommonRequestAcceptor");
+        Field fieldGrpcAcceptor =
+            ReflectionUtils.findField(GrpcSdkServer.class, "grpcCommonRequestAcceptor");
         fieldGrpcAcceptor.setAccessible(true);
         ReflectionUtils.setField(fieldGrpcAcceptor, grpcSdkServer, mockAcceptor);
         
         StreamObserver streamObserverMock = Mockito.mock(StreamObserver.class);
         Payload convert = GrpcUtils.convert(new ConfigChangeClusterSyncRequest());
         //verify not allowed
-        Mockito.when(mock.checkSourceInvokeAllowed(ConfigChangeClusterSyncRequest.class.getSimpleName(),
-                grpcSdkServer.getSource())).thenReturn(false);
+        Mockito.when(
+            mock.checkSourceInvokeAllowed(ConfigChangeClusterSyncRequest.class.getSimpleName(),
+                grpcSdkServer.getSource()))
+            .thenReturn(false);
         grpcSdkServer.handleCommonRequest(convert, streamObserverMock);
         Mockito.verify(streamObserverMock, Mockito.times(1)).onCompleted();
         //verify allowed
-        Mockito.when(mock.checkSourceInvokeAllowed(ConfigChangeClusterSyncRequest.class.getSimpleName(),
-                grpcSdkServer.getSource())).thenReturn(true);
+        Mockito.when(
+            mock.checkSourceInvokeAllowed(ConfigChangeClusterSyncRequest.class.getSimpleName(),
+                grpcSdkServer.getSource()))
+            .thenReturn(true);
         grpcSdkServer.handleCommonRequest(convert, streamObserverMock);
         Mockito.verify(mockAcceptor, Mockito.times(1)).request(eq(convert), eq(streamObserverMock));
     }
-
+    
     @Test
     void testReloadProtocolNegotiatorWhenNull() {
         grpcSdkServer = new GrpcSdkServer();
         grpcSdkServer.reloadProtocolNegotiator();
     }
-
+    
     @Test
     void testBaseGrpcServerKeepAliveAndMaxMessageDefaults() throws Exception {
         grpcSdkServer = new GrpcSdkServer();
-        java.lang.reflect.Method getKeepAliveTime = BaseGrpcServer.class.getDeclaredMethod("getKeepAliveTime");
+        java.lang.reflect.Method getKeepAliveTime =
+            BaseGrpcServer.class.getDeclaredMethod("getKeepAliveTime");
         getKeepAliveTime.setAccessible(true);
         assertNotNull(getKeepAliveTime.invoke(grpcSdkServer));
-        java.lang.reflect.Method getMaxInboundMessageSize = BaseGrpcServer.class.getDeclaredMethod("getMaxInboundMessageSize");
+        java.lang.reflect.Method getMaxInboundMessageSize =
+            BaseGrpcServer.class.getDeclaredMethod("getMaxInboundMessageSize");
         getMaxInboundMessageSize.setAccessible(true);
         assertNotNull(getMaxInboundMessageSize.invoke(grpcSdkServer));
     }
-
+    
     @Test
     void testGetSeverInterceptorsAndGetServerTransportFilters() throws Exception {
         grpcSdkServer = new GrpcSdkServer();
-        Method getSeverInterceptors = BaseGrpcServer.class.getDeclaredMethod("getSeverInterceptors");
+        Method getSeverInterceptors =
+            BaseGrpcServer.class.getDeclaredMethod("getSeverInterceptors");
         getSeverInterceptors.setAccessible(true);
         @SuppressWarnings("unchecked")
-        List<ServerInterceptor> interceptors = (List<ServerInterceptor>) getSeverInterceptors.invoke(grpcSdkServer);
+        List<ServerInterceptor> interceptors =
+            (List<ServerInterceptor>) getSeverInterceptors.invoke(grpcSdkServer);
         assertNotNull(interceptors);
         assertFalse(interceptors.isEmpty());
-        Method getServerTransportFilters = BaseGrpcServer.class.getDeclaredMethod("getServerTransportFilters");
+        Method getServerTransportFilters =
+            BaseGrpcServer.class.getDeclaredMethod("getServerTransportFilters");
         getServerTransportFilters.setAccessible(true);
         @SuppressWarnings("unchecked")
-        List<ServerTransportFilter> filters = (List<ServerTransportFilter>) getServerTransportFilters.invoke(grpcSdkServer);
+        List<ServerTransportFilter> filters =
+            (List<ServerTransportFilter>) getServerTransportFilters.invoke(grpcSdkServer);
         assertNotNull(filters);
         assertFalse(filters.isEmpty());
     }

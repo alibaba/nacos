@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryTypeTest {
-
+    
     @Test
     void testQueryTypeConstants() {
         assertEquals(0, QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS);

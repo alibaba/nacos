@@ -57,7 +57,8 @@ public class ConfigExtInfoUtil {
     /**
      * Extract the extInfo from advance config info.
      */
-    public static String getExtraInfoFromAdvanceInfoMap(Map<String, Object> advanceConfigInfoMap, String srcUser) {
+    public static String getExtraInfoFromAdvanceInfoMap(Map<String, Object> advanceConfigInfoMap,
+        String srcUser) {
         try {
             if (advanceConfigInfoMap == null || advanceConfigInfoMap.isEmpty()) {
                 return null;
@@ -74,7 +75,7 @@ public class ConfigExtInfoUtil {
                 String mappedKey = entry.getValue();
                 Object advanceConfigInfoValue = advanceConfigInfoMap.get(key);
                 if (advanceConfigInfoValue instanceof String && StringUtils.isNotBlank(
-                        (String) advanceConfigInfoValue)) {
+                    (String) advanceConfigInfoValue)) {
                     node.put(mappedKey, ((String) advanceConfigInfoValue).trim());
                 }
             }
@@ -125,7 +126,8 @@ public class ConfigExtInfoUtil {
     /**
      * Extract the extInfo from gray config info.
      */
-    public static String getExtInfoFromGrayInfo(String grayName, String grayRuleTmp, String oldSrcUser) {
+    public static String getExtInfoFromGrayInfo(String grayName, String grayRuleTmp,
+        String oldSrcUser) {
         ObjectNode node = OBJECT_MAPPER.createObjectNode();
         ObjectNode grayRuleNode = OBJECT_MAPPER.createObjectNode();
         
@@ -142,19 +144,19 @@ public class ConfigExtInfoUtil {
                 JsonNode parsedGrayRuleNode = OBJECT_MAPPER.readTree(grayRuleTmp);
                 if (parsedGrayRuleNode.has(Constants.GRAY_RULE_TYPE)) {
                     grayRuleNode.put(Constants.GRAY_RULE_TYPE,
-                            parsedGrayRuleNode.get(Constants.GRAY_RULE_TYPE).asText());
+                        parsedGrayRuleNode.get(Constants.GRAY_RULE_TYPE).asText());
                 }
                 if (parsedGrayRuleNode.has(Constants.GRAY_RULE_EXPR)) {
                     grayRuleNode.put(Constants.GRAY_RULE_EXPR,
-                            parsedGrayRuleNode.get(Constants.GRAY_RULE_EXPR).asText());
+                        parsedGrayRuleNode.get(Constants.GRAY_RULE_EXPR).asText());
                 }
                 if (parsedGrayRuleNode.has(Constants.GRAY_RULE_VERSION)) {
                     grayRuleNode.put(Constants.GRAY_RULE_VERSION,
-                            parsedGrayRuleNode.get(Constants.GRAY_RULE_VERSION).asText());
+                        parsedGrayRuleNode.get(Constants.GRAY_RULE_VERSION).asText());
                 }
                 if (parsedGrayRuleNode.has(Constants.GRAY_RULE_PRIORITY)) {
                     grayRuleNode.put(Constants.GRAY_RULE_PRIORITY,
-                            parsedGrayRuleNode.get(Constants.GRAY_RULE_PRIORITY).asText());
+                        parsedGrayRuleNode.get(Constants.GRAY_RULE_PRIORITY).asText());
                 }
                 node.put("gray_rule", grayRuleNode.toString());
             } catch (Exception ex) {

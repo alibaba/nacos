@@ -31,9 +31,11 @@ public class SubscribeServiceTraceEvent extends NamingTraceEvent {
         return clientIp;
     }
     
-    public SubscribeServiceTraceEvent(long eventTime, String clientIp, String serviceNamespace, String serviceGroup,
-            String serviceName) {
-        super("SUBSCRIBE_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+    public SubscribeServiceTraceEvent(long eventTime, String clientIp, String serviceNamespace,
+        String serviceGroup,
+        String serviceName) {
+        super("SUBSCRIBE_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup,
+            serviceName);
         this.clientIp = clientIp;
     }
 }

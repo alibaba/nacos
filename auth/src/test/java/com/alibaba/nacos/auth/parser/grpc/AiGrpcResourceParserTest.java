@@ -43,42 +43,50 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class AiGrpcResourceParserTest {
     
     private AiGrpcResourceParser resourceParser;
-
+    
     private static Stream<Arguments> fulContextRequests() {
         Arguments case1 = Arguments.of(mockMcpRequest("testNs", "testName"), "testNs", "testName",
-                MockMcpRequest.class.getSimpleName());
+            MockMcpRequest.class.getSimpleName());
         Arguments case2 = Arguments.of(mockAgentRequest("testNs", "testName"), "testNs", "testName",
-                MockAgentRequest.class.getSimpleName());
-        Arguments case3 = Arguments.of(makeReleaseAgentCardRequest("testNs", "testName", "testCardName"), "testNs",
-                "testCardName", ReleaseAgentCardRequest.class.getSimpleName());
-        Arguments case4 = Arguments.of(mockPromptRequest("testNs", "testPrompt"), "testNs", "testPrompt",
+            MockAgentRequest.class.getSimpleName());
+        Arguments case3 = Arguments.of(
+            makeReleaseAgentCardRequest("testNs", "testName", "testCardName"), "testNs",
+            "testCardName", ReleaseAgentCardRequest.class.getSimpleName());
+        Arguments case4 =
+            Arguments.of(mockPromptRequest("testNs", "testPrompt"), "testNs", "testPrompt",
                 MockPromptRequest.class.getSimpleName());
-        Arguments case5 = Arguments.of(makeReleaseMcpServerRequest("testNs", "testName", "testSpecName"), "testNs",
-                "testSpecName", ReleaseMcpServerRequest.class.getSimpleName());
+        Arguments case5 = Arguments.of(
+            makeReleaseMcpServerRequest("testNs", "testName", "testSpecName"), "testNs",
+            "testSpecName", ReleaseMcpServerRequest.class.getSimpleName());
         return Stream.of(case1, case2, case3, case4, case5);
     }
-
+    
     private static Stream<Arguments> withoutNamespaceRequests() {
         Arguments case1 = Arguments.of(mockMcpRequest("", "testName"),
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testName", MockMcpRequest.class.getSimpleName());
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testName",
+            MockMcpRequest.class.getSimpleName());
         Arguments case2 = Arguments.of(mockAgentRequest(null, "testName"),
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testName", MockAgentRequest.class.getSimpleName());
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testName",
+            MockAgentRequest.class.getSimpleName());
         Arguments case3 = Arguments.of(mockPromptRequest(null, "testPrompt"),
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testPrompt", MockPromptRequest.class.getSimpleName());
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testPrompt",
+            MockPromptRequest.class.getSimpleName());
         Arguments case4 = Arguments.of(mockOtherRequest(null, "testName"),
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "", NotifySubscriberRequest.class.getSimpleName());
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "",
+            NotifySubscriberRequest.class.getSimpleName());
         return Stream.of(case1, case2, case3, case4);
     }
-
+    
     private static Stream<Arguments> withoutNameRequests() {
         Arguments case1 = Arguments.of(mockMcpRequest("testNs", ""), "testNs", "",
-                MockMcpRequest.class.getSimpleName());
+            MockMcpRequest.class.getSimpleName());
         Arguments case2 = Arguments.of(mockAgentRequest("testNs", null), "testNs", "",
-                MockAgentRequest.class.getSimpleName());
+            MockAgentRequest.class.getSimpleName());
         Arguments case3 = Arguments.of(mockPromptRequest("testNs", ""), "testNs", "",
-                MockPromptRequest.class.getSimpleName());
+            MockPromptRequest.class.getSimpleName());
         Arguments case4 = Arguments.of(mockOtherRequest("testNs", ""),
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "", NotifySubscriberRequest.class.getSimpleName());
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "",
+            NotifySubscriberRequest.class.getSimpleName());
         return Stream.of(case1, case2, case3, case4);
     }
     
@@ -86,12 +94,13 @@ class AiGrpcResourceParserTest {
     void setUp() throws Exception {
         resourceParser = new AiGrpcResourceParser();
     }
-
+    
     @ParameterizedTest
     @MethodSource({"fulContextRequests", "withoutNamespaceRequests", "withoutNameRequests"})
     @Secured(signType = SignType.AI)
-    void testParse(Request request, String expectedNamespaceId, String expectedName, String expectedRequestClassName)
-            throws NoSuchMethodException {
+    void testParse(Request request, String expectedNamespaceId, String expectedName,
+        String expectedRequestClassName)
+        throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Resource actual = resourceParser.parse(request, secured);
         assertEquals(expectedNamespaceId, actual.getNamespaceId());
@@ -99,24 +108,25 @@ class AiGrpcResourceParserTest {
         assertEquals(expectedName, actual.getName());
         assertEquals(SignType.AI, actual.getType());
         assertEquals(expectedRequestClassName, actual.getProperties()
-                .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+            .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
-
+    
     private static AbstractMcpRequest mockMcpRequest(String testNs, String testS) {
         MockMcpRequest result = new MockMcpRequest();
         result.setNamespaceId(testNs);
         result.setMcpName(testS);
         return result;
     }
-
+    
     private static MockAgentRequest mockAgentRequest(String testNs, String testS) {
         MockAgentRequest result = new MockAgentRequest();
         result.setNamespaceId(testNs);
         result.setAgentName(testS);
         return result;
     }
-
-    private static ReleaseAgentCardRequest makeReleaseAgentCardRequest(String testNs, String agentName, String cardName) {
+    
+    private static ReleaseAgentCardRequest makeReleaseAgentCardRequest(String testNs,
+        String agentName, String cardName) {
         ReleaseAgentCardRequest result = new ReleaseAgentCardRequest();
         result.setNamespaceId(testNs);
         result.setAgentName(agentName);
@@ -125,9 +135,10 @@ class AiGrpcResourceParserTest {
         result.setAgentCard(agentCard);
         return result;
     }
-
-    private static ReleaseMcpServerRequest makeReleaseMcpServerRequest(String testNs, String mcpName,
-            String specName) {
+    
+    private static ReleaseMcpServerRequest makeReleaseMcpServerRequest(String testNs,
+        String mcpName,
+        String specName) {
         ReleaseMcpServerRequest result = new ReleaseMcpServerRequest();
         result.setNamespaceId(testNs);
         result.setMcpName(mcpName);
@@ -151,26 +162,27 @@ class AiGrpcResourceParserTest {
         result.setServiceName(testS);
         return result;
     }
-
+    
     @Secured(signType = SignType.AI)
     void forSecureAnnotationMethod() {
-
+        
     }
-
+    
     private Secured getMethodSecure() throws NoSuchMethodException {
-        Method method = AiGrpcResourceParserTest.class.getDeclaredMethod("forSecureAnnotationMethod");
+        Method method =
+            AiGrpcResourceParserTest.class.getDeclaredMethod("forSecureAnnotationMethod");
         return method.getAnnotation(Secured.class);
     }
     
     private static class MockMcpRequest extends AbstractMcpRequest {
-    
+        
     }
-
+    
     private static class MockAgentRequest extends AbstractAgentRequest {
-
+        
     }
     
     private static class MockPromptRequest extends AbstractPromptRequest {
-
+        
     }
 }

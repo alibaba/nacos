@@ -57,7 +57,7 @@ public class NamespaceProxy {
      * Create or update namespace.
      */
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
-            throws NacosException {
+        throws NacosException {
         return namespaceHandler.createNamespace(namespaceId, namespaceName, namespaceDesc);
     }
     

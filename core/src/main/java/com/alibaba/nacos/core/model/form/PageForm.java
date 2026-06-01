@@ -37,12 +37,18 @@ public class PageForm implements NacosForm {
     @Override
     public void validate() throws NacosApiException {
         if (pageNo < 1) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    String.format("Required parameter 'pageNo' should be positive integer, current is %d", pageNo));
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                String.format(
+                    "Required parameter 'pageNo' should be positive integer, current is %d",
+                    pageNo));
         }
         if (pageSize < 1) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    String.format("Required parameter 'pageSize' should be positive integer, current is %d", pageSize));
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                String.format(
+                    "Required parameter 'pageSize' should be positive integer, current is %d",
+                    pageSize));
         }
     }
     

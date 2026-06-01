@@ -27,29 +27,29 @@ import java.util.Map;
  * @author blake.qiu
  */
 public enum TrustedMysqlFunctionEnum {
-
+    
     /**
      * NOW().
      */
     NOW("NOW()", "NOW(3)");
-
+    
     private static final Map<String, TrustedMysqlFunctionEnum> LOOKUP_MAP = new HashMap<>();
-
+    
     static {
         for (TrustedMysqlFunctionEnum entry : TrustedMysqlFunctionEnum.values()) {
             LOOKUP_MAP.put(entry.functionName, entry);
         }
     }
-
+    
     private final String functionName;
-
+    
     private final String function;
-
+    
     TrustedMysqlFunctionEnum(String functionName, String function) {
         this.functionName = functionName;
         this.function = function;
     }
-
+    
     /**
      * Get the function name.
      *
@@ -61,6 +61,7 @@ public enum TrustedMysqlFunctionEnum {
         if (entry != null) {
             return entry.function;
         }
-        throw new IllegalArgumentException(String.format("Invalid function name: %s", functionName));
+        throw new IllegalArgumentException(
+            String.format("Invalid function name: %s", functionName));
     }
 }

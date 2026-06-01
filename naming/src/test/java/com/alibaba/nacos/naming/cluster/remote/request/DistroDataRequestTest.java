@@ -36,7 +36,8 @@ class DistroDataRequestTest {
     
     @Test
     void testConstructor2() {
-        DistroDataRequest req = new DistroDataRequest(mock(DistroData.class), mock(DataOperation.class));
+        DistroDataRequest req =
+            new DistroDataRequest(mock(DistroData.class), mock(DataOperation.class));
         assertNotNull(req);
     }
     

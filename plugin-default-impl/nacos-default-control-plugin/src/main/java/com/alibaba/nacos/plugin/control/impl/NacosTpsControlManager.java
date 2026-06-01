@@ -65,7 +65,8 @@ public class NacosTpsControlManager extends TpsControlManager {
     
     protected void startTpsReport() {
         executorService
-                .scheduleWithFixedDelay(new NacosTpsControlManager.TpsMetricsReporter(), 0, 900, TimeUnit.MILLISECONDS);
+            .scheduleWithFixedDelay(new NacosTpsControlManager.TpsMetricsReporter(), 0, 900,
+                TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -121,7 +122,8 @@ public class NacosTpsControlManager extends TpsControlManager {
             try {
                 return points.get(tpsRequest.getPointName()).applyTps(tpsRequest);
             } catch (Throwable throwable) {
-                Loggers.TPS.warn("[{}]apply tps error,error={}", tpsRequest.getPointName(), throwable);
+                Loggers.TPS.warn("[{}]apply tps error,error={}", tpsRequest.getPointName(),
+                    throwable);
             }
         }
         return new TpsCheckResponse(true, TpsResultCode.CHECK_SKIP, "skip");
@@ -166,9 +168,10 @@ public class NacosTpsControlManager extends TpsControlManager {
                         tempSecond = metrics.getTimeStamp();
                         
                         stringBuilder.append(pointName).append("|").append("point").append("|")
-                                .append(metrics.getPeriod()).append("|").append(formatString).append("|")
-                                .append(metrics.getCounter().getPassCount()).append("|")
-                                .append(metrics.getCounter().getDeniedCount()).append("|").append("\n");
+                            .append(metrics.getPeriod()).append("|").append(formatString)
+                            .append("|")
+                            .append(metrics.getCounter().getPassCount()).append("|")
+                            .append(metrics.getCounter().getDeniedCount()).append("|").append("\n");
                     }
                 }
                 

@@ -30,18 +30,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SnowFlowerInstanceIdGeneratorTest {
-
+    
     @Test
     void nextId() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         SnowFlowerIdGenerator generator = new SnowFlowerIdGenerator();
         generator.initialize(1);
-
+        
         long count = IntStream.range(0, 10).mapToObj(i -> generator.nextId()).distinct().count();
-
+        
         assertEquals(10, count);
     }
-
+    
     @Test
     void currentIdAndWorkerId() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -52,7 +52,7 @@ class SnowFlowerInstanceIdGeneratorTest {
         long id = generator.nextId();
         assertEquals(id, generator.currentId());
     }
-
+    
     @Test
     void info() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -63,14 +63,14 @@ class SnowFlowerInstanceIdGeneratorTest {
         assertEquals(2L, info.get("workerId"));
         assertEquals(generator.currentId(), info.get("currentId"));
     }
-
+    
     @Test
     void initializeRejectsInvalidWorkerId() {
         SnowFlowerIdGenerator generator = new SnowFlowerIdGenerator();
         assertThrows(IllegalArgumentException.class, () -> generator.initialize(1025));
         assertThrows(IllegalArgumentException.class, () -> generator.initialize(-1));
     }
-
+    
     @Test
     void nextIdWithWorkerIdFromEnv() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -81,7 +81,7 @@ class SnowFlowerInstanceIdGeneratorTest {
         }
         assertTrue(generator.currentId() > 0);
     }
-
+    
     @Test
     void nextIdSequenceOverflowTriggersWaitUntilNextTime() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -90,7 +90,8 @@ class SnowFlowerInstanceIdGeneratorTest {
         // Use reflection to force sequence=4095 and lastTime=currentMillis so the next nextId()
         // hits (++sequence & 4095)==0 and enters waitUntilNextTime()
         ReflectionTestUtils.setField(generator, "sequence", 4095L);
-        Method currentTimeMillis = SnowFlowerIdGenerator.class.getDeclaredMethod("currentTimeMillis");
+        Method currentTimeMillis =
+            SnowFlowerIdGenerator.class.getDeclaredMethod("currentTimeMillis");
         currentTimeMillis.setAccessible(true);
         long now = (Long) currentTimeMillis.invoke(generator);
         ReflectionTestUtils.setField(generator, "lastTime", now);
@@ -98,7 +99,7 @@ class SnowFlowerInstanceIdGeneratorTest {
         assertTrue(id > 0);
         assertTrue(generator.currentId() > 0);
     }
-
+    
     @Test
     void workerIdFromIpWhenNoPropertySet() {
         EnvUtil.setEnvironment(new StandardEnvironment());

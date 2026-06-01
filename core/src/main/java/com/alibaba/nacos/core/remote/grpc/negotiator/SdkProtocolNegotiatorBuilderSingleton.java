@@ -30,17 +30,20 @@ import com.alibaba.nacos.core.remote.grpc.negotiator.tls.SdkDefaultTlsProtocolNe
  * @author stone-98
  * @date 2024/2/21
  */
-public class SdkProtocolNegotiatorBuilderSingleton extends AbstractProtocolNegotiatorBuilderSingleton {
+public class SdkProtocolNegotiatorBuilderSingleton
+    extends AbstractProtocolNegotiatorBuilderSingleton {
     
     /**
      * Property key to retrieve the type of ProtocolNegotiatorBuilder.
      */
-    public static final String TYPE_PROPERTY_KEY = "nacos.remote.server.rpc.protocol.negotiator.type";
+    public static final String TYPE_PROPERTY_KEY =
+        "nacos.remote.server.rpc.protocol.negotiator.type";
     
     /**
      * Singleton instance of SdkProtocolNegotiatorBuilderSingleton.
      */
-    private static final SdkProtocolNegotiatorBuilderSingleton SINGLETON = new SdkProtocolNegotiatorBuilderSingleton();
+    private static final SdkProtocolNegotiatorBuilderSingleton SINGLETON =
+        new SdkProtocolNegotiatorBuilderSingleton();
     
     /**
      * Constructs a new instance of SdkProtocolNegotiatorBuilderSingleton. Sets up the type property key for

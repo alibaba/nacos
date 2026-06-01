@@ -25,5 +25,5 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @date 2024/3/4
  */
 public class ConfigFuzzyWatchResponse extends Response {
-
+    
 }

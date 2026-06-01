@@ -158,7 +158,8 @@ class JRaftServerTest {
     void before() throws NoSuchFieldException, IllegalAccessException {
         initPeersAndConfiguration();
         config = new RaftConfig();
-        Collection<Member> initEvent = Collections.singletonList(Member.builder().ip("1.1.1.1").port(7848).build());
+        Collection<Member> initEvent =
+            Collections.singletonList(Member.builder().ip("1.1.1.1").port(7848).build());
         config.setMembers("1.1.1.1:7848", ProtocolManager.toCPMembersInfo(initEvent));
         
         server = new JRaftServer() {
@@ -173,7 +174,8 @@ class JRaftServerTest {
         
         Map<String, JRaftServer.RaftGroupTuple> map = new HashMap<>();
         map.put("test_nacos",
-                new JRaftServer.RaftGroupTuple(node, requestProcessor, raftGroupService, nacosStateMachine));
+            new JRaftServer.RaftGroupTuple(node, requestProcessor, raftGroupService,
+                nacosStateMachine));
         server.mockMultiRaftGroup(map);
         
         mockcliClientService();
@@ -233,7 +235,8 @@ class JRaftServerTest {
         peerIds.add(peerId2);
         peerIds.add(peerId3);
         when(cliServiceMock.getPeers(groupId, conf)).thenReturn(peerIds);
-        when(cliServiceMock.addPeer(eq(groupId), eq(conf), any(PeerId.class))).thenReturn(Status.OK());
+        when(cliServiceMock.addPeer(eq(groupId), eq(conf), any(PeerId.class)))
+            .thenReturn(Status.OK());
     }
     
     private void setLeaderAs(PeerId peerId) {
@@ -242,27 +245,31 @@ class JRaftServerTest {
     
     @Test
     void testInvokeToLeader()
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, RemotingException, InterruptedException {
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException,
+        RemotingException, InterruptedException {
         when(cliClientServiceMock.getRpcClient()).thenReturn(rpcClient);
         setLeaderAs(peerId1);
         int timeout = 3000;
-        Method invokeToLeaderMethod = JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
+        Method invokeToLeaderMethod =
+            JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
                 int.class, FailoverClosure.class);
         invokeToLeaderMethod.setAccessible(true);
         invokeToLeaderMethod.invoke(server, groupId, this.readRequest, timeout, null);
         verify(cliClientServiceMock).getRpcClient();
-        verify(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), eq(readRequest), any(InvokeCallback.class),
-                any(long.class));
+        verify(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), eq(readRequest),
+            any(InvokeCallback.class),
+            any(long.class));
     }
     
     @Test
     void testRefreshRouteTable() {
         server.refreshRouteTable(groupId);
         verify(cliClientServiceMock, times(1)).connect(peerId1.getEndpoint());
-        verify(cliClientServiceMock).getLeader(eq(peerId1.getEndpoint()), any(CliRequests.GetLeaderRequest.class),
-                eq(null));
+        verify(cliClientServiceMock).getLeader(eq(peerId1.getEndpoint()),
+            any(CliRequests.GetLeaderRequest.class),
+            eq(null));
     }
-
+    
     /** refreshRouteTable when isShutdown returns immediately without refreshing. */
     @Test
     void testRefreshRouteTableWhenShutdown() {
@@ -272,7 +279,8 @@ class JRaftServerTest {
     }
     
     @Test
-    void testCommit() throws NoSuchFieldException, IllegalAccessException, TimeoutException, InterruptedException {
+    void testCommit() throws NoSuchFieldException, IllegalAccessException, TimeoutException,
+        InterruptedException {
         WriteRequest.Builder writeRequestBuilder = WriteRequest.newBuilder();
         WriteRequest writeRequest = writeRequestBuilder.build();
         
@@ -319,6 +327,7 @@ class JRaftServerTest {
         AtomicBoolean changed = new AtomicBoolean(false);
         
         JRaftMaintainService service = new JRaftMaintainService(server) {
+            
             @Override
             public RestResult<String> execute(Map<String, String> args) {
                 changed.set(true);
@@ -326,34 +335,43 @@ class JRaftServerTest {
             }
         };
         
-        Collection<Member> firstEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
-                Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
+        Collection<Member> firstEvent =
+            Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
+                Member.builder().ip("127.0.0.1").port(80).build(),
+                Member.builder().ip("127.0.0.2").port(81).build(),
                 Member.builder().ip("127.0.0.3").port(82).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(firstEvent));
         assertFalse(changed.get());
         changed.set(false);
         
-        Collection<Member> secondEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
-                Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
+        Collection<Member> secondEvent =
+            Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
+                Member.builder().ip("127.0.0.1").port(80).build(),
+                Member.builder().ip("127.0.0.2").port(81).build(),
                 Member.builder().ip("127.0.0.4").port(83).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(secondEvent));
         assertTrue(changed.get());
         changed.set(false);
         
-        Collection<Member> thirdEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
-                Member.builder().ip("127.0.0.2").port(81).build(), Member.builder().ip("127.0.0.5").port(82).build());
+        Collection<Member> thirdEvent =
+            Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
+                Member.builder().ip("127.0.0.2").port(81).build(),
+                Member.builder().ip("127.0.0.5").port(82).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(thirdEvent));
         assertTrue(changed.get());
         changed.set(false);
         
-        Collection<Member> fourEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
+        Collection<Member> fourEvent =
+            Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fourEvent));
         assertTrue(changed.get());
         changed.set(false);
         
-        Collection<Member> fiveEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
-                Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.3").port(81).build());
+        Collection<Member> fiveEvent =
+            Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
+                Member.builder().ip("127.0.0.1").port(80).build(),
+                Member.builder().ip("127.0.0.3").port(81).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fiveEvent));
         assertFalse(changed.get());
         changed.set(false);
@@ -363,7 +381,8 @@ class JRaftServerTest {
     void testIsReady() {
         assertTrue(server.isReady());
         config.setStrictMode(true);
-        ((Collection<RequestProcessor4CP>) ReflectionTestUtils.getField(server, "processors")).add(mockProcessor4CP);
+        ((Collection<RequestProcessor4CP>) ReflectionTestUtils.getField(server, "processors"))
+            .add(mockProcessor4CP);
         assertTrue(server.isReady());
         setLeaderAs(null);
         assertFalse(server.isReady());
@@ -423,11 +442,13 @@ class JRaftServerTest {
     void testGetWhenReadIndexFailsFallsBackToLeader() throws Exception {
         ReadRequest request = ReadRequest.newBuilder().setGroup("test_nacos").build();
         doAnswer(inv -> {
-            inv.getArgument(1, ReadIndexClosure.class).run(new Status(RaftError.UNKNOWN, "read index error"), 0, new byte[0]);
+            inv.getArgument(1, ReadIndexClosure.class)
+                .run(new Status(RaftError.UNKNOWN, "read index error"), 0, new byte[0]);
             return (Object) null;
         }).when(node).readIndex(any(byte[].class), any(ReadIndexClosure.class));
         when(node.isLeader()).thenReturn(true);
-        when(requestProcessor.onRequest(any(ReadRequest.class))).thenReturn(Response.newBuilder().setSuccess(true).build());
+        when(requestProcessor.onRequest(any(ReadRequest.class)))
+            .thenReturn(Response.newBuilder().setSuccess(true).build());
         doAnswer(inv -> {
             com.alipay.sofa.jraft.entity.Task task = inv.getArgument(0);
             if (task.getDone() != null) {
@@ -441,7 +462,7 @@ class JRaftServerTest {
         CompletableFuture<Response> future = server.get(request);
         assertTrue(future.get(2, java.util.concurrent.TimeUnit.SECONDS).getSuccess());
     }
-
+    
     /** get() when readIndex throws falls back to readFromLeader (catch block). */
     @Test
     void testGetWhenReadIndexThrowsFallsBackToLeader() throws Exception {
@@ -450,7 +471,8 @@ class JRaftServerTest {
             throw new RuntimeException("readIndex throw");
         }).when(node).readIndex(any(byte[].class), any(ReadIndexClosure.class));
         when(node.isLeader()).thenReturn(true);
-        when(requestProcessor.onRequest(any(ReadRequest.class))).thenReturn(Response.newBuilder().setSuccess(true).build());
+        when(requestProcessor.onRequest(any(ReadRequest.class)))
+            .thenReturn(Response.newBuilder().setSuccess(true).build());
         doAnswer(inv -> {
             com.alipay.sofa.jraft.entity.Task task = inv.getArgument(0);
             if (task.getDone() != null) {
@@ -463,7 +485,7 @@ class JRaftServerTest {
         CompletableFuture<Response> future = server.get(request);
         assertTrue(future.get(2, java.util.concurrent.TimeUnit.SECONDS).getSuccess());
     }
-
+    
     /** get() when readIndex is OK but processor.onRequest throws completes with ConsistencyException. */
     @Test
     void testGetWhenProcessorOnRequestThrowsCompletesExceptionally() throws Exception {
@@ -472,13 +494,15 @@ class JRaftServerTest {
             inv.getArgument(1, ReadIndexClosure.class).run(Status.OK(), 1L, new byte[0]);
             return null;
         }).when(node).readIndex(any(byte[].class), any(ReadIndexClosure.class));
-        when(requestProcessor.onRequest(any(ReadRequest.class))).thenThrow(new RuntimeException("processor error"));
+        when(requestProcessor.onRequest(any(ReadRequest.class)))
+            .thenThrow(new RuntimeException("processor error"));
         CompletableFuture<Response> future = server.get(request);
         assertTrue(future.isCompletedExceptionally());
         try {
             future.get();
         } catch (Exception e) {
-            assertTrue(e.getCause() instanceof com.alibaba.nacos.consistency.exception.ConsistencyException);
+            assertTrue(e
+                .getCause() instanceof com.alibaba.nacos.consistency.exception.ConsistencyException);
             assertTrue(e.getCause().getCause().getMessage().contains("processor error"));
         }
     }
@@ -488,17 +512,19 @@ class JRaftServerTest {
     void testApplyOperation() {
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup("test_nacos").build();
         com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl closure =
-                new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(new CompletableFuture<>());
+            new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(
+                new CompletableFuture<>());
         server.applyOperation(node, writeRequest, closure);
         verify(node).apply(any(com.alipay.sofa.jraft.entity.Task.class));
     }
-
+    
     /** applyOperation with ReadRequest uses REQUEST_TYPE_READ in task data. */
     @Test
     void testApplyOperationWithReadRequest() {
         ReadRequest readReq = ReadRequest.newBuilder().setGroup("test_nacos").build();
         com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl closure =
-                new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(new CompletableFuture<>());
+            new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(
+                new CompletableFuture<>());
         server.applyOperation(node, readReq, closure);
         verify(node).apply(any(com.alipay.sofa.jraft.entity.Task.class));
     }
@@ -507,16 +533,17 @@ class JRaftServerTest {
     void testFindNodeByGroupReturnsNullWhenTupleMissing() {
         assertNull(server.findNodeByGroup("nonexistent"));
     }
-
+    
     @Test
     void testFindNodeByGroupReturnsNodeWhenTupleExists() {
         assertEquals(node, server.findNodeByGroup("test_nacos"));
     }
-
+    
     /** RaftGroupTuple getters return injected components. */
     @Test
     void testRaftGroupTupleGetters() {
-        JRaftServer.RaftGroupTuple tuple = new JRaftServer.RaftGroupTuple(node, requestProcessor, raftGroupService, nacosStateMachine);
+        JRaftServer.RaftGroupTuple tuple = new JRaftServer.RaftGroupTuple(node, requestProcessor,
+            raftGroupService, nacosStateMachine);
         assertEquals(node, tuple.getNode());
         assertEquals(requestProcessor, tuple.getProcessor());
         assertEquals(raftGroupService, tuple.getRaftGroupService());
@@ -529,7 +556,7 @@ class JRaftServerTest {
         server.shutdown();
         verify(cliServiceMock, times(1)).shutdown();
     }
-
+    
     /** shutdown() catches Throwable from tuple and does not propagate. */
     @Test
     void testShutdownWhenTupleShutdownThrowsCatchesAndDoesNotPropagate() {
@@ -547,11 +574,12 @@ class JRaftServerTest {
         JRaftMaintainService service = new JRaftMaintainService(server);
         assertTrue(server.peerChange(service, sameAsCurrent));
     }
-
+    
     /** When execute returns failure for a group, peerChange returns false. */
     @Test
     void testPeerChangeWhenExecuteFailsReturnsFalse() {
         JRaftMaintainService service = new JRaftMaintainService(server) {
+            
             @Override
             public RestResult<String> execute(Map<String, String> args) {
                 return RestResultUtils.failed(500, "remove peer failed");
@@ -570,7 +598,8 @@ class JRaftServerTest {
         Field multiRaftGroupField = JRaftServer.class.getDeclaredField("multiRaftGroup");
         multiRaftGroupField.setAccessible(true);
         @SuppressWarnings("unchecked")
-        Map<String, JRaftServer.RaftGroupTuple> map = (Map<String, JRaftServer.RaftGroupTuple>) multiRaftGroupField.get(notStartedServer);
+        Map<String, JRaftServer.RaftGroupTuple> map =
+            (Map<String, JRaftServer.RaftGroupTuple>) multiRaftGroupField.get(notStartedServer);
         int sizeBefore = map.size();
         RequestProcessor4CP processor = org.mockito.Mockito.mock(RequestProcessor4CP.class);
         when(processor.group()).thenReturn("new_group");
@@ -578,20 +607,23 @@ class JRaftServerTest {
         notStartedServer.createMultiRaftGroup(Collections.singletonList(processor));
         assertEquals(sizeBefore, map.size());
         @SuppressWarnings("unchecked")
-        Collection<RequestProcessor4CP> processors = (Collection<RequestProcessor4CP>) ReflectionTestUtils.getField(notStartedServer, "processors");
+        Collection<RequestProcessor4CP> processors =
+            (Collection<RequestProcessor4CP>) ReflectionTestUtils.getField(notStartedServer,
+                "processors");
         assertTrue(processors.contains(processor));
     }
     
     /** createMultiRaftGroup with same group id throws DuplicateRaftGroupException. */
     @Test
     void testCreateMultiRaftGroupThrowsWhenDuplicateGroup() {
-        RequestProcessor4CP duplicateProcessor = org.mockito.Mockito.mock(RequestProcessor4CP.class);
+        RequestProcessor4CP duplicateProcessor =
+            org.mockito.Mockito.mock(RequestProcessor4CP.class);
         when(duplicateProcessor.group()).thenReturn("test_nacos");
         when(duplicateProcessor.loadSnapshotOperate()).thenReturn(Collections.emptyList());
         assertThrows(DuplicateRaftGroupException.class,
-                () -> server.createMultiRaftGroup(Collections.singletonList(duplicateProcessor)));
+            () -> server.createMultiRaftGroup(Collections.singletonList(duplicateProcessor)));
     }
-
+    
     /** start() success: NodeManager and JRaftUtils mocked, createMultiRaftGroup stubbed, isStarted becomes true. */
     @Test
     void testStartSuccess() throws Exception {
@@ -602,17 +634,19 @@ class JRaftServerTest {
         JRaftServer serverSpy = spy(server);
         doNothing().when(serverSpy).createMultiRaftGroup(anyCollection());
         try (MockedStatic<NodeManager> nodeManagerMock = mockStatic(NodeManager.class);
-             MockedStatic<JRaftUtils> jraftUtilsMock = mockStatic(JRaftUtils.class)) {
+            MockedStatic<JRaftUtils> jraftUtilsMock = mockStatic(JRaftUtils.class)) {
             nodeManagerMock.when(NodeManager::getInstance).thenReturn(mockNodeManager);
-            jraftUtilsMock.when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)))
-                    .thenReturn(mockRpcServer);
+            jraftUtilsMock
+                .when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)))
+                .thenReturn(mockRpcServer);
             serverSpy.start();
             assertTrue((Boolean) ReflectionTestUtils.getField(serverSpy, "isStarted"));
             verify(serverSpy).createMultiRaftGroup(anyCollection());
-            jraftUtilsMock.verify(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)));
+            jraftUtilsMock
+                .verify(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)));
         }
     }
-
+    
     /** start() when JRaftUtils.initRpcServer throws wraps in JRaftException. */
     @Test
     void testStartWithException() throws Exception {
@@ -620,16 +654,17 @@ class JRaftServerTest {
         NodeManager mockNodeManager = mock(NodeManager.class);
         RuntimeException cause = new RuntimeException("init rpc server fail");
         try (MockedStatic<NodeManager> nodeManagerMock = mockStatic(NodeManager.class);
-             MockedStatic<JRaftUtils> jraftUtilsMock = mockStatic(JRaftUtils.class)) {
+            MockedStatic<JRaftUtils> jraftUtilsMock = mockStatic(JRaftUtils.class)) {
             nodeManagerMock.when(NodeManager::getInstance).thenReturn(mockNodeManager);
-            jraftUtilsMock.when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)))
-                    .thenThrow(cause);
+            jraftUtilsMock
+                .when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)))
+                .thenThrow(cause);
             JRaftException ex = assertThrows(JRaftException.class, () -> server.start());
             assertTrue(ex.getCause() == cause);
             assertFalse((Boolean) ReflectionTestUtils.getField(server, "isStarted"));
         }
     }
-
+    
     /** start() when rpcServer.init(null) returns false throws RuntimeException. */
     @Test
     void testStartWhenRpcServerInitReturnsFalseThrows() throws Exception {
@@ -638,61 +673,72 @@ class JRaftServerTest {
         RpcServer mockRpcServer = mock(RpcServer.class);
         when(mockRpcServer.init(null)).thenReturn(false);
         try (MockedStatic<NodeManager> nodeManagerMock = mockStatic(NodeManager.class);
-             MockedStatic<JRaftUtils> jraftUtilsMock = mockStatic(JRaftUtils.class)) {
+            MockedStatic<JRaftUtils> jraftUtilsMock = mockStatic(JRaftUtils.class)) {
             nodeManagerMock.when(NodeManager::getInstance).thenReturn(mockNodeManager);
-            jraftUtilsMock.when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)))
-                    .thenReturn(mockRpcServer);
+            jraftUtilsMock
+                .when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)))
+                .thenReturn(mockRpcServer);
             assertThrows(RuntimeException.class, () -> server.start());
             assertFalse((Boolean) ReflectionTestUtils.getField(server, "isStarted"));
         }
     }
-
+    
     /** invokeToLeader callback with exception sets throwable and runs closure. */
     @Test
     void testInvokeToLeaderCallbackWithException() throws Exception {
         when(cliClientServiceMock.getRpcClient()).thenReturn(rpcClient);
         setLeaderAs(peerId1);
         com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl closure =
-                new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(new CompletableFuture<>());
+            new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(
+                new CompletableFuture<>());
         final RuntimeException ex = new RuntimeException("rpc error");
         doAnswer(inv -> {
             InvokeCallback cb = inv.getArgument(2);
             cb.complete(null, ex);
             return null;
-        }).when(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), any(Message.class), any(InvokeCallback.class), any(long.class));
-        Method invokeToLeaderMethod = JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
+        }).when(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), any(Message.class),
+            any(InvokeCallback.class), any(long.class));
+        Method invokeToLeaderMethod =
+            JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
                 int.class, FailoverClosure.class);
         invokeToLeaderMethod.setAccessible(true);
-        invokeToLeaderMethod.invoke(server, groupId, ReadRequest.newBuilder().setGroup(groupId).build(), 3000, closure);
+        invokeToLeaderMethod.invoke(server, groupId,
+            ReadRequest.newBuilder().setGroup(groupId).build(), 3000, closure);
         assertTrue(ReflectionTestUtils.getField(closure, "throwable") == ex);
     }
-
+    
     /** invokeToLeader callback with response.getSuccess() false sets throwable and runs closure. */
     @Test
     void testInvokeToLeaderCallbackWithFailedResponse() throws Exception {
         when(cliClientServiceMock.getRpcClient()).thenReturn(rpcClient);
         setLeaderAs(peerId1);
         com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl closure =
-                new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(new CompletableFuture<>());
-        Response failedResponse = Response.newBuilder().setSuccess(false).setErrMsg("raft error").build();
+            new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(
+                new CompletableFuture<>());
+        Response failedResponse =
+            Response.newBuilder().setSuccess(false).setErrMsg("raft error").build();
         doAnswer(inv -> {
             InvokeCallback cb = inv.getArgument(2);
             cb.complete(failedResponse, null);
             return null;
-        }).when(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), any(Message.class), any(InvokeCallback.class), any(long.class));
-        Method invokeToLeaderMethod = JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
+        }).when(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), any(Message.class),
+            any(InvokeCallback.class), any(long.class));
+        Method invokeToLeaderMethod =
+            JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
                 int.class, FailoverClosure.class);
         invokeToLeaderMethod.setAccessible(true);
-        invokeToLeaderMethod.invoke(server, groupId, ReadRequest.newBuilder().setGroup(groupId).build(), 3000, closure);
+        invokeToLeaderMethod.invoke(server, groupId,
+            ReadRequest.newBuilder().setGroup(groupId).build(), 3000, closure);
         Throwable t = (Throwable) ReflectionTestUtils.getField(closure, "throwable");
         assertInstanceOf(IllegalStateException.class, t);
         assertTrue(t.getMessage().contains("raft error"));
     }
-
+    
     /** invokeToLeader when no leader throws NoLeaderException. */
     @Test
     void testInvokeToLeaderWhenNoLeaderThrowsNoLeaderException() throws Exception {
         JRaftServer serverWithNoLeader = new JRaftServer() {
+            
             @Override
             protected PeerId getLeader(String raftGroupId) {
                 return null;
@@ -701,12 +747,15 @@ class JRaftServerTest {
         serverWithNoLeader.init(config);
         serverWithNoLeader.mockMultiRaftGroup(server.getMultiRaftGroup());
         ReflectionTestUtils.setField(serverWithNoLeader, "cliClientService", cliClientServiceMock);
-        Method invokeToLeaderMethod = JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
+        Method invokeToLeaderMethod =
+            JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
                 int.class, FailoverClosure.class);
         invokeToLeaderMethod.setAccessible(true);
         com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl closure =
-                new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(new CompletableFuture<>());
-        invokeToLeaderMethod.invoke(serverWithNoLeader, "test_nacos", ReadRequest.newBuilder().setGroup("test_nacos").build(), 3000, closure);
+            new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(
+                new CompletableFuture<>());
+        invokeToLeaderMethod.invoke(serverWithNoLeader, "test_nacos",
+            ReadRequest.newBuilder().setGroup("test_nacos").build(), 3000, closure);
         Throwable throwable = (Throwable) ReflectionTestUtils.getField(closure, "throwable");
         assertInstanceOf(NoLeaderException.class, throwable);
     }

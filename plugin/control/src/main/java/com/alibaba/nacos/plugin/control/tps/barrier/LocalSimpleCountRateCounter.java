@@ -58,7 +58,7 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     public long add(long timestamp, long count) {
         return createSlotIfAbsent(timestamp).countHolder.count.addAndGet(count);
     }
-
+    
     @Override
     public boolean tryAdd(long timestamp, long countDelta, long upperLimit) {
         if (createSlotIfAbsent(timestamp).countHolder.count.addAndGet(countDelta) <= upperLimit) {
@@ -68,7 +68,7 @@ public class LocalSimpleCountRateCounter extends RateCounter {
             return false;
         }
     }
-
+    
     public void minus(long timestamp, long count) {
         AtomicLong currentCount = createSlotIfAbsent(timestamp).countHolder.count;
         currentCount.addAndGet(count * -1);
@@ -87,8 +87,10 @@ public class LocalSimpleCountRateCounter extends RateCounter {
      */
     private TpsSlot getPoint(long timeStamp) {
         long distance = timeStamp - startTime;
-        long diff = (distance < 0 ? distance + getPeriod().toMillis(1) * DEFAULT_RECORD_SIZE : distance) / getPeriod()
-                .toMillis(1);
+        long diff =
+            (distance < 0 ? distance + getPeriod().toMillis(1) * DEFAULT_RECORD_SIZE : distance)
+                / getPeriod()
+                    .toMillis(1);
         long currentWindowTime = startTime + diff * getPeriod().toMillis(1);
         int index = (int) diff % DEFAULT_RECORD_SIZE;
         TpsSlot tpsSlot = slotList.get(index);
@@ -107,8 +109,10 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     public TpsSlot createSlotIfAbsent(long timeStamp) {
         long distance = timeStamp - startTime;
         
-        long diff = (distance < 0 ? distance + getPeriod().toMillis(1) * DEFAULT_RECORD_SIZE : distance) / getPeriod()
-                .toMillis(1);
+        long diff =
+            (distance < 0 ? distance + getPeriod().toMillis(1) * DEFAULT_RECORD_SIZE : distance)
+                / getPeriod()
+                    .toMillis(1);
         long currentWindowTime = startTime + diff * getPeriod().toMillis(1);
         int index = (int) diff % DEFAULT_RECORD_SIZE;
         TpsSlot tpsSlot = slotList.get(index);

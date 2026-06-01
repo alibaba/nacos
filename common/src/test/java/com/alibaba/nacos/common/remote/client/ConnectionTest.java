@@ -41,6 +41,7 @@ class ConnectionTest {
     @BeforeEach
     void setUp() throws Exception {
         connection = new Connection(new RpcClient.ServerInfo("127.0.0.1", 8848)) {
+            
             @Override
             public Response request(Request request, long timeoutMills) throws NacosException {
                 return null;
@@ -52,7 +53,8 @@ class ConnectionTest {
             }
             
             @Override
-            public void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException {
+            public void asyncRequest(Request request, RequestCallBack requestCallBack)
+                throws NacosException {
             }
             
             @Override
@@ -76,13 +78,19 @@ class ConnectionTest {
     @Test
     void testGetConnectionAbility() {
         assertFalse(connection.isAbilitiesSet());
-        assertEquals(AbilityStatus.UNKNOWN, connection.getConnectionAbility(AbilityKey.SDK_CLIENT_FUZZY_WATCH));
-        connection.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), true));
+        assertEquals(AbilityStatus.UNKNOWN,
+            connection.getConnectionAbility(AbilityKey.SDK_CLIENT_FUZZY_WATCH));
+        connection.setAbilityTable(
+            Collections.singletonMap(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), true));
         assertTrue(connection.isAbilitiesSet());
-        assertEquals(AbilityStatus.UNKNOWN, connection.getConnectionAbility(AbilityKey.SDK_CLIENT_FUZZY_WATCH));
-        assertEquals(AbilityStatus.SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
-        connection.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), false));
-        assertEquals(AbilityStatus.NOT_SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
+        assertEquals(AbilityStatus.UNKNOWN,
+            connection.getConnectionAbility(AbilityKey.SDK_CLIENT_FUZZY_WATCH));
+        assertEquals(AbilityStatus.SUPPORTED,
+            connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
+        connection.setAbilityTable(
+            Collections.singletonMap(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), false));
+        assertEquals(AbilityStatus.NOT_SUPPORTED,
+            connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
     }
     
     @Test

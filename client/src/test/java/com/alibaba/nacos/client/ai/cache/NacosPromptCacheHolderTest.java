@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -64,7 +65,8 @@ class NacosPromptCacheHolderTest {
         Properties properties = new Properties();
         properties.put(AiConstants.AI_PROMPT_CACHE_UPDATE_INTERVAL, "100");
         NotifyCenter.registerToPublisher(PromptChangedEvent.class, 16384);
-        cacheHolder = new NacosPromptCacheHolder(aiClientProxy, NacosClientProperties.PROTOTYPE.derive(properties));
+        cacheHolder = new NacosPromptCacheHolder(aiClientProxy,
+            NacosClientProperties.PROTOTYPE.derive(properties));
     }
     
     @AfterEach
@@ -80,7 +82,7 @@ class NacosPromptCacheHolderTest {
     @Test
     void subscribePromptShouldReturnNullAndScheduleWhenNotFound() throws Exception {
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null))
-                .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
+            .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
         
         Prompt result = cacheHolder.subscribePrompt("p1", "1.0.0", null);
         
@@ -98,7 +100,8 @@ class NacosPromptCacheHolderTest {
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         
         assertNotNull(getPromptCache().get("p1::version:1.0.0"));
-        assertTrue(subscriber.await(5000), "Event should be received by subscriber within 5 seconds");
+        assertTrue(subscriber.await(5000),
+            "Event should be received by subscriber within 5 seconds");
         assertTrue(subscriber.invokedMark.get(), "Subscriber should have been invoked");
     }
     
@@ -108,16 +111,19 @@ class NacosPromptCacheHolderTest {
         prompt.setMd5("m1");
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, "m1"))
-                .thenThrow(new NacosException(NacosException.NOT_MODIFIED, "up to date"));
-        cacheHolder.subscribePrompt("p1", "1.0.0", null);
+            .thenThrow(new NacosException(NacosException.NOT_MODIFIED, "up to date"));
         MockPromptEventSubscriber subscriber = registerMockSubscriber();
+        cacheHolder.subscribePrompt("p1", "1.0.0", null);
+        assertTrue(subscriber.await(5000),
+            "Initial event should be received by subscriber within 5 seconds");
+        subscriber.reset();
         
         Runnable updater = getOnlyUpdater();
         updater.run();
-        TimeUnit.MILLISECONDS.sleep(50);
         
         assertEquals("v1", getPromptCache().get("p1::version:1.0.0").getTemplate());
-        assertTrue(!subscriber.invokedMark.get());
+        assertFalse(subscriber.await(200), "Not modified prompt should not publish event");
+        assertFalse(subscriber.invokedMark.get(), "Subscriber should not be invoked");
     }
     
     @Test
@@ -126,7 +132,7 @@ class NacosPromptCacheHolderTest {
         prompt.setMd5("m1");
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, "m1"))
-                .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
+            .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         MockPromptEventSubscriber subscriber = registerMockSubscriber();
         
@@ -134,7 +140,8 @@ class NacosPromptCacheHolderTest {
         updater.run();
         
         assertNull(getPromptCache().get("p1::version:1.0.0"));
-        assertTrue(subscriber.await(5000), "Null event should be received by subscriber within 5 seconds");
+        assertTrue(subscriber.await(5000),
+            "Null event should be received by subscriber within 5 seconds");
         assertTrue(subscriber.invokedMark.get());
     }
     
@@ -154,10 +161,10 @@ class NacosPromptCacheHolderTest {
     @Test
     void subscribePromptShouldThrowWhenUnexpectedException() throws Exception {
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null))
-                .thenThrow(new NacosException(NacosException.SERVER_ERROR, "server error"));
+            .thenThrow(new NacosException(NacosException.SERVER_ERROR, "server error"));
         
         org.junit.jupiter.api.Assertions.assertThrows(NacosException.class,
-                () -> cacheHolder.subscribePrompt("p1", "1.0.0", null));
+            () -> cacheHolder.subscribePrompt("p1", "1.0.0", null));
     }
     
     @Test
@@ -166,7 +173,7 @@ class NacosPromptCacheHolderTest {
         prompt.setMd5("m1");
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, "m1"))
-                .thenThrow(new NacosException(NacosException.SERVER_ERROR, "server error"));
+            .thenThrow(new NacosException(NacosException.SERVER_ERROR, "server error"));
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         
         Runnable updater = getOnlyUpdater();
@@ -205,7 +212,7 @@ class NacosPromptCacheHolderTest {
     private static class MockPromptEventSubscriber extends Subscriber<PromptChangedEvent> {
         
         private final AtomicBoolean invokedMark = new AtomicBoolean(false);
-        private final CountDownLatch latch = new CountDownLatch(1);
+        private volatile CountDownLatch latch = new CountDownLatch(1);
         
         @Override
         public void onEvent(PromptChangedEvent event) {
@@ -220,6 +227,11 @@ class NacosPromptCacheHolderTest {
         
         boolean await(long timeoutMs) throws InterruptedException {
             return latch.await(timeoutMs, TimeUnit.MILLISECONDS);
+        }
+        
+        void reset() {
+            invokedMark.set(false);
+            latch = new CountDownLatch(1);
         }
     }
 }

@@ -28,43 +28,43 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class McpToolSpecification {
-
+    
     /**
      * Tool specification storage type. Defaults to "normal" (plaintext storage).
      * When set to "encrypted" (or vendor-specific like "encrypt-kms"), server will persist encryptData as-is
      * and skip parsing tools/securitySchemes.
      */
     private String specificationType;
-
+    
     /**
      * Encrypted payload and metadata when specificationType indicates encryption.
      */
     private EncryptObject encryptData;
-
+    
     private List<McpTool> tools = new LinkedList<>();
     
     private Map<String, McpToolMeta> toolsMeta = new HashMap<>(1);
     
     private List<SecurityScheme> securitySchemes = new ArrayList<>();
-
+    
     private Map<String, Object> extensions = new HashMap<>(1);
     
     public String getSpecificationType() {
         return specificationType;
     }
-
+    
     public void setSpecificationType(String specificationType) {
         this.specificationType = specificationType;
     }
-
+    
     public EncryptObject getEncryptData() {
         return encryptData;
     }
-
+    
     public void setEncryptData(EncryptObject encryptData) {
         this.encryptData = encryptData;
     }
-
+    
     public List<McpTool> getTools() {
         return tools;
     }
@@ -80,19 +80,19 @@ public class McpToolSpecification {
     public void setToolsMeta(Map<String, McpToolMeta> toolsMeta) {
         this.toolsMeta = toolsMeta;
     }
-
+    
     public List<SecurityScheme> getSecuritySchemes() {
         return securitySchemes;
     }
-
+    
     public void setSecuritySchemes(List<SecurityScheme> securitySchemes) {
         this.securitySchemes = securitySchemes;
     }
-
+    
     public Map<String, Object> getExtensions() {
         return extensions;
     }
-
+    
     public void setExtensions(Map<String, Object> extensions) {
         this.extensions = extensions;
     }

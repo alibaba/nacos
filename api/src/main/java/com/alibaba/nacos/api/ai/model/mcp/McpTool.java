@@ -26,26 +26,26 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class McpTool {
-
+    
     private String name;
     
     private String description;
     
     private Map<String, Object> inputSchema;
-
+    
     private Map<String, Object> outputSchema;
-
+    
     /**
      * MCP protocol meta field. See MCP specification for `_meta` usage.
      */
     @JsonProperty("_meta")
     private Map<String, Object> meta;
-
+    
     /**
      * MCP Tool annotations - additional properties describing a Tool to clients.
      */
     private McpToolAnnotations annotations;
-
+    
     public String getName() {
         return name;
     }
@@ -69,11 +69,11 @@ public class McpTool {
     public void setInputSchema(Map<String, Object> inputSchema) {
         this.inputSchema = inputSchema;
     }
-
+    
     public Map<String, Object> getOutputSchema() {
         return outputSchema;
     }
-
+    
     public void setOutputSchema(Map<String, Object> outputSchema) {
         this.outputSchema = outputSchema;
     }

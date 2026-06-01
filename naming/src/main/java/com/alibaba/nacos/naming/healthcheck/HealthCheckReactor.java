@@ -44,7 +44,8 @@ public class HealthCheckReactor {
     public static void scheduleCheck(HealthCheckTaskV2 task) {
         task.setStartTime(System.currentTimeMillis());
         Runnable wrapperTask = new HealthCheckTaskInterceptWrapper(task);
-        GlobalExecutor.scheduleNamingHealth(wrapperTask, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
+        GlobalExecutor.scheduleNamingHealth(wrapperTask, task.getCheckRtNormalized(),
+            TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -54,10 +55,12 @@ public class HealthCheckReactor {
      */
     public static void scheduleCheck(BeatCheckTask task) {
         Runnable wrapperTask =
-                task instanceof NacosHealthCheckTask ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
-                        : task;
+            task instanceof NacosHealthCheckTask
+                ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
+                : task;
         futureMap.computeIfAbsent(task.taskKey(),
-                k -> GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000, TimeUnit.MILLISECONDS));
+            k -> GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000,
+                TimeUnit.MILLISECONDS));
     }
     
     /**

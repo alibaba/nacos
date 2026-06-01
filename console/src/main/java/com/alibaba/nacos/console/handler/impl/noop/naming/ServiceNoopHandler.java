@@ -40,58 +40,73 @@ import java.util.List;
 @ConditionalOnMissingBean(value = ServiceHandler.class, ignored = ServiceNoopHandler.class)
 public class ServiceNoopHandler implements ServiceHandler {
     
-    private static final String MCP_NOT_ENABLED_MESSAGE = "Current functionMode is `config`, naming module is disabled.";
+    private static final String MCP_NOT_ENABLED_MESSAGE =
+        "Current functionMode is `config`, naming module is disabled.";
     
     @Override
-    public void createService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public void createService(ServiceForm serviceForm, ServiceMetadata serviceMetadata)
+        throws Exception {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public void deleteService(String namespaceId, String serviceName, String groupName) throws Exception {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public void deleteService(String namespaceId, String serviceName, String groupName)
+        throws Exception {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata)
+        throws Exception {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public List<String> getSelectorTypeList() throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
-            String groupName, boolean aggregation) throws Exception {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId,
+        String serviceName,
+        String groupName, boolean aggregation) throws Exception {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
-            String serviceName, String groupName, boolean ignoreEmptyService) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public Object getServiceList(boolean withInstances, String namespaceId, int pageNo,
+        int pageSize,
+        String serviceName, String groupName, boolean ignoreEmptyService) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName)
-            throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName,
+        String groupName)
+        throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
-            ClusterMetadata clusterMetadata) throws Exception {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                MCP_NOT_ENABLED_MESSAGE);
+    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName,
+        String clusterName,
+        ClusterMetadata clusterMetadata) throws Exception {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            MCP_NOT_ENABLED_MESSAGE);
     }
 }
-

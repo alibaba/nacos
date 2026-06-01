@@ -37,7 +37,7 @@ public enum DeploymentType {
      * Only console deployment type, means only the nacos console is deployed in the process.
      */
     CONSOLE(Constants.NACOS_DEPLOYMENT_TYPE_CONSOLE),
-
+    
     /**
      * Nacos Server and Mcp will be deployed in the process.
      */

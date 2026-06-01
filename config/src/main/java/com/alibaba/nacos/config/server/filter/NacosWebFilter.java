@@ -59,7 +59,7 @@ public class NacosWebFilter implements Filter {
     
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+        throws IOException, ServletException {
         request.setCharacterEncoding(Constants.ENCODE);
         response.setContentType("application/json;charset=" + Constants.ENCODE);
         

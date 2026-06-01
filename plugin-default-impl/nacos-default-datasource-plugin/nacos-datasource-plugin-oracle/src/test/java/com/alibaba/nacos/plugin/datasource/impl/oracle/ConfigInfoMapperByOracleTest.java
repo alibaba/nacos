@@ -94,22 +94,26 @@ class ConfigInfoMapperByOracleTest {
     @Test
     void testFindConfigInfoByAppCountRows() {
         MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoByAppCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?", mapperResult.getSql());
+        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?",
+            mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoByAppFetchRows() {
         MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoByAppFetchRows(context);
-        assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info"));
-        assertTrue(mapperResult.getSql().contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql()
+            .contains("SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info"));
+        assertTrue(mapperResult.getSql().contains(
+            "ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testConfigInfoLikeTenantCount() {
         MapperResult mapperResult = configInfoMapperByOracle.configInfoLikeTenantCount(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ?", mapperResult.getSql());
+        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ?",
+            mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId}, mapperResult.getParamList().toArray());
     }
     
@@ -118,7 +122,8 @@ class ConfigInfoMapperByOracleTest {
         MapperResult mapperResult = configInfoMapperByOracle.getTenantIdList(context);
         assertTrue(mapperResult.getSql().contains("SELECT tenant_id FROM config_info"));
         assertTrue(mapperResult.getSql().contains("GROUP BY tenant_id ORDER BY tenant_id"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql()
+            .contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
     }
     
     @Test
@@ -126,22 +131,26 @@ class ConfigInfoMapperByOracleTest {
         MapperResult mapperResult = configInfoMapperByOracle.getGroupIdList(context);
         assertTrue(mapperResult.getSql().contains("SELECT group_id FROM config_info"));
         assertTrue(mapperResult.getSql().contains("GROUP BY group_id ORDER BY group_id"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql()
+            .contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
     }
     
     @Test
     void testFindAllConfigKey() {
         MapperResult mapperResult = configInfoMapperByOracle.findAllConfigKey(context);
         assertTrue(mapperResult.getSql().contains("SELECT data_id,group_id,app_name"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql()
+            .contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindAllConfigInfoBaseFetchRows() {
-        MapperResult mapperResult = configInfoMapperByOracle.findAllConfigInfoBaseFetchRows(context);
+        MapperResult mapperResult =
+            configInfoMapperByOracle.findAllConfigInfoBaseFetchRows(context);
         assertTrue(mapperResult.getSql().contains("SELECT t.id,data_id,group_id,content,md5"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql()
+            .contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
@@ -151,15 +160,19 @@ class ConfigInfoMapperByOracleTest {
         context.putContextParameter(ContextConstant.NEED_CONTENT, "true");
         
         MapperResult mapperResult = configInfoMapperByOracle.findAllConfigInfoFragment(context);
-        assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql().contains(
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key"));
+        assertTrue(mapperResult.getSql()
+            .contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {id}, mapperResult.getParamList().toArray());
         
         //without content
         context.putContextParameter(ContextConstant.NEED_CONTENT, "false");
         MapperResult mapperResult2 = configInfoMapperByOracle.findAllConfigInfoFragment(context);
-        assertTrue(mapperResult2.getSql().contains("SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type,encrypted_data_key"));
-        assertTrue(mapperResult2.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult2.getSql().contains(
+            "SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type,encrypted_data_key"));
+        assertTrue(mapperResult2.getSql()
+            .contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {id}, mapperResult2.getParamList().toArray());
     }
     
@@ -167,18 +180,21 @@ class ConfigInfoMapperByOracleTest {
     void testFindChangeConfig() {
         MapperResult mapperResult = configInfoMapperByOracle.findChangeConfig(context);
         assertEquals(
-                "SELECT id, data_id, group_id, tenant_id, app_name,md5, gmt_modified, encrypted_data_key FROM config_info WHERE "
-                        + "gmt_modified >= ? and id > ? order by id fetch first ? rows only",
-                mapperResult.getSql());
-        assertArrayEquals(new Object[] {startTime, lastMaxId, pageSize}, mapperResult.getParamList().toArray());
+            "SELECT id, data_id, group_id, tenant_id, app_name,md5, gmt_modified, encrypted_data_key FROM config_info WHERE "
+                + "gmt_modified >= ? and id > ? order by id fetch first ? rows only",
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {startTime, lastMaxId, pageSize},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindChangeConfigCountRows() {
         MapperResult mapperResult = configInfoMapperByOracle.findChangeConfigCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=? ",
-                mapperResult.getSql());
-        assertArrayEquals(new Object[] {appName, startTime, endTime}, mapperResult.getParamList().toArray());
+        assertEquals(
+            "SELECT count(*) FROM config_info WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=? ",
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {appName, startTime, endTime},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
@@ -186,50 +202,63 @@ class ConfigInfoMapperByOracleTest {
         Object lastMaxId = 100;
         context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
         MapperResult mapperResult = configInfoMapperByOracle.findChangeConfigFetchRows(context);
-        assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM config_info"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + 0 + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
-        assertArrayEquals(new Object[] {tenantId, appName, startTime, endTime}, mapperResult.getParamList().toArray());
+        assertTrue(mapperResult.getSql().contains(
+            "SELECT id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM config_info"));
+        assertTrue(mapperResult.getSql()
+            .contains("OFFSET " + 0 + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertArrayEquals(new Object[] {tenantId, appName, startTime, endTime},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testListGroupKeyMd5ByPageFetchRows() {
-        MapperResult mapperResult = configInfoMapperByOracle.listGroupKeyMd5ByPageFetchRows(context);
-        assertTrue(mapperResult.getSql().contains("SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        MapperResult mapperResult =
+            configInfoMapperByOracle.listGroupKeyMd5ByPageFetchRows(context);
+        assertTrue(mapperResult.getSql().contains(
+            "SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key"));
+        assertTrue(mapperResult.getSql()
+            .contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     void testFindAllConfigInfo4Export() {
         MapperResult mapperResult = configInfoMapperByOracle.findAllConfigInfo4Export(context);
-        assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified"));
+        assertTrue(mapperResult.getSql().contains(
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified"));
         assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
         
         context.putWhereParameter(FieldConstant.IDS, null);
         mapperResult = configInfoMapperByOracle.findAllConfigInfo4Export(context);
-        assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified"));
+        assertTrue(mapperResult.getSql().contains(
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified"));
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoBaseLikeCountRows() {
-        MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoBaseLikeCountRows(context);
+        MapperResult mapperResult =
+            configInfoMapperByOracle.findConfigInfoBaseLikeCountRows(context);
         assertTrue(mapperResult.getSql().contains("SELECT count(*) FROM config_info"));
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     void testFindConfigInfoBaseLikeFetchRows() {
-        MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoBaseLikeFetchRows(context);
-        assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,tenant_id,content FROM config_info"));
-        assertTrue(mapperResult.getSql().contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        MapperResult mapperResult =
+            configInfoMapperByOracle.findConfigInfoBaseLikeFetchRows(context);
+        assertTrue(mapperResult.getSql()
+            .contains("SELECT id,data_id,group_id,tenant_id,content FROM config_info"));
+        assertTrue(mapperResult.getSql().contains(
+            "ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     void testFindConfigInfo4PageCountRows() {
         MapperResult mapperResult = configInfoMapperByOracle.findConfigInfo4PageCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE  tenant_id=?  AND app_name=? ", mapperResult.getSql());
+        assertEquals("SELECT count(*) FROM config_info WHERE  tenant_id=?  AND app_name=? ",
+            mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
@@ -240,51 +269,62 @@ class ConfigInfoMapperByOracleTest {
         String sql = mapperResult.getSql();
         assertTrue(sql.contains("WITH tag_agg AS"));
         assertTrue(sql.contains("LISTAGG"));
-        assertTrue(sql.contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(sql.contains(
+            "ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoBaseByGroupFetchRows() {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
-        MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoBaseByGroupFetchRows(context);
-        assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,content FROM config_info"));
+        MapperResult mapperResult =
+            configInfoMapperByOracle.findConfigInfoBaseByGroupFetchRows(context);
+        assertTrue(
+            mapperResult.getSql().contains("SELECT id,data_id,group_id,content FROM config_info"));
         assertTrue(mapperResult.getSql().contains("WHERE group_id=? AND tenant_id=?"));
-        assertTrue(mapperResult.getSql().contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql().contains(
+            "ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {groupId, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoLike4PageCountRows() {
-        MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoLike4PageCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ?  AND app_name = ? ", mapperResult.getSql());
+        MapperResult mapperResult =
+            configInfoMapperByOracle.findConfigInfoLike4PageCountRows(context);
+        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ?  AND app_name = ? ",
+            mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
-        MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoLike4PageFetchRows(context);
+        MapperResult mapperResult =
+            configInfoMapperByOracle.findConfigInfoLike4PageFetchRows(context);
         // Verify the optimized SQL structure with Oracle-specific syntax
         String sql = mapperResult.getSql();
         assertTrue(sql.contains("WITH tag_agg AS"));
         assertTrue(sql.contains("LISTAGG"));
-        assertTrue(sql.contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(sql.contains(
+            "ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindAllConfigInfoFetchRows() {
         MapperResult mapperResult = configInfoMapperByOracle.findAllConfigInfoFetchRows(context);
-        assertTrue(mapperResult.getSql().contains("SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5"));
+        assertTrue(mapperResult.getSql()
+            .contains("SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5"));
         assertTrue(mapperResult.getSql().contains("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY"));
-        assertArrayEquals(new Object[] {tenantId, startRow, pageSize}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {tenantId, startRow, pageSize},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfosByIds() {
         MapperResult mapperResult = configInfoMapperByOracle.findConfigInfosByIds(context);
-        assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id IN (?, ?, ?, ?, ?) ",
-                mapperResult.getSql());
+        assertEquals(
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id IN (?, ?, ?, ?, ?) ",
+            mapperResult.getSql());
         assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
     }
     
@@ -346,7 +386,7 @@ class ConfigInfoMapperByOracleTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, "DEFAULT");
         context.putWhereParameter(FieldConstant.APP_NAME, appName);
         context.putWhereParameter(FieldConstant.CONTENT, "key");
-        context.putWhereParameter(FieldConstant.TYPE, new String[]{"properties", "yaml"});
+        context.putWhereParameter(FieldConstant.TYPE, new String[] {"properties", "yaml"});
         
         MapperResult mapperResult = mapper.findConfigInfoLike4PageFetchRows(context);
         String sql = mapperResult.getSql();

@@ -42,7 +42,8 @@ public class AgentSpecHttpParamExtractor extends AbstractHttpParamExtractor {
         paramInfo.setNamespaceId(request.getParameter("namespaceId"));
         paramInfo.setAgentName(request.getParameter("agentSpecName"));
         if (request.getParameterMap().containsKey(AGENTSPEC_CARD_PARAM)) {
-            paramInfo.setAgentName(deserializeAndGetAgentSpecName(request.getParameter(AGENTSPEC_CARD_PARAM)));
+            paramInfo.setAgentName(
+                deserializeAndGetAgentSpecName(request.getParameter(AGENTSPEC_CARD_PARAM)));
         }
         return Collections.singletonList(paramInfo);
     }

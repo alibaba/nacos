@@ -27,21 +27,21 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  * {@link DistroDelayTaskExecuteEngine} unit test.
  */
 class DistroDelayTaskExecuteEngineTest {
-
+    
     private DistroDelayTaskExecuteEngine engine;
-
+    
     @BeforeEach
     void setUp() {
         engine = new DistroDelayTaskExecuteEngine();
     }
-
+    
     @Test
     void testAddAndGetProcessorWithStringKey() {
         NacosTaskProcessor processor = task -> true;
         engine.addProcessor("type1", processor);
         assertSame(processor, engine.getProcessor("type1"));
     }
-
+    
     @Test
     void testAddAndGetProcessorWithDistroKey() {
         NacosTaskProcessor processor = task -> true;
@@ -50,7 +50,7 @@ class DistroDelayTaskExecuteEngineTest {
         assertSame(processor, engine.getProcessor(key));
         assertSame(processor, engine.getProcessor("resourceType"));
     }
-
+    
     @Test
     void testGetProcessorWithDistroKeyReturnsByResourceType() {
         NacosTaskProcessor processor = task -> true;

@@ -56,7 +56,8 @@ public class UtilsAndCommons {
     
     public static final String DEFAULT_NACOS_NAMING_CONTEXT_V2 = NACOS_SERVER_VERSION_2 + "/ns";
     
-    public static final String DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 = NACOS_SERVER_VERSION_3 + "/admin/ns";
+    public static final String DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 =
+        NACOS_SERVER_VERSION_3 + "/admin/ns";
     
     public static final String NACOS_NAMING_CONTEXT = DEFAULT_NACOS_NAMING_CONTEXT;
     
@@ -76,17 +77,23 @@ public class UtilsAndCommons {
     
     public static final String NACOS_NAMING_OPERATOR_ADMIN_CONTEXT_V3 = "/ops";
     
-    public static final String SERVICE_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_SERVICE_CONTEXT;
+    public static final String SERVICE_CONTROLLER_V3_ADMIN_PATH =
+        DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_SERVICE_CONTEXT;
     
-    public static final String INSTANCE_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_INSTANCE_CONTEXT;
+    public static final String INSTANCE_CONTROLLER_V3_ADMIN_PATH =
+        DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_INSTANCE_CONTEXT;
     
-    public static final String CLUSTER_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_CLUSTER_CONTEXT;
+    public static final String CLUSTER_CONTROLLER_V3_ADMIN_PATH =
+        DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_CLUSTER_CONTEXT;
     
-    public static final String HEALTH_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_HEALTH_CONTEXT;
+    public static final String HEALTH_CONTROLLER_V3_ADMIN_PATH =
+        DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_HEALTH_CONTEXT;
     
-    public static final String OPERATOR_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_OPERATOR_ADMIN_CONTEXT_V3;
+    public static final String OPERATOR_CONTROLLER_V3_ADMIN_PATH =
+        DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_OPERATOR_ADMIN_CONTEXT_V3;
     
-    public static final String CLIENT_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_CLIENT_CONTEXT;
+    public static final String CLIENT_CONTROLLER_V3_ADMIN_PATH =
+        DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_CLIENT_CONTEXT;
     
     public static final String V3_CLIENT_API_PATH = NACOS_SERVER_VERSION_3 + "/client";
     
@@ -100,7 +107,8 @@ public class UtilsAndCommons {
     
     public static final String SWITCH_DOMAIN_NAME = "00-00---000-NACOS_SWITCH_DOMAIN-000---00-00";
     
-    public static final String CIDR_REGEX = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]+";
+    public static final String CIDR_REGEX =
+        "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]+";
     
     public static final String UNKNOWN_SITE = "unknown";
     
@@ -139,7 +147,7 @@ public class UtilsAndCommons {
     public static final String PERSIST = "persist";
     
     public static final String DATA_BASE_DIR =
-            EnvUtil.getNacosHome() + File.separator + "data" + File.separator + "naming";
+        EnvUtil.getNacosHome() + File.separator + "data" + File.separator + "naming";
     
     public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos.naming";
     
@@ -150,15 +158,15 @@ public class UtilsAndCommons {
     public static final String ENABLE_CLIENT_BEAT = "enableClientBeat";
     
     static {
-
+        
         /*
             Register subType for serialization
-
+        
             Now these subType implementation class has registered in static code.
             But there are some problem for classloader. The implementation class
             will be loaded when they are used, which will make deserialize
             before register.
-
+        
             子类实现类中的静态代码串中已经向Jackson进行了注册，但是由于classloader的原因，只有当
             该子类被使用的时候，才会加载该类。这可能会导致Jackson先进性反序列化，再注册子类，从而导致
             反序列化失败。
@@ -193,8 +201,9 @@ public class UtilsAndCommons {
                 for (String data : datas) {
                     String[] kv = data.split("=");
                     if (kv.length != 2) {
-                        throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.INSTANCE_METADATA_ERROR,
-                                "metadata format incorrect:" + metadata);
+                        throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                            ErrorCode.INSTANCE_METADATA_ERROR,
+                            "metadata format incorrect:" + metadata);
                     }
                     metadataMap.put(kv[0], kv[1]);
                 }

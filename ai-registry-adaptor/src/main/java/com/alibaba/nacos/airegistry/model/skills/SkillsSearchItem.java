@@ -22,43 +22,43 @@ package com.alibaba.nacos.airegistry.model.skills;
  * @author nacos
  */
 public class SkillsSearchItem {
-
+    
     private String id;
-
+    
     private String name;
-
+    
     private long installs;
-
+    
     private String source;
-
+    
     public String getId() {
         return id;
     }
-
+    
     public void setId(String id) {
         this.id = id;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public long getInstalls() {
         return installs;
     }
-
+    
     public void setInstalls(long installs) {
         this.installs = installs;
     }
-
+    
     public String getSource() {
         return source;
     }
-
+    
     public void setSource(String source) {
         this.source = source;
     }

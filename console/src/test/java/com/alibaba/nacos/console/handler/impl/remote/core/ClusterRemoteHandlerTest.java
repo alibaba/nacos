@@ -43,8 +43,10 @@ class ClusterRemoteHandlerTest extends AbstractRemoteHandlerTest {
     void getNodeList() throws NacosException {
         Collection<NacosMember> mockList = new LinkedList<>();
         mockList.add(new NacosMember());
-        when(namingMaintainerService.listClusterNodes(StringUtils.EMPTY, StringUtils.EMPTY)).thenReturn(mockList);
-        Collection<? extends NacosMember> actual = clusterRemoteHandler.getNodeList(StringUtils.EMPTY);
+        when(namingMaintainerService.listClusterNodes(StringUtils.EMPTY, StringUtils.EMPTY))
+            .thenReturn(mockList);
+        Collection<? extends NacosMember> actual =
+            clusterRemoteHandler.getNodeList(StringUtils.EMPTY);
         assertEquals(mockList, actual);
     }
 }

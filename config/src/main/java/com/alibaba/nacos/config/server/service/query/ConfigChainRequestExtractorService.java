@@ -30,21 +30,27 @@ import java.util.Optional;
  */
 public class ConfigChainRequestExtractorService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChainRequestExtractorService.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ConfigChainRequestExtractorService.class);
     
     private static ConfigQueryChainRequestExtractor extractor;
     
     static {
-        String curExtractor = EnvUtil.getProperty("nacos.config.query.chain.request.extractor", "nacos");
-        Optional<ConfigQueryChainRequestExtractor> optionalBuilder = NacosServiceLoader.load(ConfigQueryChainRequestExtractor.class)
+        String curExtractor =
+            EnvUtil.getProperty("nacos.config.query.chain.request.extractor", "nacos");
+        Optional<ConfigQueryChainRequestExtractor> optionalBuilder =
+            NacosServiceLoader.load(ConfigQueryChainRequestExtractor.class)
                 .stream()
                 .filter(builder -> builder.getName().equals(curExtractor))
                 .findFirst();
         if (optionalBuilder.isPresent()) {
             extractor = optionalBuilder.get();
-            LOGGER.info("ConfigQueryRequestExtractor has been initialized successfully with extractor: {}", curExtractor);
+            LOGGER.info(
+                "ConfigQueryRequestExtractor has been initialized successfully with extractor: {}",
+                curExtractor);
         } else {
-            String errorMessage = "No suitable ConfigQueryRequestExtractor found for name: " + curExtractor;
+            String errorMessage =
+                "No suitable ConfigQueryRequestExtractor found for name: " + curExtractor;
             LOGGER.error(errorMessage);
             throw new NacosConfigException(errorMessage);
         }

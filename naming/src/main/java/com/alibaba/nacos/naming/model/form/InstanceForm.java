@@ -69,15 +69,15 @@ public class InstanceForm implements Serializable {
         fillDefaultValue();
         if (StringUtils.isBlank(serviceName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'serviceName' type String is not present");
+                "Required parameter 'serviceName' type String is not present");
         }
         if (StringUtils.isBlank(ip)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'ip' type String is not present");
+                "Required parameter 'ip' type String is not present");
         }
         if (port == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'port' type Integer is not present");
+                "Required parameter 'port' type Integer is not present");
         }
     }
     
@@ -202,26 +202,35 @@ public class InstanceForm implements Serializable {
             return false;
         }
         InstanceForm that = (InstanceForm) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(groupName, that.groupName) && Objects
-                .equals(serviceName, that.serviceName) && Objects.equals(ip, that.ip) && Objects
-                .equals(clusterName, that.clusterName) && Objects.equals(port, that.port) && Objects
-                .equals(healthy, that.healthy) && Objects.equals(weight, that.weight) && Objects
-                .equals(enabled, that.enabled) && Objects.equals(metadata, that.metadata) && Objects
+        return Objects.equals(namespaceId, that.namespaceId)
+            && Objects.equals(groupName, that.groupName) && Objects
+                .equals(serviceName, that.serviceName)
+            && Objects.equals(ip, that.ip) && Objects
+                .equals(clusterName, that.clusterName)
+            && Objects.equals(port, that.port) && Objects
+                .equals(healthy, that.healthy)
+            && Objects.equals(weight, that.weight) && Objects
+                .equals(enabled, that.enabled)
+            && Objects.equals(metadata, that.metadata) && Objects
                 .equals(ephemeral, that.ephemeral);
     }
     
     @Override
     public int hashCode() {
         return Objects
-                .hash(namespaceId, groupName, serviceName, ip, clusterName, port, healthy, weight, enabled, metadata,
-                        ephemeral);
+            .hash(namespaceId, groupName, serviceName, ip, clusterName, port, healthy, weight,
+                enabled, metadata,
+                ephemeral);
     }
     
     @Override
     public String toString() {
-        return "InstanceForm{" + "namespaceId='" + namespaceId + '\'' + ", groupName='" + groupName + '\''
-                + ", serviceName='" + serviceName + '\'' + ", ip='" + ip + '\'' + ", clusterName='" + clusterName + '\''
-                + ", port=" + port + ", healthy=" + healthy + ", weight=" + weight + ", enabled=" + enabled
-                + ", metadata='" + metadata + '\'' + ", ephemeral=" + ephemeral + '}';
+        return "InstanceForm{" + "namespaceId='" + namespaceId + '\'' + ", groupName='" + groupName
+            + '\''
+            + ", serviceName='" + serviceName + '\'' + ", ip='" + ip + '\'' + ", clusterName='"
+            + clusterName + '\''
+            + ", port=" + port + ", healthy=" + healthy + ", weight=" + weight + ", enabled="
+            + enabled
+            + ", metadata='" + metadata + '\'' + ", ephemeral=" + ephemeral + '}';
     }
 }

@@ -92,7 +92,7 @@ public class Query {
             try {
                 if (null != entry.getValue()) {
                     urlBuilder.append(entry.getKey()).append('=')
-                            .append(URLEncoder.encode(String.valueOf(entry.getValue()), DEFAULT_ENC));
+                        .append(URLEncoder.encode(String.valueOf(entry.getValue()), DEFAULT_ENC));
                     if (i > 1) {
                         urlBuilder.append('&');
                     }

@@ -43,7 +43,8 @@ public class NacosConsoleAuthFilter extends AbstractWebAuthFilter {
     }
     
     @Override
-    protected ServerIdentityResult checkServerIdentity(HttpServletRequest request, Secured secured) {
+    protected ServerIdentityResult checkServerIdentity(HttpServletRequest request,
+        Secured secured) {
         return ServerIdentityResult.noMatched();
     }
 }

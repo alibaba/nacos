@@ -40,13 +40,13 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         mcpRegistryServerDetail.setRepository(new Repository());
         mcpRegistryServerDetail.setVersion("1.0.0");
         mcpRegistryServerDetail.setSchema("http://example.com/schema");
-
+        
         // Create test packages
         Package pkg = new Package();
         pkg.setIdentifier("test-package");
         pkg.setVersion("1.0.0");
         mcpRegistryServerDetail.setPackages(Arrays.asList(pkg));
-
+        
         McpRegistryServerDetail.Meta meta = new McpRegistryServerDetail.Meta();
         mcpRegistryServerDetail.setMeta(meta);
         mcpRegistryServerDetail.setRemotes(Collections.singletonList(new Remote()));
@@ -68,11 +68,13 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"name\":\"testRegistryServer\",\"description\":\"test mcp registry server object\",\"$schema\":\"http://example.com/schema\",\"packages\":[{\"identifier\":\"test-package\",\"version\":\"1.0.0\"}],"
+        String json =
+            "{\"name\":\"testRegistryServer\",\"description\":\"test mcp registry server object\",\"$schema\":\"http://example.com/schema\",\"packages\":[{\"identifier\":\"test-package\",\"version\":\"1.0.0\"}],"
                 + "\"repository\":{},\"version\":\"1.0.0\",\"remotes\":[{\"type\":\"https\","
                 + "\"url\":\"127.0.0.1:8848/sse\"}],\"_meta\":{\"io.modelcontextprotocol.registry/official\":"
                 + "{\"publishedAt\":\"2022-01-01T00:00:00Z\"}}}";
-        McpRegistryServerDetail mcpRegistryServerDetail = mapper.readValue(json, McpRegistryServerDetail.class);
+        McpRegistryServerDetail mcpRegistryServerDetail =
+            mapper.readValue(json, McpRegistryServerDetail.class);
         assertNotNull(mcpRegistryServerDetail);
         assertEquals("testRegistryServer", mcpRegistryServerDetail.getName());
         assertEquals("test mcp registry server object", mcpRegistryServerDetail.getDescription());

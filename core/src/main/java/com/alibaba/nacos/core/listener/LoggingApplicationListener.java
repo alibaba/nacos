@@ -31,7 +31,8 @@ import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
  */
 public class LoggingApplicationListener implements NacosApplicationListener {
     
-    private static final String DEFAULT_NACOS_LOGBACK_LOCATION = CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
+    private static final String DEFAULT_NACOS_LOGBACK_LOCATION =
+        CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
     
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingApplicationListener.class);
     
@@ -41,8 +42,8 @@ public class LoggingApplicationListener implements NacosApplicationListener {
             System.setProperty(CONFIG_PROPERTY, DEFAULT_NACOS_LOGBACK_LOCATION);
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("There is no property named \"{}\" in Spring Boot Environment, "
-                                + "and whose value is {} will be set into System's Properties", CONFIG_PROPERTY,
-                        DEFAULT_NACOS_LOGBACK_LOCATION);
+                    + "and whose value is {} will be set into System's Properties", CONFIG_PROPERTY,
+                    DEFAULT_NACOS_LOGBACK_LOCATION);
             }
         }
     }

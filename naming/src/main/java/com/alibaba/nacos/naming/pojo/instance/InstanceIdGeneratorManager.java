@@ -43,7 +43,8 @@ public class InstanceIdGeneratorManager {
     }
     
     private void init() {
-        Collection<InstanceIdGenerator> instanceIdGenerators = NacosServiceLoader.load(InstanceIdGenerator.class);
+        Collection<InstanceIdGenerator> instanceIdGenerators =
+            NacosServiceLoader.load(InstanceIdGenerator.class);
         for (InstanceIdGenerator instanceIdGenerator : instanceIdGenerators) {
             generatorMap.put(instanceIdGenerator.type(), instanceIdGenerator);
         }
@@ -67,7 +68,8 @@ public class InstanceIdGeneratorManager {
         if (StringUtils.isBlank(instanceIdGeneratorType)) {
             instanceIdGeneratorType = Constants.DEFAULT_INSTANCE_ID_GENERATOR;
         }
-        return INSTANCE.getInstanceIdGenerator(instanceIdGeneratorType).generateInstanceId(instance);
+        return INSTANCE.getInstanceIdGenerator(instanceIdGeneratorType)
+            .generateInstanceId(instance);
     }
     
 }

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GroupKeyTest {
@@ -83,5 +84,10 @@ class GroupKeyTest {
         assertThrows(IllegalArgumentException.class, () -> {
             GroupKey.getKey("a", "");
         });
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new GroupKey());
     }
 }

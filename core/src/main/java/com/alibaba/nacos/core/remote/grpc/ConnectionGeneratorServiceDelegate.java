@@ -35,34 +35,41 @@ import java.util.Objects;
  */
 
 public class ConnectionGeneratorServiceDelegate {
-    private String connectionGeneratorType = System.getProperty("nacos.core.remote.connection.generator", "nacos");
+    
+    private String connectionGeneratorType =
+        System.getProperty("nacos.core.remote.connection.generator", "nacos");
     
     private ConnectionGeneratorService connectionGeneratorService = null;
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionGeneratorServiceDelegate.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ConnectionGeneratorServiceDelegate.class);
     
     private ConnectionGeneratorServiceDelegate() {
-        for (ConnectionGeneratorService connectionGeneratorService : NacosServiceLoader.load(ConnectionGeneratorService.class)) {
+        for (ConnectionGeneratorService connectionGeneratorService : NacosServiceLoader
+            .load(ConnectionGeneratorService.class)) {
             if (connectionGeneratorService.getType().equals(connectionGeneratorType)) {
                 this.connectionGeneratorService = connectionGeneratorService;
                 LoggerUtils.printIfInfoEnabled(LOGGER, "{} has been loaded, class: {}",
-                        connectionGeneratorType, connectionGeneratorService.getClass().getName());
+                    connectionGeneratorType, connectionGeneratorService.getClass().getName());
             }
         }
         
         if (Objects.isNull(connectionGeneratorService)) {
             throw new RuntimeException("can not find implementation of "
-                    + ConnectionGeneratorService.class.getName() + " for type " + connectionGeneratorType);
+                + ConnectionGeneratorService.class.getName() + " for type "
+                + connectionGeneratorType);
         }
     }
     
-    private static final ConnectionGeneratorServiceDelegate INSTANCE = new ConnectionGeneratorServiceDelegate();
+    private static final ConnectionGeneratorServiceDelegate INSTANCE =
+        new ConnectionGeneratorServiceDelegate();
     
     public static ConnectionGeneratorServiceDelegate getInstance() {
         return INSTANCE;
     }
     
-    public Connection getConnection(ConnectionMeta metaInfo, StreamObserver streamObserver, Channel channel) {
+    public Connection getConnection(ConnectionMeta metaInfo, StreamObserver streamObserver,
+        Channel channel) {
         return connectionGeneratorService.getConnection(metaInfo, streamObserver, channel);
     }
 }

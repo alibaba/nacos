@@ -56,17 +56,17 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class ParamCheckerFilterTest {
-
+    
     private ParamCheckerFilter filter;
-
+    
     private ControllerMethodsCache methodsCache;
-
+    
     private HttpServletRequest request;
-
+    
     private HttpServletResponse response;
-
+    
     private FilterChain chain;
-
+    
     @BeforeEach
     void setUp() {
         methodsCache = mock(ControllerMethodsCache.class);
@@ -75,7 +75,7 @@ class ParamCheckerFilterTest {
         response = mock(HttpServletResponse.class);
         chain = mock(FilterChain.class);
     }
-
+    
     @Test
     void testDoFilterParamCheckDisabled() throws IOException, ServletException {
         ServerParamCheckConfig.getInstance().setParamCheckEnabled(false);
@@ -86,14 +86,14 @@ class ParamCheckerFilterTest {
             ServerParamCheckConfig.getInstance().setParamCheckEnabled(true);
         }
     }
-
+    
     @Test
     void testDoFilterMethodNotFound() throws IOException, ServletException {
         when(methodsCache.getMethod(request)).thenReturn(null);
         filter.doFilter(request, response, chain);
         verify(chain).doFilter(request, response);
     }
-
+    
     @Test
     void testDoFilterWhenExtractorNullFromMethodAndClass() throws Exception {
         Method method = NoExtractorController.class.getMethod("handle");
@@ -101,7 +101,7 @@ class ParamCheckerFilterTest {
         filter.doFilter(request, response, chain);
         verify(chain).doFilter(request, response);
     }
-
+    
     @Test
     void testDoFilterWhenExtractorFromClassParamCheckSuccess() throws Exception {
         Method method = ParamExtractorTest.Controller.class.getMethod("testCheckNull");
@@ -109,7 +109,7 @@ class ParamCheckerFilterTest {
         filter.doFilter(request, response, chain);
         verify(chain).doFilter(request, response);
     }
-
+    
     @Test
     void testDoFilterWhenParamCheckFails() throws Exception {
         Method method = ParamExtractorTest.Controller.class.getMethod("testCheck");
@@ -125,24 +125,27 @@ class ParamCheckerFilterTest {
         assertEquals(20002, result.getCode());
         assertEquals("parameter validate error", result.getMessage());
     }
-
+    
     @Test
     void testDoFilterWhenExtractParamThrowsNacosException() throws Exception {
         Method method = ParamExtractorTest.Controller.class.getMethod("testCheck");
         when(methodsCache.getMethod(request)).thenReturn(method);
         AbstractHttpParamExtractor failingExtractor = new AbstractHttpParamExtractor() {
+            
             @Override
             public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException {
                 throw new NacosException(500, "extract fail");
             }
         };
-        try (MockedStatic<ExtractorManager> extractorMock = org.mockito.Mockito.mockStatic(ExtractorManager.class)) {
-            extractorMock.when(() -> ExtractorManager.getHttpExtractor(any())).thenReturn(failingExtractor);
+        try (MockedStatic<ExtractorManager> extractorMock =
+            org.mockito.Mockito.mockStatic(ExtractorManager.class)) {
+            extractorMock.when(() -> ExtractorManager.getHttpExtractor(any()))
+                .thenReturn(failingExtractor);
             NacosRuntimeException ex = assertThrows(NacosRuntimeException.class,
-                    () -> filter.doFilter(request, response, chain));
+                () -> filter.doFilter(request, response, chain));
         }
     }
-
+    
     @Test
     void testGenerate400Response() throws IOException {
         StringWriter responseBody = new StringWriter();
@@ -159,15 +162,16 @@ class ParamCheckerFilterTest {
         assertEquals("parameter validate error", result.getMessage());
         assertEquals("invalid param", result.getData());
     }
-
+    
     @Test
     void testGenerate400ResponseWhenGetWriterThrows() throws IOException {
         when(response.getWriter()).thenThrow(new IOException("output error"));
         filter.generate400Response(response, "msg");
         verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
     }
-
+    
     public static class NoExtractorController {
+        
         public void handle() {
         }
     }

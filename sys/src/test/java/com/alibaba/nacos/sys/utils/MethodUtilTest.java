@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,11 @@ class MethodUtilTest {
     @Test
     void invokeAndReturnDouble() {
         InternalMethod internalMethod = new InternalMethod();
-        assertNotEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(DOUBLE_METHOD, internalMethod), 0.000001d);
+        assertNotEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(DOUBLE_METHOD, internalMethod),
+            0.000001d);
         
-        assertEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(LONG_METHOD, internalMethod), 0.000001d);
+        assertEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(LONG_METHOD, internalMethod),
+            0.000001d);
     }
     
     @Test

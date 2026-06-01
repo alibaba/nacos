@@ -25,11 +25,12 @@ import java.security.NoSuchAlgorithmException;
  * @author nacos
  */
 public class MD5Utils {
-
+    
     private MD5Utils() {
     }
     
-    private static final char[] DIGITS_LOWER = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
+    private static final char[] DIGITS_LOWER =
+        {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
             'e', 'f'};
     
     /**

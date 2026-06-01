@@ -39,8 +39,10 @@ public abstract class AbstractServerStateHandler implements ServerStateHandler {
     
     @Override
     public String getAnnouncement(String language) {
-        String file = ANNOUNCEMENT_FILE.substring(0, ANNOUNCEMENT_FILE.length() - 5) + "_" + language + ".conf";
-        if (file.contains(TOP_PATH) || file.contains(FOLDER_SEPARATOR) || file.contains(WINDOWS_FOLDER_SEPARATOR)) {
+        String file = ANNOUNCEMENT_FILE.substring(0, ANNOUNCEMENT_FILE.length() - 5) + "_"
+            + language + ".conf";
+        if (file.contains(TOP_PATH) || file.contains(FOLDER_SEPARATOR)
+            || file.contains(WINDOWS_FOLDER_SEPARATOR)) {
             throw new IllegalArgumentException("Invalid filename");
         }
         File announcementFile = new File(EnvUtil.getConfPath(), file);

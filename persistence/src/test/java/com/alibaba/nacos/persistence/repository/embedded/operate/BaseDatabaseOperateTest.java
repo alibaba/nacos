@@ -76,11 +76,13 @@ class BaseDatabaseOperateTest {
     void testUpdateSuccessWithConsumer() {
         List<ModifyRequest> requests = mockRequest(false);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
         when(jdbcTemplate.update(TEST_SQL, ARGS)).thenReturn(1);
-        assertTrue(baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
+        assertTrue(
+            baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
         verify(consumer).accept(eq(Boolean.TRUE), eq(null));
     }
     
@@ -88,11 +90,13 @@ class BaseDatabaseOperateTest {
     void testUpdateSuccessWithConsumerAndRollback() {
         List<ModifyRequest> requests = mockRequest(true);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
         when(jdbcTemplate.update(TEST_SQL, ARGS)).thenReturn(1);
-        assertTrue(baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
+        assertTrue(
+            baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
         verify(consumer).accept(eq(Boolean.TRUE), eq(null));
     }
     
@@ -100,11 +104,13 @@ class BaseDatabaseOperateTest {
     void testUpdateFailedWithConsumerAndRollback() {
         List<ModifyRequest> requests = mockRequest(true);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
         when(jdbcTemplate.update(TEST_SQL, ARGS)).thenReturn(0);
-        assertFalse(baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
+        assertFalse(
+            baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
         verify(consumer).accept(eq(Boolean.FALSE), any(IllegalTransactionStateException.class));
     }
     
@@ -112,12 +118,14 @@ class BaseDatabaseOperateTest {
     void testUpdateFailedWithConsumerAndBadSqlException() {
         List<ModifyRequest> requests = mockRequest(false);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
         when(jdbcTemplate.update(TEST_SQL, ARGS)).thenThrow(
-                new BadSqlGrammarException("test", TEST_SQL, new SQLException("test")));
-        assertFalse(baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
+            new BadSqlGrammarException("test", TEST_SQL, new SQLException("test")));
+        assertFalse(
+            baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
         verify(consumer).accept(eq(Boolean.FALSE), any(BadSqlGrammarException.class));
     }
     
@@ -125,12 +133,14 @@ class BaseDatabaseOperateTest {
     void testUpdateWithConsumerAndBadSqlException() {
         List<ModifyRequest> requests = mockRequest(false);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
         when(jdbcTemplate.update(TEST_SQL, ARGS)).thenThrow(
-                new BadSqlGrammarException("test", TEST_SQL, new SQLException("test")));
-        assertFalse(baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
+            new BadSqlGrammarException("test", TEST_SQL, new SQLException("test")));
+        assertFalse(
+            baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
         verify(consumer).accept(eq(Boolean.FALSE), any(BadSqlGrammarException.class));
     }
     
@@ -138,12 +148,15 @@ class BaseDatabaseOperateTest {
     void testUpdateWithConsumerAndCannotGetJdbcConnectionException() {
         List<ModifyRequest> requests = mockRequest(false);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
-        when(jdbcTemplate.update(TEST_SQL, ARGS)).thenThrow(new CannotGetJdbcConnectionException("test"));
+        when(jdbcTemplate.update(TEST_SQL, ARGS))
+            .thenThrow(new CannotGetJdbcConnectionException("test"));
         assertThrows(CannotGetJdbcConnectionException.class,
-                () -> baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
+            () -> baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests,
+                consumer));
         verify(consumer, never()).accept(any(), any());
     }
     
@@ -151,12 +164,14 @@ class BaseDatabaseOperateTest {
     void testUpdateWithConsumerAndDataAccessException() {
         List<ModifyRequest> requests = mockRequest(false);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
         when(jdbcTemplate.update(TEST_SQL, ARGS)).thenThrow(new NJdbcException("test"));
         assertThrows(NJdbcException.class,
-                () -> baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, consumer));
+            () -> baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests,
+                consumer));
         verify(consumer, never()).accept(any(), any());
     }
     
@@ -164,7 +179,8 @@ class BaseDatabaseOperateTest {
     void testUpdateSuccessWithoutConsumer() {
         List<ModifyRequest> requests = mockRequest(false);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
         when(jdbcTemplate.update(TEST_SQL, ARGS)).thenReturn(1);
@@ -175,7 +191,8 @@ class BaseDatabaseOperateTest {
     void testUpdateFailedWithoutConsumerAndRollback() {
         List<ModifyRequest> requests = mockRequest(true);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
         when(jdbcTemplate.update(TEST_SQL, ARGS)).thenReturn(0);
@@ -186,10 +203,12 @@ class BaseDatabaseOperateTest {
     void testUpdateWithoutConsumerAndDataIntegrityViolationException() {
         List<ModifyRequest> requests = mockRequest(false);
         when(transactionTemplate.execute(any(TransactionCallback.class))).then(invocationOnMock -> {
-            TransactionCallback callback = invocationOnMock.getArgument(0, TransactionCallback.class);
+            TransactionCallback callback =
+                invocationOnMock.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
-        when(jdbcTemplate.update(TEST_SQL, ARGS)).thenThrow(new DataIntegrityViolationException("test"));
+        when(jdbcTemplate.update(TEST_SQL, ARGS))
+            .thenThrow(new DataIntegrityViolationException("test"));
         assertFalse(baseDatabaseOperate.update(transactionTemplate, jdbcTemplate, requests, null));
     }
     

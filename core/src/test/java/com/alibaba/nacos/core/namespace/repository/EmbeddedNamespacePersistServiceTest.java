@@ -62,19 +62,19 @@ class EmbeddedNamespacePersistServiceTest {
     
     @Mock
     private DataSourceService dataSourceService;
-
+    
     @Mock
     private MapperManager mapperManager;
-
+    
     @Mock
     private TenantInfoMapper tenantInfoMapper;
-
+    
     private EmbeddedNamespacePersistServiceImpl embeddedNamespacePersistService;
     
     private MockEnvironment environment;
-
+    
     private MockedStatic<MapperManager> mapperManagerMockedStatic;
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setIsStandalone(true);
@@ -83,21 +83,22 @@ class EmbeddedNamespacePersistServiceTest {
         EnvUtil.setEnvironment(environment);
         DynamicDataSource instance = DynamicDataSource.getInstance();
         ReflectionTestUtils.setField(instance, "localDataSourceService", dataSourceService);
-
+        
         // Mock MapperManager static method to avoid SPI loading
         mapperManagerMockedStatic = Mockito.mockStatic(MapperManager.class);
-        mapperManagerMockedStatic.when(() -> MapperManager.instance(anyBoolean())).thenReturn(mapperManager);
-
+        mapperManagerMockedStatic.when(() -> MapperManager.instance(anyBoolean()))
+            .thenReturn(mapperManager);
+        
         embeddedNamespacePersistService = new EmbeddedNamespacePersistServiceImpl(databaseOperate);
     }
-
+    
     @AfterEach
     void tearDown() {
         if (mapperManagerMockedStatic != null) {
             mapperManagerMockedStatic.close();
         }
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void insertTenantInfoAtomicTest1() {
@@ -107,17 +108,18 @@ class EmbeddedNamespacePersistServiceTest {
         String namespaceName = "testNs";
         String namespaceDesc = "testDes";
         String createRes = "nacos";
-
+        
         // Stub the single-arg default method directly
         when(databaseOperate.update((List<ModifyRequest>) any())).thenReturn(true);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.insert(any())).thenReturn("INSERT INTO tenant_info ...");
-
-        embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, createRes,
-                System.currentTimeMillis());
+        
+        embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName,
+            namespaceDesc, createRes,
+            System.currentTimeMillis());
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void insertTenantInfoAtomicTest2() {
@@ -127,32 +129,33 @@ class EmbeddedNamespacePersistServiceTest {
         String namespaceName = "testNs";
         String namespaceDesc = "testDes";
         String createRes = "nacos";
-
+        
         when(databaseOperate.update((List<ModifyRequest>) any())).thenReturn(false);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.insert(any())).thenReturn("INSERT INTO tenant_info ...");
-
+        
         assertThrows(NacosRuntimeException.class,
-                () -> embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName,
-                        namespaceDesc, createRes,
-                        System.currentTimeMillis()));
+            () -> embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId,
+                namespaceName,
+                namespaceDesc, createRes,
+                System.currentTimeMillis()));
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void removeTenantInfoAtomicTest() {
         String namespaceId = "testNsId";
         String kp = "1";
-
+        
         when(databaseOperate.update((List<ModifyRequest>) any())).thenReturn(true);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.delete(any())).thenReturn("DELETE FROM tenant_info ...");
-
+        
         embeddedNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId);
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void updateTenantNameAtomicTest1() {
@@ -161,15 +164,16 @@ class EmbeddedNamespacePersistServiceTest {
         String kp = "1";
         String namespaceName = "testNs";
         String namespaceDesc = "testDes";
-
+        
         when(databaseOperate.update((List<ModifyRequest>) any())).thenReturn(true);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.update(any(), any())).thenReturn("UPDATE tenant_info ...");
-
-        embeddedNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc);
+        
+        embeddedNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName,
+            namespaceDesc);
     }
-
+    
     @SuppressWarnings("unchecked")
     @Test
     void updateTenantNameAtomicTest2() {
@@ -177,15 +181,16 @@ class EmbeddedNamespacePersistServiceTest {
         String kp = "1";
         String namespaceName = "testNs";
         String namespaceDesc = "testDes";
-
+        
         when(databaseOperate.update((List<ModifyRequest>) any())).thenReturn(false);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.update(any(), any())).thenReturn("UPDATE tenant_info ...");
-
+        
         assertThrows(NacosRuntimeException.class,
-                () -> embeddedNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName,
-                        namespaceDesc));
+            () -> embeddedNamespacePersistService.updateTenantNameAtomic(kp, namespaceId,
+                namespaceName,
+                namespaceDesc));
     }
     
     @Test
@@ -193,14 +198,15 @@ class EmbeddedNamespacePersistServiceTest {
         String kp = "1";
         List<TenantInfo> tenantInfoList = new ArrayList<>(1);
         tenantInfoList.add(new TenantInfo());
-        when(databaseOperate.queryMany(anyString(), eq(new Object[] { kp }), eq(TENANT_INFO_ROW_MAPPER)))
-                .thenReturn(tenantInfoList);
+        when(databaseOperate.queryMany(anyString(), eq(new Object[] {kp}),
+            eq(TENANT_INFO_ROW_MAPPER)))
+            .thenReturn(tenantInfoList);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.select(any(), any())).thenReturn("SELECT ...");
-
+        
         List<TenantInfo> tenantByKp = embeddedNamespacePersistService.findTenantByKp(kp);
-
+        
         assertEquals(tenantByKp.get(0), tenantInfoList.get(0));
     }
     
@@ -210,12 +216,13 @@ class EmbeddedNamespacePersistServiceTest {
         String tenantId = "tenantId";
         TenantInfo tenantInfo = new TenantInfo();
         tenantInfo.setTenantId(tenantId);
-        when(databaseOperate.queryOne(anyString(), eq(new Object[] { kp, tenantId }), eq(TENANT_INFO_ROW_MAPPER)))
-                .thenReturn(tenantInfo);
+        when(databaseOperate.queryOne(anyString(), eq(new Object[] {kp, tenantId}),
+            eq(TENANT_INFO_ROW_MAPPER)))
+            .thenReturn(tenantInfo);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.select(any(), any())).thenReturn("SELECT ...");
-
+        
         TenantInfo tenantByKp = embeddedNamespacePersistService.findTenantByKp(kp, tenantId);
         
         assertEquals(tenantInfo.getTenantId(), tenantByKp.getTenantId());
@@ -232,15 +239,16 @@ class EmbeddedNamespacePersistServiceTest {
         
         assertEquals("test%", testB);
     }
-
+    
     @Test
     void generateLikeArgumentWithUnderscoreTest() {
         // underscore is escaped for SQL LIKE (e.g. _ matches single char)
         String withUnderscore = embeddedNamespacePersistService.generateLikeArgument("ns_name");
         assertEquals("ns\\_name", withUnderscore);
-
+        
         // underscore escaped and star replaced by percent
-        String withUnderscoreAndStar = embeddedNamespacePersistService.generateLikeArgument("ns_name*");
+        String withUnderscoreAndStar =
+            embeddedNamespacePersistService.generateLikeArgument("ns_name*");
         assertEquals("ns\\_name%", withUnderscoreAndStar);
     }
     
@@ -265,15 +273,17 @@ class EmbeddedNamespacePersistServiceTest {
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
         when(tenantInfoMapper.count(any())).thenReturn("SELECT COUNT(*) ...");
-
+        
         assertThrows(IllegalArgumentException.class,
-                () -> embeddedNamespacePersistService.tenantInfoCountByTenantId(null));
-
-        when(databaseOperate.queryOne(anyString(), eq(new String[] { tenantId }), eq(Integer.class))).thenReturn(null);
+            () -> embeddedNamespacePersistService.tenantInfoCountByTenantId(null));
+        
+        when(databaseOperate.queryOne(anyString(), eq(new String[] {tenantId}), eq(Integer.class)))
+            .thenReturn(null);
         int i = embeddedNamespacePersistService.tenantInfoCountByTenantId(tenantId);
         assertEquals(0, i);
         
-        when(databaseOperate.queryOne(anyString(), eq(new String[] {tenantId}), eq(Integer.class))).thenReturn(1);
+        when(databaseOperate.queryOne(anyString(), eq(new String[] {tenantId}), eq(Integer.class)))
+            .thenReturn(1);
         int j = embeddedNamespacePersistService.tenantInfoCountByTenantId(tenantId);
         assertEquals(1, j);
     }

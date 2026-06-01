@@ -57,7 +57,8 @@ class ReleaseAgentCardRequestTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"agentName\":\"testAgent\","
+        String json =
+            "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"agentName\":\"testAgent\","
                 + "\"agentCard\":{\"protocolVersion\":null,\"name\":\"testAgentCard\",\"description\":null,\"version\":\"1.0.0\","
                 + "\"iconUrl\":null,\"capabilities\":null,\"skills\":null,\"url\":null,\"preferredTransport\":null,"
                 + "\"additionalInterfaces\":null,\"provider\":null,\"documentationUrl\":null,\"securitySchemes\":null,"

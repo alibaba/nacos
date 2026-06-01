@@ -24,10 +24,10 @@ import org.springframework.jdbc.core.RowMapper;
  * Row mappers for ai_resource and ai_resource_version.
  */
 final class AiResourceRowMappers {
-
+    
     private AiResourceRowMappers() {
     }
-
+    
     static final RowMapper<AiResource> AI_RESOURCE_ROW_MAPPER = (rs, rowNum) -> {
         AiResource r = new AiResource();
         r.setId(rs.getLong("id"));
@@ -48,7 +48,7 @@ final class AiResourceRowMappers {
         r.setDownloadCount(rs.getLong("download_count"));
         return r;
     };
-
+    
     static final RowMapper<AiResourceVersion> AI_RESOURCE_VERSION_ROW_MAPPER = (rs, rowNum) -> {
         AiResourceVersion v = new AiResourceVersion();
         v.setId(rs.getLong("id"));
@@ -67,4 +67,3 @@ final class AiResourceRowMappers {
         return v;
     };
 }
-

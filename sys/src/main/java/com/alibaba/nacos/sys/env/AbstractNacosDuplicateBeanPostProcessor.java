@@ -26,21 +26,25 @@ import org.springframework.context.ConfigurableApplicationContext;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractNacosDuplicateBeanPostProcessor implements InstantiationAwareBeanPostProcessor {
+public abstract class AbstractNacosDuplicateBeanPostProcessor
+    implements InstantiationAwareBeanPostProcessor {
     
     private final ConfigurableApplicationContext coreContext;
     
     protected AbstractNacosDuplicateBeanPostProcessor(ConfigurableApplicationContext context) {
-        coreContext = null == context.getParent() ? context : (ConfigurableApplicationContext) context.getParent();
+        coreContext = null == context.getParent() ? context
+            : (ConfigurableApplicationContext) context.getParent();
     }
     
     @Override
-    public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
+    public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName)
+        throws BeansException {
         if (!coreContext.containsBean(beanName)) {
             return null;
         }
         BeanDefinition beanDefinition = coreContext.getBeanFactory().getBeanDefinition(beanName);
-        return isReUsingBean(beanClass, beanName, beanDefinition) ? coreContext.getBean(beanName) : null;
+        return isReUsingBean(beanClass, beanName, beanDefinition) ? coreContext.getBean(beanName)
+            : null;
     }
     
     /**
@@ -51,5 +55,6 @@ public abstract class AbstractNacosDuplicateBeanPostProcessor implements Instant
      * @param beanDefinition bean definition
      * @return {@code true} means re-use beans from core context, otherwise {@code false} means to re-build bean in sub context.
      */
-    protected abstract boolean isReUsingBean(Class<?> beanClass, String beanName, BeanDefinition beanDefinition);
+    protected abstract boolean isReUsingBean(Class<?> beanClass, String beanName,
+        BeanDefinition beanDefinition);
 }

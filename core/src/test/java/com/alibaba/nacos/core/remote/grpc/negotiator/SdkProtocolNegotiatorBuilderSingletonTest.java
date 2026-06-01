@@ -48,16 +48,20 @@ class SdkProtocolNegotiatorBuilderSingletonTest {
     
     @Test
     void testSingletonInstance() {
-        AbstractProtocolNegotiatorBuilderSingleton singleton1 = SdkProtocolNegotiatorBuilderSingleton.getSingleton();
-        AbstractProtocolNegotiatorBuilderSingleton singleton2 = SdkProtocolNegotiatorBuilderSingleton.getSingleton();
+        AbstractProtocolNegotiatorBuilderSingleton singleton1 =
+            SdkProtocolNegotiatorBuilderSingleton.getSingleton();
+        AbstractProtocolNegotiatorBuilderSingleton singleton2 =
+            SdkProtocolNegotiatorBuilderSingleton.getSingleton();
         assertSame(singleton1, singleton2);
     }
     
     @Test
     void testDefaultBuilderPair() {
-        Pair<String, ProtocolNegotiatorBuilder> defaultPair = SdkProtocolNegotiatorBuilderSingleton.getSingleton().defaultBuilderPair();
+        Pair<String, ProtocolNegotiatorBuilder> defaultPair =
+            SdkProtocolNegotiatorBuilderSingleton.getSingleton().defaultBuilderPair();
         assertNotNull(defaultPair);
-        assertEquals(SdkProtocolNegotiatorBuilderSingleton.TYPE_PROPERTY_KEY, defaultPair.getFirst());
+        assertEquals(SdkProtocolNegotiatorBuilderSingleton.TYPE_PROPERTY_KEY,
+            defaultPair.getFirst());
         assertNotNull(defaultPair.getSecond());
     }
     
@@ -67,11 +71,13 @@ class SdkProtocolNegotiatorBuilderSingletonTest {
         assertNotNull(type);
         assertEquals(SdkProtocolNegotiatorBuilderSingleton.TYPE_PROPERTY_KEY, type);
     }
-
+    
     @Test
     void testBuildWhenActualBuilderNotInMapUsesDefault() throws Exception {
-        AbstractProtocolNegotiatorBuilderSingleton singleton = SdkProtocolNegotiatorBuilderSingleton.getSingleton();
-        java.lang.reflect.Field actualTypeField = AbstractProtocolNegotiatorBuilderSingleton.class.getDeclaredField("actualType");
+        AbstractProtocolNegotiatorBuilderSingleton singleton =
+            SdkProtocolNegotiatorBuilderSingleton.getSingleton();
+        java.lang.reflect.Field actualTypeField =
+            AbstractProtocolNegotiatorBuilderSingleton.class.getDeclaredField("actualType");
         actualTypeField.setAccessible(true);
         String original = (String) actualTypeField.get(singleton);
         try {

@@ -34,9 +34,9 @@ import java.util.Map;
  */
 @Deprecated
 public class ClusterInfo implements Serializable {
-
+    
     private static final long serialVersionUID = 2146881454057032105L;
-
+    
     private String clusterName;
     
     private AbstractHealthChecker healthChecker;
@@ -93,7 +93,8 @@ public class ClusterInfo implements Serializable {
      * @param newClusterInfo new {@link com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo}
      * @return this deprecated one
      */
-    public static ClusterInfo from(com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo newClusterInfo) {
+    public static ClusterInfo from(
+        com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo newClusterInfo) {
         ClusterInfo clusterInfo = new ClusterInfo();
         clusterInfo.setClusterName(newClusterInfo.getClusterName());
         clusterInfo.setHealthChecker(newClusterInfo.getHealthChecker());

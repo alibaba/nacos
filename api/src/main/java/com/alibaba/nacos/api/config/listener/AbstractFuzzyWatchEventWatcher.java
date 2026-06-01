@@ -25,7 +25,8 @@ import java.util.concurrent.Executor;
  * @author stone-98
  * @date 2024/3/4
  */
-public abstract class AbstractFuzzyWatchEventWatcher implements FuzzyWatchEventWatcher, FuzzyWatchLoadWatcher {
+public abstract class AbstractFuzzyWatchEventWatcher
+    implements FuzzyWatchEventWatcher, FuzzyWatchLoadWatcher {
     
     /**
      * Get executor for execute this receive.

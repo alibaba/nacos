@@ -29,17 +29,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MemberLookupTest {
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     void testDefaultInfoReturnsEmptyMap() {
         MemberLookup lookup = new StandaloneMemberLookup();

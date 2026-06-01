@@ -27,26 +27,26 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginConfigFormTest {
-
+    
     @Test
     void gettersSettersAndDefaults() {
         PluginConfigForm form = new PluginConfigForm();
         assertEquals(false, form.isLocalOnly());
-
+        
         form.setPluginType("auth");
         form.setPluginName("nacos");
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");
         form.setConfig(config);
         form.setLocalOnly(true);
-
+        
         assertEquals("auth", form.getPluginType());
         assertEquals("nacos", form.getPluginName());
         assertNotNull(form.getConfig());
         assertEquals("value1", form.getConfig().get("key1"));
         assertTrue(form.isLocalOnly());
     }
-
+    
     @Test
     void setConfigWithEmptyMap() {
         PluginConfigForm form = new PluginConfigForm();

@@ -41,13 +41,26 @@ class HistoryConfigCleanerConfigTest {
     
     @Test
     public void test() {
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), any(), anyString())).thenReturn("test");
-        HistoryConfigCleanerConfig historyConfigCleanerConfig = HistoryConfigCleanerConfig.getInstance();
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), any(), anyString()))
+            .thenReturn("test");
+        HistoryConfigCleanerConfig historyConfigCleanerConfig =
+            HistoryConfigCleanerConfig.getInstance();
         historyConfigCleanerConfig.getConfigFromEnv();
         assertEquals("test", historyConfigCleanerConfig.getActiveHistoryConfigCleaner());
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), any(), anyString())).thenReturn(null);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), any(), anyString()))
+            .thenReturn(null);
         historyConfigCleanerConfig.getConfigFromEnv();
         assertEquals("nacos", historyConfigCleanerConfig.getActiveHistoryConfigCleaner());
+    }
+    
+    @Test
+    public void testSetActiveHistoryConfigCleaner() {
+        HistoryConfigCleanerConfig historyConfigCleanerConfig =
+            HistoryConfigCleanerConfig.getInstance();
+        
+        historyConfigCleanerConfig.setActiveHistoryConfigCleaner("custom");
+        
+        assertEquals("custom", historyConfigCleanerConfig.getActiveHistoryConfigCleaner());
     }
     
     @AfterEach

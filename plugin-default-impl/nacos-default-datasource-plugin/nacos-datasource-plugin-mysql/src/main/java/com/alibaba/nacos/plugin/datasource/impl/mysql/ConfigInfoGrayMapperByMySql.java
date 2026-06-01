@@ -29,12 +29,15 @@ import java.util.Collections;
  * @author rong
  **/
 
-public class ConfigInfoGrayMapperByMySql extends AbstractMapperByMysql implements ConfigInfoGrayMapper {
+public class ConfigInfoGrayMapperByMySql extends AbstractMapperByMysql
+    implements ConfigInfoGrayMapper {
     
     @Override
     public MapperResult findAllConfigInfoGrayForDumpAllFetchRows(MapperContext context) {
-        String sql = " SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,md5,gmt_modified "
-                + " FROM  config_info_gray  ORDER BY id LIMIT " + context.getStartRow() + "," + context.getPageSize();
+        String sql =
+            " SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,md5,gmt_modified "
+                + " FROM  config_info_gray  ORDER BY id LIMIT " + context.getStartRow() + ","
+                + context.getPageSize();
         return new MapperResult(sql, Collections.emptyList());
     }
     

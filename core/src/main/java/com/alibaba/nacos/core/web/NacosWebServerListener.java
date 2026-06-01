@@ -36,7 +36,8 @@ public class NacosWebServerListener implements ApplicationListener<WebServerInit
     
     private final ServerMemberManager serverMemberManager;
     
-    public NacosWebServerListener(ServerMemberManager serverMemberManager, ServletContext servletContext) {
+    public NacosWebServerListener(ServerMemberManager serverMemberManager,
+        ServletContext servletContext) {
         this.serverMemberManager = serverMemberManager;
         EnvUtil.setContextPath(servletContext.getContextPath());
     }

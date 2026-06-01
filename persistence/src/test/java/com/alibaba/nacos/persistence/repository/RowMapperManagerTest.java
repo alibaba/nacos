@@ -48,18 +48,21 @@ class RowMapperManagerTest {
     @AfterEach
     void tearDown() {
         RowMapperManager.mapperMap.clear();
-        RowMapperManager.registerRowMapper(RowMapperManager.MAP_ROW_MAPPER.getClass().getCanonicalName(),
-                RowMapperManager.MAP_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+            RowMapperManager.MAP_ROW_MAPPER.getClass().getCanonicalName(),
+            RowMapperManager.MAP_ROW_MAPPER);
     }
     
     @Test
     void testRegisterRowMapper() {
         MockMapRowMapper mapper1 = new MockMapRowMapper();
         RowMapperManager.registerRowMapper(MockMapRowMapperObj.class.getCanonicalName(), mapper1);
-        assertEquals(mapper1, RowMapperManager.getRowMapper(MockMapRowMapperObj.class.getCanonicalName()));
+        assertEquals(mapper1,
+            RowMapperManager.getRowMapper(MockMapRowMapperObj.class.getCanonicalName()));
         MockMapRowMapper mapper2 = new MockMapRowMapper();
         RowMapperManager.registerRowMapper(MockMapRowMapperObj.class.getCanonicalName(), mapper2);
-        assertEquals(mapper2, RowMapperManager.getRowMapper(MockMapRowMapperObj.class.getCanonicalName()));
+        assertEquals(mapper2,
+            RowMapperManager.getRowMapper(MockMapRowMapperObj.class.getCanonicalName()));
     }
     
     @Test
@@ -84,6 +87,6 @@ class RowMapperManagerTest {
     }
     
     private static class MockMapRowMapperObj {
-    
+        
     }
 }

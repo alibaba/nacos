@@ -60,7 +60,8 @@ public class DefaultAiVisibilityService implements VisibilityService {
     private static final String ANONYMOUS_IDENTITY = AuthConstants.ANONYMOUS_USER;
     
     @Override
-    public ValidationResult validateVisibility(String identity, String action, String apiType, VisibilityResource resource) {
+    public ValidationResult validateVisibility(String identity, String action, String apiType,
+        VisibilityResource resource) {
         if (isAuthDisabled(apiType)) {
             return ValidationResult.allow();
         }
@@ -71,11 +72,13 @@ public class DefaultAiVisibilityService implements VisibilityService {
         if (isPermitted(identity, isRead, resource)) {
             return ValidationResult.allow();
         }
-        return ValidationResult.deny("No visibility permission for resource: " + resource.getResourceName());
+        return ValidationResult
+            .deny("No visibility permission for resource: " + resource.getResourceName());
     }
     
     @Override
-    public QueryAdvisor adviseQuery(String identity, String action, String apiType, VisibilityQueryContext context) {
+    public QueryAdvisor adviseQuery(String identity, String action, String apiType,
+        VisibilityQueryContext context) {
         QueryAdvisor advisor = new QueryAdvisor();
         if (isAuthDisabled(apiType) || isCurrentIdentityGlobalAdmin(identity)) {
             advisor.setBasePredicate(BaseVisibilityPredicate.ALL);
@@ -86,7 +89,7 @@ public class DefaultAiVisibilityService implements VisibilityService {
             return advisor;
         }
         advisor.setBasePredicate(isAnonymousIdentity(identity) ? BaseVisibilityPredicate.PUBLIC
-                : BaseVisibilityPredicate.PUBLIC_AND_OWNER);
+            : BaseVisibilityPredicate.PUBLIC_AND_OWNER);
         AuthorizedResources authorized = new AuthorizedResources();
         authorized.setResourceType(context == null ? null : context.getResourceType());
         // TODO: populate explicit authorized resources from auth plugin once query advisor integration is complete.
@@ -116,8 +119,10 @@ public class DefaultAiVisibilityService implements VisibilityService {
     }
     
     private String buildResourceIdentifier(VisibilityResource res) {
-        String ns = StringUtils.isBlank(res.getNamespaceId()) ? Constants.DEFAULT_NAMESPACE_ID : res.getNamespaceId();
-        return RESOURCE_PREFIX + "/" + ns + "/" + res.getResourceType() + "/" + res.getResourceName();
+        String ns = StringUtils.isBlank(res.getNamespaceId()) ? Constants.DEFAULT_NAMESPACE_ID
+            : res.getNamespaceId();
+        return RESOURCE_PREFIX + "/" + ns + "/" + res.getResourceType() + "/"
+            + res.getResourceName();
     }
     
     private boolean checkResourcePermission(VisibilityResource res, String action) {
@@ -127,13 +132,16 @@ public class DefaultAiVisibilityService implements VisibilityService {
         try {
             Optional<AuthPluginService> authService = findAuthPluginService();
             if (authService.isPresent()) {
-                IdentityContext identity = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+                IdentityContext identity =
+                    RequestContextHolder.getContext().getAuthContext().getIdentityContext();
                 return authService.get().validateAuthority(identity, permission).isSuccess();
             }
             return false;
         } catch (Exception e) {
-            LOGGER.debug("[DefaultAiVisibilityService] Permission check failed for resource '{}': {}", resourceId,
-                    e.getMessage());
+            LOGGER.debug(
+                "[DefaultAiVisibilityService] Permission check failed for resource '{}': {}",
+                resourceId,
+                e.getMessage());
             return false;
         }
     }
@@ -142,7 +150,8 @@ public class DefaultAiVisibilityService implements VisibilityService {
         NacosAuthConfigHolder holder = NacosAuthConfigHolder.getInstance();
         for (NacosAuthConfig config : holder.getAllNacosAuthConfig()) {
             if (config.isAuthEnabled()) {
-                return AuthPluginManager.getInstance().findAuthServiceSpiImpl(config.getNacosAuthSystemType());
+                return AuthPluginManager.getInstance()
+                    .findAuthServiceSpiImpl(config.getNacosAuthSystemType());
             }
         }
         return Optional.empty();
@@ -152,7 +161,8 @@ public class DefaultAiVisibilityService implements VisibilityService {
         if (StringUtils.isBlank(apiType)) {
             return !NacosAuthConfigHolder.getInstance().isAnyAuthEnabled();
         }
-        NacosAuthConfig authConfig = NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(apiType);
+        NacosAuthConfig authConfig =
+            NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(apiType);
         return authConfig == null || !authConfig.isAuthEnabled();
     }
     
@@ -165,7 +175,8 @@ public class DefaultAiVisibilityService implements VisibilityService {
             return false;
         }
         try {
-            IdentityContext identityContext = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+            IdentityContext identityContext =
+                RequestContextHolder.getContext().getAuthContext().getIdentityContext();
             Object nacosUser = identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
             if (!(nacosUser instanceof NacosUser user)) {
                 return false;

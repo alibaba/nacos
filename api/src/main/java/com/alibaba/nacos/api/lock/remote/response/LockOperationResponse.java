@@ -32,7 +32,7 @@ public class LockOperationResponse extends Response {
     private Object result;
     
     public LockOperationResponse() {
-    
+        
     }
     
     public LockOperationResponse(Boolean result) {

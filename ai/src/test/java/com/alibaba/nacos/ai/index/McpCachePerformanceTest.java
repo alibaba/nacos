@@ -49,7 +49,7 @@ public class McpCachePerformanceTest {
      * Create test configuration properties.
      */
     private static McpCacheIndexProperties createTestProperties(int maxSize, long expireTimeSeconds,
-            long cleanupIntervalSeconds) {
+        long cleanupIntervalSeconds) {
         McpCacheIndexProperties properties = new McpCacheIndexProperties();
         properties.setMaxSize(maxSize);
         properties.setExpireTimeSeconds(expireTimeSeconds);
@@ -78,7 +78,8 @@ public class McpCachePerformanceTest {
     private static void testMemoryCachePerformance() {
         System.out.println("\n=== 内存缓存性能测试 ===");
         
-        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(createTestProperties(CACHE_SIZE, 3600, 300));
+        MemoryMcpCacheIndex cacheIndex =
+            new MemoryMcpCacheIndex(createTestProperties(CACHE_SIZE, 3600, 300));
         
         // 预热缓存 - 使用有效键数量，避免超出缓存容量
         System.out.println("预热缓存...");
@@ -127,7 +128,7 @@ public class McpCachePerformanceTest {
         // 显示缓存统计
         McpCacheIndex.CacheStats stats = cacheIndex.getStats();
         System.out.printf("缓存统计 - 命中次数: %d, 未命中次数: %d, 命中率: %.2f%%, 缓存大小: %d\n",
-                stats.getHitCount(), stats.getMissCount(), stats.getHitRate() * 100, stats.getSize());
+            stats.getHitCount(), stats.getMissCount(), stats.getHitRate() * 100, stats.getSize());
     }
     
     /**
@@ -140,7 +141,8 @@ public class McpCachePerformanceTest {
     private static void testConcurrentPerformance() {
         System.out.println("\n=== 并发性能测试 ===");
         
-        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(createTestProperties(CACHE_SIZE, 3600, 300));
+        MemoryMcpCacheIndex cacheIndex =
+            new MemoryMcpCacheIndex(createTestProperties(CACHE_SIZE, 3600, 300));
         
         // 预热缓存 - 使用有效键数量，避免超出缓存容量
         System.out.println("预热缓存...");
@@ -240,7 +242,7 @@ public class McpCachePerformanceTest {
         // 显示最终缓存统计
         McpCacheIndex.CacheStats stats = cacheIndex.getStats();
         System.out.printf("最终缓存统计 - 命中次数: %d, 未命中次数: %d, 命中率: %.2f%%, 缓存大小: %d\n",
-                stats.getHitCount(), stats.getMissCount(), stats.getHitRate() * 100, stats.getSize());
+            stats.getHitCount(), stats.getMissCount(), stats.getHitRate() * 100, stats.getSize());
     }
     
     /**
@@ -254,7 +256,8 @@ public class McpCachePerformanceTest {
         for (int size : cacheSizes) {
             System.out.printf("\n测试缓存大小: %d\n", size);
             
-            MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(createTestProperties(size, 3600, 300));
+            MemoryMcpCacheIndex cacheIndex =
+                new MemoryMcpCacheIndex(createTestProperties(size, 3600, 300));
             
             // 预热缓存
             for (int i = 0; i < size; i++) {
@@ -276,7 +279,8 @@ public class McpCachePerformanceTest {
             long endTime = System.nanoTime();
             long duration = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
             
-            System.out.printf("查询 10000 次操作耗时: %d ms, 平均: %.2f μs\n", duration, (duration * 1000.0) / 10000);
+            System.out.printf("查询 10000 次操作耗时: %d ms, 平均: %.2f μs\n", duration,
+                (duration * 1000.0) / 10000);
             
             // 显示内存使用情况
             Runtime runtime = Runtime.getRuntime();
@@ -317,9 +321,10 @@ public class McpCachePerformanceTest {
         }
         
         System.out.printf("线程数: %d, 操作数: %d, 缓存大小: %d, 有效键数: %d\n", threadCount, operationCount,
-                cacheSize, effectiveKeyCount);
+            cacheSize, effectiveKeyCount);
         System.out.printf("实际生成的唯一键数量: %d\n", generatedKeys.size());
-        System.out.printf("键数量是否在合理范围内: %s\n", generatedKeys.size() <= effectiveKeyCount ? "是" : "否");
+        System.out.printf("键数量是否在合理范围内: %s\n",
+            generatedKeys.size() <= effectiveKeyCount ? "是" : "否");
         
         // 验证键的范围
         boolean allKeysInRange = generatedKeys.stream().allMatch(key -> {
@@ -340,4 +345,4 @@ public class McpCachePerformanceTest {
         // 验证修复效果：键数量应该远小于原来的100,000
         assertTrue(generatedKeys.size() < 1000, "修复后生成的键数量应该远小于原来的100,000");
     }
-} 
+}

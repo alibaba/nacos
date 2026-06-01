@@ -66,34 +66,41 @@ class ConfigCachePostProcessorDelegateTest {
     
     @Test
     void test1() {
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("lalala");
-        nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCachePostProcessor.class))
-                .thenReturn(Collections.singletonList(mockConfigCacheMd5PostProcessor));
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos"))
+            .thenReturn("lalala");
+        nacosServiceLoaderMockedStatic
+            .when(() -> NacosServiceLoader.load(ConfigCachePostProcessor.class))
+            .thenReturn(Collections.singletonList(mockConfigCacheMd5PostProcessor));
         ConfigCachePostProcessorDelegate.getInstance().postProcess(null, null);
         verify(mockConfigCacheMd5PostProcessor, times(0)).postProcess(null, null);
     }
     
     @Test
     void test2()
-            throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException,
+        InstantiationException, IllegalAccessException {
         when(mockConfigCacheMd5PostProcessor.getName()).thenReturn("nacos");
         doNothing().when(mockConfigCacheMd5PostProcessor).postProcess(null, null);
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
-        nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCachePostProcessor.class))
-                .thenReturn(Collections.singletonList(mockConfigCacheMd5PostProcessor));
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos"))
+            .thenReturn("nacos");
+        nacosServiceLoaderMockedStatic
+            .when(() -> NacosServiceLoader.load(ConfigCachePostProcessor.class))
+            .thenReturn(Collections.singletonList(mockConfigCacheMd5PostProcessor));
         Constructor constructor = ConfigCachePostProcessorDelegate.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         Field field = ConfigCachePostProcessorDelegate.class.getDeclaredField("instance");
         field.setAccessible(true);
-        ConfigCachePostProcessorDelegate delegate = (ConfigCachePostProcessorDelegate) constructor.newInstance();
+        ConfigCachePostProcessorDelegate delegate =
+            (ConfigCachePostProcessorDelegate) constructor.newInstance();
         setStaticFinalField(field, delegate);
         ConfigCachePostProcessorDelegate.getInstance().postProcess(null, null);
         verify(mockConfigCacheMd5PostProcessor, times(1)).postProcess(null, null);
     }
     
     private void setStaticFinalField(Field finalField, Object value)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method getDeclaredFields0 =
+            Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
         getDeclaredFields0.setAccessible(true);
         Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
         Field modifiers = null;

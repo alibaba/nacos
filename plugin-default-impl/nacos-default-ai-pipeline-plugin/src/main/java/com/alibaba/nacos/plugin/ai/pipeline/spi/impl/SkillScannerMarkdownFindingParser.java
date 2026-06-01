@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  * @since 3.2.0
  */
 final class SkillScannerMarkdownFindingParser {
-
+    
     private static final Pattern NEXT_H2_NOT_H3 = Pattern.compile("(?m)^## [^#]");
     
     private static final String CHECK_PROMPT_INJECTION = "Prompt injection 检查";
@@ -50,10 +50,10 @@ final class SkillScannerMarkdownFindingParser {
     private static final String CHECK_LLM_SEMANTIC = "LLM semantic analysis 检查";
     
     private static final String CHECK_META_FILTERING = "Meta-analyzer filtering 检查";
-
+    
     private SkillScannerMarkdownFindingParser() {
     }
-
+    
     /**
      * Builds reject checkpoints: one failed checkpoint per finding heading under {@code ## Findings}.
      * If no headings are found, returns a single fallback checkpoint so callers still get a structured result.
@@ -69,7 +69,7 @@ final class SkillScannerMarkdownFindingParser {
         }
         return list;
     }
-
+    
     /**
      * Builds pass checkpoints when the scanner exits successfully: either a generic pass row, or
      * derived from report text if needed later.
@@ -89,7 +89,7 @@ final class SkillScannerMarkdownFindingParser {
         }
         return list;
     }
-
+    
     /**
      * Extracts heading text from each {@code ### } line inside the {@code ## Findings} section.
      */
@@ -107,10 +107,11 @@ final class SkillScannerMarkdownFindingParser {
         }
         int bodyStart = lineAfterHeading + 1;
         int bodyEnd = findNextH2SectionStart(markdown, bodyStart);
-        String section = bodyEnd < 0 ? markdown.substring(bodyStart) : markdown.substring(bodyStart, bodyEnd);
+        String section =
+            bodyEnd < 0 ? markdown.substring(bodyStart) : markdown.substring(bodyStart, bodyEnd);
         return extractH3Titles(section);
     }
-
+    
     private static int findNextH2SectionStart(String markdown, int from) {
         Matcher m = NEXT_H2_NOT_H3.matcher(markdown);
         if (m.find(from)) {
@@ -118,7 +119,7 @@ final class SkillScannerMarkdownFindingParser {
         }
         return -1;
     }
-
+    
     private static List<String> extractH3Titles(String section) {
         Pattern h3 = Pattern.compile("(?m)^###\\s+(.+)$");
         Matcher m = h3.matcher(section);
@@ -131,7 +132,7 @@ final class SkillScannerMarkdownFindingParser {
         }
         return titles;
     }
-
+    
     private static int indexOfIgnoreCase(String haystack, String needle) {
         return haystack.toLowerCase().indexOf(needle.toLowerCase());
     }

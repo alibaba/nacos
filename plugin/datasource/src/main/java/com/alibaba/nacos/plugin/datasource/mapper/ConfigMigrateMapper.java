@@ -39,10 +39,10 @@ public interface ConfigMigrateMapper extends Mapper {
      */
     default MapperResult getConfigConflictCount(MapperContext context) {
         String sql = "SELECT COUNT(*) AS count FROM config_info ci1"
-                + " WHERE ci1.tenant_id = 'public' AND (ci1.src_user <> ? OR ci1.src_user IS NULL) "
-                + " AND EXISTS (SELECT 1 FROM config_info ci2"
-                + " WHERE ci2.data_id = ci1.data_id AND ci2.group_id = ci1.group_id AND ci2.md5 <> ci1.md5"
-                + " AND ci2.tenant_id = '' AND (ci2.src_user <> ? OR ci2.src_user IS NULL))";
+            + " WHERE ci1.tenant_id = 'public' AND (ci1.src_user <> ? OR ci1.src_user IS NULL) "
+            + " AND EXISTS (SELECT 1 FROM config_info ci2"
+            + " WHERE ci2.data_id = ci1.data_id AND ci2.group_id = ci1.group_id AND ci2.md5 <> ci1.md5"
+            + " AND ci2.tenant_id = '' AND (ci2.src_user <> ? OR ci2.src_user IS NULL))";
         Object srcUser = context.getWhereParameter(FieldConstant.SRC_USER);
         return new MapperResult(sql, CollectionUtils.list(srcUser, srcUser));
     }
@@ -55,10 +55,11 @@ public interface ConfigMigrateMapper extends Mapper {
      */
     default MapperResult findConfigIdNeedInsertMigrate(MapperContext context) {
         String sql = "SELECT ci.id FROM config_info ci WHERE ci.tenant_id = '' AND NOT EXISTS "
-                + " ( SELECT 1 FROM config_info ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id AND ci2.tenant_id = 'public' )"
-                + " AND ci.id > ?" + " ORDER BY ci.id LIMIT ?";
+            + " ( SELECT 1 FROM config_info ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id AND ci2.tenant_id = 'public' )"
+            + " AND ci.id > ?" + " ORDER BY ci.id LIMIT ?";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                context.getPageSize()));
     }
     
     /**
@@ -69,18 +70,19 @@ public interface ConfigMigrateMapper extends Mapper {
      */
     default MapperResult findConfigNeedUpdateMigrate(MapperContext context) {
         String sql = "SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id"
-                + " FROM config_info ci WHERE ci.tenant_id = ? AND "
-                + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
-                + " ( SELECT 1 FROM config_info ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
-                + " AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
-                + " AND ci2.gmt_modified < ci.gmt_modified )"
-                + " AND id > ?" + " ORDER BY id LIMIT ?";
+            + " FROM config_info ci WHERE ci.tenant_id = ? AND "
+            + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
+            + " ( SELECT 1 FROM config_info ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
+            + " AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
+            + " AND ci2.gmt_modified < ci.gmt_modified )"
+            + " AND id > ?" + " ORDER BY id LIMIT ?";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER),
-                        context.getWhereParameter(FieldConstant.TARGET_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER), context.getWhereParameter(FieldConstant.ID),
-                        context.getPageSize()));
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
+                context.getWhereParameter(FieldConstant.SRC_USER),
+                context.getWhereParameter(FieldConstant.TARGET_TENANT),
+                context.getWhereParameter(FieldConstant.SRC_USER),
+                context.getWhereParameter(FieldConstant.ID),
+                context.getPageSize()));
     }
     
     /**
@@ -91,18 +93,19 @@ public interface ConfigMigrateMapper extends Mapper {
      */
     default MapperResult findConfigGrayNeedUpdateMigrate(MapperContext context) {
         String sql = "SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id, ci.gray_name "
-                + " FROM config_info_gray ci WHERE ci.tenant_id = ? AND "
-                + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
-                + " ( SELECT 1 FROM config_info_gray ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
-                + " AND ci2.gray_name = ci.gray_name AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
-                + " AND ci2.gmt_modified < ci.gmt_modified )"
-                + " AND ci.id > ?" + " ORDER BY ci.id LIMIT ?";
+            + " FROM config_info_gray ci WHERE ci.tenant_id = ? AND "
+            + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
+            + " ( SELECT 1 FROM config_info_gray ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
+            + " AND ci2.gray_name = ci.gray_name AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
+            + " AND ci2.gmt_modified < ci.gmt_modified )"
+            + " AND ci.id > ?" + " ORDER BY ci.id LIMIT ?";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER),
-                        context.getWhereParameter(FieldConstant.TARGET_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER), context.getWhereParameter(FieldConstant.ID),
-                        context.getPageSize()));
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
+                context.getWhereParameter(FieldConstant.SRC_USER),
+                context.getWhereParameter(FieldConstant.TARGET_TENANT),
+                context.getWhereParameter(FieldConstant.SRC_USER),
+                context.getWhereParameter(FieldConstant.ID),
+                context.getPageSize()));
     }
     
     /**
@@ -114,10 +117,10 @@ public interface ConfigMigrateMapper extends Mapper {
     default MapperResult migrateConfigInsertByIds(MapperContext context) {
         ArrayList<Object> paramList = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-                "INSERT INTO config_info (data_id, group_id, content, md5, src_user, src_ip, "
-                        + "app_name, tenant_id, c_desc, type, encrypted_data_key) "
-                        + "select data_id, group_id, content, md5, ?, src_ip, "
-                        + "app_name, 'public', c_desc, type, encrypted_data_key from config_info WHERE ");
+            "INSERT INTO config_info (data_id, group_id, content, md5, src_user, src_ip, "
+                + "app_name, tenant_id, c_desc, type, encrypted_data_key) "
+                + "select data_id, group_id, content, md5, ?, src_ip, "
+                + "app_name, 'public', c_desc, type, encrypted_data_key from config_info WHERE ");
         sql.append("id IN (");
         List<Long> ids = (List<Long>) context.getWhereParameter(FieldConstant.IDS);
         paramList.add(context.getWhereParameter(FieldConstant.SRC_USER));
@@ -140,11 +143,11 @@ public interface ConfigMigrateMapper extends Mapper {
      */
     default MapperResult getConfigGrayConflictCount(MapperContext context) {
         String sql =
-                "SELECT COUNT(*) AS count FROM config_info_gray ci1"
-                        + " WHERE ci1.tenant_id = 'public' AND (ci1.src_user <> ? OR ci1.src_user IS NULL)"
-                        + " AND EXISTS (SELECT 1 FROM config_info_gray ci2"
-                        + " WHERE ci2.data_id = ci1.data_id AND ci2.group_id = ci1.group_id AND ci2.gray_name = ci1.gray_name"
-                        + " AND ci2.tenant_id = '' AND ci2.md5 <> ci1.md5 AND (ci2.src_user <> ? OR ci2.src_user IS NULL))";
+            "SELECT COUNT(*) AS count FROM config_info_gray ci1"
+                + " WHERE ci1.tenant_id = 'public' AND (ci1.src_user <> ? OR ci1.src_user IS NULL)"
+                + " AND EXISTS (SELECT 1 FROM config_info_gray ci2"
+                + " WHERE ci2.data_id = ci1.data_id AND ci2.group_id = ci1.group_id AND ci2.gray_name = ci1.gray_name"
+                + " AND ci2.tenant_id = '' AND ci2.md5 <> ci1.md5 AND (ci2.src_user <> ? OR ci2.src_user IS NULL))";
         Object srcUser = context.getWhereParameter(FieldConstant.SRC_USER);
         return new MapperResult(sql, CollectionUtils.list(srcUser, srcUser));
     }
@@ -157,11 +160,12 @@ public interface ConfigMigrateMapper extends Mapper {
      */
     default MapperResult findConfigGrayIdNeedInsertMigrate(MapperContext context) {
         String sql = "SELECT ci.id FROM config_info_gray ci WHERE ci.tenant_id = '' AND NOT EXISTS "
-                + " ( SELECT 1 FROM config_info_gray ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id"
-                + " AND ci2.tenant_id = 'public' AND ci2.gray_name = ci.gray_name )" + " AND ci.id > ?"
-                + " ORDER BY ci.id LIMIT ?";
+            + " ( SELECT 1 FROM config_info_gray ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id"
+            + " AND ci2.tenant_id = 'public' AND ci2.gray_name = ci.gray_name )" + " AND ci.id > ?"
+            + " ORDER BY ci.id LIMIT ?";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                context.getPageSize()));
     }
     
     /**
@@ -172,10 +176,10 @@ public interface ConfigMigrateMapper extends Mapper {
      */
     default MapperResult migrateConfigGrayInsertByIds(MapperContext context) {
         StringBuilder sql = new StringBuilder(
-                "INSERT INTO config_info_gray (data_id, group_id, content, md5, src_user, src_ip, "
-                        + "app_name, tenant_id, gray_name, gray_rule, encrypted_data_key) "
-                        + "select data_id, group_id, content, md5, ?, src_ip, "
-                        + "app_name, 'public', gray_name, gray_rule, encrypted_data_key from config_info_gray WHERE ");
+            "INSERT INTO config_info_gray (data_id, group_id, content, md5, src_user, src_ip, "
+                + "app_name, tenant_id, gray_name, gray_rule, encrypted_data_key) "
+                + "select data_id, group_id, content, md5, ?, src_ip, "
+                + "app_name, 'public', gray_name, gray_rule, encrypted_data_key from config_info_gray WHERE ");
         sql.append("id IN (");
         ArrayList<Object> paramList = new ArrayList<>();
         List<Long> ids = (List<Long>) context.getWhereParameter(FieldConstant.IDS);

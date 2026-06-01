@@ -87,11 +87,12 @@ public class A2aInnerHandlerTest {
         agentCardForm.setRegistrationType(REGISTRATION_TYPE);
         
         doNothing().when(a2aServerOperationService)
-                .registerAgent(eq(agentCard), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE));
+            .registerAgent(eq(agentCard), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE));
         
         a2aInnerHandler.registerAgent(agentCard, agentCardForm);
         
-        verify(a2aServerOperationService).registerAgent(eq(agentCard), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE));
+        verify(a2aServerOperationService).registerAgent(eq(agentCard), eq(NAMESPACE_ID),
+            eq(REGISTRATION_TYPE));
     }
     
     @Test
@@ -101,15 +102,17 @@ public class A2aInnerHandlerTest {
         agentCardForm.setNamespaceId(NAMESPACE_ID);
         agentCardForm.setRegistrationType(REGISTRATION_TYPE);
         
-        NacosException expectedException = new NacosException(NacosException.CONFLICT, "Agent already exists");
+        NacosException expectedException =
+            new NacosException(NacosException.CONFLICT, "Agent already exists");
         doThrow(expectedException).when(a2aServerOperationService)
-                .registerAgent(any(AgentCard.class), any(String.class), any(String.class));
+            .registerAgent(any(AgentCard.class), any(String.class), any(String.class));
         
         NacosException actualException = assertThrows(NacosException.class,
-                () -> a2aInnerHandler.registerAgent(agentCard, agentCardForm));
+            () -> a2aInnerHandler.registerAgent(agentCard, agentCardForm));
         
         assertEquals(expectedException.getErrCode(), actualException.getErrCode());
-        verify(a2aServerOperationService).registerAgent(any(AgentCard.class), any(String.class), any(String.class));
+        verify(a2aServerOperationService).registerAgent(any(AgentCard.class), any(String.class),
+            any(String.class));
     }
     
     @Test
@@ -124,14 +127,16 @@ public class A2aInnerHandlerTest {
         expectedDetailInfo.setName(AGENT_NAME);
         expectedDetailInfo.setVersion(AGENT_VERSION);
         
-        when(a2aServerOperationService.getAgentCard(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(AGENT_VERSION),
-                eq(REGISTRATION_TYPE))).thenReturn(expectedDetailInfo);
+        when(a2aServerOperationService.getAgentCard(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(AGENT_VERSION),
+            eq(REGISTRATION_TYPE))).thenReturn(expectedDetailInfo);
         
         AgentCardDetailInfo actualDetailInfo = a2aInnerHandler.getAgentCardWithVersions(form);
         
         assertEquals(expectedDetailInfo, actualDetailInfo);
-        verify(a2aServerOperationService).getAgentCard(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(AGENT_VERSION),
-                eq(REGISTRATION_TYPE));
+        verify(a2aServerOperationService).getAgentCard(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(AGENT_VERSION),
+            eq(REGISTRATION_TYPE));
     }
     
     @Test
@@ -141,11 +146,13 @@ public class A2aInnerHandlerTest {
         form.setAgentName(AGENT_NAME);
         form.setVersion(AGENT_VERSION);
         
-        doNothing().when(a2aServerOperationService).deleteAgent(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(AGENT_VERSION));
+        doNothing().when(a2aServerOperationService).deleteAgent(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(AGENT_VERSION));
         
         a2aInnerHandler.deleteAgent(form);
         
-        verify(a2aServerOperationService).deleteAgent(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(AGENT_VERSION));
+        verify(a2aServerOperationService).deleteAgent(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(AGENT_VERSION));
     }
     
     @Test
@@ -160,12 +167,13 @@ public class A2aInnerHandlerTest {
         form.setSetAsLatest(true);
         
         doNothing().when(a2aServerOperationService)
-                .updateAgentCard(eq(agentCard), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE), eq(true));
+            .updateAgentCard(eq(agentCard), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE), eq(true));
         
         a2aInnerHandler.updateAgentCard(agentCard, form);
         
-        verify(a2aServerOperationService).updateAgentCard(eq(agentCard), eq(NAMESPACE_ID), eq(REGISTRATION_TYPE),
-                eq(true));
+        verify(a2aServerOperationService).updateAgentCard(eq(agentCard), eq(NAMESPACE_ID),
+            eq(REGISTRATION_TYPE),
+            eq(true));
     }
     
     @Test
@@ -189,14 +197,16 @@ public class A2aInnerHandlerTest {
         expectedPage.setPagesAvailable(1);
         expectedPage.setTotalCount(1);
         
-        when(a2aServerOperationService.listAgents(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(SEARCH_TYPE), eq(PAGE_NO),
-                eq(PAGE_SIZE))).thenReturn(expectedPage);
+        when(a2aServerOperationService.listAgents(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(SEARCH_TYPE),
+            eq(PAGE_NO),
+            eq(PAGE_SIZE))).thenReturn(expectedPage);
         
         Page<AgentCardVersionInfo> actualPage = a2aInnerHandler.listAgents(agentListForm, pageForm);
         
         assertEquals(expectedPage, actualPage);
-        verify(a2aServerOperationService).listAgents(eq(NAMESPACE_ID), eq(AGENT_NAME), eq(SEARCH_TYPE), eq(PAGE_NO),
-                eq(PAGE_SIZE));
+        verify(a2aServerOperationService).listAgents(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(SEARCH_TYPE), eq(PAGE_NO),
+            eq(PAGE_SIZE));
     }
     
     @Test
@@ -206,10 +216,12 @@ public class A2aInnerHandlerTest {
         version.setVersion(AGENT_VERSION);
         expectedVersions.add(version);
         
-        when(a2aServerOperationService.listAgentVersions(eq(NAMESPACE_ID), eq(AGENT_NAME))).thenReturn(
+        when(a2aServerOperationService.listAgentVersions(eq(NAMESPACE_ID), eq(AGENT_NAME)))
+            .thenReturn(
                 expectedVersions);
         
-        List<AgentVersionDetail> actualVersions = a2aInnerHandler.listAgentVersions(NAMESPACE_ID, AGENT_NAME);
+        List<AgentVersionDetail> actualVersions =
+            a2aInnerHandler.listAgentVersions(NAMESPACE_ID, AGENT_NAME);
         
         assertEquals(expectedVersions, actualVersions);
         verify(a2aServerOperationService).listAgentVersions(eq(NAMESPACE_ID), eq(AGENT_NAME));

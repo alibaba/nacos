@@ -29,37 +29,37 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Package {
-
+    
     private String registryType;
-
+    
     private String registryBaseUrl;
-
+    
     private String identifier;
-
+    
     private String version;
-
+    
     private String fileSha256;
-
+    
     private String runtimeHint;
-
+    
     private List<Argument> runtimeArguments;
-
+    
     private List<Argument> packageArguments;
-
+    
     private List<KeyValueInput> environmentVariables;
-
+    
     /**
      * Transport field - required, supports multiple transport types (stdio/streamable-http/sse).
      */
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
     @JsonSubTypes({
-            @JsonSubTypes.Type(value = StdioTransport.class, name = "stdio"),
-            @JsonSubTypes.Type(value = StreamableHttpTransport.class, name = "streamable-http"),
-            @JsonSubTypes.Type(value = SseTransport.class, name = "sse")
+        @JsonSubTypes.Type(value = StdioTransport.class, name = "stdio"),
+        @JsonSubTypes.Type(value = StreamableHttpTransport.class, name = "streamable-http"),
+        @JsonSubTypes.Type(value = SseTransport.class, name = "sse")
     })
     @JsonIgnoreProperties(ignoreUnknown = true)
     private Object transport;
-
+    
     /**
      * Get registry type.
      *
@@ -68,7 +68,7 @@ public class Package {
     public String getRegistryType() {
         return registryType;
     }
-
+    
     /**
      * Set registry type.
      *
@@ -77,7 +77,7 @@ public class Package {
     public void setRegistryType(String registryType) {
         this.registryType = registryType;
     }
-
+    
     /**
      * Get registry base URL.
      *
@@ -86,7 +86,7 @@ public class Package {
     public String getRegistryBaseUrl() {
         return registryBaseUrl;
     }
-
+    
     /**
      * Set registry base URL.
      *
@@ -95,7 +95,7 @@ public class Package {
     public void setRegistryBaseUrl(String registryBaseUrl) {
         this.registryBaseUrl = registryBaseUrl;
     }
-
+    
     /**
      * Get identifier.
      *
@@ -104,7 +104,7 @@ public class Package {
     public String getIdentifier() {
         return identifier;
     }
-
+    
     /**
      * Set identifier.
      *
@@ -113,7 +113,7 @@ public class Package {
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
     }
-
+    
     /**
      * Get version.
      *
@@ -122,7 +122,7 @@ public class Package {
     public String getVersion() {
         return version;
     }
-
+    
     /**
      * Set version.
      *
@@ -131,7 +131,7 @@ public class Package {
     public void setVersion(String version) {
         this.version = version;
     }
-
+    
     /**
      * Get file SHA 256.
      *
@@ -140,7 +140,7 @@ public class Package {
     public String getFileSha256() {
         return fileSha256;
     }
-
+    
     /**
      * Set file SHA 256.
      *
@@ -149,7 +149,7 @@ public class Package {
     public void setFileSha256(String fileSha256) {
         this.fileSha256 = fileSha256;
     }
-
+    
     /**
      * Get runtime hint.
      *
@@ -158,7 +158,7 @@ public class Package {
     public String getRuntimeHint() {
         return runtimeHint;
     }
-
+    
     /**
      * Set runtime hint.
      *
@@ -167,7 +167,7 @@ public class Package {
     public void setRuntimeHint(String runtimeHint) {
         this.runtimeHint = runtimeHint;
     }
-
+    
     /**
      * Get runtime arguments.
      *
@@ -176,7 +176,7 @@ public class Package {
     public List<Argument> getRuntimeArguments() {
         return runtimeArguments;
     }
-
+    
     /**
      * Set runtime arguments.
      *
@@ -185,7 +185,7 @@ public class Package {
     public void setRuntimeArguments(List<Argument> runtimeArguments) {
         this.runtimeArguments = runtimeArguments;
     }
-
+    
     /**
      * Get package arguments.
      *
@@ -194,7 +194,7 @@ public class Package {
     public List<Argument> getPackageArguments() {
         return packageArguments;
     }
-
+    
     /**
      * Set package arguments.
      *
@@ -203,7 +203,7 @@ public class Package {
     public void setPackageArguments(List<Argument> packageArguments) {
         this.packageArguments = packageArguments;
     }
-
+    
     /**
      * Get environment variables.
      *
@@ -212,7 +212,7 @@ public class Package {
     public List<KeyValueInput> getEnvironmentVariables() {
         return environmentVariables;
     }
-
+    
     /**
      * Set environment variables.
      *
@@ -221,7 +221,7 @@ public class Package {
     public void setEnvironmentVariables(List<KeyValueInput> environmentVariables) {
         this.environmentVariables = environmentVariables;
     }
-
+    
     /**
      * Get transport.
      *
@@ -230,7 +230,7 @@ public class Package {
     public Object getTransport() {
         return transport;
     }
-
+    
     /**
      * Set transport.
      *

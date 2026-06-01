@@ -66,7 +66,8 @@ class AbstractCoreMaintainerServiceTest {
         properties.setProperty("serverAddr", "localhost:8848");
         coreMaintainerService = new AbstractCoreMaintainerService(properties) {
         };
-        Field clientHttpProxyField = AbstractCoreMaintainerService.class.getDeclaredField("clientHttpProxy");
+        Field clientHttpProxyField =
+            AbstractCoreMaintainerService.class.getDeclaredField("clientHttpProxy");
         clientHttpProxyField.setAccessible(true);
         clientHttpProxyField.set(coreMaintainerService, clientHttpProxy);
     }
@@ -101,7 +102,8 @@ class AbstractCoreMaintainerServiceTest {
         // Arrange
         List<IdGeneratorInfo> expectedList = new ArrayList<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedList)));
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -134,7 +136,8 @@ class AbstractCoreMaintainerServiceTest {
         
         Collection<NacosMember> expectedMembers = new ArrayList<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMembers)));
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMembers)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -168,7 +171,8 @@ class AbstractCoreMaintainerServiceTest {
         // Arrange
         Map<String, ConnectionInfo> expectedMap = new HashMap<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMap)));
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMap)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -241,7 +245,8 @@ class AbstractCoreMaintainerServiceTest {
         // Arrange
         ServerLoaderMetrics expectedMetrics = new ServerLoaderMetrics();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMetrics)));
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMetrics)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -257,11 +262,11 @@ class AbstractCoreMaintainerServiceTest {
     void testGetNamespaceList() throws Exception {
         // Arrange
         List<Namespace> expectedNamespaces = Arrays.asList(
-                new Namespace("namespace-1", "test-namespace-1", "description-1", 100, 10, 0),
-                new Namespace("namespace-2", "test-namespace-2", "description-2", 200, 20, 1)
-        );
+            new Namespace("namespace-1", "test-namespace-1", "description-1", 100, 10, 0),
+            new Namespace("namespace-2", "test-namespace-2", "description-2", 200, 20, 1));
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedNamespaces)));
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedNamespaces)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -272,8 +277,10 @@ class AbstractCoreMaintainerServiceTest {
         assertNotNull(result);
         assertEquals(expectedNamespaces.size(), result.size());
         assertEquals(expectedNamespaces.get(0).getNamespace(), result.get(0).getNamespace());
-        assertEquals(expectedNamespaces.get(0).getNamespaceShowName(), result.get(0).getNamespaceShowName());
-        assertEquals(expectedNamespaces.get(0).getNamespaceDesc(), result.get(0).getNamespaceDesc());
+        assertEquals(expectedNamespaces.get(0).getNamespaceShowName(),
+            result.get(0).getNamespaceShowName());
+        assertEquals(expectedNamespaces.get(0).getNamespaceDesc(),
+            result.get(0).getNamespaceDesc());
         assertEquals(expectedNamespaces.get(0).getQuota(), result.get(0).getQuota());
         assertEquals(expectedNamespaces.get(0).getConfigCount(), result.get(0).getConfigCount());
         assertEquals(expectedNamespaces.get(0).getType(), result.get(0).getType());
@@ -284,9 +291,11 @@ class AbstractCoreMaintainerServiceTest {
     void testGetNamespace() throws Exception {
         // Arrange
         String namespaceId = "test-namespace-id";
-        Namespace expectedNamespace = new Namespace(namespaceId, "test-namespace-name", "test-namespace-desc", 100, 10, 0);
+        Namespace expectedNamespace =
+            new Namespace(namespaceId, "test-namespace-name", "test-namespace-desc", 100, 10, 0);
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedNamespace)));
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedNamespace)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -334,7 +343,8 @@ class AbstractCoreMaintainerServiceTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Boolean result = coreMaintainerService.updateNamespace(namespaceId, namespaceName, namespaceDesc);
+        Boolean result =
+            coreMaintainerService.updateNamespace(namespaceId, namespaceName, namespaceDesc);
         
         // Assert
         assertTrue(result);
@@ -397,7 +407,8 @@ class AbstractCoreMaintainerServiceTest {
         Map<String, String> serverState = new HashMap<>();
         serverState.put("key", "value");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(serverState))); // 0表示不存在
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(serverState))); // 0表示不存在
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         Map<String, String> result = coreMaintainerService.getServerState();
@@ -425,15 +436,15 @@ class AbstractCoreMaintainerServiceTest {
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setCode(200);
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-
+        
         Boolean result = coreMaintainerService.readiness();
         assertTrue(result);
-
+        
         mockHttpRestResult.setCode(500);
         result = coreMaintainerService.readiness();
         assertFalse(result);
     }
-
+    
     @Test
     void testListPluginsTest() throws Exception {
         List<Map<String, Object>> expectedPlugins = new ArrayList<>();
@@ -443,34 +454,36 @@ class AbstractCoreMaintainerServiceTest {
         plugin.put("pluginName", "test");
         plugin.put("enabled", true);
         expectedPlugins.add(plugin);
-
+        
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedPlugins)));
-
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedPlugins)));
+        
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-
+        
         List<Map<String, Object>> result = coreMaintainerService.listPlugins(null);
-
+        
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("auth:test", result.get(0).get("pluginId"));
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
-
+    
     @Test
     void testListPluginsWithTypeTest() throws Exception {
         List<Map<String, Object>> expectedPlugins = new ArrayList<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedPlugins)));
-
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedPlugins)));
+        
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-
+        
         List<Map<String, Object>> result = coreMaintainerService.listPlugins("auth");
-
+        
         assertNotNull(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
-
+    
     @Test
     void testGetPluginDetailTest() throws Exception {
         Map<String, Object> expectedDetail = new HashMap<>();
@@ -479,40 +492,41 @@ class AbstractCoreMaintainerServiceTest {
         expectedDetail.put("pluginName", "test");
         expectedDetail.put("enabled", true);
         expectedDetail.put("configurable", true);
-
+        
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedDetail)));
-
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedDetail)));
+        
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-
+        
         Map<String, Object> result = coreMaintainerService.getPluginDetail("auth", "test");
-
+        
         assertNotNull(result);
         assertEquals("auth:test", result.get("pluginId"));
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
-
+    
     @Test
     void testUpdatePluginStatusTest() throws Exception {
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setCode(200);
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
-
+        
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-
+        
         coreMaintainerService.updatePluginStatus("auth", "test", false);
-
+        
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
-
+    
     @Test
     void testUpdatePluginStatusHttpErrorTest() throws Exception {
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setCode(500);
         mockHttpRestResult.setMessage("Internal Server Error");
-
+        
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-
+        
         try {
             coreMaintainerService.updatePluginStatus("auth", "test", false);
         } catch (NacosException e) {
@@ -520,34 +534,34 @@ class AbstractCoreMaintainerServiceTest {
             assertTrue(e.getMessage().contains("Failed to update plugin status"));
         }
     }
-
+    
     @Test
     void testUpdatePluginConfigTest() throws Exception {
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");
-
+        
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setCode(200);
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
-
+        
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-
+        
         coreMaintainerService.updatePluginConfig("auth", "test", config);
-
+        
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
-
+    
     @Test
     void testUpdatePluginConfigHttpErrorTest() throws Exception {
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");
-
+        
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setCode(500);
         mockHttpRestResult.setMessage("Internal Server Error");
-
+        
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-
+        
         try {
             coreMaintainerService.updatePluginConfig("auth", "test", config);
         } catch (NacosException e) {
@@ -555,20 +569,21 @@ class AbstractCoreMaintainerServiceTest {
             assertTrue(e.getMessage().contains("Failed to update plugin config"));
         }
     }
-
+    
     @Test
     void testGetPluginAvailabilityTest() throws Exception {
         Map<String, Boolean> expectedAvailability = new HashMap<>();
         expectedAvailability.put("127.0.0.1:8848", true);
         expectedAvailability.put("127.0.0.2:8848", false);
-
+        
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedAvailability)));
-
+        mockHttpRestResult
+            .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedAvailability)));
+        
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-
+        
         Map<String, Boolean> result = coreMaintainerService.getPluginAvailability("auth", "test");
-
+        
         assertNotNull(result);
         assertEquals(2, result.size());
         assertTrue(result.get("127.0.0.1:8848"));

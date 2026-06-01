@@ -27,19 +27,20 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
  * SPI builder for {@link NacosConfigAiResourceStorage}.
  */
 public class NacosConfigAiResourceStorageBuilder implements AiResourceStorageBuilder {
-
+    
     @Override
     public String type() {
         return NacosConfigAiResourceStorage.TYPE;
     }
-
+    
     @Override
     public AiResourceStorage build() {
-        ConfigQueryChainService queryChainService = ApplicationUtils.getBean(ConfigQueryChainService.class);
-        ConfigOperationService operationService = ApplicationUtils.getBean(ConfigOperationService.class);
+        ConfigQueryChainService queryChainService =
+            ApplicationUtils.getBean(ConfigQueryChainService.class);
+        ConfigOperationService operationService =
+            ApplicationUtils.getBean(ConfigOperationService.class);
         SyncEffectService[] syncRef = new SyncEffectService[1];
         ApplicationUtils.getBeanIfExist(SyncEffectService.class, bean -> syncRef[0] = bean);
         return new NacosConfigAiResourceStorage(queryChainService, operationService, syncRef[0]);
     }
 }
-

@@ -43,20 +43,21 @@ class NacosAgentSpecEventPropertyTest {
      * <p><b>Validates: Requirements 3.2, 3.3, 3.4</b></p>
      */
     @Property
-    void constructorRoundTripPreservesValues(@ForAll("arbitraryAgentSpecNames") String agentSpecName) {
+    void constructorRoundTripPreservesValues(
+        @ForAll("arbitraryAgentSpecNames") String agentSpecName) {
         AgentSpec agentSpec = new AgentSpec();
         
         NacosAgentSpecEvent event = new NacosAgentSpecEvent(agentSpecName, agentSpec);
         
         assertEquals(agentSpecName, event.getAgentSpecName(),
-                "getAgentSpecName() should return the agentSpecName passed to constructor");
+            "getAgentSpecName() should return the agentSpecName passed to constructor");
         assertSame(agentSpec, event.getAgentSpec(),
-                "getAgentSpec() should return the exact same AgentSpec reference passed to constructor");
+            "getAgentSpec() should return the exact same AgentSpec reference passed to constructor");
     }
     
     @Provide
     Arbitrary<String> arbitraryAgentSpecNames() {
         return Arbitraries.strings().alpha().numeric().withChars('-', '_', '.')
-                .ofMinLength(0).ofMaxLength(100);
+            .ofMinLength(0).ofMaxLength(100);
     }
 }

@@ -35,10 +35,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -125,7 +127,8 @@ public class AbstractAuthenticationManagerTest {
         when(jwtTokenManager.parseToken(anyString())).thenReturn(nacosUser);
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
-        mockHttpServletRequest.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + "-token");
+        mockHttpServletRequest.addHeader(AuthConstants.AUTHORIZATION_HEADER,
+            AuthConstants.TOKEN_PREFIX + "-token");
         NacosUser authenticate = abstractAuthenticationManager.authenticate(mockHttpServletRequest);
         
         assertEquals(nacosUser, authenticate);
@@ -169,6 +172,25 @@ public class AbstractAuthenticationManagerTest {
         assertThrows(AccessException.class, () -> {
             abstractAuthenticationManager.authorize(permission, nacosUser);
         });
+    }
+    
+    @Test
+    void testAuthorizeAllowsGlobalAdminUser() {
+        Permission permission = new Permission();
+        NacosUser nacosUser = new NacosUser("nacos");
+        nacosUser.setGlobalAdmin(true);
+        
+        assertDoesNotThrow(() -> abstractAuthenticationManager.authorize(permission, nacosUser));
+    }
+    
+    @Test
+    void testAuthorizeAllowsGlobalAdminRole() {
+        Permission permission = new Permission();
+        NacosUser nacosUser = new NacosUser("nacos");
+        when(roleService.hasGlobalAdminRole("nacos")).thenReturn(true);
+        
+        assertDoesNotThrow(() -> abstractAuthenticationManager.authorize(permission, nacosUser));
+        verify(roleService).hasGlobalAdminRole("nacos");
     }
     
     @Test

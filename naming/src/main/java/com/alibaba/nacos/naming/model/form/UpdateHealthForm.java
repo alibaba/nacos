@@ -58,19 +58,19 @@ public class UpdateHealthForm {
         fillDefaultValue();
         if (healthy == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'healthy' type Boolean is not present");
+                "Required parameter 'healthy' type Boolean is not present");
         }
         if (StringUtils.isBlank(serviceName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'serviceName' type String is not present");
+                "Required parameter 'serviceName' type String is not present");
         }
         if (StringUtils.isBlank(ip)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'ip' type String is not present");
+                "Required parameter 'ip' type String is not present");
         }
         if (port == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'port' type Integer is not present");
+                "Required parameter 'port' type Integer is not present");
         }
     }
     
@@ -154,9 +154,12 @@ public class UpdateHealthForm {
             return false;
         }
         UpdateHealthForm that = (UpdateHealthForm) o;
-        return Objects.equals(healthy, that.healthy) && Objects.equals(groupName, that.groupName) && Objects
-                .equals(serviceName, that.serviceName) && Objects.equals(namespaceId, that.namespaceId) && Objects
-                .equals(clusterName, that.clusterName) && Objects.equals(ip, that.ip) && Objects
+        return Objects.equals(healthy, that.healthy) && Objects.equals(groupName, that.groupName)
+            && Objects
+                .equals(serviceName, that.serviceName)
+            && Objects.equals(namespaceId, that.namespaceId) && Objects
+                .equals(clusterName, that.clusterName)
+            && Objects.equals(ip, that.ip) && Objects
                 .equals(port, that.port);
     }
     
@@ -167,8 +170,10 @@ public class UpdateHealthForm {
     
     @Override
     public String toString() {
-        return "UpdateHealthForm{" + "healthy=" + healthy + ", groupName='" + groupName + '\'' + ", serviceName='"
-                + serviceName + '\'' + ", namespaceId='" + namespaceId + '\'' + ", clusterName='" + clusterName + '\''
-                + ", ip='" + ip + '\'' + ", port=" + port + '}';
+        return "UpdateHealthForm{" + "healthy=" + healthy + ", groupName='" + groupName + '\''
+            + ", serviceName='"
+            + serviceName + '\'' + ", namespaceId='" + namespaceId + '\'' + ", clusterName='"
+            + clusterName + '\''
+            + ", ip='" + ip + '\'' + ", port=" + port + '}';
     }
 }

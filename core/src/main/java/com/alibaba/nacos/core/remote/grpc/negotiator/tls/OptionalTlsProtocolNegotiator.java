@@ -30,6 +30,8 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslHandler;
 import io.grpc.netty.shaded.io.netty.util.AsciiString;
 import io.grpc.netty.shaded.io.netty.util.Attribute;
 import io.grpc.netty.shaded.io.netty.util.AttributeKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -40,6 +42,9 @@ import java.util.List;
  * @author githubcheng2978.
  */
 public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiator {
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(OptionalTlsProtocolNegotiator.class);
     
     private static final int MAGIC_VALUE = 5;
     
@@ -66,14 +71,16 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
     
     @Override
     public ChannelHandler newHandler(GrpcHttp2ConnectionHandler grpcHttp2ConnectionHandler) {
-        ChannelHandler plaintext = InternalProtocolNegotiators.serverPlaintext().newHandler(grpcHttp2ConnectionHandler);
-        ChannelHandler ssl = InternalProtocolNegotiators.serverTls(sslContext).newHandler(grpcHttp2ConnectionHandler);
+        ChannelHandler plaintext =
+            InternalProtocolNegotiators.serverPlaintext().newHandler(grpcHttp2ConnectionHandler);
+        ChannelHandler ssl = InternalProtocolNegotiators.serverTls(sslContext)
+            .newHandler(grpcHttp2ConnectionHandler);
         return new PortUnificationServerHandler(ssl, plaintext);
     }
     
     @Override
     public void close() {
-    
+        
     }
     
     @Override
@@ -89,7 +96,8 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
             aDefault.setAccessible(true);
             return (ProtocolNegotiationEvent) aDefault.get(null);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn("Failed to access ProtocolNegotiationEvent.DEFAULT via reflection; "
+                + "the negotiation event will be null, which may break gRPC TLS negotiation", e);
         }
         return null;
     }
@@ -113,11 +121,13 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
         }
         
         @Override
-        protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out)
+            throws Exception {
             if (in.readableBytes() < MAGIC_VALUE) {
                 return;
             }
-            Attribute<Boolean> tlsProtected = ctx.channel().attr(AttributeKey.valueOf("TLS_PROTECTED"));
+            Attribute<Boolean> tlsProtected =
+                ctx.channel().attr(AttributeKey.valueOf("TLS_PROTECTED"));
             if (isSsl(in) || !supportPlainText) {
                 tlsProtected.set(true);
                 ctx.pipeline().addAfter(ctx.name(), null, this.ssl);

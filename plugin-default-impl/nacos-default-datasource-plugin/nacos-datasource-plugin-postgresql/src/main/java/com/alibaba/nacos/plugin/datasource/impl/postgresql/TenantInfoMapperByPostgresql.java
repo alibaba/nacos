@@ -78,11 +78,13 @@ public class TenantInfoMapperByPostgresql extends BaseTenantInfoMapper {
             setJoiner.add(colName + " = " + value);
         }
         
-        StringBuilder sql = new StringBuilder("UPDATE ").append(getTableName()).append(" SET ").append(setJoiner);
+        StringBuilder sql =
+            new StringBuilder("UPDATE ").append(getTableName()).append(" SET ").append(setJoiner);
         
         if (CollectionUtils.isNotEmpty(where)) {
             sql.append(" WHERE ");
-            sql.append(where.stream().map(str -> (str + " = ?")).collect(Collectors.joining(" AND ")));
+            sql.append(
+                where.stream().map(str -> (str + " = ?")).collect(Collectors.joining(" AND ")));
         }
         
         return sql.toString();

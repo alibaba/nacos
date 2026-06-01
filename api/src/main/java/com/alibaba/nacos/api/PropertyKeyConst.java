@@ -97,11 +97,13 @@ public class PropertyKeyConst {
     
     public static final String NAMING_POLLING_THREAD_COUNT = "namingPollingThreadCount";
     
-    public static final String NAMING_REQUEST_DOMAIN_RETRY_COUNT = "namingRequestDomainMaxRetryCount";
+    public static final String NAMING_REQUEST_DOMAIN_RETRY_COUNT =
+        "namingRequestDomainMaxRetryCount";
     
     public static final String NAMING_PUSH_EMPTY_PROTECTION = "namingPushEmptyProtection";
     
-    public static final String NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE = "namingAsyncQuerySubscribeService";
+    public static final String NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE =
+        "namingAsyncQuerySubscribeService";
     
     public static final String REDO_DELAY_TIME = "redoDelayTime";
     
@@ -123,7 +125,8 @@ public class PropertyKeyConst {
         
         public static final String ALIBABA_ALIWARE_ENDPOINT_PORT = "ALIBABA_ALIWARE_ENDPOINT_PORT";
         
-        public static final String ALIBABA_ALIWARE_ENDPOINT_CONTEXT_PATH = "ALIBABA_ALIWARE_ENDPOINT_CONTEXT_PATH";
+        public static final String ALIBABA_ALIWARE_ENDPOINT_CONTEXT_PATH =
+            "ALIBABA_ALIWARE_ENDPOINT_CONTEXT_PATH";
         
         public static final String ALIBABA_ALIWARE_NAMESPACE = "ALIBABA_ALIWARE_NAMESPACE";
         

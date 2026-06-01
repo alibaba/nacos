@@ -63,13 +63,15 @@ class ConfigTagsRelationMapperByOracleTest {
     
     @Test
     void testFindConfigInfo4PageFetchRows() {
-        MapperResult mapperResult = configTagsRelationMapperByOracle.findConfigInfo4PageFetchRows(context);
+        MapperResult mapperResult =
+            configTagsRelationMapperByOracle.findConfigInfo4PageFetchRows(context);
         String sql = mapperResult.getSql();
         assertTrue(sql.contains("WITH tag_agg AS"));
         assertTrue(sql.contains("SELECT DISTINCT a.id"));
         assertTrue(sql.contains("FROM config_info a"));
         assertTrue(sql.contains("LEFT JOIN config_tags_relation b"));
-        assertTrue(sql.contains("ORDER BY a.id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(sql.contains(
+            "ORDER BY a.id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertTrue(mapperResult.getParamList().contains(tenantId));
         assertTrue(mapperResult.getParamList().contains(dataId));
         assertTrue(mapperResult.getParamList().contains(groupId));
@@ -78,7 +80,8 @@ class ConfigTagsRelationMapperByOracleTest {
     
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
-        MapperResult mapperResult = configTagsRelationMapperByOracle.findConfigInfoLike4PageFetchRows(context);
+        MapperResult mapperResult =
+            configTagsRelationMapperByOracle.findConfigInfoLike4PageFetchRows(context);
         String sql = mapperResult.getSql();
         assertTrue(sql.contains("WITH tag_agg AS"));
         assertTrue(sql.contains("SELECT DISTINCT a.id"));

@@ -42,14 +42,14 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MemberReportHandlerTest {
-
+    
     @Mock
     private ServerMemberManager memberManager;
-
+    
     private MemberReportHandler handler;
-
+    
     private Member selfMember;
-
+    
     @BeforeEach
     void setUp() {
         MockEnvironment environment = new MockEnvironment();
@@ -57,26 +57,26 @@ class MemberReportHandlerTest {
         handler = new MemberReportHandler(memberManager);
         selfMember = Member.builder().ip("127.0.0.1").port(8848).state(NodeState.UP).build();
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     void handleValidNodeUpdatesMemberAndReturnsSelf() throws NacosException {
         Member node = Member.builder().ip("192.168.1.1").port(8848).state(NodeState.DOWN).build();
         MemberReportRequest request = new MemberReportRequest(node);
         RequestMeta meta = new RequestMeta();
-
+        
         when(memberManager.getSelf()).thenReturn(selfMember);
-
+        
         MemberReportResponse response = handler.handle(request, meta);
-
+        
         assertNotNull(response);
         assertNotNull(response.getNode());
         assertEquals(selfMember, response.getNode());
-
+        
         ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
         verify(memberManager).update(memberCaptor.capture());
         Member updated = memberCaptor.getValue();
@@ -84,7 +84,7 @@ class MemberReportHandlerTest {
         assertEquals(0, updated.getFailAccessCnt());
         assertEquals("192.168.1.1", updated.getIp());
     }
-
+    
     @Test
     void handleInvalidNodeReturnsErrorResponse() throws NacosException {
         Member invalidNode = new Member();
@@ -92,12 +92,13 @@ class MemberReportHandlerTest {
         invalidNode.setPort(-1);
         MemberReportRequest request = new MemberReportRequest(invalidNode);
         RequestMeta meta = new RequestMeta();
-
+        
         MemberReportResponse response = handler.handle(request, meta);
-
+        
         assertNotNull(response);
         assertFalse(response.isSuccess());
         assertEquals(400, response.getErrorCode());
-        assertTrue(response.getMessage().contains("illegal") || response.getMessage().contains("Illegal"));
+        assertTrue(
+            response.getMessage().contains("illegal") || response.getMessage().contains("Illegal"));
     }
 }

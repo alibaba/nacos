@@ -39,7 +39,8 @@ public class AgentRequestParamExtractor extends AbstractRpcParamExtractor {
         paramInfo.setNamespaceId(agentRequest.getNamespaceId());
         paramInfo.setAgentName(agentRequest.getAgentName());
         if (agentRequest instanceof ReleaseAgentCardRequest) {
-            ReleaseAgentCardRequest releaseAgentCardRequest = (ReleaseAgentCardRequest) agentRequest;
+            ReleaseAgentCardRequest releaseAgentCardRequest =
+                (ReleaseAgentCardRequest) agentRequest;
             if (null != releaseAgentCardRequest.getAgentCard()) {
                 paramInfo.setAgentName(releaseAgentCardRequest.getAgentCard().getName());
             }

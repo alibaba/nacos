@@ -36,10 +36,13 @@ public class ConfigSubscriberMetricsCollector {
     private static final long DELAY_SECONDS = 5;
     
     @Autowired
-    public ConfigSubscriberMetricsCollector(LongPollingService longPollingService, ConfigChangeListenContext configChangeListenContext) {
+    public ConfigSubscriberMetricsCollector(LongPollingService longPollingService,
+        ConfigChangeListenContext configChangeListenContext) {
         ConfigExecutor.scheduleConfigTask(() -> {
-            MetricsMonitor.getConfigSubscriberMonitor("v1").set(longPollingService.getSubscriberCount());
-            MetricsMonitor.getConfigSubscriberMonitor("v2").set(configChangeListenContext.getConnectionCount());
+            MetricsMonitor.getConfigSubscriberMonitor("v1")
+                .set(longPollingService.getSubscriberCount());
+            MetricsMonitor.getConfigSubscriberMonitor("v2")
+                .set(configChangeListenContext.getConnectionCount());
         }, DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
     }
 }

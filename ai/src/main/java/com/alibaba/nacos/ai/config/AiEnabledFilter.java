@@ -43,10 +43,12 @@ public class AiEnabledFilter implements NacosPackageExcludeFilter {
     @Override
     public boolean isExcluded(String className, Set<String> annotationNames) {
         String functionMode = EnvUtil.getFunctionMode();
-        // When not specified naming mode or config mode,
-        if (StringUtils.isNotEmpty(functionMode)) {
-            LOGGER.warn("AI module disabled because function mode is {}, and AI depend naming module and config module both",
-                    functionMode);
+        // When not specified ai mode, AI module should be disabled
+        if (StringUtils.isNotEmpty(functionMode)
+            && !EnvUtil.FUNCTION_MODE_AI.equals(functionMode)) {
+            LOGGER.warn(
+                "AI module disabled because function mode is {}, and AI mode requires empty or 'ai' mode",
+                functionMode);
             return true;
         }
         boolean aiDisabled = !EnvUtil.getProperty(AI_ENABLED_KEY, Boolean.class, true);

@@ -35,4 +35,3 @@ public interface HealthHandler {
      */
     Result<String> checkReadiness() throws NacosException;
 }
-

@@ -51,13 +51,15 @@ class InstanceMetadataBatchResultTest {
     @Test
     void testDeserialize() throws IOException {
         String jsonString = "{\"updated\":[\"1.1.1.1\"]}";
-        InstanceMetadataBatchResult metricsInfo1 = mapper.readValue(jsonString, InstanceMetadataBatchResult.class);
+        InstanceMetadataBatchResult metricsInfo1 =
+            mapper.readValue(jsonString, InstanceMetadataBatchResult.class);
         assertEquals(instanceMetadataBatchResult.getUpdated(), metricsInfo1.getUpdated());
     }
     
     @Test
     void testConstructorWithParameter() {
-        InstanceMetadataBatchResult result = new InstanceMetadataBatchResult(Collections.singletonList("2.2.2.2"));
+        InstanceMetadataBatchResult result =
+            new InstanceMetadataBatchResult(Collections.singletonList("2.2.2.2"));
         assertEquals(1, result.getUpdated().size());
         assertEquals("2.2.2.2", result.getUpdated().get(0));
     }

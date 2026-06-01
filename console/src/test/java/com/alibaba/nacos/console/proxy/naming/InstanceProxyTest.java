@@ -59,6 +59,17 @@ public class InstanceProxyTest {
     }
     
     @Test
+    public void removeInstance() throws NacosException {
+        InstanceForm instanceForm = new InstanceForm();
+        Instance instance = new Instance();
+        
+        doNothing().when(instanceHandler).removeInstance(instanceForm, instance);
+        
+        assertDoesNotThrow(() -> instanceProxy.removeInstance(instanceForm, instance));
+        verify(instanceHandler).removeInstance(instanceForm, instance);
+    }
+    
+    @Test
     public void listInstances() throws NacosException {
         String namespaceId = "testNamespace";
         String serviceNameWithoutGroup = "testService";
@@ -69,15 +80,18 @@ public class InstanceProxyTest {
         
         Page<Instance> expectedPage = new Page<>();
         doReturn(expectedPage).when(instanceHandler)
-                .listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName, page, pageSize);
+            .listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName, page,
+                pageSize);
         
-        Page<? extends Instance> result = instanceProxy.listInstances(namespaceId, serviceNameWithoutGroup, groupName,
+        Page<? extends Instance> result =
+            instanceProxy.listInstances(namespaceId, serviceNameWithoutGroup, groupName,
                 clusterName, page, pageSize);
         
         assertNotNull(result);
         assertEquals(expectedPage, result);
-        verify(instanceHandler, times(1)).listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName,
-                page, pageSize);
+        verify(instanceHandler, times(1)).listInstances(namespaceId, serviceNameWithoutGroup,
+            groupName, clusterName,
+            page, pageSize);
     }
     
 }

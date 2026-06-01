@@ -57,12 +57,13 @@ public class NamespaceConfigInfoServiceTest {
     public void testInjectDetailNotDefault() {
         
         String namespaceId = "test1234";
-        when(EnvUtil.getProperty(eq(PropertiesConstant.DEFAULT_TENANT_QUOTA), eq(Integer.class))).thenReturn(1023);
+        when(EnvUtil.getProperty(eq(PropertiesConstant.DEFAULT_TENANT_QUOTA), eq(Integer.class)))
+            .thenReturn(1023);
         when(configInfoPersistService.configInfoCount(namespaceId)).thenReturn(101);
         Namespace namespace = new Namespace(namespaceId, "test123ShowName");
         namespace.setQuota(200);
         NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(
-                configInfoPersistService);
+            configInfoPersistService);
         namespaceConfigInfoService.injectDetail(namespace);
         assertEquals(101, namespace.getConfigCount());
         assertEquals(1023, namespace.getQuota());
@@ -77,11 +78,12 @@ public class NamespaceConfigInfoServiceTest {
         tenantCapacity.setQuota(0);
         when(configInfoPersistService.configInfoCount(namespaceId)).thenReturn(105);
         
-        when(EnvUtil.getProperty(eq(PropertiesConstant.DEFAULT_TENANT_QUOTA), eq(Integer.class))).thenReturn(null);
+        when(EnvUtil.getProperty(eq(PropertiesConstant.DEFAULT_TENANT_QUOTA), eq(Integer.class)))
+            .thenReturn(null);
         Namespace namespace = new Namespace(namespaceId, "test123ShowName");
         namespace.setQuota(200);
         NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(
-                configInfoPersistService);
+            configInfoPersistService);
         namespaceConfigInfoService.injectDetail(namespace);
         
         assertEquals(105, namespace.getConfigCount());

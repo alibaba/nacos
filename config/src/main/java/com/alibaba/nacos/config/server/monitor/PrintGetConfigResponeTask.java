@@ -24,6 +24,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
  * @author zongtanghu
  */
 public class PrintGetConfigResponeTask implements Runnable {
+    
     @Override
     public void run() {
         MEMORY_LOG.info(ResponseMonitor.getStringForPrint());

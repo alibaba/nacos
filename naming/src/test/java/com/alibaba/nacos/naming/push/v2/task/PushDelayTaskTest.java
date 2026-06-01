@@ -83,6 +83,21 @@ class PushDelayTaskTest {
     }
     
     @Test
+    void testMergeIgnoreOtherDelayTask() {
+        singlePushTask.merge(new AbstractDelayTask() {
+            
+            @Override
+            public void merge(AbstractDelayTask task) {
+            }
+        });
+        
+        assertFalse(singlePushTask.isPushToAll());
+        assertNotNull(singlePushTask.getTargetClients());
+        assertEquals(1, singlePushTask.getTargetClients().size());
+        assertTrue(singlePushTask.getTargetClients().contains(singleTargetClientId));
+    }
+    
+    @Test
     void testMergeAllToAll() throws InterruptedException {
         PushDelayTask oldTask = pushToAllTask;
         TimeUnit.MILLISECONDS.sleep(10);

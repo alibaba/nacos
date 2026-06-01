@@ -32,7 +32,8 @@ import java.lang.reflect.Type;
 public class BeanResponseHandler<T> extends AbstractResponseHandler<T> {
     
     @Override
-    public HttpRestResult<T> convertResult(HttpClientResponse response, Type responseType) throws Exception {
+    public HttpRestResult<T> convertResult(HttpClientResponse response, Type responseType)
+        throws Exception {
         final Header headers = response.getHeaders();
         T extractBody = JacksonUtils.toObj(response.getBody(), responseType);
         return new HttpRestResult<>(headers, response.getStatusCode(), extractBody, null);

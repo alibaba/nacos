@@ -50,7 +50,7 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
             return true;
         }
         return getDistroComponentHolder().findTransportAgent(type)
-                .syncData(distroData, getDistroKey().getTargetServer());
+            .syncData(distroData, getDistroKey().getTargetServer());
     }
     
     @Override
@@ -62,7 +62,7 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
             return;
         }
         getDistroComponentHolder().findTransportAgent(type)
-                .syncData(distroData, getDistroKey().getTargetServer(), callback);
+            .syncData(distroData, getDistroKey().getTargetServer(), callback);
     }
     
     @Override
@@ -71,7 +71,8 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
     }
     
     private DistroData getDistroData(String type) {
-        DistroData result = getDistroComponentHolder().findDataStorage(type).getDistroData(getDistroKey());
+        DistroData result =
+            getDistroComponentHolder().findDataStorage(type).getDistroData(getDistroKey());
         if (null != result) {
             result.setType(OPERATION);
         }

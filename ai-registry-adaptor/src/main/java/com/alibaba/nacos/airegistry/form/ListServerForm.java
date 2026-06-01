@@ -30,7 +30,7 @@ import org.springframework.http.HttpStatus;
 public class ListServerForm implements NacosForm {
     
     private String namespaceId;
-     
+    
     private int offset = 0;
     
     private int limit = 30;
@@ -38,47 +38,47 @@ public class ListServerForm implements NacosForm {
     private String serverName;
     
     private String searchMode;
-
+    
     public int getLimit() {
         return limit;
     }
-
+    
     public void setLimit(int limit) {
         this.limit = limit;
     }
-
+    
     public int getOffset() {
         return offset;
     }
-
+    
     public void setOffset(int offset) {
         this.offset = offset;
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getServerName() {
         return serverName;
     }
-
+    
     public void setServerName(String serverName) {
         this.serverName = serverName;
     }
-
+    
     public String getSearchMode() {
         return searchMode;
     }
-
+    
     public void setSearchMode(String searchMode) {
         this.searchMode = searchMode;
     }
-
+    
     /**
      * check form parameters while valid.
      *
@@ -87,19 +87,24 @@ public class ListServerForm implements NacosForm {
     @Override
     public void validate() throws NacosApiException {
         if (offset < 0) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Parameter 'offset' must >= 0");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Parameter 'offset' must >= 0");
         }
         
         if (limit > Constants.MAX_LIST_SIZE) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Parameter 'limit' must <= 100");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Parameter 'limit' must <= 100");
         }
         
         if (StringUtils.isNotEmpty(searchMode)) {
-            if (!Constants.MCP_LIST_SEARCH_BLUR.equals(searchMode) && !Constants.MCP_LIST_SEARCH_ACCURATE.equals(searchMode)) {
-                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISMATCH,
-                        "Parameter 'searchMode' must be " + Constants.MCP_LIST_SEARCH_BLUR + " or " + Constants.MCP_LIST_SEARCH_ACCURATE);
+            if (!Constants.MCP_LIST_SEARCH_BLUR.equals(searchMode)
+                && !Constants.MCP_LIST_SEARCH_ACCURATE.equals(searchMode)) {
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.PARAMETER_MISMATCH,
+                    "Parameter 'searchMode' must be " + Constants.MCP_LIST_SEARCH_BLUR + " or "
+                        + Constants.MCP_LIST_SEARCH_ACCURATE);
             }
         }
         

@@ -29,49 +29,50 @@ import org.springframework.http.HttpStatus;
  * @author xinluo
  */
 public class ListServersOfficialForm implements NacosForm {
+    
     /** 默认 limit 数值. */
     public static final int DEFAULT_LIMIT = 30;
-
+    
     /** 最大 limit 数值. */
     public static final int MAX_LIMIT = 100;
-
+    
     /** offset 的字符串表示. */
     private String cursor;
-
+    
     private Integer limit = DEFAULT_LIMIT;
-
+    
     private String search;
-
+    
     private String updatedSince;
-
+    
     public String getCursor() {
         return cursor;
     }
-
+    
     public void setCursor(String cursor) {
         this.cursor = cursor;
     }
-
+    
     public Integer getLimit() {
         return limit;
     }
-
+    
     public void setLimit(Integer limit) {
         this.limit = limit;
     }
-
+    
     public String getSearch() {
         return search;
     }
-
+    
     public void setSearch(String search) {
         this.search = search;
     }
-
+    
     public String getUpdatedSince() {
         return updatedSince;
     }
-
+    
     public void setUpdatedSince(String updatedSince) {
         this.updatedSince = updatedSince;
     }
@@ -90,24 +91,28 @@ public class ListServersOfficialForm implements NacosForm {
         try {
             int off = Integer.parseInt(cursor);
             if (off < 0) {
-                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR, "cursor must be >= 0");
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.PARAMETER_VALIDATE_ERROR, "cursor must be >= 0");
             }
             return off;
         } catch (NumberFormatException e) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR, "cursor must be numeric");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "cursor must be numeric");
         }
     }
-
+    
     @Override
     public void validate() throws NacosApiException {
         if (limit == null) {
             limit = DEFAULT_LIMIT;
         }
         if (limit < 0) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR, "limit must be >= 0");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "limit must be >= 0");
         }
         if (limit > MAX_LIMIT) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR, "limit must <= " + MAX_LIMIT);
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "limit must <= " + MAX_LIMIT);
         }
         // validate cursor numeric if present
         resolveOffset();

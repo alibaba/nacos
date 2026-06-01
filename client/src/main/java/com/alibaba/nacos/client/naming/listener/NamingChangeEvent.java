@@ -31,13 +31,15 @@ public class NamingChangeEvent extends NamingEvent {
     
     private final InstancesDiff instancesDiff;
     
-    public NamingChangeEvent(String serviceName, List<Instance> instances, InstancesDiff instancesDiff) {
+    public NamingChangeEvent(String serviceName, List<Instance> instances,
+        InstancesDiff instancesDiff) {
         super(serviceName, instances);
         this.instancesDiff = instancesDiff;
     }
     
-    public NamingChangeEvent(String serviceName, String groupName, String clusters, List<Instance> instances,
-            InstancesDiff instancesDiff) {
+    public NamingChangeEvent(String serviceName, String groupName, String clusters,
+        List<Instance> instances,
+        InstancesDiff instancesDiff) {
         super(serviceName, groupName, clusters, instances);
         this.instancesDiff = instancesDiff;
     }

@@ -42,7 +42,8 @@ class ExceptionUtilTest {
     
     @Test
     void testGetCause() {
-        assertEquals("I'm caused exception.", ExceptionUtil.getCause(nacosRuntimeException).getMessage());
+        assertEquals("I'm caused exception.",
+            ExceptionUtil.getCause(nacosRuntimeException).getMessage());
         NacosRuntimeException nreWithoutCaused = new NacosRuntimeException(500);
         assertEquals(nreWithoutCaused, ExceptionUtil.getCause(nreWithoutCaused));
     }
@@ -52,8 +53,10 @@ class ExceptionUtilTest {
         assertEquals("", ExceptionUtil.getStackTrace(null));
         String stackTrace = ExceptionUtil.getStackTrace(nacosRuntimeException);
         assertTrue(
-                stackTrace.contains("com.alibaba.nacos.api.exception.runtime.NacosRuntimeException: errCode: 500, errMsg: Test"));
+            stackTrace.contains(
+                "com.alibaba.nacos.api.exception.runtime.NacosRuntimeException: errCode: 500, errMsg: Test"));
         assertTrue(stackTrace.contains("at"));
-        assertTrue(stackTrace.contains("Caused by: java.lang.RuntimeException: I'm caused exception."));
+        assertTrue(
+            stackTrace.contains("Caused by: java.lang.RuntimeException: I'm caused exception."));
     }
 }

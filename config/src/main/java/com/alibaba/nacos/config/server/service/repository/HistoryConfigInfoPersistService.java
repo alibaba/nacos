@@ -55,8 +55,9 @@ public interface HistoryConfigInfoPersistService {
      * @param grayName    gray name
      * @param extInfo     extra config info
      */
-    void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser, final Timestamp time,
-            String ops, String publishType, String grayName, String extInfo);
+    void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
+        final Timestamp time,
+        String ops, String publishType, String grayName, String extInfo);
     //------------------------------------------delete---------------------------------------------//
     
     /**
@@ -78,8 +79,9 @@ public interface HistoryConfigInfoPersistService {
      * @param publishType publish type
      * @return {@link ConfigInfoStateWrapper} list
      */
-    List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, final long startId, int size,
-            String publishType);
+    List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, final long startId,
+        int size,
+        String publishType);
     
     /**
      * List configuration history change record.
@@ -91,7 +93,8 @@ public interface HistoryConfigInfoPersistService {
      * @param pageSize size
      * @return {@link Page} with {@link ConfigHistoryInfo} generation
      */
-    Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize);
+    Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant,
+        int pageNo, int pageSize);
     
     /**
      * Get history config detail.
@@ -117,7 +120,7 @@ public interface HistoryConfigInfoPersistService {
      */
     @Deprecated
     int findConfigHistoryCountByTime(final Timestamp startTime);
-
+    
     /**
      * Get the next history config detail of the history config.
      *
@@ -129,6 +132,7 @@ public interface HistoryConfigInfoPersistService {
      * @param startNid    start nid
      * @return the next history config detail of the history config
      */
-    ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant, String publishType, String grayName,
-            long startNid);
+    ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant,
+        String publishType, String grayName,
+        long startNid);
 }

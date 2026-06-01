@@ -45,14 +45,14 @@ import java.util.zip.ZipOutputStream;
  * @author nacos
  */
 public final class AgentSpecSeedArchiveReader {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentSpecSeedArchiveReader.class);
-
+    
     private static final String MANIFEST_JSON = "manifest.json";
-
+    
     private AgentSpecSeedArchiveReader() {
     }
-
+    
     /**
      * Read bundled seed archive and return standalone agentspec packages.
      *
@@ -65,12 +65,12 @@ public final class AgentSpecSeedArchiveReader {
         if (entries.isEmpty()) {
             return Collections.emptyList();
         }
-
+        
         Set<String> roots = detectAgentSpecRoots(entries.keySet());
         if (roots.isEmpty()) {
             return Collections.emptyList();
         }
-
+        
         Set<String> seenNames = new HashSet<>();
         List<AgentSpecPackage> result = new ArrayList<>(roots.size());
         for (String root : roots) {
@@ -84,17 +84,21 @@ public final class AgentSpecSeedArchiveReader {
                 throw new IOException("Missing worker.suggested_name in " + manifestPath);
             }
             if (!seenNames.add(agentSpecName)) {
-                LOGGER.warn("Skip duplicate built-in agentspec name `{}` from archive path `{}`", agentSpecName, root);
+                LOGGER.warn("Skip duplicate built-in agentspec name `{}` from archive path `{}`",
+                    agentSpecName, root);
                 continue;
             }
-            result.add(new AgentSpecPackage(agentSpecName, extractFrom(root), root, buildAgentSpecZip(entries, root)));
+            result.add(new AgentSpecPackage(agentSpecName, extractFrom(root), root,
+                buildAgentSpecZip(entries, root)));
         }
         return result;
     }
-
-    private static Map<String, byte[]> readArchiveEntries(InputStream inputStream) throws IOException {
+    
+    private static Map<String, byte[]> readArchiveEntries(InputStream inputStream)
+        throws IOException {
         Map<String, byte[]> result = new LinkedHashMap<>();
-        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(inputStream, StandardCharsets.UTF_8.name(), true,
+        try (ZipArchiveInputStream zis =
+            new ZipArchiveInputStream(inputStream, StandardCharsets.UTF_8.name(), true,
                 true)) {
             ZipArchiveEntry entry;
             byte[] buffer = new byte[8192];
@@ -117,7 +121,7 @@ public final class AgentSpecSeedArchiveReader {
         }
         return result;
     }
-
+    
     private static Set<String> detectAgentSpecRoots(Set<String> entryNames) {
         Set<String> result = new TreeSet<>();
         for (String entryName : entryNames) {
@@ -131,7 +135,7 @@ public final class AgentSpecSeedArchiveReader {
         }
         return result;
     }
-
+    
     @SuppressWarnings("unchecked")
     private static String extractSuggestedName(byte[] manifestBytes) {
         String manifestContent = new String(manifestBytes, StandardCharsets.UTF_8);
@@ -153,8 +157,9 @@ public final class AgentSpecSeedArchiveReader {
         String suggestedName = nameObj.toString();
         return StringUtils.isBlank(suggestedName) ? null : suggestedName.trim();
     }
-
-    private static byte[] buildAgentSpecZip(Map<String, byte[]> entries, String root) throws IOException {
+    
+    private static byte[] buildAgentSpecZip(Map<String, byte[]> entries, String root)
+        throws IOException {
         List<String> paths = new ArrayList<>();
         for (String entryName : entries.keySet()) {
             if (isInRoot(entryName, root)) {
@@ -162,7 +167,7 @@ public final class AgentSpecSeedArchiveReader {
             }
         }
         Collections.sort(paths);
-
+        
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(out, StandardCharsets.UTF_8)) {
             for (String path : paths) {
@@ -178,11 +183,11 @@ public final class AgentSpecSeedArchiveReader {
         }
         return out.toByteArray();
     }
-
+    
     private static boolean isInRoot(String entryName, String root) {
         return root.isEmpty() || entryName.startsWith(root + "/");
     }
-
+    
     private static String normalizeEntryName(String entryName) {
         if (entryName == null) {
             return null;
@@ -193,11 +198,11 @@ public final class AgentSpecSeedArchiveReader {
         }
         return result;
     }
-
+    
     private static String rootPath(String root, String fileName) {
         return root.isEmpty() ? fileName : root + "/" + fileName;
     }
-
+    
     private static String extractFrom(String sourcePath) {
         if (StringUtils.isBlank(sourcePath)) {
             return null;
@@ -213,39 +218,40 @@ public final class AgentSpecSeedArchiveReader {
         String from = normalized.substring(0, idx).trim();
         return StringUtils.isBlank(from) ? null : from;
     }
-
+    
     /**
      * Standalone agentspec package built from the seed archive.
      */
     public static final class AgentSpecPackage {
-
+        
         private final String agentSpecName;
-
+        
         private final String from;
-
+        
         private final String sourcePath;
-
+        
         private final byte[] zipBytes;
-
-        public AgentSpecPackage(String agentSpecName, String from, String sourcePath, byte[] zipBytes) {
+        
+        public AgentSpecPackage(String agentSpecName, String from, String sourcePath,
+            byte[] zipBytes) {
             this.agentSpecName = agentSpecName;
             this.from = from;
             this.sourcePath = sourcePath;
             this.zipBytes = zipBytes == null ? new byte[0] : zipBytes;
         }
-
+        
         public String getAgentSpecName() {
             return agentSpecName;
         }
-
+        
         public String getFrom() {
             return from;
         }
-
+        
         public String getSourcePath() {
             return sourcePath;
         }
-
+        
         public byte[] getZipBytes() {
             return zipBytes;
         }

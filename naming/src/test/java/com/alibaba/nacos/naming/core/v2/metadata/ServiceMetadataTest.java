@@ -134,4 +134,37 @@ class ServiceMetadataTest {
         boolean equals = serviceMetadata1.equals(serviceMetadata2);
         assertFalse(equals);
     }
+    
+    @Test
+    void testEqualsSameObject() {
+        assertTrue(serviceMetadata.equals(serviceMetadata));
+    }
+    
+    @Test
+    void testEqualsWithDifferentType() {
+        assertFalse(serviceMetadata.equals("metadata"));
+    }
+    
+    @Test
+    void testEqualsAndHashCodeWithSameState() {
+        ServiceMetadata serviceMetadata1 = new ServiceMetadata();
+        ServiceMetadata serviceMetadata2 = new ServiceMetadata();
+        Selector selector = new NoneSelector();
+        Map<String, String> extendData = new HashMap<>();
+        extendData.put("k", "v");
+        Map<String, ClusterMetadata> clusters = new HashMap<>();
+        clusters.put("DEFAULT", clusterMetadata);
+        
+        serviceMetadata1.setSelector(selector);
+        serviceMetadata1.setProtectThreshold(1.0F);
+        serviceMetadata1.setExtendData(extendData);
+        serviceMetadata1.setClusters(clusters);
+        serviceMetadata2.setSelector(selector);
+        serviceMetadata2.setProtectThreshold(1.0F);
+        serviceMetadata2.setExtendData(new HashMap<>(extendData));
+        serviceMetadata2.setClusters(new HashMap<>(clusters));
+        
+        assertTrue(serviceMetadata1.equals(serviceMetadata2));
+        assertEquals(serviceMetadata1.hashCode(), serviceMetadata2.hashCode());
+    }
 }

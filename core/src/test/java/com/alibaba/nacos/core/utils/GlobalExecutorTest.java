@@ -31,14 +31,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * test suite where the environment is already initialized.
  */
 class GlobalExecutorTest {
-
+    
     @Test
     void runWithoutThreadRunsInCallerThreadAndTagIsSet() {
         AtomicBoolean tag = new AtomicBoolean(false);
         GlobalExecutor.runWithoutThread(() -> tag.set(true));
         assertTrue(tag.get());
     }
-
+    
     @Test
     void executeByCommonRunsTaskAndTagIsSet() throws InterruptedException {
         AtomicBoolean tag = new AtomicBoolean(false);
@@ -50,7 +50,7 @@ class GlobalExecutorTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertTrue(tag.get());
     }
-
+    
     @Test
     void scheduleByCommonRunsTaskAndTagIsSet() throws InterruptedException {
         AtomicBoolean tag = new AtomicBoolean(false);
@@ -62,7 +62,7 @@ class GlobalExecutorTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertTrue(tag.get());
     }
-
+    
     @Test
     void scheduleWithFixDelayByCommonRunsTaskAndTagIsSet() throws InterruptedException {
         AtomicBoolean tag = new AtomicBoolean(false);
@@ -74,7 +74,7 @@ class GlobalExecutorTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertTrue(tag.get());
     }
-
+    
     @Test
     void submitLoadDataTaskRunsTaskAndTagIsSet() throws InterruptedException {
         AtomicBoolean tag = new AtomicBoolean(false);
@@ -86,7 +86,7 @@ class GlobalExecutorTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertTrue(tag.get());
     }
-
+    
     @Test
     void submitLoadDataTaskWithDelayRunsTaskAndTagIsSet() throws InterruptedException {
         AtomicBoolean tag = new AtomicBoolean(false);
@@ -98,7 +98,7 @@ class GlobalExecutorTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertTrue(tag.get());
     }
-
+    
     @Test
     void schedulePartitionDataTimedSyncRunsTaskAndTagIsSet() throws InterruptedException {
         AtomicBoolean tag = new AtomicBoolean(false);

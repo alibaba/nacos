@@ -44,7 +44,7 @@ class McpServiceRefTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"namespaceId\":\"public\",\"groupName\":\"DEFAULT_GROUP\","
-                + "\"serviceName\":\"mcp-service\",\"transportProtocol\":\"http\"}";
+            + "\"serviceName\":\"mcp-service\",\"transportProtocol\":\"http\"}";
         
         McpServiceRef result = mapper.readValue(json, McpServiceRef.class);
         assertNotNull(result);

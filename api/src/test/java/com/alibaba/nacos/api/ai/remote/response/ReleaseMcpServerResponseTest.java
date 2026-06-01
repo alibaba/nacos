@@ -41,7 +41,8 @@ class ReleaseMcpServerResponseTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"mcpId\":\"12f418d5-22c0-4ed5-a37f-0286c5fe31c9\",\"success\":true}";
+        String json =
+            "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"mcpId\":\"12f418d5-22c0-4ed5-a37f-0286c5fe31c9\",\"success\":true}";
         ReleaseMcpServerResponse result = mapper.readValue(json, ReleaseMcpServerResponse.class);
         assertNotNull(result);
         assertEquals("1", result.getRequestId());

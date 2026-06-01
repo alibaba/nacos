@@ -24,13 +24,14 @@ import java.util.function.Supplier;
  * @author xiweng.yy
  */
 public class RequestContextHolder {
-
+    
     private static final Supplier<RequestContext> REQUEST_CONTEXT_FACTORY = () -> {
         long requestTimestamp = System.currentTimeMillis();
         return new RequestContext(requestTimestamp);
     };
     
-    private static final ThreadLocal<RequestContext> CONTEXT_HOLDER = ThreadLocal.withInitial(REQUEST_CONTEXT_FACTORY);
+    private static final ThreadLocal<RequestContext> CONTEXT_HOLDER =
+        ThreadLocal.withInitial(REQUEST_CONTEXT_FACTORY);
     
     public static RequestContext getContext() {
         return CONTEXT_HOLDER.get();

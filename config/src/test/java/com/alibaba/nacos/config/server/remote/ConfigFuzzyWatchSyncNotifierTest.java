@@ -67,27 +67,33 @@ public class ConfigFuzzyWatchSyncNotifierTest {
     @BeforeEach
     void setUp() throws IOException {
         tMockedStatic = Mockito.mockStatic(ConfigExecutor.class);
-        configFuzzyWatchSyncNotifier = new ConfigFuzzyWatchSyncNotifier(connectionManager, rpcPushService,
+        configFuzzyWatchSyncNotifier =
+            new ConfigFuzzyWatchSyncNotifier(connectionManager, rpcPushService,
                 configFuzzyWatchContextService);
     }
     
     @Test
     void testInitNotifyWithoutMatchGroupKeys() {
         String connectionId = "conn12345678";
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("dataId*", "group", "tnnt1234");
-        ConfigFuzzyWatchEvent configFuzzyWatchEvent = new ConfigFuzzyWatchEvent(connectionId, null, groupKeyPattern,
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("dataId*", "group", "tnnt1234");
+        ConfigFuzzyWatchEvent configFuzzyWatchEvent =
+            new ConfigFuzzyWatchEvent(connectionId, null, groupKeyPattern,
                 true);
         configFuzzyWatchSyncNotifier.onEvent(configFuzzyWatchEvent);
         tMockedStatic.verify(
-                () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class), eq(0L),
-                        eq(TimeUnit.SECONDS)), times(1));
+            () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class),
+                eq(0L),
+                eq(TimeUnit.SECONDS)),
+            times(1));
         
     }
     
     @Test
     void testInitNotifyWithMatchGroupKeys() {
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("dataId*", "group", "tnnt1234");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("dataId*", "group", "tnnt1234");
         Set<String> matchGroupKeys = new HashSet<>();
         int batchSize = ConfigCommonConfig.getInstance().getBatchSize();
         for (int i = batchSize; i < batchSize * 2; i++) {
@@ -98,23 +104,28 @@ public class ConfigFuzzyWatchSyncNotifierTest {
             clientMatchGroupKeys.add(GroupKey.getKeyTenant("dataId" + i, "group", "tnnt1234"));
         }
         
-        when(configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern)).thenReturn(matchGroupKeys);
+        when(configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern))
+            .thenReturn(matchGroupKeys);
         when(configFuzzyWatchContextService.reachToUpLimit(eq(groupKeyPattern))).thenReturn(false);
         String connectionId = "conn12345678";
-    
-        ConfigFuzzyWatchEvent configFuzzyWatchEvent = new ConfigFuzzyWatchEvent(connectionId, clientMatchGroupKeys,
+        
+        ConfigFuzzyWatchEvent configFuzzyWatchEvent =
+            new ConfigFuzzyWatchEvent(connectionId, clientMatchGroupKeys,
                 groupKeyPattern, true);
         configFuzzyWatchSyncNotifier.onEvent(configFuzzyWatchEvent);
         tMockedStatic.verify(
-                () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class), eq(0L),
-                        eq(TimeUnit.SECONDS)), times(2));
+            () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class),
+                eq(0L),
+                eq(TimeUnit.SECONDS)),
+            times(2));
         
     }
     
     @Test
     void testInitNotifyWithMatchGroupKeysOnDeleteProtection() {
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("dataId*", "group", "tnnt1234");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("dataId*", "group", "tnnt1234");
         
         Set<String> matchGroupKeys = new HashSet<>();
         int batchSize = ConfigCommonConfig.getInstance().getBatchSize();
@@ -126,15 +137,19 @@ public class ConfigFuzzyWatchSyncNotifierTest {
             clientMatchGroupKeys.add(GroupKey.getKeyTenant("dataId" + i, "group", "tnnt1234"));
         }
         
-        when(configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern)).thenReturn(matchGroupKeys);
+        when(configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern))
+            .thenReturn(matchGroupKeys);
         when(configFuzzyWatchContextService.reachToUpLimit(eq(groupKeyPattern))).thenReturn(true);
         String connectionId = "conn12345678";
-        ConfigFuzzyWatchEvent configFuzzyWatchEvent = new ConfigFuzzyWatchEvent(connectionId, clientMatchGroupKeys,
+        ConfigFuzzyWatchEvent configFuzzyWatchEvent =
+            new ConfigFuzzyWatchEvent(connectionId, clientMatchGroupKeys,
                 groupKeyPattern, true);
         configFuzzyWatchSyncNotifier.onEvent(configFuzzyWatchEvent);
         tMockedStatic.verify(
-                () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class), eq(0L),
-                        eq(TimeUnit.SECONDS)), times(1));
+            () -> ConfigExecutor.scheduleClientConfigNotifier(any(FuzzyWatchSyncNotifyTask.class),
+                eq(0L),
+                eq(TimeUnit.SECONDS)),
+            times(1));
         
     }
     

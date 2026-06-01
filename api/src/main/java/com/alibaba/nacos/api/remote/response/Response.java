@@ -123,7 +123,8 @@ public abstract class Response implements Payload {
     
     @Override
     public String toString() {
-        return "Response{" + "resultCode=" + resultCode + ", errorCode=" + errorCode + ", message='" + message + '\''
-                + ", requestId='" + requestId + '\'' + '}';
+        return "Response{" + "resultCode=" + resultCode + ", errorCode=" + errorCode + ", message='"
+            + message + '\''
+            + ", requestId='" + requestId + '\'' + '}';
     }
 }

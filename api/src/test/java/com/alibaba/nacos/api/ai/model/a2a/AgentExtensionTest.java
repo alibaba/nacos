@@ -52,7 +52,8 @@ class AgentExtensionTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"uri\":\"test-uri\",\"description\":\"test description\",\"required\":true,"
+        String json =
+            "{\"uri\":\"test-uri\",\"description\":\"test description\",\"required\":true,"
                 + "\"params\":{\"param1\":\"value1\",\"param2\":123}}";
         
         AgentExtension agentExtension = mapper.readValue(json, AgentExtension.class);

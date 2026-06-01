@@ -91,7 +91,8 @@ class NacosClosureTest {
         final NacosClosure.NacosStatus[] capturedRef = new NacosClosure.NacosStatus[1];
         Closure capturingClosure = status -> capturedRef[0] = (NacosClosure.NacosStatus) status;
         
-        NacosClosure nacosClosure = new NacosClosure(Response.getDefaultInstance(), capturingClosure);
+        NacosClosure nacosClosure =
+            new NacosClosure(Response.getDefaultInstance(), capturingClosure);
         nacosClosure.setThrowable(throwable);
         nacosClosure.run(Status.OK());
         
@@ -103,7 +104,8 @@ class NacosClosureTest {
     void testNacosStatusCopy() {
         final NacosClosure.NacosStatus[] capturedRef = new NacosClosure.NacosStatus[1];
         Closure capturingClosure = status -> capturedRef[0] = (NacosClosure.NacosStatus) status;
-        NacosClosure nacosClosure = new NacosClosure(Response.getDefaultInstance(), capturingClosure);
+        NacosClosure nacosClosure =
+            new NacosClosure(Response.getDefaultInstance(), capturingClosure);
         Response resp = Response.newBuilder().setSuccess(true).build();
         nacosClosure.setResponse(resp);
         nacosClosure.run(Status.OK());
@@ -117,7 +119,8 @@ class NacosClosureTest {
     void testNacosStatusReset() {
         final NacosClosure.NacosStatus[] capturedRef = new NacosClosure.NacosStatus[1];
         Closure capturingClosure = status -> capturedRef[0] = (NacosClosure.NacosStatus) status;
-        NacosClosure nacosClosure = new NacosClosure(Response.getDefaultInstance(), capturingClosure);
+        NacosClosure nacosClosure =
+            new NacosClosure(Response.getDefaultInstance(), capturingClosure);
         nacosClosure.run(new Status(RaftError.UNKNOWN, "error"));
         assertNotNull(capturedRef[0]);
         assertFalse(capturedRef[0].isOk());
@@ -129,7 +132,8 @@ class NacosClosureTest {
     void testNacosStatusSetCodeGetCode() {
         final NacosClosure.NacosStatus[] capturedRef = new NacosClosure.NacosStatus[1];
         Closure capturingClosure = status -> capturedRef[0] = (NacosClosure.NacosStatus) status;
-        NacosClosure nacosClosure = new NacosClosure(Response.getDefaultInstance(), capturingClosure);
+        NacosClosure nacosClosure =
+            new NacosClosure(Response.getDefaultInstance(), capturingClosure);
         nacosClosure.run(new Status(-100, "custom"));
         capturedRef[0].setCode(200);
         assertEquals(200, capturedRef[0].getCode());
@@ -139,7 +143,8 @@ class NacosClosureTest {
     void testNacosStatusGetRaftErrorAndSetError() {
         final NacosClosure.NacosStatus[] capturedRef = new NacosClosure.NacosStatus[1];
         Closure capturingClosure = status -> capturedRef[0] = (NacosClosure.NacosStatus) status;
-        NacosClosure nacosClosure = new NacosClosure(Response.getDefaultInstance(), capturingClosure);
+        NacosClosure nacosClosure =
+            new NacosClosure(Response.getDefaultInstance(), capturingClosure);
         nacosClosure.run(new Status(RaftError.UNKNOWN, "unknown"));
         assertNotNull(capturedRef[0].getRaftError());
         assertEquals(RaftError.UNKNOWN, capturedRef[0].getRaftError());
@@ -153,7 +158,8 @@ class NacosClosureTest {
     void testNacosStatusSetErrorMsgGetErrorMsg() {
         final NacosClosure.NacosStatus[] capturedRef = new NacosClosure.NacosStatus[1];
         Closure capturingClosure = status -> capturedRef[0] = (NacosClosure.NacosStatus) status;
-        NacosClosure nacosClosure = new NacosClosure(Response.getDefaultInstance(), capturingClosure);
+        NacosClosure nacosClosure =
+            new NacosClosure(Response.getDefaultInstance(), capturingClosure);
         nacosClosure.run(Status.OK());
         capturedRef[0].setErrorMsg("custom error msg");
         assertEquals("custom error msg", capturedRef[0].getErrorMsg());
@@ -163,7 +169,8 @@ class NacosClosureTest {
     void testNacosStatusToString() {
         final NacosClosure.NacosStatus[] capturedRef = new NacosClosure.NacosStatus[1];
         Closure capturingClosure = status -> capturedRef[0] = (NacosClosure.NacosStatus) status;
-        NacosClosure nacosClosure = new NacosClosure(Response.getDefaultInstance(), capturingClosure);
+        NacosClosure nacosClosure =
+            new NacosClosure(Response.getDefaultInstance(), capturingClosure);
         nacosClosure.run(new Status(RaftError.UNKNOWN, "err"));
         String s = capturedRef[0].toString();
         assertNotNull(s);

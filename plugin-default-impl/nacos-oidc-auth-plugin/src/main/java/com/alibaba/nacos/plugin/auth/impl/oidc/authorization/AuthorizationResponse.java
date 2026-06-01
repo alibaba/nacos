@@ -24,34 +24,34 @@ import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
  * @author WangzJi
  */
 public class AuthorizationResponse {
-
+    
     /**
      * Whether access is allowed.
      */
     private boolean allowed;
-
+    
     /**
      * Reason for denial (if not allowed).
      */
     private String reason;
-
+    
     /**
      * Error code (if any).
      */
     private String errorCode;
-
+    
     public AuthorizationResponse() {
     }
-
+    
     public AuthorizationResponse(boolean allowed) {
         this.allowed = allowed;
     }
-
+    
     public AuthorizationResponse(boolean allowed, String reason) {
         this.allowed = allowed;
         this.reason = reason;
     }
-
+    
     /**
      * Create a successful (allowed) response.
      *
@@ -60,7 +60,7 @@ public class AuthorizationResponse {
     public static AuthorizationResponse allowed() {
         return new AuthorizationResponse(true);
     }
-
+    
     /**
      * Create a denied response with reason.
      *
@@ -70,7 +70,7 @@ public class AuthorizationResponse {
     public static AuthorizationResponse denied(String reason) {
         return new AuthorizationResponse(false, reason);
     }
-
+    
     /**
      * Parse JSON response from IdP.
      * Supports common formats:
@@ -86,23 +86,23 @@ public class AuthorizationResponse {
         if (json == null || json.trim().isEmpty()) {
             return denied("Empty response from IdP");
         }
-
+        
         AuthorizationResponse response = new AuthorizationResponse();
-
+        
         // Check for "allowed" field
         if (json.contains(OidcConstants.JSON_FIELD_ALLOWED)) {
             response.allowed = json.contains("\"allowed\":true")
-                    || json.contains("\"allowed\": true");
+                || json.contains("\"allowed\": true");
         } else if (json.contains(OidcConstants.JSON_FIELD_RESULT)) {
             // Keycloak format
             response.allowed = json.toLowerCase().contains("\"result\":\"permit\"")
-                    || json.toLowerCase().contains("\"result\": \"permit\"");
+                || json.toLowerCase().contains("\"result\": \"permit\"");
         } else if (json.contains(OidcConstants.JSON_FIELD_DECISION)) {
             // Alternative format
             response.allowed = json.toLowerCase().contains("\"decision\":\"permit\"")
-                    || json.toLowerCase().contains("\"decision\": \"permit\"");
+                || json.toLowerCase().contains("\"decision\": \"permit\"");
         }
-
+        
         // Extract reason if present
         response.reason = extractJsonValue(json, "reason");
         if (response.reason == null) {
@@ -111,16 +111,16 @@ public class AuthorizationResponse {
         if (response.reason == null) {
             response.reason = extractJsonValue(json, "error_description");
         }
-
+        
         // Extract error code if present
         response.errorCode = extractJsonValue(json, "error");
         if (response.errorCode == null) {
             response.errorCode = extractJsonValue(json, "errorCode");
         }
-
+        
         return response;
     }
-
+    
     /**
      * Simple JSON value extraction.
      *
@@ -134,51 +134,51 @@ public class AuthorizationResponse {
         if (keyIndex == -1) {
             return null;
         }
-
+        
         int colonIndex = json.indexOf(":", keyIndex);
         if (colonIndex == -1) {
             return null;
         }
-
+        
         int valueStart = json.indexOf("\"", colonIndex);
         if (valueStart == -1) {
             return null;
         }
-
+        
         int valueEnd = json.indexOf("\"", valueStart + 1);
         if (valueEnd == -1) {
             return null;
         }
-
+        
         return json.substring(valueStart + 1, valueEnd);
     }
-
+    
     // Getters and Setters
-
+    
     public boolean isAllowed() {
         return allowed;
     }
-
+    
     public void setAllowed(boolean allowed) {
         this.allowed = allowed;
     }
-
+    
     public String getReason() {
         return reason;
     }
-
+    
     public void setReason(String reason) {
         this.reason = reason;
     }
-
+    
     public String getErrorCode() {
         return errorCode;
     }
-
+    
     public void setErrorCode(String errorCode) {
         this.errorCode = errorCode;
     }
-
+    
     @Override
     public String toString() {
         return "AuthorizationResponse{allowed=" + allowed + ", reason='" + reason + "'}";

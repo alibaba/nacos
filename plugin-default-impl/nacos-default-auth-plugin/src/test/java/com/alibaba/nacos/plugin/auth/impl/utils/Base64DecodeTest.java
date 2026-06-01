@@ -18,7 +18,12 @@ package com.alibaba.nacos.plugin.auth.impl.utils;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Base64Decoder test.
@@ -38,10 +43,43 @@ class Base64DecodeTest {
     
     @Test
     void testNotStandardDecode() {
-        String notStandardOrigin = "SecretKey012345678901234567890123456789012345678901234567890123456789";
+        String notStandardOrigin =
+            "SecretKey012345678901234567890123456789012345678901234567890123456789";
         byte[] decodeNotStandardOrigin = Base64Decode.decode(notStandardOrigin);
-        String truncationOrigin = "SecretKey01234567890123456789012345678901234567890123456789012345678";
+        String truncationOrigin =
+            "SecretKey01234567890123456789012345678901234567890123456789012345678";
         byte[] decodeTruncationOrigin = Base64Decode.decode(truncationOrigin);
         assertArrayEquals(decodeNotStandardOrigin, decodeTruncationOrigin);
+    }
+    
+    @Test
+    void testDecodeEmptyAndTrimmedInput() {
+        assertEquals(0, Base64Decode.decode(null).length);
+        assertEquals(0, Base64Decode.decode("").length);
+        assertArrayEquals("hello".getBytes(), Base64Decode.decode("$aGVsbG8=$"));
+    }
+    
+    @Test
+    void testDecodeMimeInputWithLineSeparators() {
+        byte[] expected = new byte[120];
+        for (int i = 0; i < expected.length; i++) {
+            expected[i] = (byte) i;
+        }
+        String encoded =
+            Base64.getMimeEncoder(76, new byte[] {'\r', '\n'}).encodeToString(expected);
+        
+        assertArrayEquals(expected, Base64Decode.decode(encoded));
+    }
+    
+    @Test
+    void testDecodeRejectsIllegalCharacters() {
+        assertThrows(IllegalArgumentException.class, () -> Base64Decode.decode("AA$A"));
+        assertThrows(IllegalArgumentException.class,
+            () -> Base64Decode.decode("AA" + (char) 256 + "A"));
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new Base64Decode());
     }
 }

@@ -39,7 +39,7 @@ public class NacosConfigException extends RuntimeException {
     }
     
     public NacosConfigException(String message, Throwable cause, boolean enableSuppression,
-            boolean writableStackTrace) {
+        boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

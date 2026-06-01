@@ -61,9 +61,11 @@ public class HealthStateChangeTraceEvent extends NamingTraceEvent {
         return healthStateChangeReason;
     }
     
-    public HealthStateChangeTraceEvent(long eventTime, String serviceNamespace, String serviceGroup, String serviceName,
-            String instanceIp, int instancePort, boolean isHealthy, String healthStateChangeReason) {
-        super("HEALTH_STATE_CHANGE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+    public HealthStateChangeTraceEvent(long eventTime, String serviceNamespace, String serviceGroup,
+        String serviceName,
+        String instanceIp, int instancePort, boolean isHealthy, String healthStateChangeReason) {
+        super("HEALTH_STATE_CHANGE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup,
+            serviceName);
         this.instanceIp = instanceIp;
         this.instancePort = instancePort;
         this.isHealthy = isHealthy;

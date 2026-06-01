@@ -36,9 +36,9 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class ClusterInfo implements NacosForm {
-
+    
     private static final long serialVersionUID = 2146881454057032105L;
-
+    
     private String clusterName;
     
     private AbstractHealthChecker healthChecker;

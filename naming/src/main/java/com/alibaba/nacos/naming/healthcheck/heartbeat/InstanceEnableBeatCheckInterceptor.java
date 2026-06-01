@@ -34,14 +34,19 @@ public class InstanceEnableBeatCheckInterceptor extends AbstractBeatCheckInterce
     
     @Override
     public boolean intercept(InstanceBeatCheckTask object) {
-        NamingMetadataManager metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
+        NamingMetadataManager metadataManager =
+            ApplicationUtils.getBean(NamingMetadataManager.class);
         HealthCheckInstancePublishInfo instance = object.getInstancePublishInfo();
-        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(object.getService(), instance.getMetadataId());
-        if (metadata.isPresent() && metadata.get().getExtendData().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
-            return ConvertUtils.toBoolean(metadata.get().getExtendData().get(UtilsAndCommons.ENABLE_CLIENT_BEAT).toString());
+        Optional<InstanceMetadata> metadata =
+            metadataManager.getInstanceMetadata(object.getService(), instance.getMetadataId());
+        if (metadata.isPresent()
+            && metadata.get().getExtendData().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
+            return ConvertUtils.toBoolean(
+                metadata.get().getExtendData().get(UtilsAndCommons.ENABLE_CLIENT_BEAT).toString());
         }
         if (instance.getExtendDatum().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
-            return ConvertUtils.toBoolean(instance.getExtendDatum().get(UtilsAndCommons.ENABLE_CLIENT_BEAT).toString());
+            return ConvertUtils.toBoolean(
+                instance.getExtendDatum().get(UtilsAndCommons.ENABLE_CLIENT_BEAT).toString());
         }
         return false;
     }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster.remote.request;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
@@ -36,50 +37,53 @@ import java.util.Map;
  * @since 3.2.0
  */
 @Component
-public class PluginAvailabilityRequestHandler extends RequestHandler<PluginAvailabilityRequest, PluginAvailabilityResponse> {
-
+@Since("3.2.0")
+public class PluginAvailabilityRequestHandler
+    extends RequestHandler<PluginAvailabilityRequest, PluginAvailabilityResponse> {
+    
     private final PluginManager pluginManager;
-
+    
     public PluginAvailabilityRequestHandler(PluginManager pluginManager) {
         this.pluginManager = pluginManager;
     }
-
+    
     @Override
-    public PluginAvailabilityResponse handle(PluginAvailabilityRequest request, RequestMeta meta) throws NacosException {
+    public PluginAvailabilityResponse handle(PluginAvailabilityRequest request, RequestMeta meta)
+        throws NacosException {
         if (!request.isQueryAll() && request.getPluginId() == null) {
             return createErrorResponse("Either queryAll must be true or pluginId must be provided");
         }
-
+        
         if (request.isQueryAll()) {
             return handleQueryAllRequest();
         }
-
+        
         return handleSinglePluginRequest(request.getPluginId());
     }
-
+    
     private PluginAvailabilityResponse createErrorResponse(String message) {
         PluginAvailabilityResponse response = new PluginAvailabilityResponse();
         response.setResultCode(ResponseCode.FAIL.getCode());
         response.setMessage(message);
         return response;
     }
-
+    
     private PluginAvailabilityResponse handleQueryAllRequest() {
         List<PluginInfo> plugins = pluginManager.listAllPlugins();
         Map<String, Boolean> availabilityMap = new HashMap<>(plugins.size());
         plugins.forEach(pluginInfo -> {
             availabilityMap.put(pluginInfo.getPluginId(), pluginInfo.isEnabled());
         });
-
+        
         PluginAvailabilityResponse response = new PluginAvailabilityResponse();
         response.setPluginAvailabilityMap(availabilityMap);
         response.setResultCode(ResponseCode.SUCCESS.getCode());
         return response;
     }
-
+    
     private PluginAvailabilityResponse handleSinglePluginRequest(String pluginId) {
         boolean available = pluginManager.isPluginAvailable(pluginId);
-
+        
         PluginAvailabilityResponse response = new PluginAvailabilityResponse();
         response.setAvailable(available);
         response.setPluginId(pluginId);

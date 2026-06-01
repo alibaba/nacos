@@ -43,7 +43,8 @@ public abstract class AbstractCachedRoleService implements NacosRoleService {
     
     private volatile Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
     
-    private volatile Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
+    private volatile Map<String, List<PermissionInfo>> permissionInfoMap =
+        new ConcurrentHashMap<>();
     
     protected Set<String> getCachedRoleSet() {
         return roleSet;
@@ -73,7 +74,8 @@ public abstract class AbstractCachedRoleService implements NacosRoleService {
             
             Map<String, List<PermissionInfo>> tmpPermissionInfoMap = new ConcurrentHashMap<>(16);
             for (String role : tmpRoleSet) {
-                Page<PermissionInfo> permissionInfoPage = getPermissions(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+                Page<PermissionInfo> permissionInfoPage =
+                    getPermissions(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
                 tmpPermissionInfoMap.put(role, permissionInfoPage.getPageItems());
             }
             

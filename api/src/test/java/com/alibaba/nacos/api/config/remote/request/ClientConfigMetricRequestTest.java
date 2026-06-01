@@ -36,9 +36,9 @@ class ClientConfigMetricRequestTest extends BasedConfigRequestTest {
         ClientConfigMetricRequest clientMetrics = new ClientConfigMetricRequest();
         clientMetrics.putAllHeader(HEADERS);
         clientMetrics.getMetricsKeys()
-                .add(ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, String.join("+", KEY)));
+            .add(ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, String.join("+", KEY)));
         clientMetrics.getMetricsKeys()
-                .add(ClientConfigMetricRequest.MetricsKey.build(SNAPSHOT_DATA, String.join("+", KEY)));
+            .add(ClientConfigMetricRequest.MetricsKey.build(SNAPSHOT_DATA, String.join("+", KEY)));
         final String requestId = injectRequestUuId(clientMetrics);
         String json = mapper.writeValueAsString(clientMetrics);
         assertTrue(json.contains("\"type\":\"" + "cacheData" + "\""));
@@ -52,9 +52,10 @@ class ClientConfigMetricRequestTest extends BasedConfigRequestTest {
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json =
-                "{\"headers\":{\"header1\":\"test_header1\"}," + "\"metricsKeys\":[{\"type\":\"cacheData\",\"key\":"
-                        + "\"test_data+group+test_tenant\"},{\"type\":\"snapshotData\","
-                        + "\"key\":\"test_data+group+test_tenant\"}],\"module\":\"config\"}";
+            "{\"headers\":{\"header1\":\"test_header1\"},"
+                + "\"metricsKeys\":[{\"type\":\"cacheData\",\"key\":"
+                + "\"test_data+group+test_tenant\"},{\"type\":\"snapshotData\","
+                + "\"key\":\"test_data+group+test_tenant\"}],\"module\":\"config\"}";
         ClientConfigMetricRequest actual = mapper.readValue(json, ClientConfigMetricRequest.class);
         assertEquals(2, actual.getMetricsKeys().size());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
@@ -64,11 +65,13 @@ class ClientConfigMetricRequestTest extends BasedConfigRequestTest {
     @Test
     void testMetricsKeysEquals() {
         String dataKey = String.join("+", KEY);
-        ClientConfigMetricRequest.MetricsKey key = ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, dataKey);
+        ClientConfigMetricRequest.MetricsKey key =
+            ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, dataKey);
         assertEquals(key, key);
         assertNotEquals(null, key);
         assertNotEquals(key, new ClientConfigMetricRequest());
-        ClientConfigMetricRequest.MetricsKey newOne = ClientConfigMetricRequest.MetricsKey.build(SNAPSHOT_DATA,
+        ClientConfigMetricRequest.MetricsKey newOne =
+            ClientConfigMetricRequest.MetricsKey.build(SNAPSHOT_DATA,
                 dataKey);
         assertNotEquals(key, newOne);
         newOne.setType(CACHE_DATA);
@@ -78,14 +81,17 @@ class ClientConfigMetricRequestTest extends BasedConfigRequestTest {
     @Test
     void testMetricsHashCode() {
         String dataKey = String.join("+", KEY);
-        ClientConfigMetricRequest.MetricsKey key = ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, dataKey);
+        ClientConfigMetricRequest.MetricsKey key =
+            ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, dataKey);
         assertEquals(Objects.hash(CACHE_DATA, dataKey), key.hashCode());
     }
     
     @Test
     void testMetricsToString() {
-        ClientConfigMetricRequest.MetricsKey key = ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA,
+        ClientConfigMetricRequest.MetricsKey key =
+            ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA,
                 String.join("+", KEY));
-        assertEquals("MetricsKey{type='cacheData', key='test_data+group+test_tenant'}", key.toString());
+        assertEquals("MetricsKey{type='cacheData', key='test_data+group+test_tenant'}",
+            key.toString());
     }
 }

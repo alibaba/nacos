@@ -49,7 +49,8 @@ public class SpiImplPushExecutorHolder {
      * @param subscriber subscriber infor
      * @return {@link PushExecutor} which interest to execute this push, otherwise {@code Optional.empty()}
      */
-    public Optional<SpiPushExecutor> findPushExecutorSpiImpl(String clientId, Subscriber subscriber) {
+    public Optional<SpiPushExecutor> findPushExecutorSpiImpl(String clientId,
+        Subscriber subscriber) {
         for (SpiPushExecutor each : pushExecutors) {
             if (each.isInterest(clientId, subscriber)) {
                 return Optional.of(each);

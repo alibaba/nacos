@@ -69,8 +69,10 @@ class NamespaceRemoteHandlerTest extends AbstractRemoteHandlerTest {
     
     @Test
     void createNamespace() throws NacosException {
-        when(namingMaintainerService.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC)).thenReturn(true);
-        assertTrue(namespaceRemoteHandler.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC));
+        when(namingMaintainerService.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC))
+            .thenReturn(true);
+        assertTrue(
+            namespaceRemoteHandler.createNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC));
     }
     
     @Test
@@ -79,7 +81,8 @@ class NamespaceRemoteHandlerTest extends AbstractRemoteHandlerTest {
         namespaceForm.setNamespaceId(NAMESPACE_ID);
         namespaceForm.setNamespaceName(NAMESPACE_NAME);
         namespaceForm.setNamespaceDesc(NAMESPACE_DESC);
-        when(namingMaintainerService.updateNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC)).thenReturn(true);
+        when(namingMaintainerService.updateNamespace(NAMESPACE_ID, NAMESPACE_NAME, NAMESPACE_DESC))
+            .thenReturn(true);
         assertTrue(namespaceRemoteHandler.updateNamespace(namespaceForm));
     }
     

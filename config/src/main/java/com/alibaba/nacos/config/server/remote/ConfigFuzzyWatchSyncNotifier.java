@@ -57,8 +57,9 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
     
     private final ConfigFuzzyWatchContextService configFuzzyWatchContextService;
     
-    public ConfigFuzzyWatchSyncNotifier(ConnectionManager connectionManager, RpcPushService rpcPushService,
-            ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
+    public ConfigFuzzyWatchSyncNotifier(ConnectionManager connectionManager,
+        RpcPushService rpcPushService,
+        ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
         this.connectionManager = connectionManager;
         this.rpcPushService = rpcPushService;
         this.configFuzzyWatchContextService = configFuzzyWatchContextService;
@@ -74,22 +75,26 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
     public void handleFuzzyWatchEvent(ConfigFuzzyWatchEvent event) {
         
         // Match client effective group keys based on the event pattern, client IP, and tag
-        Set<String> matchGroupKeys = configFuzzyWatchContextService.matchGroupKeys(event.getGroupKeyPattern());
+        Set<String> matchGroupKeys =
+            configFuzzyWatchContextService.matchGroupKeys(event.getGroupKeyPattern());
         
         // Retrieve existing group keys for the client from the event
         Set<String> clientExistingGroupKeys = event.getClientExistingGroupKeys();
         
         // Calculate and merge configuration states based on matched and existing group keys
-        List<FuzzyGroupKeyPattern.GroupKeyState> configStates = FuzzyGroupKeyPattern.diffGroupKeys(matchGroupKeys,
+        List<FuzzyGroupKeyPattern.GroupKeyState> configStates =
+            FuzzyGroupKeyPattern.diffGroupKeys(matchGroupKeys,
                 clientExistingGroupKeys);
         
         if (CollectionUtils.isEmpty(configStates)) {
             int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
             if (event.isInitializing()) {
-                ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
+                ConfigFuzzyWatchSyncRequest request =
+                    ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
                         event.getGroupKeyPattern());
                 // Create RPC push task and push the request to the client
-                FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(connectionManager,
+                FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask =
+                    new FuzzyWatchSyncNotifyTask(connectionManager,
                         rpcPushService, request, null, maxPushRetryTimes, event.getConnectionId());
                 fuzzyWatchSyncNotifyTask.scheduleSelf();
             }
@@ -101,32 +106,40 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
                 configStates.removeIf(item -> !item.isExist());
             }
             
-            String syncType = event.isInitializing() ? FUZZY_WATCH_INIT_NOTIFY : FUZZY_WATCH_DIFF_SYNC_NOTIFY;
+            String syncType =
+                event.isInitializing() ? FUZZY_WATCH_INIT_NOTIFY : FUZZY_WATCH_DIFF_SYNC_NOTIFY;
             
             int batchSize = ConfigCommonConfig.getInstance().getBatchSize();
             // Divide config states into batches
-            List<List<FuzzyGroupKeyPattern.GroupKeyState>> divideConfigStatesIntoBatches = divideConfigStatesIntoBatches(
+            List<List<FuzzyGroupKeyPattern.GroupKeyState>> divideConfigStatesIntoBatches =
+                divideConfigStatesIntoBatches(
                     configStates, batchSize);
             
             // Calculate the number of batches and initialize push batch finish count
             int totalBatch = divideConfigStatesIntoBatches.size();
-            BatchTaskCounter batchTaskCounter = new BatchTaskCounter(divideConfigStatesIntoBatches.size());
+            BatchTaskCounter batchTaskCounter =
+                new BatchTaskCounter(divideConfigStatesIntoBatches.size());
             int currentBatch = 1;
             for (List<FuzzyGroupKeyPattern.GroupKeyState> configStateList : divideConfigStatesIntoBatches) {
                 // Map config states to FuzzyListenNotifyDiffRequest.Context objects
-                Set<ConfigFuzzyWatchSyncRequest.Context> contexts = configStateList.stream().map(state -> {
-                    
-                    String changeType = state.isExist() ? Constants.ConfigChangedType.ADD_CONFIG
+                Set<ConfigFuzzyWatchSyncRequest.Context> contexts =
+                    configStateList.stream().map(state -> {
+                        
+                        String changeType = state.isExist() ? Constants.ConfigChangedType.ADD_CONFIG
                             : Constants.ConfigChangedType.DELETE_CONFIG;
-                    return ConfigFuzzyWatchSyncRequest.Context.build(state.getGroupKey(), changeType);
-                }).collect(Collectors.toSet());
+                        return ConfigFuzzyWatchSyncRequest.Context.build(state.getGroupKey(),
+                            changeType);
+                    }).collect(Collectors.toSet());
                 
-                ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildSyncRequest(syncType, contexts,
+                ConfigFuzzyWatchSyncRequest request =
+                    ConfigFuzzyWatchSyncRequest.buildSyncRequest(syncType, contexts,
                         event.getGroupKeyPattern(), totalBatch, currentBatch);
                 int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
                 // Create RPC push task and push the request to the client
-                FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(connectionManager,
-                        rpcPushService, request, batchTaskCounter, maxPushRetryTimes, event.getConnectionId());
+                FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask =
+                    new FuzzyWatchSyncNotifyTask(connectionManager,
+                        rpcPushService, request, batchTaskCounter, maxPushRetryTimes,
+                        event.getConnectionId());
                 fuzzyWatchSyncNotifyTask.scheduleSelf();
                 currentBatch++;
             }
@@ -156,14 +169,16 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
      * @param <T>          The type of items in the collection
      * @return A list of batches, each containing a sublist of items
      */
-    private <T> List<List<T>> divideConfigStatesIntoBatches(Collection<T> configStates, int batchSize) {
+    private <T> List<List<T>> divideConfigStatesIntoBatches(Collection<T> configStates,
+        int batchSize) {
         // Initialize an index to track the current batch number
         AtomicInteger index = new AtomicInteger();
         
         // Group the elements into batches based on their index divided by the batch size
         return new ArrayList<>(
-                configStates.stream().collect(Collectors.groupingBy(e -> index.getAndIncrement() / batchSize))
-                        .values());
+            configStates.stream()
+                .collect(Collectors.groupingBy(e -> index.getAndIncrement() / batchSize))
+                .values());
     }
     
 }

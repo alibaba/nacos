@@ -86,14 +86,16 @@ class ServiceQueryRequestHandlerTest {
         Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
         
         ServiceMetadata serviceMetadata = new ServiceMetadata();
-        Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(serviceMetadata));
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+            .thenReturn(Optional.of(serviceMetadata));
         
         ServiceQueryRequest serviceQueryRequest = new ServiceQueryRequest();
         serviceQueryRequest.setNamespace("A");
         serviceQueryRequest.setGroupName("B");
         serviceQueryRequest.setServiceName("C");
         serviceQueryRequest.setHealthyOnly(false);
-        QueryServiceResponse queryServiceResponse = serviceQueryRequestHandler.handle(serviceQueryRequest, new RequestMeta());
+        QueryServiceResponse queryServiceResponse =
+            serviceQueryRequestHandler.handle(serviceQueryRequest, new RequestMeta());
         
         assertEquals("C", queryServiceResponse.getServiceInfo().getName());
     }

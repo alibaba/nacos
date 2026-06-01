@@ -27,15 +27,15 @@ class McpCacheIndexPropertiesTest {
         McpCacheIndexProperties properties = new McpCacheIndexProperties();
         // Test default value.
         assertEquals(
-                "McpCacheIndexProperties{enabled=true, maxSize=10000, expireTimeSeconds=3600, cleanupIntervalSeconds=300, syncIntervalSeconds=300}",
-                properties.toString());
+            "McpCacheIndexProperties{enabled=true, maxSize=10000, expireTimeSeconds=3600, cleanupIntervalSeconds=300, syncIntervalSeconds=300}",
+            properties.toString());
         properties.setEnabled(false);
         properties.setCleanupIntervalSeconds(10);
         properties.setSyncIntervalSeconds(10);
         properties.setExpireTimeSeconds(10);
         properties.setMaxSize(100);
         assertEquals(
-                "McpCacheIndexProperties{enabled=false, maxSize=100, expireTimeSeconds=10, cleanupIntervalSeconds=10, syncIntervalSeconds=10}",
-                properties.toString());
+            "McpCacheIndexProperties{enabled=false, maxSize=100, expireTimeSeconds=10, cleanupIntervalSeconds=10, syncIntervalSeconds=10}",
+            properties.toString());
     }
 }

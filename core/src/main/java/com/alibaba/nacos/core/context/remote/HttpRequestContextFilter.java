@@ -45,8 +45,9 @@ public class HttpRequestContextFilter implements Filter {
     private static final String PATTERN_REQUEST_TARGET = "%s %s";
     
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
-            throws IOException, ServletException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+        FilterChain filterChain)
+        throws IOException, ServletException {
         RequestContext requestContext = RequestContextHolder.getContext();
         try {
             requestContext.getBasicContext().setRequestProtocol(BasicContext.HTTP_PROTOCOL);
@@ -64,7 +65,8 @@ public class HttpRequestContextFilter implements Filter {
     private void setRequestTarget(HttpServletRequest request, RequestContext requestContext) {
         String uri = request.getRequestURI();
         String method = request.getMethod();
-        requestContext.getBasicContext().setRequestTarget(String.format(PATTERN_REQUEST_TARGET, method, uri));
+        requestContext.getBasicContext()
+            .setRequestTarget(String.format(PATTERN_REQUEST_TARGET, method, uri));
     }
     
     private void setEncoding(HttpServletRequest request, RequestContext requestContext) {

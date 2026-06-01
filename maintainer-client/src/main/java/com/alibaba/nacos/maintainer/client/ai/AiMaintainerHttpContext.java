@@ -27,26 +27,26 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import java.util.Properties;
 
 final class AiMaintainerHttpContext {
-
+    
     private final ClientHttpProxy clientHttpProxy;
-
+    
     AiMaintainerHttpContext(Properties properties) throws NacosException {
         this(new ClientHttpProxy(properties));
     }
-
+    
     AiMaintainerHttpContext(ClientHttpProxy clientHttpProxy) {
         this.clientHttpProxy = clientHttpProxy;
         ParamUtil.initSerialization();
     }
-
+    
     ClientHttpProxy getClientHttpProxy() {
         return clientHttpProxy;
     }
-
+    
     String resolveNamespace(String namespaceId) {
         return StringUtils.isBlank(namespaceId) ? Constants.DEFAULT_NAMESPACE_ID : namespaceId;
     }
-
+    
     RequestResource buildRequestResource(String namespaceId, String resourceName) {
         RequestResource.Builder builder = RequestResource.aiBuilder();
         builder.setNamespace(namespaceId);
@@ -54,7 +54,7 @@ final class AiMaintainerHttpContext {
         builder.setResource(null == resourceName ? StringUtils.EMPTY : resourceName);
         return builder.build();
     }
-
+    
     HttpRequest.Builder buildHttpRequestBuilder(RequestResource resource) {
         return new HttpRequest.Builder().setResource(resource);
     }

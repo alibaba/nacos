@@ -38,7 +38,8 @@ public class DatabaseDialectManager {
     
     private static final DatabaseDialectManager INSTANCE = new DatabaseDialectManager();
     
-    private static final Map<String, DatabaseDialect> SUPPORT_DIALECT_MAP = new ConcurrentHashMap<String, DatabaseDialect>();
+    private static final Map<String, DatabaseDialect> SUPPORT_DIALECT_MAP =
+        new ConcurrentHashMap<String, DatabaseDialect>();
     
     private DatabaseDialectManager() {
     }
@@ -51,39 +52,45 @@ public class DatabaseDialectManager {
             SUPPORT_DIALECT_MAP.put(dialect.getType(), dialect);
         }
         if (SUPPORT_DIALECT_MAP.isEmpty()) {
-            LOGGER.warn("[DatasourceDialectManager] Load DatabaseDialect fail, No DatabaseDialect implements");
+            LOGGER.warn(
+                "[DatasourceDialectManager] Load DatabaseDialect fail, No DatabaseDialect implements");
         }
     }
     
     public DatabaseDialect getDialect(String databaseType) {
         // Check if plugin is enabled
-        if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.DATASOURCE_DIALECT.getType(), databaseType)) {
-            LOGGER.debug("[DatabaseDialectManager] Plugin DATASOURCE_DIALECT:{} is disabled", databaseType);
+        if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.DATASOURCE_DIALECT.getType(),
+            databaseType)) {
+            LOGGER.debug("[DatabaseDialectManager] Plugin DATASOURCE_DIALECT:{} is disabled",
+                databaseType);
             throw new IllegalStateException(
-                    "DatabaseDialect plugin is disabled: " + databaseType
-                            + ". Please enable it via plugin management API.");
+                "DatabaseDialect plugin is disabled: " + databaseType
+                    + ". Please enable it via plugin management API.");
         }
-
+        
         DatabaseDialect databaseDialect = SUPPORT_DIALECT_MAP.get(databaseType);
         if (databaseDialect == null) {
-            LOGGER.warn("[DatabaseDialectManager] No dialect found for type: {}, checking for enabled fallback dialects",
-                    databaseType);
+            LOGGER.warn(
+                "[DatabaseDialectManager] No dialect found for type: {}, checking for enabled fallback dialects",
+                databaseType);
             // Find first enabled dialect as fallback
             for (Map.Entry<String, DatabaseDialect> entry : SUPPORT_DIALECT_MAP.entrySet()) {
                 String dialectType = entry.getKey();
-                if (PluginStateCheckerHolder.isPluginEnabled(PluginType.DATASOURCE_DIALECT.getType(), dialectType)) {
-                    LOGGER.warn("[DatabaseDialectManager] Using enabled dialect {} as fallback for {}",
-                            dialectType, databaseType);
+                if (PluginStateCheckerHolder
+                    .isPluginEnabled(PluginType.DATASOURCE_DIALECT.getType(), dialectType)) {
+                    LOGGER.warn(
+                        "[DatabaseDialectManager] Using enabled dialect {} as fallback for {}",
+                        dialectType, databaseType);
                     return entry.getValue();
                 }
             }
             throw new IllegalStateException(
-                    "No enabled DatabaseDialect implementation found. "
-                            + "Please ensure datasource plugin is properly loaded and enabled.");
+                "No enabled DatabaseDialect implementation found. "
+                    + "Please ensure datasource plugin is properly loaded and enabled.");
         }
         return databaseDialect;
     }
-
+    
     /**
      * Get DatasourceDialectManager instance.
      *
@@ -92,7 +99,7 @@ public class DatabaseDialectManager {
     public static DatabaseDialectManager getInstance() {
         return INSTANCE;
     }
-
+    
     /**
      * Get all registered database dialects.
      *
@@ -101,5 +108,5 @@ public class DatabaseDialectManager {
     public Map<String, DatabaseDialect> getAllDialects() {
         return Collections.unmodifiableMap(SUPPORT_DIALECT_MAP);
     }
-
+    
 }

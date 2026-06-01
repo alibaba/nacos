@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class LoggersTest {
-
+    
     @Test
     void loggersAreNotNull() {
         assertNotNull(Loggers.AUTH);
@@ -33,32 +33,32 @@ class LoggersTest {
         assertNotNull(Loggers.REMOTE_PUSH);
         assertNotNull(Loggers.REMOTE_DIGEST);
     }
-
+    
     @Test
     void setLogLevelCoreAuth() {
         Loggers.setLogLevel("core-auth", "DEBUG");
     }
-
+    
     @Test
     void setLogLevelCore() {
         Loggers.setLogLevel("core", "DEBUG");
     }
-
+    
     @Test
     void setLogLevelCoreRaft() {
         Loggers.setLogLevel("core-raft", "DEBUG");
     }
-
+    
     @Test
     void setLogLevelCoreDistro() {
         Loggers.setLogLevel("core-distro", "DEBUG");
     }
-
+    
     @Test
     void setLogLevelCoreCluster() {
         Loggers.setLogLevel("core-cluster", "DEBUG");
     }
-
+    
     @Test
     void setLogLevelDefaultBranch() {
         Loggers.setLogLevel("other-name", "INFO");

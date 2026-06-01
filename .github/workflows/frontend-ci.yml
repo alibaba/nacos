@@ -1,0 +1,66 @@
+name: "Frontend Continuous Integration"
+
+on:
+  push:
+    branches: [ develop, v2.x-develop ]
+  pull_request:
+    branches: [ develop, v2.x-develop ]
+
+permissions: read-all
+
+jobs:
+  frontend-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: "Build and check console-ui"
+        working-directory: console-ui
+        run: npm ci && npm run build
+      - name: "Build and check console-ui-next"
+        working-directory: console-ui-next
+        run: npm ci && npm run build
+
+  check-min-release-age:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v4
+        with:
+          # node 24: npm >= 11
+          node-version: 24
+      - name: "Check npm >= 11"
+        run: |
+          NPM_VERSION=$(npm -v)
+          echo $NPM_VERSION
+          NPM_MAJOR=$(echo "$NPM_VERSION" | cut -d'.' -f1)
+          echo $NPM_MAJOR
+          if [ "$NPM_MAJOR" -lt 11 ]; then
+            echo "::error::npm version must be >= 11 for min-release-age, but got npm ${NPM_VERSION}"
+            exit 1
+          fi
+          echo "npm ${NPM_VERSION} >= 11, min-release-age is supported"
+      - name: "Check min-release-age in console-ui-next/.npmrc"
+        run: |
+          if ! grep -q '^min-release-age=' console-ui-next/.npmrc; then
+            echo "::error::min-release-age is not configured in console-ui-next/.npmrc"
+            exit 1
+          fi
+          VALUE=$(grep '^min-release-age=' console-ui-next/.npmrc | cut -d'=' -f2)
+          if [ -z "$VALUE" ]; then
+            echo "::error::min-release-age has no value set in console-ui-next/.npmrc"
+            exit 1
+          fi
+          echo "min-release-age=${VALUE} is configured"
+      - name: "Verify min-release-age takes effect during npm install"
+        run: |
+          cd console-ui-next
+          npm install --legacy-peer-deps $(node -e "const p=require('./package-lock.json'); const root=p.packages['']; const all={...root.dependencies,...root.devDependencies}; console.log(Object.entries(all).map(([k])=>k+'@'+((p.packages['node_modules/'+k]||{}).version||'?')).join(' '))")

@@ -52,12 +52,13 @@ public interface ConfigInfoGrayMapper extends Mapper {
         Object grayName = context.getWhereParameter(FieldConstant.GRAY_NAME);
         Object grayRule = context.getWhereParameter(FieldConstant.GRAY_RULE);
         Object oldMd5 = context.getWhereParameter(FieldConstant.MD5);
-        String sql = "UPDATE config_info_gray SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = "
+        String sql =
+            "UPDATE config_info_gray SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = "
                 + getFunction("NOW()") + ",app_name = ?, gray_rule = ?"
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND gray_name = ? AND (md5 = ? OR md5 IS NULL OR md5 = '')";
         return new MapperResult(sql,
-                CollectionUtils.list(content, md5, srcIp, srcUser, appName, grayRule, dataId, groupId,
-                        tenantId, grayName, oldMd5));
+            CollectionUtils.list(content, md5, srcIp, srcUser, appName, grayRule, dataId, groupId,
+                tenantId, grayName, oldMd5));
     }
     
     /**
@@ -69,9 +70,11 @@ public interface ConfigInfoGrayMapper extends Mapper {
      */
     default MapperResult findChangeConfig(MapperContext context) {
         String sql =
-                "SELECT id, data_id, group_id, tenant_id, app_name,content,gray_name,gray_rule,md5, gmt_modified, encrypted_data_key "
-                        + "FROM config_info_gray WHERE " + "gmt_modified >= ? and id > ? order by id  limit ? ";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+            "SELECT id, data_id, group_id, tenant_id, app_name,content,gray_name,gray_rule,md5, gmt_modified, encrypted_data_key "
+                + "FROM config_info_gray WHERE "
+                + "gmt_modified >= ? and id > ? order by id  limit ? ";
+        return new MapperResult(sql,
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
                 context.getWhereParameter(FieldConstant.LAST_MAX_ID),
                 context.getWhereParameter(FieldConstant.PAGE_SIZE)));
     }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchSyncRequest;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
@@ -46,8 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PushExecutorRpcImplTest {
@@ -83,9 +84,9 @@ class PushExecutorRpcImplTest {
         pushExecutor = new PushExecutorRpcImpl(pushService);
         EnvUtil.setEnvironment(new MockEnvironment());
         ApplicationUtils.injectContext(context);
-        when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
-        when(selectorManager.select(any(), any(), any())).then(
-                (Answer<List<Instance>>) invocationOnMock -> invocationOnMock.getArgument(2));
+        lenient().when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
+        lenient().when(selectorManager.select(any(), any(), any())).then(
+            (Answer<List<Instance>>) invocationOnMock -> invocationOnMock.getArgument(2));
     }
     
     @Test
@@ -97,10 +98,21 @@ class PushExecutorRpcImplTest {
     @Test
     void testDoPushWithCallback() {
         doAnswer(new CallbackAnswer()).when(pushService)
-                .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
-                        eq(GlobalExecutor.getCallbackExecutor()));
+            .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
+                eq(GlobalExecutor.getCallbackExecutor()));
         pushExecutor.doPushWithCallback(rpcClientId, subscriber, pushData, pushCallBack);
         verify(pushCallBack).onSuccess();
+    }
+    
+    @Test
+    void testDoFuzzyWatchNotifyPushWithCallback() {
+        NamingFuzzyWatchSyncRequest request = new NamingFuzzyWatchSyncRequest();
+        PushCallBack callBack = org.mockito.Mockito.mock(PushCallBack.class);
+        
+        pushExecutor.doFuzzyWatchNotifyPushWithCallBack(rpcClientId, request, callBack);
+        
+        verify(pushService).pushWithCallback(eq(rpcClientId), eq(request), eq(callBack),
+            eq(GlobalExecutor.getCallbackExecutor()));
     }
     
     private class CallbackAnswer implements Answer<Void> {
@@ -108,7 +120,8 @@ class PushExecutorRpcImplTest {
         @Override
         public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
             NotifySubscriberRequest pushRequest = invocationOnMock.getArgument(1);
-            assertEquals(pushData.getOriginalData().toString(), pushRequest.getServiceInfo().toString());
+            assertEquals(pushData.getOriginalData().toString(),
+                pushRequest.getServiceInfo().toString());
             PushCallBack callBack = invocationOnMock.getArgument(2);
             callBack.onSuccess();
             return null;

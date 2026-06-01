@@ -45,13 +45,15 @@ public class PromptClientOperationServiceImpl implements PromptClientOperationSe
     }
     
     @Override
-    public PromptVersionInfo queryPrompt(String namespaceId, String promptKey, String version, String label, String md5)
-            throws NacosException {
+    public PromptVersionInfo queryPrompt(String namespaceId, String promptKey, String version,
+        String label, String md5)
+        throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `promptKey` not present");
+                "Required parameter `promptKey` not present");
         }
-        PromptVersionInfo result = promptOperationService.queryPrompt(namespaceId, promptKey, version, label);
+        PromptVersionInfo result =
+            promptOperationService.queryPrompt(namespaceId, promptKey, version, label);
         String currentMd5 = result.getMd5();
         if (StringUtils.isNotBlank(md5) && md5.equals(currentMd5)) {
             throw new NacosException(NacosException.NOT_MODIFIED, "prompt data is up to date");

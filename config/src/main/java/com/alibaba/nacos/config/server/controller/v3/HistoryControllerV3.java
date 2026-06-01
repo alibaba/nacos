@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
@@ -70,10 +71,12 @@ public class HistoryControllerV3 {
     /**
      * Query the list history config.
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<Page<ConfigHistoryBasicInfo>> listConfigHistory(ConfigFormV3 configForm, PageForm pageForm)
-            throws NacosApiException {
+    public Result<Page<ConfigHistoryBasicInfo>> listConfigHistory(ConfigFormV3 configForm,
+        PageForm pageForm)
+        throws NacosApiException {
         configForm.validate();
         pageForm.validate();
         int pageSize = Math.min(500, pageForm.getPageSize());
@@ -81,25 +84,29 @@ public class HistoryControllerV3 {
         String dataId = configForm.getDataId();
         String groupName = configForm.getGroupName();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        Page<ConfigHistoryInfo> configHistoryInfoPage = historyService.listConfigHistory(dataId, groupName, namespaceId,
+        Page<ConfigHistoryInfo> configHistoryInfoPage =
+            historyService.listConfigHistory(dataId, groupName, namespaceId,
                 pageNo, pageSize);
         Page<ConfigHistoryBasicInfo> result = new Page<>();
         result.setPagesAvailable(configHistoryInfoPage.getPagesAvailable());
         result.setPageNumber(configHistoryInfoPage.getPageNumber());
         result.setTotalCount(configHistoryInfoPage.getTotalCount());
         result.setPageItems(
-                configHistoryInfoPage.getPageItems().stream().map(ResponseUtil::transferToConfigHistoryBasicInfo)
-                        .collect(Collectors.toList()));
+            configHistoryInfoPage.getPageItems().stream()
+                .map(ResponseUtil::transferToConfigHistoryBasicInfo)
+                .collect(Collectors.toList()));
         return Result.success(result);
     }
     
     /**
      * Query the detailed configuration history information.
      */
+    @Since("3.0.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<ConfigHistoryDetailInfo> getConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("nid") Long nid)
-            throws AccessException, NacosApiException {
+    public Result<ConfigHistoryDetailInfo> getConfigHistoryInfo(ConfigFormV3 configForm,
+        @RequestParam("nid") Long nid)
+        throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         configForm.validate();
         String dataId = configForm.getDataId();
@@ -108,10 +115,11 @@ public class HistoryControllerV3 {
         try {
             //fix issue #9783
             namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-            configHistoryInfo = historyService.getConfigHistoryInfo(dataId, groupName, namespaceId, nid);
+            configHistoryInfo =
+                historyService.getConfigHistoryInfo(dataId, groupName, namespaceId, nid);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
-                    "certain config history for nid = " + nid + " not exist");
+                "certain config history for nid = " + nid + " not exist");
         }
         return Result.success(ResponseUtil.transferToConfigHistoryDetailInfo(configHistoryInfo));
     }
@@ -119,10 +127,11 @@ public class HistoryControllerV3 {
     /**
      * Query previous config history information.
      */
+    @Since("3.0.0")
     @GetMapping(value = "/previous")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigHistoryDetailInfo> getPreviousConfigHistoryInfo(ConfigFormV3 configForm,
-            @RequestParam("id") Long id) throws AccessException, NacosApiException {
+        @RequestParam("id") Long id) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         configForm.validate();
         String dataId = configForm.getDataId();
@@ -131,10 +140,11 @@ public class HistoryControllerV3 {
         try {
             //fix issue #9783.
             namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-            configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, groupName, namespaceId, id);
+            configHistoryInfo =
+                historyService.getPreviousConfigHistoryInfo(dataId, groupName, namespaceId, id);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
-                    "previous config history for id = " + id + " not exist");
+                "previous config history for id = " + id + " not exist");
         }
         
         return Result.success(ResponseUtil.transferToConfigHistoryDetailInfo(configHistoryInfo));
@@ -143,15 +153,19 @@ public class HistoryControllerV3 {
     /**
      * Query configs list by namespace.
      */
+    @Since("3.0.0")
     @GetMapping(value = "/configs")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<List<ConfigBasicInfo>> getConfigsByNamespace(@RequestParam("namespaceId") String namespaceId)
-            throws NacosApiException {
+    public Result<List<ConfigBasicInfo>> getConfigsByNamespace(
+        @RequestParam("namespaceId") String namespaceId)
+        throws NacosApiException {
         // check namespaceId
         ParamUtils.checkTenantV2(namespaceId);
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        List<ConfigInfoWrapper> configListByNamespace = historyService.getConfigListByNamespace(namespaceId);
-        List<ConfigBasicInfo> result = configListByNamespace.stream().map(ResponseUtil::transferToConfigBasicInfo)
+        List<ConfigInfoWrapper> configListByNamespace =
+            historyService.getConfigListByNamespace(namespaceId);
+        List<ConfigBasicInfo> result =
+            configListByNamespace.stream().map(ResponseUtil::transferToConfigBasicInfo)
                 .toList();
         return Result.success(result);
     }

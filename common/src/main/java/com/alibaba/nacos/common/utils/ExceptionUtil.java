@@ -29,7 +29,7 @@ import java.util.Objects;
  * @since 1.2.0
  */
 public class ExceptionUtil {
-
+    
     private ExceptionUtil() {
     }
     

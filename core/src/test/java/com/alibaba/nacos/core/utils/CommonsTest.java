@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class CommonsTest {
-
+    
     @Test
     void contextConstants() {
         assertEquals("/nacos", Commons.NACOS_SERVER_CONTEXT);
@@ -30,7 +30,7 @@ class CommonsTest {
         assertEquals("/v2", Commons.NACOS_SERVER_VERSION_V2);
         assertEquals("/v3", Commons.NACOS_SERVER_VERSION_V3);
     }
-
+    
     @Test
     void coreContextConstants() {
         assertNotNull(Commons.DEFAULT_NACOS_CORE_CONTEXT);

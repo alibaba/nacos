@@ -61,9 +61,10 @@ public class ControlManagerCenter {
         try {
             connectionControlManager = controlManagerBuilder.buildConnectionControlManager();
             Loggers.CONTROL.info("Build connection control manager, class={}",
-                    connectionControlManager.getClass().getCanonicalName());
+                connectionControlManager.getClass().getCanonicalName());
         } catch (Exception e) {
-            Loggers.CONTROL.warn("Build connection control manager failed, use no limit manager replaced.", e);
+            Loggers.CONTROL
+                .warn("Build connection control manager failed, use no limit manager replaced.", e);
             connectionControlManager = new DefaultConnectionControlManager();
         }
     }
@@ -72,9 +73,11 @@ public class ControlManagerCenter {
         try {
             tpsControlManager = controlManagerBuilder.buildTpsControlManager();
             Loggers.CONTROL
-                    .info("Build tps control manager, class={}", tpsControlManager.getClass().getCanonicalName());
+                .info("Build tps control manager, class={}",
+                    tpsControlManager.getClass().getCanonicalName());
         } catch (Exception e) {
-            Loggers.CONTROL.warn("Build tps control manager failed, use no limit manager replaced.", e);
+            Loggers.CONTROL.warn("Build tps control manager failed, use no limit manager replaced.",
+                e);
             tpsControlManager = new DefaultTpsControlManager();
         }
     }
@@ -82,7 +85,8 @@ public class ControlManagerCenter {
     private Optional<ControlManagerBuilder> findTargetControlManagerBuilder() {
         String controlManagerType = ControlConfigs.getInstance().getControlManagerType();
         if (StringUtils.isEmpty(controlManagerType)) {
-            Loggers.CONTROL.info("Not configure type of control plugin, no limit control for current node.");
+            Loggers.CONTROL
+                .info("Not configure type of control plugin, no limit control for current node.");
             return Optional.empty();
         }
         for (ControlManagerBuilder each : NacosServiceLoader.load(ControlManagerBuilder.class)) {

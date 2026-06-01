@@ -69,6 +69,10 @@ class GroupKeyTest {
         String[] pair = GroupKey.parseKey(key);
         assertEquals("11111%", pair[0]);
         assertEquals("222", pair[1]);
+        
+        pair = GroupKey.parseKey("11111%2B+222");
+        assertEquals("11111+", pair[0]);
+        assertEquals("222", pair[1]);
     }
     
     @Test

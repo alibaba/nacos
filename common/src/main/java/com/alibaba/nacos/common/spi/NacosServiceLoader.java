@@ -65,7 +65,8 @@ public class NacosServiceLoader {
      * @return service instances
      */
     public static <T> Collection<T> newServiceInstances(final Class<T> service) {
-        return SERVICES.containsKey(service) ? newServiceInstancesFromCache(service) : Collections.<T>emptyList();
+        return SERVICES.containsKey(service) ? newServiceInstancesFromCache(service)
+            : Collections.<T>emptyList();
     }
     
     @SuppressWarnings("unchecked")

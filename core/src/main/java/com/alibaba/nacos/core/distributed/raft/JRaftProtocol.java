@@ -91,7 +91,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @SuppressWarnings("all")
 public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, RequestProcessor4CP>
-        implements CPProtocol<RaftConfig, RequestProcessor4CP> {
+    implements CPProtocol<RaftConfig, RequestProcessor4CP> {
     
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
@@ -124,6 +124,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
             // There is only one consumer to ensure that the internal consumption
             // is sequential and there is no concurrent competition
             NotifyCenter.registerSubscriber(new Subscriber<RaftEvent>() {
+                
                 @Override
                 public void onEvent(RaftEvent event) {
                     Loggers.RAFT.info("This Raft event changes : {}", event);
@@ -139,7 +140,8 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
                     // the information in the protocol metadata is updated.
                     MapUtil.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
                     MapUtil.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
-                    MapUtil.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
+                    MapUtil.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER,
+                        raftClusterInfo);
                     MapUtil.putIfValNoEmpty(properties, MetadataKey.ERR_MSG, errMsg);
                     
                     value.put(groupId, properties);

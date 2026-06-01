@@ -29,10 +29,10 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface NamespaceValidation {
-
+    
     /**
      * whether to enable namespace validation.
      */
     boolean enable() default true;
-
+    
 }

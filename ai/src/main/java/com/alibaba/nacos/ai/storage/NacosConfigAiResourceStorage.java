@@ -51,18 +51,18 @@ import java.nio.charset.StandardCharsets;
  * manifest = {@link #buildManifestStorageKey(String, String, String)}.</p>
  */
 public class NacosConfigAiResourceStorage implements AiResourceStorage {
-
+    
     public static final String TYPE = "nacos_config";
-
+    
     /** Resource type identifier for Skill storage keys. */
     public static final String RESOURCE_TYPE_SKILL = "skill";
-
+    
     /** Resource type identifier for AgentSpec storage keys. */
     public static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
-
+    
     /** Resource type identifier for Prompt storage keys. */
     public static final String RESOURCE_TYPE_PROMPT = "prompt";
-
+    
     /**
      * Build storage key for Skill resources (legacy 4-part format).
      * Key format: namespaceId:skillName:version:filePath.
@@ -76,12 +76,13 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
      * @param filePath    file path (use {@link #getResourceFilePath(String, String)})
      * @return StorageKey for route and save/get/delete
      */
-    public static StorageKey buildStorageKey(String provider, String namespaceId, String skillName, String version,
-            String filePath) {
+    public static StorageKey buildStorageKey(String provider, String namespaceId, String skillName,
+        String version,
+        String filePath) {
         String key = namespaceId + ":" + skillName + ":" + version + ":" + filePath;
         return new StorageKey(provider, key);
     }
-
+    
     /**
      * Build storage key with explicit resource type (5-part format).
      * Key format: namespaceId:resourceType:name:version:filePath.
@@ -94,19 +95,20 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
      * @param filePath     file path (use {@link #getMainFilePath(String)} or resource file path helpers)
      * @return StorageKey for route and save/get/delete
      */
-    public static StorageKey buildStorageKey(String provider, String namespaceId, String resourceType, String name,
-            String version, String filePath) {
+    public static StorageKey buildStorageKey(String provider, String namespaceId,
+        String resourceType, String name,
+        String version, String filePath) {
         String key = namespaceId + ":" + resourceType + ":" + name + ":" + version + ":" + filePath;
         return new StorageKey(provider, key);
     }
-
+    
     /**
      * Main Skill file path (dataId) for Nacos Config.
      */
     public static String getMainFilePath() {
         return SkillUtils.SKILL_MAIN_DATA_ID;
     }
-
+    
     /**
      * Main file path (dataId) for a given main dataId. Use this for AgentSpec or other resource types.
      *
@@ -116,7 +118,7 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     public static String getMainFilePath(String mainDataId) {
         return mainDataId;
     }
-
+    
     /**
      * Skill resource file path (dataId) for Nacos Config, from type and name.
      * Uses {@link SkillUtils} for resource ID generation.
@@ -125,7 +127,7 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         String resourceId = SkillUtils.generateResourceId(type, name);
         return SkillUtils.RESOURCE_DATA_ID_PREFIX + resourceId + SkillUtils.RESOURCE_DATA_ID_SUFFIX;
     }
-
+    
     /**
      * AgentSpec resource file path (dataId) for Nacos Config, from type and name.
      * Uses {@link AgentSpecUtils} for resource ID generation.
@@ -136,9 +138,10 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
      */
     public static String getAgentSpecResourceFilePath(String type, String name) {
         String resourceId = AgentSpecUtils.generateResourceId(type, name);
-        return AgentSpecUtils.RESOURCE_DATA_ID_PREFIX + resourceId + AgentSpecUtils.RESOURCE_DATA_ID_SUFFIX;
+        return AgentSpecUtils.RESOURCE_DATA_ID_PREFIX + resourceId
+            + AgentSpecUtils.RESOURCE_DATA_ID_SUFFIX;
     }
-
+    
     /**
      * Build StorageKey for skill manifest (index) config. The version part is left blank so the
      * config group has no version suffix, i.e. group = "skill_{skillName}".
@@ -148,29 +151,30 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
      * @param skillName   skill name
      * @return StorageKey for manifest config
      */
-    public static StorageKey buildManifestStorageKey(String provider, String namespaceId, String skillName) {
+    public static StorageKey buildManifestStorageKey(String provider, String namespaceId,
+        String skillName) {
         String key = namespaceId + ":" + skillName + "::" + SkillUtils.SKILL_INDEX_DATA_ID;
         return new StorageKey(provider, key);
     }
-
+    
     private final ConfigQueryChainService configQueryChainService;
-
+    
     private final ConfigOperationService configOperationService;
-
+    
     private final SyncEffectService syncEffectService;
-
+    
     public NacosConfigAiResourceStorage(ConfigQueryChainService configQueryChainService,
-            ConfigOperationService configOperationService, SyncEffectService syncEffectService) {
+        ConfigOperationService configOperationService, SyncEffectService syncEffectService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.syncEffectService = syncEffectService;
     }
-
+    
     @Override
     public String type() {
         return TYPE;
     }
-
+    
     @Override
     public void save(StorageKey storageKey, byte[] content) throws NacosException {
         long startTimeStamp = System.currentTimeMillis();
@@ -180,10 +184,11 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         form.setDataId(physicalDataId);
         form.setGroup(parts.group());
         form.setNamespaceId(parts.namespaceId());
-        form.setContent(content == null ? StringUtils.EMPTY : new String(content, StandardCharsets.UTF_8));
+        form.setContent(
+            content == null ? StringUtils.EMPTY : new String(content, StandardCharsets.UTF_8));
         form.setSrcUser("nacos");
         form.setType(guessConfigType(parts.dataId()));
-
+        
         ConfigRequestInfo requestInfo = new ConfigRequestInfo();
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             try {
@@ -193,37 +198,39 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
                 configOperationService.publishConfig(form, requestInfo, null);
             }
         }
-
+        
         // Keep compatibility: single save still waits for effect.
         // Batch writers should call SyncEffectService#toSyncConcurrent at higher level.
         if (syncEffectService != null) {
             syncEffectService.toSync(form, startTimeStamp);
         }
     }
-
+    
     @Override
     public byte[] get(StorageKey storageKey) throws NacosException {
         KeyParts parts = parse(storageKey);
         String physicalDataId = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
         ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-                physicalDataId, parts.group(), parts.namespaceId());
+            physicalDataId, parts.group(), parts.namespaceId());
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
             return null;
         }
-        return response.getContent() == null ? null : response.getContent().getBytes(StandardCharsets.UTF_8);
+        return response.getContent() == null ? null
+            : response.getContent().getBytes(StandardCharsets.UTF_8);
     }
-
+    
     @Override
     public void delete(StorageKey storageKey) throws NacosException {
         KeyParts parts = parse(storageKey);
         String physicalDataId = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
-            configOperationService.deleteConfig(physicalDataId, parts.group(), parts.namespaceId(), null, null, "nacos",
-                    null);
+            configOperationService.deleteConfig(physicalDataId, parts.group(), parts.namespaceId(),
+                null, null, "nacos",
+                null);
         }
     }
-
+    
     private static String guessConfigType(String dataId) {
         if (StringUtils.isBlank(dataId)) {
             return ConfigType.TEXT.getType();
@@ -242,7 +249,7 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         }
         return ConfigType.TEXT.getType();
     }
-
+    
     /**
      * Parse StorageKey into KeyParts. Supports three key formats:
      * <ul>
@@ -258,8 +265,8 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         }
         String[] parts = storageKey.getKey().split(":", 5);
         if (parts.length == 5 && !StringUtils.isBlank(parts[0]) && !StringUtils.isBlank(parts[1])
-                && !StringUtils.isBlank(parts[2]) && !StringUtils.isBlank(parts[3])
-                && !StringUtils.isBlank(parts[4])) {
+            && !StringUtils.isBlank(parts[2]) && !StringUtils.isBlank(parts[3])
+            && !StringUtils.isBlank(parts[4])) {
             // 5-part typed format: namespaceId:resourceType:name:version:filePath
             String namespaceId = parts[0];
             String resourceType = parts[1];
@@ -281,11 +288,13 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         // Fall back to legacy 4-part format (Skill): namespaceId:name:version:filePath
         String[] legacyParts = storageKey.getKey().split(":", 4);
         // parts[2] (version) may be blank for manifest keys
-        if (legacyParts.length != 4 || StringUtils.isBlank(legacyParts[0]) || StringUtils.isBlank(legacyParts[1])
-                || StringUtils.isBlank(legacyParts[3])) {
+        if (legacyParts.length != 4 || StringUtils.isBlank(legacyParts[0])
+            || StringUtils.isBlank(legacyParts[1])
+            || StringUtils.isBlank(legacyParts[3])) {
             throw new IllegalArgumentException(
-                    "Invalid StorageKey.key, expected namespaceId:name:version:filePath or "
-                            + "namespaceId:resourceType:name:version:filePath, got: " + storageKey.getKey());
+                "Invalid StorageKey.key, expected namespaceId:name:version:filePath or "
+                    + "namespaceId:resourceType:name:version:filePath, got: "
+                    + storageKey.getKey());
         }
         String namespaceId = legacyParts[0];
         String skillName = legacyParts[1];
@@ -299,7 +308,7 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         }
         return new KeyParts(namespaceId, group, filePath);
     }
-
+    
     record KeyParts(String namespaceId, String group, String dataId) {
     }
 }

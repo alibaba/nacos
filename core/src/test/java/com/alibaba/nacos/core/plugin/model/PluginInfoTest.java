@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginInfoTest {
-
+    
     @Test
     void gettersSetters() {
         PluginInfo info = new PluginInfo();
@@ -48,7 +48,7 @@ class PluginInfoTest {
         ConfigItemDefinition def = new ConfigItemDefinition();
         def.setKey("k");
         info.setConfigDefinitions(Collections.singletonList(def));
-
+        
         assertEquals("trace:test", info.getPluginId());
         assertEquals("test", info.getPluginName());
         assertEquals(PluginType.TRACE, info.getPluginType());

@@ -32,12 +32,13 @@ import org.springframework.security.web.firewall.StrictHttpFirewall;
  */
 @Configuration
 public class HttpPathConfiguration {
-
+    
     @Bean
     public TomcatConnectorCustomizer connectorCustomizer() {
-        return (connector) -> connector.setEncodedSolidusHandling(EncodedSolidusHandling.PASS_THROUGH.getValue());
+        return (connector) -> connector
+            .setEncodedSolidusHandling(EncodedSolidusHandling.PASS_THROUGH.getValue());
     }
-
+    
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         StrictHttpFirewall firewall = new StrictHttpFirewall();

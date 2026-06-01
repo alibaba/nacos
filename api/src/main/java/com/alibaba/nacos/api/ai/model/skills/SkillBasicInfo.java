@@ -45,8 +45,9 @@ public class SkillBasicInfo extends SkillBase {
         }
         SkillBasicInfo that = (SkillBasicInfo) o;
         return Objects.equals(getNamespaceId(), that.getNamespaceId())
-                && Objects.equals(getName(), that.getName()) && Objects.equals(getDescription(), that.getDescription())
-                && Objects.equals(updateTime, that.updateTime);
+            && Objects.equals(getName(), that.getName())
+            && Objects.equals(getDescription(), that.getDescription())
+            && Objects.equals(updateTime, that.updateTime);
     }
     
     @Override

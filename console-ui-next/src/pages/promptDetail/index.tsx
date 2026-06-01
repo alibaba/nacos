@@ -32,6 +32,7 @@ import {
   CheckCircle2,
   Tag,
   GitBranch,
+  Download,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,7 @@ import { PipelineStatusDisplay } from '@/pages/skillManagement/components/Pipeli
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
+import { CliCommandCard } from '@/components/ai/CliCommandCard';
 
 function extractVariables(template: string): string[] {
   if (!template) return [];
@@ -253,6 +255,35 @@ export default function PromptDetailPage() {
     loadVersion(version);
   };
 
+  // Download the currently selected version as a Markdown file
+  const [downloadingMd, setDownloadingMd] = useState(false);
+  const handleDownloadMarkdown = useCallback(async () => {
+    if (!selectedVersion || !promptKey) {
+      return;
+    }
+    setDownloadingMd(true);
+    try {
+      const blob = await promptApi.downloadVersion({
+        promptKey,
+        version: selectedVersion,
+        namespaceId,
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${promptKey}_${selectedVersion}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(t('prompt.downloadMarkdownSuccess'));
+    } catch {
+      toast.error(t('prompt.downloadMarkdownFailed'));
+    } finally {
+      setDownloadingMd(false);
+    }
+  }, [promptKey, selectedVersion, namespaceId, t]);
+
   // Rendered prompt with variable values
   const renderedPrompt = useMemo(() => {
     let result = template;
@@ -285,6 +316,15 @@ export default function PromptDetailPage() {
   const handleForcePublish = async (version: string) => {
     const ok = await forcePublishVersion({ promptKey, version, updateLatestLabel: true, namespaceId });
     if (ok) { toast.success(t('prompt.forcePublishSuccess')); await refreshAfterAction(version); }
+  };
+
+  const handleRedraft = async (version: string) => {
+    try {
+      await promptApi.redraft({ promptKey, version, namespaceId });
+      toast.success(t('prompt.redraftSuccess'));
+      await refreshAfterAction(version);
+      setIsEditingDraft(true);
+    } catch { /* handled by interceptor */ }
   };
 
   const handleOnline = async (version: string) => {
@@ -618,7 +658,10 @@ export default function PromptDetailPage() {
                     <SelectValue placeholder={t('prompt.selectVersion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {meta.versionDetails.map((v) => (
+                    {meta.versionDetails.map((v) => {
+                      const vPipeline = parsePipelineInfo(v.publishPipelineInfo);
+                      const isVersionRejected = v.status === 'reviewed' && vPipeline?.status === 'REJECTED';
+                      return (
                       <SelectItem key={v.version} value={v.version}>
                         <span className="flex items-center gap-2">
                           <span>{v.version}</span>
@@ -637,9 +680,18 @@ export default function PromptDetailPage() {
                               {t('prompt.versionStatus.reviewing')}
                             </Badge>
                           )}
+                          {v.status === 'reviewed' && (
+                            <Badge className={isVersionRejected
+                              ? 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 text-[10px] px-1 py-0 border-0'
+                              : 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
+                            }>
+                              {t(isVersionRejected ? 'prompt.versionStatus.rejected' : 'prompt.versionStatus.pendingPublish')}
+                            </Badge>
+                          )}
                         </span>
                       </SelectItem>
-                    ))}
+                    );
+                    })}
                   </SelectContent>
                 </Select>
               )}
@@ -744,8 +796,8 @@ export default function PromptDetailPage() {
                       </>
                     )}
 
-                    {/* Reviewing actions */}
-                    {currentVersionStatus === 'reviewing' && (
+                    {/* Reviewing / Reviewed actions */}
+                    {(currentVersionStatus === 'reviewing' || currentVersionStatus === 'reviewed') && (
                       <>
                         <Button
                           size="sm"
@@ -758,6 +810,28 @@ export default function PromptDetailPage() {
                             ? t('prompt.pipelineInProgress')
                             : t('prompt.publish')}
                         </Button>
+                        {currentVersionStatus === 'reviewed' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1.5"
+                              onClick={() => handleRedraft(selectedVersion)}
+                            >
+                              <Pencil className="h-3 w-3" />
+                              {t('prompt.redraft')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteDraft(selectedVersion)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              {t('prompt.deleteDraft')}
+                            </Button>
+                          </>
+                        )}
                         {currentPipelineInfo && (
                           <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                         )}
@@ -939,6 +1013,14 @@ export default function PromptDetailPage() {
           )}
         </div>
         <div className="space-y-4 lg:w-[320px]">
+          {/* Download & CLI Card */}
+          <CliCommandCard
+            commands={[]}
+            onDownload={handleDownloadMarkdown}
+            downloadFileName={selectedVersion ? `${promptKey}-${selectedVersion}.md` : undefined}
+            downloadDisabled={!selectedVersion || downloadingMd}
+          />
+
           {/* Basic Info Card */}
           <Card className="overflow-hidden py-0 gap-0">
             <div className="px-4 py-3 border-b bg-muted/30">
@@ -956,6 +1038,10 @@ export default function PromptDetailPage() {
                   icon={<Tag className="h-3.5 w-3.5" />}
                 />
                 <InfoCell compact label={t('prompt.publisher')} value={versionInfo?.srcUser || '-'} icon={<User className="h-3.5 w-3.5" />} />
+                <InfoCell compact label={t('prompt.downloads')} value={String(meta.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
+                {currentVersionSummary && (
+                  <InfoCell compact label={t('prompt.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
+                )}
                 <InfoCell compact label={t('prompt.commitMsg')} value={
                   isEditingDraft ? (
                     <Input

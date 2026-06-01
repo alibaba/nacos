@@ -22,5 +22,5 @@ package com.alibaba.nacos.api.naming.listener;
  * @author nkorange
  */
 public interface Event {
-
+    
 }

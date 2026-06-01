@@ -57,7 +57,8 @@ class ConfigMigrateMapperByOracleTest {
     
     @Test
     void testFindConfigIdNeedInsertMigrate() {
-        MapperResult mapperResult = configMigrateMapperByOracle.findConfigIdNeedInsertMigrate(context);
+        MapperResult mapperResult =
+            configMigrateMapperByOracle.findConfigIdNeedInsertMigrate(context);
         assertTrue(mapperResult.getSql().contains("SELECT ci.id FROM config_info ci"));
         assertTrue(mapperResult.getSql().contains("FETCH FIRST ? ROWS ONLY"));
         assertArrayEquals(new Object[] {id, pageSize}, mapperResult.getParamList().toArray());
@@ -65,27 +66,32 @@ class ConfigMigrateMapperByOracleTest {
     
     @Test
     void testFindConfigNeedUpdateMigrate() {
-        MapperResult mapperResult = configMigrateMapperByOracle.findConfigNeedUpdateMigrate(context);
-        assertTrue(mapperResult.getSql().contains("SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id"));
+        MapperResult mapperResult =
+            configMigrateMapperByOracle.findConfigNeedUpdateMigrate(context);
+        assertTrue(
+            mapperResult.getSql().contains("SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id"));
         assertTrue(mapperResult.getSql().contains("FROM config_info ci"));
         assertTrue(mapperResult.getSql().contains("FETCH FIRST ? ROWS ONLY"));
-        assertArrayEquals(new Object[] {srcTenant, srcUser, targetTenant, srcUser, id, pageSize}, 
-                mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {srcTenant, srcUser, targetTenant, srcUser, id, pageSize},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigGrayNeedUpdateMigrate() {
-        MapperResult mapperResult = configMigrateMapperByOracle.findConfigGrayNeedUpdateMigrate(context);
-        assertTrue(mapperResult.getSql().contains("SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id, ci.gray_name"));
+        MapperResult mapperResult =
+            configMigrateMapperByOracle.findConfigGrayNeedUpdateMigrate(context);
+        assertTrue(mapperResult.getSql()
+            .contains("SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id, ci.gray_name"));
         assertTrue(mapperResult.getSql().contains("FROM config_info_gray ci"));
         assertTrue(mapperResult.getSql().contains("FETCH FIRST ? ROWS ONLY"));
-        assertArrayEquals(new Object[] {srcTenant, srcUser, targetTenant, srcUser, id, pageSize}, 
-                mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {srcTenant, srcUser, targetTenant, srcUser, id, pageSize},
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigGrayIdNeedInsertMigrate() {
-        MapperResult mapperResult = configMigrateMapperByOracle.findConfigGrayIdNeedInsertMigrate(context);
+        MapperResult mapperResult =
+            configMigrateMapperByOracle.findConfigGrayIdNeedInsertMigrate(context);
         assertTrue(mapperResult.getSql().contains("SELECT ci.id FROM config_info_gray ci"));
         assertTrue(mapperResult.getSql().contains("FETCH FIRST ? ROWS ONLY"));
         assertArrayEquals(new Object[] {id, pageSize}, mapperResult.getParamList().toArray());

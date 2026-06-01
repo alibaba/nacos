@@ -56,8 +56,10 @@ public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
      * @param value   value
      * @return {@link OverrideParameterRequestWrapper}
      */
-    public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request, String name, String value) {
-        OverrideParameterRequestWrapper requestWrapper = new OverrideParameterRequestWrapper(request);
+    public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request,
+        String name, String value) {
+        OverrideParameterRequestWrapper requestWrapper =
+            new OverrideParameterRequestWrapper(request);
         requestWrapper.addParameter(name, value);
         return requestWrapper;
     }
@@ -70,8 +72,9 @@ public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
      * @return {@link OverrideParameterRequestWrapper}
      */
     public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request,
-            Map<String, String[]> appendParameters) {
-        OverrideParameterRequestWrapper requestWrapper = new OverrideParameterRequestWrapper(request);
+        Map<String, String[]> appendParameters) {
+        OverrideParameterRequestWrapper requestWrapper =
+            new OverrideParameterRequestWrapper(request);
         requestWrapper.params.putAll(appendParameters);
         return requestWrapper;
     }

@@ -23,9 +23,11 @@ package com.alibaba.nacos.common.trace.event.naming;
  */
 public class BatchRegisterInstanceTraceEvent extends RegisterInstanceTraceEvent {
     
-    public BatchRegisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc, String serviceNamespace,
-            String serviceGroup, String serviceName, String instanceIp, int instancePort) {
-        super("BATCH_REGISTER_INSTANCE_TRACE_EVENT", eventTime, clientIp, rpc, serviceNamespace, serviceGroup,
-                serviceName, instanceIp, instancePort);
+    public BatchRegisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc,
+        String serviceNamespace,
+        String serviceGroup, String serviceName, String instanceIp, int instancePort) {
+        super("BATCH_REGISTER_INSTANCE_TRACE_EVENT", eventTime, clientIp, rpc, serviceNamespace,
+            serviceGroup,
+            serviceName, instanceIp, instancePort);
     }
 }

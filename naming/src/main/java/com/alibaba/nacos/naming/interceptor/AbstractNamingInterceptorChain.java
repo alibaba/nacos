@@ -28,7 +28,7 @@ import java.util.List;
  * @author xiweng.yy
  */
 public abstract class AbstractNamingInterceptorChain<T extends Interceptable>
-        implements NacosNamingInterceptorChain<T> {
+    implements NacosNamingInterceptorChain<T> {
     
     private final List<NacosNamingInterceptor<T>> interceptors;
     

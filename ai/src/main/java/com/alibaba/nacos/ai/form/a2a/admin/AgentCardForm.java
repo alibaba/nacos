@@ -44,18 +44,21 @@ public class AgentCardForm extends AgentForm {
         fillDefaultRegistrationType();
         if (StringUtils.isEmpty(agentCard)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `agentCard` should not be `null` or empty.");
+                "Request parameter `agentCard` should not be `null` or empty.");
         }
         validateRegistrationType();
         
     }
     
     protected void validateRegistrationType() throws NacosApiException {
-        if (!A2A_ENDPOINT_TYPE_URL.equals(getRegistrationType()) && !A2A_ENDPOINT_TYPE_SERVICE.equals(
+        if (!A2A_ENDPOINT_TYPE_URL.equals(getRegistrationType())
+            && !A2A_ENDPOINT_TYPE_SERVICE.equals(
                 getRegistrationType())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    String.format("Required parameter 'registrationType' value should be `%s` or `%s` but was `%s`",
-                            A2A_ENDPOINT_TYPE_URL, A2A_ENDPOINT_TYPE_SERVICE, getRegistrationType()));
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                String.format(
+                    "Required parameter 'registrationType' value should be `%s` or `%s` but was `%s`",
+                    A2A_ENDPOINT_TYPE_URL, A2A_ENDPOINT_TYPE_SERVICE, getRegistrationType()));
         }
     }
     

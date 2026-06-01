@@ -51,12 +51,15 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
         this(name, 32, logger, 100L);
     }
     
-    public NacosDelayTaskExecuteEngine(String name, int initCapacity, Logger logger, long processInterval) {
+    public NacosDelayTaskExecuteEngine(String name, int initCapacity, Logger logger,
+        long processInterval) {
         super(logger);
         tasks = new ConcurrentHashMap<>(initCapacity);
-        processingExecutor = ExecutorFactory.newSingleScheduledExecutorService(new NameThreadFactory(name));
+        processingExecutor =
+            ExecutorFactory.newSingleScheduledExecutorService(new NameThreadFactory(name));
         processingExecutor
-                .scheduleWithFixedDelay(new ProcessRunnable(), processInterval, processInterval, TimeUnit.MILLISECONDS);
+            .scheduleWithFixedDelay(new ProcessRunnable(), processInterval, processInterval,
+                TimeUnit.MILLISECONDS);
     }
     
     @Override

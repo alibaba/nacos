@@ -21,42 +21,48 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DistroConstantsTest {
-
+    
     @Test
     void testModuleAndDataSyncConstants() {
         assertEquals("distro", DistroConstants.DISTRO_MODULE);
-        assertEquals("nacos.core.protocol.distro.data.sync.delayMs", DistroConstants.DATA_SYNC_DELAY_MILLISECONDS);
+        assertEquals("nacos.core.protocol.distro.data.sync.delayMs",
+            DistroConstants.DATA_SYNC_DELAY_MILLISECONDS);
         assertEquals("data_sync_delayMs", DistroConstants.DATA_SYNC_DELAY_MILLISECONDS_STATE);
         assertEquals(1000L, DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS);
-        assertEquals("nacos.core.protocol.distro.data.sync.timeoutMs", DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS);
+        assertEquals("nacos.core.protocol.distro.data.sync.timeoutMs",
+            DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS);
         assertEquals("data_sync_timeoutMs", DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS_STATE);
         assertEquals(3000L, DistroConstants.DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS);
         assertEquals("nacos.core.protocol.distro.data.sync.retryDelayMs",
-                DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS);
-        assertEquals("data_sync_retryDelayMs", DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS_STATE);
+            DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS);
+        assertEquals("data_sync_retryDelayMs",
+            DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS_STATE);
         assertEquals(3000L, DistroConstants.DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS);
     }
-
+    
     @Test
     void testDataVerifyConstants() {
         assertEquals("nacos.core.protocol.distro.data.verify.intervalMs",
-                DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS);
-        assertEquals("data_verify_intervalMs", DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS_STATE);
+            DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS);
+        assertEquals("data_verify_intervalMs",
+            DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS_STATE);
         assertEquals(5000L, DistroConstants.DEFAULT_DATA_VERIFY_INTERVAL_MILLISECONDS);
         assertEquals("nacos.core.protocol.distro.data.verify.timeoutMs",
-                DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS);
-        assertEquals("data_verify_timeoutMs", DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS_STATE);
+            DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS);
+        assertEquals("data_verify_timeoutMs",
+            DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS_STATE);
         assertEquals(3000L, DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS);
     }
-
+    
     @Test
     void testDataLoadConstants() {
         assertEquals("nacos.core.protocol.distro.data.load.retryDelayMs",
-                DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS);
-        assertEquals("data_load_retryDelayMs", DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS_STATE);
+            DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS);
+        assertEquals("data_load_retryDelayMs",
+            DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS_STATE);
         assertEquals(30000L, DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS);
         assertEquals("nacos.core.protocol.distro.data.load.timeoutMs",
-                DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS);
+            DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS);
         assertEquals("data_load_timeoutMs", DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS_STATE);
         assertEquals(30000L, DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS);
     }

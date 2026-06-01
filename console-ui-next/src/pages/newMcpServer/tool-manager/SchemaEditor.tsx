@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -50,7 +50,7 @@ interface PropertyRowProps {
   required: boolean;
   depth: number;
   readOnly: boolean;
-  onNameChange: (oldName: string, newName: string) => void;
+  onNameChange: (oldName: string, newName: string) => boolean;
   onSchemaChange: (name: string, schema: JsonSchemaProperty) => void;
   onRequiredChange: (name: string, required: boolean) => void;
   onDelete: (name: string) => void;
@@ -69,12 +69,34 @@ function PropertyRow({
 }: PropertyRowProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [draftName, setDraftName] = useState(name);
+  const skipCommitRef = useRef(false);
   const type = (schema.type || 'string') as SchemaType;
   const hasChildren = type === 'object' || type === 'array';
   const canExpand = hasChildren && depth < MAX_DEPTH;
 
   const childProperties = type === 'object' ? schema.properties : type === 'array' ? schema.items?.properties : undefined;
   const childRequired = type === 'object' ? schema.required : type === 'array' ? schema.items?.required : undefined;
+
+  useEffect(() => {
+    setDraftName(name);
+  }, [name]);
+
+  const commitName = useCallback(() => {
+    if (skipCommitRef.current) {
+      skipCommitRef.current = false;
+      setDraftName(name);
+      return;
+    }
+    const nextName = draftName.trim();
+    if (nextName === name) {
+      setDraftName(name);
+      return;
+    }
+    if (!nextName || !onNameChange(name, nextName)) {
+      setDraftName(name);
+    }
+  }, [draftName, name, onNameChange]);
 
   const handleTypeChange = (newType: string) => {
     const updated: JsonSchemaProperty = { ...schema, type: newType };
@@ -108,9 +130,12 @@ function PropertyRow({
   };
 
   const handleChildNameChange = (oldN: string, newN: string) => {
-    if (oldN === newN) return;
+    if (oldN === newN) return true;
     const target = type === 'object' ? schema : schema.items;
-    if (!target?.properties) return;
+    if (!target?.properties) return false;
+    if (!newN || (newN !== oldN && Object.prototype.hasOwnProperty.call(target.properties, newN))) {
+      return false;
+    }
     const props: Record<string, JsonSchemaProperty> = {};
     const reqArr = [...(target.required || [])];
     for (const key of Object.keys(target.properties)) {
@@ -127,6 +152,7 @@ function PropertyRow({
     } else {
       onSchemaChange(name, { ...schema, items: { ...schema.items, properties: props, required: reqArr } });
     }
+    return true;
   };
 
   const handleChildSchemaChange = (childName: string, childSchema: JsonSchemaProperty) => {
@@ -199,8 +225,18 @@ function PropertyRow({
         {/* Name */}
         <Input
           className="h-8 text-sm w-36 shrink-0"
-          value={name}
-          onChange={(e) => onNameChange(name, e.target.value)}
+          value={draftName}
+          onChange={(e) => setDraftName(e.target.value)}
+          onBlur={commitName}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.currentTarget.blur();
+            } else if (e.key === 'Escape') {
+              skipCommitRef.current = true;
+              setDraftName(name);
+              e.currentTarget.blur();
+            }
+          }}
           disabled={readOnly}
           placeholder="name"
         />
@@ -300,7 +336,10 @@ export default function SchemaEditor({ value, onChange, readOnly = false }: Sche
 
   const handleNameChange = useCallback(
     (oldName: string, newName: string) => {
-      if (oldName === newName) return;
+      if (oldName === newName) return true;
+      if (!newName || (newName !== oldName && Object.prototype.hasOwnProperty.call(properties, newName))) {
+        return false;
+      }
       const props: Record<string, JsonSchemaProperty> = {};
       const reqArr = [...requiredArr];
       for (const key of Object.keys(properties)) {
@@ -313,6 +352,7 @@ export default function SchemaEditor({ value, onChange, readOnly = false }: Sche
         }
       }
       onChange({ ...value, properties: props, required: reqArr });
+      return true;
     },
     [properties, requiredArr, value, onChange]
   );

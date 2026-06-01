@@ -30,151 +30,151 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class PluginInfo implements Serializable {
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     /**
      * Plugin ID, format: "{type}:{name}".
      */
     private String pluginId;
-
+    
     /**
      * Plugin name.
      */
     private String pluginName;
-
+    
     /**
      * Plugin type.
      */
     private PluginType pluginType;
-
+    
     /**
      * Plugin class name.
      */
     private String className;
-
+    
     /**
      * Plugin description.
      */
     private String description;
-
+    
     /**
      * Whether the plugin is enabled.
      */
     private boolean enabled;
-
+    
     /**
      * Whether this is a critical plugin (cannot be disabled).
      */
     private boolean critical;
-
+    
     /**
      * Whether the plugin supports configuration.
      */
     private boolean configurable;
-
+    
     /**
      * Plugin load timestamp.
      */
     private long loadTimestamp;
-
+    
     /**
      * Current configuration.
      */
     private Map<String, String> config;
-
+    
     /**
      * Configuration item definitions.
      */
     private List<ConfigItemDefinition> configDefinitions;
-
+    
     public PluginInfo() {
     }
-
+    
     public String getPluginId() {
         return pluginId;
     }
-
+    
     public void setPluginId(String pluginId) {
         this.pluginId = pluginId;
     }
-
+    
     public String getPluginName() {
         return pluginName;
     }
-
+    
     public void setPluginName(String pluginName) {
         this.pluginName = pluginName;
     }
-
+    
     public PluginType getPluginType() {
         return pluginType;
     }
-
+    
     public void setPluginType(PluginType pluginType) {
         this.pluginType = pluginType;
     }
-
+    
     public String getClassName() {
         return className;
     }
-
+    
     public void setClassName(String className) {
         this.className = className;
     }
-
+    
     public String getDescription() {
         return description;
     }
-
+    
     public void setDescription(String description) {
         this.description = description;
     }
-
+    
     public boolean isEnabled() {
         return enabled;
     }
-
+    
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-
+    
     public boolean isCritical() {
         return critical;
     }
-
+    
     public void setCritical(boolean critical) {
         this.critical = critical;
     }
-
+    
     public boolean isConfigurable() {
         return configurable;
     }
-
+    
     public void setConfigurable(boolean configurable) {
         this.configurable = configurable;
     }
-
+    
     public long getLoadTimestamp() {
         return loadTimestamp;
     }
-
+    
     public void setLoadTimestamp(long loadTimestamp) {
         this.loadTimestamp = loadTimestamp;
     }
-
+    
     public Map<String, String> getConfig() {
         return config;
     }
-
+    
     public void setConfig(Map<String, String> config) {
         this.config = config;
     }
-
+    
     public List<ConfigItemDefinition> getConfigDefinitions() {
         return configDefinitions;
     }
-
+    
     public void setConfigDefinitions(List<ConfigItemDefinition> configDefinitions) {
         this.configDefinitions = configDefinitions;
     }

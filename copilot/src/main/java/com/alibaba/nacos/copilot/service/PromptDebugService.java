@@ -36,5 +36,5 @@ public interface PromptDebugService {
      * @param callback stream response callback
      */
     void debugPromptStream(PromptDebugRequest request,
-                           StreamResponseCallback<PromptDebugResponse> callback);
+        StreamResponseCallback<PromptDebugResponse> callback);
 }

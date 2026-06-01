@@ -39,7 +39,7 @@ public class ReleaseMcpServerRequest extends AbstractMcpRequest {
     private McpToolSpecification toolSpecification;
     
     private McpResourceSpecification resourceSpecification;
-
+    
     private McpEndpointSpec endpointSpecification;
     
     public McpServerBasicInfo getServerSpecification() {
@@ -61,11 +61,11 @@ public class ReleaseMcpServerRequest extends AbstractMcpRequest {
     public McpResourceSpecification getResourceSpecification() {
         return resourceSpecification;
     }
-
+    
     public void setResourceSpecification(McpResourceSpecification resourceSpecification) {
         this.resourceSpecification = resourceSpecification;
     }
-
+    
     public McpEndpointSpec getEndpointSpecification() {
         return endpointSpecification;
     }

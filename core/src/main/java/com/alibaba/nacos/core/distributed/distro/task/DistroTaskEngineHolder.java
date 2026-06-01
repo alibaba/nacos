@@ -32,12 +32,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class DistroTaskEngineHolder implements DisposableBean {
     
-    private final DistroDelayTaskExecuteEngine delayTaskExecuteEngine = new DistroDelayTaskExecuteEngine();
+    private final DistroDelayTaskExecuteEngine delayTaskExecuteEngine =
+        new DistroDelayTaskExecuteEngine();
     
-    private final DistroExecuteTaskExecuteEngine executeWorkersManager = new DistroExecuteTaskExecuteEngine();
+    private final DistroExecuteTaskExecuteEngine executeWorkersManager =
+        new DistroExecuteTaskExecuteEngine();
     
     public DistroTaskEngineHolder(DistroComponentHolder distroComponentHolder) {
-        DistroDelayTaskProcessor defaultDelayTaskProcessor = new DistroDelayTaskProcessor(this, distroComponentHolder);
+        DistroDelayTaskProcessor defaultDelayTaskProcessor =
+            new DistroDelayTaskProcessor(this, distroComponentHolder);
         delayTaskExecuteEngine.setDefaultTaskProcessor(defaultDelayTaskProcessor);
     }
     

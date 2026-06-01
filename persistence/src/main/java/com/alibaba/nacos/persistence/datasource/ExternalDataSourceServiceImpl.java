@@ -39,6 +39,7 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -48,7 +49,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ExternalDataSourceServiceImpl implements DataSourceService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDataSourceServiceImpl.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ExternalDataSourceServiceImpl.class);
     
     /**
      * JDBC execute timeout value, unit:second.
@@ -60,6 +62,14 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     private static final int DB_MASTER_SELECT_THRESHOLD = 1;
     
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
+    
+    private static final String POSTGRESQL = "postgresql";
+    
+    private static final String POSTGRESQL_NULL_TENANT_MIGRATION_SCRIPT =
+        "META-INF/pg-upgrade-null-tenant-id.sql";
+    
+    private static final String[] POSTGRESQL_CONFIG_TENANT_TABLES = {"config_info",
+        "config_info_gray", "config_tags_relation", "his_config_info"};
     
     private List<HikariDataSource> dataSourceList = new ArrayList<>();
     
@@ -133,16 +143,16 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             final List<Boolean> isHealthListNew = new ArrayList<Boolean>();
             
             List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
-                    .build(EnvUtil.getEnvironment(), (dataSource) -> {
-                        //check datasource connection
-                        ConnectionCheckUtil.checkDataSourceConnection(dataSource);
-                        
-                        JdbcTemplate jdbcTemplate = new JdbcTemplate();
-                        jdbcTemplate.setQueryTimeout(queryTimeout);
-                        jdbcTemplate.setDataSource(dataSource);
-                        testJtListNew.add(jdbcTemplate);
-                        isHealthListNew.add(Boolean.TRUE);
-                    });
+                .build(EnvUtil.getEnvironment(), (dataSource) -> {
+                    //check datasource connection
+                    ConnectionCheckUtil.checkDataSourceConnection(dataSource);
+                    
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                    jdbcTemplate.setQueryTimeout(queryTimeout);
+                    jdbcTemplate.setDataSource(dataSource);
+                    testJtListNew.add(jdbcTemplate);
+                    isHealthListNew.add(Boolean.TRUE);
+                });
             
             final List<HikariDataSource> dataSourceListOld = dataSourceList;
             final List<JdbcTemplate> testJtListOld = testJtList;
@@ -150,6 +160,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             testJtList = testJtListNew;
             isHealthList = isHealthListNew;
             new SelectMasterTask().run();
+            validatePostgresqlTenantSchema();
             new CheckDbHealthTask().run();
             
             //close old datasource.
@@ -163,6 +174,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     oldJdbc.setDataSource(null);
                 }
             }
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (RuntimeException e) {
             LOGGER.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);
@@ -217,10 +230,12 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
                     // The master is unhealthy.
-                    return "DOWN:" + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "DOWN:"
+                        + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     // The slave  is unhealthy.
-                    return "WARN:" + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "WARN:"
+                        + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
@@ -231,6 +246,49 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     @Override
     public String getDataSourceType() {
         return dataSourceType;
+    }
+    
+    void validatePostgresqlTenantSchema() {
+        if (!POSTGRESQL.equalsIgnoreCase(dataSourceType) || null == jt.getDataSource()) {
+            return;
+        }
+        validatePostgresqlTenantSchema(jt);
+    }
+    
+    void validatePostgresqlTenantSchema(JdbcTemplate jdbcTemplate) {
+        for (String tableName : POSTGRESQL_CONFIG_TENANT_TABLES) {
+            validatePostgresqlTenantColumn(jdbcTemplate, tableName);
+        }
+    }
+    
+    private void validatePostgresqlTenantColumn(JdbcTemplate jdbcTemplate, String tableName) {
+        String sql = "SELECT is_nullable, column_default FROM information_schema.columns "
+            + "WHERE table_schema = current_schema() AND table_name = ? AND column_name = 'tenant_id'";
+        try {
+            Map<String, Object> columnInfo = jdbcTemplate.queryForMap(sql, tableName);
+            String isNullable = null == columnInfo.get("is_nullable") ? StringUtils.EMPTY
+                : String.valueOf(columnInfo.get("is_nullable"));
+            String columnDefault = null == columnInfo.get("column_default") ? StringUtils.EMPTY
+                : String.valueOf(columnInfo.get("column_default"));
+            if (!"NO".equalsIgnoreCase(isNullable) || !StringUtils.contains(columnDefault, "''")) {
+                throwIncompatiblePostgresqlTenantSchema(tableName);
+            }
+        } catch (DataAccessException e) {
+            throw new IllegalStateException(
+                buildIncompatiblePostgresqlTenantSchemaMessage(tableName), e);
+        }
+    }
+    
+    private void throwIncompatiblePostgresqlTenantSchema(String tableName) {
+        throw new IllegalStateException(buildIncompatiblePostgresqlTenantSchemaMessage(tableName));
+    }
+    
+    private String buildIncompatiblePostgresqlTenantSchemaMessage(String tableName) {
+        return "PostgreSQL schema is incompatible for table '" + tableName
+            + "': column 'tenant_id' must be "
+            + "NOT NULL DEFAULT ''. Apply the migration script "
+            + POSTGRESQL_NULL_TENANT_MIGRATION_SCRIPT
+            + " before starting Nacos.";
     }
     
     class SelectMasterTask implements Runnable {
@@ -248,7 +306,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 testMasterJt.setDataSource(ds);
                 testMasterJt.setQueryTimeout(queryTimeout);
                 try {
-                    testMasterJt.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
+                    testMasterJt.update(
+                        "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
                         LOGGER.warn("[master-db] {}", ds.getJdbcUrl());
                     }
@@ -290,10 +349,12 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         LOGGER.error("[db-error] master db {} down.",
-                                InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl()));
+                            InternetAddressUtil
+                                .getIpFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         LOGGER.error("[db-error] slave db {} down.",
-                                InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl()));
+                            InternetAddressUtil
+                                .getIpFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     

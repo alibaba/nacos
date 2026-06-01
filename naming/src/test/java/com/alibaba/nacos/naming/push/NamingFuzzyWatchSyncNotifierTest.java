@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.push;
 
+import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchSyncRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
@@ -29,10 +30,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.alibaba.nacos.naming.push.NamingFuzzyWatchSyncNotifier.BATCH_SIZE;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -53,7 +57,8 @@ public class NamingFuzzyWatchSyncNotifierTest {
     
     @BeforeEach
     void before() {
-        namingFuzzyWatchSyncNotifier = new NamingFuzzyWatchSyncNotifier(namingFuzzyWatchContextService,
+        namingFuzzyWatchSyncNotifier =
+            new NamingFuzzyWatchSyncNotifier(namingFuzzyWatchContextService,
                 fuzzyWatchPushDelayTaskEngine);
     }
     
@@ -64,33 +69,40 @@ public class NamingFuzzyWatchSyncNotifierTest {
     @Test
     void testOnClientFuzzyWatchEventInit() {
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
         
         Set<String> clientReceivedServiceKeys = new HashSet<>();
         for (int i = 0; i < BATCH_SIZE * 2; i++) {
-            clientReceivedServiceKeys.add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
+            clientReceivedServiceKeys
+                .add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
         }
         Set<String> matchedServiceKeys = new HashSet<>();
         for (int i = BATCH_SIZE; i < BATCH_SIZE * 3; i++) {
-            matchedServiceKeys.add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
+            matchedServiceKeys
+                .add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
         }
         
-        when(namingFuzzyWatchContextService.matchServiceKeys(eq(groupKeyPattern))).thenReturn(matchedServiceKeys);
+        when(namingFuzzyWatchContextService.matchServiceKeys(eq(groupKeyPattern)))
+            .thenReturn(matchedServiceKeys);
         
         when(namingFuzzyWatchContextService.reachToUpLimit(eq(groupKeyPattern))).thenReturn(false);
         String clientId = "onn1234";
         boolean isInitializing = true;
-        ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent = new ClientOperationEvent.ClientFuzzyWatchEvent(
+        ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent =
+            new ClientOperationEvent.ClientFuzzyWatchEvent(
                 groupKeyPattern, clientId, clientReceivedServiceKeys, isInitializing);
         namingFuzzyWatchSyncNotifier.onEvent(clientFuzzyWatchEvent);
         
-        verify(fuzzyWatchPushDelayTaskEngine, times(2)).addTask(anyString(), any(FuzzyWatchSyncNotifyTask.class));
+        verify(fuzzyWatchPushDelayTaskEngine, times(2)).addTask(anyString(),
+            any(FuzzyWatchSyncNotifyTask.class));
     }
     
     @Test
     void testOnClientFuzzyWatchEventInitFinish() {
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
         
         String clientId = "onn1234";
         Set<String> clientReceivedServiceKeys = new HashSet<>();
@@ -99,67 +111,96 @@ public class NamingFuzzyWatchSyncNotifierTest {
         
         Set<String> matchedServiceKeys = new HashSet<>();
         
-        when(namingFuzzyWatchContextService.matchServiceKeys(eq(groupKeyPattern))).thenReturn(matchedServiceKeys);
+        when(namingFuzzyWatchContextService.matchServiceKeys(eq(groupKeyPattern)))
+            .thenReturn(matchedServiceKeys);
         
         when(namingFuzzyWatchContextService.reachToUpLimit(eq(groupKeyPattern))).thenReturn(false);
-        ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent = new ClientOperationEvent.ClientFuzzyWatchEvent(
+        ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent =
+            new ClientOperationEvent.ClientFuzzyWatchEvent(
                 groupKeyPattern, clientId, clientReceivedServiceKeys, isInitializing);
         namingFuzzyWatchSyncNotifier.onEvent(clientFuzzyWatchEvent);
         
-        verify(fuzzyWatchPushDelayTaskEngine, times(1)).addTask(anyString(), any(FuzzyWatchSyncNotifyTask.class));
+        verify(fuzzyWatchPushDelayTaskEngine, times(1)).addTask(anyString(),
+            any(FuzzyWatchSyncNotifyTask.class));
     }
     
     @Test
     void testOnClientFuzzyWatchEventDiffSync() {
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
         
         Set<String> clientReceivedServiceKeys = new HashSet<>();
         for (int i = 0; i < BATCH_SIZE * 2; i++) {
-            clientReceivedServiceKeys.add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
+            clientReceivedServiceKeys
+                .add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
         }
         
         Set<String> matchedServiceKeys = new HashSet<>();
         for (int i = BATCH_SIZE; i < BATCH_SIZE * 3; i++) {
-            matchedServiceKeys.add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
+            matchedServiceKeys
+                .add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
         }
         
-        when(namingFuzzyWatchContextService.matchServiceKeys(eq(groupKeyPattern))).thenReturn(matchedServiceKeys);
+        when(namingFuzzyWatchContextService.matchServiceKeys(eq(groupKeyPattern)))
+            .thenReturn(matchedServiceKeys);
         when(namingFuzzyWatchContextService.reachToUpLimit(eq(groupKeyPattern))).thenReturn(false);
         String clientId = "onn1234";
         boolean isInitializing = false;
-        ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent = new ClientOperationEvent.ClientFuzzyWatchEvent(
+        ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent =
+            new ClientOperationEvent.ClientFuzzyWatchEvent(
                 groupKeyPattern, clientId, clientReceivedServiceKeys, isInitializing);
         namingFuzzyWatchSyncNotifier.onEvent(clientFuzzyWatchEvent);
-        verify(fuzzyWatchPushDelayTaskEngine, times(2)).addTask(anyString(), any(FuzzyWatchSyncNotifyTask.class));
+        verify(fuzzyWatchPushDelayTaskEngine, times(2)).addTask(anyString(),
+            any(FuzzyWatchSyncNotifyTask.class));
         
     }
     
     @Test
     void testOnClientFuzzyWatchEventWhenOverLoadModel() {
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
+        String groupKeyPattern =
+            FuzzyGroupKeyPattern.generatePattern("service*", "group123", "namespace");
         
         Set<String> clientReceivedServiceKeys = new HashSet<>();
         for (int i = 0; i < BATCH_SIZE * 2; i++) {
-            clientReceivedServiceKeys.add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
+            clientReceivedServiceKeys
+                .add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
         }
         
         Set<String> matchedServiceKeys = new HashSet<>();
         for (int i = BATCH_SIZE; i < BATCH_SIZE * 3; i++) {
-            matchedServiceKeys.add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
+            matchedServiceKeys
+                .add(NamingUtils.getServiceKey("namespace", "group123" + i, "service" + i));
         }
         
-        when(namingFuzzyWatchContextService.matchServiceKeys(eq(groupKeyPattern))).thenReturn(matchedServiceKeys);
+        when(namingFuzzyWatchContextService.matchServiceKeys(eq(groupKeyPattern)))
+            .thenReturn(matchedServiceKeys);
         
         when(namingFuzzyWatchContextService.reachToUpLimit(eq(groupKeyPattern))).thenReturn(true);
         String clientId = "onn1234";
         boolean isInitializing = false;
-    
-        ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent = new ClientOperationEvent.ClientFuzzyWatchEvent(
+        
+        ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent =
+            new ClientOperationEvent.ClientFuzzyWatchEvent(
                 groupKeyPattern, clientId, clientReceivedServiceKeys, isInitializing);
         namingFuzzyWatchSyncNotifier.onEvent(clientFuzzyWatchEvent);
-        verify(fuzzyWatchPushDelayTaskEngine, times(1)).addTask(anyString(), any(FuzzyWatchSyncNotifyTask.class));
+        verify(fuzzyWatchPushDelayTaskEngine, times(1)).addTask(anyString(),
+            any(FuzzyWatchSyncNotifyTask.class));
         
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void testDivideServiceByBatchReturnsEmptySetForEmptyContext() throws Exception {
+        Method method = NamingFuzzyWatchSyncNotifier.class
+            .getDeclaredMethod("divideServiceByBatch", java.util.Collection.class);
+        method.setAccessible(true);
+        
+        Set<Set<NamingFuzzyWatchSyncRequest.Context>> actual =
+            (Set<Set<NamingFuzzyWatchSyncRequest.Context>>) method.invoke(
+                namingFuzzyWatchSyncNotifier, Collections.emptySet());
+        
+        assertTrue(actual.isEmpty());
     }
 }

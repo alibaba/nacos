@@ -24,49 +24,49 @@ import com.alibaba.nacos.plugin.config.constants.ConfigChangePointCutTypes;
  * @author liyunfei
  */
 public class ConfigChangeResponse {
-
+    
     private ConfigChangePointCutTypes responseType;
-
+    
     private boolean isSuccess;
-
+    
     private Object retVal;
-
+    
     private String msg;
     
     private Object[] args;
-
+    
     public ConfigChangeResponse(ConfigChangePointCutTypes responseType) {
         this.responseType = responseType;
     }
-
+    
     public ConfigChangePointCutTypes getResponseType() {
         return responseType;
     }
-
+    
     public void setResponseType(ConfigChangePointCutTypes responseType) {
         this.responseType = responseType;
     }
-
+    
     public boolean isSuccess() {
         return isSuccess;
     }
-
+    
     public void setSuccess(boolean success) {
         isSuccess = success;
     }
-
+    
     public Object getRetVal() {
         return retVal;
     }
-
+    
     public void setRetVal(Object retVal) {
         this.retVal = retVal;
     }
-
+    
     public String getMsg() {
         return msg;
     }
-
+    
     public void setMsg(String msg) {
         this.msg = msg;
     }

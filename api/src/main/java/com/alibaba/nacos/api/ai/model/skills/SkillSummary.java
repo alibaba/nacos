@@ -27,6 +27,11 @@ import java.util.Map;
 public class SkillSummary extends SkillBasicInfo {
     
     /**
+     * Owner of the skill resource.
+     */
+    private String owner;
+    
+    /**
      * Whether the skill is globally enabled. true=enable, false=disable.
      */
     private boolean enable;
@@ -70,6 +75,14 @@ public class SkillSummary extends SkillBasicInfo {
      * Total download count across all versions.
      */
     private Long downloadCount;
+    
+    public String getOwner() {
+        return owner;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
     
     public boolean isEnable() {
         return enable;

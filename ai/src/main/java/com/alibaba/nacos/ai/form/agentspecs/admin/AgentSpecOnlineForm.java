@@ -48,7 +48,7 @@ public class AgentSpecOnlineForm extends AgentSpecForm {
         fillDefaultNamespaceId();
         if (StringUtils.isBlank(getAgentSpecName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `agentSpecName` should not be blank.");
+                "Request parameter `agentSpecName` should not be blank.");
         }
     }
     

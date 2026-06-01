@@ -28,9 +28,9 @@ import java.util.Set;
  * @since 3.2.0
  */
 public final class CriticalPluginConfig {
-
+    
     private static final Set<String> CRITICAL_PLUGINS;
-
+    
     static {
         // Only datasource dialects are critical - Nacos requires at least one database
         // backend.
@@ -44,10 +44,10 @@ public final class CriticalPluginConfig {
         plugins.add("ai-storage:nacos_config");
         CRITICAL_PLUGINS = Collections.unmodifiableSet(plugins);
     }
-
+    
     private CriticalPluginConfig() {
     }
-
+    
     /**
      * Check if a plugin is critical.
      *
@@ -57,7 +57,7 @@ public final class CriticalPluginConfig {
     public static boolean isCritical(String pluginId) {
         return CRITICAL_PLUGINS.contains(pluginId);
     }
-
+    
     /**
      * Get all critical plugins.
      *

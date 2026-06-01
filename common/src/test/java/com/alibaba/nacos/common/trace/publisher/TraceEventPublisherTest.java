@@ -106,14 +106,17 @@ class TraceEventPublisherTest {
         traceEventPublisher.publish(new TraceTestEvent());
         traceEventPublisher.publish(new TraceTestEvent.TraceTestEvent1());
         traceEventPublisher.publish(new TraceTestEvent.TraceTestEvent2());
-        String expectedStatus = "Publisher TraceTestEvent                : shutdown=false, queue=      3/8      ";
+        String expectedStatus =
+            "Publisher TraceTestEvent                : shutdown=false, queue=      3/8      ";
         assertEquals(traceEventPublisher.getStatus(), expectedStatus);
         traceEventPublisher.addSubscriber(subscriber, TraceTestEvent.TraceTestEvent1.class);
         ThreadUtils.sleep(2000L);
-        expectedStatus = "Publisher TraceTestEvent                : shutdown=false, queue=      0/8      ";
+        expectedStatus =
+            "Publisher TraceTestEvent                : shutdown=false, queue=      0/8      ";
         assertEquals(traceEventPublisher.getStatus(), expectedStatus);
         traceEventPublisher.shutdown();
-        expectedStatus = "Publisher TraceTestEvent                : shutdown= true, queue=      0/8      ";
+        expectedStatus =
+            "Publisher TraceTestEvent                : shutdown= true, queue=      0/8      ";
         assertEquals(traceEventPublisher.getStatus(), expectedStatus);
     }
     
@@ -132,7 +135,8 @@ class TraceEventPublisherTest {
         Executor executor = mock(Executor.class);
         when(subscriberWithExecutor.executor()).thenReturn(executor);
         
-        traceEventPublisher.addSubscriber(subscriberWithExecutor, TraceTestEvent.TraceTestEvent1.class);
+        traceEventPublisher.addSubscriber(subscriberWithExecutor,
+            TraceTestEvent.TraceTestEvent1.class);
         TraceTestEvent.TraceTestEvent1 event = new TraceTestEvent.TraceTestEvent1();
         traceEventPublisher.publish(event);
         ThreadUtils.sleep(2000L);
@@ -143,7 +147,8 @@ class TraceEventPublisherTest {
     @Test
     void testNotifySubscriberWithException() throws NacosException {
         Subscriber failingSubscriber = mock(Subscriber.class);
-        doThrow(new RuntimeException("Test exception")).when(failingSubscriber).onEvent(any(Event.class));
+        doThrow(new RuntimeException("Test exception")).when(failingSubscriber)
+            .onEvent(any(Event.class));
         
         traceEventPublisher.addSubscriber(failingSubscriber, TraceTestEvent.TraceTestEvent1.class);
         TraceTestEvent.TraceTestEvent1 event = new TraceTestEvent.TraceTestEvent1();
@@ -168,11 +173,12 @@ class TraceEventPublisherTest {
     
     @Test
     void testHandleEventWithNoSubscribers() throws NacosException {
-        TraceTestEvent.TraceTestEvent2 eventWithNoSubscribers = new TraceTestEvent.TraceTestEvent2();
+        TraceTestEvent.TraceTestEvent2 eventWithNoSubscribers =
+            new TraceTestEvent.TraceTestEvent2();
         traceEventPublisher.publish(eventWithNoSubscribers);
         ThreadUtils.sleep(500L);
-        assertTrue(traceEventPublisher.currentEventSize() == 0 
-                || traceEventPublisher.currentEventSize() > 0);
+        assertTrue(traceEventPublisher.currentEventSize() == 0
+            || traceEventPublisher.currentEventSize() > 0);
     }
     
     @Test

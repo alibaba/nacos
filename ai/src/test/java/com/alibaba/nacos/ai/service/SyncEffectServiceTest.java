@@ -46,7 +46,8 @@ class SyncEffectServiceTest {
     private class MockSyncEffectService implements SyncEffectService {
         
         @Override
-        public void toSync(ConfigForm configForm, long startTimeStamp, long timeout, TimeUnit timeUnit) {
+        public void toSync(ConfigForm configForm, long startTimeStamp, long timeout,
+            TimeUnit timeUnit) {
             invokeMark.set(true);
         }
     }

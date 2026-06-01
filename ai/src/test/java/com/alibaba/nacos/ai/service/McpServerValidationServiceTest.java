@@ -53,23 +53,25 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class McpServerValidationServiceTest {
-
+    
     private McpServerValidationService mcpServerValidationService;
-
+    
     @Mock
     private McpServerOperationService mcpServerOperationService;
-
+    
     @BeforeEach
     void setUp() {
         mcpServerValidationService = new McpServerValidationService();
-        ReflectionTestUtils.setField(mcpServerValidationService, "mcpServerOperationService", mcpServerOperationService);
+        ReflectionTestUtils.setField(mcpServerValidationService, "mcpServerOperationService",
+            mcpServerOperationService);
     }
-
+    
     @Test
     void validateServersWithNullServers() throws NacosException {
         String namespaceId = "test-namespace";
-        McpServerImportValidationResult result = mcpServerValidationService.validateServers(namespaceId, null);
-
+        McpServerImportValidationResult result =
+            mcpServerValidationService.validateServers(namespaceId, null);
+        
         assertFalse(result.isValid());
         assertEquals(0, result.getTotalCount());
         assertEquals(0, result.getValidCount());
@@ -78,12 +80,13 @@ class McpServerValidationServiceTest {
         assertNotNull(result.getErrors());
         assertFalse(result.getErrors().isEmpty());
     }
-
+    
     @Test
     void validateServersWithEmptyServers() throws NacosException {
         String namespaceId = "test-namespace";
-        McpServerImportValidationResult result = mcpServerValidationService.validateServers(namespaceId, new ArrayList<>());
-
+        McpServerImportValidationResult result =
+            mcpServerValidationService.validateServers(namespaceId, new ArrayList<>());
+        
         assertTrue(result.isValid());
         assertEquals(0, result.getTotalCount());
         assertEquals(0, result.getValidCount());
@@ -92,19 +95,21 @@ class McpServerValidationServiceTest {
         assertNotNull(result.getErrors());
         assertTrue(result.getErrors().isEmpty());
     }
-
+    
     @Test
     void validateServersWithValidServer() throws NacosException {
         String namespaceId = "test-namespace";
         List<McpServerDetailInfo> servers = new ArrayList<>();
-
+        
         McpServerDetailInfo validServer = createValidServer();
         servers.add(validServer);
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
-        McpServerImportValidationResult result = mcpServerValidationService.validateServers(namespaceId, servers);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
+        McpServerImportValidationResult result =
+            mcpServerValidationService.validateServers(namespaceId, servers);
+        
         assertTrue(result.isValid());
         assertEquals(1, result.getTotalCount());
         assertEquals(1, result.getValidCount());
@@ -112,26 +117,29 @@ class McpServerValidationServiceTest {
         assertEquals(0, result.getDuplicateCount());
         assertNotNull(result.getServers());
         assertEquals(1, result.getServers().size());
-        assertEquals(McpServerValidationConstants.STATUS_VALID, result.getServers().get(0).getStatus());
+        assertEquals(McpServerValidationConstants.STATUS_VALID,
+            result.getServers().get(0).getStatus());
     }
-
+    
     @Test
     void validateServersWithInvalidServer() throws NacosException {
         final String namespaceId = "test-namespace";
         final List<McpServerDetailInfo> servers = new ArrayList<>();
-
+        
         McpServerDetailInfo invalidServer = new McpServerDetailInfo();
         initializeVersionDetail(invalidServer);
         invalidServer.setName(""); // Empty name should be invalid
         invalidServer.setProtocol("invalid-protocol");
         invalidServer.setDescription("");
-
+        
         servers.add(invalidServer);
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
-        McpServerImportValidationResult result = mcpServerValidationService.validateServers(namespaceId, servers);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
+        McpServerImportValidationResult result =
+            mcpServerValidationService.validateServers(namespaceId, servers);
+        
         assertFalse(result.isValid());
         assertEquals(1, result.getTotalCount());
         assertEquals(0, result.getValidCount());
@@ -139,27 +147,30 @@ class McpServerValidationServiceTest {
         assertEquals(0, result.getDuplicateCount());
         assertNotNull(result.getServers());
         assertEquals(1, result.getServers().size());
-        assertEquals(McpServerValidationConstants.STATUS_INVALID, result.getServers().get(0).getStatus());
+        assertEquals(McpServerValidationConstants.STATUS_INVALID,
+            result.getServers().get(0).getStatus());
     }
-
+    
     @Test
     void validateServersWithDuplicateServerInBatch() throws NacosException {
         final String namespaceId = "test-namespace";
         List<McpServerDetailInfo> servers = new ArrayList<>();
-
+        
         McpServerDetailInfo server1 = createValidServer();
         server1.setName("duplicate-server");
-
+        
         McpServerDetailInfo server2 = createValidServer();
         server2.setName("duplicate-server"); // Same name as server1
-
+        
         servers.add(server1);
         servers.add(server2);
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
-        McpServerImportValidationResult result = mcpServerValidationService.validateServers(namespaceId, servers);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
+        McpServerImportValidationResult result =
+            mcpServerValidationService.validateServers(namespaceId, servers);
+        
         assertTrue(result.isValid());
         assertEquals(2, result.getTotalCount());
         assertEquals(1, result.getValidCount());
@@ -176,24 +187,26 @@ class McpServerValidationServiceTest {
         // Second one should be duplicate
         assertEquals(McpServerValidationConstants.STATUS_DUPLICATE, item2.getStatus());
     }
-
+    
     @Test
     void validateServersWithExistingServer() throws NacosException {
         final String namespaceId = "test-namespace";
         List<McpServerDetailInfo> servers = new ArrayList<>();
-
+        
         McpServerDetailInfo server = createValidServer();
         server.setName("existing-server");
-
+        
         servers.add(server);
-
+        
         // Mock that server already exists
         McpServerDetailInfo existingServer = createValidServer();
         existingServer.setId(UUID.randomUUID().toString());
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(existingServer);
-
-        McpServerImportValidationResult result = mcpServerValidationService.validateServers(namespaceId, servers);
-
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(existingServer);
+        
+        McpServerImportValidationResult result =
+            mcpServerValidationService.validateServers(namespaceId, servers);
+        
         assertTrue(result.isValid());
         assertEquals(1, result.getTotalCount());
         assertEquals(0, result.getValidCount());
@@ -205,21 +218,23 @@ class McpServerValidationServiceTest {
         assertEquals(McpServerValidationConstants.STATUS_DUPLICATE, item.getStatus());
         assertTrue(item.isExists());
     }
-
+    
     @Test
     void validateServersWithExceptionDuringValidation() throws NacosException {
         String namespaceId = "test-namespace";
         List<McpServerDetailInfo> servers = new ArrayList<>();
-
+        
         McpServerDetailInfo server = createValidServer();
         servers.add(server);
-
+        
         // Mock exception during validation
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class)))
-                .thenThrow(new RuntimeException("Test exception"));
-
-        McpServerImportValidationResult result = mcpServerValidationService.validateServers(namespaceId, servers);
-
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class)))
+            .thenThrow(new RuntimeException("Test exception"));
+        
+        McpServerImportValidationResult result =
+            mcpServerValidationService.validateServers(namespaceId, servers);
+        
         assertFalse(result.isValid());
         assertEquals(1, result.getTotalCount());
         assertEquals(0, result.getValidCount());
@@ -228,22 +243,23 @@ class McpServerValidationServiceTest {
         assertNotNull(result.getErrors());
         assertTrue(result.getErrors().isEmpty());
     }
-
+    
     @Test
     void validateSingleServerWithValidServer() throws Exception {
         String namespaceId = "test-namespace";
         McpServerDetailInfo server = createValidServer();
         server.setName("valid-server");
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
+            "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
         method.setAccessible(true);
         McpServerValidationItem item = (McpServerValidationItem) method.invoke(
-                mcpServerValidationService, namespaceId, server, new HashSet<>());
-
+            mcpServerValidationService, namespaceId, server, new HashSet<>());
+        
         assertNotNull(item);
         assertEquals("valid-server", item.getServerName());
         assertEquals(McpServerValidationConstants.STATUS_VALID, item.getStatus());
@@ -252,7 +268,7 @@ class McpServerValidationServiceTest {
         assertFalse(item.isExists());
         assertEquals(server, item.getServer());
     }
-
+    
     @Test
     void validateSingleServerWithMissingName() throws Exception {
         final String namespaceId = "test-namespace";
@@ -261,16 +277,17 @@ class McpServerValidationServiceTest {
         server.setName(""); // Empty name
         server.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         server.setDescription("Test description");
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
+            "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
         method.setAccessible(true);
         McpServerValidationItem item = (McpServerValidationItem) method.invoke(
-                mcpServerValidationService, namespaceId, server, new HashSet<>());
-
+            mcpServerValidationService, namespaceId, server, new HashSet<>());
+        
         assertNotNull(item);
         assertEquals("", item.getServerName());
         assertEquals(McpServerValidationConstants.STATUS_INVALID, item.getStatus());
@@ -278,7 +295,7 @@ class McpServerValidationServiceTest {
         assertFalse(item.getErrors().isEmpty());
         assertTrue(item.getErrors().contains("Server name is required"));
     }
-
+    
     @Test
     void validateSingleServerWithMissingProtocol() throws Exception {
         final String namespaceId = "test-namespace";
@@ -287,16 +304,17 @@ class McpServerValidationServiceTest {
         server.setName("test-server");
         server.setProtocol(""); // Empty protocol
         server.setDescription("Test description");
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
+            "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
         method.setAccessible(true);
         McpServerValidationItem item = (McpServerValidationItem) method.invoke(
-                mcpServerValidationService, namespaceId, server, new HashSet<>());
-
+            mcpServerValidationService, namespaceId, server, new HashSet<>());
+        
         assertNotNull(item);
         assertEquals("test-server", item.getServerName());
         assertEquals(McpServerValidationConstants.STATUS_INVALID, item.getStatus());
@@ -304,7 +322,7 @@ class McpServerValidationServiceTest {
         assertFalse(item.getErrors().isEmpty());
         assertTrue(item.getErrors().contains("Protocol is required"));
     }
-
+    
     @Test
     void validateSingleServerWithInvalidProtocol() throws Exception {
         final String namespaceId = "test-namespace";
@@ -313,16 +331,17 @@ class McpServerValidationServiceTest {
         server.setName("test-server");
         server.setProtocol("invalid-protocol");
         server.setDescription("Test description");
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
+            "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
         method.setAccessible(true);
         McpServerValidationItem item = (McpServerValidationItem) method.invoke(
-                mcpServerValidationService, namespaceId, server, new HashSet<>());
-
+            mcpServerValidationService, namespaceId, server, new HashSet<>());
+        
         assertNotNull(item);
         assertEquals("test-server", item.getServerName());
         assertEquals(McpServerValidationConstants.STATUS_INVALID, item.getStatus());
@@ -330,7 +349,7 @@ class McpServerValidationServiceTest {
         assertFalse(item.getErrors().isEmpty());
         assertTrue(item.getErrors().contains("Invalid protocol: invalid-protocol"));
     }
-
+    
     @Test
     void validateSingleServerWithMissingDescription() throws Exception {
         final String namespaceId = "test-namespace";
@@ -339,16 +358,17 @@ class McpServerValidationServiceTest {
         server.setName("test-server");
         server.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         server.setDescription(""); // Empty description
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
+            "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
         method.setAccessible(true);
         McpServerValidationItem item = (McpServerValidationItem) method.invoke(
-                mcpServerValidationService, namespaceId, server, new HashSet<>());
-
+            mcpServerValidationService, namespaceId, server, new HashSet<>());
+        
         assertNotNull(item);
         assertEquals("test-server", item.getServerName());
         assertEquals(McpServerValidationConstants.STATUS_INVALID, item.getStatus());
@@ -356,50 +376,53 @@ class McpServerValidationServiceTest {
         assertFalse(item.getErrors().isEmpty());
         assertTrue(item.getErrors().contains("Description is required"));
     }
-
+    
     @Test
     void validateSingleServerWithDuplicateInBatch() throws Exception {
         String namespaceId = "test-namespace";
         McpServerDetailInfo server = createValidServer();
         server.setName("duplicate-server");
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
         // Add server name + version to existing names set to simulate duplicate in batch
         java.util.Set<String> existingNames = new java.util.HashSet<>();
         existingNames.add("duplicate-server" + server.getVersionDetail().getVersion());
-
+        
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
+            "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
         method.setAccessible(true);
         McpServerValidationItem item = (McpServerValidationItem) method.invoke(
-                mcpServerValidationService, namespaceId, server, existingNames);
-
+            mcpServerValidationService, namespaceId, server, existingNames);
+        
         assertNotNull(item);
         assertEquals("duplicate-server", item.getServerName());
         assertEquals(McpServerValidationConstants.STATUS_DUPLICATE, item.getStatus());
         assertNotNull(item.getErrors());
         assertFalse(item.getErrors().isEmpty());
-        assertTrue(item.getErrors().contains("Duplicate server name in import batch: duplicate-server"));
+        assertTrue(
+            item.getErrors().contains("Duplicate server name in import batch: duplicate-server"));
     }
-
+    
     @Test
     void validateSingleServerWithExceptionDuringExistenceCheck() throws Exception {
         String namespaceId = "test-namespace";
         McpServerDetailInfo server = createValidServer();
         server.setName("test-server");
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class)))
-                .thenThrow(new RuntimeException("Test exception"));
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class)))
+            .thenThrow(new RuntimeException("Test exception"));
+        
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
+            "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
         method.setAccessible(true);
         McpServerValidationItem item = (McpServerValidationItem) method.invoke(
-                mcpServerValidationService, namespaceId, server, new HashSet<>());
-
+            mcpServerValidationService, namespaceId, server, new HashSet<>());
+        
         assertNotNull(item);
         assertEquals("test-server", item.getServerName());
         // Should still be invalid if existence check fails
@@ -408,32 +431,39 @@ class McpServerValidationServiceTest {
         assertFalse(item.getErrors().isEmpty());
         assertTrue(item.getErrors().contains("Error checking existing server: Test exception"));
     }
-
+    
     @Test
     void isValidProtocolWithValidProtocols() throws Exception {
         // 使用反射调用私有方法
-        Method method = McpServerValidationService.class.getDeclaredMethod("isValidProtocol", String.class);
+        Method method =
+            McpServerValidationService.class.getDeclaredMethod("isValidProtocol", String.class);
         method.setAccessible(true);
-
+        
         // Test all valid protocols
-        assertTrue((Boolean) method.invoke(mcpServerValidationService, AiConstants.Mcp.MCP_PROTOCOL_STDIO));
-        assertTrue((Boolean) method.invoke(mcpServerValidationService, AiConstants.Mcp.MCP_PROTOCOL_SSE));
-        assertTrue((Boolean) method.invoke(mcpServerValidationService, AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE));
-        assertTrue((Boolean) method.invoke(mcpServerValidationService, AiConstants.Mcp.MCP_PROTOCOL_HTTP));
-        assertTrue((Boolean) method.invoke(mcpServerValidationService, AiConstants.Mcp.MCP_PROTOCOL_DUBBO));
+        assertTrue((Boolean) method.invoke(mcpServerValidationService,
+            AiConstants.Mcp.MCP_PROTOCOL_STDIO));
+        assertTrue(
+            (Boolean) method.invoke(mcpServerValidationService, AiConstants.Mcp.MCP_PROTOCOL_SSE));
+        assertTrue((Boolean) method.invoke(mcpServerValidationService,
+            AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE));
+        assertTrue(
+            (Boolean) method.invoke(mcpServerValidationService, AiConstants.Mcp.MCP_PROTOCOL_HTTP));
+        assertTrue((Boolean) method.invoke(mcpServerValidationService,
+            AiConstants.Mcp.MCP_PROTOCOL_DUBBO));
     }
-
+    
     @Test
     void isValidProtocolWithInvalidProtocol() throws Exception {
         // 使用反射调用私有方法
-        Method method = McpServerValidationService.class.getDeclaredMethod("isValidProtocol", String.class);
+        Method method =
+            McpServerValidationService.class.getDeclaredMethod("isValidProtocol", String.class);
         method.setAccessible(true);
-
+        
         assertFalse((Boolean) method.invoke(mcpServerValidationService, "invalid-protocol"));
         assertFalse((Boolean) method.invoke(mcpServerValidationService, ""));
         assertFalse((Boolean) method.invoke(mcpServerValidationService, (String) null));
     }
-
+    
     @Test
     void validateProtocolSpecificConfigWithValidStdioConfig() throws Exception {
         McpServerDetailInfo server = new McpServerDetailInfo();
@@ -444,19 +474,19 @@ class McpServerValidationServiceTest {
         Map<String, Object> localConfig = new HashMap<>();
         localConfig.put("command", "test-command");
         server.setLocalServerConfig(localConfig);
-
+        
         List<String> errors = new ArrayList<>();
         
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
+            "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
         method.setAccessible(true);
         method.invoke(mcpServerValidationService, server, errors);
-
+        
         assertNotNull(errors);
         assertTrue(errors.isEmpty());
     }
-
+    
     @Test
     void validateProtocolSpecificConfigWithValidStdioConfigWithPackages() throws Exception {
         McpServerDetailInfo server = new McpServerDetailInfo();
@@ -468,19 +498,19 @@ class McpServerValidationServiceTest {
         packages.add(new Package());
         server.setPackages(packages);
         server.setLocalServerConfig(null); // No local config, but has packages
-
+        
         List<String> errors = new ArrayList<>();
         
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
+            "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
         method.setAccessible(true);
         method.invoke(mcpServerValidationService, server, errors);
-
+        
         assertNotNull(errors);
         assertTrue(errors.isEmpty());
     }
-
+    
     @Test
     void validateProtocolSpecificConfigWithInvalidStdioConfig() throws Exception {
         McpServerDetailInfo server = new McpServerDetailInfo();
@@ -490,20 +520,21 @@ class McpServerValidationServiceTest {
         // Invalid stdio config - no local config and no packages
         server.setLocalServerConfig(null);
         server.setPackages(null);
-
+        
         List<String> errors = new ArrayList<>();
         
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
+            "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
         method.setAccessible(true);
         method.invoke(mcpServerValidationService, server, errors);
-
+        
         assertNotNull(errors);
         assertFalse(errors.isEmpty());
-        assertTrue(errors.contains("Local server configuration or packages are required for stdio protocol"));
+        assertTrue(errors
+            .contains("Local server configuration or packages are required for stdio protocol"));
     }
-
+    
     @Test
     void validateProtocolSpecificConfigWithValidRemoteConfig() throws Exception {
         McpServerDetailInfo server = new McpServerDetailInfo();
@@ -513,19 +544,19 @@ class McpServerValidationServiceTest {
         // Valid remote config
         McpServerRemoteServiceConfig remoteConfig = new McpServerRemoteServiceConfig();
         server.setRemoteServerConfig(remoteConfig);
-
+        
         List<String> errors = new ArrayList<>();
         
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
+            "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
         method.setAccessible(true);
         method.invoke(mcpServerValidationService, server, errors);
-
+        
         assertNotNull(errors);
         assertTrue(errors.isEmpty());
     }
-
+    
     @Test
     void validateProtocolSpecificConfigWithInvalidRemoteConfig() throws Exception {
         McpServerDetailInfo server = new McpServerDetailInfo();
@@ -534,20 +565,21 @@ class McpServerValidationServiceTest {
         
         // Invalid remote config - no remote config
         server.setRemoteServerConfig(null);
-
+        
         List<String> errors = new ArrayList<>();
         
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
+            "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
         method.setAccessible(true);
         method.invoke(mcpServerValidationService, server, errors);
-
+        
         assertNotNull(errors);
         assertFalse(errors.isEmpty());
-        assertTrue(errors.contains("Remote server configuration is required for " + AiConstants.Mcp.MCP_PROTOCOL_HTTP + " protocol"));
+        assertTrue(errors.contains("Remote server configuration is required for "
+            + AiConstants.Mcp.MCP_PROTOCOL_HTTP + " protocol"));
     }
-
+    
     @Test
     void validateProtocolSpecificConfigWithValidToolSpec() throws Exception {
         McpServerDetailInfo server = new McpServerDetailInfo();
@@ -563,19 +595,19 @@ class McpServerValidationServiceTest {
         tools.add(tool);
         toolSpec.setTools(tools);
         server.setToolSpec(toolSpec);
-
+        
         List<String> errors = new ArrayList<>();
         
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
+            "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
         method.setAccessible(true);
         method.invoke(mcpServerValidationService, server, errors);
-
+        
         assertNotNull(errors);
         assertTrue(errors.isEmpty());
     }
-
+    
     @Test
     void validateProtocolSpecificConfigWithInvalidToolSpec() throws Exception {
         McpServerDetailInfo server = new McpServerDetailInfo();
@@ -587,20 +619,20 @@ class McpServerValidationServiceTest {
         McpToolSpecification toolSpec = new McpToolSpecification();
         toolSpec.setTools(new ArrayList<>()); // Empty tools list
         server.setToolSpec(toolSpec);
-
+        
         List<String> errors = new ArrayList<>();
         
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
+            "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
         method.setAccessible(true);
         method.invoke(mcpServerValidationService, server, errors);
-
+        
         assertNotNull(errors);
         assertFalse(errors.isEmpty());
         assertTrue(errors.contains("Tool specification should contain at least one tool"));
     }
-
+    
     @Test
     void validateProtocolSpecificConfigWithNullToolSpec() throws Exception {
         McpServerDetailInfo server = new McpServerDetailInfo();
@@ -610,19 +642,19 @@ class McpServerValidationServiceTest {
         
         // No tool spec - should be valid
         server.setToolSpec(null);
-
+        
         List<String> errors = new ArrayList<>();
         
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
+            "validateProtocolSpecificConfig", McpServerDetailInfo.class, List.class);
         method.setAccessible(true);
         method.invoke(mcpServerValidationService, server, errors);
-
+        
         assertNotNull(errors);
         assertTrue(errors.isEmpty());
     }
-
+    
     @Test
     void validateSingleServerDoesNotCallIndexWhenNameIsBlank() throws Exception {
         final String namespaceId = "test-namespace";
@@ -631,33 +663,34 @@ class McpServerValidationServiceTest {
         server.setName(""); // Blank name
         server.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         server.setDescription("Test description");
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
         // Should not call the index when name is blank
         // 使用反射调用私有方法
         Method method = McpServerValidationService.class.getDeclaredMethod(
-                "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
+            "validateSingleServer", String.class, McpServerDetailInfo.class, Set.class);
         method.setAccessible(true);
         McpServerValidationItem item = (McpServerValidationItem) method.invoke(
-                mcpServerValidationService, namespaceId, server, new HashSet<>());
-
+            mcpServerValidationService, namespaceId, server, new HashSet<>());
+        
         assertNotNull(item);
         assertEquals("", item.getServerName());
         assertEquals(McpServerValidationConstants.STATUS_INVALID, item.getStatus());
         assertEquals("Server name is required", item.getErrors().get(0));
     }
-
+    
     @Test
     void validateServersWithMixedValidAndInvalidServers() throws NacosException {
         final String namespaceId = "test-namespace";
         List<McpServerDetailInfo> servers = new ArrayList<>();
-
+        
         // Add a valid server
         McpServerDetailInfo validServer = createValidServer();
         validServer.setName("valid-server");
         servers.add(validServer);
-
+        
         // Add an invalid server
         McpServerDetailInfo invalidServer = new McpServerDetailInfo();
         initializeVersionDetail(invalidServer);
@@ -665,16 +698,18 @@ class McpServerValidationServiceTest {
         invalidServer.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         invalidServer.setDescription("Test description");
         servers.add(invalidServer);
-
+        
         // Add a duplicate server
         McpServerDetailInfo duplicateServer = createValidServer();
         duplicateServer.setName("valid-server"); // Same name as validServer
         servers.add(duplicateServer);
-
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(), nullable(String.class))).thenReturn(null);
-
-        McpServerImportValidationResult result = mcpServerValidationService.validateServers(namespaceId, servers);
-
+        
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+            nullable(String.class))).thenReturn(null);
+        
+        McpServerImportValidationResult result =
+            mcpServerValidationService.validateServers(namespaceId, servers);
+        
         assertFalse(result.isValid());
         assertEquals(3, result.getTotalCount());
         assertEquals(1, result.getValidCount());
@@ -683,7 +718,7 @@ class McpServerValidationServiceTest {
         assertNotNull(result.getServers());
         assertEquals(3, result.getServers().size());
     }
-
+    
     private void initializeVersionDetail(McpServerDetailInfo server) {
         if (server.getVersionDetail() == null) {
             ServerVersionDetail versionDetail = new ServerVersionDetail();
@@ -691,7 +726,7 @@ class McpServerValidationServiceTest {
             server.setVersionDetail(versionDetail);
         }
     }
-
+    
     private McpServerDetailInfo createValidServer() {
         McpServerDetailInfo server = new McpServerDetailInfo();
         initializeVersionDetail(server);

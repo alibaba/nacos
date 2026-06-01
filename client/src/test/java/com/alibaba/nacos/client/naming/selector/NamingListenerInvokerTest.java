@@ -62,7 +62,8 @@ public class NamingListenerInvokerTest {
     public void testAbstractNamingChaneEventListener() {
         AbstractNamingChangeListener listener = spy(AbstractNamingChangeListener.class);
         NamingListenerInvoker listenerInvoker = new NamingListenerInvoker(listener);
-        NamingChangeEvent event = new NamingChangeEvent("serviceName", Collections.emptyList(), new InstancesDiff());
+        NamingChangeEvent event =
+            new NamingChangeEvent("serviceName", Collections.emptyList(), new InstancesDiff());
         assertFalse(listenerInvoker.isInvoked());
         listenerInvoker.invoke(event);
         verify(listener).onChange(event);
@@ -82,5 +83,18 @@ public class NamingListenerInvokerTest {
         assertNotEquals(invoker1, invoker3);
         assertNotEquals(null, invoker1);
         assertEquals(invoker1, invoker1);
+        // different concrete class -> not equal
+        assertNotEquals(invoker1, new Object());
+    }
+    
+    @Test
+    public void testInvokeWithExecutor() {
+        AbstractEventListener listener = mock(AbstractEventListener.class);
+        java.util.concurrent.Executor executor = mock(java.util.concurrent.Executor.class);
+        org.mockito.Mockito.when(listener.getExecutor()).thenReturn(executor);
+        NamingListenerInvoker listenerInvoker = new NamingListenerInvoker(listener);
+        NamingEvent event = new NamingEvent("serviceName", Collections.emptyList());
+        listenerInvoker.invoke(event);
+        verify(executor).execute(org.mockito.ArgumentMatchers.any(Runnable.class));
     }
 }

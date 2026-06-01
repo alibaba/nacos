@@ -53,21 +53,27 @@ class FuzzyWatchSyncNotifyCallback extends AbstractPushCallBack {
     public void onSuccess() {
         // Check TPS limits
         TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-        tpsCheckRequest.setPointName(FuzzyWatchSyncNotifyTask.CONFIG_FUZZY_WATCH_CONFIG_SYNC_SUCCESS);
+        tpsCheckRequest
+            .setPointName(FuzzyWatchSyncNotifyTask.CONFIG_FUZZY_WATCH_CONFIG_SYNC_SUCCESS);
         ControlManagerCenter.getInstance().getTpsControlManager().check(tpsCheckRequest);
         
         if (fuzzyWatchSyncNotifyTask.batchTaskCounter != null) {
             fuzzyWatchSyncNotifyTask.batchTaskCounter.batchSuccess(
-                    fuzzyWatchSyncNotifyTask.notifyRequest.getCurrentBatch());
+                fuzzyWatchSyncNotifyTask.notifyRequest.getCurrentBatch());
             if (fuzzyWatchSyncNotifyTask.batchTaskCounter.batchCompleted()
-                    && fuzzyWatchSyncNotifyTask.notifyRequest.getSyncType().equals(FUZZY_WATCH_INIT_NOTIFY)) {
-                ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
+                && fuzzyWatchSyncNotifyTask.notifyRequest.getSyncType()
+                    .equals(FUZZY_WATCH_INIT_NOTIFY)) {
+                ConfigFuzzyWatchSyncRequest request =
+                    ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
                         fuzzyWatchSyncNotifyTask.notifyRequest.getGroupKeyPattern());
                 
                 // Create RPC push task and push the request to the client
-                FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTaskFinish = new FuzzyWatchSyncNotifyTask(
-                        fuzzyWatchSyncNotifyTask.connectionManager, fuzzyWatchSyncNotifyTask.rpcPushService, request,
-                        null, fuzzyWatchSyncNotifyTask.maxRetryTimes, fuzzyWatchSyncNotifyTask.connectionId);
+                FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTaskFinish =
+                    new FuzzyWatchSyncNotifyTask(
+                        fuzzyWatchSyncNotifyTask.connectionManager,
+                        fuzzyWatchSyncNotifyTask.rpcPushService, request,
+                        null, fuzzyWatchSyncNotifyTask.maxRetryTimes,
+                        fuzzyWatchSyncNotifyTask.connectionId);
                 fuzzyWatchSyncNotifyTaskFinish.scheduleSelf();
             }
         }
@@ -87,7 +93,8 @@ class FuzzyWatchSyncNotifyCallback extends AbstractPushCallBack {
         
         // Log the failure and retry the task
         Loggers.REMOTE_PUSH.warn("Push fail, groupKeyPattern={}, clientId={}",
-                fuzzyWatchSyncNotifyTask.notifyRequest.getGroupKeyPattern(), fuzzyWatchSyncNotifyTask.connectionId, e);
+            fuzzyWatchSyncNotifyTask.notifyRequest.getGroupKeyPattern(),
+            fuzzyWatchSyncNotifyTask.connectionId, e);
         fuzzyWatchSyncNotifyTask.scheduleSelf();
     }
 }

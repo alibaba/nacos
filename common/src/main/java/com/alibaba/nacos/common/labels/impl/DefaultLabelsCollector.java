@@ -62,31 +62,35 @@ public class DefaultLabelsCollector implements LabelsCollector {
         
         //properties
         LOGGER.info("default nacos collect properties raw labels: {}",
-                properties.getProperty(Constants.APP_CONN_LABELS_KEY));
+            properties.getProperty(Constants.APP_CONN_LABELS_KEY));
         Map<String, String> propertiesLabels = ConnLabelsUtils.parseRawLabels(
-                properties.getProperty(Constants.APP_CONN_LABELS_KEY));
+            properties.getProperty(Constants.APP_CONN_LABELS_KEY));
         if (properties.containsKey(Constants.CONFIG_GRAY_LABEL)) {
-            propertiesLabels.put(Constants.CONFIG_GRAY_LABEL, properties.getProperty(Constants.CONFIG_GRAY_LABEL));
+            propertiesLabels.put(Constants.CONFIG_GRAY_LABEL,
+                properties.getProperty(Constants.CONFIG_GRAY_LABEL));
         }
         LOGGER.info("default nacos collect properties labels: {}", propertiesLabels);
         
         //jvm
-        LOGGER.info("default nacos collect jvm raw labels: {}", System.getProperty(Constants.APP_CONN_LABELS_KEY));
+        LOGGER.info("default nacos collect jvm raw labels: {}",
+            System.getProperty(Constants.APP_CONN_LABELS_KEY));
         Map<String, String> jvmLabels = ConnLabelsUtils.parseRawLabels(
-                System.getProperty(Constants.APP_CONN_LABELS_KEY));
+            System.getProperty(Constants.APP_CONN_LABELS_KEY));
         if (System.getProperty(Constants.CONFIG_GRAY_LABEL) != null) {
-            jvmLabels.put(Constants.CONFIG_GRAY_LABEL, System.getProperty((Constants.CONFIG_GRAY_LABEL)));
+            jvmLabels.put(Constants.CONFIG_GRAY_LABEL,
+                System.getProperty((Constants.CONFIG_GRAY_LABEL)));
         }
         LOGGER.info("default nacos collect jvm labels: {}", jvmLabels);
         
         //env
         LOGGER.info("default nacos collect env raw labels: {}",
-                System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll(ESCAPE + DOT, UNDERSCORE)));
+            System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll(ESCAPE + DOT, UNDERSCORE)));
         Map<String, String> envLabels = ConnLabelsUtils.parseRawLabels(
-                System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll(ESCAPE + DOT, UNDERSCORE)));
-        if (System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(ESCAPE + DOT, UNDERSCORE)) != null) {
+            System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll(ESCAPE + DOT, UNDERSCORE)));
+        if (System
+            .getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(ESCAPE + DOT, UNDERSCORE)) != null) {
             envLabels.put(Constants.CONFIG_GRAY_LABEL,
-                    System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(ESCAPE + DOT, UNDERSCORE)));
+                System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(ESCAPE + DOT, UNDERSCORE)));
         }
         LOGGER.info("default nacos collect env labels: {}", envLabels);
         

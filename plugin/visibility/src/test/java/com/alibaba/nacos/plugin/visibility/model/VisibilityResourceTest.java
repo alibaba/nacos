@@ -29,6 +29,7 @@ class VisibilityResourceTest {
     @BeforeEach
     void setUp() {
         resource = new VisibilityResource() {
+            
             @Override
             public String getNamespaceId() {
                 return "test-ns";
@@ -54,5 +55,17 @@ class VisibilityResourceTest {
     @Test
     void testDefaultOwnerIsEmpty() {
         assertEquals("", resource.getOwner());
+    }
+    
+    @Test
+    void testSetScopeAndOwner() {
+        resource.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        resource.setOwner("nacos");
+        
+        assertEquals(VisibilityConstants.SCOPE_PUBLIC, resource.getScope());
+        assertEquals("nacos", resource.getOwner());
+        assertEquals("test-ns", resource.getNamespaceId());
+        assertEquals("test-resource", resource.getResourceName());
+        assertEquals("skill", resource.getResourceType());
     }
 }

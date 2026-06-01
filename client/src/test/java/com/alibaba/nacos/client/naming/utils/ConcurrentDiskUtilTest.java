@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -75,12 +76,14 @@ class ConcurrentDiskUtilTest {
     @Test
     void testTryLockFailure() throws Throwable {
         assertThrows(IOException.class, () -> {
-            Method method = ConcurrentDiskUtil.class.getDeclaredMethod("tryLock", File.class, FileChannel.class,
-                    boolean.class);
+            Method method = ConcurrentDiskUtil.class.getDeclaredMethod("tryLock", File.class,
+                FileChannel.class,
+                boolean.class);
             method.setAccessible(true);
             File file = new File("non-exist");
             FileChannel channel = mock(FileChannel.class);
-            when(channel.tryLock(anyLong(), anyLong(), anyBoolean())).thenThrow(new RuntimeException());
+            when(channel.tryLock(anyLong(), anyLong(), anyBoolean()))
+                .thenThrow(new RuntimeException());
             try {
                 method.invoke(null, file, channel, true);
             } catch (InvocationTargetException e) {
@@ -92,18 +95,25 @@ class ConcurrentDiskUtilTest {
     @Test
     void testTryLockFailureForIntercept() throws Throwable {
         assertThrows(IOException.class, () -> {
-            Method method = ConcurrentDiskUtil.class.getDeclaredMethod("tryLock", File.class, FileChannel.class,
-                    boolean.class);
+            Method method = ConcurrentDiskUtil.class.getDeclaredMethod("tryLock", File.class,
+                FileChannel.class,
+                boolean.class);
             method.setAccessible(true);
             File file = new File("non-exist");
             FileChannel channel = mock(FileChannel.class);
             Thread.currentThread().interrupt();
-            when(channel.tryLock(anyLong(), anyLong(), anyBoolean())).thenThrow(new RuntimeException());
+            when(channel.tryLock(anyLong(), anyLong(), anyBoolean()))
+                .thenThrow(new RuntimeException());
             try {
                 method.invoke(null, file, channel, true);
             } catch (InvocationTargetException e) {
                 throw e.getCause();
             }
         });
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new ConcurrentDiskUtil());
     }
 }

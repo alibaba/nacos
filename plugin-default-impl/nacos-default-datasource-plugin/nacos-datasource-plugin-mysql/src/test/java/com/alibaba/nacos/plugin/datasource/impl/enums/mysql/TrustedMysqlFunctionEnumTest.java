@@ -25,14 +25,15 @@ import org.junit.jupiter.api.Test;
  * @author blake.qiu
  */
 public class TrustedMysqlFunctionEnumTest {
-
+    
     @Test
     void testGetFunctionByName() {
         Assertions.assertEquals("NOW(3)", TrustedMysqlFunctionEnum.getFunctionByName("NOW()"));
     }
-
+    
     @Test()
     void testGetFunctionByErrorName() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> TrustedMysqlFunctionEnum.getFunctionByName("UNKNOWN"));
+        Assertions.assertThrows(IllegalArgumentException.class,
+            () -> TrustedMysqlFunctionEnum.getFunctionByName("UNKNOWN"));
     }
 }

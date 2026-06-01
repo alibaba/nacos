@@ -31,16 +31,19 @@ class BatchInstanceRequestTest extends BasedNamingRequestTest {
     @Test
     void testSerialize() throws JsonProcessingException {
         BatchInstanceRequest request = new BatchInstanceRequest(NAMESPACE, SERVICE, GROUP,
-                NamingRemoteConstants.BATCH_REGISTER_INSTANCE, Collections.singletonList(new Instance()));
+            NamingRemoteConstants.BATCH_REGISTER_INSTANCE,
+            Collections.singletonList(new Instance()));
         String json = mapper.writeValueAsString(request);
         checkSerializeBasedInfo(json);
-        assertTrue(json.contains("\"type\":\"" + NamingRemoteConstants.BATCH_REGISTER_INSTANCE + "\""));
+        assertTrue(
+            json.contains("\"type\":\"" + NamingRemoteConstants.BATCH_REGISTER_INSTANCE + "\""));
         assertTrue(json.contains("\"instances\":[{"));
     }
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
+        String json =
+            "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
                 + "\"type\":\"batchRegisterInstance\",\"instances\":[{\"port\":0,\"weight\":1.0,\"healthy\":true,"
                 + "\"enabled\":true,\"ephemeral\":true,\"metadata\":{},\"instanceIdGenerator\":\"simple\","
                 + "\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000}],"

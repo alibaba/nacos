@@ -43,13 +43,15 @@ public class NacosCombinedTraceSubscriber extends SmartSubscriber {
     public NacosCombinedTraceSubscriber(Class<? extends TraceEvent> combinedEvent) {
         this.interestedEvents = new ConcurrentHashMap<>();
         TraceEventPublisherFactory.getInstance().addPublisherEvent(combinedEvent);
-        for (NacosTraceSubscriber each : NacosTracePluginManager.getInstance().getAllTraceSubscribers()) {
+        for (NacosTraceSubscriber each : NacosTracePluginManager.getInstance()
+            .getAllTraceSubscribers()) {
             filterInterestedEvents(each, combinedEvent);
         }
         NotifyCenter.registerSubscriber(this, TraceEventPublisherFactory.getInstance());
     }
     
-    private void filterInterestedEvents(NacosTraceSubscriber plugin, Class<? extends TraceEvent> combinedEvent) {
+    private void filterInterestedEvents(NacosTraceSubscriber plugin,
+        Class<? extends TraceEvent> combinedEvent) {
         for (Class<? extends TraceEvent> each : plugin.subscribeTypes()) {
             if (combinedEvent.isAssignableFrom(each)) {
                 interestedEvents.compute(each, (eventClass, nacosTraceSubscribers) -> {

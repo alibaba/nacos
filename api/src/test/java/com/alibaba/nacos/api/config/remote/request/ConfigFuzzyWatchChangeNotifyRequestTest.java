@@ -36,7 +36,8 @@ class ConfigFuzzyWatchChangeNotifyRequestTest extends BasedConfigRequestTest {
     
     @BeforeEach
     void before() {
-        configFuzzyWatchChangeNotifyRequest = new ConfigFuzzyWatchChangeNotifyRequest(GROUP_KEY, CHANGE_TYPE);
+        configFuzzyWatchChangeNotifyRequest =
+            new ConfigFuzzyWatchChangeNotifyRequest(GROUP_KEY, CHANGE_TYPE);
         configFuzzyWatchChangeNotifyRequest.putAllHeader(HEADERS);
         requestId = injectRequestUuId(configFuzzyWatchChangeNotifyRequest);
     }
@@ -55,8 +56,9 @@ class ConfigFuzzyWatchChangeNotifyRequestTest extends BasedConfigRequestTest {
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{\"header1\":\"test_header1\"},\"groupKey\":\"test-group-key\","
-                + "\"changeType\":\"ADD\",\"module\":\"config\"}";
-        ConfigFuzzyWatchChangeNotifyRequest actual = mapper.readValue(json, ConfigFuzzyWatchChangeNotifyRequest.class);
+            + "\"changeType\":\"ADD\",\"module\":\"config\"}";
+        ConfigFuzzyWatchChangeNotifyRequest actual =
+            mapper.readValue(json, ConfigFuzzyWatchChangeNotifyRequest.class);
         assertEquals(GROUP_KEY, actual.getGroupKey());
         assertEquals(CHANGE_TYPE, actual.getChangeType());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
@@ -65,8 +67,11 @@ class ConfigFuzzyWatchChangeNotifyRequestTest extends BasedConfigRequestTest {
     
     @Test
     void testToString() {
-        ConfigFuzzyWatchChangeNotifyRequest request = new ConfigFuzzyWatchChangeNotifyRequest(GROUP_KEY, CHANGE_TYPE);
-        assertEquals("FuzzyListenNotifyChangeRequest{', groupKey='" + GROUP_KEY + "', changeType=" + CHANGE_TYPE + "}", 
-                request.toString());
+        ConfigFuzzyWatchChangeNotifyRequest request =
+            new ConfigFuzzyWatchChangeNotifyRequest(GROUP_KEY, CHANGE_TYPE);
+        assertEquals(
+            "FuzzyListenNotifyChangeRequest{', groupKey='" + GROUP_KEY + "', changeType="
+                + CHANGE_TYPE + "}",
+            request.toString());
     }
 }

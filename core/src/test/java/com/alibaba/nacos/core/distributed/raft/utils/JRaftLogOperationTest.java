@@ -43,14 +43,14 @@ class JRaftLogOperationTest {
         assertNotNull(JRaftLogOperation.READ_OPERATION);
         assertTrue(!JRaftLogOperation.MODIFY_OPERATION.equals(JRaftLogOperation.READ_OPERATION));
     }
-
+    
     @Test
     void testClassConstantsMatchExpectedValues() {
         assertNotNull(JRaftLogOperation.class);
         assertEquals("modify", JRaftLogOperation.MODIFY_OPERATION);
         assertEquals("read", JRaftLogOperation.READ_OPERATION);
     }
-
+    
     @Test
     void testConstantsUsedInComparison() {
         assertTrue("modify".equals(JRaftLogOperation.MODIFY_OPERATION));

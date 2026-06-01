@@ -45,7 +45,8 @@ class DefaultGrpcClientConfigTest {
     
     @Test
     void testDefault() {
-        DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder().build();
+        DefaultGrpcClientConfig config =
+            (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder().build();
         assertNull(config.name());
         assertEquals(3, config.retryTimes());
         assertEquals(3000L, config.timeOutMills());
@@ -86,7 +87,8 @@ class DefaultGrpcClientConfigTest {
         properties.setProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT, "5000");
         properties.setProperty(GrpcConstants.GRPC_THREADPOOL_ALLOW_CORE_THREAD_TIMEOUT, "false");
         
-        DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder()
+        DefaultGrpcClientConfig config =
+            (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder()
                 .fromProperties(properties, null).build();
         
         assertEquals("test", config.name());

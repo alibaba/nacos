@@ -27,29 +27,29 @@ import java.util.Map;
  * @author liam.fu
  */
 public enum TrustedOracleFunctionEnum {
-
+    
     /**
      * NOW().
      */
     NOW("NOW()", "SYSDATE");
-
+    
     private static final Map<String, TrustedOracleFunctionEnum> LOOKUP_MAP = new HashMap<>();
-
+    
     static {
         for (TrustedOracleFunctionEnum entry : TrustedOracleFunctionEnum.values()) {
             LOOKUP_MAP.put(entry.functionName, entry);
         }
     }
-
+    
     private final String functionName;
-
+    
     private final String function;
-
+    
     TrustedOracleFunctionEnum(String functionName, String function) {
         this.functionName = functionName;
         this.function = function;
     }
-
+    
     /**
      * Get the function name.
      *
@@ -61,6 +61,7 @@ public enum TrustedOracleFunctionEnum {
         if (entry != null) {
             return entry.function;
         }
-        throw new IllegalArgumentException(String.format("Invalid function name: %s", functionName));
+        throw new IllegalArgumentException(
+            String.format("Invalid function name: %s", functionName));
     }
 }

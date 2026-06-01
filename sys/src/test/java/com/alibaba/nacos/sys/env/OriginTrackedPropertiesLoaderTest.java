@@ -55,7 +55,8 @@ class OriginTrackedPropertiesLoaderTest {
     void compareToJavaProperties() throws Exception {
         Properties java = PropertiesLoaderUtils.loadProperties(this.resource);
         Properties ours = new Properties();
-        new OriginTrackedPropertiesLoader(this.resource).load(false).forEach((k, v) -> ours.put(k, v.getValue()));
+        new OriginTrackedPropertiesLoader(this.resource).load(false)
+            .forEach((k, v) -> ours.put(k, v.getValue()));
         assertEquals(java, ours);
     }
     
@@ -89,8 +90,10 @@ class OriginTrackedPropertiesLoaderTest {
     
     @Test
     void getMalformedUnicodeProperty() {
-        ClassPathResource resource = new ClassPathResource("test-properties-malformed-unicode.properties");
-        assertThrows(IllegalStateException.class, () -> new OriginTrackedPropertiesLoader(resource).load());
+        ClassPathResource resource =
+            new ClassPathResource("test-properties-malformed-unicode.properties");
+        assertThrows(IllegalStateException.class,
+            () -> new OriginTrackedPropertiesLoader(resource).load());
     }
     
     @Test
@@ -179,50 +182,56 @@ class OriginTrackedPropertiesLoaderTest {
     }
     
     @Test
-    void loadWhenMultiDocumentWithPoundPrefixAndWithoutWhitespaceLoadsMultiDoc() throws IOException {
+    void loadWhenMultiDocumentWithPoundPrefixAndWithoutWhitespaceLoadsMultiDoc()
+        throws IOException {
         String content = "a=a\n#---\nb=b";
         Map<String, OriginTrackedValue> loaded = new OriginTrackedPropertiesLoader(
-                new ByteArrayResource(content.getBytes())).load();
+            new ByteArrayResource(content.getBytes())).load();
         assertEquals(2, loaded.size());
     }
     
     @Test
-    void loadWhenMultiDocumentWithExclamationPrefixAndWithoutWhitespaceLoadsMultiDoc() throws IOException {
+    void loadWhenMultiDocumentWithExclamationPrefixAndWithoutWhitespaceLoadsMultiDoc()
+        throws IOException {
         String content = "a=a\n!---\nb=b";
         Map<String, OriginTrackedValue> loaded = new OriginTrackedPropertiesLoader(
-                new ByteArrayResource(content.getBytes())).load();
+            new ByteArrayResource(content.getBytes())).load();
         assertEquals(2, loaded.size());
     }
     
     @Test
-    void loadWhenMultiDocumentWithPoundPrefixAndLeadingWhitespaceLoadsSingleDoc() throws IOException {
+    void loadWhenMultiDocumentWithPoundPrefixAndLeadingWhitespaceLoadsSingleDoc()
+        throws IOException {
         String content = "a=a\n \t#---\nb=b";
         Map<String, OriginTrackedValue> loaded = new OriginTrackedPropertiesLoader(
-                new ByteArrayResource(content.getBytes())).load();
+            new ByteArrayResource(content.getBytes())).load();
         assertEquals(2, loaded.size());
     }
     
     @Test
-    void loadWhenMultiDocumentWithExclamationPrefixAndLeadingWhitespaceLoadsSingleDoc() throws IOException {
+    void loadWhenMultiDocumentWithExclamationPrefixAndLeadingWhitespaceLoadsSingleDoc()
+        throws IOException {
         String content = "a=a\n \t!---\nb=b";
         Map<String, OriginTrackedValue> loaded = new OriginTrackedPropertiesLoader(
-                new ByteArrayResource(content.getBytes())).load();
+            new ByteArrayResource(content.getBytes())).load();
         assertEquals(2, loaded.size());
     }
     
     @Test
-    void loadWhenMultiDocumentWithPoundPrefixAndTrailingWhitespaceLoadsMultiDoc() throws IOException {
+    void loadWhenMultiDocumentWithPoundPrefixAndTrailingWhitespaceLoadsMultiDoc()
+        throws IOException {
         String content = "a=a\n#--- \t \nb=b";
         Map<String, OriginTrackedValue> loaded = new OriginTrackedPropertiesLoader(
-                new ByteArrayResource(content.getBytes())).load();
+            new ByteArrayResource(content.getBytes())).load();
         assertEquals(2, loaded.size());
     }
     
     @Test
-    void loadWhenMultiDocumentWithExclamationPrefixAndTrailingWhitespaceLoadsMultiDoc() throws IOException {
+    void loadWhenMultiDocumentWithExclamationPrefixAndTrailingWhitespaceLoadsMultiDoc()
+        throws IOException {
         String content = "a=a\n!--- \t \nb=b";
         Map<String, OriginTrackedValue> loaded = new OriginTrackedPropertiesLoader(
-                new ByteArrayResource(content.getBytes())).load();
+            new ByteArrayResource(content.getBytes())).load();
         assertEquals(2, loaded.size());
     }
     
@@ -230,24 +239,26 @@ class OriginTrackedPropertiesLoaderTest {
     void loadWhenMultiDocumentWithPoundPrefixAndTrailingCharsLoadsSingleDoc() throws IOException {
         String content = "a=a\n#--- \tcomment\nb=b";
         Map<String, OriginTrackedValue> loaded = new OriginTrackedPropertiesLoader(
-                new ByteArrayResource(content.getBytes())).load();
+            new ByteArrayResource(content.getBytes())).load();
         assertEquals(2, loaded.size());
     }
     
     @Test
-    void loadWhenMultiDocumentWithExclamationPrefixAndTrailingCharsLoadsSingleDoc() throws IOException {
+    void loadWhenMultiDocumentWithExclamationPrefixAndTrailingCharsLoadsSingleDoc()
+        throws IOException {
         String content = "a=a\n!--- \tcomment\nb=b";
         Map<String, OriginTrackedValue> loaded = new OriginTrackedPropertiesLoader(
-                new ByteArrayResource(content.getBytes())).load();
+            new ByteArrayResource(content.getBytes())).load();
         assertEquals(2, loaded.size());
     }
     
     @Test
-    void loadWhenMultiDocumentSeparatorPrefixDifferentFromCommentPrefixLoadsMultiDoc() throws IOException {
+    void loadWhenMultiDocumentSeparatorPrefixDifferentFromCommentPrefixLoadsMultiDoc()
+        throws IOException {
         String[] contents = new String[] {"a=a\n# comment\n!---\nb=b", "a=a\n! comment\n#---\nb=b"};
         for (String content : contents) {
             Map<String, OriginTrackedValue> loaded = new OriginTrackedPropertiesLoader(
-                    new ByteArrayResource(content.getBytes())).load();
+                new ByteArrayResource(content.getBytes())).load();
             assertEquals(2, loaded.size());
         }
     }

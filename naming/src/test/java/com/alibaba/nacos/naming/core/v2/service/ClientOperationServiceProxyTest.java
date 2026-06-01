@@ -31,6 +31,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.Collections;
+
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,7 +68,8 @@ class ClientOperationServiceProxyTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        clientOperationServiceProxy = new ClientOperationServiceProxy(ephemeralClientOperationServiceImpl,
+        clientOperationServiceProxy =
+            new ClientOperationServiceProxy(ephemeralClientOperationServiceImpl,
                 persistentClientOperationServiceImpl);
         when(ephemeralInstance.isEphemeral()).thenReturn(true);
         when(persistentInstance.isEphemeral()).thenReturn(false);
@@ -77,43 +80,83 @@ class ClientOperationServiceProxyTest {
     void testChooseEphemeralClientOperationService() throws NacosException {
         // Test register.
         clientOperationServiceProxy.registerInstance(service, ephemeralInstance, ephemeralIpPortId);
-        verify(ephemeralClientOperationServiceImpl).registerInstance(service, ephemeralInstance, ephemeralIpPortId);
-        verify(persistentClientOperationServiceImpl, never()).registerInstance(service, ephemeralInstance, ephemeralIpPortId);
+        verify(ephemeralClientOperationServiceImpl).registerInstance(service, ephemeralInstance,
+            ephemeralIpPortId);
+        verify(persistentClientOperationServiceImpl, never()).registerInstance(service,
+            ephemeralInstance, ephemeralIpPortId);
         // Before service is registered.
-        clientOperationServiceProxy.deregisterInstance(service, ephemeralInstance, ephemeralIpPortId);
-        verify(ephemeralClientOperationServiceImpl, never()).deregisterInstance(service, ephemeralInstance, ephemeralIpPortId);
-        verify(persistentClientOperationServiceImpl, never()).deregisterInstance(service, ephemeralInstance, ephemeralIpPortId);
+        clientOperationServiceProxy.deregisterInstance(service, ephemeralInstance,
+            ephemeralIpPortId);
+        verify(ephemeralClientOperationServiceImpl, never()).deregisterInstance(service,
+            ephemeralInstance, ephemeralIpPortId);
+        verify(persistentClientOperationServiceImpl, never()).deregisterInstance(service,
+            ephemeralInstance, ephemeralIpPortId);
         
         ServiceManager.getInstance().getSingleton(service);
         // Test deregister.
-        clientOperationServiceProxy.deregisterInstance(service, ephemeralInstance, ephemeralIpPortId);
-        verify(ephemeralClientOperationServiceImpl).deregisterInstance(service, ephemeralInstance, ephemeralIpPortId);
-        verify(persistentClientOperationServiceImpl, never()).deregisterInstance(service, ephemeralInstance, ephemeralIpPortId);
+        clientOperationServiceProxy.deregisterInstance(service, ephemeralInstance,
+            ephemeralIpPortId);
+        verify(ephemeralClientOperationServiceImpl).deregisterInstance(service, ephemeralInstance,
+            ephemeralIpPortId);
+        verify(persistentClientOperationServiceImpl, never()).deregisterInstance(service,
+            ephemeralInstance, ephemeralIpPortId);
     }
     
     @Test
     void testChoosePersistentClientOperationService() throws NacosException {
-        clientOperationServiceProxy.registerInstance(service, persistentInstance, persistentIpPortId);
-        verify(persistentClientOperationServiceImpl).registerInstance(service, persistentInstance, persistentIpPortId);
-        verify(ephemeralClientOperationServiceImpl, never()).registerInstance(service, persistentInstance, persistentIpPortId);
+        clientOperationServiceProxy.registerInstance(service, persistentInstance,
+            persistentIpPortId);
+        verify(persistentClientOperationServiceImpl).registerInstance(service, persistentInstance,
+            persistentIpPortId);
+        verify(ephemeralClientOperationServiceImpl, never()).registerInstance(service,
+            persistentInstance, persistentIpPortId);
         ServiceManager.getInstance().getSingleton(service);
         // Test deregister.
-        clientOperationServiceProxy.deregisterInstance(service, persistentInstance, persistentIpPortId);
-        verify(persistentClientOperationServiceImpl).deregisterInstance(service, persistentInstance, persistentIpPortId);
-        verify(ephemeralClientOperationServiceImpl, never()).deregisterInstance(service, persistentInstance, persistentIpPortId);
+        clientOperationServiceProxy.deregisterInstance(service, persistentInstance,
+            persistentIpPortId);
+        verify(persistentClientOperationServiceImpl).deregisterInstance(service, persistentInstance,
+            persistentIpPortId);
+        verify(ephemeralClientOperationServiceImpl, never()).deregisterInstance(service,
+            persistentInstance, persistentIpPortId);
+    }
+    
+    @Test
+    void testBatchRegisterEphemeralInstance() {
+        clientOperationServiceProxy.batchRegisterInstance(service,
+            Collections.singletonList(ephemeralInstance), ephemeralIpPortId);
+        
+        verify(ephemeralClientOperationServiceImpl).batchRegisterInstance(service,
+            Collections.singletonList(ephemeralInstance), ephemeralIpPortId);
+        verify(persistentClientOperationServiceImpl, never()).batchRegisterInstance(service,
+            Collections.singletonList(ephemeralInstance), ephemeralIpPortId);
+    }
+    
+    @Test
+    void testBatchRegisterPersistentInstance() {
+        clientOperationServiceProxy.batchRegisterInstance(service,
+            Collections.singletonList(persistentInstance), persistentIpPortId);
+        
+        verify(persistentClientOperationServiceImpl).batchRegisterInstance(service,
+            Collections.singletonList(persistentInstance), persistentIpPortId);
+        verify(ephemeralClientOperationServiceImpl, never()).batchRegisterInstance(service,
+            Collections.singletonList(persistentInstance), persistentIpPortId);
     }
     
     @Test
     void testSubscribeService() {
         clientOperationServiceProxy.subscribeService(service, subscriber, ephemeralIpPortId);
-        verify(ephemeralClientOperationServiceImpl).subscribeService(service, subscriber, ephemeralIpPortId);
-        verify(persistentClientOperationServiceImpl, never()).subscribeService(service, subscriber, ephemeralIpPortId);
+        verify(ephemeralClientOperationServiceImpl).subscribeService(service, subscriber,
+            ephemeralIpPortId);
+        verify(persistentClientOperationServiceImpl, never()).subscribeService(service, subscriber,
+            ephemeralIpPortId);
     }
     
     @Test
     void testUnsubscribeService() {
         clientOperationServiceProxy.unsubscribeService(service, subscriber, ephemeralIpPortId);
-        verify(ephemeralClientOperationServiceImpl).unsubscribeService(service, subscriber, ephemeralIpPortId);
-        verify(persistentClientOperationServiceImpl, never()).unsubscribeService(service, subscriber, ephemeralIpPortId);
+        verify(ephemeralClientOperationServiceImpl).unsubscribeService(service, subscriber,
+            ephemeralIpPortId);
+        verify(persistentClientOperationServiceImpl, never()).unsubscribeService(service,
+            subscriber, ephemeralIpPortId);
     }
 }

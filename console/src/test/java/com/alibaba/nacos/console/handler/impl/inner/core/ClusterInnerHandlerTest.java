@@ -63,7 +63,8 @@ class ClusterInnerHandlerTest {
         Collection<Member> mockList = new LinkedList<>();
         mockList.add(new Member());
         when(memberManager.allMembers()).thenReturn(mockList);
-        Collection<? extends NacosMember> actual = clusterInnerHandler.getNodeList(StringUtils.EMPTY);
+        Collection<? extends NacosMember> actual =
+            clusterInnerHandler.getNodeList(StringUtils.EMPTY);
         assertEquals(mockList, actual);
     }
 }

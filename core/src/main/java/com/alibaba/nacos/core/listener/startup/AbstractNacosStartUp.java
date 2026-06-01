@@ -53,7 +53,7 @@ public abstract class AbstractNacosStartUp implements NacosStartUp {
         starting = true;
         startTimestamp = System.currentTimeMillis();
         this.startLoggingScheduledExecutor = ExecutorFactory.newSingleScheduledExecutorService(
-                new NameThreadFactory(String.format("com.alibaba.nacos.%s.nacos-starting", phase)));
+            new NameThreadFactory(String.format("com.alibaba.nacos.%s.nacos-starting", phase)));
     }
     
     @Override

@@ -109,8 +109,10 @@ public class NacosNamingService implements NamingService {
     
     private void init(Properties properties) throws NacosException {
         PreInitUtils.asyncPreLoadCostComponent();
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        NAMING_LOGGER.info(ClientBasicParamUtil.getInputParameters(nacosClientProperties.asProperties()));
+        final NacosClientProperties nacosClientProperties =
+            NacosClientProperties.PROTOTYPE.derive(properties);
+        NAMING_LOGGER.info(
+            ClientBasicParamUtil.getInputParameters(nacosClientProperties.asProperties()));
         ValidatorUtils.checkInitParam(nacosClientProperties);
         this.namespace = InitUtils.initNamespaceForNaming(nacosClientProperties);
         InitUtils.initSerialization();
@@ -121,18 +123,22 @@ public class NacosNamingService implements NamingService {
         this.changeNotifier = new InstancesChangeNotifier(this.notifierEventScope);
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(changeNotifier);
-        this.serviceInfoHolder = new ServiceInfoHolder(namespace, this.notifierEventScope, nacosClientProperties);
+        this.serviceInfoHolder =
+            new ServiceInfoHolder(namespace, this.notifierEventScope, nacosClientProperties);
         
         NotifyCenter.registerToPublisher(NamingFuzzyWatchNotifyEvent.class, 16384);
-        this.namingFuzzyWatchServiceListHolder = new NamingFuzzyWatchServiceListHolder(this.notifierEventScope);
+        this.namingFuzzyWatchServiceListHolder =
+            new NamingFuzzyWatchServiceListHolder(this.notifierEventScope);
         
-        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, nacosClientProperties,
-                changeNotifier, namingFuzzyWatchServiceListHolder);
+        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder,
+            nacosClientProperties,
+            changeNotifier, namingFuzzyWatchServiceListHolder);
     }
     
     @Deprecated
     private void initLogName(NacosClientProperties properties) {
-        logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME, DEFAULT_NAMING_LOG_FILE_PATH);
+        logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME,
+            DEFAULT_NAMING_LOG_FILE_PATH);
     }
     
     @Override
@@ -141,18 +147,21 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public void registerInstance(String serviceName, String groupName, String ip, int port) throws NacosException {
+    public void registerInstance(String serviceName, String groupName, String ip, int port)
+        throws NacosException {
         registerInstance(serviceName, groupName, ip, port, Constants.DEFAULT_CLUSTER_NAME);
     }
     
     @Override
-    public void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException {
+    public void registerInstance(String serviceName, String ip, int port, String clusterName)
+        throws NacosException {
         registerInstance(serviceName, Constants.DEFAULT_GROUP, ip, port, clusterName);
     }
     
     @Override
-    public void registerInstance(String serviceName, String groupName, String ip, int port, String clusterName)
-            throws NacosException {
+    public void registerInstance(String serviceName, String groupName, String ip, int port,
+        String clusterName)
+        throws NacosException {
         Instance instance = new Instance();
         instance.setIp(ip);
         instance.setPort(port);
@@ -167,23 +176,26 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+    public void registerInstance(String serviceName, String groupName, Instance instance)
+        throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
         checkAndStripGroupNamePrefix(instance, groupName);
         clientProxy.registerService(serviceName, groupName, instance);
     }
     
     @Override
-    public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
-            throws NacosException {
+    public void batchRegisterInstance(String serviceName, String groupName,
+        List<Instance> instances)
+        throws NacosException {
         NamingUtils.batchCheckInstanceIsLegal(instances);
         batchCheckAndStripGroupNamePrefix(instances, groupName);
         clientProxy.batchRegisterService(serviceName, groupName, instances);
     }
     
     @Override
-    public void batchDeregisterInstance(String serviceName, String groupName, List<Instance> instances)
-            throws NacosException {
+    public void batchDeregisterInstance(String serviceName, String groupName,
+        List<Instance> instances)
+        throws NacosException {
         NamingUtils.batchCheckInstanceIsLegal(instances);
         batchCheckAndStripGroupNamePrefix(instances, groupName);
         clientProxy.batchDeregisterService(serviceName, groupName, instances);
@@ -195,18 +207,21 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public void deregisterInstance(String serviceName, String groupName, String ip, int port) throws NacosException {
+    public void deregisterInstance(String serviceName, String groupName, String ip, int port)
+        throws NacosException {
         deregisterInstance(serviceName, groupName, ip, port, Constants.DEFAULT_CLUSTER_NAME);
     }
     
     @Override
-    public void deregisterInstance(String serviceName, String ip, int port, String clusterName) throws NacosException {
+    public void deregisterInstance(String serviceName, String ip, int port, String clusterName)
+        throws NacosException {
         deregisterInstance(serviceName, Constants.DEFAULT_GROUP, ip, port, clusterName);
     }
     
     @Override
-    public void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName)
-            throws NacosException {
+    public void deregisterInstance(String serviceName, String groupName, String ip, int port,
+        String clusterName)
+        throws NacosException {
         Instance instance = new Instance();
         instance.setIp(ip);
         instance.setPort(port);
@@ -220,7 +235,8 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+    public void deregisterInstance(String serviceName, String groupName, Instance instance)
+        throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
         checkAndStripGroupNamePrefix(instance, groupName);
         clientProxy.deregisterService(serviceName, groupName, instance);
@@ -232,41 +248,47 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, String groupName) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, String groupName)
+        throws NacosException {
         return getAllInstances(serviceName, groupName, new ArrayList<>());
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, boolean subscribe) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, boolean subscribe)
+        throws NacosException {
         return getAllInstances(serviceName, new ArrayList<>(), subscribe);
     }
     
     @Override
     public List<Instance> getAllInstances(String serviceName, String groupName, boolean subscribe)
-            throws NacosException {
+        throws NacosException {
         return getAllInstances(serviceName, groupName, new ArrayList<>(), subscribe);
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters)
+        throws NacosException {
         return getAllInstances(serviceName, clusters, true);
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters)
-            throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, String groupName,
+        List<String> clusters)
+        throws NacosException {
         return getAllInstances(serviceName, groupName, clusters, true);
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe)
-            throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters,
+        boolean subscribe)
+        throws NacosException {
         return getAllInstances(serviceName, Constants.DEFAULT_GROUP, clusters, subscribe);
     }
     
     @Override
-    public List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters,
-            boolean subscribe) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, String groupName,
+        List<String> clusters,
+        boolean subscribe) throws NacosException {
         List<Instance> list;
         ServiceInfo serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
@@ -276,48 +298,55 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException {
+    public List<Instance> selectInstances(String serviceName, boolean healthy)
+        throws NacosException {
         return selectInstances(serviceName, new ArrayList<>(), healthy);
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, String groupName, boolean healthy) throws NacosException {
+    public List<Instance> selectInstances(String serviceName, String groupName, boolean healthy)
+        throws NacosException {
         return selectInstances(serviceName, groupName, healthy, true);
     }
     
     @Override
     public List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe)
-            throws NacosException {
+        throws NacosException {
         return selectInstances(serviceName, new ArrayList<>(), healthy, subscribe);
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, String groupName, boolean healthy, boolean subscribe)
-            throws NacosException {
+    public List<Instance> selectInstances(String serviceName, String groupName, boolean healthy,
+        boolean subscribe)
+        throws NacosException {
         return selectInstances(serviceName, groupName, new ArrayList<>(), healthy, subscribe);
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy)
-            throws NacosException {
+    public List<Instance> selectInstances(String serviceName, List<String> clusters,
+        boolean healthy)
+        throws NacosException {
         return selectInstances(serviceName, clusters, healthy, true);
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy)
-            throws NacosException {
+    public List<Instance> selectInstances(String serviceName, String groupName,
+        List<String> clusters, boolean healthy)
+        throws NacosException {
         return selectInstances(serviceName, groupName, clusters, healthy, true);
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy, boolean subscribe)
-            throws NacosException {
+    public List<Instance> selectInstances(String serviceName, List<String> clusters,
+        boolean healthy, boolean subscribe)
+        throws NacosException {
         return selectInstances(serviceName, Constants.DEFAULT_GROUP, clusters, healthy, subscribe);
     }
     
     @Override
-    public List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy,
-            boolean subscribe) throws NacosException {
+    public List<Instance> selectInstances(String serviceName, String groupName,
+        List<String> clusters, boolean healthy,
+        boolean subscribe) throws NacosException {
         ServiceInfo serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
         return selectInstances(serviceInfo, healthy);
     }
@@ -331,7 +360,8 @@ public class NacosNamingService implements NamingService {
         Iterator<Instance> iterator = list.iterator();
         while (iterator.hasNext()) {
             Instance instance = iterator.next();
-            if (healthy != instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
+            if (healthy != instance.isHealthy() || !instance.isEnabled()
+                || instance.getWeight() <= 0) {
                 iterator.remove();
             }
         }
@@ -339,29 +369,34 @@ public class NacosNamingService implements NamingService {
         return list;
     }
     
-    private ServiceInfo getServiceInfo(String serviceName, String groupName, List<String> clusters, boolean subscribe)
-            throws NacosException {
+    private ServiceInfo getServiceInfo(String serviceName, String groupName, List<String> clusters,
+        boolean subscribe)
+        throws NacosException {
         ServiceInfo serviceInfo;
         NamingSelector clusterSelector = NamingSelectorFactory.newClusterSelector(clusters);
         if (serviceInfoHolder.isFailoverSwitch()) {
             serviceInfo = getServiceInfoByFailover(serviceName, groupName, clusterSelector);
             if (serviceInfo != null && !serviceInfo.getHosts().isEmpty()) {
-                NAMING_LOGGER.debug("getServiceInfo from failover,serviceName: {}  data:{}", serviceName,
-                        JacksonUtils.toJson(serviceInfo.getHosts()));
+                NAMING_LOGGER.debug("getServiceInfo from failover,serviceName: {}  data:{}",
+                    serviceName,
+                    JacksonUtils.toJson(serviceInfo.getHosts()));
                 return serviceInfo;
             }
         }
-        serviceInfo = getServiceInfoBySubscribe(serviceName, groupName, clusters, clusterSelector, subscribe);
+        serviceInfo = getServiceInfoBySubscribe(serviceName, groupName, clusters, clusterSelector,
+            subscribe);
         return serviceInfo;
     }
     
-    private ServiceInfo getServiceInfoByFailover(String serviceName, String groupName, NamingSelector clusterSelector) {
+    private ServiceInfo getServiceInfoByFailover(String serviceName, String groupName,
+        NamingSelector clusterSelector) {
         ServiceInfo result = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName);
         return doSelectInstance(result, clusterSelector);
     }
     
-    private ServiceInfo getServiceInfoBySubscribe(String serviceName, String groupName, List<String> clusters,
-            NamingSelector selector, boolean subscribe) throws NacosException {
+    private ServiceInfo getServiceInfoBySubscribe(String serviceName, String groupName,
+        List<String> clusters,
+        NamingSelector selector, boolean subscribe) throws NacosException {
         ServiceInfo serviceInfo;
         if (subscribe) {
             serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName);
@@ -369,13 +404,15 @@ public class NacosNamingService implements NamingService {
             serviceInfo = doSelectInstance(serviceInfo, selector);
         } else {
             String clusterString = NamingSelectorFactory.getUniqueClusterString(clusters);
-            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
+            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString,
+                false);
         }
         return serviceInfo;
     }
     
-    private ServiceInfo tryToSubscribe(String serviceName, String groupName, ServiceInfo cachedServiceInfo)
-            throws NacosException {
+    private ServiceInfo tryToSubscribe(String serviceName, String groupName,
+        ServiceInfo cachedServiceInfo)
+        throws NacosException {
         // not found in cache, service never subscribed.
         if (null == cachedServiceInfo) {
             return clientProxy.subscribe(serviceName, groupName, StringUtils.EMPTY);
@@ -389,7 +426,8 @@ public class NacosNamingService implements NamingService {
         try {
             result = clientProxy.subscribe(serviceName, groupName, StringUtils.EMPTY);
         } catch (NacosException e) {
-            NAMING_LOGGER.warn("Subscribe from Server failed, will use local cache. fail message: ", e);
+            NAMING_LOGGER.warn("Subscribe from Server failed, will use local cache. fail message: ",
+                e);
         }
         return result;
     }
@@ -410,41 +448,48 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, String groupName) throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, String groupName)
+        throws NacosException {
         return selectOneHealthyInstance(serviceName, groupName, true);
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, boolean subscribe) throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, boolean subscribe)
+        throws NacosException {
         return selectOneHealthyInstance(serviceName, new ArrayList<>(), subscribe);
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, String groupName, boolean subscribe)
-            throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, String groupName,
+        boolean subscribe)
+        throws NacosException {
         return selectOneHealthyInstance(serviceName, groupName, new ArrayList<>(), subscribe);
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters)
+        throws NacosException {
         return selectOneHealthyInstance(serviceName, clusters, true);
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters)
-            throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, String groupName,
+        List<String> clusters)
+        throws NacosException {
         return selectOneHealthyInstance(serviceName, groupName, clusters, true);
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe)
-            throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters,
+        boolean subscribe)
+        throws NacosException {
         return selectOneHealthyInstance(serviceName, Constants.DEFAULT_GROUP, clusters, subscribe);
     }
     
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters,
-            boolean subscribe) throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, String groupName,
+        List<String> clusters,
+        boolean subscribe) throws NacosException {
         ServiceInfo serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
         return Balancer.RandomByWeight.selectHost(serviceInfo);
     }
@@ -455,39 +500,47 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public void subscribe(String serviceName, String groupName, EventListener listener) throws NacosException {
+    public void subscribe(String serviceName, String groupName, EventListener listener)
+        throws NacosException {
         subscribe(serviceName, groupName, new ArrayList<>(), listener);
     }
     
     @Override
-    public void subscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException {
+    public void subscribe(String serviceName, List<String> clusters, EventListener listener)
+        throws NacosException {
         subscribe(serviceName, Constants.DEFAULT_GROUP, clusters, listener);
     }
     
     @Override
-    public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
-            throws NacosException {
+    public void subscribe(String serviceName, String groupName, List<String> clusters,
+        EventListener listener)
+        throws NacosException {
         NamingSelector clusterSelector = NamingSelectorFactory.newClusterSelector(clusters);
-        doSubscribe(serviceName, groupName, getUniqueClusterString(clusters), clusterSelector, listener);
+        doSubscribe(serviceName, groupName, getUniqueClusterString(clusters), clusterSelector,
+            listener);
     }
     
     @Override
-    public void subscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException {
+    public void subscribe(String serviceName, NamingSelector selector, EventListener listener)
+        throws NacosException {
         subscribe(serviceName, Constants.DEFAULT_GROUP, selector, listener);
     }
     
     @Override
-    public void subscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
-            throws NacosException {
+    public void subscribe(String serviceName, String groupName, NamingSelector selector,
+        EventListener listener)
+        throws NacosException {
         doSubscribe(serviceName, groupName, Constants.NULL, selector, listener);
     }
     
-    private void doSubscribe(String serviceName, String groupName, String clusters, NamingSelector selector,
-            EventListener listener) throws NacosException {
+    private void doSubscribe(String serviceName, String groupName, String clusters,
+        NamingSelector selector,
+        EventListener listener) throws NacosException {
         if (selector == null || listener == null) {
             return;
         }
-        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(serviceName, groupName, clusters, selector, listener);
+        NamingSelectorWrapper wrapper =
+            new NamingSelectorWrapper(serviceName, groupName, clusters, selector, listener);
         changeNotifier.registerListener(groupName, serviceName, wrapper);
         notifyIfSubscribed(serviceName, groupName, wrapper);
         clientProxy.subscribe(serviceName, groupName, Constants.NULL);
@@ -499,35 +552,41 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public void unsubscribe(String serviceName, String groupName, EventListener listener) throws NacosException {
+    public void unsubscribe(String serviceName, String groupName, EventListener listener)
+        throws NacosException {
         unsubscribe(serviceName, groupName, new ArrayList<>(), listener);
     }
     
     @Override
-    public void unsubscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException {
+    public void unsubscribe(String serviceName, List<String> clusters, EventListener listener)
+        throws NacosException {
         unsubscribe(serviceName, Constants.DEFAULT_GROUP, clusters, listener);
     }
     
     @Override
-    public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
-            throws NacosException {
+    public void unsubscribe(String serviceName, String groupName, List<String> clusters,
+        EventListener listener)
+        throws NacosException {
         NamingSelector clusterSelector = NamingSelectorFactory.newClusterSelector(clusters);
         unsubscribe(serviceName, groupName, clusterSelector, listener);
     }
     
     @Override
-    public void unsubscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException {
+    public void unsubscribe(String serviceName, NamingSelector selector, EventListener listener)
+        throws NacosException {
         unsubscribe(serviceName, Constants.DEFAULT_GROUP, selector, listener);
     }
     
     @Override
-    public void unsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
-            throws NacosException {
+    public void unsubscribe(String serviceName, String groupName, NamingSelector selector,
+        EventListener listener)
+        throws NacosException {
         doUnsubscribe(serviceName, groupName, selector, listener);
     }
     
-    private void doUnsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
-            throws NacosException {
+    private void doUnsubscribe(String serviceName, String groupName, NamingSelector selector,
+        EventListener listener)
+        throws NacosException {
         if (selector == null || listener == null) {
             return;
         }
@@ -539,59 +598,71 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public void fuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher listener) throws NacosException {
+    public void fuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher listener)
+        throws NacosException {
         doFuzzyWatch(ANY_PATTERN, fixedGroupName, listener);
     }
     
     @Override
-    public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, FuzzyWatchEventWatcher listener)
-            throws NacosException {
+    public void fuzzyWatch(String serviceNamePattern, String groupNamePattern,
+        FuzzyWatchEventWatcher listener)
+        throws NacosException {
         doFuzzyWatch(serviceNamePattern, groupNamePattern, listener);
     }
     
     @Override
-    public Future<ListView<String>> fuzzyWatchWithServiceKeys(String fixedGroupName, FuzzyWatchEventWatcher listener)
-            throws NacosException {
+    public Future<ListView<String>> fuzzyWatchWithServiceKeys(String fixedGroupName,
+        FuzzyWatchEventWatcher listener)
+        throws NacosException {
         return doFuzzyWatch(ANY_PATTERN, fixedGroupName, listener);
     }
     
     @Override
-    public Future<ListView<String>> fuzzyWatchWithServiceKeys(String serviceNamePattern, String groupNamePattern,
-            FuzzyWatchEventWatcher listener) throws NacosException {
+    public Future<ListView<String>> fuzzyWatchWithServiceKeys(String serviceNamePattern,
+        String groupNamePattern,
+        FuzzyWatchEventWatcher listener) throws NacosException {
         return doFuzzyWatch(serviceNamePattern, groupNamePattern, listener);
     }
     
-    private Future<ListView<String>> doFuzzyWatch(String serviceNamePattern, String groupNamePattern,
-            FuzzyWatchEventWatcher watcher) {
+    private Future<ListView<String>> doFuzzyWatch(String serviceNamePattern,
+        String groupNamePattern,
+        FuzzyWatchEventWatcher watcher) {
         if (null == watcher) {
             return null;
         }
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(serviceNamePattern, groupNamePattern, namespace);
-        NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
+        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,
+            groupNamePattern, namespace);
+        NamingFuzzyWatchContext namingFuzzyWatchContext =
+            namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
                 groupKeyPattern, watcher);
         return namingFuzzyWatchContext.createNewFuture();
     }
     
     @Override
-    public void cancelFuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher listener) throws NacosException {
+    public void cancelFuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher listener)
+        throws NacosException {
         doCancelFuzzyWatch(ANY_PATTERN, fixedGroupName, listener);
     }
     
     @Override
-    public void cancelFuzzyWatch(String serviceNamePattern, String fixedGroupName, FuzzyWatchEventWatcher listener)
-            throws NacosException {
+    public void cancelFuzzyWatch(String serviceNamePattern, String fixedGroupName,
+        FuzzyWatchEventWatcher listener)
+        throws NacosException {
         doCancelFuzzyWatch(serviceNamePattern, fixedGroupName, listener);
     }
     
-    private void doCancelFuzzyWatch(String serviceNamePattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
-            throws NacosException {
+    private void doCancelFuzzyWatch(String serviceNamePattern, String groupNamePattern,
+        FuzzyWatchEventWatcher watcher)
+        throws NacosException {
         if (null == watcher) {
             return;
         }
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(serviceNamePattern, groupNamePattern, namespace);
+        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,
+            groupNamePattern, namespace);
         
-        NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(
+        NamingFuzzyWatchContext namingFuzzyWatchContext =
+            namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(
                 groupKeyPattern);
         if (namingFuzzyWatchContext != null) {
             namingFuzzyWatchContext.removeWatcher(watcher);
@@ -604,19 +675,21 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName) throws NacosException {
+    public ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName)
+        throws NacosException {
         return getServicesOfServer(pageNo, pageSize, groupName, null);
     }
     
     @Override
     public ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector)
-            throws NacosException {
+        throws NacosException {
         return getServicesOfServer(pageNo, pageSize, Constants.DEFAULT_GROUP, selector);
     }
     
     @Override
-    public ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName, AbstractSelector selector)
-            throws NacosException {
+    public ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName,
+        AbstractSelector selector)
+        throws NacosException {
         return clientProxy.getServiceList(pageNo, pageSize, groupName, selector);
     }
     
@@ -638,31 +711,35 @@ public class NacosNamingService implements NamingService {
         NotifyCenter.deregisterSubscriber(changeNotifier);
     }
     
-    private void batchCheckAndStripGroupNamePrefix(List<Instance> instances, String groupName) throws NacosException {
+    private void batchCheckAndStripGroupNamePrefix(List<Instance> instances, String groupName)
+        throws NacosException {
         for (Instance instance : instances) {
             checkAndStripGroupNamePrefix(instance, groupName);
         }
     }
     
-    private void checkAndStripGroupNamePrefix(Instance instance, String groupName) throws NacosException {
+    private void checkAndStripGroupNamePrefix(Instance instance, String groupName)
+        throws NacosException {
         String serviceName = instance.getServiceName();
         if (NamingUtils.isServiceNameCompatibilityMode(serviceName)) {
             String groupNameOfInstance = NamingUtils.getGroupName(serviceName);
             if (!groupName.equals(groupNameOfInstance)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, String.format(
-                        "wrong group name prefix of instance service name! it should be: %s, Instance: %s", groupName,
-                        instance));
+                    "wrong group name prefix of instance service name! it should be: %s, Instance: %s",
+                    groupName,
+                    instance));
             }
             instance.setServiceName(NamingUtils.getServiceName(serviceName));
         }
     }
     
-    private void notifyIfSubscribed(String serviceName, String groupName, NamingSelectorWrapper wrapper)
-            throws NacosException {
+    private void notifyIfSubscribed(String serviceName, String groupName,
+        NamingSelectorWrapper wrapper)
+        throws NacosException {
         if (clientProxy.isSubscribed(serviceName, groupName, StringUtils.EMPTY)) {
             NAMING_LOGGER.warn(
-                    "Duplicate subscribe for groupName: {}, serviceName: {}; directly use current cached to notify.",
-                    groupName, serviceName);
+                "Duplicate subscribe for groupName: {}, serviceName: {}; directly use current cached to notify.",
+                groupName, serviceName);
             ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName);
             InstancesChangeEvent event = transferToEvent(serviceInfo);
             wrapper.notifyListener(event);
@@ -675,7 +752,8 @@ public class NacosNamingService implements NamingService {
         }
         InstancesDiff diff = new InstancesDiff();
         diff.setAddedInstances(serviceInfo.getHosts());
-        return new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
-                serviceInfo.getClusters(), serviceInfo.getHosts(), diff);
+        return new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(),
+            serviceInfo.getGroupName(),
+            serviceInfo.getClusters(), serviceInfo.getHosts(), diff);
     }
 }

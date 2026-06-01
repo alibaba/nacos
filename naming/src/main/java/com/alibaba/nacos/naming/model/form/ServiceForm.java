@@ -56,7 +56,7 @@ public class ServiceForm implements NacosForm {
         fillDefaultValue();
         if (StringUtils.isBlank(serviceName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'serviceName' type String is not present");
+                "Required parameter 'serviceName' type String is not present");
         }
     }
     
@@ -149,21 +149,28 @@ public class ServiceForm implements NacosForm {
             return false;
         }
         ServiceForm that = (ServiceForm) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(serviceName, that.serviceName) && Objects
-                .equals(groupName, that.groupName) && Objects.equals(ephemeral, that.ephemeral) && Objects
-                .equals(protectThreshold, that.protectThreshold) && Objects.equals(metadata, that.metadata) && Objects
+        return Objects.equals(namespaceId, that.namespaceId)
+            && Objects.equals(serviceName, that.serviceName) && Objects
+                .equals(groupName, that.groupName)
+            && Objects.equals(ephemeral, that.ephemeral) && Objects
+                .equals(protectThreshold, that.protectThreshold)
+            && Objects.equals(metadata, that.metadata) && Objects
                 .equals(selector, that.selector);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceId, serviceName, groupName, ephemeral, protectThreshold, metadata, selector);
+        return Objects.hash(namespaceId, serviceName, groupName, ephemeral, protectThreshold,
+            metadata, selector);
     }
     
     @Override
     public String toString() {
-        return "ServiceForm{" + "namespaceId='" + namespaceId + '\'' + ", serviceName='" + serviceName + '\''
-                + ", groupName='" + groupName + '\'' + ", ephemeral=" + ephemeral + ", protectThreshold="
-                + protectThreshold + ", metadata='" + metadata + '\'' + ", selector='" + selector + '\'' + '}';
+        return "ServiceForm{" + "namespaceId='" + namespaceId + '\'' + ", serviceName='"
+            + serviceName + '\''
+            + ", groupName='" + groupName + '\'' + ", ephemeral=" + ephemeral
+            + ", protectThreshold="
+            + protectThreshold + ", metadata='" + metadata + '\'' + ", selector='" + selector + '\''
+            + '}';
     }
 }

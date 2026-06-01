@@ -40,142 +40,162 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService implements A2aMaintainerService {
+final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
+    implements A2aMaintainerService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(A2aMaintainerServiceImpl.class);
-
+    
     private static final String SEARCH_BLUR = "blur";
-
+    
     private static final String SEARCH_ACCURATE = "accurate";
-
+    
     A2aMaintainerServiceImpl(AiMaintainerHttpContext context) {
         super(context);
     }
-
+    
     @Override
     public boolean registerAgent(AgentCard agentCard, String namespaceId, String registrationType)
-            throws NacosException {
+        throws NacosException {
         try {
             return doRegisterAgent(agentCard, namespaceId, registrationType);
         } catch (NacosException e) {
             if (shouldRetryWithLegacyFormat(e)) {
-                LOGGER.info("Retry register agent {} with legacy fields for compatibility.", agentCard.getName());
-                return doRegisterAgent(buildLegacyCompatibleAgentCard(agentCard), namespaceId, registrationType);
+                LOGGER.info("Retry register agent {} with legacy fields for compatibility.",
+                    agentCard.getName());
+                return doRegisterAgent(buildLegacyCompatibleAgentCard(agentCard), namespaceId,
+                    registrationType);
             }
             throw e;
         }
     }
     
-    private boolean doRegisterAgent(AgentCard agentCard, String namespaceId, String registrationType)
-            throws NacosException {
+    private boolean doRegisterAgent(AgentCard agentCard, String namespaceId,
+        String registrationType)
+        throws NacosException {
         Map<String, String> params = new HashMap<>(4);
         params.put("agentCard", JacksonUtils.toJson(agentCard));
         params.put("namespaceId", namespaceId);
         params.put("agentName", agentCard.getName());
         params.put("registrationType", registrationType);
-        HttpRequest request = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentCard.getName()))
-                .setHttpMethod(HttpMethod.POST).setParamValue(params).setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH)
+        HttpRequest request =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, agentCard.getName()))
+                .setHttpMethod(HttpMethod.POST).setParamValue(params)
+                .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH)
                 .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-
+    
     @Override
-    public AgentCardDetailInfo getAgentCard(String agentName, String namespaceId, String registrationType,
-            String version) throws NacosException {
+    public AgentCardDetailInfo getAgentCard(String agentName, String namespaceId,
+        String registrationType,
+        String version) throws NacosException {
         Map<String, String> params = new HashMap<>(4);
         params.put("agentName", agentName);
         params.put("namespaceId", namespaceId);
         params.put("registrationType", registrationType);
         params.put("version", version);
         HttpRequest request = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentName))
-                .setHttpMethod(HttpMethod.GET).setParamValue(params).setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH)
-                .build();
+            .setHttpMethod(HttpMethod.GET).setParamValue(params)
+            .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH)
+            .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
         Result<AgentCardDetailInfo> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<AgentCardDetailInfo>>() {
-                });
+            new TypeReference<Result<AgentCardDetailInfo>>() {
+            });
         return result.getData();
     }
-
+    
     @Override
     public boolean updateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest,
-            String registrationType) throws NacosException {
+        String registrationType) throws NacosException {
         try {
             return doUpdateAgentCard(agentCard, namespaceId, setAsLatest, registrationType);
         } catch (NacosException e) {
             if (shouldRetryWithLegacyFormat(e)) {
-                LOGGER.info("Retry update agent card {} with legacy fields for compatibility.", agentCard.getName());
-                return doUpdateAgentCard(buildLegacyCompatibleAgentCard(agentCard), namespaceId, setAsLatest,
-                        registrationType);
+                LOGGER.info("Retry update agent card {} with legacy fields for compatibility.",
+                    agentCard.getName());
+                return doUpdateAgentCard(buildLegacyCompatibleAgentCard(agentCard), namespaceId,
+                    setAsLatest,
+                    registrationType);
             }
             throw e;
         }
     }
     
     private boolean doUpdateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest,
-            String registrationType) throws NacosException {
+        String registrationType) throws NacosException {
         Map<String, String> params = new HashMap<>(5);
         params.put("agentCard", JacksonUtils.toJson(agentCard));
         params.put("namespaceId", namespaceId);
         params.put("agentName", agentCard.getName());
         params.put("setAsLatest", String.valueOf(setAsLatest));
         params.put("registrationType", registrationType);
-        HttpRequest request = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentCard.getName()))
-                .setHttpMethod(HttpMethod.PUT).setParamValue(params).setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH)
+        HttpRequest request =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, agentCard.getName()))
+                .setHttpMethod(HttpMethod.PUT).setParamValue(params)
+                .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH)
                 .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-
+    
     @Override
-    public boolean deleteAgent(String agentName, String namespaceId, String version) throws NacosException {
+    public boolean deleteAgent(String agentName, String namespaceId, String version)
+        throws NacosException {
         Map<String, String> params = new HashMap<>(4);
         params.put("agentName", agentName);
         params.put("namespaceId", namespaceId);
         params.put("version", version);
         HttpRequest request = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentName))
-                .setHttpMethod(HttpMethod.DELETE).setParamValue(params)
-                .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
+            .setHttpMethod(HttpMethod.DELETE).setParamValue(params)
+            .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-
+    
     @Override
-    public List<AgentVersionDetail> listAllVersionOfAgent(String agentName, String namespaceId) throws NacosException {
+    public List<AgentVersionDetail> listAllVersionOfAgent(String agentName, String namespaceId)
+        throws NacosException {
         Map<String, String> params = new HashMap<>(2);
         params.put("agentName", agentName);
         params.put("namespaceId", namespaceId);
         HttpRequest request = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentName))
-                .setHttpMethod(HttpMethod.GET).setParamValue(params)
-                .setPath(Constants.AdminApiPath.AI_AGENT_LIST_VERSION_ADMIN_PATH).build();
+            .setHttpMethod(HttpMethod.GET).setParamValue(params)
+            .setPath(Constants.AdminApiPath.AI_AGENT_LIST_VERSION_ADMIN_PATH).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
         Result<List<AgentVersionDetail>> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<List<AgentVersionDetail>>>() {
-                });
+            new TypeReference<Result<List<AgentVersionDetail>>>() {
+            });
         return result.getData();
     }
-
+    
     @Override
-    public Page<AgentCardVersionInfo> searchAgentCardsByName(String namespaceId, String agentNamePattern, int pageNo,
-            int pageSize) throws NacosException {
+    public Page<AgentCardVersionInfo> searchAgentCardsByName(String namespaceId,
+        String agentNamePattern, int pageNo,
+        int pageSize) throws NacosException {
         return listOrSearchAgentCardsByName(namespaceId, agentNamePattern, pageNo, pageSize, true);
     }
-
+    
     @Override
-    public Page<AgentCardVersionInfo> listAgentCards(String namespaceId, String agentName, int pageNo, int pageSize)
-            throws NacosException {
+    public Page<AgentCardVersionInfo> listAgentCards(String namespaceId, String agentName,
+        int pageNo, int pageSize)
+        throws NacosException {
         return listOrSearchAgentCardsByName(namespaceId, agentName, pageNo, pageSize, false);
     }
-
-    private Page<AgentCardVersionInfo> listOrSearchAgentCardsByName(String namespaceId, String agentName, int pageNo,
-            int pageSize, boolean isBlur) throws NacosException {
+    
+    private Page<AgentCardVersionInfo> listOrSearchAgentCardsByName(String namespaceId,
+        String agentName, int pageNo,
+        int pageSize, boolean isBlur) throws NacosException {
         Map<String, String> params = new HashMap<>(5);
         params.put("agentName", agentName);
         params.put("namespaceId", namespaceId);
@@ -183,12 +203,12 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         HttpRequest request = buildHttpRequestBuilder(buildRequestResource(namespaceId, null))
-                .setHttpMethod(HttpMethod.GET).setParamValue(params)
-                .setPath(Constants.AdminApiPath.AI_AGENT_LIST_ADMIN_PATH).build();
+            .setHttpMethod(HttpMethod.GET).setParamValue(params)
+            .setPath(Constants.AdminApiPath.AI_AGENT_LIST_ADMIN_PATH).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
         Result<Page<AgentCardVersionInfo>> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<Page<AgentCardVersionInfo>>>() {
-                });
+            new TypeReference<Result<Page<AgentCardVersionInfo>>>() {
+            });
         return result.getData();
     }
     
@@ -200,8 +220,9 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         if (StringUtils.isEmpty(errMsg)) {
             return false;
         }
-        return errMsg.contains("agentCard.protocolVersion") || errMsg.contains("agentCard.preferredTransport")
-                || errMsg.contains("agentCard.url");
+        return errMsg.contains("agentCard.protocolVersion")
+            || errMsg.contains("agentCard.preferredTransport")
+            || errMsg.contains("agentCard.url");
     }
     
     private AgentCard buildLegacyCompatibleAgentCard(AgentCard source) {
@@ -214,7 +235,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             result.setProtocolVersion(preferred.getProtocolVersion());
             if (supportedInterfaces.size() > 1) {
                 result.setAdditionalInterfaces(
-                        new ArrayList<>(supportedInterfaces.subList(1, supportedInterfaces.size())));
+                    new ArrayList<>(supportedInterfaces.subList(1, supportedInterfaces.size())));
             }
         }
         return result;

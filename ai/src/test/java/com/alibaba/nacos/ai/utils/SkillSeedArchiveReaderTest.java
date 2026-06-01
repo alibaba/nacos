@@ -38,53 +38,59 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SkillSeedArchiveReaderTest {
-
+    
     @Test
     void shouldBuildStandaloneSkillZipWithTopLevelResources() throws Exception {
-        byte[] archive = buildArchive(new ArchiveEntry("vendor/demo-skill/SKILL.md", buildSkillMarkdown("demo-skill")),
-                new ArchiveEntry("vendor/demo-skill/LICENSE.txt", "license"),
-                new ArchiveEntry("vendor/demo-skill/references/guide.md", "guide"));
-
-        List<SkillSeedArchiveReader.SkillPackage> actual = SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
-
+        byte[] archive = buildArchive(
+            new ArchiveEntry("vendor/demo-skill/SKILL.md", buildSkillMarkdown("demo-skill")),
+            new ArchiveEntry("vendor/demo-skill/LICENSE.txt", "license"),
+            new ArchiveEntry("vendor/demo-skill/references/guide.md", "guide"));
+        
+        List<SkillSeedArchiveReader.SkillPackage> actual =
+            SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        
         assertEquals(1, actual.size());
         assertEquals("demo-skill", actual.get(0).getSkillName());
         assertEquals("vendor", actual.get(0).getFrom());
-
+        
         Skill skill = SkillZipParser.parseSkillFromZip(actual.get(0).getZipBytes(), "public");
         assertEquals("demo-skill", skill.getName());
         assertNotNull(findResource(skill, "", "LICENSE.txt"));
         assertNotNull(findResource(skill, "references", "guide.md"));
     }
-
+    
     @Test
     void shouldSkipDuplicateSkillNames() throws Exception {
         byte[] archive = buildArchive(
-                new ArchiveEntry("source-a/demo/SKILL.md", buildSkillMarkdown("same-skill")),
-                new ArchiveEntry("source-b/demo/SKILL.md", buildSkillMarkdown("same-skill")));
-
-        List<SkillSeedArchiveReader.SkillPackage> actual = SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
-
+            new ArchiveEntry("source-a/demo/SKILL.md", buildSkillMarkdown("same-skill")),
+            new ArchiveEntry("source-b/demo/SKILL.md", buildSkillMarkdown("same-skill")));
+        
+        List<SkillSeedArchiveReader.SkillPackage> actual =
+            SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        
         assertEquals(1, actual.size());
         assertEquals("same-skill", actual.get(0).getSkillName());
     }
-
+    
     @Test
     void shouldParseNestedFromPath() throws Exception {
         byte[] archive = buildArchive(new ArchiveEntry("github.com/nacos/find-skills/SKILL.md",
-                buildSkillMarkdown("find-skills")));
-        List<SkillSeedArchiveReader.SkillPackage> actual = SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
+            buildSkillMarkdown("find-skills")));
+        List<SkillSeedArchiveReader.SkillPackage> actual =
+            SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
         assertEquals(1, actual.size());
         assertEquals("github.com/nacos", actual.get(0).getFrom());
     }
-
+    
     @Test
     void shouldParseAllBundledSkillsFromArchive() throws Exception {
         ClassPathResource resource = new ClassPathResource("bootstrap/skills-data.zip");
-        Assumptions.assumeTrue(resource.exists(), "bootstrap/skills-data.zip is not bundled in this test runtime");
+        Assumptions.assumeTrue(resource.exists(),
+            "bootstrap/skills-data.zip is not bundled in this test runtime");
         try (InputStream inputStream = resource.getInputStream()) {
-            List<SkillSeedArchiveReader.SkillPackage> actual = SkillSeedArchiveReader.read(inputStream);
-
+            List<SkillSeedArchiveReader.SkillPackage> actual =
+                SkillSeedArchiveReader.read(inputStream);
+            
             assertEquals(139, actual.size());
             Set<String> skillNames = new HashSet<>();
             for (SkillSeedArchiveReader.SkillPackage each : actual) {
@@ -113,7 +119,7 @@ class SkillSeedArchiveReaderTest {
             assertFalse(skillNames.contains("find-skills"));
         }
     }
-
+    
     private static SkillResource findResource(Skill skill, String type, String name) {
         if (skill.getResource() == null) {
             return null;
@@ -129,7 +135,7 @@ class SkillSeedArchiveReaderTest {
         }
         return null;
     }
-
+    
     private static byte[] buildArchive(ArchiveEntry... entries) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(out, StandardCharsets.UTF_8)) {
@@ -141,23 +147,23 @@ class SkillSeedArchiveReaderTest {
         }
         return out.toByteArray();
     }
-
+    
     private static String buildSkillMarkdown(String name) {
         return "---\n"
-                + "name: " + name + "\n"
-                + "description: demo\n"
-                + "---\n\n"
-                + "# Demo\n\n"
-                + "## Instructions\n\n"
-                + "demo";
+            + "name: " + name + "\n"
+            + "description: demo\n"
+            + "---\n\n"
+            + "# Demo\n\n"
+            + "## Instructions\n\n"
+            + "demo";
     }
-
+    
     private static final class ArchiveEntry {
-
+        
         private final String path;
-
+        
         private final String content;
-
+        
         private ArchiveEntry(String path, String content) {
             this.path = path;
             this.content = content;

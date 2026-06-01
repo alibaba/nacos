@@ -75,7 +75,8 @@ class AuthAdminFilterTest {
     }
     
     @Test
-    void testIsMatchFilterReturnsTrueForAdminApi() throws NoSuchMethodException, ServletException, IOException {
+    void testIsMatchFilterReturnsTrueForAdminApi()
+        throws NoSuchMethodException, ServletException, IOException {
         when(authConfig.isAuthEnabled()).thenReturn(true);
         when(authConfig.getServerIdentityKey()).thenReturn("1");
         when(authConfig.getServerIdentityValue()).thenReturn("2");
@@ -88,7 +89,8 @@ class AuthAdminFilterTest {
     }
     
     @Test
-    void testIsMatchFilterSkipsNonAdminApi() throws NoSuchMethodException, ServletException, IOException {
+    void testIsMatchFilterSkipsNonAdminApi()
+        throws NoSuchMethodException, ServletException, IOException {
         when(methodsCache.getMethod(request)).thenReturn(getMethodWithSecuredOpenApi());
         
         authAdminFilter.doFilter(request, response, filterChain);
@@ -97,24 +99,28 @@ class AuthAdminFilterTest {
     }
     
     @Test
-    void testDoFilterWhenAuthDisabledPassesThrough() throws NoSuchMethodException, ServletException, IOException {
+    void testDoFilterWhenAuthDisabledPassesThrough()
+        throws NoSuchMethodException, ServletException, IOException {
         when(authConfig.isAuthEnabled()).thenReturn(false);
         when(methodsCache.getMethod(request)).thenReturn(getMethodWithSecuredAdminApi());
         
         authAdminFilter.doFilter(request, response, filterChain);
         
         verify(filterChain).doFilter(request, response);
-        assertEquals(ApiType.ADMIN_API.name(), RequestContextHolder.getContext().getAuthContext().getApiType());
+        assertEquals(ApiType.ADMIN_API.name(),
+            RequestContextHolder.getContext().getAuthContext().getApiType());
     }
     
     @Test
-    void testDoFilterShouldSetApiTypeWhenSkippingNonAdminApi() throws NoSuchMethodException, ServletException, IOException {
+    void testDoFilterShouldSetApiTypeWhenSkippingNonAdminApi()
+        throws NoSuchMethodException, ServletException, IOException {
         when(methodsCache.getMethod(request)).thenReturn(getMethodWithSecuredOpenApi());
         
         authAdminFilter.doFilter(request, response, filterChain);
         
         verify(filterChain).doFilter(request, response);
-        assertEquals(ApiType.OPEN_API.name(), RequestContextHolder.getContext().getAuthContext().getApiType());
+        assertEquals(ApiType.OPEN_API.name(),
+            RequestContextHolder.getContext().getAuthContext().getApiType());
     }
     
     @Secured(apiType = ApiType.ADMIN_API)

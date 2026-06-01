@@ -55,6 +55,20 @@ export const promptApi = {
   }): ApiResult<PromptVersionListResponse> =>
     client.get(`${BASE}/versions`, { params }) as ApiResult<PromptVersionListResponse>,
 
+  /**
+   * Download a specific prompt version as a Markdown document (returned as a Blob).
+   * Caller is responsible for creating an object URL and triggering the browser download.
+   */
+  downloadVersion: (params: {
+    promptKey: string;
+    version: string;
+    namespaceId?: string;
+  }): Promise<Blob> =>
+    client.get(`${BASE}/version/download`, {
+      params,
+      responseType: 'blob',
+    }) as unknown as Promise<Blob>,
+
   // ===== Lifecycle write operations =====
 
   /** Create draft */
@@ -80,6 +94,10 @@ export const promptApi = {
   /** Force publish version (admin) */
   forcePublish: (data: PromptPublishData): ApiResult<boolean> =>
     client.post(`${BASE}/force-publish`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
+
+  /** Re-edit a reviewed version (transitions back to draft) */
+  redraft: (data: { promptKey: string; version: string; namespaceId?: string }): ApiResult<boolean> =>
+    client.post(`${BASE}/redraft`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
 
   /** Online version */
   online: (data: PromptOnlineOfflineData): ApiResult<boolean> =>

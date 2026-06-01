@@ -108,8 +108,9 @@ public class ConnectionMeta {
         return labels.get(VIPSERVER_TAG);
     }
     
-    public ConnectionMeta(String connectionId, String clientIp, String remoteIp, int remotePort, int localPort,
-            String connectType, String version, String appName, Map<String, String> labels) {
+    public ConnectionMeta(String connectionId, String clientIp, String remoteIp, int remotePort,
+        int localPort,
+        String connectType, String version, String appName, Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.connectType = connectType;
@@ -160,16 +161,20 @@ public class ConnectionMeta {
      */
     public Map<String, String> getAppLabels() {
         HashMap<String, String> labelsMap = new HashMap<String, String>(8) {
+            
             {
                 put(Constants.APPNAME, labels.get(Constants.APPNAME));
                 put(Constants.CLIENT_VERSION_KEY, version);
             }
         };
-        return ConnLabelsUtils.mergeMapByOrder(labelsMap, labels.entrySet().stream().filter(Objects::nonNull)
-                .filter(e -> e.getKey().startsWith(Constants.APP_CONN_PREFIX)
+        return ConnLabelsUtils.mergeMapByOrder(labelsMap, labels.entrySet().stream()
+            .filter(Objects::nonNull)
+            .filter(e -> e.getKey().startsWith(Constants.APP_CONN_PREFIX)
                 && e.getKey().length() > Constants.APP_CONN_PREFIX.length()
-                && StringUtils.isNotBlank(e.getValue())).collect(
-                Collectors.toMap(k -> k.getKey().substring(Constants.APP_CONN_PREFIX.length()), Map.Entry::getValue)));
+                && StringUtils.isNotBlank(e.getValue()))
+            .collect(
+                Collectors.toMap(k -> k.getKey().substring(Constants.APP_CONN_PREFIX.length()),
+                    Map.Entry::getValue)));
     }
     
     /**
@@ -379,10 +384,14 @@ public class ConnectionMeta {
     
     @Override
     public String toString() {
-        return "ConnectionMeta{" + "connectType='" + connectType + '\'' + ", clientIp='" + clientIp + '\''
-                + ", remoteIp='" + remoteIp + '\'' + ", remotePort=" + remotePort + ", localPort=" + localPort
-                + ", version='" + version + '\'' + ", connectionId='" + connectionId + '\'' + ", createTime="
-                + createTime + ", lastActiveTime=" + lastActiveTime + ", appName='" + appName + '\'' + ", tenant='"
-                + namespaceId + '\'' + ", labels=" + labels + '}';
+        return "ConnectionMeta{" + "connectType='" + connectType + '\'' + ", clientIp='" + clientIp
+            + '\''
+            + ", remoteIp='" + remoteIp + '\'' + ", remotePort=" + remotePort + ", localPort="
+            + localPort
+            + ", version='" + version + '\'' + ", connectionId='" + connectionId + '\''
+            + ", createTime="
+            + createTime + ", lastActiveTime=" + lastActiveTime + ", appName='" + appName + '\''
+            + ", tenant='"
+            + namespaceId + '\'' + ", labels=" + labels + '}';
     }
 }

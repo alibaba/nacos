@@ -38,10 +38,12 @@ class NacosDeserializationExceptionTest {
     @Test
     void testConstructorWithTargetClass() {
         NacosDeserializationException exception = new NacosDeserializationException(
-                NacosDeserializationExceptionTest.class);
+            NacosDeserializationExceptionTest.class);
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
-        assertEquals(String.format("errCode: 101, errMsg: Nacos deserialize for class [%s] failed.  ",
-                NacosDeserializationExceptionTest.class.getName()), exception.getMessage());
+        assertEquals(
+            String.format("errCode: 101, errMsg: Nacos deserialize for class [%s] failed.  ",
+                NacosDeserializationExceptionTest.class.getName()),
+            exception.getMessage());
         assertEquals(NacosDeserializationExceptionTest.class, exception.getTargetClass());
     }
     
@@ -51,14 +53,16 @@ class NacosDeserializationExceptionTest {
         NacosDeserializationException exception = new NacosDeserializationException(type);
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
         assertEquals(
-                String.format("errCode: 101, errMsg: Nacos deserialize for class [%s] failed.  ", type.getTypeName()),
-                exception.getMessage());
+            String.format("errCode: 101, errMsg: Nacos deserialize for class [%s] failed.  ",
+                type.getTypeName()),
+            exception.getMessage());
         assertNull(exception.getTargetClass());
     }
     
     @Test
     void testConstructorWithCause() {
-        NacosDeserializationException exception = new NacosDeserializationException(new RuntimeException("test"));
+        NacosDeserializationException exception =
+            new NacosDeserializationException(new RuntimeException("test"));
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
         assertEquals("errCode: 101, errMsg: Nacos deserialize failed.  ", exception.getMessage());
         assertNull(exception.getTargetClass());
@@ -67,20 +71,23 @@ class NacosDeserializationExceptionTest {
     @Test
     void testConstructorWithTargetClassAndCause() {
         NacosDeserializationException exception = new NacosDeserializationException(
-                NacosDeserializationExceptionTest.class, new RuntimeException("test"));
+            NacosDeserializationExceptionTest.class, new RuntimeException("test"));
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
-        assertEquals(String.format("errCode: 101, errMsg: Nacos deserialize for class [%s] failed, cause error[%s].  ",
-                NacosDeserializationExceptionTest.class.getName(), "test"), exception.getMessage());
+        assertEquals(String.format(
+            "errCode: 101, errMsg: Nacos deserialize for class [%s] failed, cause error[%s].  ",
+            NacosDeserializationExceptionTest.class.getName(), "test"), exception.getMessage());
         assertEquals(NacosDeserializationExceptionTest.class, exception.getTargetClass());
     }
     
     @Test
     void testConstructorWithTargetTypeAndCause() {
         Type type = SimpleType.constructUnsafe(NacosDeserializationExceptionTest.class);
-        NacosDeserializationException exception = new NacosDeserializationException(type, new RuntimeException("test"));
+        NacosDeserializationException exception =
+            new NacosDeserializationException(type, new RuntimeException("test"));
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
-        assertEquals(String.format("errCode: 101, errMsg: Nacos deserialize for class [%s] failed, cause error[%s].  ",
-                type.getTypeName(), "test"), exception.getMessage());
+        assertEquals(String.format(
+            "errCode: 101, errMsg: Nacos deserialize for class [%s] failed, cause error[%s].  ",
+            type.getTypeName(), "test"), exception.getMessage());
         assertNull(exception.getTargetClass());
     }
 }

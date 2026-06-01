@@ -43,7 +43,8 @@ class ConfigCommonConfigTest {
     void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-        Constructor<ConfigCommonConfig> declaredConstructor = ConfigCommonConfig.class.getDeclaredConstructor();
+        Constructor<ConfigCommonConfig> declaredConstructor =
+            ConfigCommonConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         commonConfig = declaredConstructor.newInstance();
     }
@@ -79,11 +80,30 @@ class ConfigCommonConfigTest {
     }
     
     @Test
+    void testGetPushTimeout() {
+        long timeout = commonConfig.getPushTimeout();
+        assertTrue(timeout > 0);
+    }
+    
+    @Test
+    void testGetMaxPatternCount() {
+        int count = commonConfig.getMaxPatternCount();
+        assertTrue(count > 0);
+    }
+    
+    @Test
+    void testGetMaxMatchedConfigCount() {
+        int count = commonConfig.getMaxMatchedConfigCount();
+        assertTrue(count > 0);
+    }
+    
+    @Test
     void testInitConfigFormEnv() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         environment.setProperty("nacos.config.push.maxRetryTime", "6");
-        Constructor<ConfigCommonConfig> declaredConstructor = ConfigCommonConfig.class.getDeclaredConstructor();
+        Constructor<ConfigCommonConfig> declaredConstructor =
+            ConfigCommonConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         ConfigCommonConfig configCommonConfig = declaredConstructor.newInstance();
         assertEquals(6, configCommonConfig.getMaxPushRetryTimes());

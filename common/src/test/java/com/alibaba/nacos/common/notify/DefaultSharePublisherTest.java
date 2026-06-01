@@ -75,6 +75,7 @@ class DefaultSharePublisherTest {
         defaultSharePublisher.addSubscriber(smartSubscriber1, MockSlowEvent1.class);
         defaultSharePublisher.addSubscriber(smartSubscriber2, MockSlowEvent2.class);
         defaultSharePublisher.receiveEvent(new SlowEvent() {
+            
             private static final long serialVersionUID = 5996336354563933789L;
             
             @Override

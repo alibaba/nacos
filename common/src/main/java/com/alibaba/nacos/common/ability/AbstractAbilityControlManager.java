@@ -40,12 +40,14 @@ import java.util.concurrent.ConcurrentHashMap;
  **/
 public abstract class AbstractAbilityControlManager {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAbilityControlManager.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(AbstractAbilityControlManager.class);
     
     /**
      * current node support abilities.
      */
-    protected final Map<AbilityMode, Map<String, Boolean>> currentNodeAbilities = new ConcurrentHashMap<>();
+    protected final Map<AbilityMode, Map<String, Boolean>> currentNodeAbilities =
+        new ConcurrentHashMap<>();
     
     protected AbstractAbilityControlManager() {
         NotifyCenter.registerToPublisher(AbilityUpdateEvent.class, 16384);
@@ -70,14 +72,16 @@ public abstract class AbstractAbilityControlManager {
             for (AbilityKey abilityKey : abilitiesTable.keySet()) {
                 if (!mode.equals(abilityKey.getMode())) {
                     LOGGER.error(
-                            "You should not contain a other mode: {} in a specify mode: {} abilities set, error key: {}, please check again.",
-                            abilityKey.getMode(), mode, abilityKey);
+                        "You should not contain a other mode: {} in a specify mode: {} abilities set, error key: {}, please check again.",
+                        abilityKey.getMode(), mode, abilityKey);
                     throw new IllegalStateException(
-                            "Except mode: " + mode + " but " + abilityKey + " mode: " + abilityKey.getMode()
-                                    + ", please check again.");
+                        "Except mode: " + mode + " but " + abilityKey + " mode: "
+                            + abilityKey.getMode()
+                            + ", please check again.");
                 }
             }
-            Collection<AbilityPostProcessor> processors = NacosServiceLoader.load(AbilityPostProcessor.class);
+            Collection<AbilityPostProcessor> processors =
+                NacosServiceLoader.load(AbilityPostProcessor.class);
             for (AbilityPostProcessor processor : processors) {
                 processor.process(mode, abilitiesTable);
             }
@@ -87,7 +91,8 @@ public abstract class AbstractAbilityControlManager {
         LOGGER.info("Ready to initialize current node abilities, support modes: {}", abilityModes);
         for (AbilityMode abilityMode : abilityModes) {
             this.currentNodeAbilities
-                    .put(abilityMode, new ConcurrentHashMap<>(AbilityKey.mapStr(abilities.get(abilityMode))));
+                .put(abilityMode,
+                    new ConcurrentHashMap<>(AbilityKey.mapStr(abilities.get(abilityMode))));
         }
         LOGGER.info("Initialize current abilities finish...");
     }

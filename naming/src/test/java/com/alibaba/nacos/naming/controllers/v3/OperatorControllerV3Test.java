@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
@@ -34,8 +35,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 
 /**
  * OperatorControllerV3Test.
@@ -85,6 +88,22 @@ class OperatorControllerV3Test {
             e.printStackTrace();
             fail(e.getMessage());
         }
+    }
+    
+    @Test
+    void testUpdateSwitchesConvertsIllegalArgumentException() throws Exception {
+        UpdateSwitchForm updateSwitchForm = new UpdateSwitchForm();
+        updateSwitchForm.setDebug(true);
+        updateSwitchForm.setEntry("test");
+        updateSwitchForm.setValue("test");
+        doThrow(new IllegalArgumentException("bad switch")).when(operatorV2Impl)
+            .updateSwitch("test", "test", true);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> operatorControllerV3.updateSwitch(updateSwitchForm));
+        
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), exception.getDetailErrCode());
+        assertEquals("bad switch", exception.getErrMsg());
     }
     
     @Test

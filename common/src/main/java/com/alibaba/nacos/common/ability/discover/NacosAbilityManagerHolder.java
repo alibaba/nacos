@@ -77,8 +77,8 @@ public class NacosAbilityManagerHolder {
         load = NacosServiceLoader.load(AbstractAbilityControlManager.class);
         // the priority of the server is higher
         List<AbstractAbilityControlManager> collect = load.stream()
-                .sorted(Comparator.comparingInt(AbstractAbilityControlManager::getPriority))
-                .collect(Collectors.toList());
+            .sorted(Comparator.comparingInt(AbstractAbilityControlManager::getPriority))
+            .collect(Collectors.toList());
         // get the highest priority one
         if (load.size() > 0) {
             abstractAbilityControlManager = collect.get(collect.size() - 1);

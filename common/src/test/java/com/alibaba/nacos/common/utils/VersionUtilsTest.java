@@ -71,6 +71,32 @@ class VersionUtilsTest {
     }
     
     @Test
+    void testVersionCompareTwoDigitMinorIsGreaterThanSingleDigit() {
+        assertTrue(VersionUtils.compareVersion("1.10.0", "1.9.0") > 0);
+        assertTrue(VersionUtils.compareVersion("1.9.0", "1.10.0") < 0);
+    }
+    
+    @Test
+    void testVersionCompareTwoDigitMajorIsGreaterThanSingleDigit() {
+        assertTrue(VersionUtils.compareVersion("10.0.0", "9.0.0") > 0);
+        assertTrue(VersionUtils.compareVersion("9.0.0", "10.0.0") < 0);
+    }
+    
+    @Test
+    void testVersionCompareTwoDigitPatchIsGreaterThanSingleDigit() {
+        assertTrue(VersionUtils.compareVersion("1.0.10", "1.0.9") > 0);
+        assertTrue(VersionUtils.compareVersion("1.0.9-beta", "1.0.10-beta") < 0);
+    }
+    
+    @Test
+    void testVersionCompareNonNumericPartIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+            () -> VersionUtils.compareVersion("1.x.0", "1.0.0"));
+        assertThrows(IllegalArgumentException.class,
+            () -> VersionUtils.compareVersion("1.0.0", "a.b.c"));
+    }
+    
+    @Test
     void testVersionCompareResourceNotExist() {
         URL resource = VersionUtils.class.getClassLoader().getResource("nacos-version.txt");
         assertNotNull(resource);

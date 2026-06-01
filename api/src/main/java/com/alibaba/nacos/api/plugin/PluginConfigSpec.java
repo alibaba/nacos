@@ -27,21 +27,21 @@ import java.util.Map;
  * @since 3.2.0
  */
 public interface PluginConfigSpec {
-
+    
     /**
      * Get configuration item definitions.
      *
      * @return list of configuration item definitions
      */
     List<ConfigItemDefinition> getConfigDefinitions();
-
+    
     /**
      * Apply configuration to the plugin.
      *
      * @param config configuration key-value pairs
      */
     void applyConfig(Map<String, String> config);
-
+    
     /**
      * Get current configuration.
      *

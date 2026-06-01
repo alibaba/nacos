@@ -47,18 +47,30 @@ class ClientConfigTest {
     
     @Test
     void testUpgradeConfig() throws InterruptedException {
-        mockEnvironment.setProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, String.valueOf(EXPIRED_TIME));
+        mockEnvironment.setProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY,
+            String.valueOf(EXPIRED_TIME));
         NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
         TimeUnit.SECONDS.sleep(1);
         assertEquals(EXPIRED_TIME, clientConfig.getClientExpiredTime());
     }
     
     @Test
-    void testInitConfigFormEnv() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        mockEnvironment.setProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, String.valueOf(EXPIRED_TIME));
+    void testInitConfigFormEnv() throws NoSuchMethodException, InvocationTargetException,
+        InstantiationException, IllegalAccessException {
+        mockEnvironment.setProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY,
+            String.valueOf(EXPIRED_TIME));
         Constructor<ClientConfig> declaredConstructor = ClientConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         ClientConfig clientConfig = declaredConstructor.newInstance();
         assertEquals(EXPIRED_TIME, clientConfig.getClientExpiredTime());
+    }
+    
+    @Test
+    void testSetClientExpiredTime() {
+        clientConfig.setClientExpiredTime(EXPIRED_TIME);
+        
+        assertEquals(EXPIRED_TIME, clientConfig.getClientExpiredTime());
+        
+        clientConfig.setClientExpiredTime(ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME);
     }
 }

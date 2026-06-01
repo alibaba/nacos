@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,8 @@ class ModuleStateHolderTest {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         EnvUtil.setDeploymentType(DeploymentType.MERGED);
-        moduleStateMap = (Map<String, ModuleState>) ReflectionTestUtils.getField(ModuleStateHolder.getInstance(),
+        moduleStateMap =
+            (Map<String, ModuleState>) ReflectionTestUtils.getField(ModuleStateHolder.getInstance(),
                 ModuleStateHolder.class, "moduleStates");
     }
     
@@ -62,25 +63,30 @@ class ModuleStateHolderTest {
     @Test
     void testGetStateValueByNameFound() {
         assertEquals("test", ModuleStateHolder.getInstance().getStateValueByName("mock", "test"));
-        assertEquals("test", ModuleStateHolder.getInstance().getStateValueByName("mock", "test", "aaa"));
+        assertEquals("test",
+            ModuleStateHolder.getInstance().getStateValueByName("mock", "test", "aaa"));
     }
     
     @Test
     void testGetStateValueByNameWithoutModuleState() {
         assertEquals("", ModuleStateHolder.getInstance().getStateValueByName("non-exist", "test"));
-        assertEquals("aaa", ModuleStateHolder.getInstance().getStateValueByName("non-exist", "test", "aaa"));
+        assertEquals("aaa",
+            ModuleStateHolder.getInstance().getStateValueByName("non-exist", "test", "aaa"));
     }
     
     @Test
     void testGetStateValueByNameForRebuildState() {
-        int lastValue = ModuleStateHolder.getInstance().getStateValueByName("rebuild-mock", "re-test", 0);
-        assertEquals(lastValue + 1, ModuleStateHolder.getInstance().getStateValueByName("rebuild-mock", "re-test", 0));
+        int lastValue =
+            ModuleStateHolder.getInstance().getStateValueByName("rebuild-mock", "re-test", 0);
+        assertEquals(lastValue + 1,
+            ModuleStateHolder.getInstance().getStateValueByName("rebuild-mock", "re-test", 0));
     }
     
     @Test
     void testGetStateValueByNameWithoutStateName() {
         assertEquals("", ModuleStateHolder.getInstance().getStateValueByName("mock", "non-exist"));
-        assertEquals("aaa", ModuleStateHolder.getInstance().getStateValueByName("mock", "non-exist", "aaa"));
+        assertEquals("aaa",
+            ModuleStateHolder.getInstance().getStateValueByName("mock", "non-exist", "aaa"));
     }
     
     @Test

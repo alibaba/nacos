@@ -18,21 +18,50 @@ package com.alibaba.nacos.client.auth.ram.utils;
 
 import com.alibaba.nacos.client.auth.ram.RamConstants;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import javax.crypto.Mac;
+import java.security.InvalidKeyException;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 class CalculateV4SigningKeyUtilTest {
     
     @Test
     void testFinalSigningKeyStringWithException() {
         assertThrows(RuntimeException.class,
-                () -> CalculateV4SigningKeyUtil.finalSigningKeyString("", "2021-01-01", "cn-hangzhou",
-                        RamConstants.SIGNATURE_V4_PRODUCE, "non-exist"));
+            () -> CalculateV4SigningKeyUtil.finalSigningKeyString("", "2021-01-01",
+                "cn-hangzhou",
+                RamConstants.SIGNATURE_V4_PRODUCE, "non-exist"));
     }
     
     @Test
     void testFinalSigningKeyStringWithDefaultInfo() {
-        assertNotNull(CalculateV4SigningKeyUtil.finalSigningKeyStringWithDefaultInfo("", "cn-hangzhou"));
+        assertNotNull(
+            CalculateV4SigningKeyUtil.finalSigningKeyStringWithDefaultInfo("", "cn-hangzhou"));
+    }
+    
+    @Test
+    void testFinalSigningKeyStringWithInvalidKey() throws Exception {
+        Mac macMock = mock(Mac.class);
+        doThrow(new InvalidKeyException("forced")).when(macMock).init(any());
+        try (MockedStatic<Mac> mocked = Mockito.mockStatic(Mac.class)) {
+            mocked.when(() -> Mac.getInstance(anyString())).thenReturn(macMock);
+            assertThrows(RuntimeException.class,
+                () -> CalculateV4SigningKeyUtil.finalSigningKeyString("secret", "20210101",
+                    "cn-hangzhou", RamConstants.SIGNATURE_V4_PRODUCE,
+                    RamConstants.SIGNATURE_V4_METHOD));
+        }
+    }
+    
+    @Test
+    void testConstructor() {
+        new CalculateV4SigningKeyUtil();
     }
 }

@@ -40,7 +40,7 @@ public class PromptOnlineForm extends PromptForm {
         super.validate();
         if (StringUtils.isBlank(version)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'version' type String is not present");
+                "Required parameter 'version' type String is not present");
         }
     }
     

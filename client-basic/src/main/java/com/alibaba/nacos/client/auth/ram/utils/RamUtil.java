@@ -32,9 +32,9 @@ public class RamUtil {
     
     public static String getAccessKey(Properties properties) {
         boolean isUseRamInfoParsing = Boolean.parseBoolean(properties
-                .getProperty(PropertyKeyConst.IS_USE_RAM_INFO_PARSING,
-                        System.getProperty(SystemPropertyKeyConst.IS_USE_RAM_INFO_PARSING,
-                                Constants.DEFAULT_USE_RAM_INFO_PARSING)));
+            .getProperty(PropertyKeyConst.IS_USE_RAM_INFO_PARSING,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_RAM_INFO_PARSING,
+                    Constants.DEFAULT_USE_RAM_INFO_PARSING)));
         
         String result = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
         if (isUseRamInfoParsing && StringUtils.isBlank(result)) {
@@ -45,9 +45,9 @@ public class RamUtil {
     
     public static String getSecretKey(Properties properties) {
         boolean isUseRamInfoParsing = Boolean.parseBoolean(properties
-                .getProperty(PropertyKeyConst.IS_USE_RAM_INFO_PARSING,
-                        System.getProperty(SystemPropertyKeyConst.IS_USE_RAM_INFO_PARSING,
-                                Constants.DEFAULT_USE_RAM_INFO_PARSING)));
+            .getProperty(PropertyKeyConst.IS_USE_RAM_INFO_PARSING,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_RAM_INFO_PARSING,
+                    Constants.DEFAULT_USE_RAM_INFO_PARSING)));
         
         String result = properties.getProperty(PropertyKeyConst.SECRET_KEY);
         if (isUseRamInfoParsing && StringUtils.isBlank(result)) {

@@ -27,28 +27,28 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class PluginStateSnapshot implements Serializable {
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     private Map<String, Boolean> states;
-
+    
     private Map<String, Map<String, String>> configs;
-
+    
     public PluginStateSnapshot() {
     }
-
+    
     public Map<String, Boolean> getStates() {
         return states;
     }
-
+    
     public void setStates(Map<String, Boolean> states) {
         this.states = states;
     }
-
+    
     public Map<String, Map<String, String>> getConfigs() {
         return configs;
     }
-
+    
     public void setConfigs(Map<String, Map<String, String>> configs) {
         this.configs = configs;
     }

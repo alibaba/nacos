@@ -56,11 +56,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Component
 public class AiResourceStorageInitializer implements ApplicationListener<ContextRefreshedEvent> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AiResourceStorageInitializer.class);
-
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(AiResourceStorageInitializer.class);
+    
     private final AtomicBoolean registered = new AtomicBoolean(false);
-
+    
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (event.getApplicationContext().getParent() != null) {
@@ -70,7 +71,8 @@ public class AiResourceStorageInitializer implements ApplicationListener<Context
             return;
         }
         try {
-            Collection<AiResourceStorageBuilder> builders = NacosServiceLoader.load(AiResourceStorageBuilder.class);
+            Collection<AiResourceStorageBuilder> builders =
+                NacosServiceLoader.load(AiResourceStorageBuilder.class);
             for (AiResourceStorageBuilder builder : builders) {
                 if (builder == null || StringUtils.isBlank(builder.type())) {
                     continue;
@@ -82,12 +84,14 @@ public class AiResourceStorageInitializer implements ApplicationListener<Context
                         LOGGER.info("Registered AiResourceStorage: {}", storage.type());
                     }
                 } catch (Throwable e) {
-                    LOGGER.warn("Failed to build AiResourceStorage for type: {}", builder.type(), e);
+                    LOGGER.warn("Failed to build AiResourceStorage for type: {}", builder.type(),
+                        e);
                 }
             }
         } catch (Throwable e) {
             registered.set(false);
-            LOGGER.error("[AiResourceStorageInitializer] Unexpected failure while registering storages", e);
+            LOGGER.error(
+                "[AiResourceStorageInitializer] Unexpected failure while registering storages", e);
         }
     }
 }

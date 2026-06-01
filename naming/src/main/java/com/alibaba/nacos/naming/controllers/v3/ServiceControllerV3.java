@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -80,8 +81,9 @@ public class ServiceControllerV3 {
     
     private final CatalogServiceV2Impl catalogServiceV2;
     
-    public ServiceControllerV3(ServiceOperatorV2Impl serviceOperatorV2, SelectorManager selectorManager,
-            CatalogServiceV2Impl catalogServiceV2) {
+    public ServiceControllerV3(ServiceOperatorV2Impl serviceOperatorV2,
+        SelectorManager selectorManager,
+        CatalogServiceV2Impl catalogServiceV2) {
         this.serviceOperatorV2 = serviceOperatorV2;
         this.selectorManager = selectorManager;
         this.catalogServiceV2 = catalogServiceV2;
@@ -90,6 +92,7 @@ public class ServiceControllerV3 {
     /**
      * Create a new service. This API will create a persistence service.
      */
+    @Since("3.0.0")
     @PostMapping()
     @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
@@ -100,11 +103,12 @@ public class ServiceControllerV3 {
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
         serviceMetadata.setEphemeral(serviceForm.getEphemeral());
-        serviceOperatorV2.create(Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+        serviceOperatorV2
+            .create(Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
                 serviceForm.getServiceName(), serviceForm.getEphemeral()), serviceMetadata);
         NotifyCenter.publishEvent(
-                new RegisterServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
-                        serviceForm.getGroupName(), serviceForm.getServiceName()));
+            new RegisterServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
+                serviceForm.getGroupName(), serviceForm.getServiceName()));
         
         return Result.success("ok");
     }
@@ -112,6 +116,7 @@ public class ServiceControllerV3 {
     /**
      * Remove service.
      */
+    @Since("3.0.0")
     @DeleteMapping()
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
@@ -122,7 +127,8 @@ public class ServiceControllerV3 {
         String serviceName = serviceForm.getServiceName();
         serviceOperatorV2.delete(Service.newService(namespaceId, groupName, serviceName));
         NotifyCenter.publishEvent(
-                new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, groupName, serviceName));
+            new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, groupName,
+                serviceName));
         
         return Result.success("ok");
     }
@@ -130,14 +136,15 @@ public class ServiceControllerV3 {
     /**
      * Get detail of service.
      */
+    @Since("3.0.0")
     @GetMapping()
     @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<ServiceDetailInfo> detail(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         ServiceDetailInfo result = serviceOperatorV2.queryService(
-                Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
-                        serviceForm.getServiceName()));
+            Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                serviceForm.getServiceName()));
         
         return Result.success(result);
     }
@@ -154,10 +161,12 @@ public class ServiceControllerV3 {
      *     </li>
      * </ul>
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<Object> list(ServiceListForm serviceListForm, PageForm pageForm) throws Exception {
+    public Result<Object> list(ServiceListForm serviceListForm, PageForm pageForm)
+        throws Exception {
         serviceListForm.validate();
         pageForm.validate();
         String namespaceId = serviceListForm.getNamespaceId();
@@ -170,15 +179,18 @@ public class ServiceControllerV3 {
         
         if (withInstances) {
             return Result.success(
-                    catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize));
+                catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo,
+                    pageSize));
         }
         return Result.success(
-                catalogServiceV2.listService(namespaceId, groupName, serviceName, pageNo, pageSize, hasIpCount));
+            catalogServiceV2.listService(namespaceId, groupName, serviceName, pageNo, pageSize,
+                hasIpCount));
     }
     
     /**
      * Update service.
      */
+    @Since("3.0.0")
     @PutMapping()
     @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
@@ -189,12 +201,14 @@ public class ServiceControllerV3 {
         serviceMetadata.setProtectThreshold(serviceForm.getProtectThreshold());
         serviceMetadata.setExtendData(metadata);
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
-        Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+        Service service =
+            Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
                 serviceForm.getServiceName());
         
         serviceOperatorV2.update(service, serviceMetadata);
         
-        NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
+        NotifyCenter.publishEvent(
+            new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
                 serviceForm.getGroupName(), serviceForm.getServiceName(), metadata));
         
         return Result.success("ok");
@@ -207,13 +221,15 @@ public class ServiceControllerV3 {
         
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
         String type = Optional.ofNullable(selectorJson.get("type")).orElseThrow(
-                () -> new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
-                        "not match any type of selector!")).asText();
-        String expression = Optional.ofNullable(selectorJson.get("expression")).map(JsonNode::asText).orElse(null);
+            () -> new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
+                "not match any type of selector!"))
+            .asText();
+        String expression =
+            Optional.ofNullable(selectorJson.get("expression")).map(JsonNode::asText).orElse(null);
         Selector selector = selectorManager.parseSelector(type, expression);
         if (Objects.isNull(selector)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
-                    "not match any type of selector!");
+                "not match any type of selector!");
         }
         
         return selector;
@@ -222,10 +238,11 @@ public class ServiceControllerV3 {
     /**
      * get subscriber list.
      */
+    @Since("3.0.0")
     @GetMapping("/subscribers")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<Page<SubscriberInfo>> subscribers(ServiceForm serviceForm, PageForm pageForm,
-            AggregationForm aggregationForm) throws Exception {
+        AggregationForm aggregationForm) throws Exception {
         serviceForm.validate();
         pageForm.validate();
         int pageNo = pageForm.getPageNo();
@@ -235,16 +252,17 @@ public class ServiceControllerV3 {
         String groupName = serviceForm.getGroupName();
         boolean aggregation = aggregationForm.isAggregation();
         return Result.success(
-                serviceOperatorV2.getSubscribers(namespaceId, serviceName, groupName, aggregation, pageNo, pageSize));
+            serviceOperatorV2.getSubscribers(namespaceId, serviceName, groupName, aggregation,
+                pageNo, pageSize));
     }
     
     /**
      * Get all {@link Selector} types.
      */
+    @Since("3.0.0")
     @GetMapping("/selector/types")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<String>> listSelectorTypes() {
         return Result.success(selectorManager.getAllSelectorTypes());
     }
 }
-

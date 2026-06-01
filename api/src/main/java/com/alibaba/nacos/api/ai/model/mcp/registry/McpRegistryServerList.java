@@ -31,56 +31,57 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class McpRegistryServerList {
-
+    
     private List<ServerResponse> servers;
-
+    
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Metadata metadata;
-
+    
     public List<ServerResponse> getServers() {
         return servers;
     }
-
+    
     public void setServers(List<ServerResponse> servers) {
         this.servers = servers;
     }
-
+    
     public Metadata getMetadata() {
         return metadata;
     }
-
+    
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
     }
-
+    
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Metadata {
+        
         @JsonProperty("nextCursor")
         @JsonAlias("next_cursor")
         private String nextCursor;
-
+        
         private Integer count;
-
+        
         public Metadata() {
         }
-
+        
         public Metadata(String nextCursor, Integer count) {
             this.nextCursor = nextCursor;
             this.count = count;
         }
-
+        
         public String getNextCursor() {
             return nextCursor;
         }
-
+        
         public void setNextCursor(String nextCursor) {
             this.nextCursor = nextCursor;
         }
-
+        
         public Integer getCount() {
             return count;
         }
-
+        
         public void setCount(Integer count) {
             this.count = count;
         }

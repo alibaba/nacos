@@ -23,11 +23,15 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -48,17 +52,22 @@ public class AgentSpecRequestUtil {
      * @return agentSpec
      * @throws NacosApiException if parse failed or request parameter is conflicted.
      */
-    public static AgentSpec parseAgentSpec(AgentSpecDetailForm detailForm) throws NacosApiException {
+    public static AgentSpec parseAgentSpec(AgentSpecDetailForm detailForm)
+        throws NacosApiException {
         try {
-            AgentSpec result = JacksonUtils.toObj(detailForm.getAgentSpecCard(), new TypeReference<>() {
-            });
+            AgentSpec result =
+                JacksonUtils.toObj(detailForm.getAgentSpecCard(), new TypeReference<>() {
+                });
             validateAgentSpec(result);
             return result;
         } catch (NacosDeserializationException e) {
-            LOGGER.error(String.format("Deserialize %s from %s failed, ", AgentSpec.class.getSimpleName(),
-                    detailForm.getAgentSpecCard()), e);
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "agentSpecCard is invalid. Can't be parsed.");
+            LOGGER.error(
+                String.format("Deserialize %s from %s failed, ", AgentSpec.class.getSimpleName(),
+                    detailForm.getAgentSpecCard()),
+                e);
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "agentSpecCard is invalid. Can't be parsed.");
         }
     }
     
@@ -72,10 +81,12 @@ public class AgentSpecRequestUtil {
         validateAgentSpecField("name", agentSpec.getName());
     }
     
-    private static void validateAgentSpecField(String fieldName, String fieldValue) throws NacosApiException {
+    private static void validateAgentSpecField(String fieldName, String fieldValue)
+        throws NacosApiException {
         if (StringUtils.isEmpty(fieldValue)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `agentSpecCard." + fieldName + "` not present");
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Required parameter `agentSpecCard." + fieldName + "` not present");
         }
     }
     
@@ -88,18 +99,63 @@ public class AgentSpecRequestUtil {
      */
     public static byte[] validateAndExtractZipBytes(MultipartFile file) throws NacosException {
         if (file == null || file.isEmpty()) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.DATA_EMPTY, "File is required");
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.DATA_EMPTY,
+                "File is required");
         }
-        if (file.getSize() > Constants.AgentSpecs.MAX_UPLOAD_ZIP_BYTES) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "AgentSpec zip size must not exceed " + (Constants.AgentSpecs.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
-                            + "MB, current: " + (file.getSize() / 1024 / 1024) + "MB");
+        long maxUploadBytes = AgentSpecZipParser.resolveMaxUploadBytes();
+        if (file.getSize() > maxUploadBytes) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "AgentSpec zip size must not exceed "
+                    + (maxUploadBytes / 1024 / 1024)
+                    + "MB, current: " + (file.getSize() / 1024 / 1024) + "MB");
         }
         try {
             return file.getBytes();
         } catch (IOException e) {
-            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.PARSING_DATA_FAILED,
-                    "Failed to read file: " + e.getMessage());
+            throw new NacosApiException(NacosException.SERVER_ERROR,
+                ErrorCode.PARSING_DATA_FAILED,
+                "Failed to read file: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Build an HTTP 200 response carrying the AgentSpec with listener-related headers.
+     *
+     * @param agentSpec       the AgentSpec object
+     * @param md5             published content MD5
+     * @param resolvedVersion resolved version string
+     * @return ResponseEntity with status 200 and headers
+     */
+    public static ResponseEntity<Result<AgentSpec>> buildAgentSpecResponse(
+        AgentSpec agentSpec, String md5, String resolvedVersion) {
+        HttpHeaders headers = new HttpHeaders();
+        applyListenerHeaders(headers, md5, resolvedVersion);
+        return new ResponseEntity<>(Result.success(agentSpec), headers, HttpStatus.OK);
+    }
+    
+    /**
+     * Build an HTTP 304 Not Modified response with listener-related headers.
+     *
+     * @param md5 published content MD5
+     * @return ResponseEntity with status 304 and headers
+     */
+    public static ResponseEntity<Result<AgentSpec>> buildAgentSpecNotModifiedResponse(
+        String md5) {
+        HttpHeaders headers = new HttpHeaders();
+        applyListenerHeaders(headers, md5, null);
+        return new ResponseEntity<>(headers, HttpStatus.NOT_MODIFIED);
+    }
+    
+    private static void applyListenerHeaders(HttpHeaders headers, String md5,
+        String resolvedVersion) {
+        if (StringUtils.isNotBlank(md5)) {
+            headers.add(HttpHeaders.ETAG, md5);
+            headers.add(Constants.AgentSpecs.HEADER_AGENTSPEC_MD5, md5);
+        }
+        if (StringUtils.isNotBlank(resolvedVersion)) {
+            headers.add(Constants.AgentSpecs.HEADER_AGENTSPEC_RESOLVED_VERSION,
+                resolvedVersion);
         }
     }
 }

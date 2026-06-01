@@ -47,7 +47,7 @@ public class DistroSyncDeleteTask extends AbstractDistroExecuteTask {
         distroData.setDistroKey(getDistroKey());
         distroData.setType(OPERATION);
         return getDistroComponentHolder().findTransportAgent(type)
-                .syncData(distroData, getDistroKey().getTargetServer());
+            .syncData(distroData, getDistroKey().getTargetServer());
     }
     
     @Override
@@ -57,7 +57,7 @@ public class DistroSyncDeleteTask extends AbstractDistroExecuteTask {
         distroData.setDistroKey(getDistroKey());
         distroData.setType(OPERATION);
         getDistroComponentHolder().findTransportAgent(type)
-                .syncData(distroData, getDistroKey().getTargetServer(), callback);
+            .syncData(distroData, getDistroKey().getTargetServer(), callback);
     }
     
     @Override

@@ -93,8 +93,10 @@ public class ConsoleWebConfig {
     }
     
     @Bean
-    public FilterRegistrationBean<NacosConsoleAuthFilter> authFilterRegistration(NacosConsoleAuthFilter authFilter) {
-        FilterRegistrationBean<NacosConsoleAuthFilter> registration = new FilterRegistrationBean<>();
+    public FilterRegistrationBean<NacosConsoleAuthFilter> authFilterRegistration(
+        NacosConsoleAuthFilter authFilter) {
+        FilterRegistrationBean<NacosConsoleAuthFilter> registration =
+            new FilterRegistrationBean<>();
         registration.setFilter(authFilter);
         registration.addUrlPatterns("/*");
         registration.setName("consoleAuthFilter");
@@ -105,12 +107,13 @@ public class ConsoleWebConfig {
     @Bean
     public NacosConsoleAuthFilter consoleAuthFilter(ControllerMethodsCache methodsCache) {
         return new NacosConsoleAuthFilter(NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE), methodsCache);
+            .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE),
+            methodsCache);
     }
     
     @Bean
     public FilterRegistrationBean<ParamCheckerFilter> consoleParamCheckerFilterRegistration(
-            ParamCheckerFilter consoleParamCheckerFilter) {
+        ParamCheckerFilter consoleParamCheckerFilter) {
         FilterRegistrationBean<ParamCheckerFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(consoleParamCheckerFilter);
         registration.addUrlPatterns("/*");
@@ -126,13 +129,15 @@ public class ConsoleWebConfig {
     
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jacksonObjectMapperCustomization() {
-        return jacksonObjectMapperBuilder -> jacksonObjectMapperBuilder.timeZone(ZoneId.systemDefault().toString());
+        return jacksonObjectMapperBuilder -> jacksonObjectMapperBuilder
+            .timeZone(ZoneId.systemDefault().toString());
     }
     
     @Bean
     @ConditionalOnMissingBean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests((authorizeHttpRequests) -> authorizeHttpRequests.requestMatchers("/**").permitAll());
+        http.authorizeHttpRequests(
+            (authorizeHttpRequests) -> authorizeHttpRequests.requestMatchers("/**").permitAll());
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }

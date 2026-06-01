@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Ken
  */
 public class ConfigTagsRelationMapperByPostgresqlTest {
+    
     int startRow = 0;
     
     int pageSize = 5;
@@ -75,22 +76,26 @@ public class ConfigTagsRelationMapperByPostgresqlTest {
     
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
-        MapperResult mapperResult = configTagsRelationMapperByPostgresql.findConfigInfoLike4PageFetchRows(context);
+        MapperResult mapperResult =
+            configTagsRelationMapperByPostgresql.findConfigInfoLike4PageFetchRows(context);
         String sql = mapperResult.getSql();
         // 验证是否存在标量子查询
-        assertTrue(sql.contains("(SELECT STRING_AGG(tag_name, ',') FROM config_tags_relation d WHERE d.id = c.id)"));
+        assertTrue(sql.contains(
+            "(SELECT STRING_AGG(tag_name, ',') FROM config_tags_relation d WHERE d.id = c.id)"));
         // 验证是否存在EXISTS
         assertTrue(sql.contains(" EXISTS "));
         // 验证是否存在标签的子查询
         assertTrue(sql.contains("SELECT 1 FROM config_tags_relation"));
         
-        assertEquals("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,"
+        assertEquals(
+            "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,"
                 + "c.type,c.c_desc,(SELECT STRING_AGG(tag_name, ',') FROM config_tags_relation d WHERE d.id = c.id) as config_tags "
                 + "FROM (SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
                 + "FROM config_info a  WHERE a.tenant_id LIKE ?  AND a.data_id LIKE ?  AND a.group_id LIKE ?  AND a.app_name = ?  "
                 + "AND a.content LIKE ?  AND  EXISTS ( SELECT 1 FROM config_tags_relation b WHERE b.id = a.id  "
                 + "AND  ( b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  )  )  AND a.type IN (?, ?, ?, ?, ?)  "
-                + "OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY) c ", mapperResult.getSql());
+                + "OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY) c ",
+            mapperResult.getSql());
         
         List<Object> expectedParams = new ArrayList<>();
         expectedParams.add(tenantId);

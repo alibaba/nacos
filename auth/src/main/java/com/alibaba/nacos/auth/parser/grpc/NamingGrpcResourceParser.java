@@ -35,7 +35,8 @@ public class NamingGrpcResourceParser extends AbstractGrpcResourceParser {
         if (request instanceof AbstractNamingRequest) {
             return ((AbstractNamingRequest) request).getNamespace();
         }
-        return (String) ReflectUtils.getFieldValue(request, PropertyKeyConst.NAMESPACE, StringUtils.EMPTY);
+        return (String) ReflectUtils.getFieldValue(request, PropertyKeyConst.NAMESPACE,
+            StringUtils.EMPTY);
     }
     
     @Override
@@ -44,7 +45,8 @@ public class NamingGrpcResourceParser extends AbstractGrpcResourceParser {
         if (request instanceof AbstractNamingRequest) {
             groupName = ((AbstractNamingRequest) request).getGroupName();
         } else {
-            groupName = (String) ReflectUtils.getFieldValue(request, CommonParams.GROUP_NAME, StringUtils.EMPTY);
+            groupName = (String) ReflectUtils.getFieldValue(request, CommonParams.GROUP_NAME,
+                StringUtils.EMPTY);
         }
         return StringUtils.isBlank(groupName) ? StringUtils.EMPTY : groupName;
     }
@@ -55,7 +57,8 @@ public class NamingGrpcResourceParser extends AbstractGrpcResourceParser {
         if (request instanceof AbstractNamingRequest) {
             serviceName = ((AbstractNamingRequest) request).getServiceName();
         } else {
-            serviceName = (String) ReflectUtils.getFieldValue(request, CommonParams.SERVICE_NAME, "");
+            serviceName =
+                (String) ReflectUtils.getFieldValue(request, CommonParams.SERVICE_NAME, "");
         }
         return StringUtils.isBlank(serviceName) ? StringUtils.EMPTY : serviceName;
     }

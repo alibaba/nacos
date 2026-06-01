@@ -23,57 +23,57 @@ import java.util.Set;
  * @author special.fy
  */
 public class WatchedStatus {
-
+    
     private String type;
     
     private boolean lastAckOrNack;
     
     private Set<String> lastSubscribe;
-
+    
     private String latestVersion;
-
+    
     private String latestNonce;
-
+    
     private String ackedVersion;
-
+    
     private String ackedNonce;
-
+    
     public String getType() {
         return type;
     }
-
+    
     public void setType(String type) {
         this.type = type;
     }
-
+    
     public String getLatestVersion() {
         return latestVersion;
     }
-
+    
     public void setLatestVersion(String latestVersion) {
         this.latestVersion = latestVersion;
     }
-
+    
     public String getLatestNonce() {
         return latestNonce;
     }
-
+    
     public void setLatestNonce(String latestNonce) {
         this.latestNonce = latestNonce;
     }
-
+    
     public String getAckedVersion() {
         return ackedVersion;
     }
-
+    
     public void setAckedVersion(String ackedVersion) {
         this.ackedVersion = ackedVersion;
     }
-
+    
     public String getAckedNonce() {
         return ackedNonce;
     }
-
+    
     public void setAckedNonce(String ackedNonce) {
         this.ackedNonce = ackedNonce;
     }

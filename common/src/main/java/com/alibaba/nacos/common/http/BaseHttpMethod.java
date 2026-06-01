@@ -40,6 +40,7 @@ public enum BaseHttpMethod {
      * get request.
      */
     GET(HttpMethod.GET) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpGet(url);
@@ -47,6 +48,7 @@ public enum BaseHttpMethod {
     },
     
     GET_LARGE(HttpMethod.GET_LARGE) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpGetWithEntity(url);
@@ -57,6 +59,7 @@ public enum BaseHttpMethod {
      * post request.
      */
     POST(HttpMethod.POST) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpPost(url);
@@ -67,6 +70,7 @@ public enum BaseHttpMethod {
      * put request.
      */
     PUT(HttpMethod.PUT) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpPut(url);
@@ -77,6 +81,7 @@ public enum BaseHttpMethod {
      * delete request.
      */
     DELETE(HttpMethod.DELETE) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpDelete(url);
@@ -87,6 +92,7 @@ public enum BaseHttpMethod {
      * delete Large request.
      */
     DELETE_LARGE(HttpMethod.DELETE_LARGE) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpDeleteWithEntity(url);
@@ -97,6 +103,7 @@ public enum BaseHttpMethod {
      * head request.
      */
     HEAD(HttpMethod.HEAD) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpHead(url);
@@ -107,6 +114,7 @@ public enum BaseHttpMethod {
      * trace request.
      */
     TRACE(HttpMethod.TRACE) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpTrace(url);
@@ -117,6 +125,7 @@ public enum BaseHttpMethod {
      * patch request.
      */
     PATCH(HttpMethod.PATCH) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpPatch(url);
@@ -127,6 +136,7 @@ public enum BaseHttpMethod {
      * options request.
      */
     OPTIONS(HttpMethod.OPTIONS) {
+        
         @Override
         protected HttpUriRequestBase createRequest(String url) {
             return new HttpTrace(url);

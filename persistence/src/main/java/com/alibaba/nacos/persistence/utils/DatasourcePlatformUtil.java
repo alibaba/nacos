@@ -34,9 +34,11 @@ public class DatasourcePlatformUtil {
      * @return
      */
     public static String getDatasourcePlatform(String defaultPlatform) {
-        String platform = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, defaultPlatform);
+        String platform =
+            EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, defaultPlatform);
         if (StringUtils.isBlank(platform)) {
-            platform = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, defaultPlatform);
+            platform = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD,
+                defaultPlatform);
         }
         return platform;
     }

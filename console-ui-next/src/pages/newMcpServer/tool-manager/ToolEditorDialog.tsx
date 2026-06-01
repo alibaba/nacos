@@ -29,7 +29,14 @@ interface ToolEditorDialogProps {
   onSave: (tool: McpTool, meta: McpToolMeta) => void;
 }
 
-const EMPTY_SCHEMA: JsonSchema = { type: 'object', properties: {}, required: [] };
+const createEmptySchema = (): JsonSchema => ({ type: 'object', properties: {}, required: [] });
+
+const cloneSchema = (schema?: Record<string, unknown> | null): JsonSchema => {
+  if (!schema) {
+    return createEmptySchema();
+  }
+  return JSON.parse(JSON.stringify(schema)) as JsonSchema;
+};
 
 export default function ToolEditorDialog({
   open,
@@ -45,8 +52,8 @@ export default function ToolEditorDialog({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [enabled, setEnabled] = useState(true);
-  const [inputSchema, setInputSchema] = useState<JsonSchema>(EMPTY_SCHEMA);
-  const [outputSchema, setOutputSchema] = useState<JsonSchema>(EMPTY_SCHEMA);
+  const [inputSchema, setInputSchema] = useState<JsonSchema>(createEmptySchema);
+  const [outputSchema, setOutputSchema] = useState<JsonSchema>(createEmptySchema);
 
   // Annotations
   const [annotationsTitle, setAnnotationsTitle] = useState('');
@@ -69,8 +76,8 @@ export default function ToolEditorDialog({
     if (tool) {
       setName(tool.name);
       setDescription(tool.description || '');
-      setInputSchema((tool.inputSchema as unknown as JsonSchema) || EMPTY_SCHEMA);
-      setOutputSchema((tool.outputSchema as unknown as JsonSchema) || EMPTY_SCHEMA);
+      setInputSchema(cloneSchema(tool.inputSchema));
+      setOutputSchema(cloneSchema(tool.outputSchema));
       setAnnotationsTitle(tool.annotations?.title || '');
       setReadOnlyHint(tool.annotations?.readOnlyHint || false);
       setDestructiveHint(tool.annotations?.destructiveHint || false);
@@ -79,8 +86,8 @@ export default function ToolEditorDialog({
     } else {
       setName('');
       setDescription('');
-      setInputSchema(EMPTY_SCHEMA);
-      setOutputSchema(EMPTY_SCHEMA);
+      setInputSchema(createEmptySchema());
+      setOutputSchema(createEmptySchema());
       setAnnotationsTitle('');
       setReadOnlyHint(false);
       setDestructiveHint(false);
@@ -154,27 +161,35 @@ export default function ToolEditorDialog({
       return;
     }
 
-    const newMeta: McpToolMeta = { enabled };
-    if (requestTemplate || responseTemplate) {
-      newMeta.templates = {
-        'json-go-template': {
-          ...(requestTemplate ? { requestTemplate } : {}),
-          ...(responseTemplate ? { responseTemplate } : {}),
-        },
-      };
+    const newMeta: McpToolMeta = { ...(meta || {}), enabled };
+    const nextTemplates = { ...(meta?.templates || {}) };
+    const jsonTemplate = { ...(nextTemplates['json-go-template'] || {}) };
+    if (requestTemplate) {
+      jsonTemplate.requestTemplate = requestTemplate;
+    } else {
+      delete jsonTemplate.requestTemplate;
+    }
+    if (responseTemplate) {
+      jsonTemplate.responseTemplate = responseTemplate;
+    } else {
+      delete jsonTemplate.responseTemplate;
+    }
+    if (Object.keys(jsonTemplate).length > 0) {
+      nextTemplates['json-go-template'] = jsonTemplate;
+    } else {
+      delete nextTemplates['json-go-template'];
+    }
+    if (Object.keys(nextTemplates).length > 0) {
+      newMeta.templates = nextTemplates;
+    } else {
+      delete newMeta.templates;
     }
     if (transparentAuth) newMeta.transparentAuth = true;
+    else delete newMeta.transparentAuth;
     if (securitySchemeId) newMeta.securitySchemeId = securitySchemeId;
+    else delete newMeta.securitySchemeId;
     if (clientSecuritySchemeId) newMeta.clientSecuritySchemeId = clientSecuritySchemeId;
-
-    // Preserve existing meta fields not managed by this editor
-    if (meta) {
-      const tmpl = meta.templates?.['json-go-template'];
-      if (tmpl?.argsPosition && newMeta.templates?.['json-go-template']) {
-        newMeta.templates['json-go-template']!.argsPosition = tmpl.argsPosition;
-      }
-      if (meta.invokeContext) newMeta.invokeContext = meta.invokeContext;
-    }
+    else delete newMeta.clientSecuritySchemeId;
 
     onSave(newTool, newMeta);
     onOpenChange(false);

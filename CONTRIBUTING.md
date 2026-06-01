@@ -22,6 +22,8 @@ Please read and set up the Nacos code style correctly before contributing:
 - IDEA code style: [`style/nacos-code-style-for-idea.xml`](style/nacos-code-style-for-idea.xml)
 - Code style guide: [`style/codeStyle.md`](style/codeStyle.md)
 
+Nacos uses [Spotless](https://github.com/diffplug/spotless) with Eclipse JDT Formatter for automated code formatting. The formatter configuration is at [`style/nacos-eclipse-formatter.xml`](style/nacos-eclipse-formatter.xml). Run `mvn spotless:apply` before committing to auto-format your code.
+
 ## Contact Us
 
 - **Nacos Gitter**: [https://gitter.im/alibaba/nacos](https://gitter.im/alibaba/nacos)
@@ -84,17 +86,12 @@ To avoid duplicate work and ensure efficient collaboration, please follow this p
 2. If the issue is already assigned, please wait or discuss in the comments
 3. To give up a claimed issue, comment `/unassign`
 
-#### Expectations after claiming
-
-- Submit a PR within **14 days** of being assigned
-- If you need more time, comment on the issue to let others know
-- If no PR or update is provided within 14 days, you will be **automatically unassigned** and the issue will be made available for other contributors
-
 #### Tips
 
 - Check if an issue already has an assignee before claiming
 - For complex issues, consider discussing your approach in the issue before starting
-- It's okay to unassign yourself if you can't continue — comment `/unassign`
+- If you need more time, comment on the issue to let others know your progress
+- If you can't continue, comment `/unassign` to release the issue for others
 
 ### Contribution Notice
 
@@ -163,7 +160,7 @@ When making changes, please ensure:
 Before pushing your commits, run the following command locally to catch issues early:
 
 ```bash
-mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check -DskipTests
+mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -DskipTests
 ```
 
 | Check | What it verifies |
@@ -172,6 +169,7 @@ mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check -DskipTest
 | `apache-rat:check` | All source files have the required Apache License header |
 | `checkstyle:check` | Code style complies with [Alibaba Java Coding Guidelines](style/NacosCheckStyle.xml) |
 | `spotbugs:check` | No high-priority bug patterns detected by [SpotBugs](https://spotbugs.github.io/) |
+| `spotless:check` | Code formatting matches Nacos Eclipse JDT style ([config](style/nacos-eclipse-formatter.xml)). Run `mvn spotless:apply` to auto-fix |
 
 To run unit tests:
 
@@ -221,8 +219,8 @@ Create a pull request to the **develop** branch and follow the [pull request tem
 - [ ] Format the pull request title like `[ISSUE #123] Fix UnknownException when host config not exist`. Each commit in the pull request should have a meaningful subject line and body.
 - [ ] Write a pull request description that is detailed enough to understand what the pull request does, how, and why.
 - [ ] Write necessary unit tests to verify your logic correction. Use mocking when cross-module dependencies exist. If a new feature or significant change is committed, please remember to add integration tests.
-- [ ] Run `mvn -B clean apache-rat:check checkstyle:check spotbugs:check -DskipTests` to make sure basic checks pass.
-- [ ] Run `mvn clean install -DskipITs` to make sure unit tests pass.
+- [ ] Run `mvn -B clean apache-rat:check checkstyle:check spotbugs:check spotless:check -DskipTests` to make sure basic checks pass.
+- [ ] Run `mvn clean install` to make sure unit tests pass.
 - [ ] Run `mvn clean test-compile failsafe:integration-test` to make sure integration tests pass.
 - [ ] If this contribution is large, please file an [Apache Individual Contributor License Agreement](http://www.apache.org/licenses/#clas).
 

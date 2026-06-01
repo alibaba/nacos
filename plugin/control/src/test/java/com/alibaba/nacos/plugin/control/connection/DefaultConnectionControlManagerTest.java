@@ -30,14 +30,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class DefaultConnectionControlManagerTest {
     
-    DefaultConnectionControlManager connectionControlManager = new DefaultConnectionControlManager();
+    DefaultConnectionControlManager connectionControlManager =
+        new DefaultConnectionControlManager();
     
     @Test
     void test() {
         
         ConnectionControlRule connectionControlRule = new ConnectionControlRule();
         
-        ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
+        ConnectionCheckRequest connectionCheckRequest =
+            new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         connectionControlRule.setCountLimit(40);
         connectionControlManager.applyConnectionLimitRule(connectionControlRule);

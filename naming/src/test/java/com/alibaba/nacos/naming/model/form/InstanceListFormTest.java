@@ -21,10 +21,11 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InstanceListFormTest {
-
+    
     @Test
     void testFillDefaultValueWhenClusterNameIsBlank() throws NacosApiException {
         InstanceListForm form = new InstanceListForm();
@@ -32,7 +33,7 @@ class InstanceListFormTest {
         form.validate();
         assertEquals("", form.getClusterName());
     }
-
+    
     @Test
     void testFillDefaultValueWhenClusterNameIsProvided() throws NacosApiException {
         InstanceListForm form = new InstanceListForm();
@@ -41,7 +42,7 @@ class InstanceListFormTest {
         form.validate();
         assertEquals("myCluster", form.getClusterName());
     }
-
+    
     @Test
     void testFillDefaultValueForNamespaceAndGroup() throws NacosApiException {
         InstanceListForm form = new InstanceListForm();
@@ -50,10 +51,32 @@ class InstanceListFormTest {
         assertEquals(Constants.DEFAULT_NAMESPACE_ID, form.getNamespaceId());
         assertEquals(Constants.DEFAULT_GROUP, form.getGroupName());
     }
-
+    
     @Test
     void testValidateThrowsExceptionWhenServiceNameIsBlank() {
         InstanceListForm form = new InstanceListForm();
         assertThrows(NacosApiException.class, () -> form.validate());
+    }
+    
+    @Test
+    void testObjectMethods() throws NacosApiException {
+        InstanceListForm form = createForm("service");
+        InstanceListForm same = createForm("service");
+        InstanceListForm different = createForm("other");
+        form.validate();
+        same.validate();
+        
+        assertEquals(form, form);
+        assertEquals(form, same);
+        assertEquals(form.hashCode(), same.hashCode());
+        assertNotEquals(form, different);
+        assertNotEquals(form, null);
+        assertNotEquals(form, new Object());
+    }
+    
+    private InstanceListForm createForm(String serviceName) {
+        InstanceListForm form = new InstanceListForm();
+        form.setServiceName(serviceName);
+        return form;
     }
 }

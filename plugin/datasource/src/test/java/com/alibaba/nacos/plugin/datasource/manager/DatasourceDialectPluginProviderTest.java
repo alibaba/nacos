@@ -32,34 +32,34 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @author WangzJi
  */
 class DatasourceDialectPluginProviderTest {
-
+    
     private DatasourceDialectPluginProvider provider;
-
+    
     @BeforeEach
     void setUp() {
         provider = new DatasourceDialectPluginProvider();
     }
-
+    
     @Test
     void getPluginTypeTest() {
         PluginType pluginType = provider.getPluginType();
-
+        
         assertNotNull(pluginType);
         assertEquals(PluginType.DATASOURCE_DIALECT, pluginType);
         assertEquals("datasource-dialect", pluginType.getType());
     }
-
+    
     @Test
     void getAllPluginsTest() {
         Map<String, DatabaseDialect> plugins = provider.getAllPlugins();
-
+        
         assertNotNull(plugins);
     }
-
+    
     @Test
     void getOrderTest() {
         int order = provider.getOrder();
-
+        
         assertEquals(0, order);
     }
 }

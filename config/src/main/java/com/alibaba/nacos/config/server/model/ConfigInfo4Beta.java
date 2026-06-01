@@ -30,7 +30,8 @@ public class ConfigInfo4Beta extends ConfigInfo {
     public ConfigInfo4Beta() {
     }
     
-    public ConfigInfo4Beta(String dataId, String group, String appName, String content, String betaIps) {
+    public ConfigInfo4Beta(String dataId, String group, String appName, String content,
+        String betaIps) {
         super(dataId, group, appName, content);
         this.betaIps = betaIps;
     }

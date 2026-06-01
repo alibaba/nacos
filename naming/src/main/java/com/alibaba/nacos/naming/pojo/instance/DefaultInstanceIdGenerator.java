@@ -32,9 +32,9 @@ public class DefaultInstanceIdGenerator implements InstanceIdGenerator {
     @Override
     public String generateInstanceId(Instance instance) {
         return instance.getIp() + NAMING_INSTANCE_ID_SPLITTER
-                + instance.getPort() + NAMING_INSTANCE_ID_SPLITTER
-                + instance.getClusterName() + NAMING_INSTANCE_ID_SPLITTER
-                + instance.getServiceName();
+            + instance.getPort() + NAMING_INSTANCE_ID_SPLITTER
+            + instance.getClusterName() + NAMING_INSTANCE_ID_SPLITTER
+            + instance.getServiceName();
     }
     
     @Override

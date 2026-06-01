@@ -73,8 +73,9 @@ public class ServerAbilities implements Serializable {
             return false;
         }
         ServerAbilities that = (ServerAbilities) o;
-        return Objects.equals(remoteAbility, that.remoteAbility) && Objects.equals(configAbility, that.configAbility)
-                && Objects.equals(namingAbility, that.namingAbility);
+        return Objects.equals(remoteAbility, that.remoteAbility)
+            && Objects.equals(configAbility, that.configAbility)
+            && Objects.equals(namingAbility, that.namingAbility);
     }
     
     @Override

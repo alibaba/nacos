@@ -30,55 +30,59 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EmbeddedApplyHookHolderTest {
-
+    
     Set<EmbeddedApplyHook> cached;
-
+    
     @BeforeEach
     void setUp() {
         cached = new HashSet<>(EmbeddedApplyHookHolder.getInstance().getAllHooks());
         EmbeddedApplyHookHolder.getInstance().getAllHooks().clear();
     }
-
+    
     @AfterEach
     void tearDown() {
         EmbeddedApplyHookHolder.getInstance().getAllHooks().clear();
         EmbeddedApplyHookHolder.getInstance().getAllHooks().addAll(cached);
     }
-
+    
     @Test
     void testGetInstance() {
         EmbeddedApplyHookHolder holder = EmbeddedApplyHookHolder.getInstance();
         assertSame(holder, EmbeddedApplyHookHolder.getInstance());
     }
-
+    
     @Test
     void testRegister() {
         assertEquals(0, EmbeddedApplyHookHolder.getInstance().getAllHooks().size());
         EmbeddedApplyHook mockHook = new EmbeddedApplyHook() {
+            
             @Override
             public void afterApply(WriteRequest log) {
             }
         };
         assertEquals(1, EmbeddedApplyHookHolder.getInstance().getAllHooks().size());
-        assertEquals(mockHook, EmbeddedApplyHookHolder.getInstance().getAllHooks().iterator().next());
+        assertEquals(mockHook,
+            EmbeddedApplyHookHolder.getInstance().getAllHooks().iterator().next());
     }
-
+    
     @Test
     void testGetAllHooksReturnsMutableSet() {
         Set<EmbeddedApplyHook> hooks = EmbeddedApplyHookHolder.getInstance().getAllHooks();
         assertTrue(hooks.isEmpty());
         EmbeddedApplyHook hook = new EmbeddedApplyHook() {
+            
             @Override
             public void afterApply(WriteRequest log) {
             }
         };
         assertTrue(hooks.contains(hook));
     }
-
+    
     @Test
     void testEmbeddedApplyHookAfterApply() {
         final boolean[] applied = {false};
         EmbeddedApplyHook hook = new EmbeddedApplyHook() {
+            
             @Override
             public void afterApply(WriteRequest log) {
                 applied[0] = true;

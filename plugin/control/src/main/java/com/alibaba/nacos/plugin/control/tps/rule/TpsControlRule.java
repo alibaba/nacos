@@ -46,6 +46,7 @@ public class TpsControlRule {
     
     @Override
     public String toString() {
-        return "TpsControlRule{" + "pointName='" + pointName + '\'' + ", pointRule=" + pointRule + "}'";
+        return "TpsControlRule{" + "pointName='" + pointName + '\'' + ", pointRule=" + pointRule
+            + "}'";
     }
 }

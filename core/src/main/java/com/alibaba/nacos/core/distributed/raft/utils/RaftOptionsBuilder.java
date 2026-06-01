@@ -68,38 +68,50 @@ public class RaftOptionsBuilder {
         raftOptions.setReadOnlyOptions(raftReadIndexType(config));
         
         raftOptions.setMaxByteCountPerRpc(
-                ConvertUtils.toInt(config.getVal(MAX_BYTE_COUNT_PER_RPC), DEFAULT_MAX_BYTE_COUNT_PER_RPC));
+            ConvertUtils.toInt(config.getVal(MAX_BYTE_COUNT_PER_RPC),
+                DEFAULT_MAX_BYTE_COUNT_PER_RPC));
         
-        raftOptions.setMaxEntriesSize(ConvertUtils.toInt(config.getVal(MAX_ENTRIES_SIZE), DEFAULT_MAX_ENTRIES_SIZE));
+        raftOptions.setMaxEntriesSize(
+            ConvertUtils.toInt(config.getVal(MAX_ENTRIES_SIZE), DEFAULT_MAX_ENTRIES_SIZE));
         
-        raftOptions.setMaxBodySize(ConvertUtils.toInt(config.getVal(MAX_BODY_SIZE), DEFAULT_MAX_BODY_SIZE));
+        raftOptions.setMaxBodySize(
+            ConvertUtils.toInt(config.getVal(MAX_BODY_SIZE), DEFAULT_MAX_BODY_SIZE));
         
         raftOptions.setMaxAppendBufferSize(
-                ConvertUtils.toInt(config.getVal(MAX_APPEND_BUFFER_SIZE), DEFAULT_MAX_APPEND_BUFFER_SIZE));
+            ConvertUtils.toInt(config.getVal(MAX_APPEND_BUFFER_SIZE),
+                DEFAULT_MAX_APPEND_BUFFER_SIZE));
         
         raftOptions.setMaxElectionDelayMs(
-                ConvertUtils.toInt(config.getVal(MAX_ELECTION_DELAY_MS), DEFAULT_MAX_ELECTION_DELAY_MS));
+            ConvertUtils.toInt(config.getVal(MAX_ELECTION_DELAY_MS),
+                DEFAULT_MAX_ELECTION_DELAY_MS));
         
         raftOptions.setElectionHeartbeatFactor(
-                ConvertUtils.toInt(config.getVal(ELECTION_HEARTBEAT_FACTOR), DEFAULT_ELECTION_HEARTBEAT_FACTOR));
+            ConvertUtils.toInt(config.getVal(ELECTION_HEARTBEAT_FACTOR),
+                DEFAULT_ELECTION_HEARTBEAT_FACTOR));
         
-        raftOptions.setApplyBatch(ConvertUtils.toInt(config.getVal(APPLY_BATCH), DEFAULT_APPLY_BATCH));
+        raftOptions
+            .setApplyBatch(ConvertUtils.toInt(config.getVal(APPLY_BATCH), DEFAULT_APPLY_BATCH));
         
         raftOptions.setSync(ConvertUtils.toBoolean(config.getVal(SYNC), DEFAULT_SYNC));
         
-        raftOptions.setSyncMeta(ConvertUtils.toBoolean(config.getVal(SYNC_META), DEFAULT_SYNC_META));
+        raftOptions
+            .setSyncMeta(ConvertUtils.toBoolean(config.getVal(SYNC_META), DEFAULT_SYNC_META));
         
         raftOptions.setDisruptorBufferSize(
-                ConvertUtils.toInt(config.getVal(DISRUPTOR_BUFFER_SIZE), DEFAULT_DISRUPTOR_BUFFER_SIZE));
+            ConvertUtils.toInt(config.getVal(DISRUPTOR_BUFFER_SIZE),
+                DEFAULT_DISRUPTOR_BUFFER_SIZE));
         
         raftOptions.setReplicatorPipeline(
-                ConvertUtils.toBoolean(config.getVal(REPLICATOR_PIPELINE), DEFAULT_REPLICATOR_PIPELINE));
+            ConvertUtils.toBoolean(config.getVal(REPLICATOR_PIPELINE),
+                DEFAULT_REPLICATOR_PIPELINE));
         
         raftOptions.setMaxReplicatorInflightMsgs(
-                ConvertUtils.toInt(config.getVal(MAX_REPLICATOR_INFLIGHT_MSGS), DEFAULT_MAX_REPLICATOR_INFLIGHT_MSGS));
+            ConvertUtils.toInt(config.getVal(MAX_REPLICATOR_INFLIGHT_MSGS),
+                DEFAULT_MAX_REPLICATOR_INFLIGHT_MSGS));
         
         raftOptions.setEnableLogEntryChecksum(
-                ConvertUtils.toBoolean(config.getVal(ENABLE_LOG_ENTRY_CHECKSUM), DEFAULT_ENABLE_LOG_ENTRY_CHECKSUM));
+            ConvertUtils.toBoolean(config.getVal(ENABLE_LOG_ENTRY_CHECKSUM),
+                DEFAULT_ENABLE_LOG_ENTRY_CHECKSUM));
         
         return raftOptions;
     }
@@ -117,7 +129,8 @@ public class RaftOptionsBuilder {
         if (StringUtils.equals(readOnlyLeaseBased, val)) {
             return ReadOnlyOption.ReadOnlyLeaseBased;
         }
-        throw new IllegalArgumentException("Illegal Raft system parameters => ReadOnlyOption" + " : [" + val
+        throw new IllegalArgumentException(
+            "Illegal Raft system parameters => ReadOnlyOption" + " : [" + val
                 + "], should be 'ReadOnlySafe' or 'ReadOnlyLeaseBased'");
         
     }

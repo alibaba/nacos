@@ -43,11 +43,11 @@ public class AgentSpecLabelsUpdateForm extends AgentSpecForm {
         fillDefaultNamespaceId();
         if (StringUtils.isBlank(getAgentSpecName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `agentSpecName` should not be blank.");
+                "Request parameter `agentSpecName` should not be blank.");
         }
         if (StringUtils.isBlank(labels)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `labels` should not be blank.");
+                "Request parameter `labels` should not be blank.");
         }
     }
     

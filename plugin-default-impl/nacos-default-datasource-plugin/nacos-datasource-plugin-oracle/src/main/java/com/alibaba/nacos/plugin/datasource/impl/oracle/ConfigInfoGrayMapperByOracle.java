@@ -30,25 +30,30 @@ import java.util.Collections;
  *
  * @author liam.fu
  **/
-public class ConfigInfoGrayMapperByOracle  extends AbstractMapperByOracle implements ConfigInfoGrayMapper {
-
+public class ConfigInfoGrayMapperByOracle extends AbstractMapperByOracle
+    implements ConfigInfoGrayMapper {
+    
     @Override
     public MapperResult findChangeConfig(MapperContext context) {
         String sql =
-                "SELECT id, data_id, group_id, tenant_id, app_name,content,gray_name,gray_rule,md5, gmt_modified, encrypted_data_key "
-                        + "FROM config_info_gray WHERE " + "gmt_modified >= ? and id > ? order by id fetch first ? rows only";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+            "SELECT id, data_id, group_id, tenant_id, app_name,content,gray_name,gray_rule,md5, gmt_modified, encrypted_data_key "
+                + "FROM config_info_gray WHERE "
+                + "gmt_modified >= ? and id > ? order by id fetch first ? rows only";
+        return new MapperResult(sql,
+            CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
                 context.getWhereParameter(FieldConstant.LAST_MAX_ID),
                 context.getWhereParameter(FieldConstant.PAGE_SIZE)));
     }
-
+    
     @Override
     public MapperResult findAllConfigInfoGrayForDumpAllFetchRows(MapperContext context) {
-        String sql = " SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,md5,gmt_modified "
-                + " FROM  config_info_gray  ORDER BY id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
+        String sql =
+            " SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,md5,gmt_modified "
+                + " FROM  config_info_gray  ORDER BY id OFFSET " + context.getStartRow()
+                + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, Collections.emptyList());
     }
-
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.ORACLE;

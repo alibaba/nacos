@@ -32,7 +32,8 @@ public abstract class AbstractGrpcResourceParser extends AbstractResourceParser<
     @Override
     protected Properties getProperties(Request request) {
         Properties properties = new Properties();
-        properties.setProperty(Constants.Resource.REQUEST_CLASS, request.getClass().getSimpleName());
+        properties.setProperty(Constants.Resource.REQUEST_CLASS,
+            request.getClass().getSimpleName());
         return properties;
     }
 }

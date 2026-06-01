@@ -26,7 +26,7 @@ import java.util.List;
  * @Date: 2022/6/24 16:25
  */
 public class BatchInstanceData implements Serializable {
-
+    
     private static final long serialVersionUID = 7845847904043098494L;
     
     private List<String> namespaces;
@@ -40,8 +40,9 @@ public class BatchInstanceData implements Serializable {
     public BatchInstanceData() {
     }
     
-    public BatchInstanceData(List<String> namespaces, List<String> groupNames, List<String> serviceNames,
-            List<BatchInstancePublishInfo> batchInstancePublishInfos) {
+    public BatchInstanceData(List<String> namespaces, List<String> groupNames,
+        List<String> serviceNames,
+        List<BatchInstancePublishInfo> batchInstancePublishInfos) {
         this.namespaces = namespaces;
         this.groupNames = groupNames;
         this.serviceNames = serviceNames;
@@ -76,7 +77,8 @@ public class BatchInstanceData implements Serializable {
         return batchInstancePublishInfos;
     }
     
-    public void setBatchInstancePublishInfos(List<BatchInstancePublishInfo> batchInstancePublishInfos) {
+    public void setBatchInstancePublishInfos(
+        List<BatchInstancePublishInfo> batchInstancePublishInfos) {
         this.batchInstancePublishInfos = batchInstancePublishInfos;
     }
 }

@@ -24,7 +24,7 @@ import java.util.UUID;
  * @author nkorange
  */
 public class UuidUtils {
-
+    
     private UuidUtils() {
     }
     

@@ -53,8 +53,9 @@ public class McpProxy {
      * @param pageSize    page size each page
      * @return list of {@link McpServerBasicInfo} matched input parameters.
      */
-    public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
-            int pageSize) throws NacosException {
+    public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName,
+        String search, int pageNo,
+        int pageSize) throws NacosException {
         return mcpHandler.listMcpServers(namespaceId, mcpName, search, pageNo, pageSize);
     }
     
@@ -66,7 +67,8 @@ public class McpProxy {
      * @return detail info with {@link McpServerDetailInfo}
      * @throws NacosException any exception during handling
      */
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException {
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId,
+        String version) throws NacosException {
         return mcpHandler.getMcpServer(namespaceId, mcpName, mcpId, version);
     }
     
@@ -81,8 +83,10 @@ public class McpProxy {
      * @throws NacosException any exception during handling
      */
     public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        return mcpHandler.createMcpServer(namespaceId, serverSpecification, toolSpecification, endpointSpecification);
+        McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification)
+        throws NacosException {
+        return mcpHandler.createMcpServer(namespaceId, serverSpecification, toolSpecification,
+            endpointSpecification);
     }
     
     /**
@@ -100,9 +104,12 @@ public class McpProxy {
      * @param overrideExisting       if replace all the instances when update the mcp server
      * @throws NacosException any exception during handling
      */
-    public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
-        mcpHandler.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification, endpointSpecification, overrideExisting);
+    public void updateMcpServer(String namespaceId, boolean isPublish,
+        McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification,
+        boolean overrideExisting) throws NacosException {
+        mcpHandler.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification,
+            endpointSpecification, overrideExisting);
     }
     
     /**
@@ -113,7 +120,8 @@ public class McpProxy {
      * @param version     version of the mcp server
      * @throws NacosException any exception during handling
      */
-    public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
+    public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId,
+        String version) throws NacosException {
         mcpHandler.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
     }
     
@@ -125,7 +133,8 @@ public class McpProxy {
      * @return validation result with details about potential issues
      * @throws NacosException any exception during validation
      */
-    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+    public McpServerImportValidationResult validateImport(String namespaceId,
+        McpServerImportRequest request) throws NacosException {
         return mcpHandler.validateImport(namespaceId, request);
     }
     
@@ -137,7 +146,8 @@ public class McpProxy {
      * @return import response with results and statistics
      * @throws NacosException any exception during import execution
      */
-    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
+        throws NacosException {
         return mcpHandler.executeImport(namespaceId, request);
     }
 }

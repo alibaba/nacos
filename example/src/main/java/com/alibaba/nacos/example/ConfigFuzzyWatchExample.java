@@ -62,12 +62,14 @@ public class ConfigFuzzyWatchExample {
         int publicConfigNum = 10;
         // Publish some configurations for testing
         for (int i = 0; i < publicConfigNum; i++) {
-            boolean isPublishOk = configService.publishConfig("test" + i, "DEFAULT_GROUP", "content");
+            boolean isPublishOk =
+                configService.publishConfig("test" + i, "DEFAULT_GROUP", "content");
             System.out.println("[publish result] " + isPublishOk);
         }
         
         // Define a fuzzy listener to handle configuration changes
         FuzzyWatchEventWatcher listener = new AbstractFuzzyWatchEventWatcher() {
+            
             @Override
             public void onEvent(ConfigFuzzyWatchChangeEvent event) {
                 System.out.println("[fuzzy listen config change]" + event.toString());
@@ -80,10 +82,12 @@ public class ConfigFuzzyWatchExample {
         
         // Publish more configurations to trigger the listener
         Thread.sleep(1000);
-        boolean isPublishOkOne = configService.publishConfig("test-one", "DEFAULT_GROUP", "content");
+        boolean isPublishOkOne =
+            configService.publishConfig("test-one", "DEFAULT_GROUP", "content");
         System.out.println("[publish result] " + isPublishOkOne);
         
-        boolean isPublishOkTwo = configService.publishConfig("nacos-test-two", "DEFAULT_GROUP", "content");
+        boolean isPublishOkTwo =
+            configService.publishConfig("nacos-test-two", "DEFAULT_GROUP", "content");
         System.out.println("[publish result] " + isPublishOkTwo);
         
         boolean isPublishOkThree = configService.publishConfig("test", "DEFAULT_GROUP", "content");

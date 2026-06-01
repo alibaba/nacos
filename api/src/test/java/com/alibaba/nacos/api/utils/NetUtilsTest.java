@@ -70,7 +70,8 @@ class NetUtilsTest {
         field.setAccessible(true);
         Properties properties = (Properties) field.get(null);
         Properties mockProperties = mock(Properties.class);
-        when(mockProperties.getProperty("java.net.preferIPv6Addresses")).thenThrow(new RuntimeException("test"));
+        when(mockProperties.getProperty("java.net.preferIPv6Addresses"))
+            .thenThrow(new RuntimeException("test"));
         field.set(null, mockProperties);
         try {
             System.setProperty("java.net.preferIPv6Addresses", "aaa");

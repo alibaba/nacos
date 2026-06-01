@@ -39,7 +39,8 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     
     private final SwitchDomain switchDomain;
     
-    public FuzzyWatchPushDelayTaskEngine(PushExecutorDelegate pushExecutor, SwitchDomain switchDomain) {
+    public FuzzyWatchPushDelayTaskEngine(PushExecutorDelegate pushExecutor,
+        SwitchDomain switchDomain) {
         super(FuzzyWatchPushDelayTaskEngine.class.getSimpleName(), Loggers.PUSH);
         this.pushExecutor = pushExecutor;
         this.switchDomain = switchDomain;
@@ -62,7 +63,8 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
         
         private final FuzzyWatchPushDelayTaskEngine fuzzyWatchPushExecuteEngine;
         
-        public WatchPushDelayTaskProcessor(FuzzyWatchPushDelayTaskEngine fuzzyWatchPushExecuteEngine) {
+        public WatchPushDelayTaskProcessor(
+            FuzzyWatchPushDelayTaskEngine fuzzyWatchPushExecuteEngine) {
             this.fuzzyWatchPushExecuteEngine = fuzzyWatchPushExecuteEngine;
         }
         
@@ -71,19 +73,22 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
             
             if (task instanceof FuzzyWatchChangeNotifyTask) {
                 //process  fuzzy watch change notify when a service changed
-                FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask = (FuzzyWatchChangeNotifyTask) task;
+                FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask =
+                    (FuzzyWatchChangeNotifyTask) task;
                 NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(getTaskKey(task),
-                        new FuzzyWatchChangeNotifyExecuteTask(fuzzyWatchPushExecuteEngine,
-                                fuzzyWatchChangeNotifyTask.getServiceKey(), fuzzyWatchChangeNotifyTask.getChangedType(),
-                                fuzzyWatchChangeNotifyTask.getClientId()));
+                    new FuzzyWatchChangeNotifyExecuteTask(fuzzyWatchPushExecuteEngine,
+                        fuzzyWatchChangeNotifyTask.getServiceKey(),
+                        fuzzyWatchChangeNotifyTask.getChangedType(),
+                        fuzzyWatchChangeNotifyTask.getClientId()));
             } else if (task instanceof FuzzyWatchSyncNotifyTask) {
                 //process fuzzy watch sync notify when a new client fuzzy watch a pattern
                 FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = (FuzzyWatchSyncNotifyTask) task;
                 String pattern = fuzzyWatchSyncNotifyTask.getPattern();
                 String clientId = fuzzyWatchSyncNotifyTask.getClientId();
                 NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(getTaskKey(task),
-                        new FuzzyWatchSyncNotifyExecuteTask(clientId, pattern, fuzzyWatchPushExecuteEngine,
-                                fuzzyWatchSyncNotifyTask));
+                    new FuzzyWatchSyncNotifyExecuteTask(clientId, pattern,
+                        fuzzyWatchPushExecuteEngine,
+                        fuzzyWatchSyncNotifyTask));
             }
             return true;
         }
@@ -93,11 +98,12 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     public static String getTaskKey(NacosTask task) {
         if (task instanceof FuzzyWatchChangeNotifyTask) {
             return "fwcnT-" + ((FuzzyWatchChangeNotifyTask) task).getClientId()
-                    + ((FuzzyWatchChangeNotifyTask) task).getServiceKey();
+                + ((FuzzyWatchChangeNotifyTask) task).getServiceKey();
         } else if (task instanceof FuzzyWatchSyncNotifyTask) {
             return "fwsnT-" + ((FuzzyWatchSyncNotifyTask) task).getSyncType() + "-"
-                    + ((FuzzyWatchSyncNotifyTask) task).getClientId() + ((FuzzyWatchSyncNotifyTask) task).getPattern()
-                    + "-" + ((FuzzyWatchSyncNotifyTask) task).getCurrentBatch();
+                + ((FuzzyWatchSyncNotifyTask) task).getClientId()
+                + ((FuzzyWatchSyncNotifyTask) task).getPattern()
+                + "-" + ((FuzzyWatchSyncNotifyTask) task).getCurrentBatch();
         } else {
             throw new NacosRuntimeException(500, "unknown fuzzy task type");
         }

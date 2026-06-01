@@ -54,14 +54,15 @@ public class RuleStorageProxy {
     
     private void buildExternalStorage(String externalStorageType) {
         Collection<ExternalRuleStorageBuilder> externalRuleStorageBuilders = NacosServiceLoader
-                .load(ExternalRuleStorageBuilder.class);
+            .load(ExternalRuleStorageBuilder.class);
         for (ExternalRuleStorageBuilder each : externalRuleStorageBuilders) {
             LOGGER.info("Found persist rule storage of name : {}", externalStorageType);
             if (externalStorageType.equalsIgnoreCase(each.getName())) {
                 try {
                     externalRuleStorage = each.buildExternalRuleStorage();
                 } catch (Exception e) {
-                    LOGGER.warn("Build external rule storage failed, the rules will not be persisted", e);
+                    LOGGER.warn(
+                        "Build external rule storage failed, the rules will not be persisted", e);
                 }
                 LOGGER.info("Build external rule storage of name {} finished", externalStorageType);
                 break;
@@ -75,7 +76,8 @@ public class RuleStorageProxy {
     private void initLocalStorage() {
         localDiskRuleStorage = new LocalDiskRuleStorage();
         if (StringUtils.isNotBlank(ControlConfigs.getInstance().getLocalRuleStorageBaseDir())) {
-            localDiskRuleStorage.setLocalRuleBaseDir(ControlConfigs.getInstance().getLocalRuleStorageBaseDir());
+            localDiskRuleStorage
+                .setLocalRuleBaseDir(ControlConfigs.getInstance().getLocalRuleStorageBaseDir());
         }
     }
     

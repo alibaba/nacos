@@ -79,9 +79,10 @@ public class RdsGenerator implements ApiGenerator<Any> {
         List<Any> result = new ArrayList<>();
         Set<String> reasons = pushRequest.getReason();
         if (reasons.contains(DEFAULT_ROUTE_CONFIGURATION)) {
-            reasons.stream().filter(reason -> !DEFAULT_ROUTE_CONFIGURATION.equals(reason)).forEach(reason -> {
-                result.add(buildDefaultRouteConfiguration(reason));
-            });
+            reasons.stream().filter(reason -> !DEFAULT_ROUTE_CONFIGURATION.equals(reason))
+                .forEach(reason -> {
+                    result.add(buildDefaultRouteConfiguration(reason));
+                });
         } else if (reasons.contains(CONFIG_REASON)) {
             reasons.stream().filter(reason -> !CONFIG_REASON.equals(reason)).forEach(reason -> {
                 VirtualService vs = parseContent(reason, VirtualService.class);
@@ -108,15 +109,22 @@ public class RdsGenerator implements ApiGenerator<Any> {
         String virtualHostName = routeConfigurationName;
         if (routeConfigurationName.endsWith(ROUTE_CONFIGURATION_SUFFIX)) {
             virtualHostName = routeConfigurationName.substring(0,
-                    routeConfigurationName.length() - ROUTE_CONFIGURATION_SUFFIX.length());
+                routeConfigurationName.length() - ROUTE_CONFIGURATION_SUFFIX.length());
         }
-        RouteConfiguration routeConfiguration = RouteConfiguration.newBuilder().setName(routeConfigurationName)
-                .addVirtualHosts(VirtualHost.newBuilder().setName(virtualHostName).addDomains("*").addRoutes(
-                        Route.newBuilder().setMatch(RouteMatch.newBuilder().setPrefix("/").build())
-                                .setRoute(RouteAction.newBuilder().setCluster(BOOTSTRAP_UPSTREAM_CLUSTER).build())
-                                .build()).build()).build();
+        RouteConfiguration routeConfiguration = RouteConfiguration.newBuilder()
+            .setName(routeConfigurationName)
+            .addVirtualHosts(VirtualHost.newBuilder().setName(virtualHostName).addDomains("*")
+                .addRoutes(
+                    Route.newBuilder()
+                        .setMatch(RouteMatch.newBuilder().setPrefix("/").build())
+                        .setRoute(RouteAction.newBuilder()
+                            .setCluster(BOOTSTRAP_UPSTREAM_CLUSTER).build())
+                        .build())
+                .build())
+            .build();
         
-        return Any.newBuilder().setValue(routeConfiguration.toByteString()).setTypeUrl(ROUTE_TYPE).build();
+        return Any.newBuilder().setValue(routeConfiguration.toByteString()).setTypeUrl(ROUTE_TYPE)
+            .build();
     }
     
     /***
@@ -125,31 +133,35 @@ public class RdsGenerator implements ApiGenerator<Any> {
      * @param pushRequest PushRequest
      * @return
      */
-    public static Any generateRdsFromVirtualService(VirtualService virtualService, PushRequest pushRequest) {
+    public static Any generateRdsFromVirtualService(VirtualService virtualService,
+        PushRequest pushRequest) {
         List<VirtualService.Spec.Http> httpRoutes = virtualService.getSpec().getHttp();
         List<String> hosts = virtualService.getSpec().getHosts();
-        Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources()
+        Map<String, IstioService> istioServiceMap =
+            pushRequest.getResourceSnapshot().getIstioResources()
                 .getIstioServiceMap();
         List<String> hostnames = getMatchingHostnames(hosts, pushRequest);
         String virtualHostName = virtualService.getMetadata().getName();
         for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
             if (entry.getKey().contains(virtualHostName)) {
-                virtualHostName = buildClusterName(TrafficDirection.OUTBOUND, "", entry.getKey() + DOMAIN_SUFFIX,
-                        entry.getValue().getPort());
+                virtualHostName = buildClusterName(TrafficDirection.OUTBOUND, "",
+                    entry.getKey() + DOMAIN_SUFFIX,
+                    entry.getValue().getPort());
                 Loggers.MAIN.info("Setting virtualHostName: {}", virtualHostName);
             }
         }
         VirtualHost.Builder virtualHostBuilder = VirtualHost.newBuilder().setName(virtualHostName)
-                .addAllDomains(hostnames);
+            .addAllDomains(hostnames);
         
         for (VirtualService.Spec.Http httpRoute : httpRoutes) {
             processHttpRoute(httpRoute, virtualHostBuilder, pushRequest);
         }
         
         RouteConfiguration routeConfiguration = RouteConfiguration.newBuilder()
-                .setName(virtualService.getMetadata().getName() + ROUTE_CONFIGURATION_SUFFIX)
-                .addVirtualHosts(virtualHostBuilder).build();
-        return Any.newBuilder().setValue(routeConfiguration.toByteString()).setTypeUrl(ROUTE_TYPE).build();
+            .setName(virtualService.getMetadata().getName() + ROUTE_CONFIGURATION_SUFFIX)
+            .addVirtualHosts(virtualHostBuilder).build();
+        return Any.newBuilder().setValue(routeConfiguration.toByteString()).setTypeUrl(ROUTE_TYPE)
+            .build();
         
     }
     
@@ -159,7 +171,8 @@ public class RdsGenerator implements ApiGenerator<Any> {
     
     private static List<String> getMatchingHostnames(List<String> hosts, PushRequest pushRequest) {
         List<String> hostnames = new ArrayList<>();
-        Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources()
+        Map<String, IstioService> istioServiceMap =
+            pushRequest.getResourceSnapshot().getIstioResources()
                 .getIstioServiceMap();
         for (String host : hosts) {
             if ("*".equals(host)) {
@@ -168,7 +181,8 @@ public class RdsGenerator implements ApiGenerator<Any> {
             }
             for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
                 if (entry.getKey().contains(host)) {
-                    String hostname = buildClusterName(TrafficDirection.OUTBOUND, "", host + DOMAIN_SUFFIX,
+                    String hostname =
+                        buildClusterName(TrafficDirection.OUTBOUND, "", host + DOMAIN_SUFFIX,
                             entry.getValue().getPort());
                     Loggers.MAIN.info("Matching hostname: {}", hostname);
                     hostnames.add(hostname);
@@ -178,8 +192,9 @@ public class RdsGenerator implements ApiGenerator<Any> {
         return hostnames;
     }
     
-    private static void processHttpRoute(VirtualService.Spec.Http httpRoute, VirtualHost.Builder virtualHostBuilder,
-            PushRequest pushRequest) {
+    private static void processHttpRoute(VirtualService.Spec.Http httpRoute,
+        VirtualHost.Builder virtualHostBuilder,
+        PushRequest pushRequest) {
         Route.Builder routeBuilder = Route.newBuilder();
         
         if (httpRoute.getName() != null) {
@@ -194,7 +209,8 @@ public class RdsGenerator implements ApiGenerator<Any> {
                 routeMatchBuilder.setPath(match.getUri().getExact());
             } else if (match.getUri().getRegex() != null) {
                 // 检查是否定义了正则表达式
-                RegexMatcher regexMatcher = RegexMatcher.newBuilder().setRegex(match.getUri().getRegex()).build();
+                RegexMatcher regexMatcher =
+                    RegexMatcher.newBuilder().setRegex(match.getUri().getRegex()).build();
                 routeMatchBuilder.setSafeRegex(regexMatcher);
             }
             routeBuilder.setMatch(routeMatchBuilder);
@@ -208,9 +224,11 @@ public class RdsGenerator implements ApiGenerator<Any> {
         virtualHostBuilder.addRoutes(routeBuilder);
     }
     
-    private static void setRouteAction(VirtualService.Spec.Http httpRoute, Route.Builder routeBuilder,
-            PushRequest pushRequest) {
-        Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources()
+    private static void setRouteAction(VirtualService.Spec.Http httpRoute,
+        Route.Builder routeBuilder,
+        PushRequest pushRequest) {
+        Map<String, IstioService> istioServiceMap =
+            pushRequest.getResourceSnapshot().getIstioResources()
                 .getIstioServiceMap();
         RouteAction.Builder routeActionBuilder = RouteAction.newBuilder();
         String hostName = httpRoute.getRoute().get(0).getDestination().getHost();
@@ -220,15 +238,17 @@ public class RdsGenerator implements ApiGenerator<Any> {
         String destName = hostName;
         for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
             if (entry.getKey().contains(hostName)) {
-                destName = buildClusterName(TrafficDirection.OUTBOUND, "", entry.getKey() + DOMAIN_SUFFIX,
-                        entry.getValue().getPort());
+                destName = buildClusterName(TrafficDirection.OUTBOUND, "",
+                    entry.getKey() + DOMAIN_SUFFIX,
+                    entry.getValue().getPort());
                 Loggers.MAIN.info("Setting route action to destination: {}", destName);
             }
         }
         routeBuilder.setRoute(routeActionBuilder.setCluster(destName));
     }
     
-    private static void setRedirectAction(VirtualService.Spec.Http.Redirect redirect, Route.Builder routeBuilder) {
+    private static void setRedirectAction(VirtualService.Spec.Http.Redirect redirect,
+        Route.Builder routeBuilder) {
         RedirectAction.Builder redirectBuilder = RedirectAction.newBuilder();
         if (redirect.getUri() != null) {
             redirectBuilder.setPathRedirect(redirect.getUri());

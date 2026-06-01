@@ -41,7 +41,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class McpServerCacheInvalidateService extends Subscriber<LocalDataChangeEvent> {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(McpServerCacheInvalidateService.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(McpServerCacheInvalidateService.class);
     
     private final McpServerIndex mcpServerIndex;
     
@@ -59,7 +60,7 @@ public class McpServerCacheInvalidateService extends Subscriber<LocalDataChangeE
     void handleConfigDataChangeEvent(LocalDataChangeEvent event) {
         // Check if the configuration is MCP server related
         String groupKey = event.groupKey;
-
+        
         String[] strings = GroupKey.parseKey(groupKey);
         String dataId = strings[0];
         String group = strings[1];
@@ -78,8 +79,9 @@ public class McpServerCacheInvalidateService extends Subscriber<LocalDataChangeE
         // Invalidate cache
         invalidateCache(tenant, serverId);
         
-        LOGGER.info("Handled MCP server config change event: namespaceId={}, group={}, dataId={}, serverId={}",
-                tenant, group, dataId, serverId);
+        LOGGER.info(
+            "Handled MCP server config change event: namespaceId={}, group={}, dataId={}, serverId={}",
+            tenant, group, dataId, serverId);
     }
     
     /**
@@ -109,8 +111,10 @@ public class McpServerCacheInvalidateService extends Subscriber<LocalDataChangeE
     private String extractServerIdFromDataId(String group, String dataId) {
         if (Constants.MCP_SERVER_VERSIONS_GROUP.equals(group)) {
             // Version info: remove "-mcp-versions.json" suffix
-            if (StringUtils.isNotEmpty(dataId) && dataId.endsWith(Constants.MCP_SERVER_VERSION_DATA_ID_SUFFIX)) {
-                return dataId.substring(0, dataId.length() - Constants.MCP_SERVER_VERSION_DATA_ID_SUFFIX.length());
+            if (StringUtils.isNotEmpty(dataId)
+                && dataId.endsWith(Constants.MCP_SERVER_VERSION_DATA_ID_SUFFIX)) {
+                return dataId.substring(0,
+                    dataId.length() - Constants.MCP_SERVER_VERSION_DATA_ID_SUFFIX.length());
             }
         }
         return null;
@@ -130,20 +134,23 @@ public class McpServerCacheInvalidateService extends Subscriber<LocalDataChangeE
             // Clear cache by server ID
             mcpServerIndex.removeMcpServerById(serverId);
             
-            LOGGER.info("MCP Server cache invalidated successfully: namespaceId={}, serverId={}", namespaceId,
-                    serverId);
+            LOGGER.info("MCP Server cache invalidated successfully: namespaceId={}, serverId={}",
+                namespaceId,
+                serverId);
         } catch (Exception e) {
             // Cache invalidation failure should not affect configuration deletion
-            LOGGER.error("Failed to invalidate MCP Server cache: namespaceId={}, serverId={}, error={}", namespaceId,
-                    serverId, e.getMessage(), e);
+            LOGGER.error(
+                "Failed to invalidate MCP Server cache: namespaceId={}, serverId={}, error={}",
+                namespaceId,
+                serverId, e.getMessage(), e);
         }
     }
-
+    
     @Override
     public void onEvent(LocalDataChangeEvent event) {
         handleConfigDataChangeEvent(event);
     }
-
+    
     @Override
     public Class<? extends Event> subscribeType() {
         return LocalDataChangeEvent.class;

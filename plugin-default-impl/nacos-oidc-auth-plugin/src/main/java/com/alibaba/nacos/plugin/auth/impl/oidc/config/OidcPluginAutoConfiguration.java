@@ -33,7 +33,7 @@ import org.springframework.context.annotation.Import;
 @Import(OidcWebSecurityConfig.class)
 @SuppressWarnings("PMD")
 public class OidcPluginAutoConfiguration {
-
+    
     /**
      * Register OidcLoginController bean.
      *

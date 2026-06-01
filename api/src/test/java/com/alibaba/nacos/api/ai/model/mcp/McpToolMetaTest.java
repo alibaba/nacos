@@ -58,7 +58,7 @@ class McpToolMetaTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"invokeContext\":{\"path\":\"/api/tool\",\"method\":\"POST\"},"
-                + "\"enabled\":true,\"templates\":{\"default\":{\"templateType\":\"json\"}}}";
+            + "\"enabled\":true,\"templates\":{\"default\":{\"templateType\":\"json\"}}}";
         
         McpToolMeta result = mapper.readValue(json, McpToolMeta.class);
         assertNotNull(result);

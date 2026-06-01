@@ -43,8 +43,8 @@ class OfficialMetaTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"serverId\":\"server1\",\"versionId\":\"version1\","
-                + "\"publishedAt\":\"2022-01-01T00:00:00Z\",\"updatedAt\":\"2022-01-02T00:00:00Z\","
-                + "\"isLatest\":true}";
+            + "\"publishedAt\":\"2022-01-01T00:00:00Z\",\"updatedAt\":\"2022-01-02T00:00:00Z\","
+            + "\"isLatest\":true}";
         
         OfficialMeta officialMeta = mapper.readValue(json, OfficialMeta.class);
         assertNotNull(officialMeta);

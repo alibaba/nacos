@@ -49,7 +49,8 @@ public class NacosApiException extends NacosException {
     public NacosApiException() {
     }
     
-    public NacosApiException(int statusCode, ErrorCode errorCode, Throwable throwable, String message) {
+    public NacosApiException(int statusCode, ErrorCode errorCode, Throwable throwable,
+        String message) {
         super(statusCode, message, throwable);
         this.detailErrCode = errorCode.getCode();
         this.errAbstract = errorCode.getMsg();

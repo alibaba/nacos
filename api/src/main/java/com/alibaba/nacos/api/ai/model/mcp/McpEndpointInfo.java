@@ -31,13 +31,13 @@ public class McpEndpointInfo {
      * Indicate the protocol of the endpoint (http / https).
      */
     private String protocol;
-
+    
     private String address;
     
     private int port;
     
     private String path;
-
+    
     private List<KeyValueInput> headers;
     
     public String getAddress() {
@@ -55,27 +55,27 @@ public class McpEndpointInfo {
     public void setPort(int port) {
         this.port = port;
     }
-
+    
     public String getPath() {
         return path;
     }
-
+    
     public void setPath(String path) {
         this.path = path;
     }
-
+    
     public String getProtocol() {
         return protocol;
     }
-
+    
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
-
+    
     public List<KeyValueInput> getHeaders() {
         return headers;
     }
-
+    
     public void setHeaders(List<KeyValueInput> headers) {
         this.headers = headers;
     }

@@ -31,7 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class AbilityControlManagerTest {
     
-    private TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
+    private TestServerAbilityControlManager serverAbilityControlManager =
+        new TestServerAbilityControlManager();
     
     @BeforeEach
     void inject() {
@@ -42,23 +43,26 @@ class AbilityControlManagerTest {
     
     @Test
     void testCurrentNodeAbility() {
-        Set<String> keySet = serverAbilityControlManager.getCurrentNodeAbilities(AbilityMode.SERVER).keySet();
+        Set<String> keySet =
+            serverAbilityControlManager.getCurrentNodeAbilities(AbilityMode.SERVER).keySet();
         // disable all
-        keySet.forEach(key -> serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+        keySet.forEach(key -> serverAbilityControlManager
+            .disableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
             assertNotEquals(AbilityStatus.SUPPORTED,
-                    serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+                serverAbilityControlManager
+                    .isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         });
         // enable all
-        keySet.forEach(key -> serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+        keySet.forEach(key -> serverAbilityControlManager
+            .enableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
             assertEquals(AbilityStatus.SUPPORTED,
-                    serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+                serverAbilityControlManager
+                    .isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         });
     }
     
 }
-
-

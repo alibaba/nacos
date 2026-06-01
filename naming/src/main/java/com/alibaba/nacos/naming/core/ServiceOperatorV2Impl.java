@@ -69,7 +69,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     private final SubscribeManager subscribeManager;
     
     public ServiceOperatorV2Impl(NamingMetadataOperateService metadataOperateService,
-            NamingMetadataManager metadataManager, ServiceStorage serviceStorage, SubscribeManager subscribeManager) {
+        NamingMetadataManager metadataManager, ServiceStorage serviceStorage,
+        SubscribeManager subscribeManager) {
         this.metadataOperateService = metadataOperateService;
         this.metadataManager = metadataManager;
         this.serviceStorage = serviceStorage;
@@ -77,8 +78,10 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     @Override
-    public void create(String namespaceId, String serviceName, ServiceMetadata metadata) throws NacosException {
-        Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, metadata.isEphemeral());
+    public void create(String namespaceId, String serviceName, ServiceMetadata metadata)
+        throws NacosException {
+        Service service =
+            getServiceFromGroupedServiceName(namespaceId, serviceName, metadata.isEphemeral());
         create(service, metadata);
     }
     
@@ -91,8 +94,10 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
      */
     public void create(Service service, ServiceMetadata metadata) throws NacosException {
         if (ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_ALREADY_EXIST,
-                    String.format("specified service %s already exists!", service.getGroupedServiceName()));
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.SERVICE_ALREADY_EXIST,
+                String.format("specified service %s already exists!",
+                    service.getGroupedServiceName()));
         }
         metadataOperateService.updateServiceMetadata(service, metadata);
     }
@@ -101,7 +106,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     public void update(Service service, ServiceMetadata metadata) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
-                    String.format("service %s not found!", service.getGroupedServiceName()));
+                String.format("service %s not found!", service.getGroupedServiceName()));
         }
         metadataOperateService.updateServiceMetadata(service, metadata);
         NotifyCenter.publishEvent(new InfoChangeEvent.ServiceInfoChangeEvent(service));
@@ -122,13 +127,14 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     public void delete(Service service) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
-                    String.format("service %s not found!", service.getGroupedServiceName()));
+                String.format("service %s not found!", service.getGroupedServiceName()));
         }
         
         if (!serviceStorage.getPushData(service).getHosts().isEmpty()) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_DELETE_FAILURE,
-                    "Service " + service.getGroupedServiceName()
-                            + " is not empty, can't be delete. Please unregister instance first");
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.SERVICE_DELETE_FAILURE,
+                "Service " + service.getGroupedServiceName()
+                    + " is not empty, can't be delete. Please unregister instance first");
         }
         metadataOperateService.deleteServiceMetadata(service);
     }
@@ -138,16 +144,18 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, true);
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
-                    "service not found, namespace: " + namespaceId + ", serviceName: " + serviceName);
+                "service not found, namespace: " + namespaceId + ", serviceName: " + serviceName);
         }
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(new ServiceMetadata());
+        ServiceMetadata serviceMetadata =
+            metadataManager.getServiceMetadata(service).orElse(new ServiceMetadata());
         setServiceMetadata(result, serviceMetadata, service);
         ArrayNode clusters = JacksonUtils.createEmptyArrayNode();
         for (String each : serviceStorage.getClusters(service)) {
             ClusterMetadata clusterMetadata =
-                    serviceMetadata.getClusters().containsKey(each) ? serviceMetadata.getClusters().get(each)
-                            : new ClusterMetadata();
+                serviceMetadata.getClusters().containsKey(each)
+                    ? serviceMetadata.getClusters().get(each)
+                    : new ClusterMetadata();
             clusters.add(newClusterNode(each, clusterMetadata));
         }
         result.set(FieldsConstants.CLUSTERS, clusters);
@@ -164,18 +172,20 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     public ServiceDetailInfo queryService(Service service) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
-                    "service not found, namespace: " + service.getNamespace() + ", serviceName: "
-                            + service.getGroupedServiceName());
+                "service not found, namespace: " + service.getNamespace() + ", serviceName: "
+                    + service.getGroupedServiceName());
         }
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         ServiceDetailInfo result = new ServiceDetailInfo();
-        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(singleton).orElse(new ServiceMetadata());
+        ServiceMetadata serviceMetadata =
+            metadataManager.getServiceMetadata(singleton).orElse(new ServiceMetadata());
         setServiceMetadata(result, serviceMetadata, singleton);
         Map<String, ClusterInfo> clusters = new HashMap<>(2);
         for (String each : serviceStorage.getClusters(singleton)) {
             ClusterMetadata clusterMetadata =
-                    serviceMetadata.getClusters().containsKey(each) ? serviceMetadata.getClusters().get(each)
-                            : new ClusterMetadata();
+                serviceMetadata.getClusters().containsKey(each)
+                    ? serviceMetadata.getClusters().get(each)
+                    : new ClusterMetadata();
             clusters.put(each, newClusterNodeV2(each, clusterMetadata));
         }
         result.setClusterMap(clusters);
@@ -183,17 +193,20 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         return result;
     }
     
-    private void setServiceMetadata(ObjectNode serviceDetail, ServiceMetadata serviceMetadata, Service service) {
+    private void setServiceMetadata(ObjectNode serviceDetail, ServiceMetadata serviceMetadata,
+        Service service) {
         serviceDetail.put(FieldsConstants.NAME_SPACE_ID, service.getNamespace());
         serviceDetail.put(FieldsConstants.GROUP_NAME, service.getGroup());
         serviceDetail.put(FieldsConstants.NAME, service.getName());
         serviceDetail.put(FieldsConstants.PROTECT_THRESHOLD, serviceMetadata.getProtectThreshold());
         serviceDetail.replace(FieldsConstants.METADATA,
-                JacksonUtils.transferToJsonNode(serviceMetadata.getExtendData()));
-        serviceDetail.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(serviceMetadata.getSelector()));
+            JacksonUtils.transferToJsonNode(serviceMetadata.getExtendData()));
+        serviceDetail.replace(FieldsConstants.SELECTOR,
+            JacksonUtils.transferToJsonNode(serviceMetadata.getSelector()));
     }
     
-    private void setServiceMetadata(ServiceDetailInfo serviceDetail, ServiceMetadata serviceMetadata, Service service) {
+    private void setServiceMetadata(ServiceDetailInfo serviceDetail,
+        ServiceMetadata serviceMetadata, Service service) {
         serviceDetail.setNamespaceId(service.getNamespace());
         serviceDetail.setGroupName(service.getGroup());
         serviceDetail.setServiceName(service.getName());
@@ -206,8 +219,9 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put(FieldsConstants.NAME, clusterName);
         result.replace(FieldsConstants.HEALTH_CHECKER,
-                JacksonUtils.transferToJsonNode(clusterMetadata.getHealthChecker()));
-        result.replace(FieldsConstants.METADATA, JacksonUtils.transferToJsonNode(clusterMetadata.getExtendData()));
+            JacksonUtils.transferToJsonNode(clusterMetadata.getHealthChecker()));
+        result.replace(FieldsConstants.METADATA,
+            JacksonUtils.transferToJsonNode(clusterMetadata.getExtendData()));
         return result;
     }
     
@@ -223,7 +237,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<String> listService(String namespaceId, String groupName, String selector) throws NacosException {
+    public Collection<String> listService(String namespaceId, String groupName, String selector)
+        throws NacosException {
         Collection<Service> services = ServiceManager.getInstance().getSingletons(namespaceId);
         if (services.isEmpty()) {
             return Collections.EMPTY_LIST;
@@ -232,7 +247,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         return selectServiceWithGroupName(services, groupName);
     }
     
-    private Collection<String> selectServiceWithGroupName(Collection<Service> serviceSet, String groupName) {
+    private Collection<String> selectServiceWithGroupName(Collection<Service> serviceSet,
+        String groupName) {
         Collection<String> result = new HashSet<>(serviceSet.size());
         for (Service each : serviceSet) {
             if (Objects.equals(groupName, each.getGroup())) {
@@ -242,7 +258,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         return result;
     }
     
-    private Service getServiceFromGroupedServiceName(String namespaceId, String groupedServiceName, boolean ephemeral) {
+    private Service getServiceFromGroupedServiceName(String namespaceId, String groupedServiceName,
+        boolean ephemeral) {
         String groupName = NamingUtils.getGroupName(groupedServiceName);
         String serviceName = NamingUtils.getServiceName(groupedServiceName);
         return Service.newService(namespaceId, groupName, serviceName, ephemeral);
@@ -254,7 +271,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     @Override
-    public Collection<String> searchServiceName(String namespaceId, String expr) throws NacosException {
+    public Collection<String> searchServiceName(String namespaceId, String expr)
+        throws NacosException {
         String regex = Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN;
         Collection<String> result = new HashSet<>();
         for (Service each : ServiceManager.getInstance().getSingletons(namespaceId)) {
@@ -267,8 +285,9 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     @Override
-    public Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName, String groupName,
-            boolean aggregation, int pageNo, int pageSize) throws NacosException {
+    public Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName,
+        String groupName,
+        boolean aggregation, int pageNo, int pageSize) throws NacosException {
         Service service = Service.newService(namespaceId, groupName, serviceName);
         Page<SubscriberInfo> result = new Page<>();
         try {

@@ -25,7 +25,7 @@ import com.alibaba.nacos.plugin.datasource.impl.base.BaseConfigInfoTagMapper;
  * @author hyx
  **/
 
-public class ConfigInfoTagMapperByPostgresql  extends BaseConfigInfoTagMapper {
+public class ConfigInfoTagMapperByPostgresql extends BaseConfigInfoTagMapper {
     
     @Override
     public String getDataSource() {

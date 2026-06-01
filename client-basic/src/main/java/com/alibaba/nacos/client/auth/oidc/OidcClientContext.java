@@ -68,10 +68,12 @@ public class OidcClientContext {
         this.issuerUri = properties.getProperty(OidcClientConstants.PROP_ISSUER_URI);
         this.clientId = properties.getProperty(OidcClientConstants.PROP_CLIENT_ID);
         this.clientSecret = properties.getProperty(OidcClientConstants.PROP_CLIENT_SECRET);
-        this.scope = properties.getProperty(OidcClientConstants.PROP_SCOPE, OidcClientConstants.DEFAULT_SCOPE);
+        this.scope = properties.getProperty(OidcClientConstants.PROP_SCOPE,
+            OidcClientConstants.DEFAULT_SCOPE);
         
         // Allow direct token endpoint override, skipping discovery
-        String directTokenEndpoint = properties.getProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT);
+        String directTokenEndpoint =
+            properties.getProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT);
         if (StringUtils.isNotBlank(directTokenEndpoint)) {
             this.tokenEndpoint = directTokenEndpoint;
             this.discovered = true;
@@ -87,7 +89,7 @@ public class OidcClientContext {
      */
     public boolean isConfigured() {
         return StringUtils.isNotBlank(clientId) && StringUtils.isNotBlank(clientSecret)
-                && (StringUtils.isNotBlank(issuerUri) || StringUtils.isNotBlank(tokenEndpoint));
+            && (StringUtils.isNotBlank(issuerUri) || StringUtils.isNotBlank(tokenEndpoint));
     }
     
     /**
@@ -104,13 +106,14 @@ public class OidcClientContext {
         }
         
         if (StringUtils.isBlank(issuerUri)) {
-            LOGGER.warn("[OIDC-CLIENT] issuer-uri is not configured, cannot perform OIDC Discovery");
+            LOGGER.warn(
+                "[OIDC-CLIENT] issuer-uri is not configured, cannot perform OIDC Discovery");
             return false;
         }
         
         String discoveryUrl = issuerUri.endsWith("/")
-                ? issuerUri + ".well-known/openid-configuration"
-                : issuerUri + OidcProtocolConstants.WELL_KNOWN_PATH;
+            ? issuerUri + ".well-known/openid-configuration"
+            : issuerUri + OidcProtocolConstants.WELL_KNOWN_PATH;
         
         LOGGER.info("[OIDC-CLIENT] Performing OIDC Discovery from: {}", discoveryUrl);
         
@@ -143,7 +146,8 @@ public class OidcClientContext {
             
             this.tokenEndpoint = tokenEndpointNode.asText();
             this.discovered = true;
-            LOGGER.info("[OIDC-CLIENT] OIDC Discovery success, token_endpoint: {}", this.tokenEndpoint);
+            LOGGER.info("[OIDC-CLIENT] OIDC Discovery success, token_endpoint: {}",
+                this.tokenEndpoint);
             return true;
             
         } catch (IOException e) {
@@ -197,4 +201,3 @@ public class OidcClientContext {
         return result.toString(StandardCharsets.UTF_8.name());
     }
 }
-

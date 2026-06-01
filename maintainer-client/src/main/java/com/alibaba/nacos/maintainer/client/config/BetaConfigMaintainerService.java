@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.config;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -45,8 +46,11 @@ public interface BetaConfigMaintainerService {
      * @return Whether the configuration was published successfully.
      * @throws NacosException If publishing fails.
      */
-    boolean publishBetaConfig(String dataId, String groupName, String namespaceId, String content, String appName,
-            String srcUser, String configTags, String desc, String type, String betaIps) throws NacosException;
+    @Since("3.0.0")
+    boolean publishBetaConfig(String dataId, String groupName, String namespaceId, String content,
+        String appName,
+        String srcUser, String configTags, String desc, String type, String betaIps)
+        throws NacosException;
     
     /**
      * Stop a beta configuration by dataId and groupName.
@@ -56,6 +60,7 @@ public interface BetaConfigMaintainerService {
      * @return Whether the beta configuration was stopped successfully.
      * @throws NacosException If stopping fails.
      */
+    @Since("3.0.0")
     default boolean stopBeta(String dataId, String groupName) throws NacosException {
         return stopBeta(dataId, groupName, Constants.DEFAULT_NAMESPACE_ID);
     }
@@ -69,6 +74,7 @@ public interface BetaConfigMaintainerService {
      * @return Whether the beta configuration was stopped successfully.
      * @throws NacosException If stopping fails.
      */
+    @Since("3.0.0")
     boolean stopBeta(String dataId, String groupName, String namespaceId) throws NacosException;
     
     /**
@@ -79,6 +85,7 @@ public interface BetaConfigMaintainerService {
      * @return Beta configuration information.
      * @throws NacosException If the query fails.
      */
+    @Since("3.0.0")
     default ConfigGrayInfo queryBeta(String dataId, String groupName) throws NacosException {
         return queryBeta(dataId, groupName, Constants.DEFAULT_NAMESPACE_ID);
     }
@@ -92,6 +99,8 @@ public interface BetaConfigMaintainerService {
      * @return Beta configuration information.
      * @throws NacosException If the query fails.
      */
-    ConfigGrayInfo queryBeta(String dataId, String groupName, String namespaceId) throws NacosException;
+    @Since("3.0.0")
+    ConfigGrayInfo queryBeta(String dataId, String groupName, String namespaceId)
+        throws NacosException;
     
 }

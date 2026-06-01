@@ -23,10 +23,12 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentSpecEvent;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
 import com.alibaba.nacos.api.ai.listener.NacosPromptEvent;
+import com.alibaba.nacos.api.ai.listener.NacosSkillEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
@@ -39,7 +41,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -48,6 +49,7 @@ import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosAgentSpecCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosPromptCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosSkillCacheHolder;
 import com.alibaba.nacos.client.ai.event.AgentCardListenerInvoker;
 import com.alibaba.nacos.client.ai.event.AgentSpecChangedEvent;
 import com.alibaba.nacos.client.ai.event.AgentSpecListenerInvoker;
@@ -56,10 +58,11 @@ import com.alibaba.nacos.client.ai.event.McpServerChangedEvent;
 import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
 import com.alibaba.nacos.client.ai.event.PromptChangedEvent;
 import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
+import com.alibaba.nacos.client.ai.event.SkillChangedEvent;
+import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
-import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -83,9 +86,9 @@ public class NacosAiService implements AiService {
     private static final Logger LOGGER = LogUtils.logger(NacosAiService.class);
     
     private static final String AGENT_CARD_FORMAT_ERROR =
-            "Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
-                    + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
-                    + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.";
+        "Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
+            + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
+            + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.";
     
     private final String namespaceId;
     
@@ -103,9 +106,9 @@ public class NacosAiService implements AiService {
     
     private final NacosAgentSpecCacheHolder agentSpecCacheHolder;
     
+    private final NacosSkillCacheHolder skillCacheHolder;
+    
     private final AiChangeNotifier aiChangeNotifier;
-
-    private final ConfigService skillConfigService;
     
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
@@ -114,18 +117,19 @@ public class NacosAiService implements AiService {
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
         this.httpProxy = new AiHttpClientProxy(namespaceId, clientProperties);
         String transportMode = clientProperties.getProperty(AiConstants.AI_TRANSPORT_MODE,
-                AiConstants.AI_TRANSPORT_MODE_GRPC);
+            AiConstants.AI_TRANSPORT_MODE_GRPC);
         if (AiConstants.AI_TRANSPORT_MODE_HTTP.equalsIgnoreCase(transportMode)) {
             LOGGER.info("AI transport mode is HTTP, using AiHttpClientProxy as primary proxy.");
             this.aiClientProxy = this.httpProxy;
         } else {
             this.aiClientProxy = this.grpcClient;
         }
-        this.skillConfigService = new NacosConfigService(properties);
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
         this.promptCacheHolder = new NacosPromptCacheHolder(this.aiClientProxy, clientProperties);
-        this.agentSpecCacheHolder = new NacosAgentSpecCacheHolder(this.skillConfigService, this.namespaceId);
+        this.agentSpecCacheHolder =
+            new NacosAgentSpecCacheHolder(this.aiClientProxy, clientProperties);
+        this.skillCacheHolder = new NacosSkillCacheHolder(this.aiClientProxy, clientProperties);
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
     }
@@ -143,6 +147,7 @@ public class NacosAiService implements AiService {
         NotifyCenter.registerToPublisher(McpServerChangedEvent.class, 16384);
         NotifyCenter.registerToPublisher(PromptChangedEvent.class, 16384);
         NotifyCenter.registerToPublisher(AgentSpecChangedEvent.class, 16384);
+        NotifyCenter.registerToPublisher(SkillChangedEvent.class, 16384);
         NotifyCenter.registerSubscriber(this.aiChangeNotifier);
     }
     
@@ -150,44 +155,48 @@ public class NacosAiService implements AiService {
     public McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `mcpName` not present");
+                "Required parameter `mcpName` not present");
         }
         return grpcClient.queryMcpServer(mcpName, version);
     }
     
     @Override
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
-            McpEndpointSpec endpointSpecification) throws NacosException {
-        return releaseMcpServer(serverSpecification, toolSpecification, null, endpointSpecification);
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        return releaseMcpServer(serverSpecification, toolSpecification, null,
+            endpointSpecification);
     }
-
+    
     @Override
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
-            McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
-            throws NacosException {
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
+        throws NacosException {
         if (null == serverSpecification) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `serverSpecification` not present");
+                "Required parameter `serverSpecification` not present");
         }
         if (StringUtils.isBlank(serverSpecification.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `serverSpecification.name` not present");
+                "Required parameter `serverSpecification.name` not present");
         }
         if (null == serverSpecification.getVersionDetail() || StringUtils.isBlank(
-                serverSpecification.getVersionDetail().getVersion())) {
+            serverSpecification.getVersionDetail().getVersion())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `serverSpecification.versionDetail.version` not present");
+                "Required parameter `serverSpecification.versionDetail.version` not present");
         }
-        return grpcClient.releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification,
-                endpointSpecification);
+        return grpcClient.releaseMcpServer(serverSpecification, toolSpecification,
+            resourceSpecification,
+            endpointSpecification);
     }
     
     @Override
     public void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
-            throws NacosException {
+        throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `mcpName` can't be empty or null");
+                "parameters `mcpName` can't be empty or null");
         }
         Instance instance = new Instance();
         instance.setIp(address);
@@ -197,10 +206,11 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
+    public void deregisterMcpServerEndpoint(String mcpName, String address, int port)
+        throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `mcpName` can't be empty or null");
+                "parameters `mcpName` can't be empty or null");
         }
         Instance instance = new Instance();
         instance.setIp(address);
@@ -211,14 +221,14 @@ public class NacosAiService implements AiService {
     
     @Override
     public McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
-            AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
+        AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `mcpName` can't be empty or null");
+                "parameters `mcpName` can't be empty or null");
         }
         if (null == mcpServerListener) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `mcpServerListener` can't be empty or null");
+                "parameters `mcpServerListener` can't be empty or null");
         }
         McpServerListenerInvoker listenerInvoker = new McpServerListenerInvoker(mcpServerListener);
         aiChangeNotifier.registerListener(mcpName, version, listenerInvoker);
@@ -230,11 +240,12 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
-            throws NacosException {
+    public void unsubscribeMcpServer(String mcpName, String version,
+        AbstractNacosMcpServerListener mcpServerListener)
+        throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `mcpName` can't be empty or null");
+                "parameters `mcpName` can't be empty or null");
         }
         if (null == mcpServerListener) {
             return;
@@ -247,21 +258,22 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public AgentCardDetailInfo getAgentCard(String agentName, String version, String registrationType)
-            throws NacosException {
+    public AgentCardDetailInfo getAgentCard(String agentName, String version,
+        String registrationType)
+        throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentName` can't be empty or null");
+                "parameters `agentName` can't be empty or null");
         }
         return grpcClient.getAgentCard(agentName, version, registrationType);
     }
     
     @Override
     public void releaseAgentCard(AgentCard agentCard, String registrationType, boolean setAsLatest)
-            throws NacosException {
+        throws NacosException {
         if (null == agentCard) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentCard` can't be null");
+                "parameters `agentCard` can't be null");
         }
         validateAgentCardField("name", agentCard.getName());
         validateAgentCardField("version", agentCard.getVersion());
@@ -273,30 +285,33 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+    public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint)
+        throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentName` can't be empty or null");
+                "parameters `agentName` can't be empty or null");
         }
         validateAgentEndpoint(endpoint);
         grpcClient.registerAgentEndpoint(agentName, endpoint);
     }
     
     @Override
-    public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
+    public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints)
+        throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentName` can't be empty or null");
+                "parameters `agentName` can't be empty or null");
         }
         validateAgentEndpoint(endpoints);
         grpcClient.registerAgentEndpoints(agentName, endpoints);
     }
     
     @Override
-    public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+    public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint)
+        throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentName` can't be empty or null");
+                "parameters `agentName` can't be empty or null");
         }
         validateAgentEndpoint(endpoint);
         grpcClient.deregisterAgentEndpoint(agentName, endpoint);
@@ -304,14 +319,14 @@ public class NacosAiService implements AiService {
     
     @Override
     public AgentCardDetailInfo subscribeAgentCard(String agentName, String version,
-            AbstractNacosAgentCardListener agentCardListener) throws NacosException {
+        AbstractNacosAgentCardListener agentCardListener) throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentName` can't be empty or null");
+                "parameters `agentName` can't be empty or null");
         }
         if (null == agentCardListener) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentCardListener` can't be empty or null");
+                "parameters `agentCardListener` can't be empty or null");
         }
         AgentCardListenerInvoker listenerInvoker = new AgentCardListenerInvoker(agentCardListener);
         aiChangeNotifier.registerListener(agentName, version, listenerInvoker);
@@ -323,11 +338,12 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void unsubscribeAgentCard(String agentName, String version, AbstractNacosAgentCardListener agentCardListener)
-            throws NacosException {
+    public void unsubscribeAgentCard(String agentName, String version,
+        AbstractNacosAgentCardListener agentCardListener)
+        throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentName` can't be empty or null");
+                "parameters `agentName` can't be empty or null");
         }
         if (null == agentCardListener) {
             return;
@@ -339,10 +355,11 @@ public class NacosAiService implements AiService {
         }
     }
     
-    private void validateAgentEndpoint(Collection<AgentEndpoint> endpoints) throws NacosApiException {
+    private void validateAgentEndpoint(Collection<AgentEndpoint> endpoints)
+        throws NacosApiException {
         if (null == endpoints || endpoints.isEmpty()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `endpoints` can't be empty or null, if want to deregister endpoints, please use deregister API.");
+                "parameters `endpoints` can't be empty or null, if want to deregister endpoints, please use deregister API.");
         }
         Set<String> versions = new HashSet<>();
         for (AgentEndpoint endpoint : endpoints) {
@@ -350,20 +367,22 @@ public class NacosAiService implements AiService {
             versions.add(endpoint.getVersion());
         }
         if (versions.size() > 1) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    String.format("Required parameter `endpoint.version` can't be different, current includes: %s.",
-                            String.join(",", versions)));
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                String.format(
+                    "Required parameter `endpoint.version` can't be different, current includes: %s.",
+                    String.join(",", versions)));
         }
     }
     
     private void validateAgentEndpoint(AgentEndpoint endpoint) throws NacosApiException {
         if (null == endpoint) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `endpoint` can't be null");
+                "parameters `endpoint` can't be null");
         }
         if (StringUtils.isBlank(endpoint.getVersion())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `endpoint.version` can't be empty or null");
+                "Required parameter `endpoint.version` can't be empty or null");
         }
         Instance instance = new Instance();
         instance.setIp(endpoint.getAddress());
@@ -371,20 +390,23 @@ public class NacosAiService implements AiService {
         instance.validate();
     }
     
-    private static void validateAgentCardField(String fieldName, String fieldValue) throws NacosApiException {
+    private static void validateAgentCardField(String fieldName, String fieldValue)
+        throws NacosApiException {
         if (StringUtils.isEmpty(fieldValue)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `agentCard." + fieldName + "` not present");
+                "Required parameter `agentCard." + fieldName + "` not present");
         }
     }
     
     private static void validateAgentCard(AgentCard agentCard) throws NacosApiException {
-        boolean hasLegacyRequiredFields = !StringUtils.isEmpty(agentCard.getProtocolVersion()) && !StringUtils.isEmpty(
-                agentCard.getPreferredTransport()) && !StringUtils.isEmpty(agentCard.getUrl());
+        boolean hasLegacyRequiredFields = !StringUtils.isEmpty(agentCard.getProtocolVersion())
+            && !StringUtils.isEmpty(
+                agentCard.getPreferredTransport())
+            && !StringUtils.isEmpty(agentCard.getUrl());
         boolean hasV1RequiredFields = hasValidV1Interfaces(agentCard.getSupportedInterfaces());
         if (!hasLegacyRequiredFields && !hasV1RequiredFields) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    AGENT_CARD_FORMAT_ERROR);
+                AGENT_CARD_FORMAT_ERROR);
         }
     }
     
@@ -393,8 +415,9 @@ public class NacosAiService implements AiService {
             return false;
         }
         for (AgentInterface each : interfaces) {
-            if (null == each || StringUtils.isEmpty(each.getUrl()) || StringUtils.isEmpty(each.getProtocolBinding())
-                    || StringUtils.isEmpty(each.getProtocolVersion())) {
+            if (null == each || StringUtils.isEmpty(each.getUrl())
+                || StringUtils.isEmpty(each.getProtocolBinding())
+                || StringUtils.isEmpty(each.getProtocolVersion())) {
                 return false;
             }
         }
@@ -405,16 +428,17 @@ public class NacosAiService implements AiService {
     public byte[] downloadSkillZip(String skillName) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `skillName` not present");
+                "Required parameter `skillName` not present");
         }
         return httpProxy.downloadSkillZip(skillName, null, null);
     }
     
     @Override
-    public byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException {
+    public byte[] downloadSkillZipByVersion(String skillName, String version)
+        throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `skillName` not present");
+                "Required parameter `skillName` not present");
         }
         return httpProxy.downloadSkillZip(skillName, version, null);
     }
@@ -423,9 +447,47 @@ public class NacosAiService implements AiService {
     public byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `skillName` not present");
+                "Required parameter `skillName` not present");
         }
         return httpProxy.downloadSkillZip(skillName, null, label);
+    }
+    
+    @Override
+    public byte[] subscribeSkill(String skillName, String version, String label,
+        AbstractNacosSkillListener skillListener) throws NacosException {
+        if (StringUtils.isBlank(skillName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                "parameters `skillName` can't be empty or null");
+        }
+        if (null == skillListener) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                "parameters `skillListener` can't be null");
+        }
+        
+        SkillListenerInvoker listenerInvoker = new SkillListenerInvoker(skillListener);
+        aiChangeNotifier.registerListener(skillName, version, label, listenerInvoker);
+        byte[] zipBytes = skillCacheHolder.subscribeSkill(skillName, version, label);
+        if (null != zipBytes && !listenerInvoker.isInvoked()) {
+            listenerInvoker.invoke(new NacosSkillEvent(skillName, zipBytes, null, null));
+        }
+        return zipBytes;
+    }
+    
+    @Override
+    public void unsubscribeSkill(String skillName, String version, String label,
+        AbstractNacosSkillListener skillListener) throws NacosException {
+        if (StringUtils.isBlank(skillName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                "parameters `skillName` can't be empty or null");
+        }
+        if (null == skillListener) {
+            return;
+        }
+        SkillListenerInvoker listenerInvoker = new SkillListenerInvoker(skillListener);
+        aiChangeNotifier.deregisterListener(skillName, version, label, listenerInvoker);
+        if (!aiChangeNotifier.isSkillSubscribed(skillName, version, label)) {
+            skillCacheHolder.unsubscribeSkill(skillName, version, label);
+        }
     }
     
     // ==================== AgentSpec Methods ====================
@@ -434,21 +496,22 @@ public class NacosAiService implements AiService {
     public AgentSpec loadAgentSpec(String agentSpecName) throws NacosException {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `agentSpecName` not present");
+                "Required parameter `agentSpecName` not present");
         }
         return agentSpecCacheHolder.queryAgentSpec(agentSpecName);
     }
     
     @Override
-    public AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
-            throws NacosException {
+    public AgentSpec subscribeAgentSpec(String agentSpecName,
+        AbstractNacosAgentSpecListener agentSpecListener)
+        throws NacosException {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentSpecName` can't be empty or null");
+                "parameters `agentSpecName` can't be empty or null");
         }
         if (null == agentSpecListener) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentSpecListener` can't be empty or null");
+                "parameters `agentSpecListener` can't be empty or null");
         }
         
         AgentSpecListenerInvoker listenerInvoker = new AgentSpecListenerInvoker(agentSpecListener);
@@ -461,11 +524,12 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
-            throws NacosException {
+    public void unsubscribeAgentSpec(String agentSpecName,
+        AbstractNacosAgentSpecListener agentSpecListener)
+        throws NacosException {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `agentSpecName` can't be empty or null");
+                "parameters `agentSpecName` can't be empty or null");
         }
         if (null == agentSpecListener) {
             return;
@@ -483,7 +547,7 @@ public class NacosAiService implements AiService {
     public Prompt getPrompt(String promptKey) throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `promptKey` can't be empty or null");
+                "parameters `promptKey` can't be empty or null");
         }
         return getPromptByVersion(promptKey, null);
     }
@@ -492,7 +556,7 @@ public class NacosAiService implements AiService {
     public Prompt getPromptByVersion(String promptKey, String version) throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `promptKey` can't be empty or null");
+                "parameters `promptKey` can't be empty or null");
         }
         if (StringUtils.isBlank(version)) {
             return aiClientProxy.queryPrompt(promptKey, null, null, null);
@@ -504,25 +568,25 @@ public class NacosAiService implements AiService {
     public Prompt getPromptByLabel(String promptKey, String label) throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `promptKey` can't be empty or null");
+                "parameters `promptKey` can't be empty or null");
         }
         if (StringUtils.isBlank(label)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `label` can't be empty or null");
+                "parameters `label` can't be empty or null");
         }
         return aiClientProxy.queryPrompt(promptKey, null, label, null);
     }
     
     @Override
     public Prompt subscribePrompt(String promptKey, String version, String label,
-            AbstractNacosPromptListener promptListener) throws NacosException {
+        AbstractNacosPromptListener promptListener) throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `promptKey` can't be empty or null");
+                "parameters `promptKey` can't be empty or null");
         }
         if (null == promptListener) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `promptListener` can't be null");
+                "parameters `promptListener` can't be null");
         }
         
         PromptListenerInvoker listenerInvoker = new PromptListenerInvoker(promptListener);
@@ -536,10 +600,10 @@ public class NacosAiService implements AiService {
     
     @Override
     public void unsubscribePrompt(String promptKey, String version, String label,
-            AbstractNacosPromptListener promptListener) throws NacosException {
+        AbstractNacosPromptListener promptListener) throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `promptKey` can't be empty or null");
+                "parameters `promptKey` can't be empty or null");
         }
         if (null == promptListener) {
             return;
@@ -555,9 +619,9 @@ public class NacosAiService implements AiService {
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
         this.httpProxy.shutdown();
-        this.skillConfigService.shutDown();
         this.mcpServerCacheHolder.shutdown();
         this.promptCacheHolder.shutdown();
         this.agentSpecCacheHolder.shutdown();
+        this.skillCacheHolder.shutdown();
     }
 }

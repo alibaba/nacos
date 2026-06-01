@@ -91,7 +91,8 @@ class NotifyCenterTest {
     
     @Test
     void testGetPublisher() {
-        assertEquals(NotifyCenter.getSharePublisher(), NotifyCenter.getPublisher(TestSlowEvent.class));
+        assertEquals(NotifyCenter.getSharePublisher(),
+            NotifyCenter.getPublisher(TestSlowEvent.class));
         assertTrue(NotifyCenter.getPublisher(TestEvent.class) instanceof DefaultPublisher);
     }
     
@@ -190,22 +191,26 @@ class NotifyCenterTest {
     void testDeregisterPublisherWithException() throws NacosException {
         final int originalSize = NotifyCenter.getPublisherMap().size();
         doThrow(new RuntimeException("test")).when(shardedEventPublisher).shutdown();
-        NotifyCenter.getPublisherMap().put(SharedEvent.class.getCanonicalName(), shardedEventPublisher);
+        NotifyCenter.getPublisherMap().put(SharedEvent.class.getCanonicalName(),
+            shardedEventPublisher);
         NotifyCenter.deregisterPublisher(SharedEvent.class);
         assertEquals(originalSize - 1, NotifyCenter.getPublisherMap().size());
     }
     
     @Test
     void testPublishEventWithException() {
-        when(shardedEventPublisher.publish(any(Event.class))).thenThrow(new RuntimeException("test"));
-        NotifyCenter.getPublisherMap().put(SharedEvent.class.getCanonicalName(), shardedEventPublisher);
+        when(shardedEventPublisher.publish(any(Event.class)))
+            .thenThrow(new RuntimeException("test"));
+        NotifyCenter.getPublisherMap().put(SharedEvent.class.getCanonicalName(),
+            shardedEventPublisher);
         assertFalse(NotifyCenter.publishEvent(new SharedEvent()));
     }
     
     @Test
     void testOperateSubscriberForShardedPublisher() {
         subscriber = new MockSubscriber(SharedEvent.class, false);
-        NotifyCenter.getPublisherMap().put(SharedEvent.class.getCanonicalName(), shardedEventPublisher);
+        NotifyCenter.getPublisherMap().put(SharedEvent.class.getCanonicalName(),
+            shardedEventPublisher);
         NotifyCenter.registerSubscriber(subscriber);
         verify(shardedEventPublisher).addSubscriber(subscriber, SharedEvent.class);
         NotifyCenter.deregisterSubscriber(subscriber);
@@ -236,7 +241,8 @@ class NotifyCenterTest {
             this(subscribedEvent, ignoreExpiredEvent, null);
         }
         
-        public MockSubscriber(Class<T> subscribedEvent, boolean ignoreExpiredEvent, CountDownLatch latch) {
+        public MockSubscriber(Class<T> subscribedEvent, boolean ignoreExpiredEvent,
+            CountDownLatch latch) {
             this.subscribedEvent = subscribedEvent;
             this.ignoreExpiredEvent = ignoreExpiredEvent;
             this.latch = latch;
@@ -271,7 +277,8 @@ class NotifyCenterTest {
             this(subscribedEvents, null);
         }
         
-        public MockSmartSubscriber(List<Class<? extends Event>> subscribedEvents, CountDownLatch latch) {
+        public MockSmartSubscriber(List<Class<? extends Event>> subscribedEvents,
+            CountDownLatch latch) {
             this.subscribedEvents = subscribedEvents;
             this.latch = latch;
         }

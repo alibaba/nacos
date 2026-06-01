@@ -55,8 +55,8 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     public boolean process(NacosTask task) {
         if (!(task instanceof DumpAllTask)) {
             DEFAULT_LOG.error(
-                    "[all-dump-error] ,invalid task type {},DumpAllProcessor should process DumpAllTask type.",
-                    task.getClass().getSimpleName());
+                "[all-dump-error] ,invalid task type {},DumpAllProcessor should process DumpAllTask type.",
+                task.getClass().getSimpleName());
             return false;
         }
         DumpAllTask dumpAllTask = (DumpAllTask) task;
@@ -66,12 +66,13 @@ public class DumpAllProcessor implements NacosTaskProcessor {
         ThreadPoolExecutor executorService = null;
         if (dumpAllTask.isStartUp()) {
             executorService = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-                    Runtime.getRuntime().availableProcessors(), 60L, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>(PropertyUtil.getAllDumpPageSize() * 2),
-                    r -> new Thread(r, "dump all executor"), new ThreadPoolExecutor.CallerRunsPolicy());
+                Runtime.getRuntime().availableProcessors(), 60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(PropertyUtil.getAllDumpPageSize() * 2),
+                r -> new Thread(r, "dump all executor"), new ThreadPoolExecutor.CallerRunsPolicy());
         } else {
-            executorService = new ThreadPoolExecutor(1, 1, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
-                    r -> new Thread(r, "dump all executor"), new ThreadPoolExecutor.CallerRunsPolicy());
+            executorService = new ThreadPoolExecutor(1, 1, 60L, TimeUnit.SECONDS,
+                new SynchronousQueue<>(),
+                r -> new Thread(r, "dump all executor"), new ThreadPoolExecutor.CallerRunsPolicy());
         }
         
         DEFAULT_LOG.info("start dump all config-info...");
@@ -79,7 +80,8 @@ public class DumpAllProcessor implements NacosTaskProcessor {
         while (lastMaxId < currentMaxId) {
             long start = System.currentTimeMillis();
             
-            Page<ConfigInfoWrapper> page = configInfoPersistService.findAllConfigInfoFragment(lastMaxId,
+            Page<ConfigInfoWrapper> page =
+                configInfoPersistService.findAllConfigInfoFragment(lastMaxId,
                     PropertyUtil.getAllDumpPageSize(), dumpAllTask.isStartUp());
             long dbTimeStamp = System.currentTimeMillis();
             if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
@@ -93,15 +95,19 @@ public class DumpAllProcessor implements NacosTaskProcessor {
                 }
                 //if not start up, page query will not return content, check md5 and lastModified first ,if changed ,get single content info to dump.
                 if (!dumpAllTask.isStartUp()) {
-                    final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
-                    boolean newLastModified = cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
+                    final String groupKey =
+                        GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
+                    boolean newLastModified =
+                        cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
                     //check md5 & update local disk cache.
                     String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
                     boolean md5Update = !localContentMd5.equals(cf.getMd5());
                     if (newLastModified || md5Update) {
-                        LogUtil.DUMP_LOG.info("[dump-all] find change config {}, {}, md5={}", groupKey,
-                                cf.getLastModified(), cf.getMd5());
-                        cf = configInfoPersistService.findConfigInfo(cf.getDataId(), cf.getGroup(), cf.getTenant());
+                        LogUtil.DUMP_LOG.info("[dump-all] find change config {}, {}, md5={}",
+                            groupKey,
+                            cf.getLastModified(), cf.getMd5());
+                        cf = configInfoPersistService.findConfigInfo(cf.getDataId(), cf.getGroup(),
+                            cf.getTenant());
                     } else {
                         continue;
                     }
@@ -129,13 +135,16 @@ public class DumpAllProcessor implements NacosTaskProcessor {
                 
                 executorService.execute(() -> {
                     final String md5Utf8 = MD5Utils.md5Hex(content, ENCODE_UTF8);
-                    boolean result = ConfigCacheService.dumpWithMd5(dataId, group, tenant, content, md5Utf8,
+                    boolean result =
+                        ConfigCacheService.dumpWithMd5(dataId, group, tenant, content, md5Utf8,
                             lastModified, type, encryptedDataKey);
                     if (result) {
                         LogUtil.DUMP_LOG.info("[dump-all-ok] {}, {}, length={},md5UTF8={}",
-                                GroupKey2.getKey(dataId, group), lastModified, content.length(), md5Utf8);
+                            GroupKey2.getKey(dataId, group), lastModified, content.length(),
+                            md5Utf8);
                     } else {
-                        LogUtil.DUMP_LOG.info("[dump-all-error] {}", GroupKey2.getKey(dataId, group));
+                        LogUtil.DUMP_LOG.info("[dump-all-error] {}",
+                            GroupKey2.getKey(dataId, group));
                     }
                     
                 });
@@ -143,15 +152,18 @@ public class DumpAllProcessor implements NacosTaskProcessor {
             }
             
             long diskStamp = System.currentTimeMillis();
-            DEFAULT_LOG.info("[all-dump] submit all task for {} / {}, dbTime={},diskTime={}", lastMaxId, currentMaxId,
-                    (dbTimeStamp - start), (diskStamp - dbTimeStamp));
+            DEFAULT_LOG.info("[all-dump] submit all task for {} / {}, dbTime={},diskTime={}",
+                lastMaxId, currentMaxId,
+                (dbTimeStamp - start), (diskStamp - dbTimeStamp));
         }
         
         //wait all task are finished and then shutdown executor.
         try {
             int unfinishedTaskCount = 0;
-            while ((unfinishedTaskCount = executorService.getQueue().size() + executorService.getActiveCount()) > 0) {
-                DEFAULT_LOG.info("[all-dump] wait {} dump tasks to be finished", unfinishedTaskCount);
+            while ((unfinishedTaskCount =
+                executorService.getQueue().size() + executorService.getActiveCount()) > 0) {
+                DEFAULT_LOG.info("[all-dump] wait {} dump tasks to be finished",
+                    unfinishedTaskCount);
                 Thread.sleep(1000L);
             }
             executorService.shutdown();

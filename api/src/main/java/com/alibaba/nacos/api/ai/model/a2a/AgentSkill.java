@@ -103,9 +103,12 @@ public class AgentSkill {
             return false;
         }
         AgentSkill that = (AgentSkill) o;
-        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(description,
-                that.description) && Objects.equals(tags, that.tags) && Objects.equals(examples, that.examples)
-                && Objects.equals(inputModes, that.inputModes) && Objects.equals(outputModes, that.outputModes);
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name)
+            && Objects.equals(description,
+                that.description)
+            && Objects.equals(tags, that.tags) && Objects.equals(examples, that.examples)
+            && Objects.equals(inputModes, that.inputModes)
+            && Objects.equals(outputModes, that.outputModes);
     }
     
     @Override

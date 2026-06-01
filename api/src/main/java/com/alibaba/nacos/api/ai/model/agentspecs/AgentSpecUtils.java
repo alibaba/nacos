@@ -101,7 +101,7 @@ public class AgentSpecUtils {
             int lastDotIndex = resourceName.lastIndexOf('.');
             if (lastDotIndex > 0) {
                 processedName = resourceName.substring(0, lastDotIndex) + DOUBLE_UNDERSCORE
-                        + resourceName.substring(lastDotIndex + 1);
+                    + resourceName.substring(lastDotIndex + 1);
             }
         }
         
@@ -138,7 +138,8 @@ public class AgentSpecUtils {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new IllegalArgumentException("AgentSpec name cannot be blank");
         }
-        return AGENTSPEC_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeManifestGroupNameSegment(agentSpecName);
+        return AGENTSPEC_GROUP_PREFIX
+            + NacosAiConfigKeyCodec.encodeManifestGroupNameSegment(agentSpecName);
     }
     
     /**
@@ -156,8 +157,9 @@ public class AgentSpecUtils {
         if (StringUtils.isBlank(version)) {
             throw new IllegalArgumentException("Version cannot be blank");
         }
-        return AGENTSPEC_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(agentSpecName)
-                + DOUBLE_UNDERSCORE + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(version);
+        return AGENTSPEC_GROUP_PREFIX
+            + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(agentSpecName)
+            + DOUBLE_UNDERSCORE + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(version);
     }
     
     /**
@@ -169,7 +171,8 @@ public class AgentSpecUtils {
      * @return ConfigInfo containing dataId and group
      * @throws IllegalArgumentException if agentSpecName or resourceName is blank
      */
-    public static ConfigInfo buildAgentSpecResourceConfigInfo(String agentSpecName, String type, String resourceName) {
+    public static ConfigInfo buildAgentSpecResourceConfigInfo(String agentSpecName, String type,
+        String resourceName) {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new IllegalArgumentException("AgentSpec name cannot be blank");
         }
@@ -179,12 +182,12 @@ public class AgentSpecUtils {
         
         String resourceId = generateResourceId(type, resourceName);
         String dataId = NacosAiConfigKeyCodec.encodeSegment(
-                RESOURCE_DATA_ID_PREFIX + resourceId + RESOURCE_DATA_ID_SUFFIX);
+            RESOURCE_DATA_ID_PREFIX + resourceId + RESOURCE_DATA_ID_SUFFIX);
         String group = buildAgentSpecGroup(agentSpecName);
-
+        
         return new ConfigInfo(dataId, group);
     }
-
+    
     /**
      * Decode an AgentSpec Nacos Config {@code group} (as stored) into logical name and optional version.
      *
@@ -201,6 +204,6 @@ public class AgentSpecUtils {
             return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest), null};
         }
         return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest.substring(0, idx)),
-                NacosAiConfigKeyCodec.decodeSegment(rest.substring(idx + DOUBLE_UNDERSCORE.length()))};
+            NacosAiConfigKeyCodec.decodeSegment(rest.substring(idx + DOUBLE_UNDERSCORE.length()))};
     }
 }

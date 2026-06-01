@@ -49,8 +49,9 @@ public class MD5Util {
     /**
      * Compare Md5.
      */
-    public static Map<String, ConfigListenState> compareMd5(HttpServletRequest request, HttpServletResponse response,
-            Map<String, ConfigListenState> clientMd5Map) {
+    public static Map<String, ConfigListenState> compareMd5(HttpServletRequest request,
+        HttpServletResponse response,
+        Map<String, ConfigListenState> clientMd5Map) {
         return Md5ComparatorDelegate.getInstance().compareMd5(request, response, clientMd5Map);
     }
     
@@ -73,7 +74,8 @@ public class MD5Util {
     /**
      * Join and encode changedGroupKeys string.
      */
-    public static String compareMd5ResultString(Map<String, ConfigListenState> changedGroupKeys) throws IOException {
+    public static String compareMd5ResultString(Map<String, ConfigListenState> changedGroupKeys)
+        throws IOException {
         if (null == changedGroupKeys) {
             return "";
         }
@@ -87,7 +89,8 @@ public class MD5Util {
             sb.append(WORD_SEPARATOR);
             sb.append(dataIdGroupId[1]);
             if (dataIdGroupId.length == 3) {
-                if (StringUtils.isNotBlank(dataIdGroupId[2]) && !entry.getValue().isNamespaceTransfer()) {
+                if (StringUtils.isNotBlank(dataIdGroupId[2])
+                    && !entry.getValue().isNamespaceTransfer()) {
                     sb.append(WORD_SEPARATOR);
                     sb.append(dataIdGroupId[2]);
                 }
@@ -166,7 +169,7 @@ public class MD5Util {
     
     public static String toString(InputStream input, String encoding) throws IOException {
         return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
-                : toString(new InputStreamReader(input, encoding));
+            : toString(new InputStreamReader(input, encoding));
     }
     
     /**
@@ -184,7 +187,7 @@ public class MD5Util {
     public static long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1024];
         long count = 0;
-        for (int n = 0; (n = input.read(buffer)) >= 0; ) {
+        for (int n = 0; (n = input.read(buffer)) >= 0;) {
             output.write(buffer, 0, n);
             count += n;
         }
@@ -196,4 +199,3 @@ public class MD5Util {
     static final char LINE_SEPARATOR_CHAR = (char) 1;
     
 }
-

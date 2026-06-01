@@ -43,9 +43,11 @@ import static com.alibaba.nacos.naming.constants.ClientConstants.REVISION;
  */
 public abstract class AbstractClient implements Client {
     
-    protected final ConcurrentHashMap<Service, InstancePublishInfo> publishers = new ConcurrentHashMap<>(16, 0.75f, 1);
+    protected final ConcurrentHashMap<Service, InstancePublishInfo> publishers =
+        new ConcurrentHashMap<>(16, 0.75f, 1);
     
-    protected final ConcurrentHashMap<Service, Subscriber> subscribers = new ConcurrentHashMap<>(16, 0.75f, 1);
+    protected final ConcurrentHashMap<Service, Subscriber> subscribers =
+        new ConcurrentHashMap<>(16, 0.75f, 1);
     
     protected volatile long lastUpdatedTime;
     
@@ -72,7 +74,8 @@ public abstract class AbstractClient implements Client {
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         if (instancePublishInfo instanceof BatchInstancePublishInfo) {
             InstancePublishInfo old = publishers.put(service, instancePublishInfo);
-            MetricsMonitor.incrementIpCountWithBatchRegister(old, (BatchInstancePublishInfo) instancePublishInfo);
+            MetricsMonitor.incrementIpCountWithBatchRegister(old,
+                (BatchInstancePublishInfo) instancePublishInfo);
         } else {
             if (null == publishers.put(service, instancePublishInfo)) {
                 MetricsMonitor.incrementInstanceCount();
@@ -139,20 +142,22 @@ public abstract class AbstractClient implements Client {
         List<String> namespaces = new LinkedList<>();
         List<String> groupNames = new LinkedList<>();
         List<String> serviceNames = new LinkedList<>();
-    
+        
         List<String> batchNamespaces = new LinkedList<>();
         List<String> batchGroupNames = new LinkedList<>();
         List<String> batchServiceNames = new LinkedList<>();
         
         List<InstancePublishInfo> instances = new LinkedList<>();
         List<BatchInstancePublishInfo> batchInstancePublishInfos = new LinkedList<>();
-        BatchInstanceData  batchInstanceData = new BatchInstanceData();
+        BatchInstanceData batchInstanceData = new BatchInstanceData();
         for (Map.Entry<Service, InstancePublishInfo> entry : publishers.entrySet()) {
             InstancePublishInfo instancePublishInfo = entry.getValue();
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                BatchInstancePublishInfo batchInstance = (BatchInstancePublishInfo) instancePublishInfo;
+                BatchInstancePublishInfo batchInstance =
+                    (BatchInstancePublishInfo) instancePublishInfo;
                 batchInstancePublishInfos.add(batchInstance);
-                buildBatchInstanceData(batchInstanceData, batchNamespaces, batchGroupNames, batchServiceNames, entry);
+                buildBatchInstanceData(batchInstanceData, batchNamespaces, batchGroupNames,
+                    batchServiceNames, entry);
                 batchInstanceData.setBatchInstancePublishInfos(batchInstancePublishInfos);
             } else {
                 namespaces.add(entry.getKey().getNamespace());
@@ -161,13 +166,16 @@ public abstract class AbstractClient implements Client {
                 instances.add(entry.getValue());
             }
         }
-        ClientSyncData data = new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstanceData);
+        ClientSyncData data = new ClientSyncData(getClientId(), namespaces, groupNames,
+            serviceNames, instances, batchInstanceData);
         data.getAttributes().addClientAttribute(REVISION, getRevision());
         return data;
     }
     
-    private static BatchInstanceData buildBatchInstanceData(BatchInstanceData  batchInstanceData, List<String> batchNamespaces,
-            List<String> batchGroupNames, List<String> batchServiceNames, Map.Entry<Service, InstancePublishInfo> entry) {
+    private static BatchInstanceData buildBatchInstanceData(BatchInstanceData batchInstanceData,
+        List<String> batchNamespaces,
+        List<String> batchGroupNames, List<String> batchServiceNames,
+        Map.Entry<Service, InstancePublishInfo> entry) {
         batchNamespaces.add(entry.getKey().getNamespace());
         batchGroupNames.add(entry.getKey().getGroup());
         batchServiceNames.add(entry.getKey().getName());

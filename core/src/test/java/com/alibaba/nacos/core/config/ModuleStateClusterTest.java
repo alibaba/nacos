@@ -48,7 +48,8 @@ class ModuleStateClusterTest {
     
     @BeforeEach
     void setUp()
-            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        throws NoSuchMethodException, InvocationTargetException, InstantiationException,
+        IllegalAccessException {
         environment = new MockEnvironment();
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "111");
@@ -56,7 +57,8 @@ class ModuleStateClusterTest {
         EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(false);
         EnvUtil.setDeploymentType(DeploymentType.MERGED);
-        Constructor<ModuleStateHolder> constructor = ModuleStateHolder.class.getDeclaredConstructor();
+        Constructor<ModuleStateHolder> constructor =
+            ModuleStateHolder.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         moduleStateHolder = constructor.newInstance();
     }
@@ -72,6 +74,7 @@ class ModuleStateClusterTest {
     void testStandaloneBuilder() {
         assertTrue(moduleStateHolder.getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
         assertTrue(moduleStateHolder.getModuleState(RaftSysConstants.RAFT_STATE).isPresent());
-        assertTrue(moduleStateHolder.getModuleState(AuthModuleStateBuilder.AUTH_MODULE).isPresent());
+        assertTrue(
+            moduleStateHolder.getModuleState(AuthModuleStateBuilder.AUTH_MODULE).isPresent());
     }
 }

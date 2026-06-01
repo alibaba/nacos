@@ -88,7 +88,8 @@ public class ConsoleServiceControllerTest {
         serviceForm.setMetadata("{\"key\":\"value\"}");
         serviceForm.setSelector("{\"type\":\"label\",\"expression\":\"role=admin\"}");
         
-        when(selectorManager.parseSelector(any(String.class), any(String.class))).thenReturn(new LabelSelector());
+        when(selectorManager.parseSelector(any(String.class), any(String.class)))
+            .thenReturn(new LabelSelector());
         
         Result<String> actual = consoleServiceController.createService(serviceForm);
         
@@ -124,7 +125,8 @@ public class ConsoleServiceControllerTest {
         serviceForm.setEphemeral(true);
         serviceForm.setMetadata("{\"key\":\"value\"}");
         serviceForm.setSelector("{\"expression\":\"role=admin\"}");
-        assertThrows(NacosApiException.class, () -> consoleServiceController.createService(serviceForm));
+        assertThrows(NacosApiException.class,
+            () -> consoleServiceController.createService(serviceForm));
     }
     
     @Test
@@ -137,7 +139,8 @@ public class ConsoleServiceControllerTest {
         serviceForm.setEphemeral(true);
         serviceForm.setMetadata("{\"key\":\"value\"}");
         serviceForm.setSelector("{\"type\":\"non-exist\"}");
-        assertThrows(NacosApiException.class, () -> consoleServiceController.createService(serviceForm));
+        assertThrows(NacosApiException.class,
+            () -> consoleServiceController.createService(serviceForm));
     }
     
     @Test
@@ -165,7 +168,8 @@ public class ConsoleServiceControllerTest {
         serviceForm.setMetadata("{\"key\":\"value\"}");
         serviceForm.setSelector("{\"type\":\"label\",\"expression\":\"role=admin\"}");
         
-        when(selectorManager.parseSelector(any(String.class), any(String.class))).thenReturn(new LabelSelector());
+        when(selectorManager.parseSelector(any(String.class), any(String.class)))
+            .thenReturn(new LabelSelector());
         
         Result<String> actual = consoleServiceController.updateService(serviceForm);
         
@@ -182,7 +186,8 @@ public class ConsoleServiceControllerTest {
         serviceDetail.setServiceName("testService");
         serviceDetail.setGroupName("testGroup");
         serviceDetail.setClusterMap(Collections.emptyMap());
-        when(serviceProxy.getServiceDetail(any(String.class), any(String.class), any(String.class))).thenReturn(
+        when(serviceProxy.getServiceDetail(any(String.class), any(String.class), any(String.class)))
+            .thenReturn(
                 serviceDetail);
         ServiceForm serviceForm = new ServiceForm();
         serviceForm.setServiceName("testService");
@@ -190,7 +195,8 @@ public class ConsoleServiceControllerTest {
         serviceForm.setGroupName("testGroup");
         Result<ServiceDetailInfo> actual = consoleServiceController.getServiceDetail(serviceForm);
         
-        verify(serviceProxy).getServiceDetail(any(String.class), any(String.class), any(String.class));
+        verify(serviceProxy).getServiceDetail(any(String.class), any(String.class),
+            any(String.class));
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(serviceDetail, actual.getData());
@@ -220,7 +226,7 @@ public class ConsoleServiceControllerTest {
         subscribers.getPageItems().get(0).setServiceName("testService");
         subscribers.getPageItems().get(0).setGroupName("testGroup");
         when(serviceProxy.getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(),
-                anyBoolean())).thenReturn(subscribers);
+            anyBoolean())).thenReturn(subscribers);
         
         PageForm pageForm = new PageForm();
         pageForm.setPageNo(1);
@@ -231,10 +237,12 @@ public class ConsoleServiceControllerTest {
         serviceForm.setGroupName("testGroup");
         AggregationForm aggregationForm = new AggregationForm();
         
-        Result<Page<SubscriberInfo>> actual = consoleServiceController.subscribers(serviceForm, pageForm,
+        Result<Page<SubscriberInfo>> actual =
+            consoleServiceController.subscribers(serviceForm, pageForm,
                 aggregationForm);
         
-        verify(serviceProxy).getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyBoolean());
+        verify(serviceProxy).getSubscribers(anyInt(), anyInt(), anyString(), anyString(),
+            anyString(), anyBoolean());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(1, actual.getData().getTotalCount());
@@ -249,8 +257,9 @@ public class ConsoleServiceControllerTest {
         Page<ServiceView> expected = new Page<>();
         expected.setTotalCount(1);
         expected.getPageItems().add(new ServiceView());
-        when(serviceProxy.getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(), anyString(), anyString(),
-                anyBoolean())).thenReturn(expected);
+        when(serviceProxy.getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(), anyString(),
+            anyString(),
+            anyBoolean())).thenReturn(expected);
         PageForm pageForm = new PageForm();
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);
@@ -260,8 +269,9 @@ public class ConsoleServiceControllerTest {
         serviceForm.setGroupNameParam("testGroup");
         Result<Object> actual = consoleServiceController.getServiceList(serviceForm, pageForm);
         
-        verify(serviceProxy).getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(), anyString(), anyString(),
-                anyBoolean());
+        verify(serviceProxy).getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(),
+            anyString(), anyString(),
+            anyBoolean());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertInstanceOf(Page.class, actual.getData());
@@ -274,8 +284,9 @@ public class ConsoleServiceControllerTest {
         
         Result<String> actual = consoleServiceController.updateCluster(updateClusterForm);
         
-        verify(serviceProxy).updateClusterMetadata(anyString(), anyString(), anyString(), anyString(),
-                any(ClusterMetadata.class));
+        verify(serviceProxy).updateClusterMetadata(anyString(), anyString(), anyString(),
+            anyString(),
+            any(ClusterMetadata.class));
         
         assertEquals("ok", actual.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());

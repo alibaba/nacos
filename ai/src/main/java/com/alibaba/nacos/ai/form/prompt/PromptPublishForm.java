@@ -72,12 +72,13 @@ public class PromptPublishForm extends PromptForm {
         
         if (StringUtils.isEmpty(version)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'version' type String is not present");
+                "Required parameter 'version' type String is not present");
         }
         
         if (!PromptVersionUtils.isValidVersion(version)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Parameter 'version' must be in format 'major.minor.patch' (e.g., '1.0.0')");
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Parameter 'version' must be in format 'major.minor.patch' (e.g., '1.0.0')");
         }
     }
     

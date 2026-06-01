@@ -53,7 +53,8 @@ class HeaderTest {
         List<String> list = header.toList();
         assertTrue(list.contains(HttpHeaderConsts.CONTENT_TYPE));
         assertTrue(list.contains(MediaType.APPLICATION_JSON));
-        assertEquals(1, list.indexOf(MediaType.APPLICATION_JSON) - list.indexOf(HttpHeaderConsts.CONTENT_TYPE));
+        assertEquals(1,
+            list.indexOf(MediaType.APPLICATION_JSON) - list.indexOf(HttpHeaderConsts.CONTENT_TYPE));
         assertTrue(list.contains(HttpHeaderConsts.ACCEPT_CHARSET));
         assertTrue(list.contains("UTF-8"));
         assertEquals(1, list.indexOf("UTF-8") - list.indexOf(HttpHeaderConsts.ACCEPT_CHARSET));

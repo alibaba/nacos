@@ -44,7 +44,8 @@ class ConfigFuzzyWatchSyncRequestTest extends BasedConfigRequestTest {
         Context context = Context.build(GROUP_KEY, CHANGED_TYPE);
         contexts.add(context);
         
-        ConfigFuzzyWatchSyncRequest configFuzzyWatchSyncRequest = ConfigFuzzyWatchSyncRequest.buildSyncRequest(
+        ConfigFuzzyWatchSyncRequest configFuzzyWatchSyncRequest =
+            ConfigFuzzyWatchSyncRequest.buildSyncRequest(
                 SYNC_TYPE, contexts, GROUP_KEY_PATTERN, 2, 1);
         configFuzzyWatchSyncRequest.putAllHeader(HEADERS);
         final String requestId = injectRequestUuId(configFuzzyWatchSyncRequest);
@@ -65,9 +66,11 @@ class ConfigFuzzyWatchSyncRequestTest extends BasedConfigRequestTest {
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{\"header1\":\"test_header1\"},\"groupKeyPattern\":\"test.*\","
-                + "\"syncType\":\"" + Constants.FUZZY_WATCH_INIT_NOTIFY + "\",\"totalBatch\":2,\"currentBatch\":1,"
-                + "\"contexts\":[{\"groupKey\":\"test-group-key\",\"changedType\":\"ADD\"}],\"module\":\"config\"}";
-        ConfigFuzzyWatchSyncRequest actual = mapper.readValue(json, ConfigFuzzyWatchSyncRequest.class);
+            + "\"syncType\":\"" + Constants.FUZZY_WATCH_INIT_NOTIFY
+            + "\",\"totalBatch\":2,\"currentBatch\":1,"
+            + "\"contexts\":[{\"groupKey\":\"test-group-key\",\"changedType\":\"ADD\"}],\"module\":\"config\"}";
+        ConfigFuzzyWatchSyncRequest actual =
+            mapper.readValue(json, ConfigFuzzyWatchSyncRequest.class);
         assertEquals(GROUP_KEY_PATTERN, actual.getGroupKeyPattern());
         assertEquals(SYNC_TYPE, actual.getSyncType());
         assertEquals(2, actual.getTotalBatch());
@@ -82,7 +85,8 @@ class ConfigFuzzyWatchSyncRequestTest extends BasedConfigRequestTest {
     
     @Test
     void testBuildInitFinishRequest() {
-        ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(GROUP_KEY_PATTERN);
+        ConfigFuzzyWatchSyncRequest request =
+            ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(GROUP_KEY_PATTERN);
         assertEquals(GROUP_KEY_PATTERN, request.getGroupKeyPattern());
         assertEquals(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, request.getSyncType());
     }

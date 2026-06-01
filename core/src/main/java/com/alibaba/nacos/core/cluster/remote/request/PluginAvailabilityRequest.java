@@ -24,26 +24,26 @@ package com.alibaba.nacos.core.cluster.remote.request;
  * @since 3.2.0
  */
 public class PluginAvailabilityRequest extends AbstractClusterRequest {
-
+    
     private String pluginId;
-
+    
     private boolean queryAll;
-
+    
     public PluginAvailabilityRequest() {
     }
-
+    
     public String getPluginId() {
         return pluginId;
     }
-
+    
     public void setPluginId(String pluginId) {
         this.pluginId = pluginId;
     }
-
+    
     public boolean isQueryAll() {
         return queryAll;
     }
-
+    
     public void setQueryAll(boolean queryAll) {
         this.queryAll = queryAll;
     }

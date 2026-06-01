@@ -53,7 +53,8 @@ public class NacosAuthPluginCoreConfig {
     
     private final ControllerMethodsCache methodsCache;
     
-    public NacosAuthPluginCoreConfig(NacosUserService userDetailsService, ControllerMethodsCache methodsCache) {
+    public NacosAuthPluginCoreConfig(NacosUserService userDetailsService,
+        ControllerMethodsCache methodsCache) {
         this.userDetailsService = userDetailsService;
         this.methodsCache = methodsCache;
     }
@@ -71,9 +72,11 @@ public class NacosAuthPluginCoreConfig {
     @Conditional(value = {ConditionOnInnerDatasource.class, ConditionOnNacosAuth.class})
     public GlobalAuthenticationConfigurerAdapter authenticationConfigurer() {
         return new GlobalAuthenticationConfigurerAdapter() {
+            
             @Override
             public void init(AuthenticationManagerBuilder auth) throws Exception {
-                if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(NacosAuthConfigHolder.getInstance()
+                if (AuthSystemTypes.NACOS.name()
+                    .equalsIgnoreCase(NacosAuthConfigHolder.getInstance()
                         .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE)
                         .getNacosAuthSystemType())) {
                     auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
@@ -91,18 +94,20 @@ public class NacosAuthPluginCoreConfig {
     @ConditionalOnMissingBean
     @Conditional(value = ConditionOnNacosAuth.class)
     public IAuthenticationManager defaultAuthenticationManager(NacosUserService userDetailsService,
-            TokenManagerDelegate jwtTokenManager, NacosRoleService roleService) {
+        TokenManagerDelegate jwtTokenManager, NacosRoleService roleService) {
         return new DefaultAuthenticationManager(userDetailsService, jwtTokenManager, roleService);
     }
     
     @Bean
-    @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED, havingValue = "false", matchIfMissing = true)
+    @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED,
+        havingValue = "false", matchIfMissing = true)
     public TokenManager tokenManager(AuthConfigs authConfigs) {
         return new JwtTokenManager(authConfigs);
     }
     
     @Bean
-    @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED, havingValue = "true")
+    @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED,
+        havingValue = "true")
     public TokenManager cachedTokenManager(AuthConfigs authConfigs) {
         return new CachedJwtTokenManager(new JwtTokenManager(authConfigs));
     }

@@ -45,8 +45,10 @@ public class ServerParamCheckConfig extends AbstractDynamicConfig {
     
     @Override
     protected void getConfigFromEnv() {
-        paramCheckEnabled = EnvUtil.getProperty("nacos.core.param.check.enabled", Boolean.class, true);
-        activeParamChecker = EnvUtil.getProperty("nacos.core.param.check.checker", String.class, "default");
+        paramCheckEnabled =
+            EnvUtil.getProperty("nacos.core.param.check.enabled", Boolean.class, true);
+        activeParamChecker =
+            EnvUtil.getProperty("nacos.core.param.check.checker", String.class, "default");
     }
     
     public boolean isParamCheckEnabled() {
@@ -68,7 +70,7 @@ public class ServerParamCheckConfig extends AbstractDynamicConfig {
     @Override
     protected String printConfig() {
         return "ParamCheckConfig{" + "paramCheckEnabled=" + paramCheckEnabled
-                + ", activeParamChecker=" + activeParamChecker + "}";
+            + ", activeParamChecker=" + activeParamChecker + "}";
     }
     
 }

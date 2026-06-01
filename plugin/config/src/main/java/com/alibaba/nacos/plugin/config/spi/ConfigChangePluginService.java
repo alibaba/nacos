@@ -28,23 +28,23 @@ import com.alibaba.nacos.plugin.config.model.ConfigChangeResponse;
  * @author liyunfei
  */
 public interface ConfigChangePluginService {
-
+    
     /**
      * execute config change plugin service.
      *
      * @param configChangeRequest  ConfigChangeRequest
      * @param configChangeResponse ConfigChangeResponse
      */
-    void execute(ConfigChangeRequest configChangeRequest, ConfigChangeResponse configChangeResponse);
-
+    void execute(ConfigChangeRequest configChangeRequest,
+        ConfigChangeResponse configChangeResponse);
+    
     /**
      * execute type {@link ConfigChangeExecuteTypes}.
      *
      * @return type
      */
     ConfigChangeExecuteTypes executeType();
-
-
+    
     /**
      * what kind of plugin service,such as webhook,whiteList and other,need keep a way with the constants config of you
      * enum in {@link ConfigChangeConstants}.
@@ -52,14 +52,14 @@ public interface ConfigChangePluginService {
      * @return service type
      */
     String getServiceType();
-
+    
     /**
      * when pointcut the same method,according to order to load plugin service. order is lower,prior is higher.
      *
      * @return order
      */
     int getOrder();
-
+    
     /**
      * the ConfigChangeTypes {@link ConfigChangePointCutTypes} of need to pointcut.
      *
@@ -70,5 +70,5 @@ public interface ConfigChangePluginService {
      * @return array of pointcut the methods
      */
     ConfigChangePointCutTypes[] pointcutMethodNames();
-
+    
 }

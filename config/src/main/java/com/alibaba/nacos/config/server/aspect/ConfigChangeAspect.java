@@ -24,6 +24,9 @@ import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.core.context.RequestContext;
+import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.core.context.addition.BasicContext;
 import com.alibaba.nacos.plugin.config.ConfigChangePluginManager;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeExecuteTypes;
@@ -44,6 +47,7 @@ import java.util.Locale;
 import java.util.Properties;
 
 import static com.alibaba.nacos.config.server.constant.Constants.HTTP;
+import static com.alibaba.nacos.config.server.constant.Constants.RPC;
 
 /**
  * Config change pointcut aspect,which config change plugin services will pointcut.
@@ -66,13 +70,13 @@ public class ConfigChangeAspect {
      * Publish config.
      */
     private static final String PUBLISH_CONFIG =
-            "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.publishConfig(..))";
+        "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.publishConfig(..))";
     
     /**
      * Delete config.
      */
     private static final String DELETE_CONFIG =
-            "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfig(..))";
+        "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfig(..))";
     
     private final ConfigChangeConfigs configChangeConfigs;
     
@@ -105,23 +109,17 @@ public class ConfigChangeAspect {
         String grayName = null;
         String grayRuleExp = null;
         if (StringUtils.isNotBlank(betaIps)) {
-            grayName =  BetaGrayRule.TYPE_BETA;
+            grayName = BetaGrayRule.TYPE_BETA;
             grayRuleExp = betaIps;
         } else if (StringUtils.isNotBlank(tag)) {
             grayName = TagGrayRule.TYPE_TAG + "_" + configForm.getTag();
             grayRuleExp = tag;
         }
         
-        ConfigChangePointCutTypes configChangePointCutType = null;
-        if (HTTP.equals(scrType)) {
-            // via console or api calls
-            configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_HTTP;
-        } else {
-            // via sdk rpc calls
-            configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_RPC;
-        }
+        ConfigChangePointCutTypes configChangePointCutType =
+            resolvePublishPointCutType(scrType);
         final List<ConfigChangePluginService> pluginServices = getPluginServices(
-                configChangePointCutType);
+            configChangePointCutType);
         // didn't enabled or add relative plugin
         if (pluginServices.isEmpty()) {
             return pjp.proceed();
@@ -158,15 +156,10 @@ public class ConfigChangeAspect {
         final String srcUser = (String) args[5];
         final String scrType = (String) args[6];
         
-        ConfigChangePointCutTypes configChangePointCutType = null;
-        if (HTTP.equals(scrType)) {
-            // via console or api calls
-            configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_HTTP;
-        } else {
-            // via sdk rpc calls
-            configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_RPC;
-        }
-        final List<ConfigChangePluginService> pluginServices = getPluginServices(configChangePointCutType);
+        ConfigChangePointCutTypes configChangePointCutType =
+            resolveRemovePointCutType(scrType);
+        final List<ConfigChangePluginService> pluginServices =
+            getPluginServices(configChangePointCutType);
         // didn't enabled or add relative plugin
         if (pluginServices.isEmpty()) {
             return pjp.proceed();
@@ -186,15 +179,17 @@ public class ConfigChangeAspect {
      * Execute relevant config change plugin services.
      */
     private Object configChangeServiceHandle(ProceedingJoinPoint pjp,
-            List<ConfigChangePluginService> configChangePluginServiceList,
-            ConfigChangeRequest configChangeRequest) {
+        List<ConfigChangePluginService> configChangePluginServiceList,
+        ConfigChangeRequest configChangeRequest) {
         ConfigChangePointCutTypes handleType = configChangeRequest.getRequestType();
         ConfigChangeResponse configChangeResponse = new ConfigChangeResponse(handleType);
         // default success,when before plugin service verify failed , set false
         configChangeResponse.setSuccess(true);
-
-        List<ConfigChangePluginService> beforeExecutePluginServices = new ArrayList<>(DEFAULT_BEFORE_LIST_CAPACITY);
-        List<ConfigChangePluginService> afterExecutePluginServices = new ArrayList<>(DEFAULT_AFTER_LIST_CAPACITY);
+        
+        List<ConfigChangePluginService> beforeExecutePluginServices =
+            new ArrayList<>(DEFAULT_BEFORE_LIST_CAPACITY);
+        List<ConfigChangePluginService> afterExecutePluginServices =
+            new ArrayList<>(DEFAULT_AFTER_LIST_CAPACITY);
         
         Object retVal = null;
         Object[] args = pjp.getArgs();
@@ -233,7 +228,8 @@ public class ConfigChangeAspect {
                 retVal = pjp.proceed(args);
             }
         } catch (Throwable e) {
-            LOGGER.warn("Config change join point execution failed. Error details: {}", e.getMessage());
+            LOGGER.warn("Config change join point execution failed. Error details: {}",
+                e.getMessage());
             configChangeResponse.setMsg("Config change join point failed: " + e.getMessage());
             retVal = false;
         }
@@ -243,7 +239,8 @@ public class ConfigChangeAspect {
             for (ConfigChangePluginService ccs : afterExecutePluginServices) {
                 try {
                     final String serviceType = ccs.getServiceType().toLowerCase(Locale.ROOT);
-                    final Properties properties = configChangeConfigs.getPluginProperties(serviceType);
+                    final Properties properties =
+                        configChangeConfigs.getPluginProperties(serviceType);
                     configChangeRequest.setArg(ConfigChangeConstants.PLUGIN_PROPERTIES, properties);
                     ccs.execute(configChangeRequest, configChangeResponse);
                 } catch (Throwable throwable) {
@@ -256,9 +253,9 @@ public class ConfigChangeAspect {
     }
     
     private List<ConfigChangePluginService> getPluginServices(
-            ConfigChangePointCutTypes configChangePointCutType) {
+        ConfigChangePointCutTypes configChangePointCutType) {
         List<ConfigChangePluginService> pluginServicePriorityList = ConfigChangePluginManager
-                .findPluginServicesByPointcut(configChangePointCutType);
+            .findPluginServicesByPointcut(configChangePointCutType);
         if (pluginServicePriorityList == null) {
             return new ArrayList<>();
         }
@@ -270,9 +267,67 @@ public class ConfigChangeAspect {
         return new ArrayList<>();
     }
     
+    private ConfigChangePointCutTypes resolvePublishPointCutType(String srcType) {
+        String resolvedSourceType = resolveSourceType(srcType);
+        if (HTTP.equals(resolvedSourceType)) {
+            // via console or api calls
+            return ConfigChangePointCutTypes.PUBLISH_BY_HTTP;
+        }
+        if (RPC.equals(resolvedSourceType)) {
+            // via sdk rpc calls
+            return ConfigChangePointCutTypes.PUBLISH_BY_RPC;
+        }
+        logUnknownSourceType(srcType);
+        return ConfigChangePointCutTypes.PUBLISH_BY_UNKNOWN;
+    }
+    
+    private ConfigChangePointCutTypes resolveRemovePointCutType(String srcType) {
+        String resolvedSourceType = resolveSourceType(srcType);
+        if (HTTP.equals(resolvedSourceType)) {
+            // via console or api calls
+            return ConfigChangePointCutTypes.REMOVE_BY_HTTP;
+        }
+        if (RPC.equals(resolvedSourceType)) {
+            // via sdk rpc calls
+            return ConfigChangePointCutTypes.REMOVE_BY_RPC;
+        }
+        logUnknownSourceType(srcType);
+        return ConfigChangePointCutTypes.REMOVE_BY_UNKNOWN;
+    }
+    
+    private String resolveSourceType(String srcType) {
+        RequestContext requestContext = RequestContextHolder.getContext();
+        if (requestContext != null) {
+            String requestProtocol = requestContext.getBasicContext().getRequestProtocol();
+            if (BasicContext.HTTP_PROTOCOL.equals(requestProtocol)) {
+                return HTTP;
+            }
+            if (BasicContext.GRPC_PROTOCOL.equals(requestProtocol)) {
+                return RPC;
+            }
+        }
+        if (HTTP.equals(srcType) || RPC.equals(srcType)) {
+            return srcType;
+        }
+        return null;
+    }
+    
+    private void logUnknownSourceType(String srcType) {
+        RequestContext requestContext = RequestContextHolder.getContext();
+        String requestProtocol = null;
+        String requestTarget = null;
+        if (requestContext != null) {
+            requestProtocol = requestContext.getBasicContext().getRequestProtocol();
+            requestTarget = requestContext.getBasicContext().getRequestTarget();
+        }
+        LOGGER.warn(
+            "Use unknown config change pointcut due to unknown source type: {}, requestProtocol: {}, requestTarget: {}",
+            srcType, requestProtocol, requestTarget);
+    }
+    
     private boolean isEnabled(ConfigChangePluginService configChangePluginService) {
         Properties serviceConfigProperties = configChangeConfigs
-                .getPluginProperties(configChangePluginService.getServiceType());
+            .getPluginProperties(configChangePluginService.getServiceType());
         return Boolean.parseBoolean(serviceConfigProperties.getProperty(ENABLED));
     }
 }

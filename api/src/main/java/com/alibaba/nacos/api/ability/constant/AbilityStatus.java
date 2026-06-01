@@ -21,7 +21,7 @@ package com.alibaba.nacos.api.ability.constant;
  * @description It is used to know a certain ability whether supporting.
  * @date 2022/8/31 12:27
  **/
-public enum  AbilityStatus {
+public enum AbilityStatus {
     
     /**.
      * Support a certain ability

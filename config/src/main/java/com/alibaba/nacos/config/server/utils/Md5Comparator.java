@@ -44,6 +44,7 @@ public interface Md5Comparator {
      * @param clientMd5Map the client md 5 map
      * @return the list
      */
-    public Map<String, ConfigListenState> compareMd5(HttpServletRequest request, HttpServletResponse response,
-            Map<String, ConfigListenState> clientMd5Map);
+    public Map<String, ConfigListenState> compareMd5(HttpServletRequest request,
+        HttpServletResponse response,
+        Map<String, ConfigListenState> clientMd5Map);
 }

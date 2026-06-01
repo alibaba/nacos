@@ -59,8 +59,8 @@ class AgentEndpointTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"address\":\"127.0.0.1\",\"port\":8080,\"transport\":\"JSONRPC\","
-                + "\"path\":\"/test\",\"supportTls\":true,\"version\":\"1.0.0\",\"protocolVersion\":\"1.0\","
-                + "\"tenant\":\"public\",\"protocol\":\"HTTP\",\"query\":\"param1=value1&param2=value2\"}";
+            + "\"path\":\"/test\",\"supportTls\":true,\"version\":\"1.0.0\",\"protocolVersion\":\"1.0\","
+            + "\"tenant\":\"public\",\"protocol\":\"HTTP\",\"query\":\"param1=value1&param2=value2\"}";
         
         AgentEndpoint agentEndpoint = mapper.readValue(json, AgentEndpoint.class);
         assertNotNull(agentEndpoint);

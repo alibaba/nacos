@@ -34,6 +34,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,7 +72,7 @@ class RequestLogAspectTest {
     
     @Test
     void testInterfacePublishConfig() throws Throwable {
-        when(pjp.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
+        when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn("dataId");
         when(configForm.getGroup()).thenReturn("group");
         when(configForm.getNamespaceId()).thenReturn("namespaceId");
@@ -92,7 +93,7 @@ class RequestLogAspectTest {
     
     @Test
     void testInterfaceGetConfig() throws Throwable {
-        when(pjp.getArgs()).thenReturn(new Object[]{chainRequest});
+        when(pjp.getArgs()).thenReturn(new Object[] {chainRequest});
         when(chainRequest.getDataId()).thenReturn("dataId");
         when(chainRequest.getGroup()).thenReturn("group");
         when(chainRequest.getTenant()).thenReturn("tenant");
@@ -103,7 +104,7 @@ class RequestLogAspectTest {
         int initialValue = configMonitor.get();
         
         Object result = requestLogAspect.interfaceGetConfig(pjp);
-
+        
         verify(pjp, times(1)).proceed();
         assertEquals("ConfigData", result);
         assertEquals(initialValue + 1, configMonitor.get());
@@ -116,7 +117,7 @@ class RequestLogAspectTest {
         String namespaceId = "namespaceId1";
         String tag = "tag1";
         String clientIp = "127.0.0.1";
-        when(pjp.getArgs()).thenReturn(new Object[]{dataId, group, namespaceId, tag, clientIp});
+        when(pjp.getArgs()).thenReturn(new Object[] {dataId, group, namespaceId, tag, clientIp});
         
         when(pjp.proceed()).thenReturn("Success");
         AtomicInteger configMonitor = MetricsMonitor.getConfigMonitor();
@@ -139,8 +140,34 @@ class RequestLogAspectTest {
         int initialValue = configMonitor.get();
         
         Response result = (Response) requestLogAspect.interfaceListenConfigRpc(pjp, request, meta);
-
+        
         assertEquals(result.getResultCode(), 200);
         assertEquals(initialValue + 1, configMonitor.get());
+    }
+    
+    @Test
+    void testInterfacePublishConfigWithException() throws Throwable {
+        when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("dataId");
+        when(configForm.getGroup()).thenReturn("group");
+        when(configForm.getNamespaceId()).thenReturn("ns");
+        when(configForm.getContent()).thenReturn(null);
+        when(configRequestInfo.getSrcIp()).thenReturn("127.0.0.1");
+        when(pjp.proceed()).thenThrow(new RuntimeException("publish error"));
+        
+        assertThrows(RuntimeException.class,
+            () -> requestLogAspect.interfacePublishConfig(pjp));
+    }
+    
+    @Test
+    void testInterfaceGetConfigWithException() throws Throwable {
+        when(pjp.getArgs()).thenReturn(new Object[] {chainRequest});
+        when(chainRequest.getDataId()).thenReturn("dataId");
+        when(chainRequest.getGroup()).thenReturn("group");
+        when(chainRequest.getTenant()).thenReturn("tenant");
+        when(pjp.proceed()).thenThrow(new RuntimeException("get error"));
+        
+        assertThrows(RuntimeException.class,
+            () -> requestLogAspect.interfaceGetConfig(pjp));
     }
 }

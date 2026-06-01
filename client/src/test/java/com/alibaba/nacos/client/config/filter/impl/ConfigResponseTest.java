@@ -74,4 +74,11 @@ class ConfigResponseTest {
         IConfigContext configContext = configResponse.getConfigContext();
         assertNotNull(configContext);
     }
+    
+    @Test
+    void testMd5GetterAndSetter() {
+        ConfigResponse configResponse = new ConfigResponse();
+        configResponse.setMd5("md5-hash");
+        assertEquals("md5-hash", configResponse.getMd5());
+    }
 }

@@ -48,7 +48,7 @@ public class FuzzyWatchSyncNotifyTask extends AbstractDelayTask {
     private long executeStartTime = System.currentTimeMillis();
     
     public FuzzyWatchSyncNotifyTask(String clientId, String pattern, String syncType,
-            Set<NamingFuzzyWatchSyncRequest.Context> syncServiceKeys, long delay) {
+        Set<NamingFuzzyWatchSyncRequest.Context> syncServiceKeys, long delay) {
         this.clientId = clientId;
         this.pattern = pattern;
         this.syncType = syncType;

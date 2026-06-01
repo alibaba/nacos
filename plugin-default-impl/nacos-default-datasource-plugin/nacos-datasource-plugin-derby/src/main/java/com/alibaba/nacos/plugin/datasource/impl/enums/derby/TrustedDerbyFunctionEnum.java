@@ -25,34 +25,34 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public enum TrustedDerbyFunctionEnum {
-
+    
     /**
      * NOW().
      */
     NOW("NOW()", "CURRENT_TIMESTAMP"),
-
+    
     /**
      * CURRENT_TIMESTAMP().
      */
     CURRENT_TIMESTAMP("CURRENT_TIMESTAMP()", "CURRENT_TIMESTAMP");
-
+    
     private static final Map<String, String> LOOKUP_MAP = new HashMap<>();
-
+    
     static {
         for (TrustedDerbyFunctionEnum entry : TrustedDerbyFunctionEnum.values()) {
             LOOKUP_MAP.put(entry.functionName, entry.function);
         }
     }
-
+    
     private final String functionName;
-
+    
     private final String function;
-
+    
     TrustedDerbyFunctionEnum(String functionName, String function) {
         this.functionName = functionName;
         this.function = function;
     }
-
+    
     /**
      * Get the function name.
      *
@@ -64,6 +64,7 @@ public enum TrustedDerbyFunctionEnum {
         if (null != function) {
             return function;
         }
-        throw new IllegalArgumentException(String.format("Invalid function name: %s", functionName));
+        throw new IllegalArgumentException(
+            String.format("Invalid function name: %s", functionName));
     }
 }

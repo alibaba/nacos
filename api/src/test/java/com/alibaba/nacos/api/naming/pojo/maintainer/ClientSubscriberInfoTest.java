@@ -55,8 +55,10 @@ class ClientSubscriberInfoTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String jsonString = "{\"clientId\":\"clientId\",\"appName\":\"appName\",\"agent\":\"agent\",\"address\":\"1.1.1.1:8080\"}";
-        ClientSubscriberInfo clientSubscriberInfo1 = mapper.readValue(jsonString, ClientSubscriberInfo.class);
+        String jsonString =
+            "{\"clientId\":\"clientId\",\"appName\":\"appName\",\"agent\":\"agent\",\"address\":\"1.1.1.1:8080\"}";
+        ClientSubscriberInfo clientSubscriberInfo1 =
+            mapper.readValue(jsonString, ClientSubscriberInfo.class);
         assertEquals(clientSubscriberInfo.getClientId(), clientSubscriberInfo1.getClientId());
         assertEquals(clientSubscriberInfo.getAppName(), clientSubscriberInfo1.getAppName());
         assertEquals(clientSubscriberInfo.getAgent(), clientSubscriberInfo1.getAgent());

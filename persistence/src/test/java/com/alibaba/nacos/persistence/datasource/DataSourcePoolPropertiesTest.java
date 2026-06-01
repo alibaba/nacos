@@ -25,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DataSourcePoolPropertiesTest {
     
-    private static final String JDBC_URL = "jdbc:derby://127.0.0.1:3306/nacos_devtest?characterEncoding=utf8&serverTimezone=UTC";
+    private static final String JDBC_URL =
+        "jdbc:derby://127.0.0.1:3306/nacos_devtest?characterEncoding=utf8&serverTimezone=UTC";
     
     private static final String JDBC_DRIVER_CLASS_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
     
@@ -61,7 +62,8 @@ class DataSourcePoolPropertiesTest {
         assertEquals(USERNAME, actual.getUsername());
         assertEquals(PASSWORD, actual.getPassword());
         assertEquals(CONNECTION_TIMEOUT.longValue(), actual.getConnectionTimeout());
-        assertEquals(DataSourcePoolProperties.DEFAULT_VALIDATION_TIMEOUT, actual.getValidationTimeout());
+        assertEquals(DataSourcePoolProperties.DEFAULT_VALIDATION_TIMEOUT,
+            actual.getValidationTimeout());
         assertEquals(DataSourcePoolProperties.DEFAULT_IDLE_TIMEOUT, actual.getIdleTimeout());
         assertEquals(MAX_POOL_SIZE.intValue(), actual.getMaximumPoolSize());
         assertEquals(DataSourcePoolProperties.DEFAULT_MINIMUM_IDLE, actual.getMinimumIdle());

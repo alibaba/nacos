@@ -37,7 +37,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface ConsistencyProtocol<T extends Config, P extends RequestProcessor> extends CommandOperations {
+public interface ConsistencyProtocol<T extends Config, P extends RequestProcessor>
+    extends CommandOperations {
     
     /**
      * Consistency protocol initialization: perform initialization operations based on the incoming.

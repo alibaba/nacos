@@ -49,7 +49,8 @@ class QueryAgentCardRequestTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"agentName\":\"testAgent\","
+        String json =
+            "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"agentName\":\"testAgent\","
                 + "\"version\":\"1.0.0\",\"registrationType\":\"SERVICE\",\"module\":\"ai\"}";
         QueryAgentCardRequest result = mapper.readValue(json, QueryAgentCardRequest.class);
         assertNotNull(result);

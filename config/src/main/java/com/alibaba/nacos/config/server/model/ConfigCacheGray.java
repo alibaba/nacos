@@ -41,7 +41,8 @@ public class ConfigCacheGray extends ConfigCache implements Serializable {
         super.clear();
     }
     
-    public ConfigCacheGray() {}
+    public ConfigCacheGray() {
+    }
     
     public ConfigCacheGray(String grayName) {
         this.grayName = grayName;
@@ -77,7 +78,8 @@ public class ConfigCacheGray extends ConfigCache implements Serializable {
      * @date 2024/3/14
      */
     public void resetGrayRule(String grayRule) throws RuntimeException {
-        this.grayRule = GrayRuleManager.constructGrayRule(GrayRuleManager.deserializeConfigGrayPersistInfo(grayRule));
+        this.grayRule = GrayRuleManager
+            .constructGrayRule(GrayRuleManager.deserializeConfigGrayPersistInfo(grayRule));
         if (this.grayRule == null || !this.grayRule.isValid()) {
             throw new RuntimeException("raw gray rule is invalid");
         }

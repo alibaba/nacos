@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.core;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.response.ConnectionInfo;
 import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
@@ -42,6 +43,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return the states key-value map
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     Map<String, String> getServerState() throws NacosException;
     
     /**
@@ -50,6 +52,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} detect successfully, {@code false} otherwise.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     Boolean liveness() throws NacosException;
     
     /**
@@ -58,6 +61,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} detect successfully, {@code false} otherwise.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     Boolean readiness() throws NacosException;
     
     /**
@@ -69,6 +73,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return the result of the Raft operation.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     String raftOps(String command, String value, String groupId) throws NacosException;
     
     /**
@@ -77,6 +82,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return a list of ID generator status objects.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     List<IdGeneratorInfo> getIdGenerators() throws NacosException;
     
     /**
@@ -86,6 +92,7 @@ public interface CoreMaintainerService extends Closeable {
      * @param logLevel the new log level to set.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     void updateLogLevel(String logName, String logLevel) throws NacosException;
     
     /**
@@ -96,6 +103,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return a collection of matching nodes.
      * @throws NacosException if an error occurs during the operation.
      */
+    @Since("3.0.0")
     Collection<NacosMember> listClusterNodes(String address, String state) throws NacosException;
     
     /**
@@ -105,6 +113,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return true if the operation was successful, false otherwise.
      * @throws NacosException if an error occurs during the operation.
      */
+    @Since("3.0.0")
     Boolean updateLookupMode(String type) throws NacosException;
     
     /**
@@ -113,6 +122,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return a map of current client connections.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     Map<String, ConnectionInfo> getCurrentClients() throws NacosException;
     
     /**
@@ -123,6 +133,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return the result of the operation.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     String reloadConnectionCount(Integer count, String redirectAddress) throws NacosException;
     
     /**
@@ -132,6 +143,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return the result of the operation.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     String smartReloadCluster(String loaderFactorStr) throws NacosException;
     
     /**
@@ -142,6 +154,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return the result of the operation.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     String reloadSingleClient(String connectionId, String redirectAddress) throws NacosException;
     
     /**
@@ -150,6 +163,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return the loader metrics for the cluster.
      * @throws NacosException if the operation fails.
      */
+    @Since("3.0.0")
     ServerLoaderMetrics getClusterLoaderMetrics() throws NacosException;
     
     /**
@@ -158,6 +172,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return A list of {@link Namespace} objects representing all available namespaces.
      * @throws NacosException Thrown if any error occurs during the retrieval.
      */
+    @Since("3.0.0")
     List<Namespace> getNamespaceList() throws NacosException;
     
     /**
@@ -167,6 +182,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return A {@link Namespace} object containing all details of the specified namespace.
      * @throws NacosException Thrown if any error occurs during the retrieval.
      */
+    @Since("3.0.0")
     Namespace getNamespace(String namespaceId) throws NacosException;
     
     /**
@@ -177,7 +193,9 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} if the namespace is created successfully, {@code false} otherwise.
      * @throws NacosException Thrown if any error occurs during the creation.
      */
-    default Boolean createNamespace(String namespaceName, String namespaceDesc) throws NacosException {
+    @Since("3.0.0")
+    default Boolean createNamespace(String namespaceName, String namespaceDesc)
+        throws NacosException {
         return createNamespace(StringUtils.EMPTY, namespaceName, namespaceDesc);
     }
     
@@ -190,7 +208,9 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} if the namespace is created successfully, {@code false} otherwise.
      * @throws NacosException Thrown if any error occurs during the creation.
      */
-    Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc) throws NacosException;
+    @Since("3.0.0")
+    Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
+        throws NacosException;
     
     /**
      * Update an existing namespace with the provided details.
@@ -201,7 +221,9 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} if the namespace is updated successfully, {@code false} otherwise.
      * @throws NacosException Thrown if any error occurs during the update.
      */
-    Boolean updateNamespace(String namespaceId, String namespaceName, String namespaceDesc) throws NacosException;
+    @Since("3.0.0")
+    Boolean updateNamespace(String namespaceId, String namespaceName, String namespaceDesc)
+        throws NacosException;
     
     /**
      * Delete a namespace by its unique identifier.
@@ -210,6 +232,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} if the namespace is deleted successfully, {@code false} otherwise.
      * @throws NacosException Thrown if any error occurs during the deletion.
      */
+    @Since("3.0.0")
     Boolean deleteNamespace(String namespaceId) throws NacosException;
     
     /**
@@ -219,8 +242,9 @@ public interface CoreMaintainerService extends Closeable {
      * @return {@code true} if the namespace exists, {@code false} otherwise.
      * @throws NacosException Thrown if any error occurs during the check.
      */
+    @Since("3.0.0")
     Boolean checkNamespaceIdExist(String namespaceId) throws NacosException;
-
+    
     /**
      * List all plugins with optional type filter.
      *
@@ -228,8 +252,9 @@ public interface CoreMaintainerService extends Closeable {
      * @return list of plugin information
      * @throws NacosException if the operation fails
      */
+    @Since("3.2.0")
     List<Map<String, Object>> listPlugins(String pluginType) throws NacosException;
-
+    
     /**
      * Get plugin detail by type and name.
      *
@@ -238,8 +263,9 @@ public interface CoreMaintainerService extends Closeable {
      * @return plugin detail information
      * @throws NacosException if the operation fails
      */
+    @Since("3.2.0")
     Map<String, Object> getPluginDetail(String pluginType, String pluginName) throws NacosException;
-
+    
     /**
      * Update plugin enabled/disabled status.
      *
@@ -248,10 +274,12 @@ public interface CoreMaintainerService extends Closeable {
      * @param enabled    whether to enable
      * @throws NacosException if the operation fails
      */
-    default void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException {
+    @Since("3.2.0")
+    default void updatePluginStatus(String pluginType, String pluginName, boolean enabled)
+        throws NacosException {
         updatePluginStatus(pluginType, pluginName, enabled, false);
     }
-
+    
     /**
      * Update plugin enabled/disabled status.
      *
@@ -261,9 +289,11 @@ public interface CoreMaintainerService extends Closeable {
      * @param localOnly  whether only apply to local node
      * @throws NacosException if the operation fails
      */
-    void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
-            throws NacosException;
-
+    @Since("3.2.0")
+    void updatePluginStatus(String pluginType, String pluginName, boolean enabled,
+        boolean localOnly)
+        throws NacosException;
+    
     /**
      * Update plugin configuration.
      *
@@ -272,11 +302,13 @@ public interface CoreMaintainerService extends Closeable {
      * @param config     configuration map
      * @throws NacosException if the operation fails
      */
-    default void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config)
-            throws NacosException {
+    @Since("3.2.0")
+    default void updatePluginConfig(String pluginType, String pluginName,
+        Map<String, String> config)
+        throws NacosException {
         updatePluginConfig(pluginType, pluginName, config, false);
     }
-
+    
     /**
      * Update plugin configuration.
      *
@@ -286,9 +318,11 @@ public interface CoreMaintainerService extends Closeable {
      * @param localOnly  whether only apply to local node
      * @throws NacosException if the operation fails
      */
-    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config, boolean localOnly)
-            throws NacosException;
-
+    @Since("3.2.0")
+    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config,
+        boolean localOnly)
+        throws NacosException;
+    
     /**
      * Get plugin availability across cluster nodes.
      *
@@ -297,5 +331,7 @@ public interface CoreMaintainerService extends Closeable {
      * @return node availability map (node address to availability)
      * @throws NacosException if the operation fails
      */
-    Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName) throws NacosException;
+    @Since("3.2.0")
+    Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName)
+        throws NacosException;
 }

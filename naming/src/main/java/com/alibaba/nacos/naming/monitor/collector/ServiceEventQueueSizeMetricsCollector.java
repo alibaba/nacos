@@ -35,18 +35,22 @@ public class ServiceEventQueueSizeMetricsCollector {
     
     private static final long DELAY_SECONDS = 2;
     
-    private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
-        Thread thread = new Thread(r, "nacos.naming.monitor.ServiceEventQueueSizeMetricsCollector");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private static ScheduledExecutorService executorService =
+        ExecutorFactory.newSingleScheduledExecutorService(r -> {
+            Thread thread =
+                new Thread(r, "nacos.naming.monitor.ServiceEventQueueSizeMetricsCollector");
+            thread.setDaemon(true);
+            return thread;
+        });
     
     public ServiceEventQueueSizeMetricsCollector() {
         executorService.scheduleWithFixedDelay(() -> {
             MetricsMonitor.getServiceSubscribedEventQueueSize().set(
-                    (int) NotifyCenter.getPublisher(ServiceEvent.ServiceSubscribedEvent.class).currentEventSize());
+                (int) NotifyCenter.getPublisher(ServiceEvent.ServiceSubscribedEvent.class)
+                    .currentEventSize());
             MetricsMonitor.getServiceChangedEventQueueSize().set(
-                    (int) NotifyCenter.getPublisher(ServiceEvent.ServiceChangedEvent.class).currentEventSize());
+                (int) NotifyCenter.getPublisher(ServiceEvent.ServiceChangedEvent.class)
+                    .currentEventSize());
         }, DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
     }
 }

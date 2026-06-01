@@ -49,22 +49,24 @@ public class PromptDebugServiceImpl implements PromptDebugService {
     
     @Override
     public void debugPromptStream(PromptDebugRequest request,
-                                  StreamResponseCallback<PromptDebugResponse> callback) {
+        StreamResponseCallback<PromptDebugResponse> callback) {
         // 1. Validate request
         if (StringUtils.isBlank(request.getPrompt())) {
-            callback.onError(new NacosException(NacosException.INVALID_PARAM, "Prompt is required"));
+            callback
+                .onError(new NacosException(NacosException.INVALID_PARAM, "Prompt is required"));
             return;
         }
         
         if (StringUtils.isBlank(request.getUserInput())) {
-            callback.onError(new NacosException(NacosException.INVALID_PARAM, "User input is required"));
+            callback.onError(
+                new NacosException(NacosException.INVALID_PARAM, "User input is required"));
             return;
         }
         
         // 2. Check if Copilot is enabled
         if (!agentManager.isEnabled()) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
-                    "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
+                "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
             return;
         }
         
@@ -75,35 +77,35 @@ public class PromptDebugServiceImpl implements PromptDebugService {
         ReActAgent agent = agentManager.createAgent(systemPrompt);
         if (agent == null) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
-                    "Failed to create Copilot agent. Please check configuration."));
+                "Failed to create Copilot agent. Please check configuration."));
             return;
         }
         
         // 5. Configure streaming options
         StreamOptions streamOptions = StreamOptions.builder()
-                .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
-                .incremental(true)
-                .build();
+            .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
+            .incremental(true)
+            .build();
         
         // 6. Create user message
         Msg userMsg = Msg.builder()
-                .textContent(request.getUserInput())
-                .build();
+            .textContent(request.getUserInput())
+            .build();
         
         // 7. Call agent with stream response
         // Unlike optimization, we include THINKING in debug response
         Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(userMsg, streamOptions)
-                .subscribeOn(Schedulers.boundedElastic());
+            .subscribeOn(Schedulers.boundedElastic());
         
         eventFlux.subscribe(StreamEventProcessor.createSubscriber(
-                (type, content, done) -> {
-                    // Include all types including THINKING for debugging
-                    PromptDebugResponse response = new PromptDebugResponse();
-                    response.setType(type);
-                    response.setChunk(content);
-                    response.setDone(done);
-                    return response;
-                },
-                callback));
+            (type, content, done) -> {
+                // Include all types including THINKING for debugging
+                PromptDebugResponse response = new PromptDebugResponse();
+                response.setType(type);
+                response.setChunk(content);
+                response.setDone(done);
+                return response;
+            },
+            callback));
     }
 }

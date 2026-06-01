@@ -47,8 +47,9 @@ public class RequestMappingInfo {
     
     @Override
     public String toString() {
-        return "RequestMappingInfo{" + "pathRequestCondition=" + pathRequestCondition + ", paramRequestCondition="
-                + paramRequestCondition + '}';
+        return "RequestMappingInfo{" + "pathRequestCondition=" + pathRequestCondition
+            + ", paramRequestCondition="
+            + paramRequestCondition + '}';
     }
     
     public static class RequestMappingInfoComparator implements Comparator<RequestMappingInfo> {
@@ -56,7 +57,7 @@ public class RequestMappingInfo {
         @Override
         public int compare(RequestMappingInfo o1, RequestMappingInfo o2) {
             return Integer.compare(o2.getParamRequestCondition().getExpressions().size(),
-                    o1.getParamRequestCondition().getExpressions().size());
+                o1.getParamRequestCondition().getExpressions().size());
         }
     }
 }

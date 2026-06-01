@@ -34,7 +34,8 @@ public class ConfigMaintainerFactory {
      * @return config maintainer service
      * @throws NacosException nacos exception
      */
-    public static ConfigMaintainerService createConfigMaintainerService(String serverList) throws NacosException {
+    public static ConfigMaintainerService createConfigMaintainerService(String serverList)
+        throws NacosException {
         Properties properties = new Properties();
         properties.setProperty("serverAddr", serverList);
         return new NacosConfigMaintainerServiceImpl(properties);
@@ -47,7 +48,8 @@ public class ConfigMaintainerFactory {
      * @return config maintainer service
      * @throws NacosException nacos exception
      */
-    public static ConfigMaintainerService createConfigMaintainerService(Properties properties) throws NacosException {
+    public static ConfigMaintainerService createConfigMaintainerService(Properties properties)
+        throws NacosException {
         if (properties == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "Properties cannot be null");
         }

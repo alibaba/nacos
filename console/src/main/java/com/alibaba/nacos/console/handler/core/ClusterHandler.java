@@ -38,4 +38,3 @@ public interface ClusterHandler {
      */
     Collection<? extends NacosMember> getNodeList(String ipKeyWord) throws NacosException;
 }
-

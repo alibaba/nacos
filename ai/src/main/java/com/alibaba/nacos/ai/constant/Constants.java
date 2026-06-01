@@ -29,6 +29,10 @@ public class Constants {
     
     public static final String MCP_CONSOLE_PATH = "/v3/console" + MCP_PATH;
     
+    public static final String AI_RESOURCE_IMPORT_ADMIN_PATH = "/v3/admin/ai/import";
+    
+    public static final String AI_RESOURCE_IMPORT_CONSOLE_PATH = "/v3/console/ai/import";
+    
     public static final String MCP_LIST_SEARCH_ACCURATE = "accurate";
     
     public static final String MCP_LIST_SEARCH_BLUR = "blur";
@@ -42,7 +46,7 @@ public class Constants {
     public static final String MCP_SERVER_TOOL_GROUP = "mcp-tools";
     
     public static final String MCP_SERVER_RESOURCE_GROUP = "mcp-resources";
-
+    
     public static final String MCP_SERVER_SPEC_DATA_ID_SUFFIX = "-mcp-server.json";
     
     public static final String MCP_SERVER_VERSION_DATA_ID_SUFFIX = "-mcp-versions.json";
@@ -50,13 +54,14 @@ public class Constants {
     public static final String MCP_SERVER_TOOL_DATA_ID_SUFFIX = "-mcp-tools.json";
     
     public static final String MCP_SERVER_RESOURCE_DATA_ID_SUFFIX = "-mcp-resources.json";
-
+    
     public static final String MCP_SERVER_ENDPOINT_GROUP = "mcp-endpoints";
     
-    public static final String MCP_SERVER_ENDPOINT_CLUSTER = com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
+    public static final String MCP_SERVER_ENDPOINT_CLUSTER =
+        com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
     
     public static final String MCP_BACKEND_INSTANCE_PROTOCOL_KEY = "transportProtocol";
-
+    
     public static final String MCP_SERVER_ENDPOINT_ADDRESS = "address";
     
     public static final String MCP_SERVER_ENDPOINT_PORT = "port";
@@ -81,14 +86,18 @@ public class Constants {
     
     public static final String META_PATH = "path";
     
-    public static final String SERVER_VERSION_CONFIG_DATA_ID_TEMPLATE = "%s" + MCP_SERVER_VERSION_DATA_ID_SUFFIX;
+    public static final String SERVER_VERSION_CONFIG_DATA_ID_TEMPLATE =
+        "%s" + MCP_SERVER_VERSION_DATA_ID_SUFFIX;
     
-    public static final String SERVER_SPECIFICATION_CONFIG_DATA_ID_TEMPLATE = "%s-%s" + MCP_SERVER_SPEC_DATA_ID_SUFFIX;
+    public static final String SERVER_SPECIFICATION_CONFIG_DATA_ID_TEMPLATE =
+        "%s-%s" + MCP_SERVER_SPEC_DATA_ID_SUFFIX;
     
-    public static final String SERVER_TOOLS_SPEC_CONFIG_DATA_ID_TEMPLATE = "%s-%s" + MCP_SERVER_TOOL_DATA_ID_SUFFIX;
+    public static final String SERVER_TOOLS_SPEC_CONFIG_DATA_ID_TEMPLATE =
+        "%s-%s" + MCP_SERVER_TOOL_DATA_ID_SUFFIX;
     
-    public static final String SERVER_RESOURCE_SPEC_CONFIG_DATA_ID_TEMPLATE = "%s-%s" + MCP_SERVER_RESOURCE_DATA_ID_SUFFIX;
-
+    public static final String SERVER_RESOURCE_SPEC_CONFIG_DATA_ID_TEMPLATE =
+        "%s-%s" + MCP_SERVER_RESOURCE_DATA_ID_SUFFIX;
+    
     public static class A2A {
         
         public static final String CONSOLE_PATH = "/v3/console/ai/a2a";
@@ -107,17 +116,23 @@ public class Constants {
         
         public static final String AGENT_ENDPOINT_PATH_KEY = "__nacos.agent.endpoint.path__";
         
-        public static final String AGENT_ENDPOINT_TRANSPORT_KEY = "__nacos.agent.endpoint.transport__";
+        public static final String AGENT_ENDPOINT_TRANSPORT_KEY =
+            "__nacos.agent.endpoint.transport__";
         
-        public static final String NACOS_AGENT_ENDPOINT_SUPPORT_TLS = "__nacos.agent.endpoint.supportTls__";
+        public static final String NACOS_AGENT_ENDPOINT_SUPPORT_TLS =
+            "__nacos.agent.endpoint.supportTls__";
         
-        public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_KEY = "__nacos.agent.endpoint.protocol__";
+        public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_KEY =
+            "__nacos.agent.endpoint.protocol__";
         
-        public static final String NACOS_AGENT_ENDPOINT_QUERY_KEY = "__nacos.agent.endpoint.query__";
+        public static final String NACOS_AGENT_ENDPOINT_QUERY_KEY =
+            "__nacos.agent.endpoint.query__";
         
-        public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY = "__nacos.agent.endpoint.protocolVersion__";
+        public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY =
+            "__nacos.agent.endpoint.protocolVersion__";
         
-        public static final String NACOS_AGENT_ENDPOINT_TENANT_KEY = "__nacos.agent.endpoint.tenant__";
+        public static final String NACOS_AGENT_ENDPOINT_TENANT_KEY =
+            "__nacos.agent.endpoint.tenant__";
     }
     
     public static class Skills {
@@ -125,7 +140,7 @@ public class Constants {
         public static final String CONSOLE_PATH = "/v3/console/ai/skills";
         
         public static final String ADMIN_PATH = "/v3/admin/ai/skills";
-
+        
         public static final String CLIENT_PATH = "/v3/client/ai/skills";
         
         public static final String SKILL_GROUP = "skill";
@@ -137,9 +152,35 @@ public class Constants {
         public static final String SEARCH_ACCURATE = "accurate";
         
         public static final String SKILL_DEFAULT_NAMESPACE = "public";
-
+        
         /**
-         * Max allowed size for skill zip upload (10MB). Exceeding this will result in a clear error.
+         * Resource type constant used in {@code ai_resource_version.type} for skill rows.
+         */
+        public static final String RESOURCE_TYPE_SKILL = "skill";
+        
+        /**
+         * Key inside {@code ai_resource_version.storage} JSON for the published content MD5.
+         */
+        public static final String STORAGE_KEY_CONTENT_MD5 = "contentMd5";
+        
+        /**
+         * Response header carrying the published skill content MD5 for client listener cache.
+         */
+        public static final String HEADER_SKILL_MD5 = "X-Nacos-Skill-Md5";
+        
+        /**
+         * Response header carrying the resolved version when the client queries by label.
+         */
+        public static final String HEADER_SKILL_RESOLVED_VERSION = "X-Nacos-Skill-Resolved-Version";
+        
+        /**
+         * Default max allowed size for skill zip upload (10MB).
+         *
+         * <p>Runtime callers should use
+         * {@code com.alibaba.nacos.ai.utils.SkillZipParser#resolveMaxUploadBytes()} instead, which
+         * honors the {@code nacos.ai.skill.zip.max-upload-size-mb} property when an operator
+         * needs to raise this cap. This constant is preserved as the historical default and for
+         * backward compatibility with callers outside the skill upload path.
          */
         public static final long MAX_UPLOAD_ZIP_BYTES = 10L * 1024 * 1024;
     }
@@ -159,17 +200,29 @@ public class Constants {
         public static final String AGENTSPEC_MAIN_DATA_ID = "manifest.json";
         
         /**
-         * Max allowed size for agentspec zip upload (50MB). Exceeding this will result in a clear error.
+         * Default max allowed size for agentspec zip upload (50MB).
+         *
+         * <p>Runtime callers should use
+         * {@code com.alibaba.nacos.ai.utils.AgentSpecZipParser#resolveMaxUploadBytes()} instead,
+         * which honors the {@code nacos.ai.agentspec.zip.max-upload-size-mb} property when an
+         * operator needs to raise this cap. This constant is preserved as the historical default
+         * and for backward compatibility with callers outside the AgentSpec upload path.
          */
         public static final long MAX_UPLOAD_ZIP_BYTES = 50L * 1024 * 1024;
         
-        public static final String AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY = "nacos.ai.agentspec.storage.provider";
+        public static final String AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY =
+            "nacos.ai.agentspec.storage.provider";
         
         public static final String SEARCH_BLUR = "blur";
         
         public static final String SEARCH_ACCURATE = "accurate";
         
         public static final String AGENTSPEC_DEFAULT_NAMESPACE = "public";
+        
+        public static final String HEADER_AGENTSPEC_MD5 = "X-Nacos-AgentSpec-Md5";
+        
+        public static final String HEADER_AGENTSPEC_RESOLVED_VERSION =
+            "X-Nacos-AgentSpec-Resolved-Version";
     }
     
     public static class Pipeline {
@@ -210,12 +263,14 @@ public class Constants {
         /**
          * DataId suffix for descriptor side prompt metadata.
          */
-        public static final String DESCRIPTOR_DATA_ID_SUFFIX = ".descriptor" + PROMPT_DATA_ID_SUFFIX;
+        public static final String DESCRIPTOR_DATA_ID_SUFFIX =
+            ".descriptor" + PROMPT_DATA_ID_SUFFIX;
         
         /**
          * DataId suffix for runtime label/version mapping.
          */
-        public static final String LABEL_VERSION_MAPPING_DATA_ID_SUFFIX = ".label-version-mapping" + PROMPT_DATA_ID_SUFFIX;
+        public static final String LABEL_VERSION_MAPPING_DATA_ID_SUFFIX =
+            ".label-version-mapping" + PROMPT_DATA_ID_SUFFIX;
         
         /**
          * Key for prompt version in extInfo.

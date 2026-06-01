@@ -82,7 +82,7 @@ public class RequestUtil {
      * @return HTTP API request parameters
      */
     public static Map<String, String> toParameters(Service service, List<Instance> instances,
-            Map<String, String> newMetadata) {
+        Map<String, String> newMetadata) {
         Map<String, String> params = new HashMap<>(6);
         params.put("namespaceId", service.getNamespaceId());
         params.put("groupName", service.getGroupName());

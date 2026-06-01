@@ -137,16 +137,21 @@ public class ConfigAdvanceInfo implements Serializable {
             return false;
         }
         ConfigAdvanceInfo that = (ConfigAdvanceInfo) o;
-        return createTime == that.createTime && modifyTime == that.modifyTime && Objects.equals(createUser,
-                that.createUser) && Objects.equals(createIp, that.createIp) && Objects.equals(desc, that.desc)
-                && Objects.equals(use, that.use) && Objects.equals(effect, that.effect) && Objects.equals(type,
-                that.type) && Objects.equals(schema, that.schema) && Objects.equals(configTags, that.configTags);
+        return createTime == that.createTime && modifyTime == that.modifyTime
+            && Objects.equals(createUser,
+                that.createUser)
+            && Objects.equals(createIp, that.createIp) && Objects.equals(desc, that.desc)
+            && Objects.equals(use, that.use) && Objects.equals(effect, that.effect)
+            && Objects.equals(type,
+                that.type)
+            && Objects.equals(schema, that.schema) && Objects.equals(configTags, that.configTags);
     }
-
+    
     @Override
     public int hashCode() {
-        return Objects.hash(createTime, modifyTime, createUser, createIp, desc, use, effect, type, schema,
-                configTags);
+        return Objects.hash(createTime, modifyTime, createUser, createIp, desc, use, effect, type,
+            schema,
+            configTags);
     }
-
+    
 }

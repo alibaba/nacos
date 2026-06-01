@@ -48,8 +48,9 @@ public interface HttpAgent extends Closeable {
      * @throws Exception If an input or output exception occurred
      */
     
-    HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
-            String encoding, long readTimeoutMs) throws Exception;
+    HttpRestResult<String> httpGet(String path, Map<String, String> headers,
+        Map<String, String> paramValues,
+        String encoding, long readTimeoutMs) throws Exception;
     
     /**
      * invoke http post method.
@@ -62,8 +63,9 @@ public interface HttpAgent extends Closeable {
      * @return HttpResult http response
      * @throws Exception If an input or output exception occurred
      */
-    HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
-            String encoding, long readTimeoutMs) throws Exception;
+    HttpRestResult<String> httpPost(String path, Map<String, String> headers,
+        Map<String, String> paramValues,
+        String encoding, long readTimeoutMs) throws Exception;
     
     /**
      * invoke http delete method.
@@ -76,8 +78,9 @@ public interface HttpAgent extends Closeable {
      * @return HttpResult http response
      * @throws Exception If an input or output exception occurred
      */
-    HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
-            String encoding, long readTimeoutMs) throws Exception;
+    HttpRestResult<String> httpDelete(String path, Map<String, String> headers,
+        Map<String, String> paramValues,
+        String encoding, long readTimeoutMs) throws Exception;
     
     /**
      * get name.

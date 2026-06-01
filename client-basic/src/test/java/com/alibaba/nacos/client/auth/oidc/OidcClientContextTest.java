@@ -16,9 +16,18 @@
 
 package com.alibaba.nacos.client.auth.oidc;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,7 +51,8 @@ class OidcClientContextTest {
     @Test
     void testInitWithFullConfig() {
         Properties properties = new Properties();
-        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, "https://idp.example.com/realms/test");
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI,
+            "https://idp.example.com/realms/test");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
         properties.setProperty(OidcClientConstants.PROP_SCOPE, "openid profile");
@@ -64,9 +74,9 @@ class OidcClientContextTest {
         properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, "https://idp.example.com");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
-
+        
         boolean configured = context.init(properties);
-
+        
         assertTrue(configured);
         assertEquals(OidcClientConstants.DEFAULT_SCOPE, context.getScope());
     }
@@ -76,7 +86,8 @@ class OidcClientContextTest {
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
-        properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT, "https://idp.example.com/token");
+        properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT,
+            "https://idp.example.com/token");
         
         boolean configured = context.init(properties);
         
@@ -99,20 +110,20 @@ class OidcClientContextTest {
     void testInitWithOnlyClientId() {
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
-
+        
         boolean configured = context.init(properties);
-
+        
         assertFalse(configured);
     }
-
+    
     @Test
     void testInitWithClientCredentialsButNoEndpoint() {
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
-
+        
         boolean configured = context.init(properties);
-
+        
         assertFalse(configured, "Should not be configured without issuer-uri or token-endpoint");
     }
     
@@ -133,7 +144,8 @@ class OidcClientContextTest {
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
-        properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT, "https://idp.example.com/token");
+        properties.setProperty(OidcClientConstants.PROP_TOKEN_ENDPOINT,
+            "https://idp.example.com/token");
         context.init(properties);
         
         // Already discovered via direct token endpoint
@@ -149,9 +161,108 @@ class OidcClientContextTest {
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
         properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
         context.init(properties);
-
+        
         boolean result = context.discover();
-
+        
         assertFalse(result, "Discovery should fail with invalid URL");
+    }
+    
+    private HttpServer httpServer;
+    
+    @AfterEach
+    void afterEach() {
+        if (httpServer != null) {
+            httpServer.stop(0);
+            httpServer = null;
+        }
+    }
+    
+    private void startServer(String path, HttpHandler handler) throws IOException {
+        httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        httpServer.createContext(path, handler);
+        httpServer.start();
+    }
+    
+    private String baseIssuerUri() {
+        return "http://127.0.0.1:" + httpServer.getAddress().getPort();
+    }
+    
+    private static void writeJson(HttpExchange exchange, int status, String body)
+        throws IOException {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(status, bytes.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
+    }
+    
+    @Test
+    void testDiscoverSuccess() throws Exception {
+        startServer("/.well-known/openid-configuration", exchange -> writeJson(exchange, 200,
+            "{\"token_endpoint\":\"http://idp.example.com/token\"}"));
+        Properties properties = new Properties();
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, baseIssuerUri());
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
+        context.init(properties);
+        assertTrue(context.discover());
+        assertTrue(context.isDiscovered());
+        assertEquals("http://idp.example.com/token", context.getTokenEndpoint());
+    }
+    
+    @Test
+    void testDiscoverSuccessWithTrailingSlashIssuer() throws Exception {
+        startServer("/.well-known/openid-configuration", exchange -> writeJson(exchange, 200,
+            "{\"token_endpoint\":\"http://idp.example.com/token\"}"));
+        Properties properties = new Properties();
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, baseIssuerUri() + "/");
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
+        context.init(properties);
+        assertTrue(context.discover());
+    }
+    
+    @Test
+    void testDiscoverHttpErrorReturnsFalse() throws Exception {
+        startServer("/.well-known/openid-configuration",
+            exchange -> writeJson(exchange, 500, "boom"));
+        Properties properties = new Properties();
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, baseIssuerUri());
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
+        context.init(properties);
+        assertFalse(context.discover());
+    }
+    
+    @Test
+    void testDiscoverMissingTokenEndpointReturnsFalse() throws Exception {
+        startServer("/.well-known/openid-configuration",
+            exchange -> writeJson(exchange, 200, "{\"issuer\":\"x\"}"));
+        Properties properties = new Properties();
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, baseIssuerUri());
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
+        context.init(properties);
+        assertFalse(context.discover());
+    }
+    
+    @Test
+    void testDiscoverNullTokenEndpointReturnsFalse() throws Exception {
+        startServer("/.well-known/openid-configuration",
+            exchange -> writeJson(exchange, 200, "{\"token_endpoint\":null}"));
+        Properties properties = new Properties();
+        properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, baseIssuerUri());
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
+        properties.setProperty(OidcClientConstants.PROP_CLIENT_SECRET, "my-secret");
+        context.init(properties);
+        assertFalse(context.discover());
+    }
+    
+    @Test
+    void testReadInputStreamAsString() throws Exception {
+        String payload = "abcdef-数据";
+        ByteArrayInputStream bis =
+            new ByteArrayInputStream(payload.getBytes(StandardCharsets.UTF_8));
+        assertEquals(payload, OidcClientContext.readInputStreamAsString(bis));
     }
 }

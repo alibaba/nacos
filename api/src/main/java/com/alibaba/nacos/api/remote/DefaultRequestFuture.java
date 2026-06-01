@@ -72,14 +72,16 @@ public class DefaultRequestFuture implements RequestFuture {
         this(connectionId, requestId, null, null);
     }
     
-    public DefaultRequestFuture(String connectionId, String requestId, RequestCallBack requestCallBack,
-            FutureTrigger futureTrigger) {
+    public DefaultRequestFuture(String connectionId, String requestId,
+        RequestCallBack requestCallBack,
+        FutureTrigger futureTrigger) {
         this.timeStamp = System.currentTimeMillis();
         this.requestCallBack = requestCallBack;
         this.requestId = requestId;
         this.connectionId = connectionId;
         if (requestCallBack != null) {
-            this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SCHEDULER.schedule(new TimeoutHandler(),
+            this.timeoutFuture =
+                RpcScheduledExecutor.TIMEOUT_SCHEDULER.schedule(new TimeoutHandler(),
                     requestCallBack.getTimeout(), TimeUnit.MILLISECONDS);
         }
         this.futureTrigger = futureTrigger;
@@ -165,8 +167,9 @@ public class DefaultRequestFuture implements RequestFuture {
                 futureTrigger.triggerOnTimeout();
             }
             throw new TimeoutException(
-                    "request timeout after " + timeout + " milliseconds, requestId=" + requestId + ", connectionId="
-                            + connectionId);
+                "request timeout after " + timeout + " milliseconds, requestId=" + requestId
+                    + ", connectionId="
+                    + connectionId);
         }
     }
     
@@ -190,8 +193,9 @@ public class DefaultRequestFuture implements RequestFuture {
         @Override
         public void run() {
             setFailResult(new TimeoutException(
-                    "Timeout After " + requestCallBack.getTimeout() + " milliseconds, requestId=" + requestId
-                            + ", connectionId=" + connectionId));
+                "Timeout After " + requestCallBack.getTimeout() + " milliseconds, requestId="
+                    + requestId
+                    + ", connectionId=" + connectionId));
             if (futureTrigger != null) {
                 futureTrigger.triggerOnTimeout();
             }

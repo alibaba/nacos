@@ -24,7 +24,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.internal.verification.Times;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.management.ObjectName;
@@ -36,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,6 +57,7 @@ class TaskManagerTest {
         taskManager = new TaskManager(TaskManagerTest.class.getName());
         taskManager.setDefaultTaskProcessor(taskProcessor);
         abstractTask = new AbstractDelayTask() {
+            
             @Override
             public void merge(AbstractDelayTask task) {
             }
@@ -91,8 +92,7 @@ class TaskManagerTest {
         when(testTaskProcessor.process(abstractTask)).thenReturn(true);
         taskManager.addProcessor("test", testTaskProcessor);
         taskManager.addTask("test", abstractTask);
-        TimeUnit.MILLISECONDS.sleep(200);
-        verify(testTaskProcessor).process(abstractTask);
+        verify(testTaskProcessor, timeout(2000)).process(abstractTask);
         verify(taskProcessor, never()).process(abstractTask);
     }
     
@@ -102,17 +102,15 @@ class TaskManagerTest {
         taskManager.addProcessor("test", testTaskProcessor);
         taskManager.removeProcessor("test");
         taskManager.addTask("test", abstractTask);
-        TimeUnit.MILLISECONDS.sleep(200);
+        verify(taskProcessor, timeout(2000)).process(abstractTask);
         verify(testTaskProcessor, never()).process(abstractTask);
-        verify(taskProcessor).process(abstractTask);
     }
     
     @Test
     void testRetryTaskAfterFail() throws InterruptedException {
         when(taskProcessor.process(abstractTask)).thenReturn(false, true);
         taskManager.addTask("test", abstractTask);
-        TimeUnit.MILLISECONDS.sleep(300);
-        verify(taskProcessor, new Times(2)).process(abstractTask);
+        verify(taskProcessor, timeout(2000).times(2)).process(abstractTask);
     }
     
     @Test
@@ -120,15 +118,69 @@ class TaskManagerTest {
         taskManager.addProcessor("test", testTaskProcessor);
         when(testTaskProcessor.process(abstractTask)).thenReturn(true);
         taskManager.addTask("test", abstractTask);
-        assertEquals("test:" + new Date(0) + Constants.NACOS_LINE_SEPARATOR, taskManager.getTaskInfos());
-        TimeUnit.MILLISECONDS.sleep(150);
+        assertEquals("test:" + new Date(0) + Constants.NACOS_LINE_SEPARATOR,
+            taskManager.getTaskInfos());
+        verify(testTaskProcessor, timeout(2000)).process(abstractTask);
         assertEquals("test:finished" + Constants.NACOS_LINE_SEPARATOR, taskManager.getTaskInfos());
+    }
+    
+    @Test
+    void testAwaitWhenEmpty() throws InterruptedException {
+        assertTrue(taskManager.isEmpty());
+        taskManager.await();
+    }
+    
+    @Test
+    void testAwaitWaitsForProcessing() throws InterruptedException {
+        when(taskProcessor.process(abstractTask)).thenAnswer(invocation -> {
+            TimeUnit.MILLISECONDS.sleep(100);
+            return true;
+        });
+        taskManager.addTask("awaitTest", abstractTask);
+        
+        taskManager.await();
+        
+        assertTrue(taskManager.isEmpty());
+    }
+    
+    @Test
+    void testAwaitWithTimeoutWhenEmpty() throws InterruptedException {
+        assertTrue(taskManager.isEmpty());
+        boolean result = taskManager.await(100, TimeUnit.MILLISECONDS);
+        assertFalse(result);
+    }
+    
+    @Test
+    void testAwaitWithTimeoutWaitsForProcessing() throws InterruptedException {
+        when(taskProcessor.process(abstractTask)).thenReturn(true);
+        taskManager.addTask("awaitTest", abstractTask);
+        boolean result = taskManager.await(2000, TimeUnit.MILLISECONDS);
+        assertTrue(taskManager.isEmpty());
+    }
+    
+    @Test
+    void testProcessTasksSignalsCondition() throws InterruptedException {
+        when(taskProcessor.process(abstractTask)).thenReturn(true);
+        taskManager.addTask("signalTest", abstractTask);
+        taskManager.await(2000, TimeUnit.MILLISECONDS);
+        assertTrue(taskManager.isEmpty());
     }
     
     @Test
     void testInit() throws Exception {
         taskManager.init();
-        ObjectName oName = new ObjectName(TaskManagerTest.class.getName() + ":type=" + TaskManager.class.getSimpleName());
+        ObjectName oName = new ObjectName(
+            TaskManagerTest.class.getName() + ":type=" + TaskManager.class.getSimpleName());
         assertTrue(ManagementFactory.getPlatformMBeanServer().isRegistered(oName));
+    }
+    
+    @Test
+    void testInitIgnoresInvalidObjectName() {
+        TaskManager invalidTaskManager = new TaskManager("invalid:name");
+        try {
+            invalidTaskManager.init();
+        } finally {
+            invalidTaskManager.close();
+        }
     }
 }

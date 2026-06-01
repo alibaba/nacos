@@ -40,25 +40,25 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
-
+    
     PluginRemoteHandler pluginRemoteHandler;
-
+    
     @BeforeEach
     void setUp() {
         super.setUpWithNaming();
         pluginRemoteHandler = new PluginRemoteHandler(clientHolder);
     }
-
+    
     @Test
     void testListPluginsTest() throws NacosException {
         List<Map<String, Object>> mockList = new ArrayList<>();
         Map<String, Object> pluginData = createMockPluginData();
         mockList.add(pluginData);
-
+        
         when(namingMaintainerService.listPlugins(null)).thenReturn(mockList);
-
+        
         List<PluginInfoVO> result = pluginRemoteHandler.listPlugins(null);
-
+        
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("auth:test", result.get(0).getPluginId());
@@ -66,30 +66,30 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertEquals("test", result.get(0).getPluginName());
         assertTrue(result.get(0).getEnabled());
     }
-
+    
     @Test
     void testListPluginsWithTypeFilterTest() throws NacosException {
         List<Map<String, Object>> mockList = new ArrayList<>();
         Map<String, Object> pluginData = createMockPluginData();
         mockList.add(pluginData);
-
+        
         when(namingMaintainerService.listPlugins("auth")).thenReturn(mockList);
-
+        
         List<PluginInfoVO> result = pluginRemoteHandler.listPlugins("auth");
-
+        
         assertNotNull(result);
         assertEquals(1, result.size());
         verify(namingMaintainerService).listPlugins("auth");
     }
-
+    
     @Test
     void testGetPluginDetailTest() throws NacosException {
         Map<String, Object> mockDetail = createMockPluginDetailData();
-
+        
         when(namingMaintainerService.getPluginDetail("auth", "test")).thenReturn(mockDetail);
-
+        
         PluginDetailVO result = pluginRemoteHandler.getPluginDetail("auth", "test");
-
+        
         assertNotNull(result);
         assertEquals("auth:test", result.getPluginId());
         assertEquals("auth", result.getPluginType());
@@ -98,44 +98,46 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertNotNull(result.getConfig());
         assertEquals("value1", result.getConfig().get("key1"));
     }
-
+    
     @Test
     void testUpdatePluginStatusTest() throws NacosException {
         doNothing().when(namingMaintainerService).updatePluginStatus("auth", "test", false, false);
-
+        
         pluginRemoteHandler.updatePluginStatus("auth", "test", false, false);
-
+        
         verify(namingMaintainerService).updatePluginStatus("auth", "test", false, false);
     }
-
+    
     @Test
     void testUpdatePluginConfigTest() throws NacosException {
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");
-
-        doNothing().when(namingMaintainerService).updatePluginConfig(eq("auth"), eq("test"), any(), eq(false));
-
+        
+        doNothing().when(namingMaintainerService).updatePluginConfig(eq("auth"), eq("test"), any(),
+            eq(false));
+        
         pluginRemoteHandler.updatePluginConfig("auth", "test", config, false);
-
+        
         verify(namingMaintainerService).updatePluginConfig("auth", "test", config, false);
     }
-
+    
     @Test
     void testGetPluginAvailabilityTest() throws NacosException {
         Map<String, Boolean> mockAvailability = new HashMap<>();
         mockAvailability.put("127.0.0.1:8848", true);
         mockAvailability.put("127.0.0.2:8848", false);
-
-        when(namingMaintainerService.getPluginAvailability("auth", "test")).thenReturn(mockAvailability);
-
+        
+        when(namingMaintainerService.getPluginAvailability("auth", "test"))
+            .thenReturn(mockAvailability);
+        
         Map<String, Boolean> result = pluginRemoteHandler.getPluginAvailability("auth", "test");
-
+        
         assertNotNull(result);
         assertEquals(2, result.size());
         assertTrue(result.get("127.0.0.1:8848"));
         assertFalse(result.get("127.0.0.2:8848"));
     }
-
+    
     @Test
     void testConvertPluginInfoVOWithNodeCountTest() throws NacosException {
         List<Map<String, Object>> mockList = new ArrayList<>();
@@ -143,21 +145,21 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         pluginData.put("totalNodeCount", 3);
         pluginData.put("availableNodeCount", 2);
         mockList.add(pluginData);
-
+        
         when(namingMaintainerService.listPlugins(null)).thenReturn(mockList);
-
+        
         List<PluginInfoVO> result = pluginRemoteHandler.listPlugins(null);
-
+        
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(3, result.get(0).getTotalNodeCount());
         assertEquals(2, result.get(0).getAvailableNodeCount());
     }
-
+    
     @Test
     void testConvertPluginDetailWithConfigDefinitionsTest() throws NacosException {
         Map<String, Object> mockDetail = createMockPluginDetailData();
-
+        
         List<Map<String, Object>> configDefinitions = new ArrayList<>();
         Map<String, Object> configDef = new HashMap<>();
         configDef.put("key", "timeout");
@@ -168,22 +170,22 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configDef.put("required", true);
         configDefinitions.add(configDef);
         mockDetail.put("configDefinitions", configDefinitions);
-
+        
         when(namingMaintainerService.getPluginDetail("auth", "test")).thenReturn(mockDetail);
-
+        
         PluginDetailVO result = pluginRemoteHandler.getPluginDetail("auth", "test");
-
+        
         assertNotNull(result);
         assertNotNull(result.getConfigDefinitions());
         assertEquals(1, result.getConfigDefinitions().size());
         assertEquals("timeout", result.getConfigDefinitions().get(0).getKey());
         assertEquals(ConfigItemType.NUMBER, result.getConfigDefinitions().get(0).getType());
     }
-
+    
     @Test
     void testConvertUnknownEnumTypeTest() throws NacosException {
         Map<String, Object> mockDetail = createMockPluginDetailData();
-
+        
         List<Map<String, Object>> configDefinitions = new ArrayList<>();
         Map<String, Object> configDef = new HashMap<>();
         configDef.put("key", "unknown");
@@ -191,17 +193,17 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configDef.put("type", "UNKNOWN_TYPE");
         configDefinitions.add(configDef);
         mockDetail.put("configDefinitions", configDefinitions);
-
+        
         when(namingMaintainerService.getPluginDetail("auth", "test")).thenReturn(mockDetail);
-
+        
         PluginDetailVO result = pluginRemoteHandler.getPluginDetail("auth", "test");
-
+        
         assertNotNull(result);
         assertNotNull(result.getConfigDefinitions());
         assertEquals(1, result.getConfigDefinitions().size());
         assertEquals(ConfigItemType.STRING, result.getConfigDefinitions().get(0).getType());
     }
-
+    
     private Map<String, Object> createMockPluginData() {
         Map<String, Object> data = new HashMap<>();
         data.put("pluginId", "auth:test");
@@ -213,7 +215,7 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         data.put("exclusive", true);
         return data;
     }
-
+    
     private Map<String, Object> createMockPluginDetailData() {
         Map<String, Object> data = createMockPluginData();
         Map<String, String> config = new HashMap<>();

@@ -35,10 +35,12 @@ public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
     protected String getNamespaceId(Request request) {
         String namespaceId = StringUtils.EMPTY;
         if (request instanceof ConfigBatchListenRequest) {
-            List<ConfigBatchListenRequest.ConfigListenContext> configListenContexts = ((ConfigBatchListenRequest) request)
+            List<ConfigBatchListenRequest.ConfigListenContext> configListenContexts =
+                ((ConfigBatchListenRequest) request)
                     .getConfigListenContexts();
             if (!configListenContexts.isEmpty()) {
-                namespaceId = ((ConfigBatchListenRequest) request).getConfigListenContexts().get(0).getTenant();
+                namespaceId = ((ConfigBatchListenRequest) request).getConfigListenContexts().get(0)
+                    .getTenant();
             }
         } else if (request instanceof AbstractConfigRequest) {
             namespaceId = ((AbstractConfigRequest) request).getTenant();
@@ -55,7 +57,8 @@ public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
             groupName = ((AbstractConfigRequest) request).getGroup();
         } else {
             groupName = (String) ReflectUtils
-                    .getFieldValue(request, com.alibaba.nacos.api.common.Constants.GROUP, StringUtils.EMPTY);
+                .getFieldValue(request, com.alibaba.nacos.api.common.Constants.GROUP,
+                    StringUtils.EMPTY);
         }
         return StringUtils.isBlank(groupName) ? StringUtils.EMPTY : groupName;
     }
@@ -67,7 +70,8 @@ public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
             dataId = ((AbstractConfigRequest) request).getDataId();
         } else {
             dataId = (String) ReflectUtils
-                    .getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATA_ID, StringUtils.EMPTY);
+                .getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATA_ID,
+                    StringUtils.EMPTY);
         }
         return StringUtils.isBlank(dataId) ? StringUtils.EMPTY : dataId;
     }

@@ -43,7 +43,7 @@ public class SpringValueConfigsInitializer implements ControlConfigsInitializer 
     @Override
     public void initialize(ControlConfigs controlConfigs) {
         controlConfigs.setConnectionRuntimeEjector(
-                EnvUtil.getProperty(CONNECTION_RUNTIME_EJECTOR, DEFAULT_CONNECTION_RUNTIME_EJECTOR));
+            EnvUtil.getProperty(CONNECTION_RUNTIME_EJECTOR, DEFAULT_CONNECTION_RUNTIME_EJECTOR));
         String localRuleStorageBaseDir = EnvUtil.getProperty(LOCAL_RULE_STORAGE_BASE_DIR);
         if (StringUtils.isNotBlank(localRuleStorageBaseDir)) {
             controlConfigs.setLocalRuleStorageBaseDir(localRuleStorageBaseDir);

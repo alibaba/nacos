@@ -49,7 +49,8 @@ class SameConfigPolicyTest {
     public void testDeserialize() throws Exception {
         assertEquals(SameConfigPolicy.ABORT, mapper.readValue("\"ABORT\"", SameConfigPolicy.class));
         assertEquals(SameConfigPolicy.SKIP, mapper.readValue("\"SKIP\"", SameConfigPolicy.class));
-        assertEquals(SameConfigPolicy.OVERWRITE, mapper.readValue("\"OVERWRITE\"", SameConfigPolicy.class));
+        assertEquals(SameConfigPolicy.OVERWRITE,
+            mapper.readValue("\"OVERWRITE\"", SameConfigPolicy.class));
     }
     
     @Test

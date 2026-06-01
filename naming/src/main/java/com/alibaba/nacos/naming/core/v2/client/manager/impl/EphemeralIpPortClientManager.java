@@ -61,8 +61,9 @@ public class EphemeralIpPortClientManager implements ClientManager {
     public EphemeralIpPortClientManager(DistroMapper distroMapper, SwitchDomain switchDomain) {
         this.distroMapper = distroMapper;
         GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this, switchDomain), 0,
-                Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
-        clientFactory = ClientFactoryHolder.getInstance().findClientFactory(ClientConstants.EPHEMERAL_IP_PORT);
+            Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
+        clientFactory =
+            ClientFactoryHolder.getInstance().findClientFactory(ClientConstants.EPHEMERAL_IP_PORT);
     }
     
     @Override
@@ -88,7 +89,8 @@ public class EphemeralIpPortClientManager implements ClientManager {
     
     @Override
     public boolean clientDisconnected(String clientId) {
-        Loggers.SRV_LOG.info("Client connection {} disconnect, remove instances and subscribers", clientId);
+        Loggers.SRV_LOG.info("Client connection {} disconnect, remove instances and subscribers",
+            clientId);
         IpPortBasedClient client = clients.remove(clientId);
         if (null == client) {
             return true;
@@ -96,7 +98,8 @@ public class EphemeralIpPortClientManager implements ClientManager {
         boolean isResponsible = isResponsibleClient(client);
         NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsible));
         client.release();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
+        NotifyCenter
+            .publishEvent(new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
         return true;
     }
     
@@ -131,11 +134,12 @@ public class EphemeralIpPortClientManager implements ClientManager {
             // remote node of old version will always verify with zero revision
             if (0 == verifyData.getRevision() || client.getRevision() == verifyData.getRevision()) {
                 NamingExecuteTaskDispatcher.getInstance()
-                        .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
+                    .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
                 return true;
             } else {
-                Loggers.DISTRO.info("[DISTRO-VERIFY-FAILED] IpPortBasedClient[{}] revision local={}, remote={}",
-                        client.getClientId(), client.getRevision(), verifyData.getRevision());
+                Loggers.DISTRO.info(
+                    "[DISTRO-VERIFY-FAILED] IpPortBasedClient[{}] revision local={}, remote={}",
+                    client.getClientId(), client.getRevision(), verifyData.getRevision());
             }
         }
         return false;
@@ -147,7 +151,8 @@ public class EphemeralIpPortClientManager implements ClientManager {
         
         private final SwitchDomain switchDomain;
         
-        public ExpiredClientCleaner(EphemeralIpPortClientManager clientManager, SwitchDomain switchDomain) {
+        public ExpiredClientCleaner(EphemeralIpPortClientManager clientManager,
+            SwitchDomain switchDomain) {
             this.clientManager = clientManager;
             this.switchDomain = switchDomain;
         }
@@ -165,17 +170,19 @@ public class EphemeralIpPortClientManager implements ClientManager {
         
         private boolean isExpireClient(long currentTime, IpPortBasedClient client) {
             long noUpdatedTime = currentTime - client.getLastUpdatedTime();
-            return client.isEphemeral() && (
-                    isExpirePublishedClient(noUpdatedTime, client) && isExpireSubscriberClient(noUpdatedTime, client)
-                            || noUpdatedTime > ClientConfig.getInstance().getClientExpiredTime());
+            return client.isEphemeral() && (isExpirePublishedClient(noUpdatedTime, client)
+                && isExpireSubscriberClient(noUpdatedTime, client)
+                || noUpdatedTime > ClientConfig.getInstance().getClientExpiredTime());
         }
         
         private boolean isExpirePublishedClient(long noUpdatedTime, IpPortBasedClient client) {
-            return client.getAllPublishedService().isEmpty() && noUpdatedTime > Constants.DEFAULT_IP_DELETE_TIMEOUT;
+            return client.getAllPublishedService().isEmpty()
+                && noUpdatedTime > Constants.DEFAULT_IP_DELETE_TIMEOUT;
         }
         
         private boolean isExpireSubscriberClient(long noUpdatedTime, IpPortBasedClient client) {
-            return client.getAllSubscribeService().isEmpty() || noUpdatedTime > switchDomain.getDefaultPushCacheMillis();
+            return client.getAllSubscribeService().isEmpty()
+                || noUpdatedTime > switchDomain.getDefaultPushCacheMillis();
         }
     }
 }

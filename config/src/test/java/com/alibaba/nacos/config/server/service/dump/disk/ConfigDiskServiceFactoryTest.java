@@ -36,7 +36,7 @@ class ConfigDiskServiceFactoryTest {
     
     @AfterEach
     void after() {
-    
+        
     }
     
     @Test
@@ -61,7 +61,8 @@ class ConfigDiskServiceFactoryTest {
     }
     
     private void clearDiskInstance() throws Exception {
-        Field configDiskService = ConfigDiskServiceFactory.class.getDeclaredField("configDiskService");
+        Field configDiskService =
+            ConfigDiskServiceFactory.class.getDeclaredField("configDiskService");
         configDiskService.setAccessible(true);
         configDiskService.set(null, null);
     }

@@ -80,7 +80,8 @@ public class IdGeneratorManager {
             return generatorMap.get(resource).nextId();
         }
         throw new NoSuchElementException(
-                "The resource is not registered with the distributed " + "ID resource for the time being.");
+            "The resource is not registered with the distributed "
+                + "ID resource for the time being.");
     }
     
     public Map<String, IdGenerator> getGeneratorMap() {

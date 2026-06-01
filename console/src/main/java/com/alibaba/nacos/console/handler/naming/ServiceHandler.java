@@ -83,8 +83,9 @@ public interface ServiceHandler {
      * @return a JSON node containing the list of subscribers
      * @throws Exception if an error occurs during fetching subscribers
      */
-    Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
-            String groupName, boolean aggregation) throws Exception;
+    Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId,
+        String serviceName,
+        String groupName, boolean aggregation) throws Exception;
     
     /**
      * List service detail information.
@@ -99,8 +100,9 @@ public interface ServiceHandler {
      * @return if withInstances is {@code true}, return Page of {@link ServiceDetailInfo}, otherwise return Page of {@link ServiceView}
      * @throws NacosException if an error occurs during fetching service details
      */
-    Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize, String serviceName,
-            String groupName, boolean ignoreEmptyService) throws NacosException;
+    Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
+        String serviceName,
+        String groupName, boolean ignoreEmptyService) throws NacosException;
     
     /**
      * Get the detail of a specific service.
@@ -111,7 +113,8 @@ public interface ServiceHandler {
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
-    ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException;
+    ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName)
+        throws NacosException;
     
     /**
      * Update the metadata of a cluster.
@@ -123,7 +126,7 @@ public interface ServiceHandler {
      * @param clusterMetadata the metadata for the cluster
      * @throws Exception if the update operation fails
      */
-    void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
-            ClusterMetadata clusterMetadata) throws Exception;
+    void updateClusterMetadata(String namespaceId, String groupName, String serviceName,
+        String clusterName,
+        ClusterMetadata clusterMetadata) throws Exception;
 }
-

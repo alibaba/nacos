@@ -47,39 +47,43 @@ public class RpcPushService {
      * @param request         request.
      * @param requestCallBack requestCallBack.
      */
-    public void pushWithCallback(String connectionId, ServerRequest request, PushCallBack requestCallBack,
-            Executor executor) {
+    public void pushWithCallback(String connectionId, ServerRequest request,
+        PushCallBack requestCallBack,
+        Executor executor) {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                connection.asyncRequest(request, new AbstractRequestCallBack(requestCallBack.getTimeout()) {
-                    
-                    @Override
-                    public Executor getExecutor() {
-                        return executor;
-                    }
-                    
-                    @Override
-                    public void onResponse(Response response) {
-                        if (response.isSuccess()) {
-                            requestCallBack.onSuccess();
-                        } else {
-                            requestCallBack.onFail(new NacosException(response.getErrorCode(), response.getMessage()));
+                connection.asyncRequest(request,
+                    new AbstractRequestCallBack(requestCallBack.getTimeout()) {
+                        
+                        @Override
+                        public Executor getExecutor() {
+                            return executor;
                         }
-                    }
-                    
-                    @Override
-                    public void onException(Throwable e) {
-                        requestCallBack.onFail(e);
-                    }
-                });
+                        
+                        @Override
+                        public void onResponse(Response response) {
+                            if (response.isSuccess()) {
+                                requestCallBack.onSuccess();
+                            } else {
+                                requestCallBack.onFail(new NacosException(response.getErrorCode(),
+                                    response.getMessage()));
+                            }
+                        }
+                        
+                        @Override
+                        public void onException(Throwable e) {
+                            requestCallBack.onFail(e);
+                        }
+                    });
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
                 requestCallBack.onSuccess();
             } catch (Exception e) {
                 Loggers.REMOTE_DIGEST
-                        .error("error to send push response to connectionId ={},push response={}", connectionId,
-                                request, e);
+                    .error("error to send push response to connectionId ={},push response={}",
+                        connectionId,
+                        request, e);
                 requestCallBack.onFail(e);
             }
         } else {
@@ -102,8 +106,9 @@ public class RpcPushService {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
                 Loggers.REMOTE_DIGEST
-                        .error("error to send push response to connectionId ={},push response={}", connectionId,
-                                request, e);
+                    .error("error to send push response to connectionId ={},push response={}",
+                        connectionId,
+                        request, e);
             }
         }
     }

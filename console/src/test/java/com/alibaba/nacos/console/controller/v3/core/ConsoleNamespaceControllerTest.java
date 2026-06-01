@@ -78,14 +78,15 @@ public class ConsoleNamespaceControllerTest {
         List<Namespace> namespaces = Arrays.asList(namespace);
         when(namespaceProxy.getNamespaceList()).thenReturn(namespaces);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/core/namespace/list");
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/core/namespace/list");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
         Result<List<Namespace>> result = new ObjectMapper().readValue(actualValue,
-                new TypeReference<Result<List<Namespace>>>() {
-                });
+            new TypeReference<Result<List<Namespace>>>() {
+            });
         
         assertEquals(1, result.getData().size());
         assertEquals("testNamespace", result.getData().get(0).getNamespace());
@@ -99,21 +100,24 @@ public class ConsoleNamespaceControllerTest {
         
         when(namespaceProxy.getNamespaceDetail(anyString())).thenReturn(namespace);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/core/namespace")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/core/namespace")
                 .param("namespaceId", "testNamespace");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<Namespace> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<Namespace>>() {
-        });
+        Result<Namespace> result =
+            new ObjectMapper().readValue(actualValue, new TypeReference<Result<Namespace>>() {
+            });
         
         assertEquals("testNamespace", result.getData().getNamespace());
     }
     
     @Test
     void testCreateNamespace() throws Exception {
-        when(namespaceProxy.createNamespace("testNamespace", "testNamespaceName", "testDesc")).thenReturn(true);
+        when(namespaceProxy.createNamespace("testNamespace", "testNamespaceName", "testDesc"))
+            .thenReturn(true);
         CreateNamespaceForm namespaceForm = new CreateNamespaceForm();
         namespaceForm.setCustomNamespaceId("testNamespace");
         namespaceForm.setNamespaceName("testNamespaceName");
@@ -127,7 +131,8 @@ public class ConsoleNamespaceControllerTest {
     void testUpdateNamespace() throws Exception {
         when(namespaceProxy.updateNamespace(any(NamespaceForm.class))).thenReturn(true);
         
-        NamespaceForm namespaceForm = new NamespaceForm("testNamespace", "testNamespaceName", "testDesc");
+        NamespaceForm namespaceForm =
+            new NamespaceForm("testNamespace", "testNamespaceName", "testDesc");
         
         Result<Boolean> result = consoleNamespaceController.updateNamespace(namespaceForm);
         
@@ -141,7 +146,8 @@ public class ConsoleNamespaceControllerTest {
     void testDeleteNamespace() throws Exception {
         when(namespaceProxy.deleteNamespace(anyString())).thenReturn(true);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete("/v3/console/core/namespace")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.delete("/v3/console/core/namespace")
                 .param("namespaceId", "testNamespace");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -152,26 +158,30 @@ public class ConsoleNamespaceControllerTest {
     void testCheckNamespaceIdExist() throws Exception {
         when(namespaceProxy.checkNamespaceIdExist(anyString())).thenReturn(true);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/core/namespace/exist")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/core/namespace/exist")
                 .param("customNamespaceId", "testNamespace");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<Boolean> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<Boolean>>() {
-        });
+        Result<Boolean> result =
+            new ObjectMapper().readValue(actualValue, new TypeReference<Result<Boolean>>() {
+            });
         
         assertTrue(result.getData());
     }
     
     @Test
     void testCheckNamespaceIdExistForEmpty() throws Exception {
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/core/namespace/exist")
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v3/console/core/namespace/exist")
                 .param("customNamespaceId", "");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
-        Result<Boolean> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<Boolean>>() {
-        });
+        Result<Boolean> result =
+            new ObjectMapper().readValue(actualValue, new TypeReference<Result<Boolean>>() {
+            });
         assertFalse(result.getData());
     }
 }

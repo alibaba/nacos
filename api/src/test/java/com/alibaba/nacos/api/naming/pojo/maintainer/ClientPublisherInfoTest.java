@@ -55,8 +55,10 @@ class ClientPublisherInfoTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String jsonString = "{\"clientId\":\"clientId\",\"ip\":\"1.1.1.1\",\"port\":8080,\"clusterName\":\"clusterName\"}";
-        ClientPublisherInfo clientPublisherInfo1 = mapper.readValue(jsonString, ClientPublisherInfo.class);
+        String jsonString =
+            "{\"clientId\":\"clientId\",\"ip\":\"1.1.1.1\",\"port\":8080,\"clusterName\":\"clusterName\"}";
+        ClientPublisherInfo clientPublisherInfo1 =
+            mapper.readValue(jsonString, ClientPublisherInfo.class);
         assertEquals(clientPublisherInfo.getClientId(), clientPublisherInfo1.getClientId());
         assertEquals(clientPublisherInfo.getIp(), clientPublisherInfo1.getIp());
         assertEquals(clientPublisherInfo.getPort(), clientPublisherInfo1.getPort());

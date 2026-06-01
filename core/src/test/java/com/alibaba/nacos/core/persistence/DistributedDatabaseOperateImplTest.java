@@ -75,35 +75,35 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DistributedDatabaseOperateImplTest {
-
+    
     @Mock
     private ServerMemberManager memberManager;
-
+    
     @Mock
     private ProtocolManager protocolManager;
-
+    
     @Mock
     private CPProtocol protocol;
-
+    
     @Mock
     private LocalDataSourceServiceImpl dataSourceService;
-
+    
     @Mock
     private JdbcTemplate jdbcTemplate;
-
+    
     @Mock
     private TransactionTemplate transactionTemplate;
-
+    
     @Mock
     private Member member;
-
+    
     private MockedStatic<DynamicDataSource> dynamicDataSourceMock;
     private MockedStatic<NotifyCenter> notifyCenterMock;
     private MockedStatic<EmbeddedStorageContextHolder> embeddedStorageContextHolderMock;
     private MockedStatic<PersistenceExecutor> persistenceExecutorMock;
-
+    
     private DistributedDatabaseOperateImpl impl;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         EnvUtil.setEnvironment(new MockEnvironment());
@@ -111,38 +111,42 @@ class DistributedDatabaseOperateImplTest {
         notifyCenterMock = Mockito.mockStatic(NotifyCenter.class);
         embeddedStorageContextHolderMock = Mockito.mockStatic(EmbeddedStorageContextHolder.class);
         persistenceExecutorMock = Mockito.mockStatic(PersistenceExecutor.class);
-
+        
         DynamicDataSource dataSourceHolder = Mockito.mock(DynamicDataSource.class);
         when(dataSourceHolder.getDataSource()).thenReturn(dataSourceService);
         dynamicDataSourceMock.when(DynamicDataSource::getInstance).thenReturn(dataSourceHolder);
-
+        
         doNothing().when(dataSourceService).cleanAndReopenDerby();
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
         when(dataSourceService.getTransactionTemplate()).thenReturn(transactionTemplate);
-
-        notifyCenterMock.when(() -> NotifyCenter.registerToSharePublisher(any())).then(invocation -> null);
-        notifyCenterMock.when(() -> NotifyCenter.registerSubscriber(any())).then(invocation -> null);
+        
+        notifyCenterMock.when(() -> NotifyCenter.registerToSharePublisher(any()))
+            .then(invocation -> null);
+        notifyCenterMock.when(() -> NotifyCenter.registerSubscriber(any()))
+            .then(invocation -> null);
         notifyCenterMock.when(() -> NotifyCenter.publishEvent(any())).then(invocation -> null);
-
-        embeddedStorageContextHolderMock.when(() -> EmbeddedStorageContextHolder.containsExtendInfo(any()))
-                .thenReturn(false);
+        
+        embeddedStorageContextHolderMock
+            .when(() -> EmbeddedStorageContextHolder.containsExtendInfo(any()))
+            .thenReturn(false);
         embeddedStorageContextHolderMock.when(EmbeddedStorageContextHolder::getCurrentExtendInfo)
-                .thenReturn(new HashMap<>());
-
-        persistenceExecutorMock.when(() -> PersistenceExecutor.executeEmbeddedDump(any())).thenAnswer(inv -> {
-            inv.getArgument(0, Runnable.class).run();
-            return null;
-        });
-
+            .thenReturn(new HashMap<>());
+        
+        persistenceExecutorMock.when(() -> PersistenceExecutor.executeEmbeddedDump(any()))
+            .thenAnswer(inv -> {
+                inv.getArgument(0, Runnable.class).run();
+                return null;
+            });
+        
         when(protocolManager.getCpProtocol()).thenReturn(protocol);
         lenient().doNothing().when(protocol).addRequestProcessors(anyList());
-
+        
         lenient().when(memberManager.getSelf()).thenReturn(member);
         lenient().when(member.getAddress()).thenReturn("127.0.0.1:8848");
-
+        
         impl = new DistributedDatabaseOperateImpl(memberManager, protocolManager);
     }
-
+    
     @AfterEach
     void tearDown() {
         if (dynamicDataSourceMock != null) {
@@ -159,19 +163,19 @@ class DistributedDatabaseOperateImplTest {
         }
         EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     void testGroup() {
         assertEquals("nacos_config", impl.group());
     }
-
+    
     @Test
     void testMockConsistencyProtocol() {
         CPProtocol anotherProtocol = Mockito.mock(CPProtocol.class);
         impl.mockConsistencyProtocol(anotherProtocol);
         // no exception, verify later usage would use anotherProtocol
     }
-
+    
     @Test
     void testOnError() {
         Throwable t = new RuntimeException("raft error");
@@ -179,42 +183,45 @@ class DistributedDatabaseOperateImplTest {
         // publishes RaftDbErrorEvent - no exception
         notifyCenterMock.verify(() -> NotifyCenter.publishEvent(any(RaftDbErrorEvent.class)));
     }
-
+    
     @Test
     void testLoadSnapshotOperate() {
         assertNotNull(impl.loadSnapshotOperate());
         assertEquals(1, impl.loadSnapshotOperate().size());
         assertTrue(impl.loadSnapshotOperate().get(0) instanceof DerbySnapshotOperation);
     }
-
+    
     @Test
     void testUpdateSuccessWithoutConsumer() throws Exception {
         Response success = Response.newBuilder().setSuccess(true).build();
         when(protocol.write(any(WriteRequest.class))).thenReturn(success);
-
-        Boolean result = impl.update(Collections.singletonList(new ModifyRequest("SELECT 1")), null);
+        
+        Boolean result =
+            impl.update(Collections.singletonList(new ModifyRequest("SELECT 1")), null);
         assertTrue(result);
     }
-
+    
     @Test
     void testUpdateFailureWithoutConsumer() throws Exception {
-        Response failure = Response.newBuilder().setSuccess(false).setErrMsg("write failed").build();
+        Response failure =
+            Response.newBuilder().setSuccess(false).setErrMsg("write failed").build();
         when(protocol.write(any(WriteRequest.class))).thenReturn(failure);
-
-        Boolean result = impl.update(Collections.singletonList(new ModifyRequest("SELECT 1")), null);
+        
+        Boolean result =
+            impl.update(Collections.singletonList(new ModifyRequest("SELECT 1")), null);
         assertFalse(result);
     }
-
+    
     @Test
     void testUpdateWithConsumer() {
         Response success = Response.newBuilder().setSuccess(true).build();
         when(protocol.writeAsync(any(WriteRequest.class)))
-                .thenReturn(CompletableFuture.completedFuture(success));
-
+            .thenReturn(CompletableFuture.completedFuture(success));
+        
         final boolean[] consumed = {false};
         Boolean result = impl.update(
-                Collections.singletonList(new ModifyRequest("SELECT 1")),
-                (ok, ex) -> consumed[0] = true);
+            Collections.singletonList(new ModifyRequest("SELECT 1")),
+            (ok, ex) -> consumed[0] = true);
         assertTrue(result);
         try {
             Thread.sleep(100);
@@ -223,106 +230,117 @@ class DistributedDatabaseOperateImplTest {
         }
         assertTrue(consumed[0]);
     }
-
+    
     // ---------- query paths (mock protocol.getData / aGetData) ----------
     @Test
     void testQueryOneWithClassSuccess() throws Exception {
         Integer value = 42;
         byte[] serialized = SerializeFactory.getDefault().serialize(value);
-        Response response = Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serialized)).build();
+        Response response =
+            Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serialized)).build();
         when(protocol.getData(any(ReadRequest.class))).thenReturn(response);
-
+        
         Integer result = impl.queryOne("SELECT 1", Integer.class);
         assertEquals(42, result);
     }
-
+    
     @Test
     void testQueryOneResponseFailure() throws Exception {
         Response response = Response.newBuilder().setSuccess(false).setErrMsg("db error").build();
         when(protocol.getData(any(ReadRequest.class))).thenReturn(response);
-
+        
         assertThrows(NacosRuntimeException.class, () -> impl.queryOne("SELECT 1", Integer.class));
     }
-
+    
     @Test
     void testQueryOneExceptionThrowsNacosRuntimeException() throws Exception {
         when(protocol.getData(any(ReadRequest.class))).thenThrow(new RuntimeException("net error"));
-
+        
         assertThrows(NacosRuntimeException.class, () -> impl.queryOne("SELECT 1", Integer.class));
     }
-
+    
     @Test
     void testQueryOneBlockRead() throws Exception {
-        embeddedStorageContextHolderMock.when(() -> EmbeddedStorageContextHolder.containsExtendInfo(any()))
-                .thenReturn(true);
+        embeddedStorageContextHolderMock
+            .when(() -> EmbeddedStorageContextHolder.containsExtendInfo(any()))
+            .thenReturn(true);
         Integer value = 100;
         byte[] serialized = SerializeFactory.getDefault().serialize(value);
-        Response response = Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serialized)).build();
-        when(protocol.aGetData(any(ReadRequest.class))).thenReturn(CompletableFuture.completedFuture(response));
-
+        Response response =
+            Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serialized)).build();
+        when(protocol.aGetData(any(ReadRequest.class)))
+            .thenReturn(CompletableFuture.completedFuture(response));
+        
         Integer result = impl.queryOne("SELECT id FROM t", Integer.class);
         assertEquals(100, result);
     }
-
+    
     @Test
     void testQueryOneWithArgsAndClass() throws Exception {
         Long value = 999L;
         byte[] serialized = SerializeFactory.getDefault().serialize(value);
         when(protocol.getData(any(ReadRequest.class)))
-                .thenReturn(Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serialized)).build());
-
+            .thenReturn(Response.newBuilder().setSuccess(true)
+                .setData(ByteString.copyFrom(serialized)).build());
+        
         Long result = impl.queryOne("SELECT 1", new Object[] {"a"}, Long.class);
         assertEquals(999L, result);
     }
-
+    
     @Test
     void testQueryManyWithList() throws Exception {
-        List<Map<String, Object>> list = Collections.singletonList(Collections.singletonMap("k", "v"));
+        List<Map<String, Object>> list =
+            Collections.singletonList(Collections.singletonMap("k", "v"));
         byte[] serialized = SerializeFactory.getDefault().serialize(list);
         when(protocol.getData(any(ReadRequest.class)))
-                .thenReturn(Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serialized)).build());
-
+            .thenReturn(Response.newBuilder().setSuccess(true)
+                .setData(ByteString.copyFrom(serialized)).build());
+        
         List<Map<String, Object>> result = impl.queryMany("SELECT * FROM t", new Object[] {});
         assertNotNull(result);
         assertEquals(1, result.size());
     }
-
+    
     @Test
     void testQueryManyResponseFailure() throws Exception {
         when(protocol.getData(any(ReadRequest.class)))
-                .thenReturn(Response.newBuilder().setSuccess(false).setErrMsg("err").build());
-
-        assertThrows(NacosRuntimeException.class, () -> impl.queryMany("SELECT * FROM t", new Object[] {}, Integer.class));
+            .thenReturn(Response.newBuilder().setSuccess(false).setErrMsg("err").build());
+        
+        assertThrows(NacosRuntimeException.class,
+            () -> impl.queryMany("SELECT * FROM t", new Object[] {}, Integer.class));
     }
-
+    
     // ---------- update exception paths ----------
     @Test
     void testUpdateThrowsTimeoutException() throws Exception {
         when(protocol.write(any(WriteRequest.class))).thenThrow(new TimeoutException("timeout"));
-
+        
         assertThrows(NacosRuntimeException.class,
-                () -> impl.update(Collections.singletonList(new ModifyRequest("UPDATE t SET x=1")), null));
+            () -> impl.update(Collections.singletonList(new ModifyRequest("UPDATE t SET x=1")),
+                null));
     }
-
+    
     @Test
     void testUpdateThrowsThrowable() throws Exception {
         when(protocol.write(any(WriteRequest.class))).thenThrow(new RuntimeException("io error"));
-
+        
         assertThrows(NacosRuntimeException.class,
-                () -> impl.update(Collections.singletonList(new ModifyRequest("UPDATE t SET x=1")), null));
+            () -> impl.update(Collections.singletonList(new ModifyRequest("UPDATE t SET x=1")),
+                null));
     }
-
+    
     @Test
     void testUpdateWithConsumerAsyncFailureStillReturnsTrue() throws Exception {
         when(protocol.writeAsync(any(WriteRequest.class)))
-                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("async failed")));
-
+            .thenReturn(CompletableFuture.failedFuture(new RuntimeException("async failed")));
+        
         Boolean result = impl.update(
-                Collections.singletonList(new ModifyRequest("INSERT INTO t VALUES (1)")),
-                (ok, e) -> { });
+            Collections.singletonList(new ModifyRequest("INSERT INTO t VALUES (1)")),
+            (ok, e) -> {
+            });
         assertTrue(result);
     }
-
+    
     // ---------- dataImport ----------
     @Test
     void testDataImportSuccess() throws Exception {
@@ -330,8 +348,9 @@ class DistributedDatabaseOperateImplTest {
         try {
             Files.write(file.toPath(), "INSERT INTO t VALUES (1);".getBytes());
             Response success = Response.newBuilder().setSuccess(true).build();
-            when(protocol.writeAsync(any(WriteRequest.class))).thenReturn(CompletableFuture.completedFuture(success));
-
+            when(protocol.writeAsync(any(WriteRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(success));
+            
             CompletableFuture<RestResult<String>> future = impl.dataImport(file);
             RestResult<String> restResult = future.get();
             assertTrue(restResult.ok());
@@ -339,23 +358,26 @@ class DistributedDatabaseOperateImplTest {
             file.delete();
         }
     }
-
+    
     @Test
     void testDataImportFailure() throws Exception {
         File file = Files.createTempFile("nacos-import-", ".sql").toFile();
         try {
             Files.write(file.toPath(), "INSERT INTO t VALUES (1);".getBytes());
-            Response failed = Response.newBuilder().setSuccess(false).setErrMsg("write failed").build();
-            when(protocol.writeAsync(any(WriteRequest.class))).thenReturn(CompletableFuture.completedFuture(failed));
-
+            Response failed =
+                Response.newBuilder().setSuccess(false).setErrMsg("write failed").build();
+            when(protocol.writeAsync(any(WriteRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(failed));
+            
             RestResult<String> restResult = impl.dataImport(file).get();
             assertFalse(restResult.ok());
-            assertTrue(restResult.getMessage() != null && restResult.getMessage().contains("write failed"));
+            assertTrue(restResult.getMessage() != null
+                && restResult.getMessage().contains("write failed"));
         } finally {
             file.delete();
         }
     }
-
+    
     @Test
     void testDataImportException() throws Exception {
         File file = File.createTempFile("nacos-import-", ".sql");
@@ -364,113 +386,123 @@ class DistributedDatabaseOperateImplTest {
         RestResult<String> restResult = future.get();
         assertFalse(restResult.ok());
     }
-
+    
     // ---------- onRequest ----------
     @Test
     void testOnRequestQueryOneNoMapperNoArgs() throws Exception {
         SelectRequest selectRequest = SelectRequest.builder()
-                .queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS)
-                .sql("SELECT 1")
-                .className(Integer.class.getCanonicalName())
-                .build();
+            .queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS)
+            .sql("SELECT 1")
+            .className(Integer.class.getCanonicalName())
+            .build();
         byte[] requestData = SerializeFactory.getDefault().serialize(selectRequest);
         ReadRequest readRequest = ReadRequest.newBuilder().setGroup("nacos_config")
-                .setData(ByteString.copyFrom(requestData)).build();
-
+            .setData(ByteString.copyFrom(requestData)).build();
+        
         when(jdbcTemplate.queryForObject("SELECT 1", Integer.class)).thenReturn(42);
         byte[] resultBytes = SerializeFactory.getDefault().serialize(42);
         Response response = impl.onRequest(readRequest);
-
+        
         assertTrue(response.getSuccess());
-        assertEquals(42, SerializeFactory.getDefault().deserialize(response.getData().toByteArray(), Integer.class));
+        assertEquals(42, SerializeFactory.getDefault().deserialize(response.getData().toByteArray(),
+            Integer.class));
     }
-
+    
     @Test
     void testOnRequestExceptionReturnsFailureResponse() throws Exception {
         SelectRequest selectRequest = SelectRequest.builder()
-                .queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS)
-                .sql("SELECT 1")
-                .className(Integer.class.getCanonicalName())
-                .build();
+            .queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS)
+            .sql("SELECT 1")
+            .className(Integer.class.getCanonicalName())
+            .build();
         ReadRequest readRequest = ReadRequest.newBuilder().setGroup("nacos_config")
-                .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(selectRequest))).build();
-
-        when(jdbcTemplate.queryForObject("SELECT 1", Integer.class)).thenThrow(new RuntimeException("db error"));
-
+            .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(selectRequest)))
+            .build();
+        
+        when(jdbcTemplate.queryForObject("SELECT 1", Integer.class))
+            .thenThrow(new RuntimeException("db error"));
+        
         Response response = impl.onRequest(readRequest);
         assertFalse(response.getSuccess());
         assertNotNull(response.getErrMsg());
     }
-
+    
     @Test
     void testOnRequestUnsupportedQueryType() throws Exception {
         SelectRequest selectRequest = SelectRequest.builder()
-                .queryType((byte) 99)
-                .sql("SELECT 1")
-                .className(Integer.class.getCanonicalName())
-                .build();
+            .queryType((byte) 99)
+            .sql("SELECT 1")
+            .className(Integer.class.getCanonicalName())
+            .build();
         ReadRequest readRequest = ReadRequest.newBuilder().setGroup("nacos_config")
-                .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(selectRequest))).build();
-
+            .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(selectRequest)))
+            .build();
+        
         Response response = impl.onRequest(readRequest);
         assertFalse(response.getSuccess());
     }
-
+    
     // ---------- onApply ----------
     @Test
     void testOnApplySuccess() throws Exception {
-        List<ModifyRequest> sqlContext = Collections.singletonList(new ModifyRequest("UPDATE t SET x=1"));
+        List<ModifyRequest> sqlContext =
+            Collections.singletonList(new ModifyRequest("UPDATE t SET x=1"));
         byte[] data = SerializeFactory.getDefault().serialize(sqlContext);
         WriteRequest log = WriteRequest.newBuilder().setGroup("nacos_config")
-                .setData(ByteString.copyFrom(data))
-                .build();
-
+            .setData(ByteString.copyFrom(data))
+            .build();
+        
         when(transactionTemplate.execute(any())).thenAnswer(inv -> {
             @SuppressWarnings("unchecked")
             TransactionCallback<Boolean> callback = inv.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(null);
         });
         lenient().when(jdbcTemplate.update(any(String.class), Mockito.<Object>any())).thenReturn(1);
-
+        
         Response response = impl.onApply(log);
         assertTrue(response.getSuccess());
     }
-
+    
     @Test
     void testOnApplyBadSqlGrammarException() throws Exception {
-        List<ModifyRequest> sqlContext = Collections.singletonList(new ModifyRequest("UPDATE t SET x=1"));
+        List<ModifyRequest> sqlContext =
+            Collections.singletonList(new ModifyRequest("UPDATE t SET x=1"));
         WriteRequest log = WriteRequest.newBuilder().setGroup("nacos_config")
-                .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(sqlContext)))
-                .build();
-
-        when(transactionTemplate.execute(any())).thenThrow(new BadSqlGrammarException("", "sql", new java.sql.SQLException()));
-
+            .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(sqlContext)))
+            .build();
+        
+        when(transactionTemplate.execute(any()))
+            .thenThrow(new BadSqlGrammarException("", "sql", new java.sql.SQLException()));
+        
         Response response = impl.onApply(log);
         assertFalse(response.getSuccess());
     }
-
+    
     @Test
     void testOnApplyDataAccessExceptionThrowsConsistencyException() throws Exception {
-        List<ModifyRequest> sqlContext = Collections.singletonList(new ModifyRequest("UPDATE t SET x=1"));
+        List<ModifyRequest> sqlContext =
+            Collections.singletonList(new ModifyRequest("UPDATE t SET x=1"));
         WriteRequest log = WriteRequest.newBuilder().setGroup("nacos_config")
-                .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(sqlContext)))
-                .build();
-
-        when(transactionTemplate.execute(any())).thenThrow(new DataAccessException("data access") { });
-
+            .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(sqlContext)))
+            .build();
+        
+        when(transactionTemplate.execute(any())).thenThrow(new DataAccessException("data access") {
+        });
+        
         assertThrows(ConsistencyException.class, () -> impl.onApply(log));
     }
-
+    
     @Test
     void testOnApplyWithDataImportKey() throws Exception {
-        List<ModifyRequest> sqlContext = Collections.singletonList(new ModifyRequest("INSERT INTO t VALUES (1)"));
+        List<ModifyRequest> sqlContext =
+            Collections.singletonList(new ModifyRequest("INSERT INTO t VALUES (1)"));
         WriteRequest log = WriteRequest.newBuilder().setGroup("nacos_config")
-                .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(sqlContext)))
-                .putExtendInfo("00--0-data_import-0--00", "true")
-                .build();
-
+            .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(sqlContext)))
+            .putExtendInfo("00--0-data_import-0--00", "true")
+            .build();
+        
         when(jdbcTemplate.batchUpdate(any(String[].class))).thenReturn(new int[] {1});
-
+        
         Response response = impl.onApply(log);
         assertTrue(response.getSuccess());
     }

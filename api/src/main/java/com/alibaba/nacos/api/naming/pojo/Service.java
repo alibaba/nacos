@@ -121,7 +121,7 @@ public class Service implements NacosForm {
         fillDefaultValue();
         if (StringUtils.isBlank(name)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'name' type String is not present");
+                "Required parameter 'name' type String is not present");
         }
     }
     

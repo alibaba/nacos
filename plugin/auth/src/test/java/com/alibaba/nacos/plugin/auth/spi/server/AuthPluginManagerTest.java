@@ -16,7 +16,11 @@
 
 package com.alibaba.nacos.plugin.auth.spi.server;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.plugin.auth.spi.mock.MockAuthPluginService;
+
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -26,6 +30,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,13 +51,19 @@ class AuthPluginManagerTest {
     @Mock
     private AuthPluginService authPluginService;
     
+    @AfterEach
+    void tearDown() {
+        PluginStateCheckerHolder.setInstance(null);
+    }
+    
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
         authPluginManager = AuthPluginManager.getInstance();
         Class<AuthPluginManager> authPluginManagerClass = AuthPluginManager.class;
         Field authPlugins = authPluginManagerClass.getDeclaredField("authServiceMap");
         authPlugins.setAccessible(true);
-        Map<String, AuthPluginService> authServiceMap = (Map<String, AuthPluginService>) authPlugins.get(authPluginManager);
+        Map<String, AuthPluginService> authServiceMap =
+            (Map<String, AuthPluginService>) authPlugins.get(authPluginManager);
         authServiceMap.put(TYPE, authPluginService);
     }
     
@@ -65,8 +76,27 @@ class AuthPluginManagerTest {
     
     @Test
     void testFindAuthServiceSpiImpl() {
-        Optional<AuthPluginService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
+        Optional<AuthPluginService> authServiceImpl =
+            authPluginManager.findAuthServiceSpiImpl(TYPE);
         assertTrue(authServiceImpl.isPresent());
+    }
+    
+    @Test
+    void testFindAuthServiceSpiImplWhenPluginDisabled() {
+        PluginStateCheckerHolder.setInstance((pluginType, pluginName) -> false);
+        
+        Optional<AuthPluginService> authServiceImpl =
+            authPluginManager.findAuthServiceSpiImpl(TYPE);
+        
+        assertFalse(authServiceImpl.isPresent());
+    }
+    
+    @Test
+    void testDefaultAuthPluginServiceMethods() {
+        AuthPluginService service = new MockAuthPluginService();
+        
+        assertFalse(service.isLoginEnabled());
+        assertTrue(service.isAdminRequest());
     }
     
 }

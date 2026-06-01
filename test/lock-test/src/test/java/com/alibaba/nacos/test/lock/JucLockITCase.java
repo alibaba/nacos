@@ -345,17 +345,86 @@ public class JucLockITCase extends BaseLockITCase {
     // ==================== 非可重入锁测试 ====================
 
     @Test
-    @DisplayName("JUC-014: 非可重入锁 - 拒绝同线程重入")
-    void testNonReentrantLockRejectsReentry() throws Exception {
+    @DisplayName("JUC-014: 非可重入锁 - tryLock 拒绝同线程重入")
+    void testNonReentrantLockTryLockRejectsReentry() throws Exception {
         String key = generateUniqueKey("juc-nonreentrant-reentry");
         NacosLock lock = getJucLockService().getNonReentrantLock(key);
 
         // 第一次加锁
         lock.lock();
 
-        // 同线程第二次加锁（应该失败或阻塞）
-        boolean acquired = lock.tryLock();
-        assertFalse(acquired, "Non-reentrant lock should reject reentry from same thread");
+        // 同线程第二次加锁 - 应在客户端本地拒绝
+        assertThrows(IllegalMonitorStateException.class,
+            () -> lock.tryLock(),
+            "Non-reentrant lock should throw IllegalMonitorStateException on reentry");
+
+        lock.unlock();
+    }
+
+    @Test
+    @DisplayName("JUC-014b: 非可重入锁 - lock() 同线程重入应在客户端拒绝")
+    void testNonReentrantLockLockRejectsReentry() throws Exception {
+        String key = generateUniqueKey("juc-nonreentrant-lock-reentry");
+        NacosLock lock = getJucLockService().getNonReentrantLock(key);
+
+        // 同线程第一次加锁
+        lock.lock();
+
+        // 同线程第二次加锁 - 应在客户端本地拒绝
+        assertThrows(IllegalMonitorStateException.class,
+                () -> lock.lock(),
+                "Non-reentrant lock should throw IllegalMonitorStateException on reentry");
+
+        lock.unlock();
+    }
+
+    @Test
+    @DisplayName("JUC-014c: 非可重入锁 - tryLock() 同线程重入应在客户端拒绝")
+    void testNonReentrantTryLockRejectsReentry() throws Exception {
+        String key = generateUniqueKey("juc-nonreentrant-trylock-reentry");
+        NacosLock lock = getJucLockService().getNonReentrantLock(key);
+
+        // 同线程第一次加锁
+        lock.lock();
+
+        // 同线程调用 tryLock() - 应立即抛出 IllegalMonitorStateException
+        assertThrows(IllegalMonitorStateException.class,
+                lock::tryLock,
+                "Non-reentrant lock should throw IllegalMonitorStateException on tryLock() reentry");
+
+        lock.unlock();
+    }
+
+    @Test
+    @DisplayName("JUC-014d: 非可重入锁 - tryLock(time, unit) 同线程重入应在客户端拒绝")
+    void testNonReentrantTryLockWithTimeoutRejectsReentry() throws Exception {
+        String key = generateUniqueKey("juc-nonreentrant-trylock-timeout-reentry");
+        NacosLock lock = getJucLockService().getNonReentrantLock(key);
+
+        // 同线程第一次加锁
+        lock.lock();
+
+        // 同线程调用 tryLock(5s) - 应立即抛出 IllegalMonitorStateException
+        assertThrows(IllegalMonitorStateException.class,
+                () -> lock.tryLock(5, TimeUnit.SECONDS),
+                "Non-reentrant lock should throw IllegalMonitorStateException on tryLock(timeout) reentry");
+
+        lock.unlock();
+    }
+
+    @Test
+    @DisplayName("JUC-014e: 非可重入锁 - lockInterruptibly() 同线程重入应在客户端拒绝")
+    void testNonReentrantLockInterruptiblyRejectsReentry() throws Exception {
+        String key = generateUniqueKey("juc-nonreentrant-interruptibly-reentry");
+        NacosLock lock = getJucLockService().getNonReentrantLock(key);
+
+        // 同线程第一次加锁
+        lock.lock();
+
+        // 同线程调用 lockInterruptibly() - 应立即抛出 IllegalMonitorStateException
+        assertThrows(IllegalMonitorStateException.class,
+                lock::lockInterruptibly,
+                "Non-reentrant lock should throw IllegalMonitorStateException on lockInterruptibly() reentry");
 
         lock.unlock();
     }

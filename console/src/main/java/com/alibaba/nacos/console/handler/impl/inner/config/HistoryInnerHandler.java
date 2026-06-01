@@ -57,52 +57,60 @@ public class HistoryInnerHandler implements HistoryHandler {
     }
     
     @Override
-    public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
-            throws NacosException {
+    public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group,
+        String namespaceId, Long nid)
+        throws NacosException {
         ConfigHistoryDetailInfo result;
         try {
-            ConfigHistoryInfo configHistoryInfo = historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
+            ConfigHistoryInfo configHistoryInfo =
+                historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
             result = ResponseUtil.transferToConfigHistoryDetailInfo(configHistoryInfo);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
-                    "certain config history for nid = " + nid + " not exist");
+                "certain config history for nid = " + nid + " not exist");
         }
         return result;
     }
     
     @Override
-    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group, String namespaceId,
-            Integer pageNo, Integer pageSize) throws NacosException {
-        Page<ConfigHistoryInfo> configHistoryInfoPage = historyService.listConfigHistory(dataId, group, namespaceId,
+    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group,
+        String namespaceId,
+        Integer pageNo, Integer pageSize) throws NacosException {
+        Page<ConfigHistoryInfo> configHistoryInfoPage =
+            historyService.listConfigHistory(dataId, group, namespaceId,
                 pageNo, pageSize);
         Page<ConfigHistoryBasicInfo> result = new Page<>();
         result.setPagesAvailable(configHistoryInfoPage.getPagesAvailable());
         result.setPageNumber(configHistoryInfoPage.getPageNumber());
         result.setTotalCount(configHistoryInfoPage.getTotalCount());
         result.setPageItems(
-                configHistoryInfoPage.getPageItems().stream().map(ResponseUtil::transferToConfigHistoryBasicInfo)
-                        .collect(Collectors.toList()));
+            configHistoryInfoPage.getPageItems().stream()
+                .map(ResponseUtil::transferToConfigHistoryBasicInfo)
+                .collect(Collectors.toList()));
         return result;
     }
     
     @Override
-    public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId,
-            Long id) throws NacosException {
+    public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group,
+        String namespaceId,
+        Long id) throws NacosException {
         ConfigHistoryDetailInfo result;
         try {
-            ConfigHistoryInfo configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, group,
+            ConfigHistoryInfo configHistoryInfo =
+                historyService.getPreviousConfigHistoryInfo(dataId, group,
                     namespaceId, id);
             result = ResponseUtil.transferToConfigHistoryDetailInfo(configHistoryInfo);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
-                    "previous config history for id = " + id + " not exist");
+                "previous config history for id = " + id + " not exist");
         }
         return result;
     }
     
     @Override
     public List<ConfigBasicInfo> getConfigsByTenant(String namespaceId) {
-        List<ConfigInfoWrapper> configListByNamespace = historyService.getConfigListByNamespace(namespaceId);
+        List<ConfigInfoWrapper> configListByNamespace =
+            historyService.getConfigListByNamespace(namespaceId);
         return configListByNamespace.stream().map(ResponseUtil::transferToConfigBasicInfo).toList();
     }
 }

@@ -106,10 +106,11 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     public void init() {
         this.protocol = protocolManager.getCpProtocol();
         this.protocol.addRequestProcessors(Collections.singletonList(this));
-        this.defaultExpireTime = EnvUtil.getProperty(PropertiesConstant.DEFAULT_AUTO_EXPIRE, Long.class,
+        this.defaultExpireTime =
+            EnvUtil.getProperty(PropertiesConstant.DEFAULT_AUTO_EXPIRE, Long.class,
                 PropertiesConstant.DEFAULT_AUTO_EXPIRE_TIME);
         this.maxExpireTime = EnvUtil.getProperty(PropertiesConstant.MAX_AUTO_EXPIRE, Long.class,
-                PropertiesConstant.MAX_AUTO_EXPIRE_TIME);
+            PropertiesConstant.MAX_AUTO_EXPIRE_TIME);
     }
 
     @PreDestroy
@@ -255,8 +256,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
         request.setLockInfo(lockInfo);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
-                .setData(ByteString.copyFrom(serializer.serialize(request)))
-                .setOperation(LockOperationEnum.ACQUIRE.name()).build();
+            .setData(ByteString.copyFrom(serializer.serialize(request)))
+            .setOperation(LockOperationEnum.ACQUIRE.name()).build();
         try {
             Response response = protocol.write(writeRequest);
             if (response.getSuccess()) {
@@ -265,8 +266,9 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             throw new NacosLockException(response.getErrMsg());
         } catch (NacosLockException e) {
             int paramSize = lockInstance.getParams() == null ? 0 : lockInstance.getParams().size();
-            LOGGER.error("key: {}, lockType:{}, paramSize:{} lock fail, errorMsg: {}", lockInstance.getKey(),
-                    lockInstance.getLockType(), paramSize, e.getMessage());
+            LOGGER.error("key: {}, lockType:{}, paramSize:{} lock fail, errorMsg: {}",
+                lockInstance.getKey(),
+                lockInstance.getLockType(), paramSize, e.getMessage());
             throw e;
         } catch (Exception e) {
             LOGGER.error("lock fail.", e);
@@ -283,8 +285,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         lockInfo.setOwner(lockInstance.getOwner());
         request.setLockInfo(lockInfo);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
-                .setData(ByteString.copyFrom(serializer.serialize(request)))
-                .setOperation(LockOperationEnum.RELEASE.name()).build();
+            .setData(ByteString.copyFrom(serializer.serialize(request)))
+            .setOperation(LockOperationEnum.RELEASE.name()).build();
         try {
             Response response = protocol.write(writeRequest);
             if (response.getSuccess()) {

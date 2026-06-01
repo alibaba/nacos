@@ -79,9 +79,12 @@ class ConfigChainEntryHandlerTest {
         request.setTenant("tenant");
         
         String groupKey = "groupKey";
-        mockedStaticGroupKey2.when(() -> GroupKey2.getKey(anyString(), anyString(), anyString())).thenReturn(groupKey);
-        mockedStaticConfigCacheService.when(() -> ConfigCacheService.tryConfigReadLock(groupKey)).thenReturn(1);
-        mockedStaticConfigCacheService.when(() -> ConfigCacheService.getContentCache(groupKey)).thenReturn(cacheItem);
+        mockedStaticGroupKey2.when(() -> GroupKey2.getKey(anyString(), anyString(), anyString()))
+            .thenReturn(groupKey);
+        mockedStaticConfigCacheService.when(() -> ConfigCacheService.tryConfigReadLock(groupKey))
+            .thenReturn(1);
+        mockedStaticConfigCacheService.when(() -> ConfigCacheService.getContentCache(groupKey))
+            .thenReturn(cacheItem);
         
         ConfigQueryChainResponse nextResponse = new ConfigQueryChainResponse();
         nextResponse.setResultCode(200);
@@ -100,13 +103,17 @@ class ConfigChainEntryHandlerTest {
         request.setTenant("tenant");
         
         String groupKey = "groupKey";
-        mockedStaticGroupKey2.when(() -> GroupKey2.getKey(anyString(), anyString(), anyString())).thenReturn(groupKey);
-        mockedStaticConfigCacheService.when(() -> ConfigCacheService.tryConfigReadLock(groupKey)).thenReturn(1);
-        mockedStaticConfigCacheService.when(() -> ConfigCacheService.getContentCache(groupKey)).thenReturn(null);
+        mockedStaticGroupKey2.when(() -> GroupKey2.getKey(anyString(), anyString(), anyString()))
+            .thenReturn(groupKey);
+        mockedStaticConfigCacheService.when(() -> ConfigCacheService.tryConfigReadLock(groupKey))
+            .thenReturn(1);
+        mockedStaticConfigCacheService.when(() -> ConfigCacheService.getContentCache(groupKey))
+            .thenReturn(null);
         
         ConfigQueryChainResponse response = configChainEntryHandler.handle(request);
         
-        assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND, response.getStatus());
+        assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND,
+            response.getStatus());
         verify(nextHandler, never()).handle(any());
     }
     
@@ -118,13 +125,17 @@ class ConfigChainEntryHandlerTest {
         request.setTenant("tenant");
         
         String groupKey = "groupKey";
-        mockedStaticGroupKey2.when(() -> GroupKey2.getKey(anyString(), anyString(), anyString())).thenReturn(groupKey);
-        mockedStaticConfigCacheService.when(() -> ConfigCacheService.tryConfigReadLock(groupKey)).thenReturn(-1);
-        mockedStaticConfigCacheService.when(() -> ConfigCacheService.getContentCache(groupKey)).thenReturn(cacheItem);
+        mockedStaticGroupKey2.when(() -> GroupKey2.getKey(anyString(), anyString(), anyString()))
+            .thenReturn(groupKey);
+        mockedStaticConfigCacheService.when(() -> ConfigCacheService.tryConfigReadLock(groupKey))
+            .thenReturn(-1);
+        mockedStaticConfigCacheService.when(() -> ConfigCacheService.getContentCache(groupKey))
+            .thenReturn(cacheItem);
         
         ConfigQueryChainResponse response = configChainEntryHandler.handle(request);
         
-        assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT, response.getStatus());
+        assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT,
+            response.getStatus());
         verify(nextHandler, never()).handle(any());
     }
     
@@ -138,9 +149,12 @@ class ConfigChainEntryHandlerTest {
         request.setTenant("tenant");
         
         String groupKey = "groupKey";
-        mockedStaticGroupKey2.when(() -> GroupKey2.getKey(anyString(), anyString(), anyString())).thenReturn(groupKey);
-        mockedStaticConfigCacheService.when(() -> ConfigCacheService.tryConfigReadLock(groupKey)).thenReturn(1);
-        mockedStaticConfigCacheService.when(() -> ConfigCacheService.getContentCache(groupKey)).thenReturn(cacheItem);
+        mockedStaticGroupKey2.when(() -> GroupKey2.getKey(anyString(), anyString(), anyString()))
+            .thenReturn(groupKey);
+        mockedStaticConfigCacheService.when(() -> ConfigCacheService.tryConfigReadLock(groupKey))
+            .thenReturn(1);
+        mockedStaticConfigCacheService.when(() -> ConfigCacheService.getContentCache(groupKey))
+            .thenReturn(cacheItem);
         
         ConfigQueryChainResponse response = configChainEntryHandler.handle(request);
         assertNull(response.getStatus());

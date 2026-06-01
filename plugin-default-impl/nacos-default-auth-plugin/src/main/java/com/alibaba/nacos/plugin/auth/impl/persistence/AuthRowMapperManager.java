@@ -37,13 +37,16 @@ public class AuthRowMapperManager {
     
     static {
         // USER_ROW_MAPPER
-        RowMapperManager.registerRowMapper(USER_ROW_MAPPER.getClass().getCanonicalName(), USER_ROW_MAPPER);
-    
+        RowMapperManager.registerRowMapper(USER_ROW_MAPPER.getClass().getCanonicalName(),
+            USER_ROW_MAPPER);
+        
         // ROLE_INFO_ROW_MAPPER
-        RowMapperManager.registerRowMapper(ROLE_INFO_ROW_MAPPER.getClass().getCanonicalName(), ROLE_INFO_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(ROLE_INFO_ROW_MAPPER.getClass().getCanonicalName(),
+            ROLE_INFO_ROW_MAPPER);
         
         // PERMISSION_ROW_MAPPER
-        RowMapperManager.registerRowMapper(PERMISSION_ROW_MAPPER.getClass().getCanonicalName(), PERMISSION_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(PERMISSION_ROW_MAPPER.getClass().getCanonicalName(),
+            PERMISSION_ROW_MAPPER);
     }
     
     public static final class UserRowMapper implements RowMapper<User> {

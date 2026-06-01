@@ -24,22 +24,27 @@ class ParamCheckerManagerTest {
     
     @Test
     void testGetParamCheckerNonExistType() {
-        assertTrue(ParamCheckerManager.getInstance().getParamChecker("non") instanceof DefaultParamChecker);
+        assertTrue(ParamCheckerManager.getInstance()
+            .getParamChecker("non") instanceof DefaultParamChecker);
     }
     
     @Test
     void testGetParamCheckerNull() {
-        assertTrue(ParamCheckerManager.getInstance().getParamChecker("") instanceof DefaultParamChecker);
-        assertTrue(ParamCheckerManager.getInstance().getParamChecker(null) instanceof DefaultParamChecker);
+        assertTrue(
+            ParamCheckerManager.getInstance().getParamChecker("") instanceof DefaultParamChecker);
+        assertTrue(
+            ParamCheckerManager.getInstance().getParamChecker(null) instanceof DefaultParamChecker);
     }
     
     @Test
     void testGetParamCheckerDefault() {
-        assertTrue(ParamCheckerManager.getInstance().getParamChecker("default") instanceof DefaultParamChecker);
+        assertTrue(ParamCheckerManager.getInstance()
+            .getParamChecker("default") instanceof DefaultParamChecker);
     }
     
     @Test
     void testGetParamCheckerOther() {
-        assertTrue(ParamCheckerManager.getInstance().getParamChecker("mock") instanceof MockParamChecker);
+        assertTrue(
+            ParamCheckerManager.getInstance().getParamChecker("mock") instanceof MockParamChecker);
     }
 }

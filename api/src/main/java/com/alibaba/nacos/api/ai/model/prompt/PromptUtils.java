@@ -60,6 +60,6 @@ public class PromptUtils {
             throw new IllegalArgumentException("Version cannot be blank");
         }
         return PROMPT_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(promptKey)
-                + DOUBLE_UNDERSCORE + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(version);
+            + DOUBLE_UNDERSCORE + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(version);
     }
 }

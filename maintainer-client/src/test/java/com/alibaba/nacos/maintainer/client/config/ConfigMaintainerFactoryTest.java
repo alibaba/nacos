@@ -33,7 +33,8 @@ public class ConfigMaintainerFactoryTest {
         String serverList = "localhost:8848";
         
         // Act
-        ConfigMaintainerService service = ConfigMaintainerFactory.createConfigMaintainerService(serverList);
+        ConfigMaintainerService service =
+            ConfigMaintainerFactory.createConfigMaintainerService(serverList);
         
         // Assert
         assertNotNull(service);
@@ -47,7 +48,8 @@ public class ConfigMaintainerFactoryTest {
         properties.setProperty("serverAddr", "localhost:8848");
         
         // Act
-        ConfigMaintainerService service = ConfigMaintainerFactory.createConfigMaintainerService(properties);
+        ConfigMaintainerService service =
+            ConfigMaintainerFactory.createConfigMaintainerService(properties);
         
         // Assert
         assertNotNull(service);
@@ -76,4 +78,3 @@ public class ConfigMaintainerFactoryTest {
         });
     }
 }
-

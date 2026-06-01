@@ -26,27 +26,27 @@ import java.util.HashMap;
  * @author liyunfei
  */
 public class ConfigChangeRequest {
-
+    
     private ConfigChangePointCutTypes requestType;
-
+    
     private HashMap<String, Object> requestArgs = new HashMap<>(8);
-
+    
     public ConfigChangeRequest(ConfigChangePointCutTypes requestType) {
         this.requestType = requestType;
     }
-
+    
     public ConfigChangePointCutTypes getRequestType() {
         return requestType;
     }
-
+    
     public void setArg(String key, Object value) {
         requestArgs.put(key, value);
     }
-
+    
     public Object getArg(String key) {
         return requestArgs.getOrDefault(key, null);
     }
-
+    
     public HashMap<String, Object> getRequestArgs() {
         return requestArgs;
     }

@@ -14,15 +14,51 @@
  * limitations under the License.
  */
 
+.skill-management-wrapper {
+  position: relative;
+  min-height: 300px;
+}
+
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(24, 144, 255, 0.06);
+  border: 2px dashed #1890ff;
+  border-radius: 8px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+
+  .drag-overlay-content {
+    text-align: center;
+    color: #1890ff;
+
+    .next-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 16px;
+      margin: 0;
+    }
+  }
+}
+
 // 使用configuration-table样式，与MCP管理页面一致
 .configuration-table {
-    margin-bottom: 20px;
-  
+  margin-bottom: 20px;
+
   // 确保描述列宽度固定
   :global {
     .next-table {
       table-layout: fixed;
-  }
+    }
 
     .next-table-col {
       &:nth-child(2) {
@@ -31,25 +67,25 @@
         max-width: 300px !important;
       }
     }
-    
+
     .next-table-cell-wrapper {
       overflow: hidden;
     }
   }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+
+  .empty-icon {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 16px;
   }
 
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-
-    .empty-icon {
-      font-size: 48px;
-      color: #ccc;
-      margin-bottom: 16px;
-    }
-
-    .empty-text {
-      color: #999;
-      margin-bottom: 16px;
+  .empty-text {
+    color: #999;
+    margin-bottom: 16px;
   }
 }
