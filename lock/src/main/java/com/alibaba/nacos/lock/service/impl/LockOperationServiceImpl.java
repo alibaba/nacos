@@ -160,7 +160,12 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         if (mutexLock == null) {
             return LockResult.fail("Lock does not exist or already expired");
         }
-        Boolean unLock = mutexLock.unLock(lockInfo);
+        Boolean released;
+        if (request.isForceRelease()) {
+            released = mutexLock.forceRelease();
+        } else {
+            released = mutexLock.unLock(lockInfo);
+        }
         int remainingCount = 0;
         if (mutexLock instanceof AbstractAtomicLock) {
             remainingCount = ((AbstractAtomicLock) mutexLock).getReentrantCount();
@@ -181,7 +186,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 lockManager.removeMutexLock(lockInfo.getKey());
             }
         }
-        if (unLock) {
+        if (released) {
             return LockResult.success(remainingCount);
         }
         return LockResult.fail("Unlock failed: not held by this owner");
@@ -303,6 +308,29 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
     }
 
+    private void forceUnLock(LockKey lockKey, String owner) {
+        MutexLockRequest request = new MutexLockRequest();
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setKey(lockKey);
+        lockInfo.setOwner(owner);
+        request.setLockInfo(lockInfo);
+        request.setForceRelease(true);
+        WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
+            .setData(ByteString.copyFrom(serializer.serialize(request)))
+            .setOperation(LockOperationEnum.RELEASE.name()).build();
+        try {
+            Response response = protocol.write(writeRequest);
+            if (!response.getSuccess()) {
+                throw new NacosLockException(response.getErrMsg());
+            }
+        } catch (NacosLockException e) {
+            LOGGER.error("key: {}, owner: {} forceUnlock fail, errorMsg: {}", lockKey, owner, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            throw new NacosLockException("forceUnLock error.", e);
+        }
+    }
+
     @Override
     public Boolean renew(LockInstance lockInstance) {
         MutexLockRequest request = new MutexLockRequest();
@@ -389,14 +417,10 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                     if (owner == null) {
                         continue;
                     }
-                    LockInstance instance = new LockInstance();
-                    instance.setKey(lockKey.getKey());
-                    instance.setLockType(lockKey.getLockType());
-                    instance.setOwner(owner);
                     try {
-                        unLock(instance);
+                        forceUnLock(lockKey, owner);
                     } catch (Exception e) {
-                        LOGGER.warn("Lock: failed to release lock via Raft for connectionId={}, key={}",
+                        LOGGER.warn("Lock: failed to force release lock via Raft for connectionId={}, key={}",
                                 connectionId, lockKey, e);
                     }
                 }

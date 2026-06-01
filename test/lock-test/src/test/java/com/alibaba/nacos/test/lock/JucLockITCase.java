@@ -16,11 +16,18 @@
 
 package com.alibaba.nacos.test.lock;
 
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.lock.LockService;
 import com.alibaba.nacos.client.lock.NacosLock;
 import com.alibaba.nacos.client.lock.NacosLockService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.StandardEnvironment;
 
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -532,5 +539,48 @@ public class JucLockITCase extends BaseLockITCase {
 
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertTrue(acquired.get(), "Thread 2 should acquire lock after Thread 1 releases");
+    }
+
+    // ==================== 连接断开清理测试 ====================
+
+    private LockService createSeparateLockService() throws NacosException {
+        EnvUtil.setEnvironment(new StandardEnvironment());
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, SERVER_ADDR);
+        properties.setProperty(PropertyKeyConst.USERNAME, "nacos");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "nacos");
+        return NacosFactory.createLockService(properties);
+    }
+
+    @Test
+    @DisplayName("JUC-020: 可重入锁连接断开清理 - 多次重入后断开，锁应完全释放")
+    void testConnectionCleanupFullyReleasesReentrantLock() throws Exception {
+        String key = generateUniqueKey("juc-conn-cleanup-reentrant");
+        LockService separateService = createSeparateLockService();
+        try {
+            NacosLock lockA = ((NacosLockService) separateService).getReentrantLock(key);
+
+            for (int i = 0; i < 100; i++) {
+                lockA.lock();
+            }
+
+            // 关闭连接，触发 releaseLocksByConnection()
+            separateService.shutdown();
+
+            // 使用基类 lockService（不同连接）尝试获取同一把锁
+            NacosLock lockB = getJucLockService().getReentrantLock(key);
+            boolean acquired = lockB.tryLock(1, TimeUnit.SECONDS);
+            assertTrue(acquired,
+                    "The lock should be acquirable after the connection is cleaned up."
+                            + "If it fails, it means that releaseLocksByConnection() did not fully release the reentrant lock.");
+            if (acquired) {
+                lockB.unlock();
+            }
+        } finally {
+            try {
+                separateService.shutdown();
+            } catch (Exception ignored) {
+            }
+        }
     }
 }

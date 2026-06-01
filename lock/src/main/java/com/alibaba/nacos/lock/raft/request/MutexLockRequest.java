@@ -27,16 +27,26 @@ import java.io.Serializable;
  * @date 2023/8/24 18:40
  */
 public class MutexLockRequest implements Serializable {
-    
+
     private static final long serialVersionUID = -925543547156890549L;
-    
+
     private LockInfo lockInfo;
-    
+
+    private boolean forceRelease;
+
     public LockInfo getLockInfo() {
         return lockInfo;
     }
-    
+
     public void setLockInfo(LockInfo lockInfo) {
         this.lockInfo = lockInfo;
+    }
+
+    public boolean isForceRelease() {
+        return forceRelease;
+    }
+
+    public void setForceRelease(boolean forceRelease) {
+        this.forceRelease = forceRelease;
     }
 }
