@@ -203,6 +203,16 @@ public abstract class OpenApiBaseITCase {
         return root;
     }
 
+    protected JsonNode putFormOk(String path, Query query) throws Exception {
+        HttpRestResult<String> restResult = nacosRestTemplate.putForm(url(path), Header.EMPTY, query,
+                Collections.emptyMap(), String.class);
+        assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
+                + restResult.getData() + ", message=" + restResult.getMessage());
+        JsonNode root = JacksonUtils.toObj(restResult.getData());
+        assertSuccess(root);
+        return root;
+    }
+
     protected JsonNode deleteJsonOk(String path, Query query) throws Exception {
         HttpRestResult<String> restResult = nacosRestTemplate.delete(url(path), Header.EMPTY, query, String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
