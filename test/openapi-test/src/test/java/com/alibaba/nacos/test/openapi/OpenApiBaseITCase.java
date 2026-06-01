@@ -178,6 +178,20 @@ public abstract class OpenApiBaseITCase {
         return executeRaw(post);
     }
 
+    protected JsonNode putJsonOk(String path, Query query, String json) throws Exception {
+        HttpResponse response = putJsonRaw(path, query, json);
+        assertEquals(200, response.code(), response.body());
+        JsonNode root = JacksonUtils.toObj(response.body());
+        assertSuccess(root);
+        return root;
+    }
+
+    protected HttpResponse putJsonRaw(String path, Query query, String json) throws Exception {
+        HttpPut put = new HttpPut(url(path + "?" + query.toQueryUrl()));
+        put.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
+        return executeRaw(put);
+    }
+
     protected HttpResponse postMultipartRaw(String path, Query query, String fieldName, String fileName,
             String contentType, byte[] fileBytes) throws Exception {
         String boundary = "----nacos-openapi-it-" + System.nanoTime();
