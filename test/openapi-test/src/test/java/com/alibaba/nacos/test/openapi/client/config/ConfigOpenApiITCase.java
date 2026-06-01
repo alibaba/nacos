@@ -29,9 +29,12 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,18 +57,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code GET /nacos/v3/client/cs/config}), aligned with
  * <a href="https://nacos.io/swagger/client/zh/api.json">Nacos HTTP 客户端 API</a>.
  *
- * <p><b>How this fits the new IT pipeline ({@code .github/workflows/it-new.yml})</b>
- * <ol>
- *     <li>Workflow builds the server distribution, patches {@code application.properties} (auth secrets / identity),
- *     starts standalone Nacos, then waits on console port {@code 8080}.</li>
- *     <li>{@code mvn clean verify -Pintegration-test} under {@code test/} runs Failsafe; {@code openapi-test} uses
- *     system properties {@code nacos.host} / {@code nacos.port} (default {@code 127.0.0.1:8848}) to call the
- *     <em>main</em> server port.</li>
- *     <li>Config is published and removed through the <em>admin</em> API ({@code /v3/admin/cs/config}), because the
- *     client API is read-only by design.</li>
- *     <li>With default {@code nacos.core.auth.enabled=false}, {@code @Secured} does not require a token; if your
- *     environment enables auth, extend these tests to attach {@code accessToken} like other IT modules.</li>
- * </ol>
+ * <p>Scenario coverage:
+ * <ul>
+ *     <li>Expected capability: a config published through the admin API can be queried through the client OpenAPI with
+ *     content, md5, lastModified, contentType, and beta response fields.</li>
+ *     <li>Boundary/validation: omitted {@code namespaceId} uses the public namespace; wrong namespace returns a wrapped
+ *     not-found result; {@code dataId} and {@code groupName} are required; v3 does not accept the legacy {@code group}
+ *     parameter as a replacement for {@code groupName}; invalid namespace values are rejected by parameter checking.</li>
+ *     <li>Exception/error handling: absent config returns HTTP 2xx with {@code RESOURCE_NOT_FOUND}; invalid namespace
+ *     returns HTTP 400 with wrapped {@code Result} fields; required-field validation currently returns controlled
+ *     HTTP 400 text from this controller path rather than HTTP 500.</li>
+ * </ul>
  *
  * @author xiweng.yy
  */
@@ -139,6 +141,7 @@ public class ConfigOpenApiITCase {
             assertEquals(content, actual.getData().getContent());
             assertEquals(MD5Utils.md5Hex(content, StandardCharsets.UTF_8.name()), actual.getData().getMd5());
             assertTrue(actual.getData().getLastModified() > 0L);
+            assertNotNull(actual.getData().getContentType());
             assertFalse(actual.getData().isBeta());
         } finally {
             deleteConfig(dataId, TEST_GROUP, "");
@@ -193,16 +196,30 @@ public class ConfigOpenApiITCase {
     public void testGetConfigMissingDataIdReturnsBadRequest() throws Exception {
         String url = BASE_URL + CLIENT_CONFIG_PATH;
         Query query = Query.newInstance().addParam("groupName", TEST_GROUP).addParam("namespaceId", DEFAULT_NAMESPACE);
-        HttpRestResult<String> httpResult = nacosRestTemplate.get(url, Header.EMPTY, query, String.class);
-        assertEquals(400, httpResult.getCode());
+        assertPlainBadRequest(rawGet(url, query), "dataId");
     }
     
     @Test
     public void testGetConfigMissingGroupNameReturnsBadRequest() throws Exception {
         String url = BASE_URL + CLIENT_CONFIG_PATH;
         Query query = Query.newInstance().addParam("dataId", "any").addParam("namespaceId", DEFAULT_NAMESPACE);
-        HttpRestResult<String> httpResult = nacosRestTemplate.get(url, Header.EMPTY, query, String.class);
-        assertEquals(400, httpResult.getCode());
+        assertPlainBadRequest(rawGet(url, query), "groupName");
+    }
+    
+    @Test
+    public void testGetConfigLegacyGroupParameterDoesNotReplaceGroupName() throws Exception {
+        String url = BASE_URL + CLIENT_CONFIG_PATH;
+        Query query = Query.newInstance().addParam("dataId", "any").addParam("group", TEST_GROUP)
+                .addParam("namespaceId", DEFAULT_NAMESPACE);
+        assertPlainBadRequest(rawGet(url, query), "groupName");
+    }
+    
+    @Test
+    public void testGetConfigInvalidNamespaceReturnsBadRequest() throws Exception {
+        String url = BASE_URL + CLIENT_CONFIG_PATH;
+        Query query = Query.newInstance().addParam("dataId", "any").addParam("groupName", TEST_GROUP)
+                .addParam("namespaceId", "invalid namespace");
+        assertBadRequestResult(rawGet(url, query), ErrorCode.PARAMETER_VALIDATE_ERROR, "namespaceId");
     }
     
     private HttpRestResult<String> getConfig(String dataId, String group, String namespace) throws Exception {
@@ -210,6 +227,31 @@ public class ConfigOpenApiITCase {
         Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", group)
                 .addParam("namespaceId", namespace);
         return nacosRestTemplate.get(url, Header.EMPTY, query, String.class);
+    }
+    
+    private HttpResponse rawGet(String url, Query query) throws Exception {
+        HttpGet request = new HttpGet(url + "?" + query.toQueryUrl());
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            String body = null == response.getEntity() ? "" : EntityUtils.toString(response.getEntity());
+            return new HttpResponse(response.getCode(), body);
+        }
+    }
+    
+    private void assertBadRequestResult(HttpResponse response, ErrorCode errorCode, String expectedData)
+            throws Exception {
+        assertEquals(400, response.statusCode, response.body);
+        Result<String> actual = JacksonUtils.toObj(response.body, new TypeReference<>() {
+        });
+        assertEquals(errorCode.getCode(), actual.getCode(), response.body);
+        assertNotNull(actual.getMessage(), response.body);
+        assertNotNull(actual.getData(), response.body);
+        assertTrue(actual.getData().contains(expectedData), response.body);
+    }
+    
+    private void assertPlainBadRequest(HttpResponse response, String expectedField) {
+        assertEquals(400, response.statusCode, response.body);
+        assertTrue(response.body.contains("Required parameter"), response.body);
+        assertTrue(response.body.contains(expectedField), response.body);
     }
     
     private boolean publishConfig(String dataId, String groupName, String namespaceId, String content) throws Exception {
@@ -253,5 +295,8 @@ public class ConfigOpenApiITCase {
         form.put("type", "");
         form.put("schema", "");
         return form;
+    }
+    
+    private record HttpResponse(int statusCode, String body) {
     }
 }
