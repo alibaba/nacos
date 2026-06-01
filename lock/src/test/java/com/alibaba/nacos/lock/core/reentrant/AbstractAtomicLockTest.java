@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -145,6 +146,198 @@ class AbstractAtomicLockTest {
 
         assertEquals(3, lock.getWaitQueue().size(),
                 "Different owner or connection should not be deduplicated");
+    }
+
+    // ==================== renew tests ====================
+
+    @Test
+    void testRenewSuccess() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 5000);
+        lock.tryLock(lockInfo);
+
+        long originalExpiry = lock.getExpiredTimestamp();
+        LockInfo renewInfo = new LockInfo();
+        renewInfo.setOwner("owner-1");
+        renewInfo.setEndTime(originalExpiry + 10000);
+
+        assertTrue(lock.renew(renewInfo));
+        assertEquals(originalExpiry + 10000, lock.getExpiredTimestamp());
+    }
+
+    @Test
+    void testRenewNullLockInfo() {
+        assertFalse(lock.renew(null));
+    }
+
+    @Test
+    void testRenewNullOwner() {
+        LockInfo renewInfo = new LockInfo();
+        renewInfo.setOwner(null);
+        assertFalse(lock.renew(renewInfo));
+    }
+
+    @Test
+    void testRenewOwnerMismatch() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 5000);
+        lock.tryLock(lockInfo);
+
+        LockInfo renewInfo = new LockInfo();
+        renewInfo.setOwner("owner-2");
+        renewInfo.setEndTime(System.currentTimeMillis() + 10000);
+        assertFalse(lock.renew(renewInfo));
+    }
+
+    // ==================== isClear tests ====================
+
+    @Test
+    void testIsClearWhenNoOwner() {
+        assertTrue(lock.isClear());
+    }
+
+    @Test
+    void testIsClearWhenOwned() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 5000);
+        lock.tryLock(lockInfo);
+        assertFalse(lock.isClear());
+    }
+
+    @Test
+    void testIsClearAfterUnlock() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 5000);
+        lock.tryLock(lockInfo);
+        lock.unLock(lockInfo);
+        assertTrue(lock.isClear());
+    }
+
+    // ==================== forceRelease edge cases ====================
+
+    @Test
+    void testForceReleaseWhenNotHeld() {
+        assertFalse(lock.forceRelease());
+    }
+
+    // ==================== autoExpire edge cases ====================
+
+    @Test
+    void testAutoExpireNotExpired() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 30000);
+        lock.tryLock(lockInfo);
+        assertFalse(lock.autoExpire());
+        assertEquals("owner-1", lock.getOwner());
+    }
+
+    @Test
+    void testAutoExpireNoExpiry() {
+        // No lock held, no expiry set
+        assertFalse(lock.autoExpire());
+    }
+
+    // ==================== null LockInfo tests ====================
+
+    @Test
+    void testTryLockNullLockInfo() {
+        assertFalse(lock.tryLock(null));
+    }
+
+    @Test
+    void testUnLockNullLockInfo() {
+        assertFalse(lock.unLock(null));
+    }
+
+    // ==================== hasWaiters / peekFirstWaiter ====================
+
+    @Test
+    void testHasWaitersEmpty() {
+        assertFalse(lock.hasWaiters());
+    }
+
+    @Test
+    void testHasWaitersNonEmpty() {
+        lock.addWaiter(createLockInfo("owner-1", "conn-1", 5000));
+        assertTrue(lock.hasWaiters());
+    }
+
+    @Test
+    void testPeekFirstWaiterExpiredInMiddle() throws InterruptedException {
+        LockInfo expired = createLockInfo("owner-1", "conn-1", 50);
+        LockInfo valid = createLockInfo("owner-2", "conn-2", 5000);
+
+        lock.addWaiter(expired);
+        lock.addWaiter(valid);
+        Thread.sleep(100);
+
+        // Peek should skip expired entry
+        var entry = lock.peekFirstWaiter();
+        assertEquals("owner-2", entry.getOwner());
+        assertEquals(1, lock.getWaitQueue().size());
+    }
+
+    // ==================== removeStaleWaiter ====================
+
+    @Test
+    void testRemoveStaleWaiter() {
+        lock.addWaiter(createLockInfo("owner-1", "conn-1", 5000));
+        lock.addWaiter(createLockInfo("owner-2", "conn-2", 5000));
+
+        assertTrue(lock.removeStaleWaiter("owner-1"));
+        assertEquals(1, lock.getWaitQueue().size());
+        assertEquals("owner-2", lock.getWaitQueue().get(0).getOwner());
+    }
+
+    @Test
+    void testRemoveStaleWaiterNotFound() {
+        lock.addWaiter(createLockInfo("owner-1", "conn-1", 5000));
+        assertFalse(lock.removeStaleWaiter("owner-99"));
+        assertEquals(1, lock.getWaitQueue().size());
+    }
+
+    // ==================== drainAllWaiters ====================
+
+    @Test
+    void testDrainAllWaiters() {
+        lock.addWaiter(createLockInfo("owner-1", "conn-1", 5000));
+        lock.addWaiter(createLockInfo("owner-2", "conn-2", 5000));
+        lock.addWaiter(createLockInfo("owner-3", "conn-3", 5000));
+
+        var drained = lock.drainAllWaiters();
+        assertEquals(3, drained.size());
+        assertEquals(0, lock.getWaitQueue().size());
+    }
+
+    @Test
+    void testDrainAllWaitersEmpty() {
+        var drained = lock.drainAllWaiters();
+        assertEquals(0, drained.size());
+    }
+
+    // ==================== removeExpiredWaiters ====================
+
+    @Test
+    void testRemoveExpiredWaiters() throws InterruptedException {
+        LockInfo expired1 = createLockInfo("owner-1", "conn-1", 50);
+        LockInfo expired2 = createLockInfo("owner-2", "conn-2", 50);
+        LockInfo valid = createLockInfo("owner-3", "conn-3", 5000);
+
+        lock.addWaiter(expired1);
+        lock.addWaiter(expired2);
+        lock.addWaiter(valid);
+        Thread.sleep(100);
+
+        var expired = lock.removeExpiredWaiters();
+        assertEquals(2, expired.size());
+        assertEquals(1, lock.getWaitQueue().size());
+        assertEquals("owner-3", lock.getWaitQueue().get(0).getOwner());
+    }
+
+    // ==================== initTransientFields ====================
+
+    @Test
+    void testInitTransientFieldsWhenNull() {
+        // Simulate deserialization: lock field is null
+        lock.initTransientFields();
+        // Should not throw, and lock should still work
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 5000);
+        assertTrue(lock.tryLock(lockInfo));
     }
 
     @Test

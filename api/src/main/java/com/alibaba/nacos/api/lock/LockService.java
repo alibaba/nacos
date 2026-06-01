@@ -81,6 +81,7 @@ public interface LockService {
      * @return true if renewed successfully, false if lock not held by this owner
      * @throws NacosException NacosException
      */
+    @Since("3.3.0")
     Boolean renew(LockInstance instance) throws NacosException;
 
     /**
