@@ -55,6 +55,8 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected static final String ADMIN_CONFIG_GRAY_PATH = ADMIN_CONFIG_PATH + "/gray";
 
+    protected static final String ADMIN_CONFIG_IMPORT_PATH = ADMIN_CONFIG_PATH + "/import";
+
     protected static final String ADMIN_CONFIG_EXPORT_PATH = ADMIN_CONFIG_PATH + "/export";
 
     protected static final String ADMIN_CONFIG_CLONE_PATH = ADMIN_CONFIG_PATH + "/clone";
@@ -66,6 +68,12 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
     protected static final String ADMIN_HISTORY_CONFIGS_PATH = ADMIN_HISTORY_PATH + "/configs";
 
     protected static final String ADMIN_LISTENER_PATH = nacosPath(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH);
+
+    protected static final String ADMIN_METRICS_PATH = nacosPath(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH);
+
+    protected static final String ADMIN_CAPACITY_PATH = nacosPath(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH);
+
+    protected static final String ADMIN_OPS_PATH = nacosPath(Constants.OPS_CONTROLLER_V3_ADMIN_PATH);
 
     protected static final String DEFAULT_NAMESPACE = "public";
 

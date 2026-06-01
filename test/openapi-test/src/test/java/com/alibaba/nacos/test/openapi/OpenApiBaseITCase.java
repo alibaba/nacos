@@ -34,6 +34,7 @@ import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.junit.jupiter.api.AfterEach;
@@ -41,6 +42,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -172,6 +175,22 @@ public abstract class OpenApiBaseITCase {
     protected HttpResponse postJsonRaw(String path, Query query, String json) throws Exception {
         HttpPost post = new HttpPost(url(path + "?" + query.toQueryUrl()));
         post.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
+        return executeRaw(post);
+    }
+
+    protected HttpResponse postMultipartRaw(String path, Query query, String fieldName, String fileName,
+            String contentType, byte[] fileBytes) throws Exception {
+        String boundary = "----nacos-openapi-it-" + System.nanoTime();
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        body.write(("--" + boundary + "\r\n").getBytes(StandardCharsets.UTF_8));
+        body.write(("Content-Disposition: form-data; name=\"" + fieldName + "\"; filename=\"" + fileName
+                + "\"\r\n").getBytes(StandardCharsets.UTF_8));
+        body.write(("Content-Type: " + contentType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+        body.write(fileBytes);
+        body.write(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+        HttpPost post = new HttpPost(url(path + "?" + query.toQueryUrl()));
+        post.setEntity(new ByteArrayEntity(body.toByteArray(),
+                ContentType.parse("multipart/form-data; boundary=" + boundary)));
         return executeRaw(post);
     }
 
