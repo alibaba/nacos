@@ -16,9 +16,14 @@
 
 package com.alibaba.nacos.test.openapi;
 
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
+import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -35,7 +40,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Shared standalone-server OpenAPI integration test infrastructure.
@@ -116,6 +127,76 @@ public abstract class OpenApiBaseITCase {
         return executeRaw(new HttpDelete(url(path + "?" + query.toQueryUrl())));
     }
     
+    protected JsonNode getJsonOk(String path, Query query) throws Exception {
+        HttpRestResult<String> restResult = nacosRestTemplate.get(url(path), Header.EMPTY, query, String.class);
+        assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
+                + restResult.getData() + ", message=" + restResult.getMessage());
+        JsonNode root = JacksonUtils.toObj(restResult.getData());
+        assertSuccess(root);
+        return root;
+    }
+
+    protected JsonNode postFormOk(String path, Map<String, String> form) throws Exception {
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(path), Header.EMPTY, form, String.class);
+        assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
+                + restResult.getData() + ", message=" + restResult.getMessage());
+        JsonNode root = JacksonUtils.toObj(restResult.getData());
+        assertSuccess(root);
+        return root;
+    }
+
+    protected JsonNode postFormOk(String path, Query query) throws Exception {
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(path), Header.EMPTY, query,
+                Collections.emptyMap(), String.class);
+        assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
+                + restResult.getData() + ", message=" + restResult.getMessage());
+        JsonNode root = JacksonUtils.toObj(restResult.getData());
+        assertSuccess(root);
+        return root;
+    }
+
+    protected JsonNode putFormOk(String path, Map<String, String> form) throws Exception {
+        HttpRestResult<String> restResult = nacosRestTemplate.putForm(url(path), Header.EMPTY, form, String.class);
+        assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
+                + restResult.getData() + ", message=" + restResult.getMessage());
+        JsonNode root = JacksonUtils.toObj(restResult.getData());
+        assertSuccess(root);
+        return root;
+    }
+
+    protected JsonNode deleteJsonOk(String path, Query query) throws Exception {
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(url(path), Header.EMPTY, query, String.class);
+        assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
+                + restResult.getData() + ", message=" + restResult.getMessage());
+        JsonNode root = JacksonUtils.toObj(restResult.getData());
+        assertSuccess(root);
+        return root;
+    }
+
+    protected void deleteQuietly(String path, Query query) throws Exception {
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(url(path), Header.EMPTY, query, String.class);
+        if (!restResult.ok()) {
+            logger().warn("delete non-OK: path={} code={} body={}", path, restResult.getCode(), restResult.getData());
+        }
+    }
+
+    protected void assertSuccess(JsonNode root) {
+        assertNotNull(root);
+        assertEquals(ErrorCode.SUCCESS.getCode(), root.get("code").asInt(), root.toString());
+        assertEquals(ErrorCode.SUCCESS.getMsg(), root.get("message").asText(), root.toString());
+    }
+
+    protected void assertError(HttpResponse response, int expectedStatus, ErrorCode expectedCode, String expectedData)
+            throws Exception {
+        assertEquals(expectedStatus, response.code(), response.body());
+        JsonNode root = JacksonUtils.toObj(response.body());
+        assertNotNull(root, response.body());
+        assertEquals(expectedCode.getCode(), root.get("code").asInt(), response.body());
+        assertNotNull(root.get("message"), response.body());
+        assertNotNull(root.get("data"), response.body());
+        assertTrue(root.get("data").asText().contains(expectedData), response.body());
+    }
+
     protected HttpResponse executeRaw(ClassicHttpRequest request) throws Exception {
         HttpClientResponseHandler<HttpResponse> responseHandler = response -> {
             String body = null == response.getEntity() ? "" : EntityUtils.toString(response.getEntity());
