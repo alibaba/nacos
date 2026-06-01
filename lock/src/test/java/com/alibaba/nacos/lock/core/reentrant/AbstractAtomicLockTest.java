@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for AbstractAtomicLock.
@@ -102,6 +103,48 @@ class AbstractAtomicLockTest {
         lock.clearWaiters();
 
         assertEquals(0, lock.getWaitQueue().size());
+    }
+
+    @Test
+    void testAddWaiterDeduplicatesByOwnerAndConnection() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 5000);
+
+        lock.addWaiter(lockInfo);
+        lock.addWaiter(lockInfo);
+        lock.addWaiter(lockInfo);
+
+        assertEquals(1, lock.getWaitQueue().size(),
+                "addWaiter() should deduplicate by owner+connectionId");
+    }
+
+    @Test
+    void testAddWaiterDedupUpdatesDeadline() {
+        LockInfo first = createLockInfo("owner-1", "conn-1", 1000);
+        LockInfo second = createLockInfo("owner-1", "conn-1", 9000);
+
+        lock.addWaiter(first);
+        long originalDeadline = lock.getWaitQueue().get(0).getWaitDeadline();
+
+        lock.addWaiter(second);
+        long updatedDeadline = lock.getWaitQueue().get(0).getWaitDeadline();
+
+        assertEquals(1, lock.getWaitQueue().size());
+        assertTrue(updatedDeadline > originalDeadline,
+                "Dedup should update the deadline to the newer value");
+    }
+
+    @Test
+    void testAddWaiterNoDedupForDifferentOwner() {
+        LockInfo info1 = createLockInfo("owner-1", "conn-1", 5000);
+        LockInfo info2 = createLockInfo("owner-2", "conn-1", 5000);
+        LockInfo info3 = createLockInfo("owner-1", "conn-2", 5000);
+
+        lock.addWaiter(info1);
+        lock.addWaiter(info2);
+        lock.addWaiter(info3);
+
+        assertEquals(3, lock.getWaitQueue().size(),
+                "Different owner or connection should not be deduplicated");
     }
 
     @Test

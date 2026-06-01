@@ -193,6 +193,14 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
         try {
             long now = System.currentTimeMillis();
             long deadline = lockInfo.getWaitTimeMs() > 0 ? now + lockInfo.getWaitTimeMs() : 0;
+            for (int i = 0; i < waitQueue.size(); i++) {
+                WaitEntry existing = waitQueue.get(i);
+                if (existing.getOwner().equals(lockInfo.getOwner())
+                        && existing.getConnectionId().equals(lockInfo.getConnectionId())) {
+                    existing.setWaitDeadline(deadline);
+                    return i;
+                }
+            }
             WaitEntry entry = new WaitEntry(lockInfo.getOwner(), lockInfo.getConnectionId(), now, deadline);
             waitQueue.add(entry);
             return waitQueue.size() - 1;
