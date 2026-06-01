@@ -23,14 +23,21 @@ import com.alibaba.nacos.test.openapi.OpenApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -71,6 +78,15 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected static final String ADMIN_PROMPT_VERSION_DOWNLOAD_PATH =
             ADMIN_PROMPT_PATH + "/version/download";
+
+    protected static final String ADMIN_SKILL_PATH = nacosPath(Constants.Skills.ADMIN_PATH);
+
+    protected static final String ADMIN_SKILL_LIST_PATH = ADMIN_SKILL_PATH + "/list";
+
+    protected static final String ADMIN_SKILL_VERSION_PATH = ADMIN_SKILL_PATH + "/version";
+
+    protected static final String ADMIN_SKILL_VERSION_DOWNLOAD_PATH =
+            ADMIN_SKILL_PATH + "/version/download";
 
     protected String randomAiName(String scenario) {
         return "oit-" + scenario + "-" + UUID.randomUUID().toString().substring(0, 8);
@@ -256,6 +272,171 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         assertEquals("Nacos", data.get("variables").get(0).get("defaultValue").asText(), data.toString());
     }
 
+    protected Query skillQuery(String skillName) {
+        return Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                .addParam("skillName", skillName);
+    }
+
+    protected Query skillVersionQuery(String skillName, String version) {
+        Query query = skillQuery(skillName);
+        addIfNotBlank(query, "version", version);
+        return query;
+    }
+
+    protected Map<String, String> skillDraftForm(String skillName, String version, String body,
+            String guideContent) {
+        Map<String, String> form = skillUpdateForm(skillName, body, guideContent);
+        form.put("namespaceId", DEFAULT_NAMESPACE);
+        form.put("targetVersion", version);
+        return form;
+    }
+
+    protected Map<String, String> skillForkForm(String skillName, String targetVersion,
+            String basedOnVersion) {
+        Map<String, String> form = skillQueryForm(skillName);
+        form.put("targetVersion", targetVersion);
+        form.put("basedOnVersion", basedOnVersion);
+        form.put("commitMsg", "openapi skill admin fork");
+        return form;
+    }
+
+    protected Map<String, String> skillUpdateForm(String skillName, String body,
+            String guideContent) {
+        Map<String, String> form = new LinkedHashMap<>();
+        form.put("skillName", skillName);
+        form.put("skillCard", buildSkillCard(skillName, body, guideContent));
+        form.put("commitMsg", "openapi skill admin it");
+        return form;
+    }
+
+    protected Map<String, String> skillPublishForm(String skillName, String version) {
+        Map<String, String> form = skillQueryForm(skillName);
+        form.put("version", version);
+        form.put("updateLatestLabel", "true");
+        return form;
+    }
+
+    protected Map<String, String> skillLabelsForm(String skillName, String labels) {
+        Map<String, String> form = skillQueryForm(skillName);
+        form.put("labels", labels);
+        return form;
+    }
+
+    protected Map<String, String> skillBizTagsForm(String skillName, String bizTags) {
+        Map<String, String> form = skillQueryForm(skillName);
+        form.put("bizTags", bizTags);
+        return form;
+    }
+
+    protected Map<String, String> skillScopeForm(String skillName, String scope) {
+        Map<String, String> form = skillQueryForm(skillName);
+        form.put("scope", scope);
+        return form;
+    }
+
+    protected Map<String, String> skillOnlineForm(String skillName, String version, String scope) {
+        Map<String, String> form = skillQueryForm(skillName);
+        addIfNotBlank(form, "version", version);
+        addIfNotBlank(form, "scope", scope);
+        return form;
+    }
+
+    protected void deleteSkillQuietly(String skillName) throws Exception {
+        deleteQuietly(ADMIN_SKILL_PATH, skillQuery(skillName));
+    }
+
+    protected void assertSkillContent(JsonNode data, String skillName, String version, String body,
+            String guideContent) {
+        assertEquals(DEFAULT_NAMESPACE, data.get("namespaceId").asText(), data.toString());
+        assertEquals(skillName, data.get("name").asText(), data.toString());
+        assertEquals("skill admin openapi integration test", data.get("description").asText(),
+                data.toString());
+        String skillMd = data.get("skillMd").asText();
+        assertTrue(skillMd.contains("name: " + skillName), skillMd);
+        assertTrue(skillMd.contains("version: " + version), skillMd);
+        assertTrue(skillMd.contains(body), skillMd);
+        JsonNode resource = findSkillResource(data.get("resource"), "references", "guide.md");
+        assertNotNull(resource, data.toString());
+        assertEquals("guide.md", resource.get("name").asText(), data.toString());
+        assertEquals("references", resource.get("type").asText(), data.toString());
+        assertEquals(guideContent, resource.get("content").asText(), data.toString());
+    }
+
+    protected JsonNode findSkillResource(JsonNode resources, String type, String name) {
+        if (null == resources || !resources.isObject()) {
+            return MissingNode.getInstance();
+        }
+        for (JsonNode resource : resources) {
+            if (name.equals(resource.get("name").asText())
+                    && type.equals(resource.get("type").asText())) {
+                return resource;
+            }
+        }
+        return MissingNode.getInstance();
+    }
+
+    protected JsonNode findSkillVersionSummary(JsonNode skillMeta, String version) {
+        for (JsonNode item : skillMeta.get("versions")) {
+            if (version.equals(item.get("version").asText())) {
+                return item;
+            }
+        }
+        return MissingNode.getInstance();
+    }
+
+    protected void assertSkillZip(ByteResponse response, String skillName, String version, String body,
+            String guideContent) throws Exception {
+        assertEquals(200, response.code(), new String(response.body(), StandardCharsets.UTF_8));
+        assertNotNull(response.contentDisposition());
+        assertTrue(response.contentDisposition().contains(skillName + ".zip"),
+                response.contentDisposition());
+        Map<String, String> entries = unzipTextEntries(response.body());
+        String skillMd = entries.get(skillName + "/SKILL.md");
+        assertNotNull(skillMd, entries.keySet().toString());
+        assertTrue(skillMd.contains("name: " + skillName), skillMd);
+        assertTrue(skillMd.contains("version: " + version), skillMd);
+        assertTrue(skillMd.contains(body), skillMd);
+        assertEquals(guideContent, entries.get(skillName + "/references/guide.md"));
+    }
+
+    protected byte[] buildSkillZip(String skillName, String version, String body,
+            String guideContent) throws Exception {
+        Map<String, String> entries = new LinkedHashMap<>();
+        entries.put("SKILL.md", skillMarkdown(skillName, version, body));
+        entries.put("references/guide.md", guideContent);
+        return zipEntries(entries);
+    }
+
+    protected byte[] buildMultiSkillZip(Map<String, String> skillNameToBody) throws Exception {
+        Map<String, String> entries = new LinkedHashMap<>();
+        skillNameToBody.forEach((skillName, body) -> {
+            entries.put(skillName + "/SKILL.md", skillMarkdown(skillName, "1.0.0", body));
+            entries.put(skillName + "/references/guide.md", "guide for " + skillName);
+        });
+        return zipEntries(entries);
+    }
+
+    protected byte[] buildPartiallyInvalidMultiSkillZip(String validSkillName, String validBody)
+            throws Exception {
+        Map<String, String> entries = new LinkedHashMap<>();
+        entries.put(validSkillName + "/SKILL.md", skillMarkdown(validSkillName, "1.0.0", validBody));
+        entries.put("invalid-skill/SKILL.md", "---\nname: {{{invalid yaml\n---\n\nBroken instructions");
+        return zipEntries(entries);
+    }
+
+    protected Map<String, String> unzipTextEntries(byte[] body) throws Exception {
+        Map<String, String> result = new LinkedHashMap<>();
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(body))) {
+            ZipEntry entry;
+            while (null != (entry = zis.getNextEntry())) {
+                if (!entry.isDirectory()) {
+                    result.put(entry.getName(), new String(readEntry(zis), StandardCharsets.UTF_8));
+                }
+            }
+        }
+        return result;
+    }
+
     private String mcpServerSpecification(String mcpName, String version, String description) {
         Map<String, Object> versionDetail = new LinkedHashMap<>();
         versionDetail.put("version", version);
@@ -323,11 +504,72 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         return form;
     }
 
+    protected Map<String, String> skillQueryForm(String skillName) {
+        Map<String, String> form = new LinkedHashMap<>();
+        form.put("namespaceId", DEFAULT_NAMESPACE);
+        form.put("skillName", skillName);
+        return form;
+    }
+
     private String promptVariables() {
         Map<String, String> variable = new LinkedHashMap<>();
         variable.put("name", "name");
         variable.put("defaultValue", "Nacos");
         variable.put("description", "target name");
         return JacksonUtils.toJson(Collections.singletonList(variable));
+    }
+
+    private String buildSkillCard(String skillName, String body, String guideContent) {
+        Map<String, Object> card = new LinkedHashMap<>();
+        card.put("name", skillName);
+        card.put("description", "skill admin openapi integration test");
+        card.put("skillMd", skillMarkdown(skillName, null, body));
+        Map<String, Object> guide = new LinkedHashMap<>();
+        guide.put("name", "guide.md");
+        guide.put("type", "references");
+        guide.put("content", guideContent);
+        Map<String, Object> resources = new LinkedHashMap<>();
+        resources.put("references::guide.md", guide);
+        card.put("resource", resources);
+        return JacksonUtils.toJson(card);
+    }
+
+    private String skillMarkdown(String skillName, String version, String body) {
+        StringBuilder result = new StringBuilder();
+        result.append("---\nname: ").append(skillName)
+                .append("\ndescription: skill admin openapi integration test\n");
+        if (null != version) {
+            result.append("version: ").append(version).append('\n');
+        }
+        result.append("---\n\n").append(body);
+        return result.toString();
+    }
+
+    private byte[] zipEntries(Map<String, String> entries) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(output)) {
+            for (Map.Entry<String, String> entry : entries.entrySet()) {
+                zos.putNextEntry(new ZipEntry(entry.getKey()));
+                zos.write(entry.getValue().getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+            }
+        }
+        return output.toByteArray();
+    }
+
+    private byte[] readEntry(ZipInputStream zis) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = zis.read(buffer)) != -1) {
+            output.write(buffer, 0, len);
+        }
+        return output.toByteArray();
+    }
+
+    private void addIfNotBlank(Map<String, String> form, String name, String value) {
+        if (null != value && !value.isBlank()) {
+            form.put(name, value);
+        }
     }
 }
