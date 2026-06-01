@@ -44,6 +44,8 @@ public class LockInstance implements Serializable {
 
     private long waitTimeMs = -1L;
 
+    private boolean waiterRetry;
+
     public LockInstance(String key, Long expiredTime, String lockType) {
         this.key = key;
         this.expiredTime = expiredTime;
@@ -130,6 +132,14 @@ public class LockInstance implements Serializable {
         this.waitTimeMs = waitTimeMs;
     }
 
+    public boolean isWaiterRetry() {
+        return waiterRetry;
+    }
+
+    public void setWaiterRetry(boolean waiterRetry) {
+        this.waiterRetry = waiterRetry;
+    }
+
     @Override
     public String toString() {
         return "LockInstance{"
@@ -139,6 +149,7 @@ public class LockInstance implements Serializable {
                 + ", lockType='" + lockType + '\''
                 + ", owner='" + owner + '\''
                 + ", waitTimeMs=" + waitTimeMs
+                + ", waiterRetry=" + waiterRetry
                 + '}';
     }
 }

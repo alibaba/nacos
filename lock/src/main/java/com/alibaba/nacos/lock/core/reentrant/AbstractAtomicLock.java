@@ -253,6 +253,29 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
     }
 
     /**
+     * Remove the first waiter entry matching the given owner.
+     *
+     * @param owner the owner to remove
+     * @return true if an entry was removed
+     */
+    public boolean removeStaleWaiter(String owner) {
+        lock.lock();
+        try {
+            Iterator<WaitEntry> iterator = waitQueue.iterator();
+            while (iterator.hasNext()) {
+                WaitEntry entry = iterator.next();
+                if (entry.getOwner().equals(owner)) {
+                    iterator.remove();
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
      * Clear all waiters from the queue.
      */
     public void clearWaiters() {

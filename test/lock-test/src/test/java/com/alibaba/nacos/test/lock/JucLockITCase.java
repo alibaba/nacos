@@ -32,6 +32,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -582,5 +583,174 @@ public class JucLockITCase extends BaseLockITCase {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    // ==================== FIFO 等待队列语义测试 ====================
+    /**
+     * <p>时间线：
+     *
+     * <pre>
+     * T=0ms     主线程：t0.lock() 成功，持有锁
+     * T=0ms     启动 N 个等待线程 t[1..N]
+     * T=1~N*ms  t[i]：tryLock(timeout) → 服务端锁被持有 → 按到达顺序入队
+     *             所有 t[i] 进入 waitForNotification() 阻塞
+     * T=allQueued  主线程：确认所有等待者已入队
+     * T=allQueued  主线程：t0.unlock() → 服务端通知队头 t[1]
+     *
+     * t[1] 被唤醒 → tryLock 成功 → 记录顺序=0 → unlock → 服务端通知 t[2]
+     * t[2] 被唤醒 → tryLock 成功 → 记录顺序=1 → unlock → 服务端通知 t[3]
+     * ...
+     * t[N] 被唤醒 → tryLock 成功 → 记录顺序=N-1 → unlock
+     *
+     * <p>验证：acquireOrder[i] 必须严格等于 i（FIFO 顺序）。
+     * Bug 下：acquireOrder 可能出现乱序（如 [0,2,1,3,...]）。
+     * </pre>
+     */
+    @Test
+    @DisplayName("JUC-021: FIFO 语义 - 多个等待者按顺序获取锁")
+    void testFifoMultipleWaitersOrdered() throws Exception {
+        final int waiterCount = 100;
+        String key = generateUniqueKey("juc-fifo-order");
+        NacosLock holderLock = getJucLockService().getReentrantLock(key);
+
+        // acquireOrder[i] 记录第 i 个获取锁的线程编号（0-based）
+        AtomicIntegerArray acquireOrder = new AtomicIntegerArray(waiterCount);
+        AtomicInteger acquireIndex = new AtomicInteger(0);
+        CountDownLatch allDone = new CountDownLatch(waiterCount);
+
+        // T=0: 主线程持有锁
+        holderLock.lock();
+
+        // 串行入队：逐个启动等待线程，每次 sleep 确保前一个已入队再启动下一个。
+        // NacosLock.lock() 内部先发 gRPC 请求（服务端串行处理入队），再 waitForNotification 阻塞。
+        // 200ms 足够一次 gRPC 往返 + Raft onApply 完成。
+        Thread[] waiters = new Thread[waiterCount];
+        for (int i = 0; i < waiterCount; i++) {
+            final int threadId = i;
+            NacosLock waiterLock = getJucLockService().getReentrantLock(key);
+            waiters[i] = new Thread(() -> {
+                try {
+                    // lock() 内部：lockWithResult(waiting) → 入队 → waitForNotification 阻塞
+                    waiterLock.lock();
+                    try {
+                        // 获取锁后记录自己的获取顺序
+                        int pos = acquireIndex.getAndIncrement();
+                        acquireOrder.set(pos, threadId);
+                    } finally {
+                        // 释放锁 → 服务端通知下一个等待者
+                        waiterLock.unlock();
+                        allDone.countDown();
+                    }
+                } catch (Exception e) {
+                    allDone.countDown();
+                }
+            });
+            waiters[i].start();
+            // 等待当前线程入队后再启动下一个，确保入队顺序 = [0,1,2,3,...]
+            Thread.sleep(200);
+        }
+
+        // 释放锁 → 服务端通知队头 → 链式传递
+        holderLock.unlock();
+
+        assertTrue(allDone.await(waiterCount, TimeUnit.SECONDS),
+                "All waiters should complete");
+
+        // 验证 FIFO 顺序：第 i 个获取锁的必须是线程 i
+        boolean fifo = true;
+        for (int i = 0; i < waiterCount; i++) {
+            if (acquireOrder.get(i) != i) {
+                fifo = false;
+                break;
+            }
+        }
+        assertTrue(fifo,
+                "等待者应按入队顺序依次获取锁。"
+                        + "实际获取顺序=" + orderToString(acquireOrder, waiterCount)
+                        + "，预期=[0,1,2,3,...]。"
+                        + "若乱序说明 FIFO 语义未被强制执行。");
+    }
+
+    /**
+     * <p>时间线：
+     *
+     * <pre>
+     * 场景：
+     *   主线程持有锁 → 多个等待者排队 → 主线程释放锁 → 新客户端立即 tryLock()
+     *
+     * 预期：
+     *   新客户端的 tryLock() 应返回 false，因为它不是队头等待者。
+     *   acquireLock() 检测到队列中有等待者，强制将新请求入队（返回 waiting），
+     *   而不是让新客户端直接获取锁。
+     *
+     * </pre>
+     */
+    @Test
+    @DisplayName("JUC-022: 有等待者时新客户端 tryLock 不能抢锁")
+    void testNewClientCannotStealLockWithWaiters() throws Exception {
+        final int waiterCount = 5;
+        String key = generateUniqueKey("juc-fifo-steal");
+        NacosLock holderLock = getJucLockService().getReentrantLock(key);
+
+        AtomicIntegerArray acquireOrder = new AtomicIntegerArray(waiterCount);
+        AtomicInteger acquireIndex = new AtomicInteger(0);
+        CountDownLatch allDone = new CountDownLatch(waiterCount);
+
+        // T=0: 主线程持有锁
+        holderLock.lock();
+
+        // 串行入队：逐个启动等待线程，确保入队顺序 = [0,1,2,3,4]
+        Thread[] waiters = new Thread[waiterCount];
+        for (int i = 0; i < waiterCount; i++) {
+            final int threadId = i;
+            NacosLock waiterLock = getJucLockService().getReentrantLock(key);
+            waiters[i] = new Thread(() -> {
+                try {
+                    waiterLock.lock();
+                    try {
+                        int pos = acquireIndex.getAndIncrement();
+                        acquireOrder.set(pos, threadId);
+                    } finally {
+                        waiterLock.unlock();
+                        allDone.countDown();
+                    }
+                } catch (Exception e) {
+                    allDone.countDown();
+                }
+            });
+            waiters[i].start();
+            Thread.sleep(200);
+        }
+
+        // 释放锁后立即用全新客户端 tryLock() → 应失败（队列中有等待者）
+        holderLock.unlock();
+        NacosLock stealerLock = getJucLockService().getReentrantLock(key);
+        boolean stolen = stealerLock.tryLock();
+        if (stolen) {
+            stealerLock.unlock();
+        }
+
+        assertFalse(stolen, "有等待者时新客户端不应通过 tryLock() 抢到锁");
+
+        // 等待所有等待者完成
+        assertTrue(allDone.await(waiterCount * 10L, TimeUnit.SECONDS),
+                "All waiters should complete");
+
+        // 验证 FIFO 顺序
+        for (int i = 0; i < waiterCount; i++) {
+            assertEquals(i, acquireOrder.get(i),
+                    "等待者应按入队顺序获取锁，实际=" + orderToString(acquireOrder, waiterCount));
+        }
+    }
+
+    private String orderToString(AtomicIntegerArray arr, int len) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < len; i++) {
+            if (i > 0) {
+                sb.append(",");
+            }
+            sb.append(arr.get(i));
+        }
+        return sb.append("]").toString();
     }
 }

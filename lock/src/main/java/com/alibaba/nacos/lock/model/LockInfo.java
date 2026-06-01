@@ -41,6 +41,8 @@ public class LockInfo implements Serializable {
 
     private long waitTimeMs;
 
+    private boolean waiterRetry;
+
     public LockInfo() {
     }
 
@@ -90,5 +92,13 @@ public class LockInfo implements Serializable {
 
     public void setWaitTimeMs(long waitTimeMs) {
         this.waitTimeMs = waitTimeMs;
+    }
+
+    public boolean isWaiterRetry() {
+        return waiterRetry;
+    }
+
+    public void setWaiterRetry(boolean waiterRetry) {
+        this.waiterRetry = waiterRetry;
     }
 }

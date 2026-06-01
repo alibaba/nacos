@@ -130,10 +130,14 @@ public class NacosLock implements Lock {
     @Override
     public void lock() {
         checkReentrantGuard();
+        boolean firstAttempt = true;
         while (true) {
             try {
                 LockInstance instance = buildInstance(-1);
                 instance.setWaitTimeMs(DEFAULT_SERVER_WAIT_TIME_MS);
+                if (!firstAttempt) {
+                    instance.setWaiterRetry(true);
+                }
                 grpcClient.registerForNotification(key, currentOwner());
                 LockResult result = grpcClient.lockWithResult(instance);
                 if (result.isSuccess()) {
@@ -144,6 +148,7 @@ public class NacosLock implements Lock {
                     }
                     return;
                 }
+                firstAttempt = false;
                 grpcClient.waitForNotification(key, currentOwner(), DEFAULT_LEASE_TIME_MS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -158,6 +163,7 @@ public class NacosLock implements Lock {
     @Override
     public void lockInterruptibly() throws InterruptedException {
         checkReentrantGuard();
+        boolean firstAttempt = true;
         while (true) {
             if (Thread.interrupted()) {
                 throw new InterruptedException();
@@ -165,6 +171,9 @@ public class NacosLock implements Lock {
             try {
                 LockInstance instance = buildInstance(-1);
                 instance.setWaitTimeMs(DEFAULT_SERVER_WAIT_TIME_MS);
+                if (!firstAttempt) {
+                    instance.setWaiterRetry(true);
+                }
                 grpcClient.registerForNotification(key, currentOwner());
                 LockResult result = grpcClient.lockWithResult(instance);
                 if (result.isSuccess()) {
@@ -175,6 +184,7 @@ public class NacosLock implements Lock {
                     }
                     return;
                 }
+                firstAttempt = false;
                 grpcClient.waitForNotification(key, currentOwner(), DEFAULT_LEASE_TIME_MS);
             } catch (NacosException e) {
                 LOGGER.error("Failed to acquire lock, key={}", key, e);
@@ -207,6 +217,7 @@ public class NacosLock implements Lock {
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         checkReentrantGuard();
         long deadline = System.currentTimeMillis() + unit.toMillis(time);
+        boolean firstAttempt = true;
         while (true) {
             LockInstance instance = buildInstance(-1);
             long remaining = deadline - System.currentTimeMillis();
@@ -214,6 +225,9 @@ public class NacosLock implements Lock {
                 return false;
             }
             instance.setWaitTimeMs(remaining);
+            if (!firstAttempt) {
+                instance.setWaiterRetry(true);
+            }
             try {
                 grpcClient.registerForNotification(key, currentOwner());
                 LockResult result = grpcClient.lockWithResult(instance);
@@ -225,6 +239,7 @@ public class NacosLock implements Lock {
                     }
                     return true;
                 }
+                firstAttempt = false;
                 grpcClient.waitForNotification(key, currentOwner(), remaining);
             } catch (NacosException e) {
                 grpcClient.cancelWait(key, currentOwner());

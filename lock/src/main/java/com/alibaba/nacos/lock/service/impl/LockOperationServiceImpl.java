@@ -175,7 +175,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                     && ((AbstractAtomicLock) mutexLock).hasWaiters();
             if (hasWaiters) {
                 AbstractAtomicLock atomicLock = (AbstractAtomicLock) mutexLock;
-                WaitEntry entry = atomicLock.pollFirstWaiter();
+                WaitEntry entry = atomicLock.peekFirstWaiter();
                 if (entry != null) {
                     LockKey lockKey = lockInfo.getKey();
                     LockNotificationRequest notification = LockNotificationRequest.available(
@@ -197,9 +197,36 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
         Boolean acquired = mutexLock.tryLock(lockInfo);
         if (acquired) {
-            int count = (mutexLock instanceof AbstractAtomicLock)
-                    ? ((AbstractAtomicLock) mutexLock).getReentrantCount() : 1;
-            return LockResult.success(count);
+            if (mutexLock instanceof AbstractAtomicLock) {
+                AbstractAtomicLock atomicLock = (AbstractAtomicLock) mutexLock;
+                if (atomicLock.hasWaiters()) {
+                    if (lockInfo.isWaiterRetry()) {
+                        WaitEntry head = atomicLock.peekFirstWaiter();
+                        if (head != null && head.getOwner().equals(lockInfo.getOwner())) {
+                            // Head waiter retrying after notification — remove stale queue entry
+                            atomicLock.pollFirstWaiter();
+                        } else {
+                            // Non-head waiter acquired due to timeout retry — undo to preserve FIFO.
+                            // forceRelease() + removeStaleWaiter() + addWaiter() is NOT atomic,
+                            // but safe because this method only runs inside the Raft onApply()
+                            // single-threaded state machine — no other request can observe the gap.
+                            atomicLock.forceRelease();
+                            atomicLock.removeStaleWaiter(lockInfo.getOwner());
+                            int position = atomicLock.addWaiter(lockInfo);
+                            notifyFirstWaiter(lockInfo.getKey(), atomicLock);
+                            return LockResult.waiting(position);
+                        }
+                    } else {
+                        // New request but queue has waiters — undo and enqueue (FIFO).
+                        // Same non-atomic gap as above; safe under Raft single-threaded apply.
+                        atomicLock.forceRelease();
+                        int position = atomicLock.addWaiter(lockInfo);
+                        return LockResult.waiting(position);
+                    }
+                }
+                return LockResult.success(atomicLock.getReentrantCount());
+            }
+            return LockResult.success(1);
         }
         if (lockInfo.getWaitTimeMs() > 0 && mutexLock instanceof AbstractAtomicLock) {
             AbstractAtomicLock atomicLock = (AbstractAtomicLock) mutexLock;
@@ -225,7 +252,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 if (atomicLock.isClear()) {
                     boolean hasWaiters = atomicLock.hasWaiters();
                     if (hasWaiters) {
-                        WaitEntry entry = atomicLock.pollFirstWaiter();
+                        WaitEntry entry = atomicLock.peekFirstWaiter();
                         if (entry != null) {
                             LockKey lockKey = lockInfo.getKey();
                             LockNotificationRequest notification = LockNotificationRequest.available(
@@ -252,6 +279,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         lockInfo.setOwner(lockInstance.getOwner());
         lockInfo.setConnectionId(connectionId);
         lockInfo.setWaitTimeMs(lockInstance.getWaitTimeMs());
+        lockInfo.setWaiterRetry(lockInstance.isWaiterRetry());
 
         long expiredTime = lockInstance.getExpiredTime();
         if (expiredTime < 0) {
@@ -390,7 +418,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     }
 
     private void notifyFirstWaiter(LockKey lockKey, AbstractAtomicLock atomicLock) {
-        WaitEntry entry = atomicLock.pollFirstWaiter();
+        WaitEntry entry = atomicLock.peekFirstWaiter();
         if (entry == null) {
             return;
         }

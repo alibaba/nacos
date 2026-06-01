@@ -142,10 +142,16 @@ public class LockGrpcClient extends AbstractLockClient {
         if (useWaitQueue) {
             registerForNotification(instance.getKey(), instance.getOwner());
         }
+        boolean firstAttempt = true;
         try {
             while (true) {
                 if (closed.get()) {
                     return false;
+                }
+                // After the first failed attempt, mark as waiter retry so the server
+                // knows this request comes from the wait queue (FIFO enforcement).
+                if (!firstAttempt) {
+                    instance.setWaiterRetry(true);
                 }
                 LockOperationRequest request = new LockOperationRequest();
                 request.setLockInstance(instance);
@@ -161,6 +167,7 @@ public class LockGrpcClient extends AbstractLockClient {
                 if (acquired) {
                     return true;
                 }
+                firstAttempt = false;
                 if (!useWaitQueue) {
                     return false;
                 }
