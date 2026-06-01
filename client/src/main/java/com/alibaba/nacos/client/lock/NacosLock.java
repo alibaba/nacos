@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.lock;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.lock.common.LockConstants;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.api.lock.model.LockResult;
 import com.alibaba.nacos.client.lock.exception.NacosLockException;
@@ -110,8 +111,25 @@ public class NacosLock implements Lock {
         return instance;
     }
 
+    /**
+     * Guard against non-reentrant lock reentry on the same thread.
+     *
+     * <p>For {@code NON_REENTRANT} locks, if the current thread already holds the lock
+     * ({@code localReentrantCount > 0}), a second acquisition attempt is immediately
+     * rejected with {@link IllegalMonitorStateException}. Without this client-side check,
+     * the request would be sent to the server, which rejects it and places the thread in
+     * the wait queue, causing self-deadlock (the thread waits for itself to release the lock).
+     */
+    private void checkReentrantGuard() {
+        if (LockConstants.NON_REENTRANT_LOCK_TYPE.equals(lockType) && localReentrantCount.get() > 0) {
+            throw new IllegalMonitorStateException(
+                    "Non-reentrant lock does not allow reentry on the same thread, key=" + key);
+        }
+    }
+
     @Override
     public void lock() {
+        checkReentrantGuard();
         while (true) {
             try {
                 LockInstance instance = buildInstance(-1);
@@ -139,6 +157,7 @@ public class NacosLock implements Lock {
 
     @Override
     public void lockInterruptibly() throws InterruptedException {
+        checkReentrantGuard();
         while (true) {
             if (Thread.interrupted()) {
                 throw new InterruptedException();
@@ -166,6 +185,7 @@ public class NacosLock implements Lock {
 
     @Override
     public boolean tryLock() {
+        checkReentrantGuard();
         try {
             LockInstance instance = buildInstance(-1);
             LockResult result = grpcClient.lockWithResult(instance);
@@ -185,6 +205,7 @@ public class NacosLock implements Lock {
 
     @Override
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        checkReentrantGuard();
         long deadline = System.currentTimeMillis() + unit.toMillis(time);
         while (true) {
             LockInstance instance = buildInstance(-1);
