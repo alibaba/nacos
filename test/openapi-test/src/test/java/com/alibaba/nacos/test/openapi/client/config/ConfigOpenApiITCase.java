@@ -20,26 +20,15 @@ import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.test.openapi.OpenApiBaseITCase;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
@@ -71,45 +60,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author xiweng.yy
  */
-public class ConfigOpenApiITCase {
+public class ConfigOpenApiITCase extends OpenApiBaseITCase {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpenApiITCase.class);
+    private static final String CLIENT_CONFIG_PATH = nacosPath(Constants.CONFIG_V3_CLIENT_API_PATH);
     
-    private static final String NACOS_HOST = System.getProperty("nacos.host", "127.0.0.1");
-    
-    private static final String NACOS_PORT = System.getProperty("nacos.port", "8848");
-    
-    private static final String BASE_URL = "http://" + NACOS_HOST + ":" + NACOS_PORT;
-    
-    private static final String CLIENT_CONFIG_PATH = "/nacos" + Constants.CONFIG_V3_CLIENT_API_PATH;
-    
-    private static final String ADMIN_CONFIG_PATH = "/nacos" + Constants.CONFIG_ADMIN_V3_PATH;
+    private static final String ADMIN_CONFIG_PATH = nacosPath(Constants.CONFIG_ADMIN_V3_PATH);
     
     private static final String DEFAULT_NAMESPACE = "public";
     
     private static final String TEST_GROUP = "openapi_it_group";
     
-    private CloseableHttpClient httpClient;
-    
-    private NacosRestTemplate nacosRestTemplate;
-    
-    @BeforeEach
-    public void setUp() throws Exception {
-        httpClient = HttpClientBuilder.create().build();
-        nacosRestTemplate = new NacosRestTemplate(LOGGER,
-                new DefaultHttpClientRequest(httpClient, RequestConfig.DEFAULT));
-    }
-    
-    @AfterEach
-    public void tearDown() throws Exception {
-        nacosRestTemplate.close();
-    }
-    
     @Test
     public void testGetConfigWhenNotExists() throws Exception {
         String dataId = "openapi_it_absent_" + UUID.randomUUID();
         HttpRestResult<String> httpResult = getConfig(dataId, TEST_GROUP, DEFAULT_NAMESPACE);
-        LOGGER.debug("getConfig result: {}", JacksonUtils.toJson(httpResult));
+        logger().debug("getConfig result: {}", JacksonUtils.toJson(httpResult));
         assertTrue(httpResult.ok(), "HTTP status should be 2xx");
         assertNotNull(httpResult.getData());
         Result<ConfigQueryResponse> actual = JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {
@@ -121,143 +86,121 @@ public class ConfigOpenApiITCase {
     public void testGetConfigSuccessAfterPublish() throws Exception {
         String dataId = "openapi_it_ok_" + UUID.randomUUID();
         String content = "hello-openapi-it-" + UUID.randomUUID();
-        try {
-            assertTrue(publishConfig(dataId, TEST_GROUP, "", content));
-            Result<ConfigQueryResponse> actual = null;
-            int retryTime = 10;
-            while (retryTime-- > 0) {
-                HttpRestResult<String> httpResult = getConfig(dataId, TEST_GROUP, DEFAULT_NAMESPACE);
-                assertTrue(httpResult.ok());
-                actual = JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {
-                });
-                if (ErrorCode.SUCCESS.getCode().equals(actual.getCode())) {
-                    break;
-                }
-                // After publish success, nacos will async cache into disk from storage.
-                TimeUnit.MILLISECONDS.sleep(100);
+        assertTrue(publishConfig(dataId, TEST_GROUP, "", content));
+        addCleanup(() -> deleteConfig(dataId, TEST_GROUP, ""));
+        Result<ConfigQueryResponse> actual = null;
+        int retryTime = 10;
+        while (retryTime-- > 0) {
+            HttpRestResult<String> httpResult = getConfig(dataId, TEST_GROUP, DEFAULT_NAMESPACE);
+            assertTrue(httpResult.ok());
+            actual = JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {
+            });
+            if (ErrorCode.SUCCESS.getCode().equals(actual.getCode())) {
+                break;
             }
-            assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode(), "Expected success after retry, but not still failed.");
-            assertNotNull(actual.getData());
-            assertEquals(content, actual.getData().getContent());
-            assertEquals(MD5Utils.md5Hex(content, StandardCharsets.UTF_8.name()), actual.getData().getMd5());
-            assertTrue(actual.getData().getLastModified() > 0L);
-            assertNotNull(actual.getData().getContentType());
-            assertFalse(actual.getData().isBeta());
-        } finally {
-            deleteConfig(dataId, TEST_GROUP, "");
+            // After publish success, nacos will async cache into disk from storage.
+            TimeUnit.MILLISECONDS.sleep(100);
         }
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode(), "Expected success after retry, but not still failed.");
+        assertNotNull(actual.getData());
+        assertEquals(content, actual.getData().getContent());
+        assertEquals(MD5Utils.md5Hex(content, StandardCharsets.UTF_8.name()), actual.getData().getMd5());
+        assertTrue(actual.getData().getLastModified() > 0L);
+        assertNotNull(actual.getData().getContentType());
+        assertFalse(actual.getData().isBeta());
     }
     
     @Test
     public void testGetConfigOmitNamespaceUsesPublic() throws Exception {
         String dataId = "openapi_it_public_" + UUID.randomUUID();
         String content = "ns-default";
-        try {
-            assertTrue(publishConfig(dataId, TEST_GROUP, "", content));
-            String url = BASE_URL + CLIENT_CONFIG_PATH;
-            Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", TEST_GROUP);
-            Result<ConfigQueryResponse> actual = null;
-            int retryTime = 10;
-            while (retryTime-- > 0) {
-                HttpRestResult<String> httpResult = nacosRestTemplate.get(url, Header.EMPTY, query, String.class);
-                assertTrue(httpResult.ok());
-                actual = JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {
-                });
-                if (ErrorCode.SUCCESS.getCode().equals(actual.getCode())) {
-                    break;
-                }
-                // After publish success, nacos will async cache into disk from storage.
-                TimeUnit.MILLISECONDS.sleep(100);
+        assertTrue(publishConfig(dataId, TEST_GROUP, "", content));
+        addCleanup(() -> deleteConfig(dataId, TEST_GROUP, ""));
+        Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", TEST_GROUP);
+        Result<ConfigQueryResponse> actual = null;
+        int retryTime = 10;
+        while (retryTime-- > 0) {
+            HttpRestResult<String> httpResult = nacosRestTemplate.get(url(CLIENT_CONFIG_PATH), Header.EMPTY, query,
+                    String.class);
+            assertTrue(httpResult.ok());
+            actual = JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {
+            });
+            if (ErrorCode.SUCCESS.getCode().equals(actual.getCode())) {
+                break;
             }
-            assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode(), "Expected success after retry, but not still failed.");
-            assertEquals(content, actual.getData().getContent());
-        } finally {
-            deleteConfig(dataId, TEST_GROUP, "");
+            // After publish success, nacos will async cache into disk from storage.
+            TimeUnit.MILLISECONDS.sleep(100);
         }
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode(), "Expected success after retry, but not still failed.");
+        assertEquals(content, actual.getData().getContent());
     }
     
     @Test
     public void testGetConfigWrongNamespaceNotFound() throws Exception {
         String dataId = "openapi_it_tenant_" + UUID.randomUUID();
         String alienNamespace = "openapi_it_other_ns_" + UUID.randomUUID();
-        try {
-            assertTrue(publishConfig(dataId, TEST_GROUP, "", "only-in-public"));
-            HttpRestResult<String> httpResult = getConfig(dataId, TEST_GROUP, alienNamespace);
-            assertTrue(httpResult.ok());
-            Result<ConfigQueryResponse> actual = JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {
-            });
-            assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode(), actual.getCode());
-        } finally {
-            deleteConfig(dataId, TEST_GROUP, "");
-        }
+        assertTrue(publishConfig(dataId, TEST_GROUP, "", "only-in-public"));
+        addCleanup(() -> deleteConfig(dataId, TEST_GROUP, ""));
+        HttpRestResult<String> httpResult = getConfig(dataId, TEST_GROUP, alienNamespace);
+        assertTrue(httpResult.ok());
+        Result<ConfigQueryResponse> actual = JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {
+        });
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode(), actual.getCode());
     }
     
     @Test
     public void testGetConfigMissingDataIdReturnsBadRequest() throws Exception {
-        String url = BASE_URL + CLIENT_CONFIG_PATH;
         Query query = Query.newInstance().addParam("groupName", TEST_GROUP).addParam("namespaceId", DEFAULT_NAMESPACE);
-        assertPlainBadRequest(rawGet(url, query), "dataId");
+        assertPlainBadRequest(getRaw(CLIENT_CONFIG_PATH, query), "dataId");
     }
     
     @Test
     public void testGetConfigMissingGroupNameReturnsBadRequest() throws Exception {
-        String url = BASE_URL + CLIENT_CONFIG_PATH;
         Query query = Query.newInstance().addParam("dataId", "any").addParam("namespaceId", DEFAULT_NAMESPACE);
-        assertPlainBadRequest(rawGet(url, query), "groupName");
+        assertPlainBadRequest(getRaw(CLIENT_CONFIG_PATH, query), "groupName");
     }
     
     @Test
     public void testGetConfigLegacyGroupParameterDoesNotReplaceGroupName() throws Exception {
-        String url = BASE_URL + CLIENT_CONFIG_PATH;
         Query query = Query.newInstance().addParam("dataId", "any").addParam("group", TEST_GROUP)
                 .addParam("namespaceId", DEFAULT_NAMESPACE);
-        assertPlainBadRequest(rawGet(url, query), "groupName");
+        assertPlainBadRequest(getRaw(CLIENT_CONFIG_PATH, query), "groupName");
     }
     
     @Test
     public void testGetConfigInvalidNamespaceReturnsBadRequest() throws Exception {
-        String url = BASE_URL + CLIENT_CONFIG_PATH;
         Query query = Query.newInstance().addParam("dataId", "any").addParam("groupName", TEST_GROUP)
                 .addParam("namespaceId", "invalid namespace");
-        assertBadRequestResult(rawGet(url, query), ErrorCode.PARAMETER_VALIDATE_ERROR, "namespaceId");
+        assertBadRequestResult(getRaw(CLIENT_CONFIG_PATH, query), ErrorCode.PARAMETER_VALIDATE_ERROR, "namespaceId");
     }
     
     private HttpRestResult<String> getConfig(String dataId, String group, String namespace) throws Exception {
-        String url = BASE_URL + CLIENT_CONFIG_PATH;
         Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", group)
                 .addParam("namespaceId", namespace);
-        return nacosRestTemplate.get(url, Header.EMPTY, query, String.class);
-    }
-    
-    private HttpResponse rawGet(String url, Query query) throws Exception {
-        HttpGet request = new HttpGet(url + "?" + query.toQueryUrl());
-        try (CloseableHttpResponse response = httpClient.execute(request)) {
-            String body = null == response.getEntity() ? "" : EntityUtils.toString(response.getEntity());
-            return new HttpResponse(response.getCode(), body);
-        }
+        return nacosRestTemplate.get(url(CLIENT_CONFIG_PATH), Header.EMPTY, query, String.class);
     }
     
     private void assertBadRequestResult(HttpResponse response, ErrorCode errorCode, String expectedData)
             throws Exception {
-        assertEquals(400, response.statusCode, response.body);
-        Result<String> actual = JacksonUtils.toObj(response.body, new TypeReference<>() {
+        assertEquals(400, response.code(), response.body());
+        Result<String> actual = JacksonUtils.toObj(response.body(), new TypeReference<>() {
         });
-        assertEquals(errorCode.getCode(), actual.getCode(), response.body);
-        assertNotNull(actual.getMessage(), response.body);
-        assertNotNull(actual.getData(), response.body);
-        assertTrue(actual.getData().contains(expectedData), response.body);
+        assertEquals(errorCode.getCode(), actual.getCode(), response.body());
+        assertNotNull(actual.getMessage(), response.body());
+        assertNotNull(actual.getData(), response.body());
+        assertTrue(actual.getData().contains(expectedData), response.body());
     }
     
     private void assertPlainBadRequest(HttpResponse response, String expectedField) {
-        assertEquals(400, response.statusCode, response.body);
-        assertTrue(response.body.contains("Required parameter"), response.body);
-        assertTrue(response.body.contains(expectedField), response.body);
+        assertEquals(400, response.code(), response.body());
+        assertTrue(response.body().contains("Required parameter"), response.body());
+        assertTrue(response.body().contains(expectedField), response.body());
     }
     
     private boolean publishConfig(String dataId, String groupName, String namespaceId, String content) throws Exception {
-        String url = BASE_URL + ADMIN_CONFIG_PATH;
         Map<String, String> form = buildPublishForm(dataId, groupName, namespaceId, content);
-        HttpRestResult<String> httpResult = nacosRestTemplate.postForm(url, Header.EMPTY, form, String.class);
+        HttpRestResult<String> httpResult = nacosRestTemplate.postForm(url(ADMIN_CONFIG_PATH), Header.EMPTY, form,
+                String.class);
         assertTrue(httpResult.ok(), "publish HTTP status should be 2xx, body=" + httpResult.getData());
         JsonNode root = JacksonUtils.toObj(httpResult.getData());
         assertNotNull(root);
@@ -266,12 +209,12 @@ public class ConfigOpenApiITCase {
     }
     
     private void deleteConfig(String dataId, String groupName, String namespaceId) throws Exception {
-        String url = BASE_URL + ADMIN_CONFIG_PATH;
         Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", groupName)
                 .addParam("namespaceId", namespaceId).addParam("tag", "");
-        HttpRestResult<String> httpResult = nacosRestTemplate.delete(url, Header.EMPTY, query, String.class);
+        HttpRestResult<String> httpResult = nacosRestTemplate.delete(url(ADMIN_CONFIG_PATH), Header.EMPTY, query,
+                String.class);
         if (!httpResult.ok()) {
-            LOGGER.warn("deleteConfig non-OK: code={} body={}", httpResult.getCode(), httpResult.getData());
+            logger().warn("deleteConfig non-OK: code={} body={}", httpResult.getCode(), httpResult.getData());
         }
     }
     
@@ -295,8 +238,5 @@ public class ConfigOpenApiITCase {
         form.put("type", "");
         form.put("schema", "");
         return form;
-    }
-    
-    private record HttpResponse(int statusCode, String body) {
     }
 }

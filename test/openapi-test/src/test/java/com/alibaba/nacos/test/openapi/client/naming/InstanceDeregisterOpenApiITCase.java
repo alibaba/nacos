@@ -20,25 +20,14 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.test.openapi.OpenApiBaseITCase;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.hc.client5.http.classic.methods.HttpDelete;
-import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -69,40 +58,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author xiweng.yy
  */
-public class InstanceDeregisterOpenApiITCase {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceDeregisterOpenApiITCase.class);
-    
-    private static final String NACOS_HOST = System.getProperty("nacos.host", "127.0.0.1");
-    
-    private static final String NACOS_PORT = System.getProperty("nacos.port", "8848");
-    
-    private static final String BASE_URL = "http://" + NACOS_HOST + ":" + NACOS_PORT;
+public class InstanceDeregisterOpenApiITCase extends OpenApiBaseITCase {
     
     private static final String INSTANCE_PATH =
-            "/nacos" + UtilsAndCommons.INSTANCE_V3_CLIENT_API_PATH;
+            nacosPath(UtilsAndCommons.INSTANCE_V3_CLIENT_API_PATH);
     
     private static final String INSTANCE_LIST_PATH = INSTANCE_PATH + "/list";
     
     private static final String TEST_GROUP = "OPENAPI_IT_DEREGISTER_GROUP";
     
     private static final String TEST_CLUSTER = "openapi-it-deregister-cluster";
-    
-    private CloseableHttpClient httpClient;
-    
-    private NacosRestTemplate nacosRestTemplate;
-    
-    @BeforeEach
-    public void setUp() throws Exception {
-        httpClient = HttpClientBuilder.create().build();
-        nacosRestTemplate = new NacosRestTemplate(LOGGER,
-                new DefaultHttpClientRequest(httpClient, RequestConfig.DEFAULT));
-    }
-    
-    @AfterEach
-    public void tearDown() throws Exception {
-        nacosRestTemplate.close();
-    }
     
     @Test
     public void testDeregisterDefaultIdentityRemovesInstance() throws Exception {
@@ -111,10 +76,10 @@ public class InstanceDeregisterOpenApiITCase {
         int port = 9201;
         register(serviceName, ip, port, UtilsAndCommons.DEFAULT_CLUSTER_NAME, null);
         assertNotNull(waitUntilInstanceVisible(serviceName, null, UtilsAndCommons.DEFAULT_CLUSTER_NAME, ip, port));
-        
+
         assertDeregisterOk(Query.newInstance().addParam("serviceName", serviceName).addParam("ip", ip)
                 .addParam("port", String.valueOf(port)));
-        
+
         assertEventuallyAbsent(serviceName, null, UtilsAndCommons.DEFAULT_CLUSTER_NAME, ip, port);
     }
     
@@ -123,21 +88,16 @@ public class InstanceDeregisterOpenApiITCase {
         String serviceName = "openapi-it-deregister-isolated-" + UUID.randomUUID();
         String targetIp = "10.13.0.2";
         String otherIp = "10.13.0.3";
-        try {
-            register(serviceName, targetIp, 9202, TEST_CLUSTER, TEST_GROUP);
-            register(serviceName, otherIp, 9203, TEST_CLUSTER, null);
-            assertNotNull(waitUntilInstanceVisible(serviceName, TEST_GROUP, TEST_CLUSTER, targetIp, 9202));
-            assertNotNull(waitUntilInstanceVisible(serviceName, null, TEST_CLUSTER, otherIp, 9203));
-            
-            assertDeregisterOk(baseInstanceQuery(serviceName, targetIp, 9202).addParam("groupName", TEST_GROUP)
-                    .addParam("clusterName", TEST_CLUSTER));
-            
-            assertEventuallyAbsent(serviceName, TEST_GROUP, TEST_CLUSTER, targetIp, 9202);
-            assertNotNull(waitUntilInstanceVisible(serviceName, null, TEST_CLUSTER, otherIp, 9203));
-        } finally {
-            deregisterQuietly(serviceName, targetIp, 9202, TEST_CLUSTER, TEST_GROUP);
-            deregisterQuietly(serviceName, otherIp, 9203, TEST_CLUSTER, null);
-        }
+        register(serviceName, targetIp, 9202, TEST_CLUSTER, TEST_GROUP);
+        register(serviceName, otherIp, 9203, TEST_CLUSTER, null);
+        assertNotNull(waitUntilInstanceVisible(serviceName, TEST_GROUP, TEST_CLUSTER, targetIp, 9202));
+        assertNotNull(waitUntilInstanceVisible(serviceName, null, TEST_CLUSTER, otherIp, 9203));
+
+        assertDeregisterOk(baseInstanceQuery(serviceName, targetIp, 9202).addParam("groupName", TEST_GROUP)
+                .addParam("clusterName", TEST_CLUSTER));
+
+        assertEventuallyAbsent(serviceName, TEST_GROUP, TEST_CLUSTER, targetIp, 9202);
+        assertNotNull(waitUntilInstanceVisible(serviceName, null, TEST_CLUSTER, otherIp, 9203));
     }
     
     @Test
@@ -181,11 +141,12 @@ public class InstanceDeregisterOpenApiITCase {
             String groupName) throws Exception {
         Query query = baseInstanceQuery(serviceName, ip, port).addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
-        HttpRestResult<String> restResult = nacosRestTemplate.postForm(BASE_URL + INSTANCE_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(INSTANCE_PATH),
                 Header.EMPTY, query, Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(), "register HTTP status should be 2xx, body=" + restResult.getData());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), root.get("code").asInt(), restResult.getData());
+        addCleanup(() -> deregisterQuietly(serviceName, ip, port, clusterName, groupName));
     }
     
     private void assertDeregisterOk(Query query) throws Exception {
@@ -196,7 +157,7 @@ public class InstanceDeregisterOpenApiITCase {
     }
     
     private Result<String> deregister(Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.delete(BASE_URL + INSTANCE_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(url(INSTANCE_PATH),
                 Header.EMPTY, query, String.class);
         assertTrue(restResult.ok(), "deregister HTTP status should be 2xx, body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
@@ -207,31 +168,22 @@ public class InstanceDeregisterOpenApiITCase {
             String groupName) throws Exception {
         Query query = baseInstanceQuery(serviceName, ip, port).addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
-        HttpRestResult<String> restResult = nacosRestTemplate.delete(BASE_URL + INSTANCE_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(url(INSTANCE_PATH),
                 Header.EMPTY, query, String.class);
         if (!restResult.ok()) {
-            LOGGER.warn("deregister instance non-OK: code={} body={}", restResult.getCode(),
+            logger().warn("deregister instance non-OK: code={} body={}", restResult.getCode(),
                     restResult.getData());
         }
     }
     
     private void assertBadRequest(Query query, ErrorCode errorCode, String expectedData) throws Exception {
-        HttpResponse response = deleteRaw(query);
-        assertEquals(400, response.code, response.body);
-        JsonNode root = JacksonUtils.toObj(response.body);
+        HttpResponse response = deleteRaw(INSTANCE_PATH, query);
+        assertEquals(400, response.code(), response.body());
+        JsonNode root = JacksonUtils.toObj(response.body());
         assertNotNull(root);
-        assertEquals(errorCode.getCode(), root.get("code").asInt(), response.body);
-        assertNotNull(root.get("message").asText(), response.body);
-        assertTrue(root.get("data").asText().contains(expectedData), response.body);
-    }
-    
-    private HttpResponse deleteRaw(Query query) throws Exception {
-        HttpDelete httpDelete = new HttpDelete(BASE_URL + INSTANCE_PATH + "?" + query.toQueryUrl());
-        try (CloseableHttpResponse response = httpClient.execute(httpDelete)) {
-            String body = null == response.getEntity() ? ""
-                    : EntityUtils.toString(response.getEntity());
-            return new HttpResponse(response.getCode(), body);
-        }
+        assertEquals(errorCode.getCode(), root.get("code").asInt(), response.body());
+        assertNotNull(root.get("message").asText(), response.body());
+        assertTrue(root.get("data").asText().contains(expectedData), response.body());
     }
     
     private Instance waitUntilInstanceVisible(String serviceName, String groupName,
@@ -270,7 +222,7 @@ public class InstanceDeregisterOpenApiITCase {
         Query query = Query.newInstance().addParam("serviceName", serviceName)
                 .addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
-        HttpRestResult<String> restResult = nacosRestTemplate.get(BASE_URL + INSTANCE_LIST_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.get(url(INSTANCE_LIST_PATH),
                 Header.EMPTY, query, String.class);
         assertTrue(restResult.ok(), "list HTTP status should be 2xx, body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
@@ -280,12 +232,6 @@ public class InstanceDeregisterOpenApiITCase {
     private static Query baseInstanceQuery(String serviceName, String ip, int port) {
         return Query.newInstance().addParam("serviceName", serviceName).addParam("ip", ip)
                 .addParam("port", String.valueOf(port));
-    }
-    
-    private static void addIfNotBlank(Query query, String name, String value) {
-        if (null != value && !value.isBlank()) {
-            query.addParam(name, value);
-        }
     }
     
     private static Instance findInstance(List<Instance> instances, String ip, int port) {
@@ -298,8 +244,5 @@ public class InstanceDeregisterOpenApiITCase {
             }
         }
         return null;
-    }
-    
-    private record HttpResponse(int code, String body) {
     }
 }

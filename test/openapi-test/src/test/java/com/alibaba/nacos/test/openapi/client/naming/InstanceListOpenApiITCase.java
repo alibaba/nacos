@@ -21,25 +21,14 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.test.openapi.OpenApiBaseITCase;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -73,18 +62,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author xiweng.yy
  */
-public class InstanceListOpenApiITCase {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceListOpenApiITCase.class);
-    
-    private static final String NACOS_HOST = System.getProperty("nacos.host", "127.0.0.1");
-    
-    private static final String NACOS_PORT = System.getProperty("nacos.port", "8848");
-    
-    private static final String BASE_URL = "http://" + NACOS_HOST + ":" + NACOS_PORT;
+public class InstanceListOpenApiITCase extends OpenApiBaseITCase {
     
     private static final String INSTANCE_PATH =
-            "/nacos" + UtilsAndCommons.INSTANCE_V3_CLIENT_API_PATH;
+            nacosPath(UtilsAndCommons.INSTANCE_V3_CLIENT_API_PATH);
     
     private static final String INSTANCE_LIST_PATH = INSTANCE_PATH + "/list";
     
@@ -92,56 +73,33 @@ public class InstanceListOpenApiITCase {
     
     private static final String CUSTOM_GROUP = "OPENAPI_IT_GROUP";
     
-    private CloseableHttpClient httpClient;
-    
-    private NacosRestTemplate nacosRestTemplate;
-    
-    @BeforeEach
-    public void setUp() throws Exception {
-        httpClient = HttpClientBuilder.create().build();
-        nacosRestTemplate = new NacosRestTemplate(LOGGER,
-                new DefaultHttpClientRequest(httpClient, RequestConfig.DEFAULT));
-    }
-    
-    @AfterEach
-    public void tearDown() throws Exception {
-        nacosRestTemplate.close();
-    }
-    
     @Test
     public void testListDefaultNamespaceAndGroupFiltersDisabledInstances() throws Exception {
         String serviceName = "openapi-it-list-" + UUID.randomUUID();
         String enabledIp = "10.11.0.1";
         String disabledIp = "10.11.0.2";
         String otherClusterIp = "10.11.0.3";
-        try {
-            assertRegisterOk(serviceName, enabledIp, 9001, TEST_CLUSTER, true);
-            assertRegisterOk(serviceName, disabledIp, 9002, TEST_CLUSTER, false);
-            assertRegisterOk(serviceName, otherClusterIp, 9003, "other-" + TEST_CLUSTER, true);
-            
-            Result<List<Instance>> actual = waitUntilInstanceVisible(serviceName, TEST_CLUSTER,
-                    enabledIp, 9001);
-            assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-            assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());
-            assertNotNull(actual.getData());
-            assertTrue(containsInstance(actual.getData(), enabledIp, 9001));
-            assertFalse(containsInstance(actual.getData(), disabledIp, 9002),
-                    "client list API should filter enabled=false instances");
-            assertFalse(containsInstance(actual.getData(), otherClusterIp, 9003),
-                    "client list API should filter by clusterName");
-            
-            Instance enabled = findInstance(actual.getData(), enabledIp, 9001);
-            assertEquals(TEST_CLUSTER, enabled.getClusterName());
-            assertEquals(Constants.DEFAULT_GROUP + "@@" + serviceName, enabled.getServiceName());
-            assertTrue(enabled.isHealthy());
-            assertTrue(enabled.isEnabled());
-            assertEquals(1.0, enabled.getWeight(), 0.0001);
-            assertEquals("openapi-it", enabled.getMetadata().get("source"));
-        } finally {
-            deregister(serviceName, enabledIp, 9001, TEST_CLUSTER, null);
-            deregister(serviceName, disabledIp, 9002, TEST_CLUSTER, null);
-            deregister(serviceName, otherClusterIp, 9003, "other-" + TEST_CLUSTER, null);
-        }
+        assertRegisterOk(serviceName, enabledIp, 9001, TEST_CLUSTER, true);
+        assertRegisterOk(serviceName, disabledIp, 9002, TEST_CLUSTER, false);
+        assertRegisterOk(serviceName, otherClusterIp, 9003, "other-" + TEST_CLUSTER, true);
+
+        Result<List<Instance>> actual = waitUntilInstanceVisible(serviceName, TEST_CLUSTER, enabledIp, 9001);
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
+        assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());
+        assertNotNull(actual.getData());
+        assertTrue(containsInstance(actual.getData(), enabledIp, 9001));
+        assertFalse(containsInstance(actual.getData(), disabledIp, 9002),
+                "client list API should filter enabled=false instances");
+        assertFalse(containsInstance(actual.getData(), otherClusterIp, 9003),
+                "client list API should filter by clusterName");
+
+        Instance enabled = findInstance(actual.getData(), enabledIp, 9001);
+        assertEquals(TEST_CLUSTER, enabled.getClusterName());
+        assertEquals(Constants.DEFAULT_GROUP + "@@" + serviceName, enabled.getServiceName());
+        assertTrue(enabled.isHealthy());
+        assertTrue(enabled.isEnabled());
+        assertEquals(1.0, enabled.getWeight(), 0.0001);
+        assertEquals("openapi-it", enabled.getMetadata().get("source"));
     }
     
     @Test
@@ -150,26 +108,17 @@ public class InstanceListOpenApiITCase {
         String defaultClusterIp = "10.11.1.1";
         String customClusterIp = "10.11.1.2";
         String disabledIp = "10.11.1.3";
-        try {
-            assertRegisterOk(serviceName, defaultClusterIp, 9011,
-                    UtilsAndCommons.DEFAULT_CLUSTER_NAME, true);
-            assertRegisterOk(serviceName, customClusterIp, 9012, TEST_CLUSTER, true);
-            assertRegisterOk(serviceName, disabledIp, 9013, TEST_CLUSTER, false);
-            
-            Result<List<Instance>> actual = waitUntilInstanceVisible(serviceName, null,
-                    defaultClusterIp, 9011);
-            assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-            assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());
-            assertTrue(containsInstance(actual.getData(), defaultClusterIp, 9011));
-            assertTrue(containsInstance(actual.getData(), customClusterIp, 9012));
-            assertFalse(containsInstance(actual.getData(), disabledIp, 9013),
-                    "client list API should filter enabled=false instances without clusterName");
-        } finally {
-            deregister(serviceName, defaultClusterIp, 9011,
-                    UtilsAndCommons.DEFAULT_CLUSTER_NAME, null);
-            deregister(serviceName, customClusterIp, 9012, TEST_CLUSTER, null);
-            deregister(serviceName, disabledIp, 9013, TEST_CLUSTER, null);
-        }
+        assertRegisterOk(serviceName, defaultClusterIp, 9011, UtilsAndCommons.DEFAULT_CLUSTER_NAME, true);
+        assertRegisterOk(serviceName, customClusterIp, 9012, TEST_CLUSTER, true);
+        assertRegisterOk(serviceName, disabledIp, 9013, TEST_CLUSTER, false);
+
+        Result<List<Instance>> actual = waitUntilInstanceVisible(serviceName, null, defaultClusterIp, 9011);
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
+        assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());
+        assertTrue(containsInstance(actual.getData(), defaultClusterIp, 9011));
+        assertTrue(containsInstance(actual.getData(), customClusterIp, 9012));
+        assertFalse(containsInstance(actual.getData(), disabledIp, 9013),
+                "client list API should filter enabled=false instances without clusterName");
     }
     
     @Test
@@ -177,27 +126,21 @@ public class InstanceListOpenApiITCase {
         String serviceName = "openapi-it-list-group-" + UUID.randomUUID();
         String defaultGroupIp = "10.11.2.1";
         String customGroupIp = "10.11.2.2";
-        try {
-            assertRegisterOk(serviceName, defaultGroupIp, 9021, TEST_CLUSTER, true);
-            assertRegisterOk(serviceName, customGroupIp, 9022, TEST_CLUSTER, true, CUSTOM_GROUP);
-            
-            Result<List<Instance>> defaultGroup = waitUntilInstanceVisible(serviceName,
-                    TEST_CLUSTER, defaultGroupIp, 9021);
-            assertTrue(containsInstance(defaultGroup.getData(), defaultGroupIp, 9021));
-            assertFalse(containsInstance(defaultGroup.getData(), customGroupIp, 9022));
-            
-            Result<List<Instance>> customGroup = waitUntilInstanceVisible(serviceName, CUSTOM_GROUP,
-                    TEST_CLUSTER, customGroupIp, 9022, null);
-            assertEquals(ErrorCode.SUCCESS.getCode(), customGroup.getCode());
-            assertEquals(ErrorCode.SUCCESS.getMsg(), customGroup.getMessage());
-            assertTrue(containsInstance(customGroup.getData(), customGroupIp, 9022));
-            assertFalse(containsInstance(customGroup.getData(), defaultGroupIp, 9021));
-            assertEquals(CUSTOM_GROUP + "@@" + serviceName,
-                    findInstance(customGroup.getData(), customGroupIp, 9022).getServiceName());
-        } finally {
-            deregister(serviceName, defaultGroupIp, 9021, TEST_CLUSTER, null);
-            deregister(serviceName, customGroupIp, 9022, TEST_CLUSTER, CUSTOM_GROUP);
-        }
+        assertRegisterOk(serviceName, defaultGroupIp, 9021, TEST_CLUSTER, true);
+        assertRegisterOk(serviceName, customGroupIp, 9022, TEST_CLUSTER, true, CUSTOM_GROUP);
+
+        Result<List<Instance>> defaultGroup = waitUntilInstanceVisible(serviceName, TEST_CLUSTER, defaultGroupIp, 9021);
+        assertTrue(containsInstance(defaultGroup.getData(), defaultGroupIp, 9021));
+        assertFalse(containsInstance(defaultGroup.getData(), customGroupIp, 9022));
+
+        Result<List<Instance>> customGroup = waitUntilInstanceVisible(serviceName, CUSTOM_GROUP, TEST_CLUSTER,
+                customGroupIp, 9022, null);
+        assertEquals(ErrorCode.SUCCESS.getCode(), customGroup.getCode());
+        assertEquals(ErrorCode.SUCCESS.getMsg(), customGroup.getMessage());
+        assertTrue(containsInstance(customGroup.getData(), customGroupIp, 9022));
+        assertFalse(containsInstance(customGroup.getData(), defaultGroupIp, 9021));
+        assertEquals(CUSTOM_GROUP + "@@" + serviceName,
+                findInstance(customGroup.getData(), customGroupIp, 9022).getServiceName());
     }
     
     @Test
@@ -205,22 +148,17 @@ public class InstanceListOpenApiITCase {
         String serviceName = "openapi-it-list-healthy-" + UUID.randomUUID();
         String healthyIp = "10.11.3.1";
         String unhealthyIp = "10.11.3.2";
-        try {
-            assertRegisterOk(serviceName, healthyIp, 9031, TEST_CLUSTER, true, null, true);
-            assertRegisterOk(serviceName, unhealthyIp, 9032, TEST_CLUSTER, true, null, false);
-            
-            Result<List<Instance>> actual = waitUntilInstanceVisible(serviceName, null,
-                    TEST_CLUSTER, unhealthyIp, 9032, "true");
-            assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-            assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());
-            assertTrue(containsInstance(actual.getData(), healthyIp, 9031));
-            assertTrue(containsInstance(actual.getData(), unhealthyIp, 9032),
-                    "client list API passes healthOnly=false even when healthyOnly=true");
-            assertFalse(findInstance(actual.getData(), unhealthyIp, 9032).isHealthy());
-        } finally {
-            deregister(serviceName, healthyIp, 9031, TEST_CLUSTER, null);
-            deregister(serviceName, unhealthyIp, 9032, TEST_CLUSTER, null);
-        }
+        assertRegisterOk(serviceName, healthyIp, 9031, TEST_CLUSTER, true, null, true);
+        assertRegisterOk(serviceName, unhealthyIp, 9032, TEST_CLUSTER, true, null, false);
+
+        Result<List<Instance>> actual = waitUntilInstanceVisible(serviceName, null, TEST_CLUSTER, unhealthyIp, 9032,
+                "true");
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
+        assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());
+        assertTrue(containsInstance(actual.getData(), healthyIp, 9031));
+        assertTrue(containsInstance(actual.getData(), unhealthyIp, 9032),
+                "client list API passes healthOnly=false even when healthyOnly=true");
+        assertFalse(findInstance(actual.getData(), unhealthyIp, 9032).isHealthy());
     }
     
     @Test
@@ -236,11 +174,11 @@ public class InstanceListOpenApiITCase {
     @Test
     public void testListMissingServiceNameReturnsBadRequestResultBody() throws Exception {
         HttpResponse response = getRaw(INSTANCE_LIST_PATH + "?clusterName=" + TEST_CLUSTER);
-        assertEquals(400, response.code);
-        JsonNode root = JacksonUtils.toObj(response.body);
+        assertEquals(400, response.code());
+        JsonNode root = JacksonUtils.toObj(response.body());
         assertNotNull(root);
         assertEquals(ErrorCode.PARAMETER_MISSING.getCode(), root.get("code").asInt(),
-                response.body);
+                response.body());
         assertTrue(root.get("message").asText().contains("parameter"));
         assertTrue(root.get("data").asText().contains("serviceName"));
     }
@@ -259,7 +197,7 @@ public class InstanceListOpenApiITCase {
             boolean enabled, String groupName, boolean healthy) throws Exception {
         Query query = buildInstanceQuery(serviceName, ip, port, clusterName, enabled, groupName,
                 healthy);
-        HttpRestResult<String> restResult = nacosRestTemplate.postForm(BASE_URL + INSTANCE_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(INSTANCE_PATH),
                 Header.EMPTY, query, Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(),
                 "register HTTP status should be 2xx, body=" + restResult.getData());
@@ -267,6 +205,7 @@ public class InstanceListOpenApiITCase {
         assertNotNull(root);
         assertEquals(ErrorCode.SUCCESS.getCode(), root.get("code").asInt(), restResult.getData());
         assertEquals("ok", root.get("data").asText());
+        addCleanup(() -> deregister(serviceName, ip, port, clusterName, groupName));
     }
     
     private void deregister(String serviceName, String ip, int port, String clusterName,
@@ -274,10 +213,10 @@ public class InstanceListOpenApiITCase {
         Query query = Query.newInstance().addParam("serviceName", serviceName).addParam("ip", ip)
                 .addParam("port", String.valueOf(port)).addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
-        HttpRestResult<String> restResult = nacosRestTemplate.delete(BASE_URL + INSTANCE_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(url(INSTANCE_PATH),
                 Header.EMPTY, query, String.class);
         if (!restResult.ok()) {
-            LOGGER.warn("deregister instance non-OK: code={} body={}", restResult.getCode(),
+            logger().warn("deregister instance non-OK: code={} body={}", restResult.getCode(),
                     restResult.getData());
         }
     }
@@ -309,20 +248,11 @@ public class InstanceListOpenApiITCase {
         addIfNotBlank(query, "groupName", groupName);
         addIfNotBlank(query, "clusterName", clusterName);
         addIfNotBlank(query, "healthyOnly", healthyOnly);
-        HttpRestResult<String> restResult = nacosRestTemplate.get(BASE_URL + INSTANCE_LIST_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.get(url(INSTANCE_LIST_PATH),
                 Header.EMPTY, query, String.class);
         assertTrue(restResult.ok(), "list HTTP status should be 2xx, body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
         });
-    }
-    
-    private HttpResponse getRaw(String pathAndQuery) throws Exception {
-        HttpGet httpGet = new HttpGet(BASE_URL + pathAndQuery);
-        try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
-            String body = null == response.getEntity() ? ""
-                    : EntityUtils.toString(response.getEntity());
-            return new HttpResponse(response.getCode(), body);
-        }
     }
     
     private static Query buildInstanceQuery(String serviceName, String ip, int port,
@@ -334,12 +264,6 @@ public class InstanceListOpenApiITCase {
                 .addParam("metadata", "source=openapi-it");
         addIfNotBlank(query, "groupName", groupName);
         return query;
-    }
-    
-    private static void addIfNotBlank(Query query, String name, String value) {
-        if (null != value && !value.isBlank()) {
-            query.addParam(name, value);
-        }
     }
     
     private static boolean containsInstance(List<Instance> instances, String ip, int port) {
@@ -356,8 +280,5 @@ public class InstanceListOpenApiITCase {
             }
         }
         return null;
-    }
-    
-    private record HttpResponse(int code, String body) {
     }
 }

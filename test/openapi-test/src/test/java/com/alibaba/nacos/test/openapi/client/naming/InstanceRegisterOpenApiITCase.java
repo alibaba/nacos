@@ -21,25 +21,14 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.test.openapi.OpenApiBaseITCase;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -72,18 +61,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author xiweng.yy
  */
-public class InstanceRegisterOpenApiITCase {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceRegisterOpenApiITCase.class);
-    
-    private static final String NACOS_HOST = System.getProperty("nacos.host", "127.0.0.1");
-    
-    private static final String NACOS_PORT = System.getProperty("nacos.port", "8848");
-    
-    private static final String BASE_URL = "http://" + NACOS_HOST + ":" + NACOS_PORT;
+public class InstanceRegisterOpenApiITCase extends OpenApiBaseITCase {
     
     private static final String INSTANCE_PATH =
-            "/nacos" + UtilsAndCommons.INSTANCE_V3_CLIENT_API_PATH;
+            nacosPath(UtilsAndCommons.INSTANCE_V3_CLIENT_API_PATH);
     
     private static final String INSTANCE_LIST_PATH = INSTANCE_PATH + "/list";
     
@@ -91,44 +72,23 @@ public class InstanceRegisterOpenApiITCase {
     
     private static final String TEST_CLUSTER = "openapi-it-register-cluster";
     
-    private CloseableHttpClient httpClient;
-    
-    private NacosRestTemplate nacosRestTemplate;
-    
-    @BeforeEach
-    public void setUp() throws Exception {
-        httpClient = HttpClientBuilder.create().build();
-        nacosRestTemplate = new NacosRestTemplate(LOGGER,
-                new DefaultHttpClientRequest(httpClient, RequestConfig.DEFAULT));
-    }
-    
-    @AfterEach
-    public void tearDown() throws Exception {
-        nacosRestTemplate.close();
-    }
-    
     @Test
     public void testRegisterWithDefaultValuesMakesInstanceDiscoverable() throws Exception {
         String serviceName = "openapi-it-register-default-" + UUID.randomUUID();
         String ip = "10.12.0.1";
         int port = 9101;
-        try {
-            assertRegisterOk(Query.newInstance().addParam("serviceName", serviceName)
-                    .addParam("ip", ip).addParam("port", String.valueOf(port))
-                    .addParam("metadata", "source=openapi-it"));
-            
-            Instance actual = waitUntilInstanceVisible(serviceName, null,
-                    UtilsAndCommons.DEFAULT_CLUSTER_NAME, ip, port);
-            assertEquals(Constants.DEFAULT_GROUP + "@@" + serviceName, actual.getServiceName());
-            assertEquals(UtilsAndCommons.DEFAULT_CLUSTER_NAME, actual.getClusterName());
-            assertTrue(actual.isHealthy());
-            assertTrue(actual.isEnabled());
-            assertTrue(actual.isEphemeral());
-            assertEquals(1.0, actual.getWeight(), 0.0001);
-            assertEquals("openapi-it", actual.getMetadata().get("source"));
-        } finally {
-            deregister(serviceName, ip, port, UtilsAndCommons.DEFAULT_CLUSTER_NAME, null);
-        }
+        assertRegisterOk(Query.newInstance().addParam("serviceName", serviceName).addParam("ip", ip)
+                .addParam("port", String.valueOf(port)).addParam("metadata", "source=openapi-it"));
+        addCleanup(() -> deregister(serviceName, ip, port, UtilsAndCommons.DEFAULT_CLUSTER_NAME, null));
+
+        Instance actual = waitUntilInstanceVisible(serviceName, null, UtilsAndCommons.DEFAULT_CLUSTER_NAME, ip, port);
+        assertEquals(Constants.DEFAULT_GROUP + "@@" + serviceName, actual.getServiceName());
+        assertEquals(UtilsAndCommons.DEFAULT_CLUSTER_NAME, actual.getClusterName());
+        assertTrue(actual.isHealthy());
+        assertTrue(actual.isEnabled());
+        assertTrue(actual.isEphemeral());
+        assertEquals(1.0, actual.getWeight(), 0.0001);
+        assertEquals("openapi-it", actual.getMetadata().get("source"));
     }
     
     @Test
@@ -136,22 +96,18 @@ public class InstanceRegisterOpenApiITCase {
         String serviceName = "openapi-it-register-explicit-" + UUID.randomUUID();
         String ip = "10.12.0.2";
         int port = 9102;
-        try {
-            assertRegisterOk(baseInstanceQuery(serviceName, ip, port).addParam("groupName", TEST_GROUP)
-                    .addParam("clusterName", TEST_CLUSTER).addParam("healthy", "false")
-                    .addParam("enabled", "true").addParam("weight", "2.5")
-                    .addParam("metadata", "source=openapi-it,case=explicit"));
-            
-            Instance actual = waitUntilInstanceVisible(serviceName, TEST_GROUP, TEST_CLUSTER, ip, port);
-            assertEquals(TEST_GROUP + "@@" + serviceName, actual.getServiceName());
-            assertEquals(TEST_CLUSTER, actual.getClusterName());
-            assertFalse(actual.isHealthy());
-            assertTrue(actual.isEnabled());
-            assertEquals(2.5, actual.getWeight(), 0.0001);
-            assertEquals("explicit", actual.getMetadata().get("case"));
-        } finally {
-            deregister(serviceName, ip, port, TEST_CLUSTER, TEST_GROUP);
-        }
+        assertRegisterOk(baseInstanceQuery(serviceName, ip, port).addParam("groupName", TEST_GROUP)
+                .addParam("clusterName", TEST_CLUSTER).addParam("healthy", "false").addParam("enabled", "true")
+                .addParam("weight", "2.5").addParam("metadata", "source=openapi-it,case=explicit"));
+        addCleanup(() -> deregister(serviceName, ip, port, TEST_CLUSTER, TEST_GROUP));
+
+        Instance actual = waitUntilInstanceVisible(serviceName, TEST_GROUP, TEST_CLUSTER, ip, port);
+        assertEquals(TEST_GROUP + "@@" + serviceName, actual.getServiceName());
+        assertEquals(TEST_CLUSTER, actual.getClusterName());
+        assertFalse(actual.isHealthy());
+        assertTrue(actual.isEnabled());
+        assertEquals(2.5, actual.getWeight(), 0.0001);
+        assertEquals("explicit", actual.getMetadata().get("case"));
     }
     
     @Test
@@ -159,15 +115,12 @@ public class InstanceRegisterOpenApiITCase {
         String serviceName = "openapi-it-register-persistent-" + UUID.randomUUID();
         String ip = "10.12.0.3";
         int port = 9103;
-        try {
-            assertRegisterOk(baseInstanceQuery(serviceName, ip, port).addParam("clusterName", TEST_CLUSTER)
-                    .addParam("ephemeral", "false"));
-            
-            Instance actual = waitUntilInstanceVisible(serviceName, null, TEST_CLUSTER, ip, port);
-            assertFalse(actual.isEphemeral());
-        } finally {
-            deregister(serviceName, ip, port, TEST_CLUSTER, null);
-        }
+        assertRegisterOk(baseInstanceQuery(serviceName, ip, port).addParam("clusterName", TEST_CLUSTER)
+                .addParam("ephemeral", "false"));
+        addCleanup(() -> deregister(serviceName, ip, port, TEST_CLUSTER, null));
+
+        Instance actual = waitUntilInstanceVisible(serviceName, null, TEST_CLUSTER, ip, port);
+        assertFalse(actual.isEphemeral());
     }
     
     @Test
@@ -175,17 +128,14 @@ public class InstanceRegisterOpenApiITCase {
         String serviceName = "openapi-it-register-heartbeat-" + UUID.randomUUID();
         String ip = "10.12.0.4";
         int port = 9104;
-        try {
-            assertRegisterOk(baseInstanceQuery(serviceName, ip, port).addParam("clusterName", TEST_CLUSTER));
-            assertRegisterOk(baseInstanceQuery(serviceName, ip, port).addParam("clusterName", TEST_CLUSTER)
-                    .addParam("heartBeat", "true"));
-            
-            Instance actual = waitUntilInstanceVisible(serviceName, null, TEST_CLUSTER, ip, port);
-            assertEquals(ip, actual.getIp());
-            assertEquals(port, actual.getPort());
-        } finally {
-            deregister(serviceName, ip, port, TEST_CLUSTER, null);
-        }
+        assertRegisterOk(baseInstanceQuery(serviceName, ip, port).addParam("clusterName", TEST_CLUSTER));
+        addCleanup(() -> deregister(serviceName, ip, port, TEST_CLUSTER, null));
+        assertRegisterOk(baseInstanceQuery(serviceName, ip, port).addParam("clusterName", TEST_CLUSTER)
+                .addParam("heartBeat", "true"));
+
+        Instance actual = waitUntilInstanceVisible(serviceName, null, TEST_CLUSTER, ip, port);
+        assertEquals(ip, actual.getIp());
+        assertEquals(port, actual.getPort());
     }
     
     @Test
@@ -239,7 +189,7 @@ public class InstanceRegisterOpenApiITCase {
     }
     
     private Result<String> postInstance(Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.postForm(BASE_URL + INSTANCE_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(INSTANCE_PATH),
                 Header.EMPTY, query, Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(), "register HTTP status should be 2xx, body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
@@ -247,22 +197,13 @@ public class InstanceRegisterOpenApiITCase {
     }
     
     private void assertBadRequest(Query query, ErrorCode errorCode, String expectedData) throws Exception {
-        HttpResponse response = postRaw(query);
-        assertEquals(400, response.code, response.body);
-        JsonNode root = JacksonUtils.toObj(response.body);
+        HttpResponse response = postRaw(INSTANCE_PATH, query);
+        assertEquals(400, response.code(), response.body());
+        JsonNode root = JacksonUtils.toObj(response.body());
         assertNotNull(root);
-        assertEquals(errorCode.getCode(), root.get("code").asInt(), response.body);
-        assertNotNull(root.get("message").asText(), response.body);
-        assertTrue(root.get("data").asText().contains(expectedData), response.body);
-    }
-    
-    private HttpResponse postRaw(Query query) throws Exception {
-        HttpPost httpPost = new HttpPost(BASE_URL + INSTANCE_PATH + "?" + query.toQueryUrl());
-        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-            String body = null == response.getEntity() ? ""
-                    : EntityUtils.toString(response.getEntity());
-            return new HttpResponse(response.getCode(), body);
-        }
+        assertEquals(errorCode.getCode(), root.get("code").asInt(), response.body());
+        assertNotNull(root.get("message").asText(), response.body());
+        assertTrue(root.get("data").asText().contains(expectedData), response.body());
     }
     
     private Instance waitUntilInstanceVisible(String serviceName, String groupName,
@@ -287,7 +228,7 @@ public class InstanceRegisterOpenApiITCase {
         Query query = Query.newInstance().addParam("serviceName", serviceName)
                 .addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
-        HttpRestResult<String> restResult = nacosRestTemplate.get(BASE_URL + INSTANCE_LIST_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.get(url(INSTANCE_LIST_PATH),
                 Header.EMPTY, query, String.class);
         assertTrue(restResult.ok(), "list HTTP status should be 2xx, body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
@@ -299,10 +240,10 @@ public class InstanceRegisterOpenApiITCase {
         Query query = Query.newInstance().addParam("serviceName", serviceName).addParam("ip", ip)
                 .addParam("port", String.valueOf(port)).addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
-        HttpRestResult<String> restResult = nacosRestTemplate.delete(BASE_URL + INSTANCE_PATH,
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(url(INSTANCE_PATH),
                 Header.EMPTY, query, String.class);
         if (!restResult.ok()) {
-            LOGGER.warn("deregister instance non-OK: code={} body={}", restResult.getCode(),
+            logger().warn("deregister instance non-OK: code={} body={}", restResult.getCode(),
                     restResult.getData());
         }
     }
@@ -310,12 +251,6 @@ public class InstanceRegisterOpenApiITCase {
     private static Query baseInstanceQuery(String serviceName, String ip, int port) {
         return Query.newInstance().addParam("serviceName", serviceName).addParam("ip", ip)
                 .addParam("port", String.valueOf(port));
-    }
-    
-    private static void addIfNotBlank(Query query, String name, String value) {
-        if (null != value && !value.isBlank()) {
-            query.addParam(name, value);
-        }
     }
     
     private static Instance findInstance(List<Instance> instances, String ip, int port) {
@@ -328,8 +263,5 @@ public class InstanceRegisterOpenApiITCase {
             }
         }
         return null;
-    }
-    
-    private record HttpResponse(int code, String body) {
     }
 }
