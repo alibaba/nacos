@@ -19,6 +19,7 @@ package com.alibaba.nacos.lock;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.model.LockKey;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,11 +40,11 @@ public interface LockManager {
     AtomicLockService getMutexLock(LockKey lockKey);
     
     /**
-     * show all atomicLock entity to snapshot save.
+     * Show all atomicLock entities as an unmodifiable view.
      *
-     * @return Map
+     * @return unmodifiable map of all locks
      */
-    ConcurrentHashMap<LockKey, AtomicLockService> showLocks();
+    Map<LockKey, AtomicLockService> showLocks();
     
     /**
      * remove mutex lock.

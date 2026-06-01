@@ -62,11 +62,7 @@ public class ReentrantAtomicLock extends AbstractAtomicLock {
     @Override
     protected Boolean doUnLock(LockInfo lockInfo) {
         if (getReentrantCount() <= 0) {
-            setOwner(null);
-            setConnectionId(null);
-            setReentrantCount(0);
-            setExpiredTimestamp(0);
-            return true;
+            return false;
         }
         setReentrantCount(getReentrantCount() - 1);
         if (getReentrantCount() == 0) {

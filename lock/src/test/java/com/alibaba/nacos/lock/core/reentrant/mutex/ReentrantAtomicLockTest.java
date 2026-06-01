@@ -17,6 +17,7 @@
 package com.alibaba.nacos.lock.core.reentrant.mutex;
 
 import com.alibaba.nacos.lock.model.LockInfo;
+import com.alibaba.nacos.lock.model.LockKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -101,6 +102,23 @@ class ReentrantAtomicLockTest {
         assertTrue(lock.tryLock(lockInfo1));
         assertFalse(lock.tryLock(lockInfo2));
         assertEquals("owner-1", lock.getOwner());
+    }
+
+    @Test
+    void testUnlockWhenLockNotHeldShouldReturnFalse() {
+        // Lock is freshly created, never locked — reentrantCount == 0, owner == null
+        LockInfo emptyOwnerInfo = new LockInfo();
+        emptyOwnerInfo.setKey(new LockKey("test", "test-key"));
+        emptyOwnerInfo.setOwner(null);
+        emptyOwnerInfo.setEndTime(System.currentTimeMillis() + 30000);
+
+        // doUnLock is called because lockInfo.owner is null (bypasses owner check in unLock).
+        // BUG: doUnLock returns true when reentrantCount == 0, but the lock isn't held.
+        Boolean result = lock.unLock(emptyOwnerInfo);
+
+        assertFalse(result, "unlocking an unheld lock should return false");
+        assertNull(lock.getOwner());
+        assertEquals(0, lock.getReentrantCount());
     }
 
     @Test

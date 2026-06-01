@@ -25,6 +25,7 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.lock.LockManager;
+import com.alibaba.nacos.lock.NacosLockManager;
 import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.core.reentrant.mutex.MutexAtomicLock;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -111,7 +113,7 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
     }
     
     private InputStream dumpSnapshot() {
-        ConcurrentHashMap<LockKey, AtomicLockService> lockMap = lockManager.showLocks();
+        Map<LockKey, AtomicLockService> lockMap = lockManager.showLocks();
         return new ByteArrayInputStream(serializer.serialize(lockMap));
     }
     
@@ -161,7 +163,7 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
             }
         }
 
-        ConcurrentHashMap<LockKey, AtomicLockService> lockMap = lockManager.showLocks();
+        ConcurrentHashMap<LockKey, AtomicLockService> lockMap = getRawLockMap();
         //loadSnapshot
         lockMap.putAll(newData);
         migrateMutexAtomicLocks(lockMap);
@@ -176,6 +178,13 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
      *
      * @param lockMap the lock map containing deserialized locks
      */
+    private ConcurrentHashMap<LockKey, AtomicLockService> getRawLockMap() {
+        if (lockManager instanceof NacosLockManager nacosLockManager) {
+            return nacosLockManager.getRawLockMap();
+        }
+        throw new IllegalStateException("LockManager must be NacosLockManager for snapshot operations");
+    }
+
     private void migrateMutexAtomicLocks(ConcurrentHashMap<LockKey, AtomicLockService> lockMap) {
         for (AtomicLockService lockService : lockMap.values()) {
             if (lockService instanceof MutexAtomicLock) {

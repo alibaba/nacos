@@ -31,7 +31,7 @@ public class LockInfo implements Serializable {
 
     private LockKey key;
 
-    private Long endTime;
+    private long endTime;
 
     private Map<String, ? extends Serializable> params;
 
@@ -54,11 +54,11 @@ public class LockInfo implements Serializable {
         this.key = key;
     }
 
-    public Long getEndTime() {
+    public long getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(Long endTime) {
+    public void setEndTime(long endTime) {
         this.endTime = endTime;
     }
 

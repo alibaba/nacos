@@ -54,6 +54,9 @@ public class NonReentrantAtomicLock extends AbstractAtomicLock {
 
     @Override
     protected Boolean doUnLock(LockInfo lockInfo) {
+        if (getOwner() == null) {
+            return false;
+        }
         setOwner(null);
         setConnectionId(null);
         setReentrantCount(0);
