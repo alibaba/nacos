@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.adminapi.config;
 
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -49,6 +50,14 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
     protected static final String ADMIN_CONFIG_LISTENER_PATH = ADMIN_CONFIG_PATH + "/listener";
 
     protected static final String ADMIN_CONFIG_METADATA_PATH = ADMIN_CONFIG_PATH + "/metadata";
+
+    protected static final String ADMIN_CONFIG_BETA_PATH = ADMIN_CONFIG_PATH + "/beta";
+
+    protected static final String ADMIN_CONFIG_GRAY_PATH = ADMIN_CONFIG_PATH + "/gray";
+
+    protected static final String ADMIN_CONFIG_EXPORT_PATH = ADMIN_CONFIG_PATH + "/export";
+
+    protected static final String ADMIN_CONFIG_CLONE_PATH = ADMIN_CONFIG_PATH + "/clone";
 
     protected static final String ADMIN_HISTORY_PATH = nacosPath(Constants.HISTORY_ADMIN_V3_PATH);
 
@@ -85,6 +94,28 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
         return root;
     }
 
+    protected JsonNode publishBetaConfig(String dataId, String groupName, String namespaceId, String content,
+            String betaIps) throws Exception {
+        Header header = Header.newInstance().addParam("betaIps", betaIps);
+        JsonNode root = postFormOk(ADMIN_CONFIG_PATH, header,
+                buildPublishForm(dataId, groupName, namespaceId, content, DEFAULT_TYPE, "", ""));
+        assertTrue(root.get("data").asBoolean(), root.toString());
+        return root;
+    }
+
+    protected JsonNode publishGrayConfig(String dataId, String groupName, String namespaceId, String content,
+            String grayName, String grayRuleExp) throws Exception {
+        Map<String, String> form = buildPublishForm(dataId, groupName, namespaceId, content, DEFAULT_TYPE, "", "");
+        form.put("grayName", grayName);
+        form.put("grayType", "tagv2");
+        form.put("grayMatchRuleExp", grayRuleExp);
+        form.put("grayVersion", "1.0.0");
+        form.put("grayPriority", "1");
+        JsonNode root = postFormOk(ADMIN_CONFIG_GRAY_PATH, form);
+        assertTrue(root.get("data").asBoolean(), root.toString());
+        return root;
+    }
+
     protected JsonNode queryConfig(String dataId, String groupName, String namespaceId) throws Exception {
         return getJsonOk(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, namespaceId));
     }
@@ -105,6 +136,15 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected void deleteConfigQuietly(String dataId, String groupName, String namespaceId) throws Exception {
         deleteQuietly(ADMIN_CONFIG_PATH, configDeleteQuery(dataId, groupName, namespaceId));
+    }
+
+    protected void deleteBetaQuietly(String dataId, String groupName, String namespaceId) throws Exception {
+        deleteQuietly(ADMIN_CONFIG_BETA_PATH, configQuery(dataId, groupName, namespaceId));
+    }
+
+    protected void deleteGrayQuietly(String dataId, String groupName, String namespaceId, String grayName)
+            throws Exception {
+        deleteQuietly(ADMIN_CONFIG_GRAY_PATH, configQuery(dataId, groupName, namespaceId).addParam("grayName", grayName));
     }
 
     protected Query configQuery(String dataId, String groupName, String namespaceId) {

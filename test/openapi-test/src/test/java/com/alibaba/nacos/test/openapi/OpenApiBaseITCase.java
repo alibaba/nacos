@@ -32,8 +32,10 @@ import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
@@ -137,7 +139,11 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode postFormOk(String path, Map<String, String> form) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(path), Header.EMPTY, form, String.class);
+        return postFormOk(path, Header.EMPTY, form);
+    }
+
+    protected JsonNode postFormOk(String path, Header header, Map<String, String> form) throws Exception {
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(path), header, form, String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -153,6 +159,20 @@ public abstract class OpenApiBaseITCase {
         JsonNode root = JacksonUtils.toObj(restResult.getData());
         assertSuccess(root);
         return root;
+    }
+
+    protected JsonNode postJsonOk(String path, Query query, String json) throws Exception {
+        HttpResponse response = postJsonRaw(path, query, json);
+        assertEquals(200, response.code(), response.body());
+        JsonNode root = JacksonUtils.toObj(response.body());
+        assertSuccess(root);
+        return root;
+    }
+
+    protected HttpResponse postJsonRaw(String path, Query query, String json) throws Exception {
+        HttpPost post = new HttpPost(url(path + "?" + query.toQueryUrl()));
+        post.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
+        return executeRaw(post);
     }
 
     protected JsonNode putFormOk(String path, Map<String, String> form) throws Exception {
