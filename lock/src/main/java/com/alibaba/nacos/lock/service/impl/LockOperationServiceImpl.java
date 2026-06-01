@@ -52,7 +52,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
@@ -134,6 +136,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 data = renewLock(mutexLockRequest);
             } else if (lockOperation == LockOperationEnum.EXPIRE) {
                 data = expireLock(mutexLockRequest);
+            } else if (lockOperation == LockOperationEnum.CLEANUP_CONNECTION) {
+                data = cleanupConnection(mutexLockRequest);
             } else {
                 throw new NacosLockException("lockOperation is not exist.");
             }
@@ -270,6 +274,59 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         return LockResult.fail("Lock not expired or not found");
     }
 
+    /**
+     * Cleanup lock state for a disconnected connection inside the Raft state machine.
+     *
+     * <p>Atomically performs:
+     * <ol>
+     *     <li>Force-release the lock if held by this connection</li>
+     *     <li>Notify the next waiter (if any) after release</li>
+     *     <li>Remove all wait queue entries belonging to this connection</li>
+     * </ol>
+     *
+     * @param request lock request with key and connectionId
+     * @return lock result indicating cleanup outcome
+     */
+    private LockResult cleanupConnection(MutexLockRequest request) {
+        LockInfo lockInfo = request.getLockInfo();
+        String connectionId = request.getConnectionId();
+        LockKey lockKey = lockInfo.getKey();
+
+        AtomicLockService lockService = lockManager.showLocks().get(lockKey);
+        if (lockService == null || !(lockService instanceof AbstractAtomicLock atomicLock)) {
+            return LockResult.fail("Lock does not exist");
+        }
+
+        // Step 1: Force-release if held by this connection
+        boolean wasHeld = false;
+        if (connectionId.equals(atomicLock.getConnectionId())) {
+            String owner = atomicLock.getOwner();
+            if (owner != null) {
+                wasHeld = atomicLock.forceRelease();
+            }
+        }
+
+        // Step 2: Remove all wait queue entries belonging to this connection
+        atomicLock.removeWaiterByConnection(connectionId);
+
+        // Step 3: If lock was released and now clear, handle post-release logic
+        if (wasHeld && atomicLock.isClear()) {
+            if (atomicLock.hasWaiters()) {
+                WaitEntry entry = atomicLock.peekFirstWaiter();
+                if (entry != null) {
+                    LockNotificationRequest notification = LockNotificationRequest.available(
+                            lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
+                    notificationExecutor.submit(
+                            () -> rpcPushService.pushWithoutAck(entry.getConnectionId(), notification));
+                }
+            } else {
+                lockManager.removeMutexLock(lockKey);
+            }
+        }
+
+        return LockResult.success(0);
+    }
+
     @Override
     public LockResult lock(LockInstance lockInstance, String connectionId) {
         final MutexLockRequest request = new MutexLockRequest();
@@ -336,29 +393,6 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
     }
 
-    private void forceUnLock(LockKey lockKey, String owner) {
-        MutexLockRequest request = new MutexLockRequest();
-        LockInfo lockInfo = new LockInfo();
-        lockInfo.setKey(lockKey);
-        lockInfo.setOwner(owner);
-        request.setLockInfo(lockInfo);
-        request.setForceRelease(true);
-        WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
-            .setData(ByteString.copyFrom(serializer.serialize(request)))
-            .setOperation(LockOperationEnum.RELEASE.name()).build();
-        try {
-            Response response = protocol.write(writeRequest);
-            if (!response.getSuccess()) {
-                throw new NacosLockException(response.getErrMsg());
-            }
-        } catch (NacosLockException e) {
-            LOGGER.error("key: {}, owner: {} forceUnlock fail, errorMsg: {}", lockKey, owner, e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            throw new NacosLockException("forceUnLock error.", e);
-        }
-    }
-
     @Override
     public Boolean renew(LockInstance lockInstance) {
         MutexLockRequest request = new MutexLockRequest();
@@ -422,38 +456,56 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         if (entry == null) {
             return;
         }
+        String targetConnectionId = entry.getConnectionId();
         LockNotificationRequest notification = LockNotificationRequest.available(
                 lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
-        rpcPushService.pushWithoutAck(entry.getConnectionId(), notification);
+        notificationExecutor.submit(() -> {
+            try {
+                rpcPushService.pushWithoutAck(targetConnectionId, notification);
+            } catch (Exception e) {
+                LOGGER.warn("Lock: failed to notify waiter, key={}, connectionId={}",
+                        lockKey, targetConnectionId, e);
+            }
+        });
         LOGGER.info("notifyFirstWaiter key={}, notified owner={}", lockKey, entry.getOwner());
     }
 
     /**
      * Force release all locks held by the specified connection and clean up wait queue entries.
      *
+     * <p>All state mutations are submitted through Raft consensus via {@code CLEANUP_CONNECTION}
+     * WriteRequests, ensuring cluster-wide consistency for both lock releases and wait queue cleanup.
+     *
      * @param connectionId the gRPC connection ID of the disconnected client
      */
     public void releaseLocksByConnection(String connectionId) {
-        java.util.Map<LockKey, AtomicLockService> snapshot = new java.util.HashMap<>(lockManager.showLocks());
-        for (java.util.Map.Entry<LockKey, AtomicLockService> entry : snapshot.entrySet()) {
+        Map<LockKey, AtomicLockService> snapshot = new HashMap<>(lockManager.showLocks());
+        for (Map.Entry<LockKey, AtomicLockService> entry : snapshot.entrySet()) {
             AtomicLockService lockService = entry.getValue();
             if (lockService instanceof AbstractAtomicLock) {
-                AbstractAtomicLock atomicLock = (AbstractAtomicLock) lockService;
                 LockKey lockKey = entry.getKey();
-                if (connectionId.equals(atomicLock.getConnectionId())) {
-                    String owner = atomicLock.getOwner();
-                    if (owner == null) {
-                        continue;
-                    }
-                    try {
-                        forceUnLock(lockKey, owner);
-                    } catch (Exception e) {
-                        LOGGER.warn("Lock: failed to force release lock via Raft for connectionId={}, key={}",
-                                connectionId, lockKey, e);
-                    }
+                try {
+                    cleanupConnectionViaRaft(lockKey, connectionId);
+                } catch (Exception e) {
+                    LOGGER.warn("Lock: failed to cleanup connection via Raft for connectionId={}, key={}",
+                            connectionId, lockKey, e);
                 }
-                atomicLock.removeWaiterByConnection(connectionId);
             }
+        }
+    }
+
+    private void cleanupConnectionViaRaft(LockKey lockKey, String connectionId) throws Exception {
+        MutexLockRequest request = new MutexLockRequest();
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setKey(lockKey);
+        request.setLockInfo(lockInfo);
+        request.setConnectionId(connectionId);
+        WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
+                .setData(ByteString.copyFrom(serializer.serialize(request)))
+                .setOperation(LockOperationEnum.CLEANUP_CONNECTION.name()).build();
+        Response response = protocol.write(writeRequest);
+        if (!response.getSuccess()) {
+            throw new NacosLockException(response.getErrMsg());
         }
     }
 

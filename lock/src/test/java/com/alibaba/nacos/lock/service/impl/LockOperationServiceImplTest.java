@@ -424,4 +424,116 @@ public class LockOperationServiceImplTest {
                 .setData(ByteString.copyFrom(serializer.serialize(mutexLockRequest)))
                 .setOperation(LockOperationEnum.EXPIRE.name()).build();
     }
+
+    // ==================== CLEANUP_CONNECTION tests ====================
+
+    @Test
+    public void testCleanupConnectionForceReleasesHeldLock() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("cleanup-key");
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setOwner("owner-1");
+        lockInfo.setConnectionId("conn-1");
+        lockInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, "cleanup-key"));
+        lockInfo.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.tryLock(lockInfo);
+
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(new LockKey(LockConstants.NACOS_LOCK_TYPE, "cleanup-key"), reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+
+        WriteRequest request = buildCleanupConnectionRequest("cleanup-key", "conn-1");
+        Response response = lockOperationService.onApply(request);
+        assertTrue(response.getSuccess());
+        assertTrue(reentrantLock.isClear());
+    }
+
+    @Test
+    public void testCleanupConnectionRemovesWaiterEntries() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("cleanup-waiter-key");
+
+        // Holder holds the lock
+        LockInfo holderInfo = new LockInfo();
+        holderInfo.setOwner("holder-1");
+        holderInfo.setConnectionId("conn-holder");
+        holderInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, "cleanup-waiter-key"));
+        holderInfo.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.tryLock(holderInfo);
+
+        // Disconnected client is in the wait queue
+        LockInfo waiterInfo = new LockInfo();
+        waiterInfo.setOwner("waiter-disconnected");
+        waiterInfo.setConnectionId("conn-disconnected");
+        waiterInfo.setWaitTimeMs(5000);
+        reentrantLock.addWaiter(waiterInfo);
+
+        // Another waiter also in queue
+        LockInfo waiterInfo2 = new LockInfo();
+        waiterInfo2.setOwner("waiter-other");
+        waiterInfo2.setConnectionId("conn-other");
+        waiterInfo2.setWaitTimeMs(5000);
+        reentrantLock.addWaiter(waiterInfo2);
+
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(new LockKey(LockConstants.NACOS_LOCK_TYPE, "cleanup-waiter-key"), reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+
+        // Cleanup the disconnected connection
+        WriteRequest request = buildCleanupConnectionRequest("cleanup-waiter-key", "conn-disconnected");
+        Response response = lockOperationService.onApply(request);
+        assertTrue(response.getSuccess());
+
+        // Disconnected waiter should be removed; other waiter should remain
+        assertEquals(1, reentrantLock.getWaitQueue().size());
+        assertEquals("waiter-other", reentrantLock.getWaitQueue().get(0).getOwner());
+    }
+
+    @Test
+    public void testCleanupConnectionNonExistentLock() {
+        buildService();
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+
+        WriteRequest request = buildCleanupConnectionRequest("nonexistent", "conn-1");
+        Response response = lockOperationService.onApply(request);
+        assertTrue(response.getSuccess());
+        LockResult result = serializer.deserialize(response.getData().toByteArray());
+        assertFalse(result.isSuccess());
+    }
+
+    @Test
+    public void testCleanupConnectionReentrantLockForceReleasesAll() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("cleanup-reentrant-key");
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setOwner("owner-1");
+        lockInfo.setConnectionId("conn-1");
+        lockInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, "cleanup-reentrant-key"));
+        lockInfo.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.tryLock(lockInfo);
+        reentrantLock.tryLock(lockInfo);
+        reentrantLock.tryLock(lockInfo);
+
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(new LockKey(LockConstants.NACOS_LOCK_TYPE, "cleanup-reentrant-key"), reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+
+        WriteRequest request = buildCleanupConnectionRequest("cleanup-reentrant-key", "conn-1");
+        Response response = lockOperationService.onApply(request);
+        assertTrue(response.getSuccess());
+        assertTrue(reentrantLock.isClear());
+        assertEquals(0, reentrantLock.getReentrantCount());
+    }
+
+    private WriteRequest buildCleanupConnectionRequest(String key, String connectionId) {
+        MutexLockRequest mutexLockRequest = new MutexLockRequest();
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, key));
+        mutexLockRequest.setLockInfo(lockInfo);
+        mutexLockRequest.setConnectionId(connectionId);
+        return WriteRequest.newBuilder().setGroup(lockOperationService.group())
+                .setData(ByteString.copyFrom(serializer.serialize(mutexLockRequest)))
+                .setOperation(LockOperationEnum.CLEANUP_CONNECTION.name()).build();
+    }
 }

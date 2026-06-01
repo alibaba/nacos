@@ -34,6 +34,8 @@ public class MutexLockRequest implements Serializable {
 
     private boolean forceRelease;
 
+    private String connectionId;
+
     public LockInfo getLockInfo() {
         return lockInfo;
     }
@@ -48,5 +50,13 @@ public class MutexLockRequest implements Serializable {
 
     public void setForceRelease(boolean forceRelease) {
         this.forceRelease = forceRelease;
+    }
+
+    public String getConnectionId() {
+        return connectionId;
+    }
+
+    public void setConnectionId(String connectionId) {
+        this.connectionId = connectionId;
     }
 }

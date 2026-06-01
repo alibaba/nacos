@@ -39,7 +39,13 @@ public enum LockOperationEnum implements Serializable {
     /**
      * Renew (watchdog heartbeat).
      */
-    RENEW;
+    RENEW,
+    /**
+     * Cleanup all lock state (held lock + wait queue) for a disconnected connection.
+     *
+     * <p>Internal operation used by {@code releaseLocksByConnection()}. Not exposed to clients.
+     */
+    CLEANUP_CONNECTION;
 
     private static final long serialVersionUID = -241044344531890549L;
 }
