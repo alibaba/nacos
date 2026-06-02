@@ -72,6 +72,7 @@ extension mechanisms, and cross-cutting security rules.
 ## Testing Model
 
 - [API Integration Test Spec](testing/api-integration-test-spec.md)
+- [Java SDK Integration Test Spec](testing/java-sdk-integration-test-spec.md)
 
 Agent guidance files such as [AGENTS.md](../../AGENTS.md) should summarize these
 specs for local execution. The specs remain the rule source when API guidance is

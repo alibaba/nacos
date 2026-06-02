@@ -35,6 +35,7 @@
         <module>naming-test</module>
         <module>core-test</module>
         <module>openapi-test</module>
+        <module>java-sdk-test</module>
     </modules>
     
     <dependencies>
