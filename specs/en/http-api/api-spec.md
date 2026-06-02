@@ -169,7 +169,10 @@ Additional detail specs:
    version that supports the API.
 6. Use `Result<T>` for JSON responses unless a documented exception applies.
 7. Put validation in a form object or dedicated validator.
-8. Add route, validation, auth, and response-shape tests for meaningful changes.
+8. Add or update API integration tests according to the
+   [API Integration Test Spec](../testing/api-integration-test-spec.md),
+   including route, validation, auth, response-shape, and scenario coverage for
+   meaningful changes.
 9. Update the matching spec and website documentation in the same change.
 
 New Open APIs require an explicit compatibility note. New Admin or Console APIs

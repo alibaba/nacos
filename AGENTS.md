@@ -18,6 +18,12 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Cop
   clarifies spec-covered behavior MUST include the corresponding spec updates
   in the same change set. When the design is large or controversial, prefer a
   spec/design-only PR first, then follow with implementation PRs.
+- **API IT impact comes first**: Before adding, changing, deleting, or
+  deprecating any HTTP API, AI agents MUST analyze the affected
+  `test/openapi-test` coverage and update the API IT scenario matrix, test
+  cases, and coverage registry in the same change set. If the functional path
+  cannot be exercised in standalone IT, cover boundary/error scenarios and
+  document the reason.
 - **Disclose AI usage**: When a significant part of a commit is AI-generated, add a trailer to your commit message:
   ```
   Assisted-by: Claude Code
@@ -215,6 +221,8 @@ English:
   [OIDC Auth Plugin Spec](./specs/en/auth/oidc-auth-plugin-spec.md),
   [Visibility Plugin Spec](./specs/en/auth/visibility-plugin-spec.md),
   [Default Auth Plugin Implementation Spec](./specs/en/auth/default-auth-plugin-spec.md)
+- Testing model:
+  [API Integration Test Spec](./specs/en/testing/api-integration-test-spec.md)
 
 Simplified Chinese:
 
@@ -289,6 +297,8 @@ Simplified Chinese:
   [OIDC 鉴权插件规范](./specs/zh-cn/auth/oidc-auth-plugin-spec.md)，
   [可见性插件规范](./specs/zh-cn/auth/visibility-plugin-spec.md)，
   [默认鉴权插件实现规范](./specs/zh-cn/auth/default-auth-plugin-spec.md)
+- 测试模型：
+  [API 集成测试规范](./specs/zh-cn/testing/api-integration-test-spec.md)
 
 This section is a quick implementation checklist for agents. If it conflicts
 with the specs, follow the specs and update this checklist.
@@ -344,6 +354,22 @@ with the specs, follow the specs and update this checklist.
          signType = SignType.CONFIG,       // CONFIG, NAMING, or CONSOLE
          apiType = ApiType.ADMIN_API)      // OPEN_API, ADMIN_API, or CONSOLE_API
 ```
+
+### API Integration Tests
+
+For every HTTP API addition, modification, deletion, or deprecation, handle
+`test/openapi-test` before the API change is considered complete:
+
+1. Read the affected controller, form/request model, validators, service path,
+   response model, exception handling, and matching specs.
+2. Build or update the scenario matrix for expected capability,
+   boundary/validation behavior, and exception/error handling.
+3. Add, update, or remove API IT cases for the changed contract. The goal is API
+   scenario coverage, not line or branch coverage.
+4. Update `test/openapi-test/API_TEST_COVERAGE.md` and the matching
+   `*_API_TEST_SCENARIOS.md` document.
+5. If the functional success path is hard to exercise in standalone IT, at
+   least cover boundary and error scenarios and document the uncovered path.
 
 ### Controller Example
 
