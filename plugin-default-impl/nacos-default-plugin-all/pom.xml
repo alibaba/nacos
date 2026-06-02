@@ -126,6 +126,8 @@
                                       tofile="${project.basedir}/../../distribution/conf/pg-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-grant-nacos-readwrite.sql"
                                       tofile="${project.basedir}/../../distribution/conf/pg-grant-nacos-readwrite.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-upgrade-null-tenant-id.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/pg-upgrade-null-tenant-id.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/oracle-schema.sql" overwrite="true"/>
                             </target>
