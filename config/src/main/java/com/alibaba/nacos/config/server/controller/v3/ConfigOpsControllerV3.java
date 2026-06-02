@@ -218,17 +218,22 @@ public class ConfigOpsControllerV3 {
     private DeferredResult<Result<String>> convertToResult(
         DeferredResult<RestResult<String>> restResult) {
         DeferredResult<Result<String>> wrappedResponse = new DeferredResult<>();
-        restResult.onCompletion(() -> {
-            if (restResult.getResult() != null) {
-                RestResult<String> originalResult = (RestResult<String>) restResult.getResult();
-                Result<String> newResult =
-                    new Result<>(originalResult.getCode(), originalResult.getMessage(),
-                        originalResult.getData());
-                
-                wrappedResponse.setResult(newResult);
-            }
-        });
+        restResult.onCompletion(() -> copyRestResult(restResult, wrappedResponse));
+        copyRestResult(restResult, wrappedResponse);
         
         return wrappedResponse;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private void copyRestResult(DeferredResult<RestResult<String>> restResult,
+        DeferredResult<Result<String>> wrappedResponse) {
+        if (wrappedResponse.hasResult() || restResult.getResult() == null) {
+            return;
+        }
+        RestResult<String> originalResult = (RestResult<String>) restResult.getResult();
+        Result<String> newResult =
+            new Result<>(originalResult.getCode(), originalResult.getMessage(),
+                originalResult.getData());
+        wrappedResponse.setResult(newResult);
     }
 }
