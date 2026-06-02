@@ -216,9 +216,6 @@ public class SkillsRegistryController {
         if (StringUtils.isBlank(extracted)) {
             return extracted;
         }
-        while (extracted.startsWith("/")) {
-            extracted = extracted.substring(1);
-        }
-        return extracted;
+        return extracted.replaceFirst("^/+", "");
     }
 }

@@ -378,10 +378,7 @@ public class SkillWellKnownImportService implements AiResourceImportService {
         if (format == ArchiveFormat.ZIP) {
             return artifact.getBody();
         }
-        if (format == ArchiveFormat.TAR || format == ArchiveFormat.TAR_GZ) {
-            return convertTarToZip(artifact.getBody(), format == ArchiveFormat.TAR_GZ);
-        }
-        throw invalid("Unsupported Skill well-known archive format: " + artifact.getUrl());
+        return convertTarToZip(artifact.getBody(), format == ArchiveFormat.TAR_GZ);
     }
     
     private byte[] convertTarToZip(byte[] bytes, boolean gzip) throws Exception {
