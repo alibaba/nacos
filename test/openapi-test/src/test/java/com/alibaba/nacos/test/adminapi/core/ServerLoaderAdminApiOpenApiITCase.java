@@ -32,7 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: current local connection map and cluster loader metrics return the v3 success envelope
  *     and diagnostic shapes.</li>
  *     <li>Boundary/validation: reload-by-count and reload-single-client require {@code count} and
- *     {@code connectionId}; destructive connection rebalance success paths are intentionally not executed.</li>
+ *     {@code connectionId}; smart cluster reload requires a numeric {@code loaderFactor}; destructive connection
+ *     rebalance success paths are intentionally not executed.</li>
  *     <li>Exception/error handling: missing required parameters return controlled HTTP 400 errors instead of invoking
  *     rebalance operations.</li>
  * </ul>
@@ -59,5 +60,8 @@ public class ServerLoaderAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
                 400, ErrorCode.PARAMETER_MISSING, "count");
         assertError(postRaw(ADMIN_CORE_LOADER_PATH + "/reloadClient", Query.newInstance()),
                 400, ErrorCode.PARAMETER_MISSING, "connectionId");
+        assertError(postRaw(ADMIN_CORE_LOADER_PATH + "/smartReloadCluster",
+                Query.newInstance().addParam("loaderFactor", "not-a-number")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "not-a-number");
     }
 }

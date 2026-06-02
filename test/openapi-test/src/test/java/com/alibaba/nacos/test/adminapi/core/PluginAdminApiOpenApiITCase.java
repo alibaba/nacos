@@ -31,10 +31,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: plugin list exposes discovered plugin inventory, pluginType filters narrow results, and
  *     plugin detail returns the same identity plus mutable-state fields.</li>
- *     <li>Boundary/validation: unknown pluginType filters return an empty list; missing plugin detail is reported as
- *     not found.</li>
+ *     <li>Boundary/validation: unknown pluginType filters return an empty list; status update requires
+ *     {@code pluginName}; config update requires {@code config}; missing plugin detail is reported as not found.</li>
  *     <li>Exception/error handling: plugin state/config mutation success paths are intentionally not executed because
- *     they change runtime extension state; detail not-found is verified as a controlled RESOURCE_NOT_FOUND response.</li>
+ *     they change runtime extension state; required-parameter and detail not-found failures are verified as controlled
+ *     v3 error envelopes.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -77,5 +78,15 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         assertError(getRaw(ADMIN_CORE_PLUGIN_PATH + "/detail",
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
                 404, ErrorCode.RESOURCE_NOT_FOUND, "auth:missing-plugin");
+    }
+
+    @Test
+    public void testPluginMutationValidationReturnsBadRequest() throws Exception {
+        assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/status",
+                Query.newInstance().addParam("pluginType", "auth").addParam("enabled", "true")),
+                400, ErrorCode.PARAMETER_MISSING, "pluginName");
+        assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/config",
+                Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
+                400, ErrorCode.PARAMETER_MISSING, "config");
     }
 }

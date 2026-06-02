@@ -34,9 +34,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Expected capability: draft creation and update persist editable content; force-publish makes a version
- *     online and latest; governance, version detail, version list, list, Markdown download, labels, description,
- *     bizTags, online/offline, and delete expose the expected prompt state.</li>
+ *     <li>Expected capability: draft creation and update persist editable content; draft delete removes only the
+ *     editing version while retaining prompt governance metadata; force-publish makes a version online and latest;
+ *     governance, version detail, version list, list, Markdown download, labels, description, bizTags,
+ *     online/offline, and delete expose the expected prompt state.</li>
  *     <li>Boundary/validation: namespace defaults to public; list supports accurate/blur and bizTags filters while
  *     clamping page arguments; promptKey, template or basedOnVersion, version, labels, and description are required
  *     where controller forms require them; legacy version format is validated.</li>
@@ -139,6 +140,29 @@ public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
     }
 
     @Test
+    public void testPromptDeleteDraftRemovesEditingVersionOnly() throws Exception {
+        String promptKey = randomPromptKey("delete-draft");
+        postFormOk(ADMIN_PROMPT_PATH + "/draft",
+                promptDraftForm(promptKey, "1.0.0", "Draft to delete {{name}}", "delete draft desc",
+                        "delete-draft"));
+        addCleanup(() -> deletePromptQuietly(promptKey));
+        assertPromptVersion(getJsonOk(ADMIN_PROMPT_VERSION_PATH, promptVersionQuery(promptKey, "1.0.0"))
+                .get("data"), promptKey, "1.0.0", "draft", "Draft to delete {{name}}");
+
+        JsonNode deleted = deleteJsonOk(ADMIN_PROMPT_PATH + "/draft", promptQuery(promptKey));
+        assertEquals("ok", deleted.get("data").asText(), deleted.toString());
+
+        JsonNode governance = getJsonOk(ADMIN_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey))
+                .get("data");
+        assertEquals(promptKey, governance.get("promptKey").asText(), governance.toString());
+        assertTrue(governance.path("editingVersion").isNull()
+                || governance.path("editingVersion").isMissingNode(), governance.toString());
+        assertEquals(0, governance.get("versions").size(), governance.toString());
+        assertError(getRaw(ADMIN_PROMPT_VERSION_PATH, promptVersionQuery(promptKey, "1.0.0")), 404,
+                ErrorCode.RESOURCE_NOT_FOUND, "Prompt version not found");
+    }
+
+    @Test
     public void testPromptSubmitAndLegacyCompatibilityEndpoints() throws Exception {
         String legacyPublishKey = randomPromptKey("legacy-publish");
         Map<String, String> legacyPublish = promptQueryForm(legacyPublishKey);
@@ -214,6 +238,9 @@ public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertError(putRaw(ADMIN_PROMPT_PATH + "/draft",
                 promptQuery(randomPromptKey("missing-template-update"))), 400,
                 ErrorCode.PARAMETER_MISSING, "template");
+        assertError(deleteRaw(ADMIN_PROMPT_PATH + "/draft",
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)), 400,
+                ErrorCode.PARAMETER_MISSING, "promptKey");
         assertError(postRaw(ADMIN_PROMPT_PATH + "/force-publish",
                 queryFrom(promptQueryForm(randomPromptKey("missing-version")))), 400,
                 ErrorCode.PARAMETER_MISSING, "version");
@@ -232,6 +259,8 @@ public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 ErrorCode.RESOURCE_NOT_FOUND, "Prompt not found");
         assertError(getRaw(ADMIN_PROMPT_VERSION_DOWNLOAD_PATH, promptVersionQuery(absentPrompt, "1.0.0")),
                 404, ErrorCode.RESOURCE_NOT_FOUND, "Prompt not found");
+        assertError(deleteRaw(ADMIN_PROMPT_PATH + "/draft", promptQuery(absentPrompt)), 404,
+                ErrorCode.RESOURCE_NOT_FOUND, "not found");
 
         Map<String, String> legacyPublish = promptQueryForm(randomPromptKey("legacy-invalid-version"));
         legacyPublish.put("version", "bad-version");
