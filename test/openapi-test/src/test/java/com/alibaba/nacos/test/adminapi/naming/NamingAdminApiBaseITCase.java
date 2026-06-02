@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -37,6 +38,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public abstract class NamingAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected static final String ADMIN_SERVICE_PATH = nacosPath(UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH);
+
+    protected static final String ADMIN_SERVICE_LIST_PATH = ADMIN_SERVICE_PATH + "/list";
+
+    protected static final String ADMIN_SERVICE_SUBSCRIBERS_PATH = ADMIN_SERVICE_PATH + "/subscribers";
+
+    protected static final String ADMIN_SERVICE_SELECTOR_TYPES_PATH = ADMIN_SERVICE_PATH + "/selector/types";
 
     protected static final String ADMIN_INSTANCE_PATH = nacosPath(UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH);
 
@@ -86,6 +93,15 @@ public abstract class NamingAdminApiBaseITCase extends OpenApiBaseITCase {
         addIfNotBlank(query, "namespaceId", namespaceId);
         query.addParam("pageNo", String.valueOf(pageNo));
         query.addParam("pageSize", String.valueOf(pageSize));
+        return query;
+    }
+
+    protected Query subscribersQuery(String serviceName, String groupName, String namespaceId,
+            int pageNo, int pageSize, String aggregation) {
+        Query query = serviceQuery(serviceName, groupName, namespaceId);
+        query.addParam("pageNo", String.valueOf(pageNo));
+        query.addParam("pageSize", String.valueOf(pageSize));
+        addIfNotBlank(query, "aggregation", aggregation);
         return query;
     }
 
@@ -261,6 +277,16 @@ public abstract class NamingAdminApiBaseITCase extends OpenApiBaseITCase {
         JsonNode service = findService(page, serviceName, groupName);
         assertFalse(service.isMissingNode(), page.toString());
         assertTrue(service.get("clusterCount").asInt() >= 0, service.toString());
+    }
+
+    protected void assertNamingPageShape(JsonNode page) {
+        assertNotNull(page.get("pageNumber"), page.toString());
+        assertNotNull(page.get("pagesAvailable"), page.toString());
+        assertNotNull(page.get("totalCount"), page.toString());
+        assertTrue(page.get("pageNumber").asInt() >= 1, page.toString());
+        assertTrue(page.get("pagesAvailable").asInt() >= 0, page.toString());
+        assertTrue(page.get("totalCount").asInt() >= 0, page.toString());
+        assertTrue(page.get("pageItems").isArray(), page.toString());
     }
 
     protected JsonNode getInstanceDetail(String serviceName, String groupName, String namespaceId, String ip,

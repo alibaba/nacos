@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for config ops admin OpenAPIs under {@code /nacos/v3/admin/cs/ops}.
@@ -31,11 +32,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <ul>
  *     <li>Expected capability: local-cache dump trigger returns the v3 success envelope when the standalone server can
  *     dump from store.</li>
- *     <li>Boundary/validation: log level update requires both {@code logName} and {@code logLevel}, and Derby ops
- *     requires {@code sql}. Derby import is intentionally not exercised because it mutates the embedded database from
- *     an uploaded external dump.</li>
+ *     <li>Boundary/validation: log level update requires both {@code logName} and {@code logLevel}; Derby query
+ *     requires {@code sql}; Derby import is invoked with a multipart file but its success path is intentionally not
+ *     exercised because it mutates the embedded database from an uploaded external dump.</li>
  *     <li>Exception/error handling: missing required operation parameters return HTTP 400 with the v3 {@code Result}
- *     error envelope instead of HTTP 500.</li>
+ *     error envelope instead of HTTP 500, and disabled or non-embedded Derby import returns a controlled
+ *     {@code Result} failure body instead of importing data.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -58,5 +60,13 @@ public class ConfigOpsAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
         assertError(putRaw(ADMIN_OPS_PATH + "/log", Query.newInstance().addParam("logName", "config-server")),
                 400, ErrorCode.PARAMETER_MISSING, "logLevel");
         assertError(getRaw(ADMIN_OPS_PATH + "/derby"), 400, ErrorCode.PARAMETER_MISSING, "sql");
+
+        HttpResponse importResponse = postMultipartRaw(ADMIN_OPS_PATH + "/derby/import", Query.newInstance(),
+                "file", "derby-import.sql", "text/plain", new byte[0]);
+        assertEquals(200, importResponse.code(), importResponse.body());
+        JsonNode importResult = JacksonUtils.toObj(importResponse.body());
+        assertTrue(importResult.get("code").asInt() != ErrorCode.SUCCESS.getCode(), importResult.toString());
+        assertTrue(importResult.get("message").asText().contains("Derby ops is disabled")
+                || importResult.get("message").asText().contains("embedded storage mode"), importResult.toString());
     }
 }

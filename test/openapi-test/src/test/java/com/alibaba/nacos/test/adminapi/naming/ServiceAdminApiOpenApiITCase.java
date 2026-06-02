@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for naming service admin OpenAPI {@code /nacos/v3/admin/ns/service}.
@@ -30,9 +31,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <ul>
  *     <li>Expected capability: create persists a service, detail returns metadata/default namespace/group/ephemeral
  *     fields, update changes service metadata, list can find the service by {@code serviceNameParam}/{@code
- *     groupNameParam}, and delete removes it from the list.</li>
+ *     groupNameParam}, selector-types exposes the built-in {@code none} selector, subscribers returns the
+ *     expected empty page shape for a service without subscribers, and delete removes the service from the list.</li>
  *     <li>Boundary/validation: omitted namespace and group default to public and DEFAULT_GROUP; service list requires
- *     positive pagination values; {@code serviceName} is required for create/detail/update/delete.</li>
+ *     positive pagination values; {@code serviceName} is required for create/detail/update/delete/subscribers.</li>
  *     <li>Exception/error handling: missing required fields and invalid pagination return HTTP 400 with the v3
  *     {@code Result} error envelope instead of HTTP 500.</li>
  * </ul>
@@ -46,6 +48,11 @@ public class ServiceAdminApiOpenApiITCase extends NamingAdminApiBaseITCase {
         String serviceName = randomServiceName("service");
         createService(serviceName, "", null, "{\"env\":\"it\"}", "0.4");
         addCleanup(() -> deleteServiceQuietly(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE));
+
+        JsonNode selectorTypes = getJsonOk(ADMIN_SERVICE_SELECTOR_TYPES_PATH, Query.newInstance())
+                .get("data");
+        assertTrue(selectorTypes.isArray(), selectorTypes.toString());
+        assertArrayContainsText(selectorTypes, "none");
         
         JsonNode created = getJsonOk(ADMIN_SERVICE_PATH,
                 serviceQuery(serviceName, null, null)).get("data");
@@ -58,7 +65,14 @@ public class ServiceAdminApiOpenApiITCase extends NamingAdminApiBaseITCase {
         assertServiceDetail(updated, serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE, "env", "updated");
         assertEquals(0.6F, updated.get("protectThreshold").floatValue(), 0.001F, updated.toString());
         
-        JsonNode listed = getJsonOk(ADMIN_SERVICE_PATH + "/list",
+        JsonNode subscribers = getJsonOk(ADMIN_SERVICE_SUBSCRIBERS_PATH,
+                subscribersQuery(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE, 1, 10, "false"))
+                .get("data");
+        assertNamingPageShape(subscribers);
+        assertEquals(1, subscribers.get("pageNumber").asInt(), subscribers.toString());
+        assertEquals(0, subscribers.get("totalCount").asInt(), subscribers.toString());
+
+        JsonNode listed = getJsonOk(ADMIN_SERVICE_LIST_PATH,
                 serviceListQuery(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE, 1, 10)).get("data");
         assertEquals(1, listed.get("pageNumber").asInt(), listed.toString());
         assertServiceListed(listed, serviceName, DEFAULT_GROUP);
@@ -66,7 +80,7 @@ public class ServiceAdminApiOpenApiITCase extends NamingAdminApiBaseITCase {
         JsonNode deleted = deleteJsonOk(ADMIN_SERVICE_PATH,
                 serviceQuery(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE));
         assertEquals("ok", deleted.get("data").asText(), deleted.toString());
-        JsonNode afterDelete = getJsonOk(ADMIN_SERVICE_PATH + "/list",
+        JsonNode afterDelete = getJsonOk(ADMIN_SERVICE_LIST_PATH,
                 serviceListQuery(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE, 1, 10)).get("data");
         assertEquals(0, afterDelete.get("totalCount").asInt(), afterDelete.toString());
     }
@@ -81,8 +95,23 @@ public class ServiceAdminApiOpenApiITCase extends NamingAdminApiBaseITCase {
                 ErrorCode.PARAMETER_MISSING, "serviceName");
         assertError(deleteRaw(ADMIN_SERVICE_PATH, Query.newInstance()), 400,
                 ErrorCode.PARAMETER_MISSING, "serviceName");
-        assertError(getRaw(ADMIN_SERVICE_PATH + "/list",
+        assertError(getRaw(ADMIN_SERVICE_LIST_PATH,
                 serviceListQuery(randomServiceName("service-page"), DEFAULT_GROUP, DEFAULT_NAMESPACE, 0, 10)),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "pageNo");
+        assertError(getRaw(ADMIN_SERVICE_SUBSCRIBERS_PATH,
+                subscribersQuery(randomServiceName("subscriber-page"), DEFAULT_GROUP, DEFAULT_NAMESPACE, 0, 10,
+                        "false")), 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "pageNo");
+        assertError(getRaw(ADMIN_SERVICE_SUBSCRIBERS_PATH,
+                Query.newInstance().addParam("pageNo", "1").addParam("pageSize", "10")),
+                400, ErrorCode.PARAMETER_MISSING, "serviceName");
+    }
+
+    private void assertArrayContainsText(JsonNode array, String expected) {
+        for (JsonNode item : array) {
+            if (expected.equals(item.asText())) {
+                return;
+            }
+        }
+        throw new AssertionError("Expected array to contain " + expected + ", actual=" + array);
     }
 }

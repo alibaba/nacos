@@ -392,6 +392,20 @@ class ConfigOpsControllerV3Test {
     }
     
     @Test
+    @SuppressWarnings("unchecked")
+    void testConvertToResultCopiesPreCompletedRestResult() {
+        DeferredResult<RestResult<String>> restResult = new DeferredResult<>();
+        restResult.setResult(RestResultUtils.failed("pre-set failure"));
+        
+        DeferredResult<Result<String>> wrappedResult =
+            ReflectionTestUtils.invokeMethod(configOpsControllerV3, "convertToResult", restResult);
+        
+        Result<String> result = (Result<String>) wrappedResult.getResult();
+        assertEquals(500, result.getCode());
+        assertEquals("pre-set failure", result.getMessage());
+    }
+    
+    @Test
     void testConvertToResultIgnoresNullRestResult() {
         DeferredResult<RestResult<String>> restResult = new DeferredResult<>();
         DeferredResult<Result<String>> wrappedResult =
