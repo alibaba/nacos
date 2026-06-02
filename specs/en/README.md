@@ -69,6 +69,10 @@ extension mechanisms, and cross-cutting security rules.
 - [Visibility Plugin Spec](auth/visibility-plugin-spec.md)
 - [Default Auth Plugin Implementation Spec](auth/default-auth-plugin-spec.md)
 
+## Testing Model
+
+- [API Integration Test Spec](testing/api-integration-test-spec.md)
+
 Agent guidance files such as [AGENTS.md](../../AGENTS.md) should summarize these
 specs for local execution. The specs remain the rule source when API guidance is
 used by humans, AI agents, templates, or validation tools.
