@@ -32,6 +32,10 @@ Java Client SDK 是现有运行时应用行为的基准。它的连接、server 
 本地缓存和 redo 行为由[客户端运行时规范](../client/README.md)定义。Java Maintainer SDK
 是管理、UI、网关和运维场景的推荐 Java 接入方式。
 
+当公开 SDK interface、factory、模型、监听行为、生命周期行为或异常映射发生
+变化时，必须按照[Java SDK 集成测试规范](../testing/java-sdk-integration-test-spec.md)
+使用场景化 IT 验证 Java SDK 行为。
+
 ## 2. Java Client SDK Factory 和生命周期
 
 | Interface | Factory | 生命周期关闭方法 |

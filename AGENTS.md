@@ -24,6 +24,12 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Cop
   cases, and coverage registry in the same change set. If the functional path
   cannot be exercised in standalone IT, cover boundary/error scenarios and
   document the reason.
+- **Java SDK IT impact comes first**: Before adding, changing, deleting, or
+  deprecating any public Java SDK interface, factory, model, listener behavior,
+  lifecycle behavior, or exception mapping, AI agents MUST analyze and update
+  `test/java-sdk-test` coverage, including scenario documentation. If the
+  end-to-end success path is impractical, cover SDK parameter validation,
+  boundary behavior, and controlled exceptions.
 - **Disclose AI usage**: When a significant part of a commit is AI-generated, add a trailer to your commit message:
   ```
   Assisted-by: Claude Code
@@ -222,7 +228,8 @@ English:
   [Visibility Plugin Spec](./specs/en/auth/visibility-plugin-spec.md),
   [Default Auth Plugin Implementation Spec](./specs/en/auth/default-auth-plugin-spec.md)
 - Testing model:
-  [API Integration Test Spec](./specs/en/testing/api-integration-test-spec.md)
+  [API Integration Test Spec](./specs/en/testing/api-integration-test-spec.md),
+  [Java SDK Integration Test Spec](./specs/en/testing/java-sdk-integration-test-spec.md)
 
 Simplified Chinese:
 
@@ -298,7 +305,8 @@ Simplified Chinese:
   [可见性插件规范](./specs/zh-cn/auth/visibility-plugin-spec.md)，
   [默认鉴权插件实现规范](./specs/zh-cn/auth/default-auth-plugin-spec.md)
 - 测试模型：
-  [API 集成测试规范](./specs/zh-cn/testing/api-integration-test-spec.md)
+  [API 集成测试规范](./specs/zh-cn/testing/api-integration-test-spec.md)，
+  [Java SDK 集成测试规范](./specs/zh-cn/testing/java-sdk-integration-test-spec.md)
 
 This section is a quick implementation checklist for agents. If it conflicts
 with the specs, follow the specs and update this checklist.
@@ -370,6 +378,22 @@ For every HTTP API addition, modification, deletion, or deprecation, handle
    `*_API_TEST_SCENARIOS.md` document.
 5. If the functional success path is hard to exercise in standalone IT, at
    least cover boundary and error scenarios and document the uncovered path.
+
+### Java SDK Integration Tests
+
+For every Java SDK public contract change, handle `test/java-sdk-test` before
+the SDK change is considered complete:
+
+1. Read the public interface, implementation, request/response model, listener
+   path, lifecycle code, exception mapping, and matching SDK/client specs.
+2. Build or update the scenario matrix for factory/lifecycle behavior,
+   expected capability, boundary/validation behavior, listener/subscription
+   behavior, and exception handling.
+3. Add, update, or remove Java SDK IT cases for the changed SDK contract. Assert
+   SDK return values, callbacks, remote side effects, and typed exceptions.
+4. Update `test/java-sdk-test/JAVA_SDK_IT_COVERAGE.md`.
+5. Keep SDK ITs as external-client tests against a standalone Nacos server; do
+   not start Spring or Nacos inside the test class.
 
 ### Controller Example
 
