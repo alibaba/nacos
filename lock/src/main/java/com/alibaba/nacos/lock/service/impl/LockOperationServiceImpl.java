@@ -208,44 +208,38 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     private LockResult acquireLock(MutexLockRequest request) {
         LockInfo lockInfo = request.getLockInfo();
         AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
-        Boolean acquired = mutexLock.tryLock(lockInfo);
-        if (acquired) {
-            if (mutexLock instanceof AbstractAtomicLock) {
-                AbstractAtomicLock atomicLock = (AbstractAtomicLock) mutexLock;
-                if (atomicLock.hasWaiters()) {
-                    if (lockInfo.isWaiterRetry()) {
-                        WaitEntry head = atomicLock.peekFirstWaiter();
-                        if (head != null && head.getOwner().equals(lockInfo.getOwner())) {
-                            // Head waiter retrying after notification — remove stale queue entry
-                            atomicLock.pollFirstWaiter();
-                        } else {
-                            // Non-head waiter acquired due to timeout retry — undo to preserve FIFO.
-                            // forceRelease() + removeStaleWaiter() + addWaiter() is NOT atomic,
-                            // but safe because this method only runs inside the Raft onApply()
-                            // single-threaded state machine — no other request can observe the gap.
-                            atomicLock.forceRelease();
-                            atomicLock.removeStaleWaiter(lockInfo.getOwner());
-                            int position = atomicLock.addWaiter(lockInfo);
-                            notifyFirstWaiter(lockInfo.getKey(), atomicLock);
-                            return LockResult.waiting(position);
-                        }
-                    } else {
-                        // New request but queue has waiters — undo and enqueue (FIFO).
-                        // Same non-atomic gap as above; safe under Raft single-threaded apply.
-                        atomicLock.forceRelease();
-                        int position = atomicLock.addWaiter(lockInfo);
-                        notifyFirstWaiter(lockInfo.getKey(), atomicLock);
-                        return LockResult.waiting(position);
+
+        if (mutexLock instanceof AbstractAtomicLock atomicLock) {
+            // Strict FIFO: non-retry requests must queue behind existing waiters
+            if (!lockInfo.isWaiterRetry() && atomicLock.hasWaiters()) {
+                if (lockInfo.getWaitTimeMs() > 0) {
+                    int position = atomicLock.addWaiter(lockInfo);
+                    return LockResult.waiting(position);
+                }
+                return LockResult.fail("Lock is held by another owner");
+            }
+
+            Boolean acquired = mutexLock.tryLock(lockInfo);
+            if (acquired) {
+                if (lockInfo.isWaiterRetry() && atomicLock.hasWaiters()) {
+                    WaitEntry head = atomicLock.peekFirstWaiter();
+                    if (head != null && head.getOwner().equals(lockInfo.getOwner())) {
+                        atomicLock.pollFirstWaiter();
                     }
                 }
                 return LockResult.success(atomicLock.getReentrantCount());
             }
-            return LockResult.success(1);
+
+            if (lockInfo.getWaitTimeMs() > 0) {
+                int position = atomicLock.addWaiter(lockInfo);
+                return LockResult.waiting(position);
+            }
+            return LockResult.fail("Lock is held by another owner");
         }
-        if (lockInfo.getWaitTimeMs() > 0 && mutexLock instanceof AbstractAtomicLock) {
-            AbstractAtomicLock atomicLock = (AbstractAtomicLock) mutexLock;
-            int position = atomicLock.addWaiter(lockInfo);
-            return LockResult.waiting(position);
+
+        Boolean acquired = mutexLock.tryLock(lockInfo);
+        if (acquired) {
+            return LockResult.success(1);
         }
         return LockResult.fail("Lock is held by another owner");
     }

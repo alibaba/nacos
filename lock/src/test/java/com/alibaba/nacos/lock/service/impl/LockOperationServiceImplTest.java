@@ -282,9 +282,9 @@ public class LockOperationServiceImplTest {
     }
 
     @Test
-    public void testFifoForceEnqueueShouldNotifyHeadWaiter() {
+    public void testNewRequestQueuesBehindExistingWaiters() {
         buildService();
-        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("m2-key");
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("fifo-key");
         Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
                 .thenReturn(reentrantLock);
 
@@ -296,7 +296,7 @@ public class LockOperationServiceImplTest {
         waiterInfo.setEndTime(System.currentTimeMillis() + 30000);
         reentrantLock.addWaiter(waiterInfo);
 
-        // Lock is free — new request comes in, should be enqueued due to FIFO
+        // Lock is free — new request should be enqueued behind waiter-1 (strict FIFO)
         WriteRequest request = buildAcquireRequest("new-owner", "conn-new", 5000, false);
         Response response = lockOperationService.onApply(request);
         assertTrue(response.getSuccess());
@@ -304,18 +304,11 @@ public class LockOperationServiceImplTest {
         assertFalse(result.isSuccess());
         assertTrue(result.isWaiting());
 
-        // Lock is now free (forceReleased), waiter-1 exists in queue
-        assertNull(reentrantLock.getOwner(), "Lock should be free after forceRelease");
+        // Lock remains free, new request enqueued after waiter-1
+        assertNull(reentrantLock.getOwner(), "Lock should remain free");
         assertEquals(2, reentrantLock.getWaitQueue().size());
-
-        // After fix: notifyFirstWaiter() sends notification to waiter-1
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        Mockito.verify(rpcPushService, Mockito.times(1))
-                .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+        assertEquals("waiter-1", reentrantLock.getWaitQueue().get(0).getOwner());
+        assertEquals("new-owner", reentrantLock.getWaitQueue().get(1).getOwner());
     }
 
     // ==================== releaseLock tests ====================
