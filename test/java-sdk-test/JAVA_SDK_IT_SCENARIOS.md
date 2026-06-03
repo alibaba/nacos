@@ -20,6 +20,11 @@ This document records Java SDK integration-test scenario coverage. The goal is
 SDK API scenario coverage, not line coverage, branch coverage, or a small demo
 per service interface.
 
+Run these scenarios with the dedicated Maven profile
+`java-sdk-integration-test` after a standalone Nacos server is ready. The
+generic `integration-test` profile is for HTTP API IT and must not be used to
+execute SDK IT cases implicitly.
+
 ## Status Legend
 
 | Status | Meaning |

@@ -37,7 +37,7 @@
     
     <profiles>
         <profile>
-            <id>integration-test</id>
+            <id>java-sdk-integration-test</id>
             <build>
                 <plugins>
                     <plugin>

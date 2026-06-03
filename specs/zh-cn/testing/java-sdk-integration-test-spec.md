@@ -128,4 +128,9 @@ Java SDK IT 变更需要运行：
 - `mvn -pl test/java-sdk-test -DskipTests test-compile`
 
 当单机 Nacos 服务可用时，应运行相关 Failsafe 选择，或执行
-`mvn -pl test/java-sdk-test -Pintegration-test -DskipTests=false verify`。
+`mvn -pl test/java-sdk-test -Pjava-sdk-integration-test -DskipTests=false
+verify`。
+
+Java SDK IT 必须使用独立的 `java-sdk-integration-test` Maven profile。通用
+`integration-test` profile 保留给 HTTP API IT 工作流，不能意外运行依赖 SDK
+gRPC 连接就绪状态或可选服务端能力的 SDK 测试。

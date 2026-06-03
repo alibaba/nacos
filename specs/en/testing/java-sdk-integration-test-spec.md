@@ -144,5 +144,11 @@ For Java SDK IT changes, run:
 - `mvn -pl test/java-sdk-test -DskipTests test-compile`
 
 When a standalone Nacos server is available, run the relevant Failsafe
-selection or `mvn -pl test/java-sdk-test -Pintegration-test -DskipTests=false
+selection or
+`mvn -pl test/java-sdk-test -Pjava-sdk-integration-test -DskipTests=false
 verify`.
+
+Java SDK ITs intentionally use the dedicated `java-sdk-integration-test` Maven
+profile. The generic `integration-test` profile is reserved for HTTP API IT
+workflows and must not accidentally run SDK tests that depend on SDK gRPC
+connection readiness or optional server abilities.

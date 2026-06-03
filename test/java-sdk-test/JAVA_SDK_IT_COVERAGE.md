@@ -25,6 +25,10 @@ The detailed scenario matrix lives in
 the current IT has representative coverage but must not be treated as complete
 SDK API scenario coverage.
 
+Java SDK ITs run only with the dedicated Maven profile
+`java-sdk-integration-test`. The generic `integration-test` profile belongs to
+HTTP API IT CI and should build this module without executing SDK IT cases.
+
 ## Client SDK
 
 | SDK interface | IT class | Status | Scenario coverage | Known gaps |
