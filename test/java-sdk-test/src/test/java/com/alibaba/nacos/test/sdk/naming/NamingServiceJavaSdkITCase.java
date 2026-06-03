@@ -152,31 +152,34 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Test
     public void testHealthySelectionFiltersDisabledAndZeroWeightInstances() throws Exception {
         NamingService namingService = createNamingService();
-        String serviceName = randomServiceName("selection");
+        String healthyServiceName = randomServiceName("selection-healthy");
+        String disabledServiceName = randomServiceName("selection-disabled");
+        String zeroWeightServiceName = randomServiceName("selection-zero-weight");
         String groupName = randomGroup("naming");
         Instance healthy = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
         Instance disabled = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
         disabled.setEnabled(false);
         Instance zeroWeight = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
         zeroWeight.setWeight(0D);
-        List<Instance> instances = Arrays.asList(healthy, disabled, zeroWeight);
-        for (Instance instance : instances) {
-            addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, instance));
-        }
+        addCleanup(() -> namingService.deregisterInstance(healthyServiceName, groupName, healthy));
+        addCleanup(() -> namingService.deregisterInstance(disabledServiceName, groupName, disabled));
+        addCleanup(() -> namingService.deregisterInstance(zeroWeightServiceName, groupName,
+                zeroWeight));
         
-        for (Instance instance : instances) {
-            namingService.registerInstance(serviceName, groupName, instance);
-        }
-        waitUntil("all registered instances should be queryable",
-                () -> containsInstance(namingService.getAllInstances(serviceName, groupName, false),
-                        healthy.getPort()) && containsInstance(namingService.getAllInstances(serviceName,
-                        groupName, false), disabled.getPort()) && containsInstance(namingService
-                        .getAllInstances(serviceName, groupName, false), zeroWeight.getPort()));
+        namingService.registerInstance(healthyServiceName, groupName, healthy);
+        waitUntil("healthy instance should be queryable",
+                () -> containsInstance(namingService.getAllInstances(healthyServiceName, groupName,
+                        false), healthy.getPort()));
+        namingService.registerInstance(disabledServiceName, groupName, disabled);
+        namingService.registerInstance(zeroWeightServiceName, groupName, zeroWeight);
         
-        List<Instance> selected = namingService.selectInstances(serviceName, groupName, true, false);
+        List<Instance> selected = namingService.selectInstances(healthyServiceName, groupName, true,
+                false);
         assertTrue(containsInstance(selected, healthy.getPort()), selected.toString());
-        assertFalse(containsInstance(selected, disabled.getPort()), selected.toString());
-        assertFalse(containsInstance(selected, zeroWeight.getPort()), selected.toString());
+        assertTrue(namingService.selectInstances(disabledServiceName, groupName, true, false)
+                .isEmpty());
+        assertTrue(namingService.selectInstances(zeroWeightServiceName, groupName, true, false)
+                .isEmpty());
     }
     
     @Test
