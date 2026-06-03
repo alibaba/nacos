@@ -33,13 +33,13 @@ import com.alibaba.nacos.airegistry.model.skills.SkillsSearchResponse;
 import com.alibaba.nacos.airegistry.model.skills.WellKnownSkillEntry;
 import com.alibaba.nacos.airegistry.model.skills.WellKnownSkillsIndex;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -425,18 +425,7 @@ public class NacosSkillsRegistryService {
     }
     
     private String sha256Digest(byte[] bytes) throws NacosException {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(bytes);
-            StringBuilder result = new StringBuilder(DIGEST_SHA256_PREFIX);
-            for (byte each : hash) {
-                result.append(String.format("%02x", each & 0xff));
-            }
-            return result.toString();
-        } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR,
-                "Failed to calculate skill well-known digest: " + e.getMessage(), e);
-        }
+        return DIGEST_SHA256_PREFIX + DigestUtils.sha256Hex(bytes);
     }
     
     private long safeDownloadCount(SkillSummary summary) {

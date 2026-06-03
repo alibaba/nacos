@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Repository;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -41,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.reset;
 
 /**
  * Unit tests for {@link McpRegistryImportService}.
@@ -105,6 +107,57 @@ class McpRegistryImportServiceTest {
         context.getSource().setEndpoint(null);
         
         assertThrows(NacosException.class, () -> importService.search(context));
+    }
+    
+    @Test
+    void testSearchWrapsClientFailureAndHandlesEmptyPage() throws Exception {
+        when(client.fetchOfficialRegistryPage(any(AiResourceImportSource.class), any(), any(),
+            any())).thenThrow(new IllegalStateException("boom"));
+        assertThrows(NacosException.class, () -> importService.search(newContext()));
+        
+        reset(client);
+        McpRegistryImportService emptyService = new McpRegistryImportService(client);
+        when(client.fetchOfficialRegistryPage(any(AiResourceImportSource.class), eq("cursor-1"),
+            eq(20), eq("redis"))).thenReturn(new McpRegistryClient.Page(null, null));
+        AiResourceImportCandidatePage result = emptyService.search(newContext());
+        assertEquals(0, result.getItems().size());
+    }
+    
+    @Test
+    void testFetchRejectsInvalidItemAndWrapsClientFailure() throws Exception {
+        assertThrows(NacosException.class, () -> importService.fetch(newFetchContext(), null));
+        assertThrows(NacosException.class,
+            () -> importService.fetch(newFetchContext(), new AiResourceImportItem()));
+        
+        AiResourceImportItem item = new AiResourceImportItem();
+        item.setName("io.nacos/test-server");
+        when(client.fetchOfficialRegistryServer(any(AiResourceImportSource.class),
+            eq("io.nacos/test-server"), eq(30))).thenThrow(new IllegalStateException("boom"));
+        assertThrows(NacosException.class, () -> importService.fetch(newFetchContext(), item));
+    }
+    
+    @Test
+    void testFetchUsesContextLimitAndFallbackVersionMetadata() throws Exception {
+        McpServerDetailInfo server = newMcpServer();
+        server.setVersion("2.0.0");
+        server.setVersionDetail(null);
+        server.setStatus("active");
+        Repository repository = new Repository();
+        repository.setUrl("https://github.com/nacos/test-server");
+        server.setRepository(repository);
+        when(client.fetchOfficialRegistryServer(any(AiResourceImportSource.class),
+            eq("io.nacos/test-server"), eq(7))).thenReturn(server);
+        AiResourceImportContext context = newFetchContext();
+        context.setLimit(7);
+        AiResourceImportItem item = new AiResourceImportItem();
+        item.setName("io.nacos/test-server");
+        
+        AiResourceImportArtifact result = importService.fetch(context, item);
+        
+        assertEquals("2.0.0", result.getVersion());
+        assertEquals("active", result.getSourceMetadata().get("status"));
+        assertEquals("https://github.com/nacos/test-server",
+            result.getSourceMetadata().get("repository"));
     }
     
     @Test

@@ -24,14 +24,17 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportItem;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.DefaultImportHttpClient;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.ImportHttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -51,8 +54,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link SkillsShImportService}.
@@ -162,6 +167,147 @@ class SkillsShImportServiceTest {
         assertEquals("PDF Skill", result.getName());
         assertEquals("openai/skills/pdf", result.getExternalId());
         assertZipEntryContains(result.getPayload(), "pdf/SKILL.md", "name: pdf");
+    }
+    
+    @Test
+    void testSearchReturnsEmptyWhenResponseHasNoSkills() throws Exception {
+        SkillsShImportService service = serviceWithResponse(200, "{}");
+        
+        AiResourceImportCandidatePage result = service.search(newContext());
+        
+        assertTrue(result.getItems().isEmpty());
+    }
+    
+    @Test
+    void testSearchSkipsInvalidItemsAndStopsAtLimit() throws Exception {
+        SkillsShImportService service = serviceWithResponse(200, "{\"skills\":[null,"
+            + "{\"id\":\"\"},"
+            + "{\"id\":\"owner/repo/one\",\"skillId\":\"one\",\"source\":\"owner/repo\"},"
+            + "{\"id\":\"owner/repo/two\",\"skillId\":\"two\",\"source\":\"\"}]}");
+        AiResourceImportContext context = newContext();
+        context.setLimit(2);
+        
+        AiResourceImportCandidatePage result = service.search(context);
+        
+        assertEquals(2, result.getItems().size());
+        assertEquals("owner/repo/one", result.getItems().get(0).getExternalId());
+    }
+    
+    @Test
+    void testSearchRejectsHttpError() throws Exception {
+        SkillsShImportService service = serviceWithResponse(500, "{}");
+        
+        assertThrows(NacosException.class, () -> service.search(newContext()));
+    }
+    
+    @Test
+    void testSearchWrapsHttpClientFailure() throws Exception {
+        DefaultImportHttpClient client = Mockito.mock(DefaultImportHttpClient.class);
+        when(client.get(any(AiResourceImportSource.class), any(String.class), eq(20),
+            eq("application/json"))).thenThrow(new IllegalStateException("boom"));
+        
+        assertThrows(NacosException.class,
+            () -> new SkillsShImportService(client).search(newContext()));
+    }
+    
+    @Test
+    void testFetchRejectsHttpErrorAndWrapsClientFailure() throws Exception {
+        SkillsShImportService service = serviceWithResponse(500, "{}");
+        assertThrows(NacosException.class,
+            () -> service.fetch(newContext(), item("owner/repo/one")));
+        
+        DefaultImportHttpClient client = Mockito.mock(DefaultImportHttpClient.class);
+        when(client.get(any(AiResourceImportSource.class), any(String.class), eq(20),
+            eq("application/json"))).thenThrow(new IllegalStateException("boom"));
+        assertThrows(NacosException.class,
+            () -> new SkillsShImportService(client).fetch(newContext(), item("owner/repo/one")));
+    }
+    
+    @Test
+    void testFetchRejectsInvalidItems() {
+        assertThrows(NacosException.class, () -> importService.fetch(newContext(), null));
+        assertThrows(NacosException.class,
+            () -> importService.fetch(newContext(), item("missing")));
+        assertThrows(NacosException.class,
+            () -> importService.fetch(newContext(), item("bad-source/repo/skill")));
+        assertThrows(NacosException.class,
+            () -> importService.fetch(newContext(), item("owner/repo/../skill")));
+        assertThrows(NacosException.class,
+            () -> importService.fetch(newContext(), item("owner/repo/.hidden")));
+        assertThrows(NacosException.class,
+            () -> importService.fetch(newContext(), item("owner/repo/path\\")));
+        
+        AiResourceImportItem metadataItem = new AiResourceImportItem();
+        metadataItem.setExternalId("owner/repo/skill");
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("repositorySource", "invalid");
+        metadata.put("skillId", "skill");
+        metadataItem.setMetadata(metadata);
+        assertThrows(NacosException.class,
+            () -> importService.fetch(newContext(), metadataItem));
+    }
+    
+    @Test
+    void testFetchRejectsInvalidDownloadResponse() throws Exception {
+        assertThrows(NacosException.class,
+            () -> serviceWithResponse(200, "{}").fetch(newContext(), item("owner/repo/one")));
+        assertThrows(NacosException.class,
+            () -> serviceWithResponse(200, "{\"files\":[{\"path\":\" \",\"contents\":\"x\"}]}")
+                .fetch(newContext(), item("owner/repo/one")));
+    }
+    
+    @Test
+    void testFetchRejectsFileCountAndSizeLimit() throws Exception {
+        AiResourceImportContext countContext = newContext();
+        countContext.getSource().setMaxItemCount(1);
+        String tooManyFiles = "{\"files\":[{\"path\":\"SKILL.md\",\"contents\":\"x\"},"
+            + "{\"path\":\"README.md\",\"contents\":\"y\"}]}";
+        assertThrows(NacosException.class,
+            () -> serviceWithResponse(200, tooManyFiles).fetch(countContext,
+                item("owner/repo/one")));
+        
+        AiResourceImportContext sizeContext = newContext();
+        sizeContext.getSource().setMaxArtifactSize(1);
+        assertThrows(NacosException.class,
+            () -> serviceWithResponse(200, downloadJson()).fetch(sizeContext,
+                item("owner/repo/one")));
+    }
+    
+    @Test
+    void testFetchNormalizesAndSkipsDuplicateFiles() throws Exception {
+        String json = "{\"files\":["
+            + "{\"path\":\"./SKILL.md\",\"contents\":\"name: one\"},"
+            + "{\"path\":\"SKILL.md\",\"contents\":\"duplicate\"}"
+            + "]}";
+        
+        AiResourceImportArtifact result =
+            serviceWithResponse(200, json).fetch(newContext(), item("owner/repo/one"));
+        
+        assertZipEntryContains(result.getPayload(), "one/SKILL.md", "name: one");
+    }
+    
+    @Test
+    void testEndpointVariantsAndConstructor() throws Exception {
+        SkillsShImportService byHttpClient = new SkillsShImportService(httpClient);
+        assertEquals(SkillsShImportServiceBuilder.IMPORTER_TYPE, byHttpClient.importerType());
+        
+        AiResourceImportContext searchEndpoint = newContext();
+        searchEndpoint.getSource().setEndpoint(ENDPOINT + "/api/search/");
+        assertEquals(1, importService.search(searchEndpoint).getItems().size());
+        
+        AiResourceImportContext downloadEndpoint = newContext();
+        downloadEndpoint.getSource().setEndpoint(ENDPOINT + "/api/download/");
+        assertZipEntryContains(importService.fetch(downloadEndpoint, item("openai/skills/pdf"))
+            .getPayload(), "pdf/SKILL.md", "name: pdf");
+        
+        AiResourceImportContext blankEndpoint = newContext();
+        blankEndpoint.getSource().setEndpoint(" ");
+        assertThrows(NacosException.class, () -> importService.search(blankEndpoint));
+        
+        Method method = SkillsShImportService.class.getDeclaredMethod("trimTrailingSlash",
+            String.class);
+        method.setAccessible(true);
+        assertThrows(Exception.class, () -> method.invoke(importService, " "));
     }
     
     @Test
@@ -295,6 +441,19 @@ class SkillsShImportServiceTest {
                 return HttpClient.Version.HTTP_1_1;
             }
         };
+    }
+    
+    private SkillsShImportService serviceWithResponse(int status, String body) throws Exception {
+        DefaultImportHttpClient client = Mockito.mock(DefaultImportHttpClient.class);
+        when(client.get(any(AiResourceImportSource.class), any(String.class), eq(20),
+            eq("application/json"))).thenReturn(importResponse(status, body));
+        return new SkillsShImportService(client);
+    }
+    
+    private ImportHttpResponse importResponse(int status, String body) {
+        return new ImportHttpResponse("https://skills.sh/api/search", status,
+            HttpHeaders.of(Collections.emptyMap(), (key, value) -> true),
+            body.getBytes(StandardCharsets.UTF_8));
     }
     
     private void assertZipEntryContains(byte[] zipBytes, String entryName, String expected)
