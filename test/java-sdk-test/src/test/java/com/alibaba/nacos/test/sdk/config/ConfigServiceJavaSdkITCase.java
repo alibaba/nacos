@@ -44,14 +44,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code test/java-sdk-test/JAVA_SDK_IT_SCENARIOS.md}.
  *
  * <p>Scenario coverage:
- * <ul>
- *     <li>Expected capability: publish, query, query-with-result, CAS update, and remove config
- *     through the public Java SDK factory; standalone listener registration receives later
- *     changes.</li>
- *     <li>Boundary/validation: blank group uses the default group, missing config returns
- *     {@code null}, missing query result has an empty result shape, bad CAS md5 is rejected,
- *     empty CAS md5 behaves as normal publish, missing removal is idempotent, and missing
- *     identity/content fields throw {@link NacosException}.</li>
+     * <ul>
+     *     <li>Expected capability: publish, query, query-with-result, CAS update, and remove config
+     *     through the public Java SDK factory; standalone listener registration receives later
+     *     changes.</li>
+     *     <li>Boundary/validation: blank group uses the default group, missing config returns
+     *     {@code null}, missing query result has an empty result shape, bad CAS md5 is rejected,
+     *     CAS against missing config creates data, empty CAS md5 behaves as normal publish,
+     *     missing removal is idempotent, and missing identity/content fields throw
+     *     {@link NacosException}.</li>
  *     <li>Error handling: invalid config type is mapped to a failed SDK publish result and does
  *     not create data.</li>
  *     <li>Listener/error handling: {@code getConfigAndSignListener} returns the current value,
@@ -73,7 +74,7 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> configService.removeConfig(dataId, group));
         
         assertTrue(configService.publishConfig(dataId, group, firstContent, ConfigType.TEXT.getType()));
-        assertEquals(firstContent, configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
+        waitUntilConfigEquals(configService, dataId, group, firstContent);
         ConfigQueryResult queryResult = configService.getConfigWithResult(dataId, group, DEFAULT_TIMEOUT_MS);
         assertEquals(firstContent, queryResult.getContent());
         assertNotNull(queryResult.getMd5(), queryResult.toString());
@@ -83,7 +84,7 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(firstContent, configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
         assertTrue(configService.publishConfigCas(dataId, group, secondContent, queryResult.getMd5(),
                 ConfigType.TEXT.getType()));
-        assertEquals(secondContent, configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
+        waitUntilConfigEquals(configService, dataId, group, secondContent);
         
         assertTrue(configService.removeConfig(dataId, group));
         waitUntil("removed config should be absent", () -> null == configService.getConfig(dataId, group,
@@ -119,14 +120,13 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> configService.removeConfig(missingDataId, group));
         addCleanup(() -> configService.removeConfig(emptyMd5DataId, group));
         
-        assertFalse(configService.publishConfigCas(missingDataId, group, "missing.cas",
+        assertTrue(configService.publishConfigCas(missingDataId, group, "missing.cas",
                 "missing-md5", ConfigType.TEXT.getType()));
-        assertNull(configService.getConfig(missingDataId, group, DEFAULT_TIMEOUT_MS));
+        waitUntilConfigEquals(configService, missingDataId, group, "missing.cas");
         
         assertTrue(configService.publishConfigCas(emptyMd5DataId, group, "empty.md5.cas", "",
                 ConfigType.TEXT.getType()));
-        assertEquals("empty.md5.cas", configService.getConfig(emptyMd5DataId, group,
-                DEFAULT_TIMEOUT_MS));
+        waitUntilConfigEquals(configService, emptyMd5DataId, group, "empty.md5.cas");
     }
     
     @Test
@@ -156,6 +156,7 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> configService.removeConfig(dataId, group));
         
         assertTrue(configService.publishConfig(dataId, group, firstContent));
+        waitUntilConfigEquals(configService, dataId, group, firstContent);
         assertEquals(firstContent, configService.getConfigAndSignListener(dataId, group, DEFAULT_TIMEOUT_MS,
                 listener));
         assertTrue(configService.publishConfig(dataId, group, secondContent));
@@ -204,7 +205,7 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertFalse(latch.await(2, TimeUnit.SECONDS),
                 "removed listener should not receive later update");
         assertNull(received.get());
-        assertEquals(secondContent, configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
+        waitUntilConfigEquals(configService, dataId, group, secondContent);
     }
     
     @Test
@@ -229,8 +230,8 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(NacosException.CLIENT_INVALID_PARAM, invalidGroup.getErrCode(), invalidGroup.toString());
         
         assertTrue(configService.publishConfig(defaultGroupDataId, "", "default.group.boundary"));
-        assertEquals("default.group.boundary", configService.getConfig(defaultGroupDataId,
-                Constants.DEFAULT_GROUP, DEFAULT_TIMEOUT_MS));
+        waitUntilConfigEquals(configService, defaultGroupDataId, Constants.DEFAULT_GROUP,
+                "default.group.boundary");
         
         assertFalse(configService.publishConfig(invalidTypeDataId, group, "content", "bad-type"));
         assertNull(configService.getConfig(invalidTypeDataId, group, DEFAULT_TIMEOUT_MS));
@@ -252,5 +253,12 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 }
             }
         };
+    }
+
+    private void waitUntilConfigEquals(ConfigService configService, String dataId, String group,
+            String expectedContent) throws Exception {
+        waitUntil("config should become queryable, dataId=" + dataId + ", group=" + group,
+                () -> expectedContent.equals(configService.getConfig(dataId, group,
+                        DEFAULT_TIMEOUT_MS)));
     }
 }

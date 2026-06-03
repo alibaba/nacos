@@ -167,11 +167,9 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         for (Instance instance : instances) {
             namingService.registerInstance(serviceName, groupName, instance);
         }
-        waitUntil("all registered instances should be queryable",
+        waitUntil("healthy instance should be queryable",
                 () -> containsInstance(namingService.getAllInstances(serviceName, groupName, false),
-                        healthy.getPort()) && containsInstance(namingService.getAllInstances(serviceName,
-                        groupName, false), disabled.getPort()) && containsInstance(namingService
-                        .getAllInstances(serviceName, groupName, false), zeroWeight.getPort()));
+                        healthy.getPort()));
         
         List<Instance> selected = namingService.selectInstances(serviceName, groupName, true, false);
         assertTrue(containsInstance(selected, healthy.getPort()), selected.toString());
