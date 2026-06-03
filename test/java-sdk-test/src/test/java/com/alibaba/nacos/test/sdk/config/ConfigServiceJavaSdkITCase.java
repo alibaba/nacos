@@ -44,17 +44,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code test/java-sdk-test/JAVA_SDK_IT_SCENARIOS.md}.
  *
  * <p>Scenario coverage:
-     * <ul>
-     *     <li>Expected capability: publish, query, query-with-result, CAS update, and remove config
-     *     through the public Java SDK factory; standalone listener registration receives later
-     *     changes.</li>
-     *     <li>Boundary/validation: blank group uses the default group, missing config returns
-     *     {@code null}, missing query result has an empty result shape, bad CAS md5 is rejected,
-     *     CAS against missing config creates data, empty CAS md5 behaves as normal publish,
-     *     missing removal is idempotent, and missing identity/content fields throw
-     *     {@link NacosException}.</li>
- *     <li>Error handling: invalid config type is mapped to a failed SDK publish result and does
- *     not create data.</li>
+ * <ul>
+ *     <li>Expected capability: publish, query, query-with-result, CAS update, and remove config
+ *     through the public Java SDK factory; standalone listener registration receives later
+ *     changes.</li>
+ *     <li>Boundary/validation: blank group uses the default group, missing config returns
+ *     {@code null}, missing query result has an empty result shape, bad CAS md5 is rejected,
+ *     CAS against missing config creates data, empty CAS md5 behaves as normal publish,
+ *     missing removal is idempotent, and missing identity/content fields throw
+ *     {@link NacosException}; unknown config type is accepted as a compatibility boundary and
+ *     remains queryable.</li>
+ *     <li>Error handling: invalid required fields and group names are mapped to controlled SDK
+ *     exceptions.</li>
  *     <li>Listener/error handling: {@code getConfigAndSignListener} returns the current value,
  *     delivers later updates, standalone listener receives updates, listener removal stops later
  *     callbacks, and listener cleanup plus SDK shutdown are safe.</li>
@@ -233,8 +234,9 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntilConfigEquals(configService, defaultGroupDataId, Constants.DEFAULT_GROUP,
                 "default.group.boundary");
         
-        assertFalse(configService.publishConfig(invalidTypeDataId, group, "content", "bad-type"));
-        assertNull(configService.getConfig(invalidTypeDataId, group, DEFAULT_TIMEOUT_MS));
+        assertTrue(configService.publishConfig(invalidTypeDataId, group, "unknown.type.content",
+                "bad-type"));
+        waitUntilConfigEquals(configService, invalidTypeDataId, group, "unknown.type.content");
     }
     
     private Listener listenerForContent(String expectedContent, CountDownLatch latch,
