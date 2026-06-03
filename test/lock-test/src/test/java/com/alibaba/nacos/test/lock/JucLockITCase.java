@@ -29,6 +29,8 @@ import org.springframework.core.env.StandardEnvironment;
 
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -505,6 +507,65 @@ public class JucLockITCase extends BaseLockITCase {
         startLatch.countDown();
         assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "All threads should complete");
         assertEquals(threadCount, counter.get(), "All threads should have executed");
+    }
+
+    @Test
+    @DisplayName("JUC-018b: 可重入锁 - 高并发场景下锁的稳定性")
+    void testJucHighConcurrencyStability() throws Exception {
+        String key = generateUniqueKey("juc-high-concurrency");
+        int iterations = 1000;
+
+        ExecutorService executor = Executors.newFixedThreadPool(20);
+        CountDownLatch latch = new CountDownLatch(iterations);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger activeHolders = new AtomicInteger(0);
+        AtomicInteger maxConcurrentHolders = new AtomicInteger(0);
+        AtomicInteger conflictCount = new AtomicInteger(0);
+        AtomicInteger exceptionCount = new AtomicInteger(0);
+
+        for (int i = 0; i < iterations; i++) {
+            executor.submit(() -> {
+                NacosLock lock = getJucLockService().getReentrantLock(key);
+                boolean locked = false;
+                try {
+                    lock.lock();
+                    locked = true;
+                    successCount.incrementAndGet();
+                    int currentHolders = activeHolders.incrementAndGet();
+                    maxConcurrentHolders.accumulateAndGet(currentHolders, Math::max);
+                    if (currentHolders > 1) {
+                        conflictCount.incrementAndGet();
+                    }
+                    // Keep the critical section observable under high contention.
+                    Thread.sleep(5);
+                } catch (Exception e) {
+                    exceptionCount.incrementAndGet();
+                } finally {
+                    try {
+                        if (locked) {
+                            activeHolders.decrementAndGet();
+                            lock.unlock();
+                        }
+                    } catch (Exception e) {
+                        exceptionCount.incrementAndGet();
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            });
+        }
+
+        assertTrue(latch.await(60, TimeUnit.SECONDS), "All iterations should complete within 60s");
+        executor.shutdown();
+        executor.awaitTermination(10, TimeUnit.SECONDS);
+
+        assertEquals(iterations, successCount.get(),
+                "All iterations should successfully acquire lock");
+        assertEquals(0, exceptionCount.get(), "Lock operations should not throw exceptions");
+        assertEquals(0, conflictCount.get(),
+                "No concurrent access should occur in critical section");
+        assertEquals(1, maxConcurrentHolders.get(),
+                "Only one holder should enter critical section at a time");
     }
 
     @Test

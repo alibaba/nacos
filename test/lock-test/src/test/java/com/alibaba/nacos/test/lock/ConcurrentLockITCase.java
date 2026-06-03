@@ -131,25 +131,38 @@ public class ConcurrentLockITCase extends BaseLockITCase {
         ExecutorService executor = Executors.newFixedThreadPool(20);
         CountDownLatch latch = new CountDownLatch(iterations);
         AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger activeHolders = new AtomicInteger(0);
+        AtomicInteger maxConcurrentHolders = new AtomicInteger(0);
+        AtomicInteger conflictCount = new AtomicInteger(0);
+        AtomicInteger exceptionCount = new AtomicInteger(0);
 
         for (int i = 0; i < iterations; i++) {
             final int iteration = i;
             executor.submit(() -> {
+                LockInstance lock = createReentrantLock(key);
                 try {
-                    LockInstance lock = createReentrantLock(key);
                     lock.setOwner("iteration-" + iteration);
                     lock.setExpiredTime(5000L);
                     lock.setWaitTimeMs(30000L);
 
                     Boolean lockResult = lockService.lock(lock);
                     if (lockResult) {
-                        successCount.incrementAndGet();
-                        // 持有锁一小段时间
-                        Thread.sleep(5);
-                        lockService.unLock(lock);
+                        try {
+                            successCount.incrementAndGet();
+                            int currentHolders = activeHolders.incrementAndGet();
+                            maxConcurrentHolders.accumulateAndGet(currentHolders, Math::max);
+                            if (currentHolders > 1) {
+                                conflictCount.incrementAndGet();
+                            }
+                            // Keep the critical section observable under high contention.
+                            Thread.sleep(5);
+                        } finally {
+                            activeHolders.decrementAndGet();
+                            lockService.unLock(lock);
+                        }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    exceptionCount.incrementAndGet();
                 } finally {
                     latch.countDown();
                 }
@@ -161,6 +174,12 @@ public class ConcurrentLockITCase extends BaseLockITCase {
         executor.awaitTermination(10, TimeUnit.SECONDS);
 
         // 所有迭代都应该成功获取过锁（串行执行）
-        assertEquals(iterations, successCount.get(), "All iterations should successfully acquire lock");
+        assertEquals(iterations, successCount.get(),
+                "All iterations should successfully acquire lock");
+        assertEquals(0, exceptionCount.get(), "Lock operations should not throw exceptions");
+        assertEquals(0, conflictCount.get(),
+                "No concurrent access should occur in critical section");
+        assertEquals(1, maxConcurrentHolders.get(),
+                "Only one holder should enter critical section at a time");
     }
 }
