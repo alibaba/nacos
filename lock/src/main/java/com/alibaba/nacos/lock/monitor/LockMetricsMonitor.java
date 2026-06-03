@@ -41,7 +41,11 @@ public class LockMetricsMonitor {
     private static AtomicInteger grpcLockTotal = new AtomicInteger();
     
     private static AtomicInteger grpcUnLockTotal = new AtomicInteger();
-    
+
+    private static AtomicInteger grpcRenewSuccess = new AtomicInteger();
+
+    private static AtomicInteger grpcRenewTotal = new AtomicInteger();
+
     private static AtomicInteger aliveLockCount = new AtomicInteger();
     
     static {
@@ -65,7 +69,17 @@ public class LockMetricsMonitor {
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "grpcUnLockSuccess"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, grpcUnLockSuccess);
-        
+
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
+        tags.add(new ImmutableTag("name", "grpcRenewTotal"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, grpcRenewTotal);
+
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
+        tags.add(new ImmutableTag("name", "grpcRenewSuccess"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, grpcRenewSuccess);
+
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "aliveLockCount"));
@@ -96,16 +110,22 @@ public class LockMetricsMonitor {
     public static AtomicInteger getSuccessMeter(LockOperationEnum lockOperationEnum) {
         if (lockOperationEnum == LockOperationEnum.ACQUIRE) {
             return grpcLockSuccess;
-        } else {
+        } else if (lockOperationEnum == LockOperationEnum.RELEASE) {
             return grpcUnLockSuccess;
+        } else if (lockOperationEnum == LockOperationEnum.RENEW) {
+            return grpcRenewSuccess;
         }
+        return grpcUnLockSuccess;
     }
-    
+
     public static AtomicInteger getTotalMeter(LockOperationEnum lockOperationEnum) {
         if (lockOperationEnum == LockOperationEnum.ACQUIRE) {
             return grpcLockTotal;
-        } else {
+        } else if (lockOperationEnum == LockOperationEnum.RELEASE) {
             return grpcUnLockTotal;
+        } else if (lockOperationEnum == LockOperationEnum.RENEW) {
+            return grpcRenewTotal;
         }
+        return grpcUnLockTotal;
     }
 }

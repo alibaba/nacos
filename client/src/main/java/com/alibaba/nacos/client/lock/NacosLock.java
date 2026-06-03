@@ -152,9 +152,11 @@ public class NacosLock implements Lock {
                 grpcClient.waitForNotification(key, currentOwner(), DEFAULT_LEASE_TIME_MS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                grpcClient.cancelWait(key, currentOwner());
                 throw new NacosLockException("Lock interrupted", e);
             } catch (NacosException e) {
                 LOGGER.error("Failed to acquire lock, key={}", key, e);
+                grpcClient.cancelWait(key, currentOwner());
                 throw new NacosLockException("Failed to acquire lock: " + key, e);
             }
         }
@@ -188,6 +190,7 @@ public class NacosLock implements Lock {
                 grpcClient.waitForNotification(key, currentOwner(), DEFAULT_LEASE_TIME_MS);
             } catch (NacosException e) {
                 LOGGER.error("Failed to acquire lock, key={}", key, e);
+                grpcClient.cancelWait(key, currentOwner());
                 throw new NacosLockException("Failed to acquire lock: " + key, e);
             }
         }
@@ -267,10 +270,12 @@ public class NacosLock implements Lock {
                     localReentrantCount.set(count - 1);
                     if (result.getReentrantCount() == 0) {
                         watchdog.unregister(key);
+                        localReentrantCount.remove();
                     }
                 } else {
                     localReentrantCount.set(0);
                     watchdog.unregister(key);
+                    localReentrantCount.remove();
                     throw new IllegalMonitorStateException(
                             "Unlock rejected by server, key=" + key + ", msg=" + result.getErrorMessage());
                 }
@@ -280,6 +285,9 @@ public class NacosLock implements Lock {
             }
         } finally {
             inUnlock.set(Boolean.FALSE);
+            if (localReentrantCount.get() <= 0) {
+                inUnlock.remove();
+            }
         }
     }
 

@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
@@ -113,7 +114,7 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
     }
     
     private InputStream dumpSnapshot() {
-        Map<LockKey, AtomicLockService> lockMap = lockManager.showLocks();
+        Map<LockKey, AtomicLockService> lockMap = new HashMap<>(lockManager.showLocks());
         return new ByteArrayInputStream(serializer.serialize(lockMap));
     }
     

@@ -31,6 +31,7 @@ import com.alibaba.nacos.lock.constant.PropertiesConstant;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.core.reentrant.mutex.MutexAtomicLock;
 import com.alibaba.nacos.lock.core.reentrant.mutex.ReentrantAtomicLock;
+import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.lock.model.LockInfo;
 import com.alibaba.nacos.lock.model.LockKey;
 import com.alibaba.nacos.lock.raft.request.MutexLockRequest;
@@ -51,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.alibaba.nacos.lock.constant.Constants.LOCK_ACQUIRE_SERVICE_GROUP_V2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -70,6 +72,9 @@ public class LockOperationServiceImplTest {
     
     @Mock
     private static LockManager lockManager;
+
+    @Mock
+    private static RpcPushService rpcPushService;
     
     private final Serializer serializer = SerializeFactory.getDefault();
     
@@ -93,6 +98,13 @@ public class LockOperationServiceImplTest {
     public void buildService() {
         Mockito.when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         lockOperationService = Mockito.spy(new LockOperationServiceImpl(lockManager, protocolManager));
+        try {
+            java.lang.reflect.Field field = LockOperationServiceImpl.class.getDeclaredField("rpcPushService");
+            field.setAccessible(true);
+            field.set(lockOperationService, rpcPushService);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         lockOperationService.init();
     }
     
@@ -269,6 +281,43 @@ public class LockOperationServiceImplTest {
         assertTrue(result.isSuccess());
     }
 
+    @Test
+    public void testFifoForceEnqueueShouldNotifyHeadWaiter() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("m2-key");
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+                .thenReturn(reentrantLock);
+
+        // Waiter-1 is waiting in queue
+        LockInfo waiterInfo = new LockInfo();
+        waiterInfo.setOwner("waiter-1");
+        waiterInfo.setConnectionId("conn-waiter");
+        waiterInfo.setWaitTimeMs(30000);
+        waiterInfo.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.addWaiter(waiterInfo);
+
+        // Lock is free — new request comes in, should be enqueued due to FIFO
+        WriteRequest request = buildAcquireRequest("new-owner", "conn-new", 5000, false);
+        Response response = lockOperationService.onApply(request);
+        assertTrue(response.getSuccess());
+        LockResult result = serializer.deserialize(response.getData().toByteArray());
+        assertFalse(result.isSuccess());
+        assertTrue(result.isWaiting());
+
+        // Lock is now free (forceReleased), waiter-1 exists in queue
+        assertNull(reentrantLock.getOwner(), "Lock should be free after forceRelease");
+        assertEquals(2, reentrantLock.getWaitQueue().size());
+
+        // After fix: notifyFirstWaiter() sends notification to waiter-1
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        Mockito.verify(rpcPushService, Mockito.times(1))
+                .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+    }
+
     // ==================== releaseLock tests ====================
 
     @Test
@@ -370,6 +419,55 @@ public class LockOperationServiceImplTest {
         assertTrue(response.getSuccess());
         LockResult result = serializer.deserialize(response.getData().toByteArray());
         assertTrue(result.isSuccess());
+    }
+
+    @Test
+    public void testStaleConnectionIdAfterExpireCausesWrongOwnerRelease() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("m1-key");
+
+        // Owner-1 holds the lock on conn-1 (expired)
+        LockInfo holderInfo = new LockInfo();
+        holderInfo.setOwner("owner-1");
+        holderInfo.setConnectionId("conn-1");
+        holderInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, "m1-key"));
+        holderInfo.setEndTime(System.currentTimeMillis() - 1000);
+        reentrantLock.tryLock(holderInfo);
+
+        // Owner-2 waiting in queue on conn-2
+        LockInfo waiterInfo = new LockInfo();
+        waiterInfo.setOwner("owner-2");
+        waiterInfo.setConnectionId("conn-2");
+        waiterInfo.setWaitTimeMs(30000);
+        waiterInfo.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.addWaiter(waiterInfo);
+
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(new LockKey(LockConstants.NACOS_LOCK_TYPE, "m1-key"), reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+                .thenReturn(reentrantLock);
+
+        // Expire the lock — autoExpire clears owner but NOT connectionId
+        WriteRequest expireRequest = buildExpireRequest("owner-1", "m1-key");
+        lockOperationService.onApply(expireRequest);
+
+        // Owner-2 acquires the lock
+        LockInfo newOwnerInfo = new LockInfo();
+        newOwnerInfo.setOwner("owner-2");
+        newOwnerInfo.setConnectionId("conn-2");
+        newOwnerInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, "m1-key"));
+        newOwnerInfo.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.tryLock(newOwnerInfo);
+        assertEquals("owner-2", reentrantLock.getOwner());
+
+        // conn-1 disconnects — should NOT affect owner-2
+        WriteRequest cleanupRequest = buildCleanupConnectionRequest("m1-key", "conn-1");
+        lockOperationService.onApply(cleanupRequest);
+
+        // BUG: stale connectionId="conn-1" matches, owner-2 gets force-released
+        assertEquals("owner-2", reentrantLock.getOwner(),
+                "owner-2 should still hold the lock after conn-1 disconnects");
     }
 
     // ==================== helper methods ====================
@@ -499,7 +597,7 @@ public class LockOperationServiceImplTest {
         Response response = lockOperationService.onApply(request);
         assertTrue(response.getSuccess());
         LockResult result = serializer.deserialize(response.getData().toByteArray());
-        assertFalse(result.isSuccess());
+        assertTrue(result.isSuccess(), "Cleaning up non-existent lock is a no-op, should succeed");
     }
 
     @Test

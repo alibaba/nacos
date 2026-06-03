@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.lock.common.LockNotificationType;
 import com.alibaba.nacos.api.lock.constant.PropertyConstants;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.api.lock.model.LockResult;
@@ -75,7 +76,7 @@ public class LockGrpcClient extends AbstractLockClient {
 
     private final RpcClient rpcClient;
 
-    private final ConcurrentHashMap<String, CompletableFuture<String>> notificationFutures = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CompletableFuture<LockNotificationType>> notificationFutures = new ConcurrentHashMap<>();
 
     /**
      * Tracks whether the client has been shut down. When true, pending notification futures
@@ -107,7 +108,7 @@ public class LockGrpcClient extends AbstractLockClient {
                 if (request instanceof LockNotificationRequest) {
                     LockNotificationRequest notification = (LockNotificationRequest) request;
                     String waitKey = buildWaitKey(notification.getLockKey(), notification.getOwner());
-                    CompletableFuture<String> future = notificationFutures.get(waitKey);
+                    CompletableFuture<LockNotificationType> future = notificationFutures.get(waitKey);
                     if (future != null) {
                         future.complete(notification.getNotificationType());
                     }
@@ -178,9 +179,9 @@ public class LockGrpcClient extends AbstractLockClient {
                 try {
                     long pollTimeout = Math.min(remaining,
                             DEFAULT_NOTIFICATION_POLL_MS + ThreadLocalRandom.current().nextInt(200));
-                    String notificationType = waitForNotification(
+                    LockNotificationType notificationType = waitForNotification(
                             instance.getKey(), instance.getOwner(), pollTimeout);
-                    if ("TIMEOUT".equals(notificationType)) {
+                    if (notificationType == LockNotificationType.TIMEOUT) {
                         return false;
                     }
                 } catch (InterruptedException e) {
@@ -293,15 +294,15 @@ public class LockGrpcClient extends AbstractLockClient {
      * @param lockKey lock key
      * @param owner lock owner identifier
      * @param timeoutMs max wait time in milliseconds, 0 means wait indefinitely
-     * @return notification type string ("AVAILABLE" or "TIMEOUT"), or null on timeout
+     * @return notification type, or null on timeout
      * @throws InterruptedException if the thread is interrupted while waiting
      */
-    public String waitForNotification(String lockKey, String owner, long timeoutMs) throws InterruptedException {
+    public LockNotificationType waitForNotification(String lockKey, String owner, long timeoutMs) throws InterruptedException {
         if (closed.get()) {
-            return "TIMEOUT";
+            return LockNotificationType.TIMEOUT;
         }
         String waitKey = buildWaitKey(lockKey, owner);
-        CompletableFuture<String> future = notificationFutures.compute(waitKey, (k, existing) -> {
+        CompletableFuture<LockNotificationType> future = notificationFutures.compute(waitKey, (k, existing) -> {
             if (existing != null && !existing.isDone()) {
                 return existing;
             }
@@ -332,9 +333,9 @@ public class LockGrpcClient extends AbstractLockClient {
      */
     public void registerForNotification(String lockKey, String owner) {
         String waitKey = buildWaitKey(lockKey, owner);
-        CompletableFuture<String> oldFuture = notificationFutures.put(waitKey, new CompletableFuture<>());
+        CompletableFuture<LockNotificationType> oldFuture = notificationFutures.put(waitKey, new CompletableFuture<>());
         if (oldFuture != null && !oldFuture.isDone()) {
-            oldFuture.complete("AVAILABLE");
+            oldFuture.complete(LockNotificationType.AVAILABLE);
         }
     }
 
@@ -346,7 +347,7 @@ public class LockGrpcClient extends AbstractLockClient {
      */
     public void cancelWait(String lockKey, String owner) {
         String waitKey = buildWaitKey(lockKey, owner);
-        CompletableFuture<String> future = notificationFutures.remove(waitKey);
+        CompletableFuture<LockNotificationType> future = notificationFutures.remove(waitKey);
         if (future != null) {
             future.cancel(false);
         }

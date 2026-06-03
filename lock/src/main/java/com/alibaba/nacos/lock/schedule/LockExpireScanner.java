@@ -17,13 +17,10 @@
 package com.alibaba.nacos.lock.schedule;
 
 import com.alibaba.nacos.api.lock.model.LockInstance;
-import com.alibaba.nacos.api.lock.remote.request.LockNotificationRequest;
-import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.model.LockKey;
-import com.alibaba.nacos.lock.model.WaitEntry;
 import com.alibaba.nacos.lock.service.LockOperationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -55,9 +51,6 @@ public class LockExpireScanner {
     @Autowired
     private LockOperationService lockOperationService;
 
-    @Autowired
-    private RpcPushService rpcPushService;
-
     /**
      * Scan for expired locks and clean up wait queue entries periodically.
      */
@@ -78,15 +71,17 @@ public class LockExpireScanner {
             if (lockService instanceof AbstractAtomicLock) {
                 AbstractAtomicLock atomicLock = (AbstractAtomicLock) lockService;
 
-                if (atomicLock.getExpiredTimestamp() > 0
+                // Local check is an optimization to avoid unnecessary Raft submissions.
+                // A RENEW may race between here and the Raft apply, but autoExpire()
+                // inside onApply() is the authoritative check — it will reject the
+                // EXPIRE if the lock was renewed.
+                if (atomicLock.getOwner() != null
+                        && atomicLock.getExpiredTimestamp() > 0
                         && System.currentTimeMillis() > atomicLock.getExpiredTimestamp()) {
                     LOGGER.info("Lock: lock expired, key={}, type={}, releasing via Raft",
                             lockKey.getKey(), lockKey.getLockType());
                     expireLockViaRaft(lockKey, atomicLock);
-                    continue;
                 }
-
-                cleanExpiredWaitEntries(lockKey, atomicLock);
             }
         }
     }
@@ -104,19 +99,6 @@ public class LockExpireScanner {
             lockOperationService.expire(instance);
         } catch (Exception e) {
             LOGGER.warn("Lock: failed to expire lock via Raft, key={}", lockKey, e);
-        }
-    }
-
-    private void cleanExpiredWaitEntries(LockKey lockKey, AbstractAtomicLock atomicLock) {
-        List<WaitEntry> expiredWaiters = atomicLock.removeExpiredWaiters();
-        for (WaitEntry entry : expiredWaiters) {
-            LockNotificationRequest timeout = LockNotificationRequest.timeout(
-                    lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
-            try {
-                rpcPushService.pushWithoutAck(entry.getConnectionId(), timeout);
-            } catch (Exception e) {
-                LOGGER.warn("Lock: failed to notify expired waiter, connectionId={}", entry.getConnectionId(), e);
-            }
         }
     }
 }

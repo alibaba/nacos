@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.lock.remote.request;
 
+import com.alibaba.nacos.api.lock.common.LockNotificationType;
 import com.alibaba.nacos.api.remote.request.ServerRequest;
 
 import static com.alibaba.nacos.api.common.Constants.Lock.LOCK_MODULE;
@@ -37,12 +38,12 @@ public class LockNotificationRequest extends ServerRequest {
 
     private String owner;
 
-    private String notificationType;
+    private LockNotificationType notificationType;
 
     public LockNotificationRequest() {
     }
 
-    public LockNotificationRequest(String lockKey, String lockType, String owner, String notificationType) {
+    public LockNotificationRequest(String lockKey, String lockType, String owner, LockNotificationType notificationType) {
         this.lockKey = lockKey;
         this.lockType = lockType;
         this.owner = owner;
@@ -50,11 +51,11 @@ public class LockNotificationRequest extends ServerRequest {
     }
 
     public static LockNotificationRequest available(String lockKey, String lockType, String owner) {
-        return new LockNotificationRequest(lockKey, lockType, owner, "AVAILABLE");
+        return new LockNotificationRequest(lockKey, lockType, owner, LockNotificationType.AVAILABLE);
     }
 
     public static LockNotificationRequest timeout(String lockKey, String lockType, String owner) {
-        return new LockNotificationRequest(lockKey, lockType, owner, "TIMEOUT");
+        return new LockNotificationRequest(lockKey, lockType, owner, LockNotificationType.TIMEOUT);
     }
 
     @Override
@@ -86,11 +87,11 @@ public class LockNotificationRequest extends ServerRequest {
         this.owner = owner;
     }
 
-    public String getNotificationType() {
+    public LockNotificationType getNotificationType() {
         return notificationType;
     }
 
-    public void setNotificationType(String notificationType) {
+    public void setNotificationType(LockNotificationType notificationType) {
         this.notificationType = notificationType;
     }
 }

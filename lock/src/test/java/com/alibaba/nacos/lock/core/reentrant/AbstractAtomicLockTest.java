@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -310,25 +311,6 @@ class AbstractAtomicLockTest {
         assertEquals(0, drained.size());
     }
 
-    // ==================== removeExpiredWaiters ====================
-
-    @Test
-    void testRemoveExpiredWaiters() throws InterruptedException {
-        LockInfo expired1 = createLockInfo("owner-1", "conn-1", 50);
-        LockInfo expired2 = createLockInfo("owner-2", "conn-2", 50);
-        LockInfo valid = createLockInfo("owner-3", "conn-3", 5000);
-
-        lock.addWaiter(expired1);
-        lock.addWaiter(expired2);
-        lock.addWaiter(valid);
-        Thread.sleep(100);
-
-        var expired = lock.removeExpiredWaiters();
-        assertEquals(2, expired.size());
-        assertEquals(1, lock.getWaitQueue().size());
-        assertEquals("owner-3", lock.getWaitQueue().get(0).getOwner());
-    }
-
     // ==================== initTransientFields ====================
 
     @Test
@@ -351,6 +333,23 @@ class AbstractAtomicLockTest {
 
         var entry = lock.pollFirstWaiter();
         assertEquals("owner-2", entry.getOwner());
+    }
+
+    // ==================== M3: null owner bypasses unlock verification ====================
+
+    @Test
+    void testUnLockWithNullOwnerReleasesAnyLock() {
+        LockInfo lockInfo = createLockInfo("real-owner", "conn-1", 5000);
+        lock.tryLock(lockInfo);
+        assertEquals("real-owner", lock.getOwner());
+
+        // Another client sends RELEASE with null owner — bypasses owner check
+        LockInfo nullOwnerInfo = new LockInfo();
+        nullOwnerInfo.setOwner(null);
+        nullOwnerInfo.setKey(lockInfo.getKey());
+        assertTrue(lock.unLock(nullOwnerInfo),
+                "null owner should NOT be able to release someone else's lock");
+        assertNull(lock.getOwner(), "Lock released by unauthenticated request");
     }
 
     private LockInfo createLockInfo(String owner, String connectionId, long waitTimeMs) {

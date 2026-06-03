@@ -311,29 +311,6 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
         }
     }
 
-    /**
-     * Remove and return all expired waiters from the queue.
-     *
-     * @return list of expired waiters (may be empty)
-     */
-    public List<WaitEntry> removeExpiredWaiters() {
-        lock.lock();
-        try {
-            List<WaitEntry> expired = new ArrayList<>();
-            Iterator<WaitEntry> iterator = waitQueue.iterator();
-            while (iterator.hasNext()) {
-                WaitEntry entry = iterator.next();
-                if (entry.isExpired()) {
-                    expired.add(entry);
-                    iterator.remove();
-                }
-            }
-            return expired;
-        } finally {
-            lock.unlock();
-        }
-    }
-
     @Override
     public Boolean autoExpire() {
         lock.lock();

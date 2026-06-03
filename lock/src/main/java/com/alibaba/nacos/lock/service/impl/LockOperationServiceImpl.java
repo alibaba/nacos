@@ -52,7 +52,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -144,7 +143,10 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             if (LOGGER.isDebugEnabled()) {
                 LockInfo lockInfo = mutexLockRequest.getLockInfo();
                 LOGGER.debug("onApply {} key={}, owner={}, result={}",
-                        lockOperation, lockInfo.getKey(), lockInfo.getOwner(), data);
+                        lockOperation,
+                        lockInfo != null ? lockInfo.getKey() : "batch",
+                        lockInfo != null ? lockInfo.getOwner() : null,
+                        data);
             }
             ByteString bytes = ByteString.copyFrom(serializer.serialize(data));
             return Response.newBuilder().setSuccess(true).setData(bytes).build();
@@ -184,7 +186,14 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                     LockKey lockKey = lockInfo.getKey();
                     LockNotificationRequest notification = LockNotificationRequest.available(
                             lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
-                    notificationExecutor.submit(() -> rpcPushService.pushWithoutAck(entry.getConnectionId(), notification));
+                    String targetConn = entry.getConnectionId();
+                    notificationExecutor.submit(() -> {
+                        try {
+                            rpcPushService.pushWithoutAck(targetConn, notification);
+                        } catch (Exception e) {
+                            LOGGER.warn("Lock: failed to notify waiter after release, key={}", lockKey, e);
+                        }
+                    });
                 }
             } else {
                 lockManager.removeMutexLock(lockInfo.getKey());
@@ -225,6 +234,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                         // Same non-atomic gap as above; safe under Raft single-threaded apply.
                         atomicLock.forceRelease();
                         int position = atomicLock.addWaiter(lockInfo);
+                        notifyFirstWaiter(lockInfo.getKey(), atomicLock);
                         return LockResult.waiting(position);
                     }
                 }
@@ -261,8 +271,14 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                             LockKey lockKey = lockInfo.getKey();
                             LockNotificationRequest notification = LockNotificationRequest.available(
                                     lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
-                            notificationExecutor.submit(
-                                    () -> rpcPushService.pushWithoutAck(entry.getConnectionId(), notification));
+                            String targetConn = entry.getConnectionId();
+                            notificationExecutor.submit(() -> {
+                                try {
+                                    rpcPushService.pushWithoutAck(targetConn, notification);
+                                } catch (Exception e) {
+                                    LOGGER.warn("Lock: failed to notify waiter after expire, key={}", lockKey, e);
+                                }
+                            });
                         }
                     } else {
                         lockManager.removeMutexLock(lockInfo.getKey());
@@ -277,24 +293,39 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     /**
      * Cleanup lock state for a disconnected connection inside the Raft state machine.
      *
-     * <p>Atomically performs:
+     * <p>If the request contains a specific lock key, cleans up only that lock.
+     * Otherwise (batch mode), iterates all locks and cleans up each one.
+     *
+     * <p>For each affected lock, atomically performs:
      * <ol>
      *     <li>Force-release the lock if held by this connection</li>
      *     <li>Notify the next waiter (if any) after release</li>
      *     <li>Remove all wait queue entries belonging to this connection</li>
      * </ol>
      *
-     * @param request lock request with key and connectionId
+     * @param request lock request with connectionId (and optional key)
      * @return lock result indicating cleanup outcome
      */
     private LockResult cleanupConnection(MutexLockRequest request) {
-        LockInfo lockInfo = request.getLockInfo();
         String connectionId = request.getConnectionId();
-        LockKey lockKey = lockInfo.getKey();
+        LockInfo lockInfo = request.getLockInfo();
 
+        if (lockInfo != null && lockInfo.getKey() != null) {
+            cleanupSingleLock(lockInfo.getKey(), connectionId);
+        } else {
+            for (Map.Entry<LockKey, AtomicLockService> entry : lockManager.showLocks().entrySet()) {
+                if (entry.getValue() instanceof AbstractAtomicLock) {
+                    cleanupSingleLock(entry.getKey(), connectionId);
+                }
+            }
+        }
+        return LockResult.success(0);
+    }
+
+    private void cleanupSingleLock(LockKey lockKey, String connectionId) {
         AtomicLockService lockService = lockManager.showLocks().get(lockKey);
         if (lockService == null || !(lockService instanceof AbstractAtomicLock atomicLock)) {
-            return LockResult.fail("Lock does not exist");
+            return;
         }
 
         // Step 1: Force-release if held by this connection
@@ -316,15 +347,19 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 if (entry != null) {
                     LockNotificationRequest notification = LockNotificationRequest.available(
                             lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
-                    notificationExecutor.submit(
-                            () -> rpcPushService.pushWithoutAck(entry.getConnectionId(), notification));
+                    String targetConn = entry.getConnectionId();
+                    notificationExecutor.submit(() -> {
+                        try {
+                            rpcPushService.pushWithoutAck(targetConn, notification);
+                        } catch (Exception e) {
+                            LOGGER.warn("Lock: failed to notify waiter after cleanup, key={}", lockKey, e);
+                        }
+                    });
                 }
             } else {
                 lockManager.removeMutexLock(lockKey);
             }
         }
-
-        return LockResult.success(0);
     }
 
     @Override
@@ -473,32 +508,21 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     /**
      * Force release all locks held by the specified connection and clean up wait queue entries.
      *
-     * <p>All state mutations are submitted through Raft consensus via {@code CLEANUP_CONNECTION}
-     * WriteRequests, ensuring cluster-wide consistency for both lock releases and wait queue cleanup.
+     * <p>Submits a single {@code CLEANUP_CONNECTION} Raft request. The batch iteration
+     * happens inside {@code onApply()} under Raft consensus, ensuring cluster-wide consistency.
      *
      * @param connectionId the gRPC connection ID of the disconnected client
      */
     public void releaseLocksByConnection(String connectionId) {
-        Map<LockKey, AtomicLockService> snapshot = new HashMap<>(lockManager.showLocks());
-        for (Map.Entry<LockKey, AtomicLockService> entry : snapshot.entrySet()) {
-            AtomicLockService lockService = entry.getValue();
-            if (lockService instanceof AbstractAtomicLock) {
-                LockKey lockKey = entry.getKey();
-                try {
-                    cleanupConnectionViaRaft(lockKey, connectionId);
-                } catch (Exception e) {
-                    LOGGER.warn("Lock: failed to cleanup connection via Raft for connectionId={}, key={}",
-                            connectionId, lockKey, e);
-                }
-            }
+        try {
+            cleanupConnectionViaRaft(connectionId);
+        } catch (Exception e) {
+            LOGGER.warn("Lock: failed to cleanup connection via Raft, connectionId={}", connectionId, e);
         }
     }
 
-    private void cleanupConnectionViaRaft(LockKey lockKey, String connectionId) throws Exception {
+    private void cleanupConnectionViaRaft(String connectionId) throws Exception {
         MutexLockRequest request = new MutexLockRequest();
-        LockInfo lockInfo = new LockInfo();
-        lockInfo.setKey(lockKey);
-        request.setLockInfo(lockInfo);
         request.setConnectionId(connectionId);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
                 .setData(ByteString.copyFrom(serializer.serialize(request)))
