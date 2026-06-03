@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   integration-test:
+    name: OpenAPI and Java SDK Integration Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -77,3 +78,6 @@ jobs:
         run: |
           cd test
           mvn clean verify -Pintegration-test
+
+      - name: Run Java SDK IT Tests
+        run: mvn -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test -DskipTests=false
