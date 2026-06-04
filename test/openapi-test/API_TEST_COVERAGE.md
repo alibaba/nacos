@@ -33,6 +33,34 @@ coverage before adding or debugging an IT.
 - If an exposed success path is intentionally not executed because it mutates
   risky runtime or storage state, record the reason in the scenario cell.
 
+## Status Legend
+
+| Status | Meaning |
+| --- | --- |
+| Covered | The current IT verifies the expected behavior and its important result shape. |
+| Partial | The current IT verifies representative behavior, but important public API scenarios remain. |
+| Pending | No IT currently verifies this public API scenario. |
+
+## Coverage Calculation
+
+Coverage is calculated from the API-surface rows in the scenario documents. One
+row may cover multiple closely coupled HTTP operations in a workflow, such as a
+create/query/update/delete API group. Strict coverage counts only `Covered`
+rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
+`0.5`.
+
+| API surface | Scenario rows | Covered | Partial | Pending | Strict coverage | Effective coverage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Client OpenAPI | 8 | 8 | 0 | 0 | 100.00% | 100.00% |
+| Admin API | 35 | 30 | 5 | 0 | 85.71% | 92.86% |
+| Console API | 27 | 25 | 2 | 0 | 92.59% | 96.30% |
+| Total | 70 | 63 | 7 | 0 | 90.00% | 95.00% |
+
+Partial rows are documented in the matching scenario document. The current
+partial set is limited to operations whose remaining success paths mutate
+shared runtime/storage state, require publish-pipeline plugin data, or require
+an external LLM provider.
+
 ## Coverage Documents
 
 | API surface | Scenario document | Test package |
