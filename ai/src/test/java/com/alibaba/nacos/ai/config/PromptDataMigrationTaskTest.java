@@ -856,9 +856,6 @@ class PromptDataMigrationTaskTest {
             return resp;
         });
         
-        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, RESOURCE_TYPE_PROMPT, "0.0.1"))
-            .thenReturn(null);
-        
         PromptVersionInfo versionContent = new PromptVersionInfo();
         versionContent.setTemplate("Hello");
         ConfigAllInfo versionConfigAllInfo = new ConfigAllInfo();
