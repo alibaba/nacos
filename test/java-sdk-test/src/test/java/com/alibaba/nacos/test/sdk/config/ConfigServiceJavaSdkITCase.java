@@ -19,17 +19,23 @@ package com.alibaba.nacos.test.sdk.config;
 import com.alibaba.nacos.api.config.ConfigQueryResult;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.config.filter.AbstractConfigFilter;
+import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
+import com.alibaba.nacos.api.config.filter.IConfigRequest;
+import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
 
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.alibaba.nacos.client.config.common.ConfigConstants.CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -59,12 +65,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Listener/error handling: {@code getConfigAndSignListener} returns the current value,
  *     delivers later updates, standalone listener receives updates, listener removal stops later
  *     callbacks, and listener cleanup plus SDK shutdown are safe.</li>
+ *     <li>Filter/type behavior: valid non-text config types are preserved in query result
+ *     metadata, and a public SDK config filter can transform publish request content and query
+ *     response content.</li>
  * </ul>
  *
  * @author xiweng.yy
  */
 public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
-    
+
     @Test
     public void testPublishQueryCasAndRemoveConfig() throws Exception {
         ConfigService configService = createConfigService();
@@ -73,32 +82,32 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         String firstContent = "sdk.config.first=true";
         String secondContent = "sdk.config.second=true";
         addCleanup(() -> configService.removeConfig(dataId, group));
-        
+
         assertTrue(configService.publishConfig(dataId, group, firstContent, ConfigType.TEXT.getType()));
         waitUntilConfigEquals(configService, dataId, group, firstContent);
         ConfigQueryResult queryResult = configService.getConfigWithResult(dataId, group, DEFAULT_TIMEOUT_MS);
         assertEquals(firstContent, queryResult.getContent());
         assertNotNull(queryResult.getMd5(), queryResult.toString());
-        
+
         assertFalse(configService.publishConfigCas(dataId, group, "bad-cas-content", "bad-md5",
                 ConfigType.TEXT.getType()));
         assertEquals(firstContent, configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
         assertTrue(configService.publishConfigCas(dataId, group, secondContent, queryResult.getMd5(),
                 ConfigType.TEXT.getType()));
         waitUntilConfigEquals(configService, dataId, group, secondContent);
-        
+
         assertTrue(configService.removeConfig(dataId, group));
         waitUntil("removed config should be absent", () -> null == configService.getConfig(dataId, group,
                 DEFAULT_TIMEOUT_MS));
         assertNull(configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
     }
-    
+
     @Test
     public void testMissingConfigResultAndRemoveAreEmptyAndIdempotent() throws Exception {
         ConfigService configService = createConfigService();
         String dataId = randomDataId("missing-result");
         String group = randomGroup("config");
-        
+
         assertNull(configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
         ConfigQueryResult queryResult = configService.getConfigWithResult(dataId, group,
                 DEFAULT_TIMEOUT_MS);
@@ -106,12 +115,12 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertNull(queryResult.getContent(), queryResult.toString());
         assertNull(queryResult.getMd5(), queryResult.toString());
         assertNull(queryResult.getConfigType(), queryResult.toString());
-        
+
         assertTrue(configService.removeConfig(dataId, group),
                 "server-side remove of an absent config is idempotent");
         assertNull(configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
     }
-    
+
     @Test
     public void testCasBoundaryForMissingAndEmptyMd5() throws Exception {
         ConfigService configService = createConfigService();
@@ -120,16 +129,16 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         String group = randomGroup("config");
         addCleanup(() -> configService.removeConfig(missingDataId, group));
         addCleanup(() -> configService.removeConfig(emptyMd5DataId, group));
-        
+
         assertTrue(configService.publishConfigCas(missingDataId, group, "missing.cas",
                 "missing-md5", ConfigType.TEXT.getType()));
         waitUntilConfigEquals(configService, missingDataId, group, "missing.cas");
-        
+
         assertTrue(configService.publishConfigCas(emptyMd5DataId, group, "empty.md5.cas", "",
                 ConfigType.TEXT.getType()));
         waitUntilConfigEquals(configService, emptyMd5DataId, group, "empty.md5.cas");
     }
-    
+
     @Test
     public void testGetConfigAndSignListenerReceivesUpdates() throws Exception {
         ConfigService configService = createConfigService();
@@ -144,7 +153,7 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
             public Executor getExecutor() {
                 return null;
             }
-            
+
             @Override
             public void receiveConfigInfo(String configInfo) {
                 if (secondContent.equals(configInfo)) {
@@ -155,17 +164,17 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         };
         addCleanup(() -> configService.removeListener(dataId, group, listener));
         addCleanup(() -> configService.removeConfig(dataId, group));
-        
+
         assertTrue(configService.publishConfig(dataId, group, firstContent));
         waitUntilConfigEquals(configService, dataId, group, firstContent);
         assertEquals(firstContent, configService.getConfigAndSignListener(dataId, group, DEFAULT_TIMEOUT_MS,
                 listener));
         assertTrue(configService.publishConfig(dataId, group, secondContent));
-        
+
         assertTrue(latch.await(10, TimeUnit.SECONDS), "listener should receive updated config");
         assertEquals(secondContent, received.get());
     }
-    
+
     @Test
     public void testAddListenerReceivesPublishedUpdate() throws Exception {
         ConfigService configService = createConfigService();
@@ -177,14 +186,14 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Listener listener = listenerForContent(content, latch, received);
         addCleanup(() -> configService.removeListener(dataId, group, listener));
         addCleanup(() -> configService.removeConfig(dataId, group));
-        
+
         configService.addListener(dataId, group, listener);
         assertTrue(configService.publishConfig(dataId, group, content));
-        
+
         assertTrue(latch.await(10, TimeUnit.SECONDS), "standalone listener should receive update");
         assertEquals(content, received.get());
     }
-    
+
     @Test
     public void testRemoveListenerStopsLaterCallbacks() throws Exception {
         ConfigService configService = createConfigService();
@@ -197,18 +206,18 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Listener listener = listenerForContent(secondContent, latch, received);
         addCleanup(() -> configService.removeListener(dataId, group, listener));
         addCleanup(() -> configService.removeConfig(dataId, group));
-        
+
         assertTrue(configService.publishConfig(dataId, group, firstContent));
         configService.addListener(dataId, group, listener);
         configService.removeListener(dataId, group, listener);
         assertTrue(configService.publishConfig(dataId, group, secondContent));
-        
+
         assertFalse(latch.await(2, TimeUnit.SECONDS),
                 "removed listener should not receive later update");
         assertNull(received.get());
         waitUntilConfigEquals(configService, dataId, group, secondContent);
     }
-    
+
     @Test
     public void testConfigValidationAndDefaultGroupBoundary() throws Exception {
         ConfigService configService = createConfigService();
@@ -217,28 +226,67 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         String invalidTypeDataId = randomDataId("invalid-type");
         addCleanup(() -> configService.removeConfig(defaultGroupDataId, Constants.DEFAULT_GROUP));
         addCleanup(() -> configService.removeConfig(invalidTypeDataId, group));
-        
+
         NacosException missingDataId = assertThrows(NacosException.class,
                 () -> configService.getConfig("", group, DEFAULT_TIMEOUT_MS));
         assertEquals(NacosException.CLIENT_INVALID_PARAM, missingDataId.getErrCode(), missingDataId.toString());
-        
+
         NacosException missingContent = assertThrows(NacosException.class,
                 () -> configService.publishConfig(randomDataId("invalid"), group, ""));
         assertEquals(NacosException.CLIENT_INVALID_PARAM, missingContent.getErrCode(), missingContent.toString());
-        
+
         NacosException invalidGroup = assertThrows(NacosException.class,
                 () -> configService.getConfig(randomDataId("invalid"), "bad/group", DEFAULT_TIMEOUT_MS));
         assertEquals(NacosException.CLIENT_INVALID_PARAM, invalidGroup.getErrCode(), invalidGroup.toString());
-        
+
         assertTrue(configService.publishConfig(defaultGroupDataId, "", "default.group.boundary"));
         waitUntilConfigEquals(configService, defaultGroupDataId, Constants.DEFAULT_GROUP,
                 "default.group.boundary");
-        
+
         assertTrue(configService.publishConfig(invalidTypeDataId, group, "unknown.type.content",
                 "bad-type"));
         waitUntilConfigEquals(configService, invalidTypeDataId, group, "unknown.type.content");
     }
-    
+
+    @Test
+    public void testValidJsonTypeIsPreservedInQueryResult() throws Exception {
+        ConfigService configService = createConfigService();
+        String dataId = randomDataId("json-type");
+        String group = randomGroup("config");
+        String content = "{\"sdk\":\"json\",\"enabled\":true}";
+        addCleanup(() -> configService.removeConfig(dataId, group));
+
+        assertTrue(configService.publishConfig(dataId, group, content, ConfigType.JSON.getType()));
+        waitUntilConfigEquals(configService, dataId, group, content);
+
+        ConfigQueryResult queryResult = configService.getConfigWithResult(dataId, group,
+                DEFAULT_TIMEOUT_MS);
+        assertEquals(content, queryResult.getContent());
+        assertEquals(ConfigType.JSON.getType(), queryResult.getConfigType(),
+                queryResult.toString());
+        assertNotNull(queryResult.getMd5(), queryResult.toString());
+    }
+
+    @Test
+    public void testConfigFilterTransformsPublishAndQueryContent() throws Exception {
+        ConfigService configService = createConfigService();
+        String dataId = randomDataId("filter");
+        String group = randomGroup("config");
+        String originalContent = "sdk.filter.original=true";
+        String storedContent = originalContent + TransformingConfigFilter.PUBLISH_SUFFIX;
+        String visibleContent = storedContent + TransformingConfigFilter.QUERY_SUFFIX;
+        configService.addConfigFilter(new TransformingConfigFilter());
+        addCleanup(() -> configService.removeConfig(dataId, group));
+
+        assertTrue(configService.publishConfig(dataId, group, originalContent));
+        waitUntilConfigEquals(configService, dataId, group, visibleContent);
+
+        ConfigQueryResult queryResult = configService.getConfigWithResult(dataId, group,
+                DEFAULT_TIMEOUT_MS);
+        assertEquals(visibleContent, queryResult.getContent());
+        assertNotNull(queryResult.getMd5(), queryResult.toString());
+    }
+
     private Listener listenerForContent(String expectedContent, CountDownLatch latch,
             AtomicReference<String> received) {
         return new Listener() {
@@ -246,7 +294,7 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
             public Executor getExecutor() {
                 return null;
             }
-            
+
             @Override
             public void receiveConfigInfo(String configInfo) {
                 if (expectedContent.equals(configInfo)) {
@@ -262,5 +310,38 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntil("config should become queryable, dataId=" + dataId + ", group=" + group,
                 () -> expectedContent.equals(configService.getConfig(dataId, group,
                         DEFAULT_TIMEOUT_MS)));
+    }
+
+    private static class TransformingConfigFilter extends AbstractConfigFilter {
+
+        static final String PUBLISH_SUFFIX = "|request-filter";
+
+        static final String QUERY_SUFFIX = "|response-filter";
+
+        @Override
+        public void init(Properties properties) {
+        }
+
+        @Override
+        public void doFilter(IConfigRequest request, IConfigResponse response,
+                IConfigFilterChain filterChain) throws NacosException {
+            if (null != request) {
+                request.putParameter(CONTENT, request.getParameter(CONTENT) + PUBLISH_SUFFIX);
+            }
+            filterChain.doFilter(request, response);
+            if (null != response && null != response.getParameter(CONTENT)) {
+                response.putParameter(CONTENT, response.getParameter(CONTENT) + QUERY_SUFFIX);
+            }
+        }
+
+        @Override
+        public int getOrder() {
+            return 0;
+        }
+
+        @Override
+        public String getFilterName() {
+            return "javaSdkItTransformingConfigFilter";
+        }
     }
 }
