@@ -102,9 +102,14 @@ V3 HTTP 行为当前由以下代码位置定义：
 
 ## 5. Admin API 已实现行为
 
-Admin API 面向运维人员，默认使用 `ApiType.ADMIN_API`。现有文档说明 v3
-Admin API 不兼容 v1/v2 Admin API；如果必须使用 v1/v2 Admin API 兼容能力，
-需要设置 `nacos.core.auth.admin.enabled=true`。
+Admin API 面向运维人员，默认使用 `ApiType.ADMIN_API`。Nacos 3.x 标准
+Admin API 使用 `/v3/admin/*` 路径。v1/v2 Admin API 已从当前 Nacos 主
+发行包中移除，新接入应迁移到 v3 Admin API；如果迁移期仍需使用 v1/v2
+Admin API，应参考
+[nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)
+方案和[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)。
+`nacos.core.auth.admin.enabled` 仅表示是否启用 Admin API 鉴权，不是旧
+Admin API 兼容开关。
 
 当前模块：
 
