@@ -48,7 +48,7 @@ left as `Partial` or `Pending` without a documented reason.
 | `publishConfig` overloads | Default type, explicit valid type, unknown type compatibility, empty or invalid content, group defaulting, and durable server state. | Covered | Default publish, explicit `TEXT`, explicit `JSON`, unknown type compatibility, missing content, invalid group, blank group, and durable server state are covered. |
 | `publishConfigCas` overloads | Bad md5 rejection, correct md5 update, missing config CAS create, empty CAS md5, explicit type, and unchanged state after failed CAS. | Covered | Bad md5 rejection, correct md5 update, missing config CAS create, empty CAS md5 as normal publish, explicit type, and unchanged state after failed CAS are covered. |
 | `removeConfig` | Existing config removal, missing config/idempotent behavior, invalid identity, and absence after removal. | Covered | Existing removal, missing/idempotent removal, invalid identity, and absence after removal are covered. |
-| `addListener`, `getConfigAndSignListener`, `removeListener` | Initial value, later update callback, standalone `addListener`, removal stops callbacks, invalid listener input. | Partial | `getConfigAndSignListener`, standalone `addListener`, update callback, and remove-listener stop behavior are covered. Invalid listener input remains. |
+| `addListener`, `getConfigAndSignListener`, `removeListener` | Initial value, later update callback, standalone `addListener`, removal stops callbacks, invalid listener input. | Covered | `getConfigAndSignListener`, standalone `addListener`, update callback, remove-listener stop behavior, and null listener rejection for add/sign/remove paths are covered. |
 | `addConfigFilter` | Filter registration effect or explicit standalone limitation. | Covered | Public SDK filter registration is covered by a transforming filter that mutates publish request content and query response content. |
 | Fuzzy watch APIs | Fixed group pattern, dataId+group pattern, matched key return, event callback, cancel behavior, invalid pattern/listener. | Pending | No current scenario. |
 
@@ -58,12 +58,12 @@ left as `Partial` or `Pending` without a documented reason.
 | --- | --- | --- | --- |
 | Factory, server status, shutdown | Create via `NamingFactory`, wait for `UP`, and close cleanly after each test. | Covered | `JavaSdkBaseITCase` creates and shuts down the client. |
 | `registerInstance` overloads | Default group, explicit group, cluster, `Instance` metadata, string overloads, duplicate registration, invalid IP/port/cluster/service, and persistent/ephemeral behavior where exposed. | Partial | Explicit group, default group, string overload, cluster string overload, metadata, duplicate registration, blank service, null instance, invalid port/cluster, invalid heartbeat metadata, persistent batch member, and mismatched group prefix are covered. Invalid IP and single persistent instance behavior remain. |
-| `batchRegisterInstance` / `batchDeregisterInstance` | Batch success, partial or invalid member validation, empty list, and cleanup after batch deregister. | Partial | Batch success, partial batch deregister, cleanup, invalid persistent batch member, and empty batch deregister validation are covered. Empty batch register and null-list behavior remain. |
+| `batchRegisterInstance` / `batchDeregisterInstance` | Batch success, partial or invalid member validation, empty list, and cleanup after batch deregister. | Partial | Batch success, empty batch register no-op behavior, partial batch deregister, cleanup, invalid persistent batch member, and empty batch deregister validation are covered. Null-list behavior remains. |
 | `deregisterInstance` overloads | Existing instance removal, missing instance/idempotent behavior, default group, cluster overload, and invalid identity. | Covered | Existing removal through `Instance` overload, default string overload removal, cluster string overload removal, missing-instance no-op behavior, and repeated removal idempotency are covered. |
-| `getAllInstances` overloads | Existing, missing service empty result, default group, explicit group, cluster filters, subscribe flag, and empty cluster list behavior. | Partial | Existing query, missing service, default group, explicit group, cluster filter, subscribe=false, and empty cluster list behavior are covered. subscribe=true/cache behavior remains. |
-| `selectInstances` overloads | Healthy-only filtering, unhealthy/disabled boundaries, cluster filters, subscribe flag, and missing-service empty result. | Partial | Healthy selection, disabled filtering, zero-weight filtering, cluster filters, subscribe=false, and missing-service empty result are covered. Explicit unhealthy selection remains. |
+| `getAllInstances` overloads | Existing, missing service empty result, default group, explicit group, cluster filters, subscribe flag, and empty cluster list behavior. | Covered | Existing query, missing service, default group, explicit group, cluster filter, subscribe=false, subscribe=true cached refresh through server push, and empty cluster list behavior are covered. |
+| `selectInstances` overloads | Healthy-only filtering, unhealthy/disabled boundaries, cluster filters, subscribe flag, and missing-service empty result. | Covered | Healthy selection, explicit unhealthy selection, disabled filtering, zero-weight filtering, cluster filters, subscribe flag variants, and missing-service empty result are covered. |
 | `selectOneHealthyInstance` overloads | Success, cluster selection, default group, subscribe flag, and controlled failure when no healthy instance exists. | Covered | Success, cluster/default-group/subscribe overloads, and missing/no-healthy `IllegalStateException` behavior are covered. |
-| `subscribe` / `unsubscribe` overloads | Initial and update event, cluster/selector filtering, removal stops callbacks, invalid listener, and `getSubscribeServices` state. | Partial | Basic grouped subscribe event, `getSubscribeServices`, null listener no-op, unsubscribe-stop behavior, and cleanup are covered. Cluster/selector listener overloads remain. |
+| `subscribe` / `unsubscribe` overloads | Initial and update event, cluster/selector filtering, removal stops callbacks, invalid listener, and `getSubscribeServices` state. | Covered | Basic grouped subscribe event, `getSubscribeServices`, cluster filtering, public selector filtering, null listener no-op, unsubscribe-stop behavior, and cleanup are covered. |
 | Fuzzy watch APIs | Fixed group pattern, service+group pattern, matched service keys, event callback, cancel behavior, invalid pattern/listener. | Pending | No current scenario. |
 | `getServicesOfServer` overloads | Pagination, default group, explicit group, selector overload, empty pages, and invalid page boundary. | Partial | Default and explicit group pages containing registered services, empty second page, and current `pageNo=0` first-page normalization are covered. Selector scenarios remain. |
 
@@ -99,10 +99,9 @@ left as `Partial` or `Pending` without a documented reason.
 
 ## Recommended Next Test Batches
 
-1. Config and Naming watcher expansion: invalid listener, selector
-   subscription, explicit unhealthy selection, invalid IP behavior, empty batch
-   register/null-list validation, and single persistent instance behavior where
-   standalone IT can exercise it safely.
+1. Naming residual boundary expansion: invalid IP behavior, null-list batch
+   behavior, single persistent instance behavior, and deprecated service-list
+   selector behavior where standalone IT can exercise them safely.
 2. AI functional expansion: direct MCP endpoint-spec release, all-version MCP
    endpoints, A2A batch endpoint overwrite, duplicate A2A version behavior, and
    functional Prompt/Skill/AgentSpec resource creation or explicit standalone
