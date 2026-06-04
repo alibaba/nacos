@@ -17,3 +17,4 @@
 com.alibaba.nacos.ai.param.McpHttpParamExtractor
 com.alibaba.nacos.ai.param.AgentHttpParamExtractor
 com.alibaba.nacos.ai.param.SkillHttpParamExtractor
+com.alibaba.nacos.ai.param.SkillListHttpParamExtractor
