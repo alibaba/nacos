@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
+import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     return stable result shapes, blank service name is rejected by the grouped-name utility, and
  *     null instance, invalid port/cluster, invalid heartbeat metadata, persistent batch instance,
  *     empty batch deregister, plus mismatched group-prefix inputs throw controlled SDK
- *     exceptions.</li>
+ *     exceptions where the SDK defines them; null batch lists fail before a remote call.</li>
  *     <li>Listener/error handling: subscribe receives an instance change event, subscribe=true
  *     queries refresh cached service info through later push, subscribe state is visible, cluster
  *     and selector subscribe overloads filter listener events, null listener subscribe is a no-op,
@@ -152,6 +153,30 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntil("cluster string overload instance should be absent",
                 () -> !containsInstance(namingService.getAllInstances(serviceName, groupName,
                         Collections.singletonList(clusterName), false), port));
+    }
+
+    @Test
+    public void testSinglePersistentInstanceRegisterAndDeregister() throws Exception {
+        NamingService namingService = createNamingService();
+        String serviceName = randomServiceName("persistent");
+        String groupName = randomGroup("naming");
+        Instance instance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        instance.setEphemeral(false);
+        addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, instance));
+
+        namingService.registerInstance(serviceName, groupName, instance);
+        waitUntil("single persistent instance should be queryable",
+                () -> containsInstance(namingService.getAllInstances(serviceName, groupName,
+                        false), instance.getPort()));
+
+        Instance queried = findInstance(namingService.getAllInstances(serviceName, groupName,
+                false), instance.getPort());
+        assertFalse(queried.isEphemeral(), queried.toString());
+
+        namingService.deregisterInstance(serviceName, groupName, instance);
+        waitUntil("single persistent instance should be absent after deregister",
+                () -> !containsInstance(namingService.getAllInstances(serviceName, groupName,
+                        false), instance.getPort()));
     }
 
     @Test
@@ -307,6 +332,37 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         ListView<String> zeroPage = namingService.getServicesOfServer(0, 1, groupName);
         assertEquals(firstPage.getData(), zeroPage.getData(), zeroPage.toString());
         assertEquals(firstPage.getCount(), zeroPage.getCount(), zeroPage.toString());
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testServiceListSelectorOverloadsReturnStableShape() throws Exception {
+        NamingService namingService = createNamingService();
+        String serviceName = randomServiceName("service-list-selector");
+        String defaultGroupServiceName = randomServiceName("service-list-selector-default");
+        String groupName = randomGroup("naming");
+        Instance instance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        Instance defaultGroupInstance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, instance));
+        addCleanup(() -> namingService.deregisterInstance(defaultGroupServiceName,
+                defaultGroupInstance));
+
+        namingService.registerInstance(serviceName, groupName, instance);
+        namingService.registerInstance(defaultGroupServiceName, defaultGroupInstance);
+        waitUntil("registered service should appear in selector overload service list",
+                () -> namingService.getServicesOfServer(1, 1000, groupName, new NoneSelector())
+                        .getData().contains(serviceName));
+        waitUntil("default group service should appear in selector overload service list",
+                () -> namingService.getServicesOfServer(1, 1000, new NoneSelector()).getData()
+                        .contains(defaultGroupServiceName));
+
+        ListView<String> selectorPage = namingService.getServicesOfServer(1, 1000, groupName,
+                new NoneSelector());
+        assertTrue(selectorPage.getData().contains(serviceName), selectorPage.toString());
+        ListView<String> defaultSelectorPage = namingService.getServicesOfServer(1, 1000,
+                new NoneSelector());
+        assertTrue(defaultSelectorPage.getData().contains(defaultGroupServiceName),
+                defaultSelectorPage.toString());
     }
 
     @Test
@@ -496,6 +552,13 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
                         Collections.emptyList()));
         assertEquals(NacosException.INVALID_PARAM, emptyBatchDeregister.getErrCode(),
                 emptyBatchDeregister.toString());
+
+        assertThrows(NullPointerException.class,
+                () -> namingService.batchRegisterInstance(serviceName, Constants.DEFAULT_GROUP,
+                        null));
+        assertThrows(NullPointerException.class,
+                () -> namingService.batchDeregisterInstance(serviceName, Constants.DEFAULT_GROUP,
+                        null));
 
         assertTrue(namingService.getAllInstances(randomServiceName("missing"), Constants.DEFAULT_GROUP, false)
                 .isEmpty());
