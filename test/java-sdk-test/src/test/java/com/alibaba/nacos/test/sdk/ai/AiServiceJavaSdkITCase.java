@@ -75,7 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: release/query MCP server and A2A agent card through the
  *     public Java SDK factory, including current-value subscription callbacks, latest-version
  *     lookup, direct/ref MCP endpoint publication and registration, duplicate release behavior,
- *     and single/batch/TLS A2A endpoint registration APIs.</li>
+ *     A2A unsubscribe-stop behavior, and single/batch/TLS A2A endpoint registration APIs.</li>
  *     <li>Boundary/validation: missing MCP, A2A, Prompt, Skill, AgentSpec, endpoint, and
  *     listener parameters throw controlled {@link NacosException} values; missing subscribed
  *     resources return nullable SDK shapes where the SDK defines them.</li>
