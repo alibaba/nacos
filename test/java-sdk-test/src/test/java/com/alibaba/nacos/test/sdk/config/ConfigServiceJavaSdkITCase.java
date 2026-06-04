@@ -64,7 +64,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     exceptions.</li>
  *     <li>Listener/error handling: {@code getConfigAndSignListener} returns the current value,
  *     delivers later updates, standalone listener receives updates, listener removal stops later
- *     callbacks, and listener cleanup plus SDK shutdown are safe.</li>
+ *     callbacks, null listener input is rejected before silent registration, and listener cleanup
+ *     plus SDK shutdown are safe.</li>
  *     <li>Filter/type behavior: valid non-text config types are preserved in query result
  *     metadata, and a public SDK config filter can transform publish request content and query
  *     response content.</li>
@@ -216,6 +217,34 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 "removed listener should not receive later update");
         assertNull(received.get());
         waitUntilConfigEquals(configService, dataId, group, secondContent);
+    }
+
+    @Test
+    public void testNullConfigListenerIsRejected() throws Exception {
+        ConfigService configService = createConfigService();
+        String dataId = randomDataId("null-listener");
+        String group = randomGroup("config");
+        String content = "sdk.listener.null-boundary=true";
+        Listener validListener = listenerForContent("unused", new CountDownLatch(1),
+                new AtomicReference<>());
+        addCleanup(() -> configService.removeListener(dataId, group, validListener));
+        addCleanup(() -> configService.removeConfig(dataId, group));
+
+        assertTrue(configService.publishConfig(dataId, group, content));
+        waitUntilConfigEquals(configService, dataId, group, content);
+
+        IllegalArgumentException addListenerFailure = assertThrows(IllegalArgumentException.class,
+                () -> configService.addListener(dataId, group, null));
+        assertEquals("listener is null", addListenerFailure.getMessage());
+
+        IllegalArgumentException signListenerFailure = assertThrows(IllegalArgumentException.class,
+                () -> configService.getConfigAndSignListener(dataId, group, DEFAULT_TIMEOUT_MS, null));
+        assertEquals("listener is null", signListenerFailure.getMessage());
+
+        configService.addListener(dataId, group, validListener);
+        IllegalArgumentException removeListenerFailure = assertThrows(IllegalArgumentException.class,
+                () -> configService.removeListener(dataId, group, null));
+        assertEquals("listener is null", removeListenerFailure.getMessage());
     }
 
     @Test

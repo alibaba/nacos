@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
 
@@ -34,6 +35,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -54,14 +57,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     exercised.</li>
  *     <li>Boundary/validation: explicit/default group and cluster are honored, missing service
  *     is empty, duplicate register and missing deregister are idempotent, disabled or zero-weight
- *     instances are filtered from healthy selection, list pagination boundaries return stable
- *     result shapes, blank service name is rejected by the grouped-name utility, and null
- *     instance, invalid port/cluster, invalid heartbeat metadata, persistent batch instance,
+ *     instances are filtered from healthy selection, explicit unhealthy selection returns only
+ *     unhealthy instances, empty batch register leaves no instance, list pagination boundaries
+ *     return stable result shapes, blank service name is rejected by the grouped-name utility, and
+ *     null instance, invalid port/cluster, invalid heartbeat metadata, persistent batch instance,
  *     empty batch deregister, plus mismatched group-prefix inputs throw controlled SDK
  *     exceptions.</li>
- *     <li>Listener/error handling: subscribe receives an instance change event, subscribe state
- *     is visible, null listener subscribe is a no-op, unsubscribe stops later callbacks, and
- *     deregister cleanup plus SDK shutdown are safe.</li>
+ *     <li>Listener/error handling: subscribe receives an instance change event, subscribe=true
+ *     queries refresh cached service info through later push, subscribe state is visible, cluster
+ *     and selector subscribe overloads filter listener events, null listener subscribe is a no-op,
+ *     unsubscribe stops later callbacks, and deregister cleanup plus SDK shutdown are safe.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -210,6 +215,17 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     @Test
+    public void testEmptyBatchRegisterLeavesNoInstances() throws Exception {
+        NamingService namingService = createNamingService();
+        String serviceName = randomServiceName("empty-batch");
+        String groupName = randomGroup("naming");
+
+        namingService.batchRegisterInstance(serviceName, groupName, Collections.emptyList());
+
+        assertTrue(namingService.getAllInstances(serviceName, groupName, false).isEmpty());
+    }
+
+    @Test
     public void testHealthySelectionFiltersDisabledAndZeroWeightInstances() throws Exception {
         NamingService namingService = createNamingService();
         String healthyServiceName = randomServiceName("selection-healthy");
@@ -236,10 +252,34 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         List<Instance> selected = namingService.selectInstances(healthyServiceName, groupName, true,
                 false);
         assertTrue(containsInstance(selected, healthy.getPort()), selected.toString());
+        assertTrue(containsInstance(namingService.selectInstances(healthyServiceName, groupName,
+                true), healthy.getPort()));
         assertTrue(namingService.selectInstances(disabledServiceName, groupName, true, false)
                 .isEmpty());
         assertTrue(namingService.selectInstances(zeroWeightServiceName, groupName, true, false)
                 .isEmpty());
+    }
+
+    @Test
+    public void testUnhealthySelectionReturnsExplicitUnhealthyInstances() throws Exception {
+        NamingService namingService = createNamingService();
+        String serviceName = randomServiceName("selection-unhealthy");
+        String groupName = randomGroup("naming");
+        Instance unhealthy = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        unhealthy.setHealthy(false);
+        addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, unhealthy));
+
+        namingService.registerInstance(serviceName, groupName, unhealthy);
+        waitUntil("unhealthy instance should be queryable",
+                () -> containsInstance(namingService.selectInstances(serviceName, groupName,
+                        false, false), unhealthy.getPort()));
+
+        Instance queried = findInstance(namingService.getAllInstances(serviceName, groupName,
+                false), unhealthy.getPort());
+        assertFalse(queried.isHealthy(), queried.toString());
+        assertTrue(namingService.selectInstances(serviceName, groupName, true, false).isEmpty());
+        assertTrue(containsInstance(namingService.selectInstances(serviceName, groupName, false,
+                false), unhealthy.getPort()));
     }
 
     @Test
@@ -291,6 +331,95 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertTrue(latch.await(10, TimeUnit.SECONDS), "listener should receive registered instance event");
         assertTrue(containsSubscribedService(namingService.getSubscribeServices(), serviceName,
                 groupName), namingService.getSubscribeServices().toString());
+    }
+
+    @Test
+    public void testGetAllInstancesSubscribeTrueUsesPushedCache() throws Exception {
+        NamingService namingService = createNamingService();
+        String serviceName = randomServiceName("subscribe-cache");
+        String groupName = randomGroup("naming");
+        Instance instance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, instance));
+
+        namingService.registerInstance(serviceName, groupName, instance);
+        waitUntil("subscribe=true query should return registered instance",
+                () -> containsInstance(namingService.getAllInstances(serviceName, groupName,
+                        true), instance.getPort()));
+        assertTrue(containsInstance(namingService.getAllInstances(serviceName, groupName, true),
+                instance.getPort()));
+
+        namingService.deregisterInstance(serviceName, groupName, instance);
+        waitUntil("subscribe=true cached service info should be refreshed after server push",
+                () -> !containsInstance(namingService.getAllInstances(serviceName, groupName,
+                        true), instance.getPort()));
+    }
+
+    @Test
+    public void testClusterSubscribeFiltersInstanceChangeEvents() throws Exception {
+        NamingService namingService = createNamingService();
+        String serviceName = randomServiceName("cluster-subscribe");
+        String groupName = randomGroup("naming");
+        String targetCluster = "sdk-target-cluster";
+        String ignoredCluster = "sdk-ignored-cluster";
+        Instance target = buildInstance(randomPort(), targetCluster);
+        Instance ignored = buildInstance(randomPort(), ignoredCluster);
+        List<String> targetClusters = Collections.singletonList(targetCluster);
+        CountDownLatch selectedLatch = new CountDownLatch(1);
+        AtomicBoolean sawIgnoredInstance = new AtomicBoolean(false);
+        EventListener listener = event -> {
+            if (eventContainsInstance(event, ignored.getPort())) {
+                sawIgnoredInstance.set(true);
+            }
+            if (eventContainsInstance(event, target.getPort())) {
+                selectedLatch.countDown();
+            }
+        };
+        addCleanup(() -> namingService.unsubscribe(serviceName, groupName, targetClusters, listener));
+        addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, ignored));
+        addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, target));
+
+        namingService.subscribe(serviceName, groupName, targetClusters, listener);
+        namingService.registerInstance(serviceName, groupName, ignored);
+        namingService.registerInstance(serviceName, groupName, target);
+
+        assertTrue(selectedLatch.await(10, TimeUnit.SECONDS),
+                "cluster listener should receive matching cluster instance");
+        assertFalse(sawIgnoredInstance.get(),
+                "cluster listener should not expose other cluster instances");
+    }
+
+    @Test
+    public void testSelectorSubscribeFiltersInstanceChangeEvents() throws Exception {
+        NamingService namingService = createNamingService();
+        String serviceName = randomServiceName("selector-subscribe");
+        String groupName = randomGroup("naming");
+        Instance target = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        target.addMetadata("selector", "target");
+        Instance ignored = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        ignored.addMetadata("selector", "ignored");
+        NamingSelector selector = metadataSelector("selector", "target");
+        CountDownLatch selectedLatch = new CountDownLatch(1);
+        AtomicBoolean sawIgnoredInstance = new AtomicBoolean(false);
+        EventListener listener = event -> {
+            if (eventContainsInstance(event, ignored.getPort())) {
+                sawIgnoredInstance.set(true);
+            }
+            if (eventContainsInstance(event, target.getPort())) {
+                selectedLatch.countDown();
+            }
+        };
+        addCleanup(() -> namingService.unsubscribe(serviceName, groupName, selector, listener));
+        addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, ignored));
+        addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, target));
+
+        namingService.subscribe(serviceName, groupName, selector, listener);
+        namingService.registerInstance(serviceName, groupName, ignored);
+        namingService.registerInstance(serviceName, groupName, target);
+
+        assertTrue(selectedLatch.await(10, TimeUnit.SECONDS),
+                "selector listener should receive matching metadata instance");
+        assertFalse(sawIgnoredInstance.get(),
+                "selector listener should not expose non-matching instances");
     }
 
     @Test
@@ -389,6 +518,17 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         instance.setEnabled(true);
         instance.addMetadata("source", "java-sdk-test");
         return instance;
+    }
+
+    private NamingSelector metadataSelector(String key, String expectedValue) {
+        return context -> () -> {
+            if (null == context.getInstances()) {
+                return Collections.emptyList();
+            }
+            return context.getInstances().stream()
+                    .filter(instance -> expectedValue.equals(instance.getMetadata().get(key)))
+                    .collect(Collectors.toList());
+        };
     }
 
     private boolean eventContainsInstance(Event event, int port) {
