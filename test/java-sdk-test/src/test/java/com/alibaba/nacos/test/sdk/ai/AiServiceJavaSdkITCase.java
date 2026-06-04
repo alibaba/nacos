@@ -34,9 +34,12 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -49,6 +52,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -67,8 +71,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: release/query MCP server and A2A agent card through the
  *     public Java SDK factory, including current-value subscription callbacks, latest-version
- *     lookup, duplicate release behavior, A2A endpoint registration APIs, and MCP endpoint
- *     registration error handling for stdio servers.</li>
+ *     lookup, direct MCP endpoint publication and registration, duplicate release behavior,
+ *     and single/batch A2A endpoint registration APIs.</li>
  *     <li>Boundary/validation: missing MCP, A2A, Prompt, Skill, AgentSpec, endpoint, and
  *     listener parameters throw controlled {@link NacosException} values; missing subscribed
  *     resources return nullable SDK shapes where the SDK defines them.</li>
@@ -94,6 +98,12 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String MCP_SERVER_RESOURCE_GROUP = "mcp-resources";
     
     private static final String LOCALHOST = "127.0.0.1";
+    
+    private static final String MCP_ENDPOINT_SPEC_ADDRESS = "address";
+    
+    private static final String MCP_ENDPOINT_SPEC_PORT = "port";
+    
+    private static final String MCP_ENDPOINT_SPEC_TRANSPORT_PROTOCOL = "transportProtocol";
     
     @Test
     public void testReleaseQueryAndSubscribeMcpServer() throws Exception {
@@ -162,6 +172,67 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
     
     @Test
+    public void testReleaseMcpServerWithDirectEndpointSpecification() throws Exception {
+        AiService aiService = createAiService();
+        ConfigService configService = createConfigService();
+        String mcpName = randomServiceName("mcp-direct");
+        String version = "1.0.0";
+        String exportPath = "/mcp/sse";
+        int publishedPort = randomPort();
+        
+        String mcpId = aiService.releaseMcpServer(
+                buildRemoteMcpServer(mcpName, version, exportPath),
+                buildMcpToolSpecification(mcpName), buildMcpResourceSpecification(mcpName),
+                buildDirectMcpEndpointSpec(publishedPort, AiConstants.Mcp.MCP_PROTOCOL_SSE));
+        addCleanup(() -> cleanupMcpServer(configService, mcpId, version));
+        
+        McpServerDetailInfo detail = aiService.getMcpServer(mcpName, version);
+        assertEquals(mcpId, detail.getId(), detail.toString());
+        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_SSE, detail.getProtocol(), detail.toString());
+        assertNotNull(detail.getRemoteServerConfig(), detail.toString());
+        assertNotNull(detail.getRemoteServerConfig().getServiceRef(), detail.toString());
+        assertEquals(mcpName + "::" + version,
+                detail.getRemoteServerConfig().getServiceRef().getServiceName(),
+                detail.toString());
+        assertTrue(containsMcpEndpoint(detail, publishedPort, exportPath,
+                AiConstants.Mcp.MCP_PROTOCOL_SSE), detail.toString());
+    }
+    
+    @Test
+    public void testRegisterMcpServerEndpointForRemoteRefServer() throws Exception {
+        AiService aiService = createAiService();
+        ConfigService configService = createConfigService();
+        String mcpName = randomServiceName("mcp-ref-endpoint");
+        String version = "1.0.0";
+        String exportPath = "/mcp/ref";
+        int registeredPort = randomPort();
+        
+        String mcpId = aiService.releaseMcpServer(
+                buildRemoteMcpServer(mcpName, version, exportPath),
+                buildMcpToolSpecification(mcpName), buildMcpResourceSpecification(mcpName));
+        addCleanup(() -> cleanupMcpServer(configService, mcpId, version));
+        McpServerDetailInfo detail = aiService.getMcpServer(mcpName, version);
+        assertEquals(mcpName + "::" + version,
+                detail.getRemoteServerConfig().getServiceRef().getServiceName(),
+                detail.toString());
+        
+        addCleanup(() -> aiService.deregisterMcpServerEndpoint(mcpName, LOCALHOST,
+                registeredPort));
+        aiService.registerMcpServerEndpoint(mcpName, LOCALHOST, registeredPort, version);
+        waitUntil("registered MCP endpoint should be visible from query",
+                () -> containsMcpEndpoint(aiService.getMcpServer(mcpName, version),
+                        registeredPort, exportPath, null));
+        McpServerDetailInfo registeredDetail = aiService.getMcpServer(mcpName, version);
+        assertTrue(containsMcpEndpoint(registeredDetail, registeredPort, exportPath, null),
+                registeredDetail.toString());
+        
+        aiService.deregisterMcpServerEndpoint(mcpName, LOCALHOST, registeredPort);
+        waitUntil("deregistered MCP endpoint should disappear from query",
+                () -> !containsMcpEndpoint(aiService.getMcpServer(mcpName, version),
+                        registeredPort, exportPath, null));
+    }
+    
+    @Test
     public void testMissingMcpSubscriptionReturnsNullableShape() throws Exception {
         AiService aiService = createAiService();
         String missingName = randomServiceName("missing-mcp");
@@ -212,6 +283,28 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
     
     @Test
+    public void testAgentCardDuplicateReleaseKeepsExistingVersion() throws Exception {
+        AiService aiService = createAiService();
+        ConfigService configService = createConfigService();
+        String agentName = randomServiceName("agent-duplicate");
+        String version = "1.0.0";
+        
+        aiService.releaseAgentCard(buildAgentCard(agentName, version),
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        addCleanup(() -> cleanupAgentCard(configService, agentName, version));
+        AgentCard duplicate = buildAgentCard(agentName, version);
+        duplicate.setDescription("Duplicate release should not overwrite existing card");
+        aiService.releaseAgentCard(duplicate, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, false);
+        
+        AgentCardDetailInfo detail = aiService.getAgentCard(agentName, version,
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
+        assertEquals(agentName, detail.getName(), detail.toString());
+        assertEquals(version, detail.getVersion(), detail.toString());
+        assertEquals("Java SDK IT agent", detail.getDescription(), detail.toString());
+        assertTrue(detail.isLatestVersion(), detail.toString());
+    }
+    
+    @Test
     public void testAgentCardLatestVersionAndEndpointScenarios() throws Exception {
         AiService aiService = createAiService();
         ConfigService configService = createConfigService();
@@ -243,6 +336,55 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, serviceDetail.getRegistrationType(),
                 serviceDetail.toString());
         aiService.deregisterAgentEndpoint(agentName, endpoint);
+    }
+    
+    @Test
+    public void testAgentCardBatchEndpointOverwritesSingleEndpoint() throws Exception {
+        AiService aiService = createAiService();
+        ConfigService configService = createConfigService();
+        String agentName = randomServiceName("agent-batch-endpoint");
+        String version = "1.0.0";
+        
+        aiService.releaseAgentCard(buildAgentCard(agentName, version),
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        addCleanup(() -> cleanupAgentCard(configService, agentName, version));
+        
+        AgentEndpoint singleEndpoint = buildAgentEndpoint(version, randomPort(),
+                "/a2a-single", null);
+        addCleanup(() -> aiService.deregisterAgentEndpoint(agentName, singleEndpoint));
+        aiService.registerAgentEndpoint(agentName, singleEndpoint);
+        waitUntil("single A2A endpoint should be visible from SERVICE query",
+                () -> containsAgentInterface(
+                        aiService.getAgentCard(agentName, version,
+                                AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE),
+                        singleEndpoint));
+        
+        AgentEndpoint batchEndpoint = buildAgentEndpoint(version, randomPort(),
+                "/a2a-batch", "mode=batch");
+        AgentEndpoint secondBatchEndpoint = buildAgentEndpoint(version, randomPort(),
+                "/a2a-batch-second", null);
+        addCleanup(() -> aiService.deregisterAgentEndpoint(agentName, batchEndpoint));
+        addCleanup(() -> aiService.deregisterAgentEndpoint(agentName, secondBatchEndpoint));
+        aiService.registerAgentEndpoint(agentName,
+                Arrays.asList(batchEndpoint, secondBatchEndpoint));
+        
+        waitUntil("batch A2A endpoints should overwrite single endpoint",
+                () -> {
+                    AgentCardDetailInfo detail = aiService.getAgentCard(agentName, version,
+                            AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE);
+                    return !containsAgentInterface(detail, singleEndpoint)
+                            && containsAgentInterface(detail, batchEndpoint)
+                            && containsAgentInterface(detail, secondBatchEndpoint);
+                });
+        AgentCardDetailInfo batchDetail = aiService.getAgentCard(agentName, version,
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE);
+        assertTrue(!containsAgentInterface(batchDetail, singleEndpoint),
+                batchDetail.toString());
+        assertTrue(containsAgentInterface(batchDetail, batchEndpoint), batchDetail.toString());
+        assertTrue(containsAgentInterface(batchDetail, secondBatchEndpoint),
+                batchDetail.toString());
+        assertEquals(AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT,
+                batchDetail.getPreferredTransport(), batchDetail.toString());
     }
     
     @Test
@@ -344,6 +486,27 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
     
+    private McpServerBasicInfo buildRemoteMcpServer(String mcpName, String version,
+            String exportPath) {
+        McpServerBasicInfo result = buildMcpServer(mcpName, version);
+        result.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        result.setFrontProtocol(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        McpServerRemoteServiceConfig remoteServerConfig = new McpServerRemoteServiceConfig();
+        remoteServerConfig.setExportPath(exportPath);
+        remoteServerConfig.setFrontEndpointConfigList(Collections.emptyList());
+        result.setRemoteServerConfig(remoteServerConfig);
+        return result;
+    }
+    
+    private McpEndpointSpec buildDirectMcpEndpointSpec(int port, String transportProtocol) {
+        McpEndpointSpec result = new McpEndpointSpec();
+        result.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        result.getData().put(MCP_ENDPOINT_SPEC_ADDRESS, LOCALHOST);
+        result.getData().put(MCP_ENDPOINT_SPEC_PORT, String.valueOf(port));
+        result.getData().put(MCP_ENDPOINT_SPEC_TRANSPORT_PROTOCOL, transportProtocol);
+        return result;
+    }
+    
     private McpToolSpecification buildMcpToolSpecification(String mcpName) {
         McpTool tool = new McpTool();
         tool.setName("tool_" + mcpName.replace('-', '_'));
@@ -396,12 +559,18 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
     
     private AgentEndpoint buildAgentEndpoint(String version) {
+        return buildAgentEndpoint(version, randomPort(), "/a2a", null);
+    }
+    
+    private AgentEndpoint buildAgentEndpoint(String version, int port, String path, String query) {
         AgentEndpoint result = new AgentEndpoint();
         result.setVersion(version);
         result.setAddress(LOCALHOST);
-        result.setPort(randomPort());
+        result.setPort(port);
         result.setTransport(AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT);
-        result.setPath("/a2a");
+        result.setProtocolVersion("1.0");
+        result.setPath(path);
+        result.setQuery(query);
         return result;
     }
     
@@ -409,6 +578,35 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         List<ServerVersionDetail> versions = detail.getAllVersions();
         return null != versions && versions.stream()
                 .anyMatch(each -> version.equals(each.getVersion()));
+    }
+    
+    private boolean containsMcpEndpoint(McpServerDetailInfo detail, int port, String path,
+            String protocol) {
+        List<McpEndpointInfo> endpoints = detail.getBackendEndpoints();
+        return null != endpoints && endpoints.stream()
+                .anyMatch(each -> LOCALHOST.equals(each.getAddress()) && port == each.getPort()
+                        && path.equals(each.getPath())
+                        && Objects.equals(protocol, each.getProtocol()));
+    }
+    
+    private boolean containsAgentInterface(AgentCardDetailInfo detail, AgentEndpoint endpoint) {
+        List<AgentInterface> interfaces = detail.getAdditionalInterfaces();
+        return null != interfaces && interfaces.stream()
+                .anyMatch(each -> expectedAgentEndpointUrl(endpoint).equals(each.getUrl())
+                        && endpoint.getTransport().equals(each.getProtocolBinding())
+                        && endpoint.getProtocolVersion().equals(each.getProtocolVersion()));
+    }
+    
+    private String expectedAgentEndpointUrl(AgentEndpoint endpoint) {
+        StringBuilder result = new StringBuilder("http://").append(endpoint.getAddress())
+                .append(":").append(endpoint.getPort());
+        if (null != endpoint.getPath()) {
+            result.append(endpoint.getPath());
+        }
+        if (null != endpoint.getQuery()) {
+            result.append("?").append(endpoint.getQuery());
+        }
+        return result.toString();
     }
     
     private void cleanupMcpServer(ConfigService configService, String mcpId, String version)
