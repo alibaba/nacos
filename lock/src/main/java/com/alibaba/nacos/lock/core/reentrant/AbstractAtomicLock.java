@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.lock.core.reentrant;
 
+import com.alibaba.nacos.api.lock.model.LockResult;
 import com.alibaba.nacos.lock.model.LockInfo;
 import com.alibaba.nacos.lock.model.WaitEntry;
 
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -219,14 +221,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
     public WaitEntry peekFirstWaiter() {
         lock.lock();
         try {
-            while (!waitQueue.isEmpty()) {
-                WaitEntry entry = waitQueue.peek();
-                if (!entry.isExpired()) {
-                    return entry;
-                }
-                waitQueue.poll();
-            }
-            return null;
+            return peekFirstWaiterUnderLock();
         } finally {
             lock.unlock();
         }
@@ -262,6 +257,45 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
     }
     
     /**
+     * Atomically acquire the lock only if the requester is still the queue head.
+     *
+     * <p>This keeps queue-head verification, lock acquisition, and waiter removal in
+     * one critical section. Otherwise a concurrent cancel or cleanup could change the
+     * queue between verification and removal.
+     *
+     * @param lockInfo retry request from a queued waiter
+     * @return structured lock result
+     */
+    public LockResult tryLockAsQueueHead(LockInfo lockInfo) {
+        lock.lock();
+        try {
+            if (lockInfo == null) {
+                return LockResult.fail("LockInfo cannot be null");
+            }
+            WaitEntry head = peekFirstWaiterUnderLock();
+            if (!isSameWaiter(head, lockInfo)) {
+                return LockResult.fail("Only queue head waiter can retry");
+            }
+            
+            autoExpire();
+            Boolean acquired = doTryLock(lockInfo);
+            if (acquired) {
+                waitQueue.poll();
+                return LockResult.success(reentrantCount);
+            }
+            
+            if (lockInfo.getWaitTimeMs() > 0) {
+                long deadline = System.currentTimeMillis() + lockInfo.getWaitTimeMs();
+                head.setWaitDeadline(deadline);
+                return LockResult.waiting(0);
+            }
+            return LockResult.fail("Lock is held by another owner");
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    /**
      * Remove the first waiter entry matching the given owner.
      *
      * @param owner the owner to remove
@@ -282,6 +316,47 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
         } finally {
             lock.unlock();
         }
+    }
+    
+    /**
+     * Remove the first waiter entry matching the given owner and connection.
+     *
+     * @param owner the owner to remove
+     * @param connectionId the connection ID to remove
+     * @return true if an entry was removed
+     */
+    public boolean removeWaiter(String owner, String connectionId) {
+        lock.lock();
+        try {
+            Iterator<WaitEntry> iterator = waitQueue.iterator();
+            while (iterator.hasNext()) {
+                WaitEntry entry = iterator.next();
+                if (Objects.equals(entry.getOwner(), owner)
+                    && Objects.equals(entry.getConnectionId(), connectionId)) {
+                    iterator.remove();
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    private WaitEntry peekFirstWaiterUnderLock() {
+        while (!waitQueue.isEmpty()) {
+            WaitEntry entry = waitQueue.peek();
+            if (!entry.isExpired()) {
+                return entry;
+            }
+            waitQueue.poll();
+        }
+        return null;
+    }
+    
+    private boolean isSameWaiter(WaitEntry waiter, LockInfo lockInfo) {
+        return waiter != null && Objects.equals(waiter.getOwner(), lockInfo.getOwner())
+            && Objects.equals(waiter.getConnectionId(), lockInfo.getConnectionId());
     }
     
     /**

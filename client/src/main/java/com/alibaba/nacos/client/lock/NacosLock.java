@@ -154,11 +154,11 @@ public class NacosLock implements Lock {
                 grpcClient.waitForNotification(key, currentOwner(), DEFAULT_LEASE_TIME_MS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                grpcClient.cancelWait(key, currentOwner());
+                grpcClient.cancelWait(key, lockType, currentOwner());
                 throw new NacosLockException("Lock interrupted", e);
             } catch (NacosException e) {
                 LOGGER.error("Failed to acquire lock, key={}", key, e);
-                grpcClient.cancelWait(key, currentOwner());
+                grpcClient.cancelWait(key, lockType, currentOwner());
                 throw new NacosLockException("Failed to acquire lock: " + key, e);
             }
         }
@@ -170,6 +170,9 @@ public class NacosLock implements Lock {
         boolean firstAttempt = true;
         while (true) {
             if (Thread.interrupted()) {
+                if (!firstAttempt) {
+                    grpcClient.cancelWait(key, lockType, currentOwner());
+                }
                 throw new InterruptedException();
             }
             try {
@@ -190,9 +193,12 @@ public class NacosLock implements Lock {
                 }
                 firstAttempt = false;
                 grpcClient.waitForNotification(key, currentOwner(), DEFAULT_LEASE_TIME_MS);
+            } catch (InterruptedException e) {
+                grpcClient.cancelWait(key, lockType, currentOwner());
+                throw e;
             } catch (NacosException e) {
                 LOGGER.error("Failed to acquire lock, key={}", key, e);
-                grpcClient.cancelWait(key, currentOwner());
+                grpcClient.cancelWait(key, lockType, currentOwner());
                 throw new NacosLockException("Failed to acquire lock: " + key, e);
             }
         }
@@ -227,6 +233,7 @@ public class NacosLock implements Lock {
             LockInstance instance = buildInstance(-1);
             long remaining = deadline - System.currentTimeMillis();
             if (remaining <= 0) {
+                grpcClient.cancelWait(key, lockType, currentOwner());
                 return false;
             }
             instance.setWaitTimeMs(remaining);
@@ -246,8 +253,11 @@ public class NacosLock implements Lock {
                 }
                 firstAttempt = false;
                 grpcClient.waitForNotification(key, currentOwner(), remaining);
+            } catch (InterruptedException e) {
+                grpcClient.cancelWait(key, lockType, currentOwner());
+                throw e;
             } catch (NacosException e) {
-                grpcClient.cancelWait(key, currentOwner());
+                grpcClient.cancelWait(key, lockType, currentOwner());
                 LOGGER.error("Failed to try lock with timeout, key={}", key, e);
                 return false;
             }

@@ -99,6 +99,10 @@ public class LockRequestHandler
                 }
                 Boolean renewed = lockOperationService.renew(lockInstance);
                 return LockOperationResponse.success(renewed);
+            } else if (request.getLockOperationEnum() == LockOperationEnum.CANCEL_WAIT) {
+                LockResult cancelResult =
+                    lockOperationService.cancelWait(lockInstance, connectionId);
+                return LockOperationResponse.success(cancelResult);
             } else {
                 return LockOperationResponse.fail("There is no Handler of such operations!");
             }

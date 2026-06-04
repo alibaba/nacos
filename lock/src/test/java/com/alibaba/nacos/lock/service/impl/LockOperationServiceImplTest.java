@@ -282,6 +282,99 @@ public class LockOperationServiceImplTest {
         assertTrue(response.getSuccess());
         LockResult result = serializer.deserialize(response.getData().toByteArray());
         assertTrue(result.isSuccess());
+        assertEquals("waiter-1", reentrantLock.getOwner());
+        assertEquals(0, reentrantLock.getWaitQueue().size());
+    }
+    
+    @Test
+    public void testAcquireLockNonHeadWaiterRetryDoesNotAcquireFreeLock() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("fifo-key");
+        
+        LockInfo waiterInfoB = new LockInfo();
+        waiterInfoB.setOwner("waiter-1");
+        waiterInfoB.setConnectionId("conn-1");
+        waiterInfoB.setWaitTimeMs(5000);
+        waiterInfoB.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.addWaiter(waiterInfoB);
+        
+        LockInfo waiterInfoC = new LockInfo();
+        waiterInfoC.setOwner("waiter-2");
+        waiterInfoC.setConnectionId("conn-2");
+        waiterInfoC.setWaitTimeMs(5000);
+        waiterInfoC.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.addWaiter(waiterInfoC);
+        
+        LockInfo holderInfo = new LockInfo();
+        holderInfo.setOwner("holder-1");
+        holderInfo.setConnectionId("conn-holder");
+        holderInfo.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.tryLock(holderInfo);
+        reentrantLock.unLock(holderInfo);
+        
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+            .thenReturn(reentrantLock);
+        
+        WriteRequest request = buildAcquireRequest("waiter-2", "conn-2", 0, true);
+        Response response = lockOperationService.onApply(request);
+        assertTrue(response.getSuccess());
+        LockResult result = serializer.deserialize(response.getData().toByteArray());
+        assertFalse(result.isSuccess());
+        
+        assertNull(reentrantLock.getOwner(), "Lock should remain free for queue head");
+        assertEquals(2, reentrantLock.getWaitQueue().size());
+        assertEquals("waiter-1", reentrantLock.getWaitQueue().get(0).getOwner());
+        assertEquals("waiter-2", reentrantLock.getWaitQueue().get(1).getOwner());
+    }
+    
+    @Test
+    public void testCancelWaitRemovesServerWaiter() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("fifo-key");
+        
+        LockInfo waiterInfoB = new LockInfo();
+        waiterInfoB.setOwner("waiter-1");
+        waiterInfoB.setConnectionId("conn-1");
+        waiterInfoB.setWaitTimeMs(5000);
+        waiterInfoB.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.addWaiter(waiterInfoB);
+        
+        LockInfo waiterInfoC = new LockInfo();
+        waiterInfoC.setOwner("waiter-2");
+        waiterInfoC.setConnectionId("conn-2");
+        waiterInfoC.setWaitTimeMs(5000);
+        waiterInfoC.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.addWaiter(waiterInfoC);
+        
+        LockInfo holderInfo = new LockInfo();
+        holderInfo.setOwner("holder-1");
+        holderInfo.setConnectionId("conn-holder");
+        holderInfo.setEndTime(System.currentTimeMillis() + 30000);
+        reentrantLock.tryLock(holderInfo);
+        
+        LockKey lockKey = new LockKey(LockConstants.NACOS_LOCK_TYPE, "fifo-key");
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey, reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+            .thenReturn(reentrantLock);
+        
+        WriteRequest cancelRequest = buildCancelWaitRequest("waiter-1", "conn-1");
+        Response cancelResponse = lockOperationService.onApply(cancelRequest);
+        assertTrue(cancelResponse.getSuccess());
+        LockResult cancelResult = serializer.deserialize(cancelResponse.getData().toByteArray());
+        assertTrue(cancelResult.isSuccess());
+        assertEquals(1, reentrantLock.getWaitQueue().size());
+        assertEquals("waiter-2", reentrantLock.getWaitQueue().get(0).getOwner());
+        
+        reentrantLock.unLock(holderInfo);
+        WriteRequest retryCRequest = buildAcquireRequest("waiter-2", "conn-2", 0, true);
+        Response retryCResponse = lockOperationService.onApply(retryCRequest);
+        assertTrue(retryCResponse.getSuccess());
+        LockResult retryCResult = serializer.deserialize(retryCResponse.getData().toByteArray());
+        assertTrue(retryCResult.isSuccess());
+        assertEquals("waiter-2", reentrantLock.getOwner());
+        assertEquals(0, reentrantLock.getWaitQueue().size());
     }
     
     @Test
@@ -482,6 +575,18 @@ public class LockOperationServiceImplTest {
         return WriteRequest.newBuilder().setGroup(lockOperationService.group())
             .setData(ByteString.copyFrom(serializer.serialize(mutexLockRequest)))
             .setOperation(LockOperationEnum.ACQUIRE.name()).build();
+    }
+    
+    private WriteRequest buildCancelWaitRequest(String owner, String connectionId) {
+        MutexLockRequest mutexLockRequest = new MutexLockRequest();
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, "fifo-key"));
+        lockInfo.setOwner(owner);
+        lockInfo.setConnectionId(connectionId);
+        mutexLockRequest.setLockInfo(lockInfo);
+        return WriteRequest.newBuilder().setGroup(lockOperationService.group())
+            .setData(ByteString.copyFrom(serializer.serialize(mutexLockRequest)))
+            .setOperation(LockOperationEnum.CANCEL_WAIT.name()).build();
     }
     
     private WriteRequest buildReleaseRequest(String owner, String key, boolean force) {

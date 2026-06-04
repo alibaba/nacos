@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.lock.core.reentrant;
 
+import com.alibaba.nacos.api.lock.model.LockResult;
 import com.alibaba.nacos.lock.core.reentrant.mutex.MutexAtomicLock;
 import com.alibaba.nacos.lock.model.LockInfo;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,6 +91,53 @@ class AbstractAtomicLockTest {
     void testPollFirstWaiterEmpty() {
         var entry = lock.pollFirstWaiter();
         assertEquals(null, entry);
+    }
+    
+    @Test
+    void testTryLockAsQueueHeadAcquiresAndRemovesHead() {
+        LockInfo waiter1 = createLockInfo("owner-1", "conn-1", 5000);
+        LockInfo waiter2 = createLockInfo("owner-2", "conn-2", 5000);
+        lock.addWaiter(waiter1);
+        lock.addWaiter(waiter2);
+        
+        LockResult result = lock.tryLockAsQueueHead(waiter1);
+        
+        assertTrue(result.isSuccess());
+        assertEquals("owner-1", lock.getOwner());
+        assertEquals(1, lock.getWaitQueue().size());
+        assertEquals("owner-2", lock.getWaitQueue().get(0).getOwner());
+    }
+    
+    @Test
+    void testTryLockAsQueueHeadRejectsNonHead() {
+        LockInfo waiter1 = createLockInfo("owner-1", "conn-1", 5000);
+        LockInfo waiter2 = createLockInfo("owner-2", "conn-2", 5000);
+        lock.addWaiter(waiter1);
+        lock.addWaiter(waiter2);
+        
+        LockResult result = lock.tryLockAsQueueHead(waiter2);
+        
+        assertFalse(result.isSuccess());
+        assertNull(lock.getOwner());
+        assertEquals(2, lock.getWaitQueue().size());
+        assertEquals("owner-1", lock.getWaitQueue().get(0).getOwner());
+        assertEquals("owner-2", lock.getWaitQueue().get(1).getOwner());
+    }
+    
+    @Test
+    void testTryLockAsQueueHeadKeepsHeadWhenLockStillHeld() {
+        LockInfo owner = createLockInfo("owner-0", "conn-0", 5000);
+        LockInfo waiter = createLockInfo("owner-1", "conn-1", 5000);
+        lock.tryLock(owner);
+        lock.addWaiter(waiter);
+        
+        LockResult result = lock.tryLockAsQueueHead(waiter);
+        
+        assertFalse(result.isSuccess());
+        assertTrue(result.isWaiting());
+        assertEquals("owner-0", lock.getOwner());
+        assertEquals(1, lock.getWaitQueue().size());
+        assertEquals("owner-1", lock.getWaitQueue().get(0).getOwner());
     }
     
     @Test

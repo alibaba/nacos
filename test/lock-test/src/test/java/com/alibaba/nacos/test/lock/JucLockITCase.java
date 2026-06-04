@@ -20,13 +20,18 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.lock.LockService;
+import com.alibaba.nacos.api.lock.common.LockConstants;
+import com.alibaba.nacos.api.lock.model.LockInstance;
+import com.alibaba.nacos.api.lock.model.LockResult;
 import com.alibaba.nacos.client.lock.NacosLock;
 import com.alibaba.nacos.client.lock.NacosLockService;
+import com.alibaba.nacos.client.lock.remote.grpc.LockGrpcClient;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.StandardEnvironment;
 
+import java.lang.reflect.Field;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -50,6 +55,19 @@ public class JucLockITCase extends BaseLockITCase {
 
     private NacosLockService getJucLockService() {
         return (NacosLockService) lockService;
+    }
+
+    private LockGrpcClient getLockGrpcClient() throws Exception {
+        Field field = NacosLockService.class.getDeclaredField("lockGrpcClient");
+        field.setAccessible(true);
+        return (LockGrpcClient) field.get(lockService);
+    }
+
+    private LockInstance createOwnedReentrantLock(String key, String owner) {
+        LockInstance instance = createReentrantLock(key);
+        instance.setLockType(LockConstants.REENTRANT_LOCK_TYPE);
+        instance.setOwner(owner);
+        return instance;
     }
 
     // ==================== 可重入锁基础测试 ====================
@@ -350,6 +368,99 @@ public class JucLockITCase extends BaseLockITCase {
         assertTrue(interrupted.get(), "lockInterruptibly should respond to interrupt");
 
         lock1.unlock();
+    }
+
+    @Test
+    @DisplayName("JUC-013: 可重入锁 - lockInterruptibly 中断后清理服务端等待队列")
+    void testLockInterruptiblyInterruptShouldCancelServerWaiter() throws Exception {
+        String key = generateUniqueKey("juc-interrupt-cancel-waiter");
+        LockGrpcClient grpcClient = getLockGrpcClient();
+        NacosLock lockA = getJucLockService().getReentrantLock(key);
+        NacosLock lockB = getJucLockService().getReentrantLock(key);
+        NacosLock lockC = getJucLockService().getReentrantLock(key);
+
+        lockA.lock();
+        boolean releasedA = false;
+
+        AtomicBoolean bInterrupted = new AtomicBoolean(false);
+        AtomicBoolean cAcquired = new AtomicBoolean(false);
+        CountDownLatch bStarted = new CountDownLatch(1);
+        CountDownLatch bDone = new CountDownLatch(1);
+        CountDownLatch cStarted = new CountDownLatch(1);
+        CountDownLatch cDone = new CountDownLatch(1);
+
+        Thread waiterB = new Thread(() -> {
+            boolean acquired = false;
+            try {
+                bStarted.countDown();
+                lockB.lockInterruptibly();
+                acquired = true;
+            } catch (InterruptedException e) {
+                bInterrupted.set(true);
+            } finally {
+                if (acquired) {
+                    lockB.unlock();
+                }
+                bDone.countDown();
+            }
+        }, "lock-interruptibly-waiter-b");
+
+        Thread waiterC = new Thread(() -> {
+            boolean acquired = false;
+            try {
+                cStarted.countDown();
+                lockC.lockInterruptibly();
+                acquired = true;
+                cAcquired.set(true);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                if (acquired) {
+                    lockC.unlock();
+                }
+                cDone.countDown();
+            }
+        }, "lock-interruptibly-waiter-c");
+
+        try {
+            waiterB.start();
+            assertTrue(bStarted.await(5, TimeUnit.SECONDS));
+            Thread.sleep(500);
+
+            waiterC.start();
+            assertTrue(cStarted.await(5, TimeUnit.SECONDS));
+            Thread.sleep(500);
+
+            // B 是服务端等待队列的队头；中断 B 后，客户端应自动发送 cancelWait。
+            waiterB.interrupt();
+            assertTrue(bDone.await(5, TimeUnit.SECONDS));
+            assertTrue(bInterrupted.get(), "Client B should exit via InterruptedException");
+
+            // D 用底层 RPC 观察服务端队列：若 B 的 cancel 已生效，C 是队头，D 应排在 C 后面。
+            LockInstance lockD = createOwnedReentrantLock(key, "client-D");
+            lockD.setWaitTimeMs(5000L);
+            LockResult waitD = grpcClient.lockWithResult(lockD);
+            assertTrue(waitD.isWaiting(), "Client D should wait while A still holds the lock");
+            assertEquals(1, waitD.getWaitPosition(),
+                    "Interrupted waiter B should have been removed from the server-side queue");
+            assertTrue(grpcClient.cancelWaitWithResult(lockD).isSuccess(),
+                    "Client D should cancel its observer wait entry");
+
+            lockA.unlock();
+            releasedA = true;
+
+            assertTrue(cDone.await(5, TimeUnit.SECONDS),
+                    "Client C should not wait for interrupted client B's server-side waiter to expire");
+            assertTrue(cAcquired.get(), "Client C should acquire after B is interrupted and A releases");
+        } finally {
+            if (!releasedA) {
+                lockA.unlock();
+            }
+            waiterB.interrupt();
+            waiterC.interrupt();
+            waiterB.join(1000);
+            waiterC.join(1000);
+        }
     }
 
     // ==================== 非可重入锁测试 ====================

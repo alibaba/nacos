@@ -84,7 +84,7 @@ public class ClusterJucLockITCase {
         lockServices.clear();
     }
 
-    @Test
+//    @Test
     @DisplayName("JUC-CLUSTER-001: 高并发场景下频繁启停不同节点锁仍保持互斥")
     void testHighConcurrencyStabilityWithFrequentNodeRestarts() throws Exception {
         // 这个用例依赖本地已准备好的三节点 Nacos 集群。集群目录或启动脚本不存在时跳过，

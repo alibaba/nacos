@@ -279,6 +279,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         String key = generateUniqueKey("non-head-retry");
         LockGrpcClient grpcClient = getLockGrpcClient();
 
+        // 构造 A 持锁、B/C 入队等待的场景，其中 B 是队头，C 是非队头 waiter。
         LockInstance lockA = createOwnedReentrantLock(key, "client-A");
         LockResult resultA = grpcClient.lockWithResult(lockA);
         assertTrue(resultA.isSuccess(), "Client A should acquire the lock");
@@ -300,9 +301,11 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         LockResult retryResult = null;
         boolean releasedA = false;
         try {
+            // A 释放后锁变为空锁，但 FIFO 语义要求只有队头 B 可以通过 waiterRetry 获锁。
             assertTrue(lockService.unLock(lockA), "Client A should release the lock");
             releasedA = true;
 
+            // C 即使带 waiterRetry 重试，也不能跳过 B 抢占这个空锁。
             retryResult = grpcClient.lockWithResult(retryC);
             assertFalse(retryResult.isSuccess(),
                     "Non-head waiter retry must not acquire a clear lock before the queue head");
@@ -322,6 +325,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         String key = generateUniqueKey("stale-waiter");
         LockGrpcClient grpcClient = getLockGrpcClient();
 
+        // 构造 A 持锁、B 为队头、C 为非队头的等待队列，用于复现乱序 retry。
         LockInstance lockA = createOwnedReentrantLock(key, "client-A");
         assertTrue(grpcClient.lockWithResult(lockA).isSuccess(), "Client A should acquire the lock");
 
@@ -347,20 +351,23 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         try {
             assertTrue(lockService.unLock(lockA), "Client A should release the lock");
 
+            // C 不是队头，即使设置 waiterRetry 也必须失败，避免乱序获锁后残留 stale waiter。
             LockResult retryCResult = grpcClient.lockWithResult(retryC);
-            if (!retryCResult.isSuccess()) {
-                return;
-            }
-            cAcquired = true;
-            assertTrue(lockService.unLock(retryC), "Client C should release the out-of-order lock");
-            cAcquired = false;
+            assertFalse(retryCResult.isSuccess(), "Non-head waiter retry should be rejected");
 
             LockResult retryBResult = grpcClient.lockWithResult(retryB);
-            assertTrue(retryBResult.isSuccess(), "Client B should acquire after C releases");
+            assertTrue(retryBResult.isSuccess(), "Client B should acquire as the queue head");
             bAcquired = true;
             assertTrue(lockService.unLock(retryB), "Client B should release the lock");
             bAcquired = false;
 
+            LockResult retryCAfterBResult = grpcClient.lockWithResult(retryC);
+            assertTrue(retryCAfterBResult.isSuccess(), "Client C should acquire after B releases");
+            cAcquired = true;
+            assertTrue(lockService.unLock(retryC), "Client C should release the lock");
+            cAcquired = false;
+
+            // B/C 都释放后，新客户端 D 应能立即获锁；若 C 残留为 stale waiter，这里会失败。
             LockResult resultD = grpcClient.lockWithResult(lockD);
             dAcquired = resultD.isSuccess();
             assertTrue(resultD.isSuccess(),
@@ -374,6 +381,60 @@ public class WaitQueueLockITCase extends BaseLockITCase {
             }
             if (cAcquired) {
                 lockService.unLock(retryC);
+            }
+        }
+    }
+    
+    @Test
+    @DisplayName("IT-023: 等待队列 - 取消等待后不应阻塞后续 waiter")
+    void testCancelWaitShouldRemoveServerWaiter() throws Exception {
+        String key = generateUniqueKey("local-cancel-wait");
+        LockGrpcClient grpcClient = getLockGrpcClient();
+        
+        // 客户端 A 先持有锁，后续 B/C 都会进入等待队列。
+        LockInstance lockA = createOwnedReentrantLock(key, "client-A");
+        assertTrue(grpcClient.lockWithResult(lockA).isSuccess(), "Client A should acquire the lock");
+        
+        // 客户端 B 进入服务端等待队列，并成为当前队头。
+        LockInstance lockB = createOwnedReentrantLock(key, "client-B");
+        lockB.setWaitTimeMs(5000L);
+        grpcClient.registerForNotification(key, "client-B");
+        LockResult waitB = grpcClient.lockWithResult(lockB);
+        assertTrue(waitB.isWaiting(), "Client B should be queued as the first waiter");
+        
+        // B 在客户端本地取消等待；正确实现应同步删除服务端等待队列中的 B。
+        LockResult cancelBResult = grpcClient.cancelWaitWithResult(lockB);
+        assertTrue(cancelBResult.isSuccess(), "Client B should cancel server-side wait entry");
+        
+        // C 随后入队。如果 B 已从服务端删除，A 释放后 C 应成为队头。
+        LockInstance lockC = createOwnedReentrantLock(key, "client-C");
+        lockC.setWaitTimeMs(5000L);
+        LockResult waitC = grpcClient.lockWithResult(lockC);
+        assertTrue(waitC.isWaiting(), "Client C should wait while A holds the lock");
+        assertEquals(0, waitC.getWaitPosition(), "Client C should become the queue head");
+        
+        LockInstance retryC = createOwnedReentrantLock(key, "client-C");
+        retryC.setWaiterRetry(true);
+        
+        boolean releasedA = false;
+        boolean cAcquired = false;
+        try {
+            // A 释放锁后，服务端应跳过/移除已取消的 B，并通知或允许 C 作为队头重试。
+            LockResult unlockAResult = grpcClient.unLockWithResult(lockA);
+            assertTrue(unlockAResult.isSuccess(), unlockAResult.getErrorMessage());
+            releasedA = true;
+            
+            // C 不应被已取消的 B 阻塞到 wait deadline 过期。
+            LockResult retryCResult = grpcClient.lockWithResult(retryC);
+            assertTrue(retryCResult.isSuccess(),
+                    "Client C should acquire without waiting for canceled client B to expire");
+            cAcquired = true;
+        } finally {
+            if (cAcquired) {
+                lockService.unLock(retryC);
+            }
+            if (!releasedA) {
+                lockService.unLock(lockA);
             }
         }
     }

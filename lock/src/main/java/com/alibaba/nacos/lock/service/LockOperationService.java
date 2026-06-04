@@ -53,6 +53,15 @@ public interface LockOperationService {
     Boolean renew(LockInstance lockInstance);
     
     /**
+     * Cancel a pending wait queue entry via Raft consensus.
+     *
+     * @param lockInstance lock instance with owner
+     * @param connectionId gRPC connection ID of the waiter
+     * @return structured cancel result
+     */
+    LockResult cancelWait(LockInstance lockInstance, String connectionId);
+    
+    /**
      * Expire lock via Raft consensus.
      *
      * <p>This method atomically checks and expires a lock inside the Raft onApply() path,

@@ -140,6 +140,7 @@ public class LockGrpcClient extends AbstractLockClient {
         }
         boolean useWaitQueue = waitTimeMs > 0;
         long deadline = useWaitQueue ? System.currentTimeMillis() + waitTimeMs : 0;
+        boolean acquired = false;
         
         // Register for notification ONCE before the loop to avoid TOCTOU race condition.
         // If we register inside the loop, each call replaces the future, and a notification
@@ -164,7 +165,6 @@ public class LockGrpcClient extends AbstractLockClient {
                 LockOperationResponse response =
                     requestToServer(request, LockOperationResponse.class);
                 LockResult lockResult = response.getLockResult();
-                boolean acquired;
                 if (lockResult != null) {
                     acquired = lockResult.isSuccess();
                 } else {
@@ -196,7 +196,11 @@ public class LockGrpcClient extends AbstractLockClient {
             }
         } finally {
             if (useWaitQueue) {
-                cancelWait(instance.getKey(), instance.getOwner());
+                if (acquired) {
+                    cancelWait(instance.getKey(), instance.getOwner());
+                } else {
+                    cancelWait(instance.getKey(), instance.getLockType(), instance.getOwner());
+                }
             }
         }
     }
@@ -359,6 +363,51 @@ public class LockGrpcClient extends AbstractLockClient {
         if (future != null) {
             future.cancel(false);
         }
+    }
+    
+    /**
+     * Cancel a pending notification wait locally and remove the server-side wait queue entry.
+     *
+     * @param lockKey lock key
+     * @param lockType lock type
+     * @param owner lock owner identifier
+     */
+    public void cancelWait(String lockKey, String lockType, String owner) {
+        cancelWait(lockKey, owner);
+        try {
+            LockInstance instance = new LockInstance();
+            instance.setKey(lockKey);
+            instance.setLockType(lockType);
+            instance.setOwner(owner);
+            cancelWaitWithResult(instance);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to cancel server-side lock waiter, key={}, owner={}", lockKey,
+                owner, e);
+        }
+    }
+    
+    /**
+     * Cancel a pending server-side wait queue entry.
+     *
+     * @param instance lock instance identifying the waiter
+     * @return structured cancel result
+     * @throws NacosException on server error
+     */
+    public LockResult cancelWaitWithResult(LockInstance instance) throws NacosException {
+        cancelWait(instance.getKey(), instance.getOwner());
+        if (!isAbilitySupportedByServer()) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                "Request Nacos server version is too low, not support lock feature.");
+        }
+        LockOperationRequest request = new LockOperationRequest();
+        request.setLockInstance(instance);
+        request.setLockOperationEnum(LockOperationEnum.CANCEL_WAIT);
+        LockOperationResponse response = requestToServer(request, LockOperationResponse.class);
+        LockResult lockResult = response.getLockResult();
+        if (lockResult != null) {
+            return lockResult;
+        }
+        return new LockResult((Boolean) response.getResult());
     }
     
     private String buildWaitKey(String lockKey, String owner) {

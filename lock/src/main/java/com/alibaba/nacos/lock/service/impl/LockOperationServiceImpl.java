@@ -136,6 +136,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 data = renewLock(mutexLockRequest);
             } else if (lockOperation == LockOperationEnum.EXPIRE) {
                 data = expireLock(mutexLockRequest);
+            } else if (lockOperation == LockOperationEnum.CANCEL_WAIT) {
+                data = cancelWaitInternal(mutexLockRequest);
             } else if (lockOperation == LockOperationEnum.CLEANUP_CONNECTION) {
                 data = cleanupConnection(mutexLockRequest);
             } else {
@@ -212,6 +214,10 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
         
         if (mutexLock instanceof AbstractAtomicLock atomicLock) {
+            if (lockInfo.isWaiterRetry()) {
+                return atomicLock.tryLockAsQueueHead(lockInfo);
+            }
+            
             // Strict FIFO: non-retry requests must queue behind existing waiters
             if (!lockInfo.isWaiterRetry() && atomicLock.hasWaiters()) {
                 if (lockInfo.getWaitTimeMs() > 0) {
@@ -223,12 +229,6 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             
             Boolean acquired = mutexLock.tryLock(lockInfo);
             if (acquired) {
-                if (lockInfo.isWaiterRetry() && atomicLock.hasWaiters()) {
-                    WaitEntry head = atomicLock.peekFirstWaiter();
-                    if (head != null && head.getOwner().equals(lockInfo.getOwner())) {
-                        atomicLock.pollFirstWaiter();
-                    }
-                }
                 return LockResult.success(atomicLock.getReentrantCount());
             }
             
@@ -250,6 +250,50 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         LockInfo lockInfo = request.getLockInfo();
         AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
         return mutexLock.renew(lockInfo);
+    }
+    
+    private LockResult cancelWaitInternal(MutexLockRequest request) {
+        LockInfo lockInfo = request.getLockInfo();
+        AtomicLockService mutexLock = lockManager.showLocks().get(lockInfo.getKey());
+        if (!(mutexLock instanceof AbstractAtomicLock atomicLock)) {
+            return LockResult.success(0);
+        }
+        
+        boolean removed = atomicLock.removeWaiter(lockInfo.getOwner(), lockInfo.getConnectionId());
+        if (removed && atomicLock.isClear()) {
+            if (atomicLock.hasWaiters()) {
+                notifyFirstWaiter(lockInfo.getKey(), atomicLock);
+            } else {
+                lockManager.removeMutexLock(lockInfo.getKey());
+            }
+        }
+        return LockResult.success(0);
+    }
+    
+    @Override
+    public LockResult cancelWait(LockInstance lockInstance, String connectionId) {
+        MutexLockRequest request = new MutexLockRequest();
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setKey(new LockKey(lockInstance.getLockType(), lockInstance.getKey()));
+        lockInfo.setOwner(lockInstance.getOwner());
+        lockInfo.setConnectionId(connectionId);
+        request.setLockInfo(lockInfo);
+        WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
+            .setData(ByteString.copyFrom(serializer.serialize(request)))
+            .setOperation(LockOperationEnum.CANCEL_WAIT.name()).build();
+        try {
+            Response response = protocol.write(writeRequest);
+            if (response.getSuccess()) {
+                return serializer.deserialize(response.getData().toByteArray());
+            }
+            throw new NacosLockException(response.getErrMsg());
+        } catch (NacosLockException e) {
+            LOGGER.error("key: {}, lockType:{} cancel wait fail, errorMsg: {}",
+                lockInstance.getKey(), lockInstance.getLockType(), e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            throw new NacosLockException("cancel wait error.", e);
+        }
     }
     
     private LockResult expireLock(MutexLockRequest request) {
