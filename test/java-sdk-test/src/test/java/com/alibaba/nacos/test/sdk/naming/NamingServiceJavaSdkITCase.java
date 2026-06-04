@@ -20,8 +20,10 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
+import com.alibaba.nacos.api.naming.listener.AbstractFuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.FuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -35,8 +37,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -67,7 +71,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Listener/error handling: subscribe receives an instance change event, subscribe=true
  *     queries refresh cached service info through later push, subscribe state is visible, cluster
  *     and selector subscribe overloads filter listener events, null listener subscribe is a no-op,
- *     unsubscribe stops later callbacks, and deregister cleanup plus SDK shutdown are safe.</li>
+ *     unsubscribe stops later callbacks, fuzzy watch returns matched service keys, receives add
+ *     events, stops callbacks after cancel, and deregister cleanup plus SDK shutdown are safe.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -476,6 +481,70 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 "selector listener should receive matching metadata instance");
         assertFalse(sawIgnoredInstance.get(),
                 "selector listener should not expose non-matching instances");
+    }
+
+    @Test
+    public void testFuzzyWatchReturnsServiceKeysAndStopsAfterCancel() throws Exception {
+        NamingService namingService = createNamingService();
+        String groupName = randomGroup("fuzzy");
+        String servicePrefix = randomServiceName("fuzzy");
+        String existingServiceName = servicePrefix + "-existing";
+        String addedServiceName = servicePrefix + "-added";
+        String afterCancelServiceName = servicePrefix + "-after-cancel";
+        String ignoredServiceName = randomServiceName("ignored-fuzzy");
+        Instance existingInstance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        Instance ignoredInstance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        Instance addedInstance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        Instance afterCancelInstance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        CountDownLatch addLatch = new CountDownLatch(1);
+        CountDownLatch afterCancelLatch = new CountDownLatch(1);
+        AtomicReference<FuzzyWatchChangeEvent> addEvent = new AtomicReference<>();
+        AbstractFuzzyWatchEventWatcher watcher = new AbstractFuzzyWatchEventWatcher() {
+            @Override
+            public void onEvent(FuzzyWatchChangeEvent event) {
+                if (addedServiceName.equals(event.getServiceName())
+                        && Constants.ServiceChangedType.ADD_SERVICE.equals(event.getChangeType())) {
+                    addEvent.set(event);
+                    addLatch.countDown();
+                }
+                if (afterCancelServiceName.equals(event.getServiceName())) {
+                    afterCancelLatch.countDown();
+                }
+            }
+        };
+        addCleanup(() -> namingService.cancelFuzzyWatch(servicePrefix + "*", groupName, watcher));
+        addCleanup(() -> namingService.deregisterInstance(afterCancelServiceName, groupName,
+                afterCancelInstance));
+        addCleanup(() -> namingService.deregisterInstance(addedServiceName, groupName,
+                addedInstance));
+        addCleanup(() -> namingService.deregisterInstance(ignoredServiceName, groupName,
+                ignoredInstance));
+        addCleanup(() -> namingService.deregisterInstance(existingServiceName, groupName,
+                existingInstance));
+
+        namingService.registerInstance(existingServiceName, groupName, existingInstance);
+        namingService.registerInstance(ignoredServiceName, groupName, ignoredInstance);
+        waitUntil("existing fuzzy service should be queryable",
+                () -> containsInstance(namingService.getAllInstances(existingServiceName,
+                        groupName, false), existingInstance.getPort()));
+        Future<ListView<String>> serviceKeysFuture = namingService.fuzzyWatchWithServiceKeys(
+                servicePrefix + "*", groupName, watcher);
+
+        ListView<String> serviceKeys = serviceKeysFuture.get(10, TimeUnit.SECONDS);
+        assertTrue(serviceKeys.getData().stream().anyMatch(each -> each.contains(
+                existingServiceName)), serviceKeys.toString());
+        assertFalse(serviceKeys.getData().stream().anyMatch(each -> each.contains(
+                ignoredServiceName)), serviceKeys.toString());
+
+        namingService.registerInstance(addedServiceName, groupName, addedInstance);
+        assertTrue(addLatch.await(10, TimeUnit.SECONDS),
+                "fuzzy watcher should receive add event for matched service");
+        assertEquals(groupName, addEvent.get().getGroupName(), addEvent.get().toString());
+
+        namingService.cancelFuzzyWatch(servicePrefix + "*", groupName, watcher);
+        namingService.registerInstance(afterCancelServiceName, groupName, afterCancelInstance);
+        assertFalse(afterCancelLatch.await(2, TimeUnit.SECONDS),
+                "canceled fuzzy watcher should not receive later service events");
     }
 
     @Test

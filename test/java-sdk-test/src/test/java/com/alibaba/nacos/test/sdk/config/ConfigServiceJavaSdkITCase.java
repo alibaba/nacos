@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.config.filter.AbstractConfigFilter;
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
+import com.alibaba.nacos.api.config.listener.AbstractFuzzyWatchEventWatcher;
+import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -30,8 +32,10 @@ import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -65,7 +69,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Listener/error handling: {@code getConfigAndSignListener} returns the current value,
  *     delivers later updates, standalone listener receives updates, listener removal stops later
  *     callbacks, null listener input is rejected before silent registration, and listener cleanup
- *     plus SDK shutdown are safe.</li>
+ *     plus SDK shutdown are safe; fuzzy watch returns matched keys, receives add/delete events,
+ *     and stops callbacks after cancel.</li>
  *     <li>Filter/type behavior: valid non-text config types are preserved in query result
  *     metadata, and a public SDK config filter can transform publish request content and query
  *     response content.</li>
@@ -314,6 +319,76 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 DEFAULT_TIMEOUT_MS);
         assertEquals(visibleContent, queryResult.getContent());
         assertNotNull(queryResult.getMd5(), queryResult.toString());
+    }
+
+    @Test
+    public void testFuzzyWatchReturnsKeysAndStopsAfterCancel() throws Exception {
+        ConfigService configService = createConfigService();
+        String group = randomGroup("fuzzy");
+        String dataIdPrefix = randomDataId("fuzzy").replace(".data", "");
+        String existingDataId = dataIdPrefix + "-existing.data";
+        String addedDataId = dataIdPrefix + "-added.data";
+        String deletedDataId = dataIdPrefix + "-delete.data";
+        String afterCancelDataId = dataIdPrefix + "-after-cancel.data";
+        String ignoredDataId = randomDataId("ignored-fuzzy");
+        CountDownLatch addLatch = new CountDownLatch(1);
+        CountDownLatch deleteLatch = new CountDownLatch(1);
+        CountDownLatch afterCancelLatch = new CountDownLatch(1);
+        AtomicReference<ConfigFuzzyWatchChangeEvent> addEvent = new AtomicReference<>();
+        AtomicReference<ConfigFuzzyWatchChangeEvent> deleteEvent = new AtomicReference<>();
+        AbstractFuzzyWatchEventWatcher watcher = new AbstractFuzzyWatchEventWatcher() {
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                if (addedDataId.equals(event.getDataId())
+                        && Constants.ConfigChangedType.ADD_CONFIG.equals(event.getChangedType())) {
+                    addEvent.set(event);
+                    addLatch.countDown();
+                }
+                if (deletedDataId.equals(event.getDataId())
+                        && Constants.ConfigChangedType.DELETE_CONFIG.equals(event.getChangedType())) {
+                    deleteEvent.set(event);
+                    deleteLatch.countDown();
+                }
+                if (afterCancelDataId.equals(event.getDataId())) {
+                    afterCancelLatch.countDown();
+                }
+            }
+        };
+        addCleanup(() -> configService.cancelFuzzyWatch(dataIdPrefix + "*", group, watcher));
+        addCleanup(() -> configService.removeConfig(afterCancelDataId, group));
+        addCleanup(() -> configService.removeConfig(deletedDataId, group));
+        addCleanup(() -> configService.removeConfig(addedDataId, group));
+        addCleanup(() -> configService.removeConfig(ignoredDataId, group));
+        addCleanup(() -> configService.removeConfig(existingDataId, group));
+
+        assertTrue(configService.publishConfig(existingDataId, group, "fuzzy.existing"));
+        assertTrue(configService.publishConfig(ignoredDataId, group, "fuzzy.ignored"));
+        waitUntilConfigEquals(configService, existingDataId, group, "fuzzy.existing");
+        Future<Set<String>> groupKeysFuture = configService.fuzzyWatchWithGroupKeys(
+                dataIdPrefix + "*", group, watcher);
+
+        Set<String> groupKeys = groupKeysFuture.get(10, TimeUnit.SECONDS);
+        assertTrue(groupKeys.stream().anyMatch(each -> each.contains(existingDataId)),
+                groupKeys.toString());
+        assertFalse(groupKeys.stream().anyMatch(each -> each.contains(ignoredDataId)),
+                groupKeys.toString());
+
+        assertTrue(configService.publishConfig(addedDataId, group, "fuzzy.added"));
+        assertTrue(addLatch.await(10, TimeUnit.SECONDS),
+                "fuzzy watcher should receive add event for matched config");
+        assertEquals(group, addEvent.get().getGroup(), addEvent.get().toString());
+
+        assertTrue(configService.publishConfig(deletedDataId, group, "fuzzy.deleted"));
+        waitUntilConfigEquals(configService, deletedDataId, group, "fuzzy.deleted");
+        assertTrue(configService.removeConfig(deletedDataId, group));
+        assertTrue(deleteLatch.await(10, TimeUnit.SECONDS),
+                "fuzzy watcher should receive delete event for matched config");
+        assertEquals(group, deleteEvent.get().getGroup(), deleteEvent.get().toString());
+
+        configService.cancelFuzzyWatch(dataIdPrefix + "*", group, watcher);
+        assertTrue(configService.publishConfig(afterCancelDataId, group, "fuzzy.after.cancel"));
+        assertFalse(afterCancelLatch.await(2, TimeUnit.SECONDS),
+                "canceled fuzzy watcher should not receive later events");
     }
 
     private Listener listenerForContent(String expectedContent, CountDownLatch latch,
