@@ -41,16 +41,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @ExtendWith(MockitoExtension.class)
 public class LockRequestHandlerTest {
-
+    
     @Mock
     private LockOperationService lockOperationService;
-
+    
     private LockRequestHandler lockRequestHandler;
-
+    
     @Test
     public void testAcquireHandler() throws NacosException {
         lockRequestHandler = new LockRequestHandler(lockOperationService);
-
+        
         LockInstance lockInstance = new LockInstance();
         lockInstance.setKey("key");
         lockInstance.setOwner("test-owner");
@@ -60,19 +60,19 @@ public class LockRequestHandlerTest {
         request.setLockInstance(lockInstance);
         request.setLockOperationEnum(LockOperationEnum.ACQUIRE);
         Mockito.when(lockOperationService.lock(Mockito.eq(lockInstance), Mockito.anyString()))
-                .thenReturn(LockResult.success(1));
-
+            .thenReturn(LockResult.success(1));
+        
         RequestMeta meta = new RequestMeta();
         meta.setConnectionId("test-conn-id");
         LockOperationResponse response = lockRequestHandler.handle(request, meta);
         LockResult result = response.getLockResult();
         assertTrue(result.isSuccess());
     }
-
+    
     @Test
     public void testReleaseHandler() throws NacosException {
         lockRequestHandler = new LockRequestHandler(lockOperationService);
-
+        
         LockInstance lockInstance = new LockInstance();
         lockInstance.setKey("key");
         lockInstance.setOwner("test-owner");
@@ -81,7 +81,7 @@ public class LockRequestHandlerTest {
         request.setLockInstance(lockInstance);
         request.setLockOperationEnum(LockOperationEnum.RELEASE);
         Mockito.when(lockOperationService.unLock(lockInstance)).thenReturn(LockResult.success(0));
-
+        
         RequestMeta meta = new RequestMeta();
         meta.setConnectionId("test-conn-id");
         LockOperationResponse response = lockRequestHandler.handle(request, meta);

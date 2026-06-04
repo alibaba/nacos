@@ -37,25 +37,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2026/05/29
  */
 public class NacosLockWatchdog {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosLockWatchdog.class);
-
+    
     private static final long DEFAULT_RENEW_INTERVAL_MS = 10000L;
-
+    
     private final ScheduledExecutorService scheduler;
-
+    
     private final Map<String, ScheduledFuture<?>> renewTasks = new ConcurrentHashMap<>();
-
+    
     private final Map<String, LockInstance> lockInstances = new ConcurrentHashMap<>();
-
+    
     private final long renewIntervalMs;
-
+    
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
-
+    
     public NacosLockWatchdog() {
         this(DEFAULT_RENEW_INTERVAL_MS);
     }
-
+    
     public NacosLockWatchdog(long renewIntervalMs) {
         this.renewIntervalMs = renewIntervalMs;
         this.scheduler = Executors.newScheduledThreadPool(2, r -> {
@@ -64,7 +64,7 @@ public class NacosLockWatchdog {
             return t;
         });
     }
-
+    
     /**
      * Register a lock for automatic lease renewal.
      *
@@ -75,11 +75,12 @@ public class NacosLockWatchdog {
     public void register(String key, LockGrpcClient client, LockInstance instance) {
         if (shutdown.get() || renewIntervalMs <= 0) {
             LOGGER.warn("Watchdog cannot register lock: {}, shutdown={}, renewIntervalMs={}",
-                    key, shutdown.get(), renewIntervalMs);
+                key, shutdown.get(), renewIntervalMs);
             return;
         }
         lockInstances.put(key, instance);
-        long ttl = instance.getExpiredTime() > 0 ? instance.getExpiredTime() : DEFAULT_RENEW_INTERVAL_MS * 3;
+        long ttl = instance.getExpiredTime() > 0 ? instance.getExpiredTime()
+            : DEFAULT_RENEW_INTERVAL_MS * 3;
         long interval = Math.max(1000L, Math.min(ttl / 3, renewIntervalMs));
         ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(() -> {
             try {
@@ -101,7 +102,7 @@ public class NacosLockWatchdog {
         }, interval, interval, TimeUnit.MILLISECONDS);
         renewTasks.put(key, future);
     }
-
+    
     /**
      * Unregister a lock from automatic renewal.
      *
@@ -114,7 +115,7 @@ public class NacosLockWatchdog {
             future.cancel(false);
         }
     }
-
+    
     /**
      * Shutdown the watchdog and cancel all renewal tasks.
      */
@@ -134,7 +135,7 @@ public class NacosLockWatchdog {
             }
         }
     }
-
+    
     public boolean isShutdown() {
         return shutdown.get();
     }

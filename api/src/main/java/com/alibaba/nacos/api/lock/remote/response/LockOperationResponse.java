@@ -38,9 +38,9 @@ public class LockOperationResponse extends Response {
     public LockOperationResponse(Boolean result) {
         this.result = result;
     }
-
+    
     private LockResult lockResult;
-
+    
     /**
      * create success response.
      * @param result result
@@ -50,7 +50,7 @@ public class LockOperationResponse extends Response {
         LockOperationResponse response = new LockOperationResponse(result);
         return response;
     }
-
+    
     /**
      * create success response with structured lock result.
      * @param lockResult structured lock result
@@ -61,7 +61,7 @@ public class LockOperationResponse extends Response {
         response.setLockResult(lockResult);
         return response;
     }
-
+    
     /**
      * create fail response.
      * @param message message
@@ -73,19 +73,19 @@ public class LockOperationResponse extends Response {
         response.setMessage(message);
         return response;
     }
-
+    
     public Object getResult() {
         return result;
     }
-
+    
     public void setResult(Object result) {
         this.result = result;
     }
-
+    
     public LockResult getLockResult() {
         return lockResult;
     }
-
+    
     public void setLockResult(LockResult lockResult) {
         this.lockResult = lockResult;
     }

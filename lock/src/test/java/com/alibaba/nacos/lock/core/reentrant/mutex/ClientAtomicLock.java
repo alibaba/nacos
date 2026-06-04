@@ -48,7 +48,7 @@ public class ClientAtomicLock extends AbstractAtomicLock {
         }
         return state.compareAndSet(EMPTY, nacosClientId) || state.get().equals(nacosClientId);
     }
-
+    
     @Override
     protected Boolean doUnLock(LockInfo lockInfo) {
         String nacosClientId = (String) lockInfo.getParams().get("nacosClientId");

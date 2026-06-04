@@ -63,27 +63,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2023/6/28 17:35
  */
 public class LockGrpcClient extends AbstractLockClient {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(LockGrpcClient.class);
-
+    
     private static final long DEFAULT_REQUEST_TIMEOUT_MS = 15000L;
-
+    
     private static final long DEFAULT_NOTIFICATION_POLL_MS = 2000L;
-
+    
     private final String uuid;
-
+    
     private final Long requestTimeout;
-
+    
     private final RpcClient rpcClient;
-
-    private final ConcurrentHashMap<String, CompletableFuture<LockNotificationType>> notificationFutures = new ConcurrentHashMap<>();
-
+    
+    private final ConcurrentHashMap<String, CompletableFuture<LockNotificationType>> notificationFutures =
+        new ConcurrentHashMap<>();
+    
     /**
      * Tracks whether the client has been shut down. When true, pending notification futures
      * are completed exceptionally to prevent thread leaks from indefinite blocking.
      */
     private final AtomicBoolean closed = new AtomicBoolean(false);
-
+    
     public LockGrpcClient(NacosClientProperties properties, ServerListFactory serverListFactory,
         SecurityProxy securityProxy) throws NacosException {
         super(securityProxy);
@@ -95,20 +96,23 @@ public class LockGrpcClient extends AbstractLockClient {
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_LOCK);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
-                RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties.asProperties()));
+            RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties.asProperties()));
         registerServerRequestHandler();
         start(serverListFactory);
     }
-
+    
     private void registerServerRequestHandler() {
         rpcClient.registerServerRequestHandler(new ServerRequestHandler() {
+            
             @Override
             public Response requestReply(com.alibaba.nacos.api.remote.request.Request request,
-                    com.alibaba.nacos.common.remote.client.Connection connection) {
+                com.alibaba.nacos.common.remote.client.Connection connection) {
                 if (request instanceof LockNotificationRequest) {
                     LockNotificationRequest notification = (LockNotificationRequest) request;
-                    String waitKey = buildWaitKey(notification.getLockKey(), notification.getOwner());
-                    CompletableFuture<LockNotificationType> future = notificationFutures.get(waitKey);
+                    String waitKey =
+                        buildWaitKey(notification.getLockKey(), notification.getOwner());
+                    CompletableFuture<LockNotificationType> future =
+                        notificationFutures.get(waitKey);
                     if (future != null) {
                         future.complete(notification.getNotificationType());
                     }
@@ -118,12 +122,12 @@ public class LockGrpcClient extends AbstractLockClient {
             }
         });
     }
-
+    
     private void start(ServerListFactory serverListFactory) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.start();
     }
-
+    
     @Override
     public Boolean lock(LockInstance instance) throws NacosException {
         if (!isAbilitySupportedByServer()) {
@@ -136,7 +140,7 @@ public class LockGrpcClient extends AbstractLockClient {
         }
         boolean useWaitQueue = waitTimeMs > 0;
         long deadline = useWaitQueue ? System.currentTimeMillis() + waitTimeMs : 0;
-
+        
         // Register for notification ONCE before the loop to avoid TOCTOU race condition.
         // If we register inside the loop, each call replaces the future, and a notification
         // that arrives between two registrations would be lost, causing indefinite blocking.
@@ -157,7 +161,8 @@ public class LockGrpcClient extends AbstractLockClient {
                 LockOperationRequest request = new LockOperationRequest();
                 request.setLockInstance(instance);
                 request.setLockOperationEnum(LockOperationEnum.ACQUIRE);
-                LockOperationResponse response = requestToServer(request, LockOperationResponse.class);
+                LockOperationResponse response =
+                    requestToServer(request, LockOperationResponse.class);
                 LockResult lockResult = response.getLockResult();
                 boolean acquired;
                 if (lockResult != null) {
@@ -178,9 +183,9 @@ public class LockGrpcClient extends AbstractLockClient {
                 }
                 try {
                     long pollTimeout = Math.min(remaining,
-                            DEFAULT_NOTIFICATION_POLL_MS + ThreadLocalRandom.current().nextInt(200));
+                        DEFAULT_NOTIFICATION_POLL_MS + ThreadLocalRandom.current().nextInt(200));
                     LockNotificationType notificationType = waitForNotification(
-                            instance.getKey(), instance.getOwner(), pollTimeout);
+                        instance.getKey(), instance.getOwner(), pollTimeout);
                     if (notificationType == LockNotificationType.TIMEOUT) {
                         return false;
                     }
@@ -195,13 +200,13 @@ public class LockGrpcClient extends AbstractLockClient {
             }
         }
     }
-
+    
     @Override
     public Boolean unLock(LockInstance instance) throws NacosException {
         LockResult result = unLockWithResult(instance);
         return result.isSuccess();
     }
-
+    
     /**
      * Release lock and return structured result with remaining reentrant count.
      *
@@ -224,7 +229,7 @@ public class LockGrpcClient extends AbstractLockClient {
         }
         return new LockResult((Boolean) response.getResult());
     }
-
+    
     /**
      * Renew lock lease time (watchdog heartbeat).
      *
@@ -236,7 +241,7 @@ public class LockGrpcClient extends AbstractLockClient {
         LockResult result = renewWithResult(instance);
         return result.isSuccess();
     }
-
+    
     /**
      * Renew lock lease time and return structured result.
      *
@@ -247,7 +252,7 @@ public class LockGrpcClient extends AbstractLockClient {
     public LockResult renewWithResult(LockInstance instance) throws NacosException {
         if (!isAbilitySupportedByServer()) {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
-                    "Request Nacos server version is too low, not support lock feature.");
+                "Request Nacos server version is too low, not support lock feature.");
         }
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(instance);
@@ -259,7 +264,7 @@ public class LockGrpcClient extends AbstractLockClient {
         }
         return new LockResult((Boolean) response.getResult());
     }
-
+    
     /**
      * Acquire lock and return structured result with reentrant count or error details.
      *
@@ -270,7 +275,7 @@ public class LockGrpcClient extends AbstractLockClient {
     public LockResult lockWithResult(LockInstance instance) throws NacosException {
         if (!isAbilitySupportedByServer()) {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
-                    "Request Nacos server version is too low, not support lock feature.");
+                "Request Nacos server version is too low, not support lock feature.");
         }
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(instance);
@@ -282,7 +287,7 @@ public class LockGrpcClient extends AbstractLockClient {
         }
         return new LockResult((Boolean) response.getResult());
     }
-
+    
     /**
      * Block until a server push notification arrives for the specified lock and owner.
      *
@@ -297,17 +302,19 @@ public class LockGrpcClient extends AbstractLockClient {
      * @return notification type, or null on timeout
      * @throws InterruptedException if the thread is interrupted while waiting
      */
-    public LockNotificationType waitForNotification(String lockKey, String owner, long timeoutMs) throws InterruptedException {
+    public LockNotificationType waitForNotification(String lockKey, String owner, long timeoutMs)
+        throws InterruptedException {
         if (closed.get()) {
             return LockNotificationType.TIMEOUT;
         }
         String waitKey = buildWaitKey(lockKey, owner);
-        CompletableFuture<LockNotificationType> future = notificationFutures.compute(waitKey, (k, existing) -> {
-            if (existing != null && !existing.isDone()) {
-                return existing;
-            }
-            return new CompletableFuture<>();
-        });
+        CompletableFuture<LockNotificationType> future =
+            notificationFutures.compute(waitKey, (k, existing) -> {
+                if (existing != null && !existing.isDone()) {
+                    return existing;
+                }
+                return new CompletableFuture<>();
+            });
         try {
             if (timeoutMs <= 0) {
                 return future.get();
@@ -320,7 +327,7 @@ public class LockGrpcClient extends AbstractLockClient {
             return null;
         }
     }
-
+    
     /**
      * Register for push notification BEFORE sending lock request.
      *
@@ -333,12 +340,13 @@ public class LockGrpcClient extends AbstractLockClient {
      */
     public void registerForNotification(String lockKey, String owner) {
         String waitKey = buildWaitKey(lockKey, owner);
-        CompletableFuture<LockNotificationType> oldFuture = notificationFutures.put(waitKey, new CompletableFuture<>());
+        CompletableFuture<LockNotificationType> oldFuture =
+            notificationFutures.put(waitKey, new CompletableFuture<>());
         if (oldFuture != null && !oldFuture.isDone()) {
             oldFuture.complete(LockNotificationType.AVAILABLE);
         }
     }
-
+    
     /**
      * Cancel a pending notification wait for the specified lock and owner.
      *
@@ -352,24 +360,26 @@ public class LockGrpcClient extends AbstractLockClient {
             future.cancel(false);
         }
     }
-
+    
     private String buildWaitKey(String lockKey, String owner) {
         return lockKey + ":" + owner;
     }
-
+    
     @Override
     public void shutdown() throws NacosException {
         if (closed.compareAndSet(false, true)) {
             // Complete all pending futures exceptionally to unblock waiting threads
-            java.util.concurrent.CancellationException ex = new java.util.concurrent.CancellationException("Client shutdown");
+            java.util.concurrent.CancellationException ex =
+                new java.util.concurrent.CancellationException("Client shutdown");
             notificationFutures.values().forEach(f -> f.completeExceptionally(ex));
             notificationFutures.clear();
             rpcClient.shutdown();
         }
     }
-
-    private <T extends Response> T requestToServer(AbstractLockRequest request, Class<T> responseClass)
-            throws NacosException {
+    
+    private <T extends Response> T requestToServer(AbstractLockRequest request,
+        Class<T> responseClass)
+        throws NacosException {
         try {
             request.putAllHeader(getSecurityHeaders());
             long timeout = requestTimeout > 0 ? requestTimeout : 15000L;
@@ -388,7 +398,7 @@ public class LockGrpcClient extends AbstractLockClient {
         }
         throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
     }
-
+    
     private boolean isAbilitySupportedByServer() {
         return rpcClient.getConnectionAbility(
             AbilityKey.SERVER_DISTRIBUTED_LOCK) == AbilityStatus.SUPPORTED;

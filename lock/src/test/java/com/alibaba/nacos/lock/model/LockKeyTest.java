@@ -28,66 +28,66 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  * @date 2026/06/01
  */
 class LockKeyTest {
-
+    
     @Test
     void testEqualsSameValues() {
         LockKey key1 = new LockKey("type-a", "key-1");
         LockKey key2 = new LockKey("type-a", "key-1");
         assertEquals(key1, key2);
     }
-
+    
     @Test
     void testEqualsSelf() {
         LockKey key = new LockKey("type-a", "key-1");
         assertEquals(key, key);
     }
-
+    
     @Test
     void testEqualsNull() {
         LockKey key = new LockKey("type-a", "key-1");
         assertNotEquals(null, key);
     }
-
+    
     @Test
     void testNotEqualsDifferentType() {
         LockKey key1 = new LockKey("type-a", "key-1");
         LockKey key2 = new LockKey("type-b", "key-1");
         assertNotEquals(key1, key2);
     }
-
+    
     @Test
     void testNotEqualsDifferentKey() {
         LockKey key1 = new LockKey("type-a", "key-1");
         LockKey key2 = new LockKey("type-a", "key-2");
         assertNotEquals(key1, key2);
     }
-
+    
     @Test
     void testHashCodeConsistent() {
         LockKey key1 = new LockKey("type-a", "key-1");
         LockKey key2 = new LockKey("type-a", "key-1");
         assertEquals(key1.hashCode(), key2.hashCode());
     }
-
+    
     @Test
     void testHashCodeDifferent() {
         LockKey key1 = new LockKey("type-a", "key-1");
         LockKey key2 = new LockKey("type-a", "key-2");
         assertNotEquals(key1.hashCode(), key2.hashCode());
     }
-
+    
     @Test
     void testToString() {
         LockKey key = new LockKey("type-a", "key-1");
         assertEquals("type-a:key-1", key.toString());
     }
-
+    
     @Test
     void testGettersAndSetters() {
         LockKey key = new LockKey("type-a", "key-1");
         assertEquals("type-a", key.getLockType());
         assertEquals("key-1", key.getKey());
-
+        
         key.setLockType("type-b");
         key.setKey("key-2");
         assertEquals("type-b", key.getLockType());

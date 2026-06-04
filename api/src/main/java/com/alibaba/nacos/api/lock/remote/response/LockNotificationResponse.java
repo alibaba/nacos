@@ -26,10 +26,10 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  * @date 2026/05/29
  */
 public class LockNotificationResponse extends Response {
-
+    
     public LockNotificationResponse() {
     }
-
+    
     /**
      * create success response.
      * @return LockNotificationResponse
@@ -39,7 +39,7 @@ public class LockNotificationResponse extends Response {
         response.setResultCode(ResponseCode.SUCCESS.getCode());
         return response;
     }
-
+    
     /**
      * create fail response.
      * @param message error message

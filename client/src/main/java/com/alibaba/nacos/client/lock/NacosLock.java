@@ -47,11 +47,11 @@ import java.util.concurrent.locks.Lock;
  * @date 2026/05/29
  */
 public class NacosLock implements Lock {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosLock.class);
-
+    
     private static final long DEFAULT_LEASE_TIME_MS = 30000L;
-
+    
     /**
      * Server-side wait queue timeout for indefinite lock acquisition ({@link #lock()}).
      *
@@ -65,19 +65,19 @@ public class NacosLock implements Lock {
      * and the watchdog renewal mechanism.
      */
     private static final long DEFAULT_SERVER_WAIT_TIME_MS = 300000L;
-
+    
     private final String key;
-
+    
     private final String lockType;
-
+    
     private final LockGrpcClient grpcClient;
-
+    
     private final NacosLockWatchdog watchdog;
-
+    
     private final String clientId;
-
+    
     private final ThreadLocal<Integer> localReentrantCount = ThreadLocal.withInitial(() -> 0);
-
+    
     /**
      * Guard flag to prevent recursive unlock() calls from the same thread.
      *
@@ -88,20 +88,21 @@ public class NacosLock implements Lock {
      * such recursive calls.
      */
     private final ThreadLocal<Boolean> inUnlock = ThreadLocal.withInitial(() -> Boolean.FALSE);
-
-    public NacosLock(String key, String lockType, LockGrpcClient grpcClient, NacosLockWatchdog watchdog,
-                     String clientId) {
+    
+    public NacosLock(String key, String lockType, LockGrpcClient grpcClient,
+        NacosLockWatchdog watchdog,
+        String clientId) {
         this.key = key;
         this.lockType = lockType;
         this.grpcClient = grpcClient;
         this.watchdog = watchdog;
         this.clientId = clientId;
     }
-
+    
     private String currentOwner() {
         return clientId + ":" + Thread.currentThread().getId();
     }
-
+    
     private LockInstance buildInstance(long expiredTimeMs) {
         LockInstance instance = new LockInstance();
         instance.setKey(key);
@@ -110,7 +111,7 @@ public class NacosLock implements Lock {
         instance.setExpiredTime(expiredTimeMs);
         return instance;
     }
-
+    
     /**
      * Guard against non-reentrant lock reentry on the same thread.
      *
@@ -121,12 +122,13 @@ public class NacosLock implements Lock {
      * the wait queue, causing self-deadlock (the thread waits for itself to release the lock).
      */
     private void checkReentrantGuard() {
-        if (LockConstants.NON_REENTRANT_LOCK_TYPE.equals(lockType) && localReentrantCount.get() > 0) {
+        if (LockConstants.NON_REENTRANT_LOCK_TYPE.equals(lockType)
+            && localReentrantCount.get() > 0) {
             throw new IllegalMonitorStateException(
-                    "Non-reentrant lock does not allow reentry on the same thread, key=" + key);
+                "Non-reentrant lock does not allow reentry on the same thread, key=" + key);
         }
     }
-
+    
     @Override
     public void lock() {
         checkReentrantGuard();
@@ -161,7 +163,7 @@ public class NacosLock implements Lock {
             }
         }
     }
-
+    
     @Override
     public void lockInterruptibly() throws InterruptedException {
         checkReentrantGuard();
@@ -195,7 +197,7 @@ public class NacosLock implements Lock {
             }
         }
     }
-
+    
     @Override
     public boolean tryLock() {
         checkReentrantGuard();
@@ -215,7 +217,7 @@ public class NacosLock implements Lock {
             return false;
         }
     }
-
+    
     @Override
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         checkReentrantGuard();
@@ -251,7 +253,7 @@ public class NacosLock implements Lock {
             }
         }
     }
-
+    
     @Override
     public void unlock() {
         if (inUnlock.get()) {
@@ -277,7 +279,8 @@ public class NacosLock implements Lock {
                     watchdog.unregister(key);
                     localReentrantCount.remove();
                     throw new IllegalMonitorStateException(
-                            "Unlock rejected by server, key=" + key + ", msg=" + result.getErrorMessage());
+                        "Unlock rejected by server, key=" + key + ", msg="
+                            + result.getErrorMessage());
                 }
             } catch (NacosException e) {
                 LOGGER.error("Failed to unlock, key={}", key, e);
@@ -290,16 +293,17 @@ public class NacosLock implements Lock {
             }
         }
     }
-
+    
     @Override
     public Condition newCondition() {
-        throw new UnsupportedOperationException("Condition not supported in Nacos distributed lock");
+        throw new UnsupportedOperationException(
+            "Condition not supported in Nacos distributed lock");
     }
-
+    
     public String getKey() {
         return key;
     }
-
+    
     public String getLockType() {
         return lockType;
     }

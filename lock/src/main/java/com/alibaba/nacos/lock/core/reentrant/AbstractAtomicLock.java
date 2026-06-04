@@ -38,21 +38,21 @@ import java.util.concurrent.locks.ReentrantLock;
  * @date 2023/7/10 14:50
  */
 public abstract class AbstractAtomicLock implements AtomicLockService, Serializable {
-
+    
     private static final long serialVersionUID = -3460985546856855524L;
-
+    
     private final String key;
-
+    
     private String owner;
-
+    
     private String connectionId;
-
+    
     private int reentrantCount;
-
+    
     private long expiredTimestamp;
-
+    
     private final LinkedList<WaitEntry> waitQueue = new LinkedList<>();
-
+    
     /**
      * ReentrantLock for thread-safe access to lock state.
      *
@@ -64,11 +64,11 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
      * Must be reinitialized after deserialization via readObject().
      */
     private transient ReentrantLock lock = new ReentrantLock();
-
+    
     public AbstractAtomicLock(String key) {
         this.key = key;
     }
-
+    
     /**
      * Initialize transient fields after deserialization.
      *
@@ -81,12 +81,12 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             this.lock = new ReentrantLock();
         }
     }
-
+    
     @Override
     public String getKey() {
         return key;
     }
-
+    
     public String getOwner() {
         lock.lock();
         try {
@@ -95,7 +95,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     public String getConnectionId() {
         lock.lock();
         try {
@@ -104,7 +104,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     public int getReentrantCount() {
         lock.lock();
         try {
@@ -113,7 +113,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     public long getExpiredTimestamp() {
         lock.lock();
         try {
@@ -122,7 +122,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     protected void setOwner(String owner) {
         lock.lock();
         try {
@@ -131,7 +131,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     protected void setConnectionId(String connectionId) {
         lock.lock();
         try {
@@ -140,7 +140,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     protected void setReentrantCount(int count) {
         lock.lock();
         try {
@@ -149,7 +149,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     protected void setExpiredTimestamp(long timestamp) {
         lock.lock();
         try {
@@ -158,7 +158,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     public List<WaitEntry> getWaitQueue() {
         lock.lock();
         try {
@@ -167,7 +167,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     /**
      * Remove all waiters associated with the given connection.
      *
@@ -181,7 +181,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     /**
      * Add a waiter to the queue when lock acquisition fails.
      *
@@ -196,19 +196,20 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             for (int i = 0; i < waitQueue.size(); i++) {
                 WaitEntry existing = waitQueue.get(i);
                 if (existing.getOwner().equals(lockInfo.getOwner())
-                        && existing.getConnectionId().equals(lockInfo.getConnectionId())) {
+                    && existing.getConnectionId().equals(lockInfo.getConnectionId())) {
                     existing.setWaitDeadline(deadline);
                     return i;
                 }
             }
-            WaitEntry entry = new WaitEntry(lockInfo.getOwner(), lockInfo.getConnectionId(), now, deadline);
+            WaitEntry entry =
+                new WaitEntry(lockInfo.getOwner(), lockInfo.getConnectionId(), now, deadline);
             waitQueue.add(entry);
             return waitQueue.size() - 1;
         } finally {
             lock.unlock();
         }
     }
-
+    
     /**
      * Peek at the first non-expired waiter without removing it from the queue.
      * Expired entries encountered are discarded.
@@ -230,7 +231,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     /**
      * Check if there are any non-expired waiters in the queue.
      *
@@ -239,7 +240,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
     public boolean hasWaiters() {
         return peekFirstWaiter() != null;
     }
-
+    
     /**
      * Remove and return the first waiter from the queue.
      *
@@ -259,7 +260,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     /**
      * Remove the first waiter entry matching the given owner.
      *
@@ -282,7 +283,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     /**
      * Clear all waiters from the queue.
      */
@@ -294,7 +295,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     /**
      * Remove and return all waiters from the queue.
      *
@@ -310,7 +311,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     @Override
     public Boolean autoExpire() {
         lock.lock();
@@ -326,7 +327,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     @Override
     public Boolean isClear() {
         lock.lock();
@@ -336,7 +337,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     @Override
     public Boolean renew(LockInfo lockInfo) {
         lock.lock();
@@ -353,7 +354,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     @Override
     public Boolean forceRelease() {
         lock.lock();
@@ -369,7 +370,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     /**
      * Subclass hook for lock acquisition logic. Called after common checks.
      *
@@ -377,7 +378,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
      * @return true if acquired
      */
     protected abstract Boolean doTryLock(LockInfo lockInfo);
-
+    
     /**
      * Subclass hook for unlock logic. Called after owner verification.
      *
@@ -385,7 +386,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
      * @return true if released
      */
     protected abstract Boolean doUnLock(LockInfo lockInfo);
-
+    
     @Override
     public Boolean tryLock(LockInfo lockInfo) {
         lock.lock();
@@ -399,7 +400,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             lock.unlock();
         }
     }
-
+    
     /**
      * Unlock the lock with owner verification.
      *

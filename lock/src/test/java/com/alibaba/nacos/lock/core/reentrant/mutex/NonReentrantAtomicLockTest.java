@@ -32,14 +32,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @date 2026/06/01
  */
 class NonReentrantAtomicLockTest {
-
+    
     private NonReentrantAtomicLock lock;
-
+    
     @BeforeEach
     void setUp() {
         lock = new NonReentrantAtomicLock("test-key");
     }
-
+    
     @Test
     void testBasicLockAndUnlock() {
         LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 30000);
@@ -47,13 +47,13 @@ class NonReentrantAtomicLockTest {
         assertEquals("owner-1", lock.getOwner());
         assertEquals("conn-1", lock.getConnectionId());
         assertEquals(1, lock.getReentrantCount());
-
+        
         assertTrue(lock.unLock(lockInfo));
         assertNull(lock.getOwner());
         assertNull(lock.getConnectionId());
         assertEquals(0, lock.getReentrantCount());
     }
-
+    
     @Test
     void testSameOwnerCannotReenter() {
         LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 30000);
@@ -61,80 +61,80 @@ class NonReentrantAtomicLockTest {
         assertFalse(lock.tryLock(lockInfo), "Non-reentrant lock should reject same owner reentry");
         assertEquals(1, lock.getReentrantCount());
     }
-
+    
     @Test
     void testDifferentOwnerCannotLock() {
         LockInfo lockInfo1 = createLockInfo("owner-1", "conn-1", 30000);
         LockInfo lockInfo2 = createLockInfo("owner-2", "conn-2", 30000);
-
+        
         assertTrue(lock.tryLock(lockInfo1));
         assertFalse(lock.tryLock(lockInfo2));
         assertEquals("owner-1", lock.getOwner());
     }
-
+    
     @Test
     void testDifferentOwnerCannotUnlock() {
         LockInfo lockInfo1 = createLockInfo("owner-1", "conn-1", 30000);
         LockInfo lockInfo2 = createLockInfo("owner-2", "conn-2", 30000);
-
+        
         assertTrue(lock.tryLock(lockInfo1));
         assertFalse(lock.unLock(lockInfo2));
         assertEquals("owner-1", lock.getOwner());
         assertEquals(1, lock.getReentrantCount());
     }
-
+    
     @Test
     void testUnlockClearsAllState() {
         LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 30000);
         lock.tryLock(lockInfo);
         lock.unLock(lockInfo);
-
+        
         assertNull(lock.getOwner());
         assertNull(lock.getConnectionId());
         assertEquals(0, lock.getReentrantCount());
         assertEquals(0, lock.getExpiredTimestamp());
     }
-
+    
     @Test
     void testForceRelease() {
         LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 30000);
         lock.tryLock(lockInfo);
-
+        
         assertTrue(lock.forceRelease());
         assertNull(lock.getOwner());
         assertEquals(0, lock.getReentrantCount());
     }
-
+    
     @Test
     void testAutoExpire() {
         LockInfo lockInfo = createLockInfo("owner-1", "conn-1", -1000);
         lock.tryLock(lockInfo);
-
+        
         assertTrue(lock.autoExpire());
         assertNull(lock.getOwner());
         assertEquals(0, lock.getReentrantCount());
     }
-
+    
     @Test
     void testAutoExpireNotExpired() {
         LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 30000);
         lock.tryLock(lockInfo);
-
+        
         assertFalse(lock.autoExpire());
         assertEquals("owner-1", lock.getOwner());
     }
-
+    
     @Test
     void testLockAfterUnlock() {
         LockInfo lockInfo1 = createLockInfo("owner-1", "conn-1", 30000);
         LockInfo lockInfo2 = createLockInfo("owner-2", "conn-2", 30000);
-
+        
         assertTrue(lock.tryLock(lockInfo1));
         assertTrue(lock.unLock(lockInfo1));
         assertTrue(lock.tryLock(lockInfo2));
         assertEquals("owner-2", lock.getOwner());
     }
-
+    
     private LockInfo createLockInfo(String owner, String connectionId, long expireTime) {
         LockInfo lockInfo = new LockInfo();
         lockInfo.setOwner(owner);

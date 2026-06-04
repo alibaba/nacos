@@ -28,59 +28,59 @@ import java.io.Serializable;
  * @date 2026/05/29 23:00
  */
 public class WaitEntry implements Serializable {
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     private String owner;
-
+    
     private String connectionId;
-
+    
     private long enqueueTime;
-
+    
     private long waitDeadline;
-
+    
     public WaitEntry() {
     }
-
+    
     public WaitEntry(String owner, String connectionId, long enqueueTime, long waitDeadline) {
         this.owner = owner;
         this.connectionId = connectionId;
         this.enqueueTime = enqueueTime;
         this.waitDeadline = waitDeadline;
     }
-
+    
     public String getOwner() {
         return owner;
     }
-
+    
     public void setOwner(String owner) {
         this.owner = owner;
     }
-
+    
     public String getConnectionId() {
         return connectionId;
     }
-
+    
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }
-
+    
     public long getEnqueueTime() {
         return enqueueTime;
     }
-
+    
     public void setEnqueueTime(long enqueueTime) {
         this.enqueueTime = enqueueTime;
     }
-
+    
     public long getWaitDeadline() {
         return waitDeadline;
     }
-
+    
     public void setWaitDeadline(long waitDeadline) {
         this.waitDeadline = waitDeadline;
     }
-
+    
     public boolean isExpired() {
         return waitDeadline > 0 && System.currentTimeMillis() >= waitDeadline;
     }

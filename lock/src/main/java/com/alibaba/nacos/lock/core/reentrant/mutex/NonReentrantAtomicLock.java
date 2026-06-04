@@ -32,14 +32,14 @@ import java.io.Serial;
  * @date 2026/05/29
  */
 public class NonReentrantAtomicLock extends AbstractAtomicLock {
-
+    
     @Serial
     private static final long serialVersionUID = 1L;
-
+    
     public NonReentrantAtomicLock(String key) {
         super(key);
     }
-
+    
     @Override
     protected Boolean doTryLock(LockInfo lockInfo) {
         if (getOwner() == null) {
@@ -51,7 +51,7 @@ public class NonReentrantAtomicLock extends AbstractAtomicLock {
         }
         return false;
     }
-
+    
     @Override
     protected Boolean doUnLock(LockInfo lockInfo) {
         if (getOwner() == null) {

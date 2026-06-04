@@ -26,78 +26,78 @@ import java.util.Map;
  * @date 2023/9/17 14:20
  */
 public class LockInfo implements Serializable {
-
+    
     private static final long serialVersionUID = -3460985546826875524L;
-
+    
     private LockKey key;
-
+    
     private long endTime;
-
+    
     private Map<String, ? extends Serializable> params;
-
+    
     private String owner;
-
+    
     private String connectionId;
-
+    
     private long waitTimeMs;
-
+    
     private boolean waiterRetry;
-
+    
     public LockInfo() {
     }
-
+    
     public LockKey getKey() {
         return key;
     }
-
+    
     public void setKey(LockKey key) {
         this.key = key;
     }
-
+    
     public long getEndTime() {
         return endTime;
     }
-
+    
     public void setEndTime(long endTime) {
         this.endTime = endTime;
     }
-
+    
     public Map<String, ? extends Serializable> getParams() {
         return params;
     }
-
+    
     public void setParams(Map<String, ? extends Serializable> params) {
         this.params = params;
     }
-
+    
     public String getOwner() {
         return owner;
     }
-
+    
     public void setOwner(String owner) {
         this.owner = owner;
     }
-
+    
     public String getConnectionId() {
         return connectionId;
     }
-
+    
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }
-
+    
     public long getWaitTimeMs() {
         return waitTimeMs;
     }
-
+    
     public void setWaitTimeMs(long waitTimeMs) {
         this.waitTimeMs = waitTimeMs;
     }
-
+    
     public boolean isWaiterRetry() {
         return waiterRetry;
     }
-
+    
     public void setWaiterRetry(boolean waiterRetry) {
         this.waiterRetry = waiterRetry;
     }

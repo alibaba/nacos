@@ -154,8 +154,9 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
     }
     
     private void loadSnapshot(byte[] snapshotBytes) {
-        ConcurrentHashMap<LockKey, AtomicLockService> newData = serializer.deserialize(snapshotBytes);
-
+        ConcurrentHashMap<LockKey, AtomicLockService> newData =
+            serializer.deserialize(snapshotBytes);
+        
         // Initialize transient fields for all deserialized locks
         // Hessian deserialization does not call readObject(), so transient fields remain null
         for (AtomicLockService lockService : newData.values()) {
@@ -163,20 +164,21 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
                 ((AbstractAtomicLock) lockService).initTransientFields();
             }
         }
-
+        
         ConcurrentHashMap<LockKey, AtomicLockService> lockMap = getRawLockMap();
         //loadSnapshot
         lockMap.putAll(newData);
         migrateMutexAtomicLocks(lockMap);
     }
-
+    
     private ConcurrentHashMap<LockKey, AtomicLockService> getRawLockMap() {
         if (lockManager instanceof NacosLockManager nacosLockManager) {
             return nacosLockManager.getRawLockMap();
         }
-        throw new IllegalStateException("LockManager must be NacosLockManager for snapshot operations");
+        throw new IllegalStateException(
+            "LockManager must be NacosLockManager for snapshot operations");
     }
-
+    
     /**
      * Migrate old-format MutexAtomicLock entries to the new owner-based model.
      *

@@ -73,7 +73,7 @@ public interface LockService {
      */
     @Since("3.0.0")
     Boolean remoteReleaseLock(LockInstance instance) throws NacosException;
-
+    
     /**
      * Renew lock lease time (watchdog heartbeat).
      *
@@ -83,7 +83,7 @@ public interface LockService {
      */
     @Since("3.3.0")
     Boolean renew(LockInstance instance) throws NacosException;
-
+    
     /**
      * Shutdown the Resources, such as Thread Pool.
      *

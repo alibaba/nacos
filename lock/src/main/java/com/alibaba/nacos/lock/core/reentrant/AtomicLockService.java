@@ -26,7 +26,7 @@ import com.alibaba.nacos.lock.model.LockInfo;
  * @date 2023/7/10 15:34
  */
 public interface AtomicLockService {
-
+    
     /**
      * Try to acquire the lock.
      *
@@ -34,7 +34,7 @@ public interface AtomicLockService {
      * @return true if acquired successfully
      */
     Boolean tryLock(LockInfo lockInfo);
-
+    
     /**
      * Release the lock. Only the owner can release.
      *
@@ -42,7 +42,7 @@ public interface AtomicLockService {
      * @return true if released successfully
      */
     Boolean unLock(LockInfo lockInfo);
-
+    
     /**
      * Renew the lock lease time (watchdog heartbeat). Only the owner can renew.
      *
@@ -50,28 +50,28 @@ public interface AtomicLockService {
      * @return true if renewed successfully
      */
     Boolean renew(LockInfo lockInfo);
-
+    
     /**
      * Check if the lock has auto-expired.
      *
      * @return true if expired
      */
     Boolean autoExpire();
-
+    
     /**
      * Get the lock key identifier.
      *
      * @return lock key string
      */
     String getKey();
-
+    
     /**
      * Check if the lock is clear (not held by anyone).
      *
      * @return true if lock is not held
      */
     Boolean isClear();
-
+    
     /**
      * Force release the lock regardless of owner. Used for connection disconnect cleanup.
      *

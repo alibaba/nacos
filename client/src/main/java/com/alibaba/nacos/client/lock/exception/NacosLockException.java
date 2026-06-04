@@ -28,9 +28,9 @@ package com.alibaba.nacos.client.lock.exception;
  * @date 2026/05/31
  */
 public class NacosLockException extends RuntimeException {
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     public NacosLockException(String message, Throwable cause) {
         super(message, cause);
     }

@@ -44,13 +44,13 @@ import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO
 public class NacosLockService implements LockService {
     
     private final LockGrpcClient lockGrpcClient;
-
+    
     private final SecurityProxy securityProxy;
-
+    
     private final NacosLockWatchdog watchdog;
-
+    
     private final String clientId;
-
+    
     private ScheduledExecutorService executorService;
     
     public NacosLockService(Properties properties) throws NacosException {
@@ -61,7 +61,8 @@ public class NacosLockService implements LockService {
         this.securityProxy = new SecurityProxy(serverListManager,
             NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(nacosClientProperties);
-        this.lockGrpcClient = new LockGrpcClient(nacosClientProperties, serverListManager, securityProxy);
+        this.lockGrpcClient =
+            new LockGrpcClient(nacosClientProperties, serverListManager, securityProxy);
         this.watchdog = new NacosLockWatchdog();
         this.clientId = UUID.randomUUID().toString();
     }
@@ -94,17 +95,17 @@ public class NacosLockService implements LockService {
     public Boolean remoteTryLock(LockInstance instance) throws NacosException {
         return lockGrpcClient.lock(instance);
     }
-
+    
     @Override
     public Boolean remoteReleaseLock(LockInstance instance) throws NacosException {
         return lockGrpcClient.unLock(instance);
     }
-
+    
     @Override
     public Boolean renew(LockInstance instance) throws NacosException {
         return lockGrpcClient.renew(instance);
     }
-
+    
     /**
      * Get a JUC-style reentrant distributed lock.
      *
@@ -112,9 +113,10 @@ public class NacosLockService implements LockService {
      * @return NacosLock implementing java.util.concurrent.locks.Lock
      */
     public NacosLock getReentrantLock(String key) {
-        return new NacosLock(key, LockConstants.REENTRANT_LOCK_TYPE, lockGrpcClient, watchdog, clientId);
+        return new NacosLock(key, LockConstants.REENTRANT_LOCK_TYPE, lockGrpcClient, watchdog,
+            clientId);
     }
-
+    
     /**
      * Get a JUC-style non-reentrant distributed lock.
      *
@@ -122,9 +124,10 @@ public class NacosLockService implements LockService {
      * @return NacosLock implementing java.util.concurrent.locks.Lock
      */
     public NacosLock getNonReentrantLock(String key) {
-        return new NacosLock(key, LockConstants.NON_REENTRANT_LOCK_TYPE, lockGrpcClient, watchdog, clientId);
+        return new NacosLock(key, LockConstants.NON_REENTRANT_LOCK_TYPE, lockGrpcClient, watchdog,
+            clientId);
     }
-
+    
     @Override
     public void shutdown() throws NacosException {
         lockGrpcClient.shutdown();

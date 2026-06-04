@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.lock.model.LockResult;
  * @date 2023/6/28 2:38
  */
 public interface LockOperationService {
-
+    
     /**
      * Acquire lock via Raft consensus.
      *
@@ -35,7 +35,7 @@ public interface LockOperationService {
      * @return structured lock result
      */
     LockResult lock(LockInstance lockInstance, String connectionId);
-
+    
     /**
      * Release lock via Raft consensus.
      *
@@ -43,7 +43,7 @@ public interface LockOperationService {
      * @return structured lock result with remaining reentrant count
      */
     LockResult unLock(LockInstance lockInstance);
-
+    
     /**
      * Renew lock lease time via Raft consensus (watchdog heartbeat).
      *
@@ -51,7 +51,7 @@ public interface LockOperationService {
      * @return true if renewed successfully
      */
     Boolean renew(LockInstance lockInstance);
-
+    
     /**
      * Expire lock via Raft consensus.
      *
@@ -62,7 +62,7 @@ public interface LockOperationService {
      * @return structured lock result
      */
     LockResult expire(LockInstance lockInstance);
-
+    
     /**
      * Force release all locks held by the specified connection and clean up wait queue entries.
      *

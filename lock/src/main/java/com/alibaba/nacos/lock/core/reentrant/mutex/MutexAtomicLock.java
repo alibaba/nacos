@@ -33,14 +33,14 @@ import java.io.Serial;
  * @date 2023/7/10 15:33
  */
 public class MutexAtomicLock extends AbstractAtomicLock {
-
+    
     @Serial
     private static final long serialVersionUID = -3460985546826855524L;
-
+    
     private static final int EMPTY = 0;
-
+    
     private static final String LEGACY_OWNER = "legacy-migrated";
-
+    
     /**
      * Backward-compatible field for Hessian deserialization of old snapshots.
      *
@@ -54,13 +54,13 @@ public class MutexAtomicLock extends AbstractAtomicLock {
      */
     @SuppressWarnings("unused")
     private transient Integer state;
-
+    
     private transient boolean legacyMigrated;
-
+    
     public MutexAtomicLock(String key) {
         super(key);
     }
-
+    
     /**
      * Migrate legacy snapshot data to the new owner-based model.
      *
@@ -85,7 +85,7 @@ public class MutexAtomicLock extends AbstractAtomicLock {
         }
         state = null;
     }
-
+    
     @Override
     protected Boolean doTryLock(LockInfo lockInfo) {
         if (getOwner() == null) {
@@ -97,7 +97,7 @@ public class MutexAtomicLock extends AbstractAtomicLock {
         }
         return false;
     }
-
+    
     @Override
     protected Boolean doUnLock(LockInfo lockInfo) {
         if (getOwner() == null) {

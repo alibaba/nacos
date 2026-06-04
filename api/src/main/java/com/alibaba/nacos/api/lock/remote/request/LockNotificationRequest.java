@@ -31,66 +31,68 @@ import static com.alibaba.nacos.api.common.Constants.Lock.LOCK_MODULE;
  * @date 2026/05/29
  */
 public class LockNotificationRequest extends ServerRequest {
-
+    
     private String lockKey;
-
+    
     private String lockType;
-
+    
     private String owner;
-
+    
     private LockNotificationType notificationType;
-
+    
     public LockNotificationRequest() {
     }
-
-    public LockNotificationRequest(String lockKey, String lockType, String owner, LockNotificationType notificationType) {
+    
+    public LockNotificationRequest(String lockKey, String lockType, String owner,
+        LockNotificationType notificationType) {
         this.lockKey = lockKey;
         this.lockType = lockType;
         this.owner = owner;
         this.notificationType = notificationType;
     }
-
+    
     public static LockNotificationRequest available(String lockKey, String lockType, String owner) {
-        return new LockNotificationRequest(lockKey, lockType, owner, LockNotificationType.AVAILABLE);
+        return new LockNotificationRequest(lockKey, lockType, owner,
+            LockNotificationType.AVAILABLE);
     }
-
+    
     public static LockNotificationRequest timeout(String lockKey, String lockType, String owner) {
         return new LockNotificationRequest(lockKey, lockType, owner, LockNotificationType.TIMEOUT);
     }
-
+    
     @Override
     public String getModule() {
         return LOCK_MODULE;
     }
-
+    
     public String getLockKey() {
         return lockKey;
     }
-
+    
     public void setLockKey(String lockKey) {
         this.lockKey = lockKey;
     }
-
+    
     public String getLockType() {
         return lockType;
     }
-
+    
     public void setLockType(String lockType) {
         this.lockType = lockType;
     }
-
+    
     public String getOwner() {
         return owner;
     }
-
+    
     public void setOwner(String owner) {
         this.owner = owner;
     }
-
+    
     public LockNotificationType getNotificationType() {
         return notificationType;
     }
-
+    
     public void setNotificationType(LockNotificationType notificationType) {
         this.notificationType = notificationType;
     }

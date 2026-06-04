@@ -42,15 +42,15 @@ import java.util.Map;
  */
 @Component
 public class LockExpireScanner {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(LockExpireScanner.class);
-
+    
     @Autowired
     private LockManager lockManager;
-
+    
     @Autowired
     private LockOperationService lockOperationService;
-
+    
     /**
      * Scan for expired locks and clean up wait queue entries periodically.
      */
@@ -62,30 +62,31 @@ public class LockExpireScanner {
             LOGGER.error("Lock: error during expire scan", e);
         }
     }
-
+    
     private void doScan() {
-        for (Map.Entry<LockKey, AtomicLockService> entry : new java.util.HashMap<>(lockManager.showLocks()).entrySet()) {
+        for (Map.Entry<LockKey, AtomicLockService> entry : new java.util.HashMap<>(
+            lockManager.showLocks()).entrySet()) {
             LockKey lockKey = entry.getKey();
             AtomicLockService lockService = entry.getValue();
-
+            
             if (lockService instanceof AbstractAtomicLock) {
                 AbstractAtomicLock atomicLock = (AbstractAtomicLock) lockService;
-
+                
                 // Local check is an optimization to avoid unnecessary Raft submissions.
                 // A RENEW may race between here and the Raft apply, but autoExpire()
                 // inside onApply() is the authoritative check — it will reject the
                 // EXPIRE if the lock was renewed.
                 if (atomicLock.getOwner() != null
-                        && atomicLock.getExpiredTimestamp() > 0
-                        && System.currentTimeMillis() > atomicLock.getExpiredTimestamp()) {
+                    && atomicLock.getExpiredTimestamp() > 0
+                    && System.currentTimeMillis() > atomicLock.getExpiredTimestamp()) {
                     LOGGER.info("Lock: lock expired, key={}, type={}, releasing via Raft",
-                            lockKey.getKey(), lockKey.getLockType());
+                        lockKey.getKey(), lockKey.getLockType());
                     expireLockViaRaft(lockKey, atomicLock);
                 }
             }
         }
     }
-
+    
     private void expireLockViaRaft(LockKey lockKey, AbstractAtomicLock atomicLock) {
         String owner = atomicLock.getOwner();
         if (owner == null) {

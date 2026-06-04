@@ -23,12 +23,12 @@ package com.alibaba.nacos.api.lock.common;
  * @date 2026/06/03
  */
 public enum LockNotificationType {
-
+    
     /**
      * Lock is available for acquisition.
      */
     AVAILABLE,
-
+    
     /**
      * Wait queue entry timed out.
      */

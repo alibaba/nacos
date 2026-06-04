@@ -65,68 +65,68 @@ public class MutexAtomicLockTest {
             .thenReturn(new MutexAtomicLock("key"));
         AtomicLockService lock =
             lockManager.getMutexLock(new LockKey(LockConstants.NACOS_LOCK_TYPE, "key"));
-
+        
         LockInfo lockInfo = new LockInfo();
         lockInfo.setOwner("test-owner");
         lockInfo.setEndTime(System.currentTimeMillis() - 2_000_000);
         assertTrue(lock.tryLock(lockInfo));
         assertTrue(lock.autoExpire());
-
+        
         LockInfo lockInstanceAuto = new LockInfo();
         lockInstanceAuto.setOwner("test-owner-2");
         lockInstanceAuto.setEndTime(System.currentTimeMillis() + 2_000_000);
         assertTrue(lock.tryLock(lockInstanceAuto));
     }
-
+    
     @Test
     public void testMigrateFromLegacyWithFullState() throws Exception {
         MutexAtomicLock mutexLock = new MutexAtomicLock("key");
         setState(mutexLock, 1);
-
+        
         mutexLock.migrateFromLegacy();
-
+        
         assertEquals("legacy-migrated", mutexLock.getOwner());
         assertEquals(1, mutexLock.getReentrantCount());
     }
-
+    
     @Test
     public void testMigrateFromLegacyWithEmptyState() throws Exception {
         MutexAtomicLock mutexLock = new MutexAtomicLock("key");
         setState(mutexLock, 0);
-
+        
         mutexLock.migrateFromLegacy();
-
+        
         assertNull(mutexLock.getOwner());
         assertEquals(0, mutexLock.getReentrantCount());
     }
-
+    
     @Test
     public void testMigrateFromLegacyWithNullState() throws Exception {
         MutexAtomicLock mutexLock = new MutexAtomicLock("key");
         // state is null by default
-
+        
         mutexLock.migrateFromLegacy();
-
+        
         assertNull(mutexLock.getOwner());
     }
-
+    
     @Test
     public void testMigrateFromLegacyIdempotent() throws Exception {
         MutexAtomicLock mutexLock = new MutexAtomicLock("key");
         setState(mutexLock, 1);
-
+        
         mutexLock.migrateFromLegacy();
         assertEquals("legacy-migrated", mutexLock.getOwner());
-
+        
         // Second call should be no-op
         mutexLock.migrateFromLegacy();
         assertEquals("legacy-migrated", mutexLock.getOwner());
     }
-
+    
     private void setState(MutexAtomicLock mutexLock, Integer value) throws Exception {
         Field stateField = MutexAtomicLock.class.getDeclaredField("state");
         stateField.setAccessible(true);
         stateField.set(mutexLock, value);
     }
-
+    
 }

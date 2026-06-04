@@ -27,12 +27,12 @@ import com.alibaba.nacos.lock.core.reentrant.mutex.NonReentrantAtomicLock;
  * @date 2026/05/29
  */
 public class NonReentrantLockFactory implements LockFactory {
-
+    
     @Override
     public String getLockType() {
         return LockConstants.NON_REENTRANT_LOCK_TYPE;
     }
-
+    
     @Override
     public AbstractAtomicLock createLock(String key) {
         return new NonReentrantAtomicLock(key);

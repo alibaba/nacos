@@ -67,39 +67,39 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @Component
 public class LockOperationServiceImpl extends RequestProcessor4CP implements LockOperationService {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(LockOperationServiceImpl.class);
-
+    
     private final Serializer serializer = SerializeFactory.getDefault();
-
+    
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-
+    
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-
+    
     private final ProtocolManager protocolManager;
-
+    
     private final LockManager lockManager;
-
+    
     private CPProtocol protocol;
-
+    
     private long defaultExpireTime;
-
+    
     private long maxExpireTime;
-
+    
     private final ExecutorService notificationExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "lock-notification");
         t.setDaemon(true);
         return t;
     });
-
+    
     @Autowired
     private RpcPushService rpcPushService;
-
+    
     public LockOperationServiceImpl(LockManager lockManager, ProtocolManager protocolManager) {
         this.lockManager = lockManager;
         this.protocolManager = protocolManager;
     }
-
+    
     /**
      * Initialize protocol and configuration after Spring bean construction.
      */
@@ -113,12 +113,12 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         this.maxExpireTime = EnvUtil.getProperty(PropertiesConstant.MAX_AUTO_EXPIRE, Long.class,
             PropertiesConstant.MAX_AUTO_EXPIRE_TIME);
     }
-
+    
     @PreDestroy
     public void destroy() {
         notificationExecutor.shutdown();
     }
-
+    
     @Override
     public Response onApply(WriteRequest request) {
         final Lock lock = readLock;
@@ -126,7 +126,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         try {
             LockOperationEnum lockOperation = LockOperationEnum.valueOf(request.getOperation());
             Object data;
-            final MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
+            final MutexLockRequest mutexLockRequest =
+                serializer.deserialize(request.getData().toByteArray());
             if (lockOperation == LockOperationEnum.ACQUIRE) {
                 data = acquireLock(mutexLockRequest);
             } else if (lockOperation == LockOperationEnum.RELEASE) {
@@ -143,10 +144,10 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             if (LOGGER.isDebugEnabled()) {
                 LockInfo lockInfo = mutexLockRequest.getLockInfo();
                 LOGGER.debug("onApply {} key={}, owner={}, result={}",
-                        lockOperation,
-                        lockInfo != null ? lockInfo.getKey() : "batch",
-                        lockInfo != null ? lockInfo.getOwner() : null,
-                        data);
+                    lockOperation,
+                    lockInfo != null ? lockInfo.getKey() : "batch",
+                    lockInfo != null ? lockInfo.getOwner() : null,
+                    data);
             }
             ByteString bytes = ByteString.copyFrom(serializer.serialize(data));
             return Response.newBuilder().setSuccess(true).setData(bytes).build();
@@ -159,7 +160,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             lock.unlock();
         }
     }
-
+    
     private LockResult releaseLock(MutexLockRequest request) {
         LockInfo lockInfo = request.getLockInfo();
         AtomicLockService mutexLock = lockManager.showLocks().get(lockInfo.getKey());
@@ -178,20 +179,21 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
         if (mutexLock.isClear()) {
             boolean hasWaiters = mutexLock instanceof AbstractAtomicLock
-                    && ((AbstractAtomicLock) mutexLock).hasWaiters();
+                && ((AbstractAtomicLock) mutexLock).hasWaiters();
             if (hasWaiters) {
                 AbstractAtomicLock atomicLock = (AbstractAtomicLock) mutexLock;
                 WaitEntry entry = atomicLock.peekFirstWaiter();
                 if (entry != null) {
                     LockKey lockKey = lockInfo.getKey();
                     LockNotificationRequest notification = LockNotificationRequest.available(
-                            lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
+                        lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
                     String targetConn = entry.getConnectionId();
                     notificationExecutor.submit(() -> {
                         try {
                             rpcPushService.pushWithoutAck(targetConn, notification);
                         } catch (Exception e) {
-                            LOGGER.warn("Lock: failed to notify waiter after release, key={}", lockKey, e);
+                            LOGGER.warn("Lock: failed to notify waiter after release, key={}",
+                                lockKey, e);
                         }
                     });
                 }
@@ -204,11 +206,11 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
         return LockResult.fail("Unlock failed: not held by this owner");
     }
-
+    
     private LockResult acquireLock(MutexLockRequest request) {
         LockInfo lockInfo = request.getLockInfo();
         AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
-
+        
         if (mutexLock instanceof AbstractAtomicLock atomicLock) {
             // Strict FIFO: non-retry requests must queue behind existing waiters
             if (!lockInfo.isWaiterRetry() && atomicLock.hasWaiters()) {
@@ -218,7 +220,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 }
                 return LockResult.fail("Lock is held by another owner");
             }
-
+            
             Boolean acquired = mutexLock.tryLock(lockInfo);
             if (acquired) {
                 if (lockInfo.isWaiterRetry() && atomicLock.hasWaiters()) {
@@ -229,27 +231,27 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 }
                 return LockResult.success(atomicLock.getReentrantCount());
             }
-
+            
             if (lockInfo.getWaitTimeMs() > 0) {
                 int position = atomicLock.addWaiter(lockInfo);
                 return LockResult.waiting(position);
             }
             return LockResult.fail("Lock is held by another owner");
         }
-
+        
         Boolean acquired = mutexLock.tryLock(lockInfo);
         if (acquired) {
             return LockResult.success(1);
         }
         return LockResult.fail("Lock is held by another owner");
     }
-
+    
     private Boolean renewLock(MutexLockRequest request) {
         LockInfo lockInfo = request.getLockInfo();
         AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
         return mutexLock.renew(lockInfo);
     }
-
+    
     private LockResult expireLock(MutexLockRequest request) {
         LockInfo lockInfo = request.getLockInfo();
         AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
@@ -263,14 +265,17 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                         WaitEntry entry = atomicLock.peekFirstWaiter();
                         if (entry != null) {
                             LockKey lockKey = lockInfo.getKey();
-                            LockNotificationRequest notification = LockNotificationRequest.available(
+                            LockNotificationRequest notification =
+                                LockNotificationRequest.available(
                                     lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
                             String targetConn = entry.getConnectionId();
                             notificationExecutor.submit(() -> {
                                 try {
                                     rpcPushService.pushWithoutAck(targetConn, notification);
                                 } catch (Exception e) {
-                                    LOGGER.warn("Lock: failed to notify waiter after expire, key={}", lockKey, e);
+                                    LOGGER.warn(
+                                        "Lock: failed to notify waiter after expire, key={}",
+                                        lockKey, e);
                                 }
                             });
                         }
@@ -283,7 +288,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
         return LockResult.fail("Lock not expired or not found");
     }
-
+    
     /**
      * Cleanup lock state for a disconnected connection inside the Raft state machine.
      *
@@ -303,7 +308,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     private LockResult cleanupConnection(MutexLockRequest request) {
         String connectionId = request.getConnectionId();
         LockInfo lockInfo = request.getLockInfo();
-
+        
         if (lockInfo != null && lockInfo.getKey() != null) {
             cleanupSingleLock(lockInfo.getKey(), connectionId);
         } else {
@@ -315,13 +320,13 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
         return LockResult.success(0);
     }
-
+    
     private void cleanupSingleLock(LockKey lockKey, String connectionId) {
         AtomicLockService lockService = lockManager.showLocks().get(lockKey);
         if (lockService == null || !(lockService instanceof AbstractAtomicLock atomicLock)) {
             return;
         }
-
+        
         // Step 1: Force-release if held by this connection
         boolean wasHeld = false;
         if (connectionId.equals(atomicLock.getConnectionId())) {
@@ -330,23 +335,24 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 wasHeld = atomicLock.forceRelease();
             }
         }
-
+        
         // Step 2: Remove all wait queue entries belonging to this connection
         atomicLock.removeWaiterByConnection(connectionId);
-
+        
         // Step 3: If lock was released and now clear, handle post-release logic
         if (wasHeld && atomicLock.isClear()) {
             if (atomicLock.hasWaiters()) {
                 WaitEntry entry = atomicLock.peekFirstWaiter();
                 if (entry != null) {
                     LockNotificationRequest notification = LockNotificationRequest.available(
-                            lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
+                        lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
                     String targetConn = entry.getConnectionId();
                     notificationExecutor.submit(() -> {
                         try {
                             rpcPushService.pushWithoutAck(targetConn, notification);
                         } catch (Exception e) {
-                            LOGGER.warn("Lock: failed to notify waiter after cleanup, key={}", lockKey, e);
+                            LOGGER.warn("Lock: failed to notify waiter after cleanup, key={}",
+                                lockKey, e);
                         }
                     });
                 }
@@ -355,7 +361,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             }
         }
     }
-
+    
     @Override
     public LockResult lock(LockInstance lockInstance, String connectionId) {
         final MutexLockRequest request = new MutexLockRequest();
@@ -366,7 +372,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         lockInfo.setConnectionId(connectionId);
         lockInfo.setWaitTimeMs(lockInstance.getWaitTimeMs());
         lockInfo.setWaiterRetry(lockInstance.isWaiterRetry());
-
+        
         long expiredTime = lockInstance.getExpiredTime();
         if (expiredTime < 0) {
             lockInfo.setEndTime(defaultExpireTime + getNowTimestamp());
@@ -394,7 +400,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             throw new NacosLockException("tryLock error.", e);
         }
     }
-
+    
     @Override
     public LockResult unLock(LockInstance lockInstance) {
         MutexLockRequest request = new MutexLockRequest();
@@ -414,14 +420,15 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             throw new NacosLockException(response.getErrMsg());
         } catch (NacosLockException e) {
             int paramSize = lockInstance.getParams() == null ? 0 : lockInstance.getParams().size();
-            LOGGER.error("key: {}, lockType:{}, paramSize:{} unlock fail, errorMsg: {}", lockInstance.getKey(),
-                    lockInstance.getLockType(), paramSize, e.getMessage());
+            LOGGER.error("key: {}, lockType:{}, paramSize:{} unlock fail, errorMsg: {}",
+                lockInstance.getKey(),
+                lockInstance.getLockType(), paramSize, e.getMessage());
             throw e;
         } catch (Exception e) {
             throw new NacosLockException("unLock error.", e);
         }
     }
-
+    
     @Override
     public Boolean renew(LockInstance lockInstance) {
         MutexLockRequest request = new MutexLockRequest();
@@ -429,7 +436,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         lockInfo.setKey(new LockKey(lockInstance.getLockType(), lockInstance.getKey()));
         lockInfo.setParams(lockInstance.getParams());
         lockInfo.setOwner(lockInstance.getOwner());
-
+        
         long expiredTime = lockInstance.getExpiredTime();
         if (expiredTime < 0) {
             lockInfo.setEndTime(defaultExpireTime + getNowTimestamp());
@@ -438,8 +445,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
         request.setLockInfo(lockInfo);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
-                .setData(ByteString.copyFrom(serializer.serialize(request)))
-                .setOperation(LockOperationEnum.RENEW.name()).build();
+            .setData(ByteString.copyFrom(serializer.serialize(request)))
+            .setOperation(LockOperationEnum.RENEW.name()).build();
         try {
             Response response = protocol.write(writeRequest);
             if (response.getSuccess()) {
@@ -448,13 +455,13 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             throw new NacosLockException(response.getErrMsg());
         } catch (NacosLockException e) {
             LOGGER.error("key: {}, lockType:{} renew fail, errorMsg: {}", lockInstance.getKey(),
-                    lockInstance.getLockType(), e.getMessage());
+                lockInstance.getLockType(), e.getMessage());
             throw e;
         } catch (Exception e) {
             throw new NacosLockException("renew error.", e);
         }
     }
-
+    
     @Override
     public LockResult expire(LockInstance lockInstance) {
         MutexLockRequest request = new MutexLockRequest();
@@ -463,8 +470,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         lockInfo.setOwner(lockInstance.getOwner());
         request.setLockInfo(lockInfo);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
-                .setData(ByteString.copyFrom(serializer.serialize(request)))
-                .setOperation(LockOperationEnum.EXPIRE.name()).build();
+            .setData(ByteString.copyFrom(serializer.serialize(request)))
+            .setOperation(LockOperationEnum.EXPIRE.name()).build();
         try {
             Response response = protocol.write(writeRequest);
             if (response.getSuccess()) {
@@ -473,13 +480,13 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             throw new NacosLockException(response.getErrMsg());
         } catch (NacosLockException e) {
             LOGGER.error("key: {}, lockType:{} expire fail, errorMsg: {}", lockInstance.getKey(),
-                    lockInstance.getLockType(), e.getMessage());
+                lockInstance.getLockType(), e.getMessage());
             throw e;
         } catch (Exception e) {
             throw new NacosLockException("expire error.", e);
         }
     }
-
+    
     private void notifyFirstWaiter(LockKey lockKey, AbstractAtomicLock atomicLock) {
         WaitEntry entry = atomicLock.peekFirstWaiter();
         if (entry == null) {
@@ -487,18 +494,18 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         }
         String targetConnectionId = entry.getConnectionId();
         LockNotificationRequest notification = LockNotificationRequest.available(
-                lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
+            lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
         notificationExecutor.submit(() -> {
             try {
                 rpcPushService.pushWithoutAck(targetConnectionId, notification);
             } catch (Exception e) {
                 LOGGER.warn("Lock: failed to notify waiter, key={}, connectionId={}",
-                        lockKey, targetConnectionId, e);
+                    lockKey, targetConnectionId, e);
             }
         });
         LOGGER.info("notifyFirstWaiter key={}, notified owner={}", lockKey, entry.getOwner());
     }
-
+    
     /**
      * Force release all locks held by the specified connection and clean up wait queue entries.
      *
@@ -511,39 +518,41 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         try {
             cleanupConnectionViaRaft(connectionId);
         } catch (Exception e) {
-            LOGGER.warn("Lock: failed to cleanup connection via Raft, connectionId={}", connectionId, e);
+            LOGGER.warn("Lock: failed to cleanup connection via Raft, connectionId={}",
+                connectionId, e);
         }
     }
-
+    
     private void cleanupConnectionViaRaft(String connectionId) throws Exception {
         MutexLockRequest request = new MutexLockRequest();
         request.setConnectionId(connectionId);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
-                .setData(ByteString.copyFrom(serializer.serialize(request)))
-                .setOperation(LockOperationEnum.CLEANUP_CONNECTION.name()).build();
+            .setData(ByteString.copyFrom(serializer.serialize(request)))
+            .setOperation(LockOperationEnum.CLEANUP_CONNECTION.name()).build();
         Response response = protocol.write(writeRequest);
         if (!response.getSuccess()) {
             throw new NacosLockException(response.getErrMsg());
         }
     }
-
+    
     public long getNowTimestamp() {
         return System.currentTimeMillis();
     }
-
+    
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(new NacosLockSnapshotOperation(lockManager, lock.writeLock()));
+        return Collections
+            .singletonList(new NacosLockSnapshotOperation(lockManager, lock.writeLock()));
     }
-
+    
     @Override
     public Response onRequest(ReadRequest request) {
         return null;
     }
-
+    
     @Override
     public String group() {
         return Constants.LOCK_ACQUIRE_SERVICE_GROUP_V2;
     }
-
+    
 }

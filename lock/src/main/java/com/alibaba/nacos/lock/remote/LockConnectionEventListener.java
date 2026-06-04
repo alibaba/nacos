@@ -34,20 +34,20 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class LockConnectionEventListener extends ClientConnectionEventListener {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(LockConnectionEventListener.class);
-
+    
     private final LockOperationService lockOperationService;
-
+    
     public LockConnectionEventListener(LockOperationService lockOperationService) {
         this.lockOperationService = lockOperationService;
         setName("LockConnectionEventListener");
     }
-
+    
     @Override
     public void clientConnected(Connection connect) {
     }
-
+    
     @Override
     public void clientDisConnected(Connection connect) {
         String connectionId = connect.getMetaInfo().getConnectionId();
@@ -55,7 +55,8 @@ public class LockConnectionEventListener extends ClientConnectionEventListener {
         try {
             lockOperationService.releaseLocksByConnection(connectionId);
         } catch (Exception e) {
-            LOGGER.error("Lock: failed to clean up locks for disconnected connectionId={}", connectionId, e);
+            LOGGER.error("Lock: failed to clean up locks for disconnected connectionId={}",
+                connectionId, e);
         }
     }
 }

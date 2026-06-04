@@ -28,24 +28,24 @@ import java.io.Serializable;
  * @date 2026/05/29
  */
 public class LockResult implements Serializable {
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     private boolean success;
-
+    
     private int reentrantCount;
-
+    
     private int waitPosition = -1;
-
+    
     private String errorMessage;
-
+    
     public LockResult() {
     }
-
+    
     public LockResult(boolean success) {
         this.success = success;
     }
-
+    
     /**
      * Create success result with reentrant count.
      * @param reentrantCount current reentrant count
@@ -56,7 +56,7 @@ public class LockResult implements Serializable {
         result.setReentrantCount(reentrantCount);
         return result;
     }
-
+    
     /**
      * Create fail result with error message.
      * @param errorMessage error description
@@ -67,7 +67,7 @@ public class LockResult implements Serializable {
         result.setErrorMessage(errorMessage);
         return result;
     }
-
+    
     /**
      * Create waiting result with queue position.
      * @param waitPosition position in wait queue (0-based, -1 means not queued)
@@ -78,43 +78,43 @@ public class LockResult implements Serializable {
         result.setWaitPosition(waitPosition);
         return result;
     }
-
+    
     public boolean isSuccess() {
         return success;
     }
-
+    
     public boolean isWaiting() {
         return waitPosition >= 0;
     }
-
+    
     public void setSuccess(boolean success) {
         this.success = success;
     }
-
+    
     public int getReentrantCount() {
         return reentrantCount;
     }
-
+    
     public void setReentrantCount(int reentrantCount) {
         this.reentrantCount = reentrantCount;
     }
-
+    
     public int getWaitPosition() {
         return waitPosition;
     }
-
+    
     public void setWaitPosition(int waitPosition) {
         this.waitPosition = waitPosition;
     }
-
+    
     public String getErrorMessage() {
         return errorMessage;
     }
-
+    
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -125,16 +125,16 @@ public class LockResult implements Serializable {
         }
         LockResult that = (LockResult) o;
         return success == that.success
-                && reentrantCount == that.reentrantCount
-                && waitPosition == that.waitPosition
-                && java.util.Objects.equals(errorMessage, that.errorMessage);
+            && reentrantCount == that.reentrantCount
+            && waitPosition == that.waitPosition
+            && java.util.Objects.equals(errorMessage, that.errorMessage);
     }
-
+    
     @Override
     public int hashCode() {
         return java.util.Objects.hash(success, reentrantCount, waitPosition, errorMessage);
     }
-
+    
     @Override
     public String toString() {
         if (success) {
