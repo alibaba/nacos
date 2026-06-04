@@ -25,25 +25,33 @@ for `/v3/client/**`. The branch-level coverage target is API scenario coverage:
 expected capability, boundary/validation behavior, and controlled
 exception/error handling.
 
+## Status Legend
+
+| Status | Meaning |
+| --- | --- |
+| Covered | The current IT verifies the expected behavior and its important result shape. |
+| Partial | The current IT verifies representative behavior, but important public API scenarios remain. |
+| Pending | No IT currently verifies this public API scenario. |
+
 ## Config
 
-| IT class | Covered API operations | Scenario coverage |
-| --- | --- | --- |
-| `ConfigOpenApiITCase` | `GET /v3/client/cs/config` | Queries config published by admin API with content, md5, lastModified, contentType, and beta fields; verifies public namespace defaulting, wrong namespace not-found, required `dataId`/`groupName`, legacy `group` rejection, invalid namespace, and wrapped not-found/error bodies. |
+| API surface / IT class | Covered API operations | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| `ConfigOpenApiITCase` | `GET /v3/client/cs/config` | Covered | Queries config published by admin API with content, md5, lastModified, contentType, and beta fields; verifies public namespace defaulting, wrong namespace not-found, required `dataId`/`groupName`, legacy `group` rejection, invalid namespace, and wrapped not-found/error bodies. |
 
 ## Naming
 
-| IT class | Covered API operations | Scenario coverage |
-| --- | --- | --- |
-| `InstanceRegisterOpenApiITCase` | `POST /v3/client/ns/instance` | Registers instances and verifies visibility through list; covers namespace/group/cluster/healthy/weight/enabled defaults, explicit group/cluster behavior, required service/ip/port validation, invalid weight/cluster, and duplicate or service-state errors. |
-| `InstanceListOpenApiITCase` | `GET /v3/client/ns/instance/list` | Lists enabled registered instances with metadata and health fields; covers namespace/group/cluster defaults, healthy-only and enabled filtering, empty-result behavior, required `serviceName`, malformed or unknown parameters, and not-found style results. |
-| `InstanceDeregisterOpenApiITCase` | `DELETE /v3/client/ns/instance` | Deregisters an existing instance and verifies absence from list; covers default and explicit group/cluster values, idempotent missing-instance behavior, required service/ip/port validation, and malformed port handling. |
+| API surface / IT class | Covered API operations | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| `InstanceRegisterOpenApiITCase` | `POST /v3/client/ns/instance` | Covered | Registers instances and verifies visibility through list; covers namespace/group/cluster/healthy/weight/enabled defaults, explicit group/cluster behavior, required service/ip/port validation, invalid weight/cluster, and duplicate or service-state errors. |
+| `InstanceListOpenApiITCase` | `GET /v3/client/ns/instance/list` | Covered | Lists enabled registered instances with metadata and health fields; covers namespace/group/cluster defaults, healthy-only and enabled filtering, empty-result behavior, required `serviceName`, malformed or unknown parameters, and not-found style results. |
+| `InstanceDeregisterOpenApiITCase` | `DELETE /v3/client/ns/instance` | Covered | Deregisters an existing instance and verifies absence from list; covers default and explicit group/cluster values, idempotent missing-instance behavior, required service/ip/port validation, and malformed port handling. |
 
 ## AI Registry
 
-| IT class | Covered API operations | Scenario coverage |
-| --- | --- | --- |
-| `PromptClientOpenApiITCase` | `GET /v3/client/ai/prompt` | Queries online prompts by latest, explicit version, and label; verifies namespace defaulting, version-over-label priority, md5 conditional HTTP 304, missing promptKey/version resolution, absent prompt, unknown version, and offline/not-online errors. |
-| `SkillClientOpenApiITCase` | `GET /v3/client/ai/skills` | Downloads online skills as ZIP by latest, version, and label with resource entries; covers namespace defaulting, version-over-label priority, missing skillName, absent skill, unknown version/label, and controlled not-found JSON for download failures. |
-| `AgentSpecClientOpenApiITCase` | `GET /v3/client/ai/agentspecs` | Queries online AgentSpecs by latest, version, and label with manifest/resource content; covers namespace defaulting, label/version resolution, missing agentSpecName, absent AgentSpec, unknown version, and controlled not-found errors. |
-| `AgentSpecSearchClientOpenApiITCase` | `GET /v3/client/ai/agentspecs/search` | Searches enabled AgentSpecs with online versions and keyword filters; covers optional keyword, namespace defaulting, page defaults and validation, empty page success, and invalid pagination errors. |
+| API surface / IT class | Covered API operations | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| `PromptClientOpenApiITCase` | `GET /v3/client/ai/prompt` | Covered | Queries online prompts by latest, explicit version, and label; verifies namespace defaulting, version-over-label priority, md5 conditional HTTP 304, missing promptKey/version resolution, absent prompt, unknown version, and offline/not-online errors. |
+| `SkillClientOpenApiITCase` | `GET /v3/client/ai/skills` | Covered | Downloads online skills as ZIP by latest, version, and label with resource entries; covers namespace defaulting, version-over-label priority, missing skillName, absent skill, unknown version/label, and controlled not-found JSON for download failures. |
+| `AgentSpecClientOpenApiITCase` | `GET /v3/client/ai/agentspecs` | Covered | Queries online AgentSpecs by latest, version, and label with manifest/resource content; covers namespace defaulting, label/version resolution, missing agentSpecName, absent AgentSpec, unknown version, and controlled not-found errors. |
+| `AgentSpecSearchClientOpenApiITCase` | `GET /v3/client/ai/agentspecs/search` | Covered | Searches enabled AgentSpecs with online versions and keyword filters; covers optional keyword, namespace defaulting, page defaults and validation, empty page success, and invalid pagination errors. |
