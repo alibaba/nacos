@@ -17,9 +17,13 @@
 package com.alibaba.nacos.test.lock;
 
 import com.alibaba.nacos.api.lock.model.LockInstance;
+import com.alibaba.nacos.api.lock.model.LockResult;
+import com.alibaba.nacos.client.lock.NacosLockService;
+import com.alibaba.nacos.client.lock.remote.grpc.LockGrpcClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -267,5 +271,122 @@ public class WaitQueueLockITCase extends BaseLockITCase {
 
         // 清理
         lockService.unLock(lockA);
+    }
+
+    @Test
+    @DisplayName("IT-021: 等待队列 - 非队头 waiterRetry 不能抢占空锁")
+    void testNonHeadWaiterRetryMustNotAcquireFreeLock() throws Exception {
+        String key = generateUniqueKey("non-head-retry");
+        LockGrpcClient grpcClient = getLockGrpcClient();
+
+        LockInstance lockA = createOwnedReentrantLock(key, "client-A");
+        LockResult resultA = grpcClient.lockWithResult(lockA);
+        assertTrue(resultA.isSuccess(), "Client A should acquire the lock");
+
+        LockInstance lockB = createOwnedReentrantLock(key, "client-B");
+        lockB.setWaitTimeMs(10000L);
+        LockResult resultB = grpcClient.lockWithResult(lockB);
+        assertFalse(resultB.isSuccess(), "Client B should wait while A holds the lock");
+        assertTrue(resultB.isWaiting(), "Client B should be queued as the first waiter");
+
+        LockInstance lockC = createOwnedReentrantLock(key, "client-C");
+        lockC.setWaitTimeMs(10000L);
+        LockResult resultC = grpcClient.lockWithResult(lockC);
+        assertFalse(resultC.isSuccess(), "Client C should wait while A holds the lock");
+        assertTrue(resultC.isWaiting(), "Client C should be queued behind B");
+
+        LockInstance retryC = createOwnedReentrantLock(key, "client-C");
+        retryC.setWaiterRetry(true);
+        LockResult retryResult = null;
+        boolean releasedA = false;
+        try {
+            assertTrue(lockService.unLock(lockA), "Client A should release the lock");
+            releasedA = true;
+
+            retryResult = grpcClient.lockWithResult(retryC);
+            assertFalse(retryResult.isSuccess(),
+                    "Non-head waiter retry must not acquire a clear lock before the queue head");
+        } finally {
+            if (retryResult != null && retryResult.isSuccess()) {
+                lockService.unLock(retryC);
+            }
+            if (!releasedA) {
+                lockService.unLock(lockA);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("IT-022: 等待队列 - 非队头抢锁不应残留 stale waiter")
+    void testOutOfOrderRetryMustNotLeaveStaleWaiter() throws Exception {
+        String key = generateUniqueKey("stale-waiter");
+        LockGrpcClient grpcClient = getLockGrpcClient();
+
+        LockInstance lockA = createOwnedReentrantLock(key, "client-A");
+        assertTrue(grpcClient.lockWithResult(lockA).isSuccess(), "Client A should acquire the lock");
+
+        LockInstance lockB = createOwnedReentrantLock(key, "client-B");
+        lockB.setWaitTimeMs(10000L);
+        LockResult waitB = grpcClient.lockWithResult(lockB);
+        assertTrue(waitB.isWaiting(), "Client B should be queued as the first waiter");
+
+        LockInstance lockC = createOwnedReentrantLock(key, "client-C");
+        lockC.setWaitTimeMs(10000L);
+        LockResult waitC = grpcClient.lockWithResult(lockC);
+        assertTrue(waitC.isWaiting(), "Client C should be queued behind B");
+
+        LockInstance retryC = createOwnedReentrantLock(key, "client-C");
+        retryC.setWaiterRetry(true);
+        LockInstance retryB = createOwnedReentrantLock(key, "client-B");
+        retryB.setWaiterRetry(true);
+        LockInstance lockD = createOwnedReentrantLock(key, "client-D");
+
+        boolean cAcquired = false;
+        boolean bAcquired = false;
+        boolean dAcquired = false;
+        try {
+            assertTrue(lockService.unLock(lockA), "Client A should release the lock");
+
+            LockResult retryCResult = grpcClient.lockWithResult(retryC);
+            if (!retryCResult.isSuccess()) {
+                return;
+            }
+            cAcquired = true;
+            assertTrue(lockService.unLock(retryC), "Client C should release the out-of-order lock");
+            cAcquired = false;
+
+            LockResult retryBResult = grpcClient.lockWithResult(retryB);
+            assertTrue(retryBResult.isSuccess(), "Client B should acquire after C releases");
+            bAcquired = true;
+            assertTrue(lockService.unLock(retryB), "Client B should release the lock");
+            bAcquired = false;
+
+            LockResult resultD = grpcClient.lockWithResult(lockD);
+            dAcquired = resultD.isSuccess();
+            assertTrue(resultD.isSuccess(),
+                    "Fresh client should acquire after queued waiters have completed; stale waiter blocks it");
+        } finally {
+            if (dAcquired) {
+                lockService.unLock(lockD);
+            }
+            if (bAcquired) {
+                lockService.unLock(retryB);
+            }
+            if (cAcquired) {
+                lockService.unLock(retryC);
+            }
+        }
+    }
+
+    private LockInstance createOwnedReentrantLock(String key, String owner) {
+        LockInstance instance = createReentrantLock(key);
+        instance.setOwner(owner);
+        return instance;
+    }
+
+    private LockGrpcClient getLockGrpcClient() throws Exception {
+        Field field = NacosLockService.class.getDeclaredField("lockGrpcClient");
+        field.setAccessible(true);
+        return (LockGrpcClient) field.get(lockService);
     }
 }
