@@ -44,6 +44,13 @@ public class LockInstance implements Serializable {
     
     private long waitTimeMs = -1L;
     
+    /**
+     * Whether this request is a retry from the wait queue.
+     *
+     * <p>When true, the server enforces FIFO ordering — the lock is only
+     * granted if this client is at the head of the wait queue. Set by the
+     * client after the first failed acquisition attempt.
+     */
     private boolean waiterRetry;
     
     public LockInstance(String key, Long expiredTime, String lockType) {

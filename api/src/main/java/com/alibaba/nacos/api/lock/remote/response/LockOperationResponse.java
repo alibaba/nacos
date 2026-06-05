@@ -48,6 +48,7 @@ public class LockOperationResponse extends Response {
      */
     public static LockOperationResponse success(Boolean result) {
         LockOperationResponse response = new LockOperationResponse(result);
+        response.setResultCode(ResponseCode.SUCCESS.getCode());
         return response;
     }
     
@@ -58,6 +59,7 @@ public class LockOperationResponse extends Response {
      */
     public static LockOperationResponse success(LockResult lockResult) {
         LockOperationResponse response = new LockOperationResponse(lockResult.isSuccess());
+        response.setResultCode(ResponseCode.SUCCESS.getCode());
         response.setLockResult(lockResult);
         return response;
     }

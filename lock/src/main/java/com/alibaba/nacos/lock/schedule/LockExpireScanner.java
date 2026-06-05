@@ -64,13 +64,18 @@ public class LockExpireScanner {
     }
     
     private void doScan() {
-        for (Map.Entry<LockKey, AtomicLockService> entry : new java.util.HashMap<>(
-            lockManager.showLocks()).entrySet()) {
+        for (Map.Entry<LockKey, AtomicLockService> entry : lockManager.showLocks().entrySet()) {
             LockKey lockKey = entry.getKey();
             AtomicLockService lockService = entry.getValue();
             
             if (lockService instanceof AbstractAtomicLock) {
                 AbstractAtomicLock atomicLock = (AbstractAtomicLock) lockService;
+                
+                // Empty shell lock: no owner, no waiters — remove directly.
+                if (atomicLock.isClear() && !atomicLock.hasWaiters()) {
+                    lockManager.removeMutexLock(lockKey);
+                    continue;
+                }
                 
                 // Local check is an optimization to avoid unnecessary Raft submissions.
                 // A RENEW may race between here and the Raft apply, but autoExpire()

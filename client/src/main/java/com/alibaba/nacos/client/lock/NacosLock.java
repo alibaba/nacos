@@ -53,6 +53,16 @@ public class NacosLock implements Lock {
     private static final long DEFAULT_LEASE_TIME_MS = 30000L;
     
     /**
+     * Timeout for each waitForNotification poll in the lock acquisition loop.
+     *
+     * <p>When waiting for a lock, the client polls waitForNotification with this timeout.
+     * If no notification arrives within this window, the client re-sends the ACQUIRE request.
+     * This is independent of the lease time ({@link #DEFAULT_LEASE_TIME_MS}) and the server
+     * wait queue timeout ({@link #DEFAULT_SERVER_WAIT_TIME_MS}).
+     */
+    private static final long NOTIFICATION_POLL_TIMEOUT_MS = 60000L;
+    
+    /**
      * Server-side wait queue timeout for indefinite lock acquisition ({@link #lock()}).
      *
      * <p>This tells the server how long to keep the client in its wait queue. When this
@@ -151,14 +161,18 @@ public class NacosLock implements Lock {
                     return;
                 }
                 firstAttempt = false;
-                grpcClient.waitForNotification(key, currentOwner(), DEFAULT_LEASE_TIME_MS);
+                grpcClient.waitForNotification(key, currentOwner(), NOTIFICATION_POLL_TIMEOUT_MS);
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                // Clear interrupt flag so gRPC cancel request doesn't throw,
+                // then restore it after the synchronous server-side cleanup.
                 grpcClient.cancelWait(key, lockType, currentOwner());
+                Thread.currentThread().interrupt();
+                localReentrantCount.remove();
                 throw new NacosLockException("Lock interrupted", e);
             } catch (NacosException e) {
                 LOGGER.error("Failed to acquire lock, key={}", key, e);
                 grpcClient.cancelWait(key, lockType, currentOwner());
+                localReentrantCount.remove();
                 throw new NacosLockException("Failed to acquire lock: " + key, e);
             }
         }
@@ -192,13 +206,15 @@ public class NacosLock implements Lock {
                     return;
                 }
                 firstAttempt = false;
-                grpcClient.waitForNotification(key, currentOwner(), DEFAULT_LEASE_TIME_MS);
+                grpcClient.waitForNotification(key, currentOwner(), NOTIFICATION_POLL_TIMEOUT_MS);
             } catch (InterruptedException e) {
                 grpcClient.cancelWait(key, lockType, currentOwner());
+                localReentrantCount.remove();
                 throw e;
             } catch (NacosException e) {
                 LOGGER.error("Failed to acquire lock, key={}", key, e);
                 grpcClient.cancelWait(key, lockType, currentOwner());
+                localReentrantCount.remove();
                 throw new NacosLockException("Failed to acquire lock: " + key, e);
             }
         }
@@ -230,6 +246,12 @@ public class NacosLock implements Lock {
         long deadline = System.currentTimeMillis() + unit.toMillis(time);
         boolean firstAttempt = true;
         while (true) {
+            if (Thread.interrupted()) {
+                if (!firstAttempt) {
+                    grpcClient.cancelWait(key, lockType, currentOwner());
+                }
+                throw new InterruptedException();
+            }
             LockInstance instance = buildInstance(-1);
             long remaining = deadline - System.currentTimeMillis();
             if (remaining <= 0) {
@@ -255,9 +277,11 @@ public class NacosLock implements Lock {
                 grpcClient.waitForNotification(key, currentOwner(), remaining);
             } catch (InterruptedException e) {
                 grpcClient.cancelWait(key, lockType, currentOwner());
+                localReentrantCount.remove();
                 throw e;
             } catch (NacosException e) {
                 grpcClient.cancelWait(key, lockType, currentOwner());
+                localReentrantCount.remove();
                 LOGGER.error("Failed to try lock with timeout, key={}", key, e);
                 return false;
             }
@@ -270,6 +294,7 @@ public class NacosLock implements Lock {
             throw new IllegalMonitorStateException("Recursive unlock() detected for key=" + key);
         }
         inUnlock.set(Boolean.TRUE);
+        boolean removed = false;
         try {
             int count = localReentrantCount.get();
             if (count <= 0) {
@@ -283,23 +308,31 @@ public class NacosLock implements Lock {
                     if (result.getReentrantCount() == 0) {
                         watchdog.unregister(key);
                         localReentrantCount.remove();
+                        removed = true;
                     }
                 } else {
                     localReentrantCount.set(0);
                     watchdog.unregister(key);
                     localReentrantCount.remove();
+                    removed = true;
                     throw new IllegalMonitorStateException(
                         "Unlock rejected by server, key=" + key + ", msg="
                             + result.getErrorMessage());
                 }
             } catch (NacosException e) {
+                // Server may have already released the lock — clear client state
+                // to prevent the lock from becoming permanently unusable.
+                localReentrantCount.set(0);
+                watchdog.unregister(key);
+                localReentrantCount.remove();
+                removed = true;
                 LOGGER.error("Failed to unlock, key={}", key, e);
                 throw new IllegalStateException("Failed to unlock: " + key, e);
             }
         } finally {
-            inUnlock.set(Boolean.FALSE);
-            if (localReentrantCount.get() <= 0) {
-                inUnlock.remove();
+            inUnlock.remove();
+            if (!removed && localReentrantCount.get() <= 0) {
+                localReentrantCount.remove();
             }
         }
     }

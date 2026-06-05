@@ -267,6 +267,13 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 lockManager.removeMutexLock(lockInfo.getKey());
             }
         }
+        // If the removed waiter was the queue head and lock is still held,
+        // notify the new first waiter so it knows it is now first in line.
+        if (removed && !atomicLock.isClear()) {
+            if (atomicLock.hasWaiters()) {
+                notifyFirstWaiter(lockInfo.getKey(), atomicLock);
+            }
+        }
         return LockResult.success(0);
     }
     
@@ -386,22 +393,18 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         // Step 3: If lock was released and now clear, handle post-release logic
         if (wasHeld && atomicLock.isClear()) {
             if (atomicLock.hasWaiters()) {
-                WaitEntry entry = atomicLock.peekFirstWaiter();
-                if (entry != null) {
-                    LockNotificationRequest notification = LockNotificationRequest.available(
-                        lockKey.getKey(), lockKey.getLockType(), entry.getOwner());
-                    String targetConn = entry.getConnectionId();
-                    notificationExecutor.submit(() -> {
-                        try {
-                            rpcPushService.pushWithoutAck(targetConn, notification);
-                        } catch (Exception e) {
-                            LOGGER.warn("Lock: failed to notify waiter after cleanup, key={}",
-                                lockKey, e);
-                        }
-                    });
-                }
+                notifyFirstWaiter(lockKey, atomicLock);
             } else {
                 lockManager.removeMutexLock(lockKey);
+            }
+        }
+        
+        // Step 4: If lock is still held by another connection, notify the new first waiter.
+        // The removed waiter may have been the queue head; the new head needs to know
+        // it is now first in line.
+        if (!wasHeld && !atomicLock.isClear()) {
+            if (atomicLock.hasWaiters()) {
+                notifyFirstWaiter(lockKey, atomicLock);
             }
         }
     }

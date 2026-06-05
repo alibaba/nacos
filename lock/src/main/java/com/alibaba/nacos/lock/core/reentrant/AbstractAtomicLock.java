@@ -230,6 +230,9 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
     /**
      * Check if there are any non-expired waiters in the queue.
      *
+     * <p>Note: this method discards expired entries from the head of the queue
+     * as a side effect of the peek operation.
+     *
      * @return true if at least one non-expired waiter exists
      */
     public boolean hasWaiters() {
@@ -395,6 +398,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
                 owner = null;
                 reentrantCount = 0;
                 expiredTimestamp = 0;
+                connectionId = null;
                 return true;
             }
             return false;

@@ -32,6 +32,7 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
 
@@ -51,12 +52,16 @@ public class NacosLockService implements LockService {
     
     private final String clientId;
     
+    private final AbstractServerListManager serverListManager;
+    
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+    
     private ScheduledExecutorService executorService;
     
     public NacosLockService(Properties properties) throws NacosException {
         NacosClientProperties nacosClientProperties =
             NacosClientProperties.PROTOTYPE.derive(properties);
-        AbstractServerListManager serverListManager = new NamingServerListManager(properties);
+        this.serverListManager = new NamingServerListManager(properties);
         serverListManager.start();
         this.securityProxy = new SecurityProxy(serverListManager,
             NamingHttpClientManager.getInstance().getNacosRestTemplate());
@@ -65,6 +70,12 @@ public class NacosLockService implements LockService {
             new LockGrpcClient(nacosClientProperties, serverListManager, securityProxy);
         this.watchdog = new NacosLockWatchdog();
         this.clientId = UUID.randomUUID().toString();
+    }
+    
+    private void checkNotClosed() {
+        if (closed.get()) {
+            throw new IllegalStateException("NacosLockService has been shut down");
+        }
     }
     
     private void initSecurityProxy(NacosClientProperties properties) {
@@ -83,26 +94,31 @@ public class NacosLockService implements LockService {
     
     @Override
     public Boolean lock(LockInstance instance) throws NacosException {
+        checkNotClosed();
         return instance.lock(this);
     }
     
     @Override
     public Boolean unLock(LockInstance instance) throws NacosException {
+        checkNotClosed();
         return instance.unLock(this);
     }
     
     @Override
     public Boolean remoteTryLock(LockInstance instance) throws NacosException {
+        checkNotClosed();
         return lockGrpcClient.lock(instance);
     }
     
     @Override
     public Boolean remoteReleaseLock(LockInstance instance) throws NacosException {
+        checkNotClosed();
         return lockGrpcClient.unLock(instance);
     }
     
     @Override
     public Boolean renew(LockInstance instance) throws NacosException {
+        checkNotClosed();
         return lockGrpcClient.renew(instance);
     }
     
@@ -113,6 +129,7 @@ public class NacosLockService implements LockService {
      * @return NacosLock implementing java.util.concurrent.locks.Lock
      */
     public NacosLock getReentrantLock(String key) {
+        checkNotClosed();
         return new NacosLock(key, LockConstants.REENTRANT_LOCK_TYPE, lockGrpcClient, watchdog,
             clientId);
     }
@@ -124,23 +141,27 @@ public class NacosLockService implements LockService {
      * @return NacosLock implementing java.util.concurrent.locks.Lock
      */
     public NacosLock getNonReentrantLock(String key) {
+        checkNotClosed();
         return new NacosLock(key, LockConstants.NON_REENTRANT_LOCK_TYPE, lockGrpcClient, watchdog,
             clientId);
     }
     
     @Override
     public void shutdown() throws NacosException {
-        lockGrpcClient.shutdown();
-        watchdog.shutdown();
-        if (null != executorService) {
-            executorService.shutdown();
-            try {
-                if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+        if (closed.compareAndSet(false, true)) {
+            lockGrpcClient.shutdown();
+            watchdog.shutdown();
+            serverListManager.shutdown();
+            if (null != executorService) {
+                executorService.shutdown();
+                try {
+                    if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                        executorService.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
                     executorService.shutdownNow();
+                    Thread.currentThread().interrupt();
                 }
-            } catch (InterruptedException e) {
-                executorService.shutdownNow();
-                Thread.currentThread().interrupt();
             }
         }
     }

@@ -29,8 +29,10 @@ import com.alibaba.nacos.api.lock.remote.AbstractLockRequest;
 import com.alibaba.nacos.api.lock.remote.LockOperationEnum;
 import com.alibaba.nacos.api.lock.remote.request.LockNotificationRequest;
 import com.alibaba.nacos.api.lock.remote.request.LockOperationRequest;
+import com.alibaba.nacos.api.lock.remote.response.LockNotificationResponse;
 import com.alibaba.nacos.api.lock.remote.response.LockOperationResponse;
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -41,6 +43,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import org.slf4j.Logger;
@@ -49,10 +52,13 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -105,8 +111,7 @@ public class LockGrpcClient extends AbstractLockClient {
         rpcClient.registerServerRequestHandler(new ServerRequestHandler() {
             
             @Override
-            public Response requestReply(com.alibaba.nacos.api.remote.request.Request request,
-                com.alibaba.nacos.common.remote.client.Connection connection) {
+            public Response requestReply(Request request, Connection connection) {
                 if (request instanceof LockNotificationRequest) {
                     LockNotificationRequest notification = (LockNotificationRequest) request;
                     String waitKey =
@@ -116,7 +121,7 @@ public class LockGrpcClient extends AbstractLockClient {
                     if (future != null) {
                         future.complete(notification.getNotificationType());
                     }
-                    return new com.alibaba.nacos.api.lock.remote.response.LockNotificationResponse();
+                    return new LockNotificationResponse();
                 }
                 return null;
             }
@@ -134,7 +139,16 @@ public class LockGrpcClient extends AbstractLockClient {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
                 "Request Nacos server version is too low, not support lock feature.");
         }
-        long waitTimeMs = instance.getWaitTimeMs();
+        // Defensive copy to avoid mutating the caller's object.
+        LockInstance copy = new LockInstance();
+        copy.setKey(instance.getKey());
+        copy.setLockType(instance.getLockType());
+        copy.setOwner(instance.getOwner());
+        copy.setExpiredTime(instance.getExpiredTime());
+        copy.setWaitTimeMs(instance.getWaitTimeMs());
+        copy.setParams(instance.getParams());
+        
+        long waitTimeMs = copy.getWaitTimeMs();
         if (waitTimeMs == 0) {
             waitTimeMs = DEFAULT_REQUEST_TIMEOUT_MS;
         }
@@ -146,7 +160,7 @@ public class LockGrpcClient extends AbstractLockClient {
         // If we register inside the loop, each call replaces the future, and a notification
         // that arrives between two registrations would be lost, causing indefinite blocking.
         if (useWaitQueue) {
-            registerForNotification(instance.getKey(), instance.getOwner());
+            registerForNotification(copy.getKey(), copy.getOwner());
         }
         boolean firstAttempt = true;
         try {
@@ -157,10 +171,10 @@ public class LockGrpcClient extends AbstractLockClient {
                 // After the first failed attempt, mark as waiter retry so the server
                 // knows this request comes from the wait queue (FIFO enforcement).
                 if (!firstAttempt) {
-                    instance.setWaiterRetry(true);
+                    copy.setWaiterRetry(true);
                 }
                 LockOperationRequest request = new LockOperationRequest();
-                request.setLockInstance(instance);
+                request.setLockInstance(copy);
                 request.setLockOperationEnum(LockOperationEnum.ACQUIRE);
                 LockOperationResponse response =
                     requestToServer(request, LockOperationResponse.class);
@@ -168,7 +182,8 @@ public class LockGrpcClient extends AbstractLockClient {
                 if (lockResult != null) {
                     acquired = lockResult.isSuccess();
                 } else {
-                    acquired = (Boolean) response.getResult();
+                    Boolean raw = (Boolean) response.getResult();
+                    acquired = raw != null && raw;
                 }
                 if (acquired) {
                     return true;
@@ -185,7 +200,7 @@ public class LockGrpcClient extends AbstractLockClient {
                     long pollTimeout = Math.min(remaining,
                         DEFAULT_NOTIFICATION_POLL_MS + ThreadLocalRandom.current().nextInt(200));
                     LockNotificationType notificationType = waitForNotification(
-                        instance.getKey(), instance.getOwner(), pollTimeout);
+                        copy.getKey(), copy.getOwner(), pollTimeout);
                     if (notificationType == LockNotificationType.TIMEOUT) {
                         return false;
                     }
@@ -197,9 +212,9 @@ public class LockGrpcClient extends AbstractLockClient {
         } finally {
             if (useWaitQueue) {
                 if (acquired) {
-                    cancelWait(instance.getKey(), instance.getOwner());
+                    cancelWait(copy.getKey(), copy.getOwner());
                 } else {
-                    cancelWait(instance.getKey(), instance.getLockType(), instance.getOwner());
+                    cancelWait(copy.getKey(), copy.getLockType(), copy.getOwner());
                 }
             }
         }
@@ -231,7 +246,8 @@ public class LockGrpcClient extends AbstractLockClient {
         if (lockResult != null) {
             return lockResult;
         }
-        return new LockResult((Boolean) response.getResult());
+        Boolean raw = (Boolean) response.getResult();
+        return new LockResult(raw != null && raw);
     }
     
     /**
@@ -266,7 +282,8 @@ public class LockGrpcClient extends AbstractLockClient {
         if (lockResult != null) {
             return lockResult;
         }
-        return new LockResult((Boolean) response.getResult());
+        Boolean raw = (Boolean) response.getResult();
+        return new LockResult(raw != null && raw);
     }
     
     /**
@@ -289,7 +306,8 @@ public class LockGrpcClient extends AbstractLockClient {
         if (lockResult != null) {
             return lockResult;
         }
-        return new LockResult((Boolean) response.getResult());
+        Boolean raw = (Boolean) response.getResult();
+        return new LockResult(raw != null && raw);
     }
     
     /**
@@ -324,9 +342,9 @@ public class LockGrpcClient extends AbstractLockClient {
                 return future.get();
             }
             return future.get(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (java.util.concurrent.TimeoutException e) {
+        } catch (TimeoutException e) {
             return null;
-        } catch (java.util.concurrent.ExecutionException e) {
+        } catch (ExecutionException e) {
             LOGGER.warn("Notification wait failed for key={}, owner={}", lockKey, owner, e);
             return null;
         }
@@ -343,6 +361,9 @@ public class LockGrpcClient extends AbstractLockClient {
      * @param owner lock owner identifier
      */
     public void registerForNotification(String lockKey, String owner) {
+        if (closed.get()) {
+            return;
+        }
         String waitKey = buildWaitKey(lockKey, owner);
         CompletableFuture<LockNotificationType> oldFuture =
             notificationFutures.put(waitKey, new CompletableFuture<>());
@@ -394,7 +415,6 @@ public class LockGrpcClient extends AbstractLockClient {
      * @throws NacosException on server error
      */
     public LockResult cancelWaitWithResult(LockInstance instance) throws NacosException {
-        cancelWait(instance.getKey(), instance.getOwner());
         if (!isAbilitySupportedByServer()) {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
                 "Request Nacos server version is too low, not support lock feature.");
@@ -407,7 +427,8 @@ public class LockGrpcClient extends AbstractLockClient {
         if (lockResult != null) {
             return lockResult;
         }
-        return new LockResult((Boolean) response.getResult());
+        Boolean raw = (Boolean) response.getResult();
+        return new LockResult(raw != null && raw);
     }
     
     private String buildWaitKey(String lockKey, String owner) {
@@ -418,8 +439,7 @@ public class LockGrpcClient extends AbstractLockClient {
     public void shutdown() throws NacosException {
         if (closed.compareAndSet(false, true)) {
             // Complete all pending futures exceptionally to unblock waiting threads
-            java.util.concurrent.CancellationException ex =
-                new java.util.concurrent.CancellationException("Client shutdown");
+            CancellationException ex = new CancellationException("Client shutdown");
             notificationFutures.values().forEach(f -> f.completeExceptionally(ex));
             notificationFutures.clear();
             rpcClient.shutdown();

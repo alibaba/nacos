@@ -89,6 +89,10 @@ public class LockResult implements Serializable {
     
     public void setSuccess(boolean success) {
         this.success = success;
+        if (success) {
+            this.waitPosition = -1;
+            this.errorMessage = null;
+        }
     }
     
     public int getReentrantCount() {
