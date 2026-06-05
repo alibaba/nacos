@@ -32,11 +32,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: maintainer SDK factory can create a client and
- *     query liveness/server-state through a running standalone Nacos server.</li>
+ *     query liveness/readiness/server-state through a running standalone Nacos
+ *     server.</li>
  *     <li>Boundary/validation: profile wiring resolves the default
  *     {@code nacos.host}/{@code nacos.port} server address.</li>
- *     <li>Error handling: detailed readiness and unavailable-server mappings
- *     are documented as pending scenarios for later batches.</li>
+ *     <li>Error handling: unavailable-server mappings are documented as pending
+ *     scenarios for later batches.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -48,6 +49,7 @@ class CoreMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
         
         assertTrue(maintainerService.liveness());
+        assertTrue(maintainerService.readiness());
         Map<String, String> serverState = maintainerService.getServerState();
         assertNotNull(serverState);
     }

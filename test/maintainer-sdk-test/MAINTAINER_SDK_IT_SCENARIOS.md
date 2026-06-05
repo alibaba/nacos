@@ -22,7 +22,7 @@ remain, and `Pending` means no IT verifies that surface yet.
 
 | Public maintainer SDK surface | Required scenarios | Current status | Current/missing coverage |
 | --- | --- | --- | --- |
-| `CoreMaintainerService` server state and health probes | Factory creation, standalone server liveness, readiness, server state shape, unavailable-server error mapping, and auth-disabled/admin-surface assumptions. | Partial | Covers factory creation through `NacosMaintainerFactory`, real HTTP liveness, and server-state result mapping against standalone server. Readiness is pending because `ConfigMaintainerService.readiness()` currently targets `/v3/admin/core/ops/readiness` while the server exposes `/v3/admin/core/state/readiness`; unavailable-server and auth-enabled mappings remain pending. |
+| `CoreMaintainerService` server state and health probes | Factory creation, standalone server liveness, readiness, server state shape, unavailable-server error mapping, and auth-disabled/admin-surface assumptions. | Covered | Covers factory creation through `NacosMaintainerFactory`, real HTTP liveness/readiness, and server-state result mapping against standalone server. Unavailable-server and auth-enabled mappings are intentionally left for the later auth/error-mapping batch. |
 | `CoreMaintainerService` namespace operations | Create, query, update, duplicate, delete, absent namespace, default/blank namespace boundaries, and cleanup idempotency. | Pending | No maintainer SDK IT yet. |
 | `CoreMaintainerService` cluster/plugin/loader operations | Read-only cluster/plugin/loader queries, controlled operation boundaries, and dangerous mutation exclusions for shared standalone CI. | Pending | No maintainer SDK IT yet. |
 | `ConfigMaintainerService` config lifecycle | Publish, query, list, metadata update, history query, delete, absent config, required parameter validation, and cleanup idempotency. | Pending | No maintainer SDK IT yet. |
@@ -36,5 +36,5 @@ remain, and `Pending` means no IT verifies that surface yet.
 
 Current in-scope maintained surfaces: 9.
 
-- Strict coverage: 0 / 9 = 0.0%
-- Effective coverage: (0 + 1 * 0.5) / 9 = 5.6%
+- Strict coverage: 1 / 9 = 11.1%
+- Effective coverage: (1 + 0 * 0.5) / 9 = 11.1%
