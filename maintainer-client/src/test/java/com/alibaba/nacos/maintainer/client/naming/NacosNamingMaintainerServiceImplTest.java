@@ -36,11 +36,13 @@ import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
+import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -95,7 +97,9 @@ public class NacosNamingMaintainerServiceImplTest {
         
         // Assert
         assertEquals("success", result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(requestCaptor.capture());
+        assertTrue(requestCaptor.getValue().getPath().contains("serviceName=" + serviceName));
     }
     
     @Test
