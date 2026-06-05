@@ -33,6 +33,7 @@ maintainer SDK IT cases.
 | Maintainer SDK interface | IT class | Status | Scenario coverage | Known gaps |
 | --- | --- | --- | --- | --- |
 | `CoreMaintainerService` | `CoreMaintainerServiceMaintainerSdkITCase` | Partial | Verifies factory creation through `NacosMaintainerFactory`, standalone server liveness/readiness, server-state result mapping, ID generator list, cluster node list, current client map, cluster loader metrics, plugin list, namespace create/get/list/update/check/delete lifecycle, duplicate namespace controlled error, invalid namespace parameter errors, default namespace lookup, default `nacos.host`/`nacos.port` profile wiring, and shutdown cleanup. | Unavailable-server error mapping, auth-enabled behavior, mutating cluster/plugin/loader controls, and wider maintainer SDK surfaces remain pending for later batches. |
+| `ConfigMaintainerService` | `ConfigMaintainerServiceMaintainerSdkITCase` | Partial | Verifies publish/get/list/search/update-metadata/update/delete lifecycle, namespace config list, delete by storage ID, missing config controlled exception, invalid publish parameters, default host/port wiring, and cleanup. | Config history, beta config, listener/ops diagnostics, clone/import/export, and auth-enabled behavior remain pending for later batches. |
 
 ## Pending Maintainer SDK Surfaces
 
