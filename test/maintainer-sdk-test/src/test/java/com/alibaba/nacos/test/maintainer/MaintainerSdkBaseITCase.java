@@ -19,6 +19,8 @@ package com.alibaba.nacos.test.maintainer;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.NacosMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
+import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
 import org.junit.jupiter.api.AfterEach;
 
 import java.util.ArrayDeque;
@@ -56,6 +58,13 @@ public abstract class MaintainerSdkBaseITCase {
     protected ConfigMaintainerService createConfigMaintainerService() throws NacosException {
         ConfigMaintainerService service =
                 NacosMaintainerFactory.createConfigMaintainerService(maintainerProperties());
+        shutdownActions.addFirst(service::shutdown);
+        return service;
+    }
+
+    protected NamingMaintainerService createNamingMaintainerService() throws NacosException {
+        NamingMaintainerService service =
+                NamingMaintainerFactory.createNamingMaintainerService(maintainerProperties());
         shutdownActions.addFirst(service::shutdown);
         return service;
     }
