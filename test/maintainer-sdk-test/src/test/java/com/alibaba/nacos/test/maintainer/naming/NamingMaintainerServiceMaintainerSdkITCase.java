@@ -218,6 +218,7 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         Instance instance = new Instance();
         instance.setIp(ip);
         instance.setPort(port);
+        instance.setClusterName(Constants.DEFAULT_CLUSTER_NAME);
         instance.setEphemeral(ephemeral);
         return instance;
     }
