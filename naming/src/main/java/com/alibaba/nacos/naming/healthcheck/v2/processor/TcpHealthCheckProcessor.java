@@ -188,6 +188,17 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                     beat.finishCheck(true, false,
                         System.currentTimeMillis() - beat.getTask().getStartTime(),
                         "tcp:ok+");
+                    // Connections are not reused (keep-alive disabled), so close the
+                    // channel as soon as the check succeeds to avoid leaking the FD.
+                    // Closing failures must not flip the already-successful result, so
+                    // they are swallowed here instead of falling into the catch below.
+                    try {
+                        key.cancel();
+                        channel.close();
+                    } catch (Exception ignore) {
+                        // ignore close failure
+                    }
+                    return;
                 }
                 
                 if (key.isValid() && key.isReadable()) {
@@ -206,6 +217,15 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                 // unable to connect, possibly port not opened
                 beat.finishCheck(false, true, switchDomain.getTcpHealthParams().getMax(),
                     "tcp:unable2connect:" + e.getMessage());
+                // finishCheck() already removed this beat from keyMap, so the next round
+                // can no longer close this channel; close it here to avoid leaking the FD
+                // on the common connection-refused failure path.
+                try {
+                    key.cancel();
+                    channel.close();
+                } catch (Exception ignore) {
+                    // ignore close failure
+                }
             } catch (Exception e) {
                 beat.finishCheck(false, false, switchDomain.getTcpHealthParams().getMax(),
                     "tcp:error:" + e.getMessage());
