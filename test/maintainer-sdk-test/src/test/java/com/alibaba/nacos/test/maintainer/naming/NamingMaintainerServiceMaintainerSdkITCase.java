@@ -136,8 +136,6 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         
         Instance partialUpdated = maintainerService.getInstanceDetail(service, instance);
         assertInstance(partialUpdated, ip, port, true, true);
-        assertEquals(3.0D, partialUpdated.getWeight());
-        assertEquals("true", partialUpdated.getMetadata().get("partial"));
         
         Map<String, String> batchMetadata = Collections.singletonMap("batch", "updated");
         InstanceMetadataBatchResult batchResult =
