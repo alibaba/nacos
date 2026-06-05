@@ -5,9 +5,17 @@ import type {
   SkillListResponse,
   SkillAdminDetail,
   SkillDocument,
+  SkillUploadPrecheckRequest,
+  SkillUploadPrecheckResult,
 } from '@/types/skill';
 
 const BASE = 'v3/console/ai/skills';
+
+interface UploadOptions {
+  overwrite?: boolean;
+  targetVersion?: string;
+  commitMsg?: string;
+}
 
 export const skillApi = {
   /** List skills with pagination and search */
@@ -41,22 +49,47 @@ export const skillApi = {
     }) as unknown as Promise<Blob>,
 
   /** Upload skill from ZIP */
-  upload: (namespaceId: string, file: File): ApiResult<string> => {
+  upload: (namespaceId: string, file: File, options?: UploadOptions): ApiResult<string> => {
     const formData = new FormData();
     // Pass filename explicitly so backend can reliably read original upload filename.
     formData.append('file', file, file.name);
     formData.append('namespaceId', namespaceId);
+    if (options?.overwrite !== undefined) {
+      formData.append('overwrite', String(options.overwrite));
+    }
+    if (options?.targetVersion) {
+      formData.append('targetVersion', options.targetVersion);
+    }
+    if (options?.commitMsg) {
+      formData.append('commitMsg', options.commitMsg);
+    }
     return client.post(`${BASE}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
     }) as ApiResult<string>;
   },
 
+  /** Batch precheck skill metadata before uploading the full ZIP */
+  batchPrecheckUpload: (
+    requests: SkillUploadPrecheckRequest[],
+  ): ApiResult<SkillUploadPrecheckResult[]> =>
+    client.post(`${BASE}/upload/batch/precheck`, requests, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 30000,
+    }) as ApiResult<SkillUploadPrecheckResult[]>,
+
   /** Batch upload skills from a multi-skill ZIP archive */
-  batchUpload: (namespaceId: string, file: File): ApiResult<{ succeeded: string[]; failed: { name: string; reason: string }[] }> => {
+  batchUpload: (
+    namespaceId: string,
+    file: File,
+    options?: { overwrite?: boolean },
+  ): ApiResult<{ succeeded: string[]; failed: { name: string; reason: string }[] }> => {
     const formData = new FormData();
     formData.append('file', file, file.name);
     formData.append('namespaceId', namespaceId);
+    if (options?.overwrite !== undefined) {
+      formData.append('overwrite', String(options.overwrite));
+    }
     return client.post(`${BASE}/upload/batch`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120000,

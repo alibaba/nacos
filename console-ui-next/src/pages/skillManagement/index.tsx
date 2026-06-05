@@ -36,13 +36,6 @@ import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { skillApi } from '@/api/skill';
 
-interface SkillBatchUploadResponse {
-  data?: {
-    succeeded?: string[];
-    failed?: { name: string; reason: string }[];
-  };
-}
-
 export default function SkillManagementPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -80,6 +73,7 @@ export default function SkillManagementPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [uploadInitialFile, setUploadInitialFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounter = useRef(0);
 
@@ -175,7 +169,7 @@ export default function SkillManagementPage() {
     }
   }, []);
 
-  const handlePageDrop = useCallback(async (e: React.DragEvent) => {
+  const handlePageDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     dragCounter.current = 0;
@@ -186,41 +180,9 @@ export default function SkillManagementPage() {
       toast.error(t('skill.invalidZipFile'));
       return;
     }
-    try {
-      const res = await skillApi.batchUpload(namespaceId, droppedFile);
-      const data = (res as SkillBatchUploadResponse)?.data;
-      if (data && (data.succeeded || data.failed)) {
-        const succeededList: string[] = data.succeeded ?? [];
-        const failedList: { name: string; reason: string }[] = data.failed ?? [];
-        if (failedList.length === 0) {
-          toast.success(t('skill.batchUploadAllSuccess', { count: succeededList.length }), { duration: 5000 });
-        } else {
-          const title = succeededList.length > 0
-            ? t('skill.batchUploadResult', { succeeded: succeededList.length, failed: failedList.length })
-            : t('skill.batchUploadAllFailed', { count: failedList.length });
-          const description = (
-            <div className="flex flex-col gap-0.5 text-xs">
-              {succeededList.map((name) => (
-                <div key={name} style={{ color: '#16a34a' }}>✓ {name}</div>
-              ))}
-              {failedList.map((item) => (
-                <div key={item.name} style={{ color: '#dc2626' }}>
-                  ✗ {item.name}<span style={{ opacity: 0.8 }}> — {item.reason}</span>
-                </div>
-              ))}
-            </div>
-          );
-          const toastFn = succeededList.length > 0 ? toast.warning : toast.error;
-          toastFn(title, { description, duration: 8000 });
-        }
-      } else {
-        toast.success(t('skill.uploadSuccess'));
-      }
-      loadData();
-    } catch {
-      toast.error(t('skill.uploadFailed'));
-    }
-  }, [namespaceId, t, loadData]);
+    setUploadInitialFile(droppedFile);
+    setUploadOpen(true);
+  }, [t]);
 
   const totalPages = Math.ceil(total / pageSize);
   const allSelected = items.length > 0 && items.every((a) => selectedNames.has(a.name));
@@ -254,7 +216,14 @@ export default function SkillManagementPage() {
           <span className="text-xs text-muted-foreground hidden sm:inline">
             {t('skill.dragDropHint')}
           </span>
-          <Button size="sm" variant="outline" onClick={() => setUploadOpen(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setUploadInitialFile(null);
+              setUploadOpen(true);
+            }}
+          >
             <Upload className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.upload')}
           </Button>
@@ -499,9 +468,15 @@ export default function SkillManagementPage() {
       {/* Upload dialog */}
       <UploadSkillDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
+        onOpenChange={(nextOpen) => {
+          setUploadOpen(nextOpen);
+          if (!nextOpen) {
+            setUploadInitialFile(null);
+          }
+        }}
         namespaceId={namespaceId}
         onSuccess={loadData}
+        initialFile={uploadInitialFile}
       />
 
       {/* Import dialog */}
