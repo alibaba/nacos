@@ -56,6 +56,9 @@ Skill 定义为“一个目录，至少包含一个 `SKILL.md` 文件”。Nacos
   仍是包内容的事实来源。
 - 标准包根目录可以包含可选的 `scripts/`、`references/` 与 `assets/` 目录。
   Nacos 将这些文件作为 Skill resource 存储和分发。
+- 上传解析必须忽略平台生成的 ZIP 元数据文件，例如 macOS 的 `.DS_Store`、
+  `._*` AppleDouble 文件和 `__MACOSX/` 目录；这些文件不得作为 Skill resource
+  存储或分发。该过滤不得影响普通资源文件，也不得把嵌套 Skill 目录特殊隐藏。
 - Skill name 应遵循上游命名规则：小写字母、数字和连字符，不能以连字符开头或结尾，
   不能包含连续连字符，长度不超过 64 个字符。
 

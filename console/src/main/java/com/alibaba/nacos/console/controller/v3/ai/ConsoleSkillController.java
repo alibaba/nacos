@@ -37,6 +37,8 @@ import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -55,10 +57,14 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Collections;
+import java.util.List;
 
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX;
 
@@ -167,6 +173,7 @@ public class ConsoleSkillController {
      * @param request     HTTP servlet request
      * @param namespaceId namespace ID
      * @param commitMsg   version-level commit message
+     * @param uploadAction explicit upload action selected after precheck
      * @param file        zip file containing skill
      * @return result of the upload operation
      * @throws NacosException if the upload fails
@@ -181,6 +188,7 @@ public class ConsoleSkillController {
             defaultValue = "false") boolean overwrite,
         @RequestParam(value = "targetVersion", required = false) String targetVersion,
         @RequestParam(value = "commitMsg", required = false) String commitMsg,
+        @RequestParam(value = "uploadAction", required = false) String uploadAction,
         @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
@@ -190,9 +198,38 @@ public class ConsoleSkillController {
             .overwrite(overwrite)
             .targetVersion(targetVersion)
             .commitMsg(commitMsg)
+            .uploadAction(uploadAction)
             .build();
         String skillName = skillProxy.uploadSkillFromZip(uploadRequest);
         return Result.success(skillName);
+    }
+    
+    /**
+     * Batch precheck multiple skill uploads from client-parsed metadata.
+     *
+     * @param request HTTP servlet request
+     * @param precheckRequests list of upload precheck requests
+     * @return list of precheck results in the same order as input
+     * @throws NacosException if precheck failed unexpectedly
+     */
+    @Since("3.2.3")
+    @PostMapping(value = "/upload/batch/precheck")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
+    public Result<List<SkillUploadPrecheckResult>> batchPrecheckUploadSkill(
+        HttpServletRequest request,
+        @RequestBody(required = false) List<SkillUploadPrecheckRequest> precheckRequests)
+        throws NacosException {
+        if (precheckRequests == null || precheckRequests.isEmpty()) {
+            return Result.success(Collections.emptyList());
+        }
+        for (SkillUploadPrecheckRequest req : precheckRequests) {
+            if (req != null) {
+                req.setNamespaceId(
+                    NamespaceUtil.processNamespaceParameter(req.getNamespaceId()));
+            }
+        }
+        return Result.success(skillProxy.batchPrecheckUploadSkill(precheckRequests));
     }
     
     /**

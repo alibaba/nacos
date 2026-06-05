@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -256,7 +258,40 @@ public interface SkillMaintainerService {
     default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
         String targetVersion, String commitMsg)
         throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion, commitMsg,
+            null);
+    }
+    
+    /**
+     * Upload skill from zip file with explicit upload action.
+     *
+     * @param namespaceId   namespace ID
+     * @param zipBytes      zip file bytes
+     * @param overwrite     whether to overwrite the current editable draft when the skill already exists
+     * @param targetVersion user-specified version (optional, used as fallback when ZIP content has no version)
+     * @param commitMsg     version-level commit message (optional)
+     * @param uploadAction  explicit upload action selected after precheck
+     * @return skill name
+     * @throws NacosException if fail to upload skill
+     */
+    @Since("3.2.3")
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion, String commitMsg, String uploadAction)
+        throws NacosException {
         return uploadSkillFromZip(namespaceId, zipBytes, overwrite);
+    }
+    
+    /**
+     * Batch precheck multiple skill uploads.
+     *
+     * @param requests list of precheck requests
+     * @return list of precheck results in the same order as input
+     * @throws NacosException if precheck failed unexpectedly
+     */
+    @Since("3.2.3")
+    default java.util.List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
+        java.util.List<SkillUploadPrecheckRequest> requests) throws NacosException {
+        return java.util.Collections.emptyList();
     }
     
     /**

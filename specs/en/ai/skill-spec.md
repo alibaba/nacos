@@ -63,6 +63,11 @@ Standard-compatible Skill packages follow these rules:
 - Standard package roots may include optional `scripts/`, `references/`, and
   `assets/` directories. Nacos stores and distributes these files as Skill
   resources.
+- Upload parsing must ignore platform-generated ZIP metadata files, such as
+  macOS `.DS_Store`, `._*` AppleDouble files, and the `__MACOSX/` directory.
+  These files must not be stored or distributed as Skill resources. This
+  filtering must not affect normal resource files or hide nested Skill
+  directories.
 - Skill names should follow the upstream naming rule: lowercase alphanumeric
   characters and hyphens, no leading or trailing hyphen, no consecutive
   hyphens, and no more than 64 characters.

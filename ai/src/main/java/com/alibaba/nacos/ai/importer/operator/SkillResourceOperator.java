@@ -50,6 +50,8 @@ public class SkillResourceOperator implements AiResourceOperator {
     
     private static final String CONFLICT_TYPE_WORKING_VERSION = "working_version";
     
+    private static final String CONFLICT_TYPE_REVIEWING_VERSION = "reviewing_version";
+    
     private static final String CONFLICT_TYPE_EXISTING = "existing";
     
     private static final String METADATA_ARTIFACT_URL = "artifactUrl";
@@ -57,7 +59,10 @@ public class SkillResourceOperator implements AiResourceOperator {
     private static final String METADATA_SOURCE = "source";
     
     private static final String WORKING_VERSION_SKIP_MESSAGE =
-        "Skipped because a working version (editing/reviewing) already exists.";
+        "Skipped because an editing draft already exists.";
+    
+    private static final String REVIEWING_VERSION_SKIP_MESSAGE =
+        "Skipped because a reviewing version already exists.";
     
     private final SkillOperationService skillOperationService;
     
@@ -86,11 +91,18 @@ public class SkillResourceOperator implements AiResourceOperator {
             return result;
         }
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
-        if (hasWorkingVersion(info) && !overwriteExisting) {
+        if (hasReviewingVersion(info)) {
+            result.setStatus(AiResourceImportValidationStatus.CONFLICT);
+            result.setConflictType(CONFLICT_TYPE_REVIEWING_VERSION);
+            result.setErrors(Collections.singletonList(
+                "There is already a reviewing version, cannot import until review finishes."));
+            return result;
+        }
+        if (hasEditingVersion(info) && !overwriteExisting) {
             result.setStatus(AiResourceImportValidationStatus.CONFLICT);
             result.setConflictType(CONFLICT_TYPE_WORKING_VERSION);
             result.setErrors(Collections.singletonList(
-                "There is already a working version (editing/reviewing), enable overwrite to import."));
+                "There is already an editing draft, enable overwrite to import."));
             return result;
         }
         result.setStatus(AiResourceImportValidationStatus.WARNING);
@@ -104,7 +116,11 @@ public class SkillResourceOperator implements AiResourceOperator {
         AiResourceImportArtifact artifact, boolean overwriteExisting) throws NacosException {
         Skill skill = parseSkill(namespaceId, artifact);
         AiResource meta = resourceManager.findMeta(namespaceId, skill.getName(), resourceType());
-        if (!overwriteExisting && hasWorkingVersion(AiResourceManager.requireVersionInfo(meta))) {
+        ResourceVersionInfo info = meta == null ? null : AiResourceManager.requireVersionInfo(meta);
+        if (hasReviewingVersion(info)) {
+            return skippedReviewingVersionItem(artifact, skill);
+        }
+        if (!overwriteExisting && hasEditingVersion(info)) {
             return skippedWorkingVersionItem(artifact, skill);
         }
         String version = resolveVersion(artifact);
@@ -121,6 +137,17 @@ public class SkillResourceOperator implements AiResourceOperator {
         result.setResourceName(skillName);
         result.setVersion(version);
         result.setStatus(AiResourceImportResultStatus.SUCCESS);
+        return result;
+    }
+    
+    private AiResourceImportResultItem skippedReviewingVersionItem(
+        AiResourceImportArtifact artifact, Skill skill) {
+        AiResourceImportResultItem result = new AiResourceImportResultItem();
+        result.setExternalId(artifact.getExternalId());
+        result.setResourceName(skill.getName());
+        result.setVersion(resolveVersion(artifact));
+        result.setStatus(AiResourceImportResultStatus.SKIPPED);
+        result.setWarnings(Collections.singletonList(REVIEWING_VERSION_SKIP_MESSAGE));
         return result;
     }
     
@@ -157,9 +184,12 @@ public class SkillResourceOperator implements AiResourceOperator {
         return metadata.get(METADATA_SOURCE);
     }
     
-    private boolean hasWorkingVersion(ResourceVersionInfo info) {
-        return StringUtils.isNotBlank(info.getEditingVersion())
-            || StringUtils.isNotBlank(info.getReviewingVersion());
+    private boolean hasEditingVersion(ResourceVersionInfo info) {
+        return info != null && StringUtils.isNotBlank(info.getEditingVersion());
+    }
+    
+    private boolean hasReviewingVersion(ResourceVersionInfo info) {
+        return info != null && StringUtils.isNotBlank(info.getReviewingVersion());
     }
     
     private String resolveExistingWarning(ResourceVersionInfo info) {

@@ -32,6 +32,8 @@ import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
@@ -40,6 +42,8 @@ import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * Remote implementation of Skill handler.
@@ -115,7 +119,13 @@ public class SkillRemoteHandler implements SkillHandler {
     public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {
         return clientHolder.getAiMaintainerService().skill().uploadSkillFromZip(
             request.getNamespaceId(), request.getZipBytes(), request.isOverwrite(),
-            request.getTargetVersion(), request.getCommitMsg());
+            request.getTargetVersion(), request.getCommitMsg(), request.getUploadAction());
+    }
+    
+    @Override
+    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
+        List<SkillUploadPrecheckRequest> requests) throws NacosException {
+        return clientHolder.getAiMaintainerService().skill().batchPrecheckUploadSkill(requests);
     }
     
     @Override

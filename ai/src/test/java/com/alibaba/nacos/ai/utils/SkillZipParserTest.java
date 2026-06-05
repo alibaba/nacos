@@ -252,13 +252,13 @@ class SkillZipParserTest {
     
     @Test
     void testParseSkillFromZipIgnoresMacOsMetadataFiles() throws Exception {
-        // Given: zip contains macOS AppleDouble file (._LICENSE.txt) and normal resource
+        // Given: zip contains macOS metadata files and normal resource
         byte[] zipBytes = createSkillZipWithMacOsMetadataFiles();
         
         // When
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
         
-        // Then: skill parses OK and ._* files are not in resources (key = generateResourceId("references", "readme.md"))
+        // Then: skill parses OK and macOS metadata files are not in resources
         String readmeKey = SkillUtils.generateResourceId("references", "readme.md");
         assertNotNull(skill);
         assertNotNull(skill.getResource());
@@ -266,6 +266,7 @@ class SkillZipParserTest {
         assertTrue(skill.getResource().containsKey(readmeKey));
         assertFalse(skill.getResource().containsKey("._LICENSE"));
         assertFalse(skill.getResource().keySet().stream().anyMatch(k -> k.startsWith("._")));
+        assertFalse(skill.getResource().keySet().stream().anyMatch(k -> k.contains(".DS_Store")));
     }
     
     @Test
@@ -288,8 +289,29 @@ class SkillZipParserTest {
     }
     
     @Test
+    void testParseSkillFromZipTreatsNestedSkillDirectoryAsResources() throws Exception {
+        // Given: zip with a nested directory that also contains SKILL.md
+        byte[] zipBytes = createSkillZipWithNestedSkillDirectory();
+        
+        // When
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+        
+        // Then: only the root SKILL.md is the descriptor; nested SKILL.md stays as a resource
+        String nestedSkillMdKey = SkillUtils.generateResourceId("nested-skill", "SKILL.md");
+        String nestedGuideKey = SkillUtils.generateResourceId(
+            "nested-skill/references", "guide.md");
+        assertEquals("parent-skill", skill.getName());
+        assertNotNull(skill.getResource());
+        assertTrue(skill.getResource().containsKey(nestedSkillMdKey));
+        assertTrue(skill.getResource().get(nestedSkillMdKey).getContent()
+            .contains("name: nested-skill"));
+        assertTrue(skill.getResource().containsKey(nestedGuideKey));
+        assertFalse(skill.getResource().keySet().stream().anyMatch(k -> k.contains(".DS_Store")));
+    }
+    
+    @Test
     void testParseMultipleSkillsFromZipWithSingleSkill() throws Exception {
-        // Given: zip with single SKILL.md (should delegate to single-skill parsing)
+        // Given: zip with single SKILL.md (parsed via the batch-style path)
         byte[] zipBytes = createValidSkillZip();
         
         // When
@@ -318,6 +340,28 @@ class SkillZipParserTest {
         String nestedSkillMdKey = SkillUtils.generateResourceId("nested", "SKILL.md");
         assertTrue(skill.getResource().containsKey(nestedSkillMdKey));
         assertTrue(result.getFailures().isEmpty());
+    }
+    
+    @Test
+    void testParseMultipleSkillsFromZipTreatsNestedSkillDirectoryAsResource()
+        throws Exception {
+        // Given: skill-alpha contains a nested directory that also contains SKILL.md
+        byte[] zipBytes = createMultiSkillZipWithNestedSkillDirectory();
+        
+        // When
+        SkillZipParser.MultiSkillParseResult result =
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
+        // Then: nested-skill is not parsed independently, and its SKILL.md is preserved
+        assertEquals(2, result.getSkills().size());
+        assertFalse(result.getSkills().stream()
+            .anyMatch(skill -> "nested-skill".equals(skill.getName())));
+        assertTrue(result.getFailures().isEmpty());
+        Skill alpha = result.getSkills().stream()
+            .filter(skill -> "skill-alpha".equals(skill.getName())).findFirst().orElse(null);
+        assertNotNull(alpha);
+        String nestedSkillMdKey = SkillUtils.generateResourceId("nested-skill", "SKILL.md");
+        assertTrue(alpha.getResource().containsKey(nestedSkillMdKey));
     }
     
     @Test
@@ -365,6 +409,66 @@ class SkillZipParserTest {
         // beta has a config resource
         assertNotNull(beta.getResource());
         assertTrue(beta.getResource().size() > 0);
+    }
+    
+    @Test
+    void testParseMultipleSkillsFromZipWithOnlyOneInvalidSkillReturnsFailure() throws Exception {
+        // Given: zip with a single SKILL.md whose YAML front matter is missing.
+        // Reproduces the batch upload "skip existing drafts" flow where the frontend strips
+        // valid skills out and only an invalid skill folder remains in the submitted zip.
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("multi-skill/invalid-skill/SKILL.md");
+            zos.putNextEntry(entry);
+            // No YAML front matter, just plain text -> should not throw, just record failure
+            zos.write("This skill is missing its YAML front matter.".getBytes());
+            zos.closeEntry();
+        }
+        byte[] zipBytes = baos.toByteArray();
+        
+        // When
+        SkillZipParser.MultiSkillParseResult result =
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
+        // Then: no successful skills, the invalid folder is reported as a failure
+        assertTrue(result.getSkills().isEmpty());
+        assertEquals(1, result.getFailures().size());
+        assertEquals("invalid-skill", result.getFailures().get(0).getFolder());
+        assertTrue(result.getFailures().get(0).getReason().contains("YAML front matter"));
+    }
+    
+    @Test
+    void testParseMultipleSkillsFromZipWithInvalidSkillAndPeerNonSkillFolder() throws Exception {
+        // Given: zip mirroring the user-reported scenario: an invalid skill folder plus a
+        // peer folder without SKILL.md. The early throw should not fire because the broken
+        // SKILL.md is still detected; both folders end up as recorded failures.
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("multi-skill/invalid-skill/SKILL.md");
+            zos.putNextEntry(entry);
+            zos.write("This skill is missing its YAML front matter.".getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("multi-skill/not-a-skill/readme.txt");
+            zos.putNextEntry(entry);
+            zos.write("plain folder, no SKILL.md".getBytes());
+            zos.closeEntry();
+        }
+        byte[] zipBytes = baos.toByteArray();
+        
+        // When
+        SkillZipParser.MultiSkillParseResult result =
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
+        // Then: no successful skills; both folders reported with their own reasons
+        assertTrue(result.getSkills().isEmpty());
+        assertEquals(2, result.getFailures().size());
+        assertTrue(result.getFailures().stream()
+            .anyMatch(f -> "invalid-skill".equals(f.getFolder())
+                && f.getReason().contains("YAML front matter")));
+        assertTrue(result.getFailures().stream()
+            .anyMatch(f -> "not-a-skill".equals(f.getFolder())
+                && f.getReason().contains("SKILL.md not found")));
     }
     
     @Test
@@ -618,6 +722,34 @@ class SkillZipParserTest {
         return baos.toByteArray();
     }
     
+    private byte[] createSkillZipWithNestedSkillDirectory() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            zos.write("---\nname: parent-skill\ndescription: Parent skill\n---\n\nParent"
+                .getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("nested-skill/SKILL.md");
+            zos.putNextEntry(entry);
+            zos.write("---\nname: nested-skill\ndescription: Nested skill\n---\n\nNested"
+                .getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("nested-skill/references/guide.md");
+            zos.putNextEntry(entry);
+            zos.write("Nested guide".getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("nested-skill/.DS_Store");
+            zos.putNextEntry(entry);
+            zos.write(new byte[] {0, 0, 0, 1});
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+    
     /**
      * Create a zip without SKILL.md.
      */
@@ -722,8 +854,7 @@ class SkillZipParserTest {
     }
     
     /**
-     * Create a skill zip that contains macOS metadata files (._*) like ._LICENSE.txt. Parser should ignore them and
-     * only include normal resources.
+     * Create a skill zip that contains macOS metadata files. Parser should ignore them and only include normal resources.
      */
     private byte[] createSkillZipWithMacOsMetadataFiles() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -744,6 +875,16 @@ class SkillZipParserTest {
             entry = new ZipEntry("test-skill/._LICENSE.txt");
             zos.putNextEntry(entry);
             zos.write(new byte[] {0, 5, 0, 0}); // binary AppleDouble-like content
+            zos.closeEntry();
+            
+            entry = new ZipEntry("test-skill/.DS_Store");
+            zos.putNextEntry(entry);
+            zos.write(new byte[] {0, 0, 0, 1});
+            zos.closeEntry();
+            
+            entry = new ZipEntry("__MACOSX/test-skill/._LICENSE.txt");
+            zos.putNextEntry(entry);
+            zos.write(new byte[] {0, 5, 0, 0});
             zos.closeEntry();
         }
         return baos.toByteArray();
@@ -924,6 +1065,30 @@ class SkillZipParserTest {
             entry = new ZipEntry("skill-beta/configs/settings.yaml");
             zos.putNextEntry(entry);
             zos.write("key: value".getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+    
+    private byte[] createMultiSkillZipWithNestedSkillDirectory() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("skill-alpha/SKILL.md");
+            zos.putNextEntry(entry);
+            zos.write("---\nname: skill-alpha\ndescription: Alpha skill\n---\n\nAlpha"
+                .getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("skill-alpha/nested-skill/SKILL.md");
+            zos.putNextEntry(entry);
+            zos.write("---\nname: nested-skill\ndescription: Nested skill\n---\n\nNested"
+                .getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("skill-beta/SKILL.md");
+            zos.putNextEntry(entry);
+            zos.write("---\nname: skill-beta\ndescription: Beta skill\n---\n\nBeta"
+                .getBytes());
             zos.closeEntry();
         }
         return baos.toByteArray();

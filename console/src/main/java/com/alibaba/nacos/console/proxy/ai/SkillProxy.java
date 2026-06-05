@@ -33,10 +33,14 @@ import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Skill proxy.
@@ -76,6 +80,11 @@ public class SkillProxy {
     
     public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {
         return skillHandler.uploadSkillFromZip(request);
+    }
+    
+    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
+        List<SkillUploadPrecheckRequest> requests) throws NacosException {
+        return skillHandler.batchPrecheckUploadSkill(requests);
     }
     
     public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,

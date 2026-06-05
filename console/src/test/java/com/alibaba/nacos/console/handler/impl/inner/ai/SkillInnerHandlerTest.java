@@ -32,6 +32,8 @@ import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -178,6 +180,27 @@ class SkillInnerHandlerTest {
         
         assertEquals(SKILL_NAME, result);
         verify(skillOperationService).uploadSkillFromZip(request);
+    }
+    
+    @Test
+    void testBatchPrecheckUploadSkill() throws NacosException {
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(NAMESPACE_ID);
+        request.setSkillName(SKILL_NAME);
+        SkillUploadPrecheckResult precheckResult = new SkillUploadPrecheckResult();
+        precheckResult.setSkillName(SKILL_NAME);
+        java.util.List<SkillUploadPrecheckRequest> requests =
+            java.util.Collections.singletonList(request);
+        java.util.List<SkillUploadPrecheckResult> results =
+            java.util.Collections.singletonList(precheckResult);
+        when(skillOperationService.batchPrecheckUploadSkill(requests)).thenReturn(results);
+        
+        java.util.List<SkillUploadPrecheckResult> actual =
+            skillInnerHandler.batchPrecheckUploadSkill(requests);
+        
+        assertEquals(1, actual.size());
+        assertEquals(SKILL_NAME, actual.get(0).getSkillName());
+        verify(skillOperationService).batchPrecheckUploadSkill(requests);
     }
     
     @Test

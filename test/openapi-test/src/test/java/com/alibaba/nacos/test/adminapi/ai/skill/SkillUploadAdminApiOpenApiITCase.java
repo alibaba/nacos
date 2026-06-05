@@ -35,8 +35,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Expected capability: single ZIP upload creates a draft from {@code SKILL.md} plus resource files, overwrite
- *     updates an existing editing draft, and batch upload reports successful skill folders with persisted content.</li>
+ *     <li>Expected capability: single ZIP upload creates a draft from {@code SKILL.md} plus resource files, precheck
+ *     reports existing-draft overwrite target, overwrite updates an editing draft, and batch upload reports successful skill
+ *     folders with persisted content.</li>
  *     <li>Boundary/validation: namespace defaults to public; upload version resolves from SKILL.md before
  *     targetVersion; duplicate working drafts require overwrite; batch upload keeps valid folders while reporting
  *     invalid folders in {@code failed}.</li>
@@ -67,6 +68,17 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 "file", skillName + ".zip", "application/zip",
                 buildSkillZip(skillName, "1.0.0", "Duplicate body.", "duplicate guide")),
                 409, ErrorCode.RESOURCE_CONFLICT, "working version");
+        JsonNode precheck = assertUploadResult(postJsonRaw(ADMIN_SKILL_PATH
+                        + "/upload/precheck", Query.EMPTY,
+                precheckRequestJson(skillName, "1.0.0", "duplicate guide", "9.9.9")))
+                .get("data");
+        assertEquals("WARNING", precheck.get("status").asText(), precheck.toString());
+        assertEquals(skillName, precheck.get("skillName").asText(), precheck.toString());
+        assertEquals("duplicate guide", precheck.get("description").asText(), precheck.toString());
+        assertEquals("1.0.0", precheck.get("parsedVersion").asText(), precheck.toString());
+        assertEquals("1.0.0", precheck.get("resolvedVersion").asText(), precheck.toString());
+        assertEquals(1, precheck.get("actions").size(), precheck.toString());
+        assertActionContains(precheck.get("actions"), "OVERWRITE_DRAFT");
         HttpResponse overwritten = postMultipartRaw(ADMIN_SKILL_PATH + "/upload",
                 uploadQuery(true, "9.9.9", "openapi overwrite"), "file", skillName + ".zip",
                 "application/zip",
@@ -147,6 +159,18 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         addIfNotBlank(query, "commitMsg", commitMsg);
         return query;
     }
+    
+    private String precheckRequestJson(String skillName, String parsedVersion, String description,
+            String targetVersion) {
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("namespaceId", DEFAULT_NAMESPACE);
+        request.put("skillName", skillName);
+        request.put("description", description);
+        request.put("parsedVersion", parsedVersion);
+        request.put("versionSource", "SKILL.md frontmatter");
+        request.put("targetVersion", targetVersion);
+        return JacksonUtils.toJson(request);
+    }
 
     private void assertUploadSuccess(HttpResponse response, String skillName) {
         JsonNode root = assertUploadResult(response);
@@ -167,5 +191,14 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
             }
         }
         throw new AssertionError("Expected " + expected + " in " + array);
+    }
+    
+    private void assertActionContains(JsonNode array, String expectedType) {
+        for (JsonNode item : array) {
+            if (expectedType.equals(item.get("type").asText())) {
+                return;
+            }
+        }
+        throw new AssertionError("Expected action " + expectedType + " in " + array);
     }
 }
