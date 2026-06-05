@@ -23,7 +23,7 @@ remain, and `Pending` means no IT verifies that surface yet.
 | Public maintainer SDK surface | Required scenarios | Current status | Current/missing coverage |
 | --- | --- | --- | --- |
 | `CoreMaintainerService` server state and health probes | Factory creation, standalone server liveness, readiness, server state shape, unavailable-server error mapping, and auth-disabled/admin-surface assumptions. | Covered | Covers factory creation through `NacosMaintainerFactory`, real HTTP liveness/readiness, and server-state result mapping against standalone server. Unavailable-server and auth-enabled mappings are intentionally left for the later auth/error-mapping batch. |
-| `CoreMaintainerService` namespace operations | Create, query, update, duplicate, delete, absent namespace, default/blank namespace boundaries, and cleanup idempotency. | Pending | No maintainer SDK IT yet. |
+| `CoreMaintainerService` namespace operations | Create, query, update, duplicate, delete, absent namespace, default/blank namespace boundaries, and cleanup idempotency. | Covered | Covers default namespace lookup, explicit namespace create/get/list/update/check/delete lifecycle, duplicate namespace controlled exception, invalid namespace ID/name controlled exceptions, absent-after-delete check behavior, and cleanup idempotency. |
 | `CoreMaintainerService` cluster/plugin/loader operations | Read-only cluster/plugin/loader queries, controlled operation boundaries, and dangerous mutation exclusions for shared standalone CI. | Partial | Covers ID generator list, cluster node list, current client map, cluster loader metrics, and plugin list. Mutating operations such as lookup-mode changes, log-level updates, connection reloads, and plugin status/config updates remain pending or intentionally excluded until their standalone CI safety is reviewed. |
 | `ConfigMaintainerService` config lifecycle | Publish, query, list, metadata update, history query, delete, absent config, required parameter validation, and cleanup idempotency. | Pending | No maintainer SDK IT yet. |
 | `BetaConfigMaintainerService` | Publish/query/delete beta config, required beta IP validation, and normal config compatibility. | Pending | No maintainer SDK IT yet. |
@@ -36,5 +36,5 @@ remain, and `Pending` means no IT verifies that surface yet.
 
 Current in-scope maintained surfaces: 9.
 
-- Strict coverage: 1 / 9 = 11.1%
-- Effective coverage: (1 + 1 * 0.5) / 9 = 16.7%
+- Strict coverage: 2 / 9 = 22.2%
+- Effective coverage: (2 + 1 * 0.5) / 9 = 27.8%
