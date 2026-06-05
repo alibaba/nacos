@@ -141,6 +141,9 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         
         assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, firstContent));
         assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, secondContent));
+        ConfigDetailInfo currentConfig = maintainerService.getConfig(dataId, group, namespaceId);
+        assertConfigDetail(currentConfig, dataId, group, namespaceId, secondContent);
+        assertNotNull(currentConfig.getId());
         
         Page<ConfigHistoryBasicInfo> historyPage =
                 maintainerService.listConfigHistory(dataId, group, namespaceId, 1, 10);
@@ -148,25 +151,34 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertTrue(historyPage.getTotalCount() >= 2,
                 "two publishes should produce at least two history rows");
         
-        Long secondHistoryId = null;
+        ConfigHistoryBasicInfo newestHistory = historyPage.getPageItems().get(0);
+        assertEquals(dataId, newestHistory.getDataId());
+        assertEquals(group, newestHistory.getGroupName());
+        assertEquals(namespaceId, newestHistory.getNamespaceId());
+        assertNotNull(newestHistory.getId());
+
+        boolean hasInitialHistory = false;
         for (ConfigHistoryBasicInfo history : historyPage.getPageItems()) {
             assertEquals(dataId, history.getDataId());
             assertEquals(group, history.getGroupName());
             assertEquals(namespaceId, history.getNamespaceId());
             assertNotNull(history.getId());
-            ConfigHistoryDetailInfo detail = maintainerService.getConfigHistoryInfo(dataId, group,
-                    namespaceId, history.getId());
-            if (secondContent.equals(detail.getContent())) {
-                secondHistoryId = history.getId();
-                break;
+            if (history.getOpType().trim().startsWith("I")) {
+                hasInitialHistory = true;
             }
         }
-        assertNotNull(secondHistoryId, "history detail should contain the second publish content");
+        assertTrue(hasInitialHistory, "history list should contain the initial publish record");
+
+        ConfigHistoryDetailInfo historyDetail =
+                maintainerService.getConfigHistoryInfo(dataId, group, namespaceId,
+                        newestHistory.getId());
+        assertEquals(firstContent, historyDetail.getContent());
         
         ConfigHistoryDetailInfo previousDetail =
                 maintainerService.getPreviousConfigHistoryInfo(dataId, group, namespaceId,
-                        secondHistoryId);
+                        currentConfig.getId());
         assertEquals(firstContent, previousDetail.getContent());
+        assertEquals(newestHistory.getId(), previousDetail.getId());
     }
     
     @Test
