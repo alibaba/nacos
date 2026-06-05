@@ -16,11 +16,17 @@
 
 package com.alibaba.nacos.test.maintainer.core;
 
+import com.alibaba.nacos.api.model.response.ConnectionInfo;
+import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
+import com.alibaba.nacos.api.model.response.NacosMember;
+import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
 import com.alibaba.nacos.test.maintainer.MaintainerSdkBaseITCase;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: maintainer SDK factory can create a client and
  *     query liveness/readiness/server-state through a running standalone Nacos
- *     server.</li>
+ *     server, plus read-only core operational views.</li>
  *     <li>Boundary/validation: profile wiring resolves the default
  *     {@code nacos.host}/{@code nacos.port} server address.</li>
  *     <li>Error handling: unavailable-server mappings are documented as pending
@@ -52,5 +58,25 @@ class CoreMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         assertTrue(maintainerService.readiness());
         Map<String, String> serverState = maintainerService.getServerState();
         assertNotNull(serverState);
+    }
+    
+    @Test
+    void shouldQueryReadOnlyCoreOperationalViews() throws Exception {
+        ConfigMaintainerService maintainerService = createConfigMaintainerService();
+        
+        List<IdGeneratorInfo> idGenerators = maintainerService.getIdGenerators();
+        assertNotNull(idGenerators);
+        
+        Collection<NacosMember> members = maintainerService.listClusterNodes("", "");
+        assertNotNull(members);
+        
+        Map<String, ConnectionInfo> currentClients = maintainerService.getCurrentClients();
+        assertNotNull(currentClients);
+        
+        ServerLoaderMetrics loaderMetrics = maintainerService.getClusterLoaderMetrics();
+        assertNotNull(loaderMetrics);
+        
+        List<Map<String, Object>> plugins = maintainerService.listPlugins(null);
+        assertNotNull(plugins);
     }
 }

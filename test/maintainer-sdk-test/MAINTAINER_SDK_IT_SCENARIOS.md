@@ -24,7 +24,7 @@ remain, and `Pending` means no IT verifies that surface yet.
 | --- | --- | --- | --- |
 | `CoreMaintainerService` server state and health probes | Factory creation, standalone server liveness, readiness, server state shape, unavailable-server error mapping, and auth-disabled/admin-surface assumptions. | Covered | Covers factory creation through `NacosMaintainerFactory`, real HTTP liveness/readiness, and server-state result mapping against standalone server. Unavailable-server and auth-enabled mappings are intentionally left for the later auth/error-mapping batch. |
 | `CoreMaintainerService` namespace operations | Create, query, update, duplicate, delete, absent namespace, default/blank namespace boundaries, and cleanup idempotency. | Pending | No maintainer SDK IT yet. |
-| `CoreMaintainerService` cluster/plugin/loader operations | Read-only cluster/plugin/loader queries, controlled operation boundaries, and dangerous mutation exclusions for shared standalone CI. | Pending | No maintainer SDK IT yet. |
+| `CoreMaintainerService` cluster/plugin/loader operations | Read-only cluster/plugin/loader queries, controlled operation boundaries, and dangerous mutation exclusions for shared standalone CI. | Partial | Covers ID generator list, cluster node list, current client map, cluster loader metrics, and plugin list. Mutating operations such as lookup-mode changes, log-level updates, connection reloads, and plugin status/config updates remain pending or intentionally excluded until their standalone CI safety is reviewed. |
 | `ConfigMaintainerService` config lifecycle | Publish, query, list, metadata update, history query, delete, absent config, required parameter validation, and cleanup idempotency. | Pending | No maintainer SDK IT yet. |
 | `BetaConfigMaintainerService` | Publish/query/delete beta config, required beta IP validation, and normal config compatibility. | Pending | No maintainer SDK IT yet. |
 | `ConfigHistoryMaintainerService` | Config history list/detail/previous lookup across publish/update/delete lifecycle. | Pending | No maintainer SDK IT yet. |
@@ -37,4 +37,4 @@ remain, and `Pending` means no IT verifies that surface yet.
 Current in-scope maintained surfaces: 9.
 
 - Strict coverage: 1 / 9 = 11.1%
-- Effective coverage: (1 + 0 * 0.5) / 9 = 11.1%
+- Effective coverage: (1 + 1 * 0.5) / 9 = 16.7%
