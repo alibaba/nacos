@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -71,6 +72,14 @@ public abstract class MaintainerSdkBaseITCase {
     
     protected String randomMaintainerName(String scenario) {
         return "maintainer-sdk-it-" + scenario + "-" + randomSuffix();
+    }
+    
+    protected String randomDataId(String scenario) {
+        return randomMaintainerName(scenario) + ".data";
+    }
+    
+    protected String randomGroup(String scenario) {
+        return ("MAINTAINER_SDK_IT_" + scenario + "_" + randomSuffix()).toUpperCase(Locale.ROOT);
     }
     
     private String randomSuffix() {
