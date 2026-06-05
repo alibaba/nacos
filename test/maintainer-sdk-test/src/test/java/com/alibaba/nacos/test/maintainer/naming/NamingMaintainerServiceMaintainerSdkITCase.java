@@ -142,15 +142,19 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 maintainerService.batchUpdateInstanceMetadata(service,
                         Collections.singletonList(instance), batchMetadata);
         assertNotNull(batchResult);
-        Instance batchUpdated = maintainerService.getInstanceDetail(service, instance);
-        assertEquals("updated", batchUpdated.getMetadata().get("batch"));
+        waitUntil("batch metadata should be visible", () -> {
+            Instance batchUpdated = maintainerService.getInstanceDetail(service, instance);
+            return "updated".equals(batchUpdated.getMetadata().get("batch"));
+        });
         
         InstanceMetadataBatchResult deleteResult =
                 maintainerService.batchDeleteInstanceMetadata(service,
                         Collections.singletonList(instance), batchMetadata);
         assertNotNull(deleteResult);
-        Instance metadataDeleted = maintainerService.getInstanceDetail(service, instance);
-        assertFalse(metadataDeleted.getMetadata().containsKey("batch"));
+        waitUntil("batch metadata should be removed", () -> {
+            Instance metadataDeleted = maintainerService.getInstanceDetail(service, instance);
+            return !metadataDeleted.getMetadata().containsKey("batch");
+        });
         
         assertNotNull(maintainerService.deregisterInstance(service, instance));
         assertThrows(NacosException.class, () -> maintainerService.getInstanceDetail(service,

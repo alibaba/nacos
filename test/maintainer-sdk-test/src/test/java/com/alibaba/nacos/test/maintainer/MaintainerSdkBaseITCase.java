@@ -29,6 +29,8 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * Shared standalone-server maintainer SDK integration test infrastructure.
  *
@@ -91,6 +93,25 @@ public abstract class MaintainerSdkBaseITCase {
         return ("MAINTAINER_SDK_IT_" + scenario + "_" + randomSuffix()).toUpperCase(Locale.ROOT);
     }
     
+    protected void waitUntil(String reason, CheckedCondition condition) throws Exception {
+        long deadline = System.currentTimeMillis() + 10000;
+        Throwable lastFailure = null;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                if (condition.evaluate()) {
+                    return;
+                }
+            } catch (Throwable throwable) {
+                lastFailure = throwable;
+            }
+            Thread.sleep(500);
+        }
+        if (null == lastFailure) {
+            fail(reason);
+        }
+        fail(reason + ", last failure: " + lastFailure.getMessage(), lastFailure);
+    }
+    
     private String randomSuffix() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
@@ -124,5 +145,11 @@ public abstract class MaintainerSdkBaseITCase {
     protected interface CleanupAction {
         
         void run() throws Exception;
+    }
+    
+    @FunctionalInterface
+    protected interface CheckedCondition {
+        
+        boolean evaluate() throws Exception;
     }
 }
