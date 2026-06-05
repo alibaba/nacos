@@ -20,8 +20,10 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
@@ -159,6 +161,69 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 maintainerService.getPreviousConfigHistoryInfo(dataId, group, namespaceId,
                         latestHistory.getId());
         assertEquals(firstContent, previousDetail.getContent());
+    }
+    
+    @Test
+    void shouldManageBetaConfig() throws Exception {
+        ConfigMaintainerService maintainerService = createConfigMaintainerService();
+        String dataId = randomDataId("beta");
+        String group = randomGroup("config");
+        String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        String content = "maintainer.config.beta=true";
+        String betaIps = "127.0.0.1";
+        addCleanup(() -> maintainerService.stopBeta(dataId, group, namespaceId));
+        addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
+        
+        NacosException missingBetaIps = assertThrows(NacosException.class,
+                () -> maintainerService.publishBetaConfig(dataId, group, namespaceId, content,
+                        null, null, null, null, ConfigType.TEXT.getType(), ""));
+        assertEquals(NacosException.INVALID_PARAM, missingBetaIps.getErrCode());
+        
+        assertTrue(maintainerService.publishBetaConfig(dataId, group, namespaceId, content,
+                "maintainer-sdk-it", "maintainer", "beta", "beta config",
+                ConfigType.TEXT.getType(), betaIps));
+        ConfigGrayInfo beta = maintainerService.queryBeta(dataId, group, namespaceId);
+        assertConfigDetail(beta, dataId, group, namespaceId, content);
+        assertEquals("beta", beta.getGrayName());
+        assertNotNull(beta.getGrayRule());
+        
+        assertTrue(maintainerService.stopBeta(dataId, group, namespaceId));
+        assertThrows(NacosException.class, () -> maintainerService.queryBeta(dataId, group,
+                namespaceId));
+    }
+    
+    @Test
+    void shouldQueryConfigListenerDiagnostics() throws Exception {
+        ConfigMaintainerService maintainerService = createConfigMaintainerService();
+        String dataId = randomDataId("listener");
+        String group = randomGroup("config");
+        String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
+        
+        assertTrue(maintainerService.publishConfig(dataId, group, namespaceId,
+                "maintainer.config.listener=true"));
+        ConfigListenerInfo configListeners =
+                maintainerService.getListeners(dataId, group, namespaceId, false);
+        assertNotNull(configListeners);
+        assertEquals(ConfigListenerInfo.QUERY_TYPE_CONFIG, configListeners.getQueryType());
+        assertNotNull(configListeners.getListenersStatus());
+        
+        ConfigListenerInfo ipListeners =
+                maintainerService.getAllSubClientConfigByIp("127.0.0.1", true, namespaceId,
+                        false);
+        assertNotNull(ipListeners);
+        assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, ipListeners.getQueryType());
+        assertNotNull(ipListeners.getListenersStatus());
+    }
+    
+    @Test
+    void shouldRunConfigOpsMaintenanceCommands() throws Exception {
+        ConfigMaintainerService maintainerService = createConfigMaintainerService();
+        
+        assertEquals("Local cache updated from store successfully!",
+                maintainerService.updateLocalCacheFromStore());
+        assertEquals("Log level updated successfully! Module: config-server, Log Level: INFO",
+                maintainerService.setLogLevel("config-server", "INFO"));
     }
     
     @Test
