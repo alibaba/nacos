@@ -620,7 +620,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Query query = Query.newInstance().initParams(params);
         return query.isEmpty() ? path : path + "?" + query.toQueryUrl();
     }
-
+    
     private RequestResource buildRequestResource(Service service) {
         return buildRequestResource(service.getNamespaceId(), service.getGroupName(),
             service.getName());

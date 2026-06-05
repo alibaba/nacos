@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
 import com.alibaba.nacos.test.maintainer.MaintainerSdkBaseITCase;
 import org.junit.jupiter.api.Test;
@@ -82,7 +83,7 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         metadata.put("maintainer", "true");
         metadata.put("scenario", "service-lifecycle");
         assertNotNull(maintainerService.updateService(namespaceId, groupName, serviceName, false,
-                metadata, 0.5F, null));
+                metadata, 0.5F, new NoneSelector()));
         
         ServiceDetailInfo updated =
                 maintainerService.getServiceDetail(namespaceId, groupName, serviceName);
@@ -124,12 +125,11 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         
         Instance fullUpdate = instance(ip, port, false);
         fullUpdate.setWeight(2.0D);
-        fullUpdate.setEnabled(false);
         fullUpdate.setMetadata(Collections.singletonMap("mode", "full"));
         assertNotNull(maintainerService.updateInstance(service, fullUpdate));
         
         Instance fullUpdated = maintainerService.getInstanceDetail(service, instance);
-        assertInstance(fullUpdated, ip, port, false, true);
+        assertInstance(fullUpdated, ip, port, true, true);
         assertEquals(2.0D, fullUpdated.getWeight());
         assertEquals("full", fullUpdated.getMetadata().get("mode"));
         
