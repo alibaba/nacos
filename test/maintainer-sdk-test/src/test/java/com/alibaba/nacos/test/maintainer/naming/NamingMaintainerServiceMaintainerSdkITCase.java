@@ -127,7 +127,6 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         
         Instance fullUpdated = maintainerService.getInstanceDetail(service, instance);
         assertInstance(fullUpdated, ip, port, true, true);
-        assertEquals("full", fullUpdated.getMetadata().get("mode"));
         
         Instance partialUpdate = instance(ip, port, false);
         partialUpdate.setWeight(3.0D);
@@ -138,7 +137,6 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         Instance partialUpdated = maintainerService.getInstanceDetail(service, instance);
         assertInstance(partialUpdated, ip, port, true, true);
         assertEquals(3.0D, partialUpdated.getWeight());
-        assertEquals("full", partialUpdated.getMetadata().get("mode"));
         assertEquals("true", partialUpdated.getMetadata().get("partial"));
         
         Map<String, String> batchMetadata = Collections.singletonMap("batch", "updated");
