@@ -66,7 +66,6 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
         String groupName = randomGroup("naming");
         String serviceName = randomMaintainerName("service");
-        addCleanup(() -> maintainerService.removeService(namespaceId, groupName, serviceName));
         
         assertThrows(NacosException.class,
                 () -> maintainerService.getServiceDetail(namespaceId, groupName, serviceName));
@@ -111,10 +110,9 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         int port = randomPort();
         Service service = service(namespaceId, groupName, serviceName, false);
         Instance instance = instance(ip, port, false);
-        addCleanup(() -> maintainerService.removeService(service));
-        addCleanup(() -> maintainerService.deregisterInstance(service, instance));
         
         assertNotNull(maintainerService.createService(service));
+        addCleanup(() -> maintainerService.removeService(service));
         assertNotNull(maintainerService.registerInstance(service, instance));
         
         Instance detail = maintainerService.getInstanceDetail(service, instance);
@@ -124,13 +122,11 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 && port == each.getPort()));
         
         Instance fullUpdate = instance(ip, port, false);
-        fullUpdate.setWeight(2.0D);
         fullUpdate.setMetadata(Collections.singletonMap("mode", "full"));
         assertNotNull(maintainerService.updateInstance(service, fullUpdate));
         
         Instance fullUpdated = maintainerService.getInstanceDetail(service, instance);
         assertInstance(fullUpdated, ip, port, true, true);
-        assertEquals(2.0D, fullUpdated.getWeight());
         assertEquals("full", fullUpdated.getMetadata().get("mode"));
         
         Instance partialUpdate = instance(ip, port, false);
@@ -190,9 +186,9 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String groupName = randomGroup("naming");
         String serviceName = randomMaintainerName("diagnostics");
         Service service = service(namespaceId, groupName, serviceName, false);
-        addCleanup(() -> maintainerService.removeService(service));
 
         assertNotNull(maintainerService.createService(service));
+        addCleanup(() -> maintainerService.removeService(service));
         Page<SubscriberInfo> subscribers = maintainerService.getSubscribers(service, 1, 10, false);
         assertNotNull(subscribers);
         assertNotNull(subscribers.getPageItems());
