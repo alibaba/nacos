@@ -33,5 +33,6 @@
     <modules>
         <module>openapi-test</module>
         <module>java-sdk-test</module>
+        <module>maintainer-sdk-test</module>
     </modules>
 </project>
