@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
@@ -123,6 +125,40 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertTrue(maintainerService.deleteConfigs(Collections.singletonList(detail.getId())));
         assertThrows(NacosException.class,
                 () -> maintainerService.getConfig(dataId, group, namespaceId));
+    }
+    
+    @Test
+    void shouldQueryConfigHistory() throws Exception {
+        ConfigMaintainerService maintainerService = createConfigMaintainerService();
+        String dataId = randomDataId("history");
+        String group = randomGroup("config");
+        String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        String firstContent = "maintainer.config.history.first=true";
+        String secondContent = "maintainer.config.history.second=true";
+        addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
+        
+        assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, firstContent));
+        assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, secondContent));
+        
+        Page<ConfigHistoryBasicInfo> historyPage =
+                maintainerService.listConfigHistory(dataId, group, namespaceId, 1, 10);
+        assertNotNull(historyPage);
+        assertTrue(historyPage.getTotalCount() >= 2,
+                "two publishes should produce at least two history rows");
+        ConfigHistoryBasicInfo latestHistory = historyPage.getPageItems().get(0);
+        assertEquals(dataId, latestHistory.getDataId());
+        assertEquals(group, latestHistory.getGroupName());
+        assertEquals(namespaceId, latestHistory.getNamespaceId());
+        assertNotNull(latestHistory.getId());
+        
+        ConfigHistoryDetailInfo latestDetail = maintainerService.getConfigHistoryInfo(dataId, group,
+                namespaceId, latestHistory.getId());
+        assertEquals(secondContent, latestDetail.getContent());
+        
+        ConfigHistoryDetailInfo previousDetail =
+                maintainerService.getPreviousConfigHistoryInfo(dataId, group, namespaceId,
+                        latestHistory.getId());
+        assertEquals(firstContent, previousDetail.getContent());
     }
     
     @Test
