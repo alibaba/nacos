@@ -45,4 +45,5 @@ The following SDK surfaces are documented by
 later batches:
 
 - deprecated `NamingMaintainService`
-- maintainer-client SDK interfaces
+- maintainer-client SDK interfaces are tracked separately in
+  `test/maintainer-sdk-test`
