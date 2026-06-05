@@ -157,8 +157,14 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         });
         
         assertNotNull(maintainerService.deregisterInstance(service, instance));
-        assertThrows(NacosException.class, () -> maintainerService.getInstanceDetail(service,
-                instance));
+        waitUntil("deregistered instance should be absent", () -> {
+            try {
+                maintainerService.getInstanceDetail(service, instance);
+                return false;
+            } catch (NacosException ignored) {
+                return true;
+            }
+        });
     }
     
     @Test

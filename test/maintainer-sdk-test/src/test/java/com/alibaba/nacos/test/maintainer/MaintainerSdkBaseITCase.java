@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.maintainer;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.maintainer.client.NacosMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory;
@@ -42,6 +43,9 @@ public abstract class MaintainerSdkBaseITCase {
     
     protected static final String NACOS_PORT = System.getProperty("nacos.port", "8848");
     
+    protected static final String NACOS_CONTEXT_PATH = System.getProperty("nacos.contextPath",
+            "/nacos");
+
     protected static final String SERVER_ADDR = NACOS_HOST + ":" + NACOS_PORT;
     
     private final Deque<CleanupAction> cleanupActions = new ArrayDeque<>();
@@ -73,7 +77,8 @@ public abstract class MaintainerSdkBaseITCase {
     
     protected Properties maintainerProperties() {
         Properties properties = new Properties();
-        properties.setProperty("serverAddr", SERVER_ADDR);
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, SERVER_ADDR);
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, NACOS_CONTEXT_PATH);
         return properties;
     }
     
