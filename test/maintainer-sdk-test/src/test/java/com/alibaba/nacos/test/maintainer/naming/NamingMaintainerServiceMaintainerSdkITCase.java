@@ -22,8 +22,10 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
+import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
 import com.alibaba.nacos.test.maintainer.MaintainerSdkBaseITCase;
 import org.junit.jupiter.api.Test;
@@ -181,6 +183,33 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 invalidPort));
     }
     
+    @Test
+    void shouldQueryNamingDiagnostics() throws Exception {
+        NamingMaintainerService maintainerService = createNamingMaintainerService();
+        String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        String groupName = randomGroup("naming");
+        String serviceName = randomMaintainerName("diagnostics");
+        Service service = service(namespaceId, groupName, serviceName, false);
+        addCleanup(() -> maintainerService.removeService(service));
+
+        assertNotNull(maintainerService.createService(service));
+        Page<SubscriberInfo> subscribers = maintainerService.getSubscribers(service, 1, 10, false);
+        assertNotNull(subscribers);
+        assertNotNull(subscribers.getPageItems());
+
+        MetricsInfo statusOnlyMetrics = maintainerService.getMetrics(true);
+        assertNotNull(statusOnlyMetrics);
+        assertNotNull(statusOnlyMetrics.getStatus());
+
+        MetricsInfo fullMetrics = maintainerService.getMetrics(false);
+        assertNotNull(fullMetrics);
+        assertNotNull(fullMetrics.getStatus());
+        assertTrue(fullMetrics.getServiceCount() >= 0);
+        assertTrue(fullMetrics.getClientCount() >= 0);
+
+        assertEquals("ok", maintainerService.setLogLevel("naming-main", "INFO"));
+    }
+
     private Service service(String namespaceId, String groupName, String serviceName,
             boolean ephemeral) {
         Service service = new Service();
