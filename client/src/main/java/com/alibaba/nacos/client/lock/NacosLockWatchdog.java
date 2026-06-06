@@ -95,9 +95,11 @@ public class NacosLockWatchdog {
                     unregister(key);
                 }
             } catch (NacosException e) {
-                LOGGER.error("Error renewing lock: {}", key, e);
+                LOGGER.error("Error renewing lock: {}, removing from watchdog", key, e);
+                unregister(key);
             } catch (Exception e) {
-                LOGGER.error("Unexpected error renewing lock: {}", key, e);
+                LOGGER.error("Unexpected error renewing lock: {}, removing from watchdog", key, e);
+                unregister(key);
             }
         }, interval, interval, TimeUnit.MILLISECONDS);
         renewTasks.put(key, future);

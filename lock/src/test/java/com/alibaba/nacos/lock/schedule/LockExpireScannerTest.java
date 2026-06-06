@@ -131,4 +131,83 @@ public class LockExpireScannerTest {
         // Should NOT remove because it has waiters
         verify(lockManager, never()).removeMutexLock(any(LockKey.class));
     }
+    
+    @Test
+    public void testScanHandlesShowLocksExceptionGracefully() {
+        when(lockManager.showLocks()).thenThrow(new RuntimeException("test error"));
+        
+        // 不应抛出异常，scanExpiredLocks 内部 catch 了所有异常
+        scanner.scanExpiredLocks();
+    }
+    
+    @Test
+    public void testScanHandlesExpireFailureGracefully() {
+        ReentrantAtomicLock expiredLock = new ReentrantAtomicLock("expired-key");
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setOwner("owner-1");
+        lockInfo.setConnectionId("conn-1");
+        lockInfo.setEndTime(System.currentTimeMillis() - 1000);
+        expiredLock.tryLock(lockInfo);
+        
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey("expired-key"), expiredLock);
+        when(lockManager.showLocks()).thenReturn(locks);
+        when(lockOperationService.expire(any(LockInstance.class)))
+            .thenThrow(new RuntimeException("raft error"));
+        
+        // expireViaRaft 内部 catch 了异常，不应崩溃
+        scanner.scanExpiredLocks();
+    }
+    
+    @Test
+    public void testScanSkipsNonAbstractAtomicLockInstance() {
+        // AtomicLockService 的非 AbstractAtomicLock 实现应被跳过
+        AtomicLockService nonAbstractLock = new AtomicLockService() {
+            
+            @Override
+            public String getKey() {
+                return "non-abstract";
+            }
+            
+            @Override
+            public Boolean tryLock(com.alibaba.nacos.lock.model.LockInfo lockInfo) {
+                return false;
+            }
+            
+            @Override
+            public Boolean unLock(com.alibaba.nacos.lock.model.LockInfo lockInfo) {
+                return false;
+            }
+            
+            @Override
+            public Boolean renew(com.alibaba.nacos.lock.model.LockInfo lockInfo) {
+                return false;
+            }
+            
+            @Override
+            public Boolean forceRelease() {
+                return false;
+            }
+            
+            @Override
+            public Boolean autoExpire() {
+                return false;
+            }
+            
+            @Override
+            public Boolean isClear() {
+                return true;
+            }
+        };
+        
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey("non-abstract"), nonAbstractLock);
+        when(lockManager.showLocks()).thenReturn(locks);
+        
+        scanner.scanExpiredLocks();
+        
+        // 非 AbstractAtomicLock 实例不应触发任何操作
+        verify(lockManager, never()).removeMutexLock(any(LockKey.class));
+        verify(lockOperationService, never()).expire(any(LockInstance.class));
+    }
 }

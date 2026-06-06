@@ -34,7 +34,7 @@ public class LockInstance implements Serializable {
     
     private String key;
     
-    private Long expiredTime;
+    private long expiredTime;
     
     private Map<String, ? extends Serializable> params;
     
@@ -53,7 +53,7 @@ public class LockInstance implements Serializable {
      */
     private boolean waiterRetry;
     
-    public LockInstance(String key, Long expiredTime, String lockType) {
+    public LockInstance(String key, long expiredTime, String lockType) {
         this.key = key;
         this.expiredTime = expiredTime;
         this.lockType = lockType;
@@ -62,11 +62,11 @@ public class LockInstance implements Serializable {
     public LockInstance() {
     }
     
-    public Long getExpiredTime() {
+    public long getExpiredTime() {
         return expiredTime;
     }
-    
-    public void setExpiredTime(Long expiredTime) {
+
+    public void setExpiredTime(long expiredTime) {
         this.expiredTime = expiredTime;
     }
     

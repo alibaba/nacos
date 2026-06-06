@@ -19,11 +19,14 @@ package com.alibaba.nacos.lock.core.reentrant;
 import com.alibaba.nacos.api.lock.model.LockResult;
 import com.alibaba.nacos.lock.core.reentrant.mutex.MutexAtomicLock;
 import com.alibaba.nacos.lock.model.LockInfo;
+import com.alibaba.nacos.lock.model.WaitEntry;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -398,6 +401,236 @@ class AbstractAtomicLockTest {
         assertTrue(lock.unLock(nullOwnerInfo),
             "null owner should NOT be able to release someone else's lock");
         assertNull(lock.getOwner(), "Lock released by unauthenticated request");
+    }
+    
+    // ==================== forceRelease connectionId 清除 ====================
+    
+    @Test
+    @DisplayName("forceRelease() 应清除 connectionId")
+    void testForceReleaseClearsConnectionId() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 30000);
+        lock.tryLock(lockInfo);
+        assertEquals("conn-1", lock.getConnectionId());
+        
+        lock.forceRelease();
+        
+        assertNull(lock.getOwner());
+        assertEquals(0, lock.getReentrantCount());
+        assertEquals(0, lock.getExpiredTimestamp());
+        assertNull(lock.getConnectionId(),
+            "forceRelease() 应清除 connectionId");
+    }
+    
+    @Test
+    @DisplayName("forceRelease 后 connectionId 已清除，不会误匹配")
+    void testForceReleaseClearsConnectionIdNoStaleMatch() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 30000);
+        lock.tryLock(lockInfo);
+        
+        lock.forceRelease();
+        assertTrue(lock.isClear());
+        
+        assertNull(lock.getConnectionId(),
+            "forceRelease 后 connectionId 应为 null");
+        
+        assertFalse(lock.forceRelease(),
+            "对已释放的锁再次 forceRelease 应返回 false");
+    }
+    
+    // ==================== tryLockAsQueueHead deadline 保持 ====================
+    
+    @Test
+    @DisplayName("tryLockAsQueueHead 重试失败时不应重置等待 deadline")
+    void testTryLockAsQueueHeadDoesNotResetDeadline() throws InterruptedException {
+        LockInfo holder = createLockInfo("owner-0", "conn-0", 30000);
+        lock.tryLock(holder);
+        
+        LockInfo waiter = createLockInfo("owner-1", "conn-1", 5000);
+        lock.addWaiter(waiter);
+        
+        WaitEntry head = lock.getWaitQueue().get(0);
+        long originalDeadline = head.getWaitDeadline();
+        
+        Thread.sleep(100);
+        
+        LockInfo retryInfo = createLockInfo("owner-1", "conn-1", 5000);
+        retryInfo.setWaitTimeMs(5000);
+        LockResult result = lock.tryLockAsQueueHead(retryInfo);
+        
+        assertFalse(result.isSuccess());
+        assertTrue(result.isWaiting());
+        
+        WaitEntry headAfter = lock.getWaitQueue().get(0);
+        long newDeadline = headAfter.getWaitDeadline();
+        
+        assertEquals(originalDeadline, newDeadline,
+            "tryLockAsQueueHead 重试失败时不应重置 deadline");
+    }
+    
+    @Test
+    @DisplayName("tryLockAsQueueHead 重试不延长 deadline，等待者正确过期")
+    void testDeadlineNotResetWaiterExpiresCorrectly() {
+        LockInfo holder = createLockInfo("owner-0", "conn-0", 30000);
+        lock.tryLock(holder);
+        
+        LockInfo waiter = createLockInfo("owner-1", "conn-1", 100);
+        lock.addWaiter(waiter);
+        
+        for (int i = 0; i < 5; i++) {
+            LockInfo retryInfo = createLockInfo("owner-1", "conn-1", 100);
+            retryInfo.setWaitTimeMs(100);
+            lock.tryLockAsQueueHead(retryInfo);
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        
+        assertFalse(lock.hasWaiters(),
+            "等待者应已过期（原始 deadline 为入队后 100ms）");
+    }
+    
+    // ==================== 过期等待者静默丢弃 ====================
+    
+    @Test
+    @DisplayName("过期等待者被 peekFirstWaiter 静默丢弃")
+    void testExpiredWaitersDiscardedWithoutNotification() {
+        LockInfo holder = createLockInfo("owner-0", "conn-0", 30000);
+        lock.tryLock(holder);
+        
+        LockInfo expiredWaiter = createLockInfo("owner-expired", "conn-expired", 1000);
+        lock.addWaiter(expiredWaiter);
+        lock.getWaitQueue().get(0).setWaitDeadline(System.currentTimeMillis() - 1000);
+        
+        LockInfo validWaiter = createLockInfo("owner-valid", "conn-valid", 10000);
+        lock.addWaiter(validWaiter);
+        
+        assertEquals(2, lock.getWaitQueue().size());
+        
+        WaitEntry first = lock.peekFirstWaiter();
+        assertNotNull(first);
+        assertEquals("owner-valid", first.getOwner());
+        
+        assertEquals(1, lock.getWaitQueue().size(),
+            "过期等待者被静默移除");
+    }
+    
+    @Test
+    @DisplayName("pollFirstWaiter 跳过中间的过期条目")
+    void testPollFirstWaiterDiscardsExpiredMiddleEntries() {
+        LockInfo holder = createLockInfo("owner-0", "conn-0", 30000);
+        lock.tryLock(holder);
+        
+        lock.addWaiter(createLockInfo("owner-1", "conn-1", 10000));
+        lock.addWaiter(createLockInfo("owner-2", "conn-2", 10000));
+        lock.addWaiter(createLockInfo("owner-3", "conn-3", 10000));
+        assertEquals(3, lock.getWaitQueue().size());
+        
+        lock.getWaitQueue().get(0).setWaitDeadline(System.currentTimeMillis() - 2000);
+        lock.getWaitQueue().get(1).setWaitDeadline(System.currentTimeMillis() - 1000);
+        
+        WaitEntry entry = lock.pollFirstWaiter();
+        assertNotNull(entry);
+        assertEquals("owner-3", entry.getOwner());
+        
+        assertEquals(0, lock.getWaitQueue().size());
+    }
+    
+    // ==================== removeWaiter(owner, connectionId) ====================
+    
+    @Test
+    @DisplayName("removeWaiter 按 owner+connectionId 精确移除")
+    void testRemoveWaiterByOwnerAndConnection() {
+        lock.addWaiter(createLockInfo("owner-1", "conn-1", 5000));
+        lock.addWaiter(createLockInfo("owner-2", "conn-2", 5000));
+        lock.addWaiter(createLockInfo("owner-1", "conn-3", 5000));
+        
+        assertTrue(lock.removeStaleWaiter("owner-1"));
+        assertEquals(2, lock.getWaitQueue().size());
+        // 第一个 owner-1 被移除，owner-1:conn-3 仍在
+        assertEquals("owner-2", lock.getWaitQueue().get(0).getOwner());
+        assertEquals("owner-1", lock.getWaitQueue().get(1).getOwner());
+        assertEquals("conn-3", lock.getWaitQueue().get(1).getConnectionId());
+    }
+    
+    @Test
+    @DisplayName("removeWaiter 找不到匹配时返回 false")
+    void testRemoveWaiterNotFound() {
+        lock.addWaiter(createLockInfo("owner-1", "conn-1", 5000));
+        assertFalse(lock.removeStaleWaiter("owner-99"));
+        assertEquals(1, lock.getWaitQueue().size());
+    }
+    
+    @Test
+    @DisplayName("removeWaiter 空队列返回 false")
+    void testRemoveWaiterEmptyQueue() {
+        assertFalse(lock.removeStaleWaiter("owner-1"));
+    }
+    
+    // ==================== tryLockAsQueueHead 边界情况 ====================
+    
+    @Test
+    @DisplayName("tryLockAsQueueHead 传 null 返回 fail")
+    void testTryLockAsQueueHeadNull() {
+        LockResult result = lock.tryLockAsQueueHead(null);
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    @DisplayName("tryLockAsQueueHead 队列为空时返回 fail")
+    void testTryLockAsQueueHeadEmptyQueue() {
+        LockInfo info = createLockInfo("owner-1", "conn-1", 5000);
+        LockResult result = lock.tryLockAsQueueHead(info);
+        assertFalse(result.isSuccess());
+    }
+    
+    @Test
+    @DisplayName("tryLockAsQueueHead 锁被持有且 waitTimeMs<=0 时返回 fail")
+    void testTryLockAsQueueHeadLockHeldNoWait() {
+        LockInfo holder = createLockInfo("owner-0", "conn-0", 30000);
+        lock.tryLock(holder);
+        
+        LockInfo waiter = createLockInfo("owner-1", "conn-1", 0);
+        lock.addWaiter(waiter);
+        
+        // waitTimeMs=0, 锁被持有 → 返回 fail 而非 waiting
+        LockResult result = lock.tryLockAsQueueHead(waiter);
+        assertFalse(result.isSuccess());
+        assertFalse(result.isWaiting());
+    }
+    
+    // ==================== forceRelease 清除所有字段 ====================
+    
+    @Test
+    @DisplayName("forceRelease 清除所有状态字段")
+    void testForceReleaseClearsAllFields() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 30000);
+        lock.tryLock(lockInfo);
+        
+        lock.forceRelease();
+        
+        assertNull(lock.getOwner());
+        assertEquals(0, lock.getReentrantCount());
+        assertEquals(0, lock.getExpiredTimestamp());
+        assertNull(lock.getConnectionId());
+        assertTrue(lock.isClear());
+    }
+    
+    // ==================== autoExpire 过期后清除所有字段 ====================
+    
+    @Test
+    @DisplayName("autoExpire 过期后清除所有字段")
+    void testAutoExpireClearsAllFields() {
+        LockInfo lockInfo = createLockInfo("owner-1", "conn-1", 0);
+        lockInfo.setEndTime(System.currentTimeMillis() - 1000);
+        assertTrue(lock.tryLock(lockInfo));
+        
+        assertTrue(lock.autoExpire());
+        assertNull(lock.getOwner());
+        assertEquals(0, lock.getReentrantCount());
+        assertEquals(0, lock.getExpiredTimestamp());
+        assertNull(lock.getConnectionId());
     }
     
     private LockInfo createLockInfo(String owner, String connectionId, long waitTimeMs) {

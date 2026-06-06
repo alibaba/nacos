@@ -624,6 +624,36 @@ public class LockOperationServiceImplTest {
             .setOperation(LockOperationEnum.EXPIRE.name()).build();
     }
     
+    // ==================== expireLock 僵尸锁测试 ====================
+    
+    @Test
+    public void testExpireLockCreatesZombieEntryWhenLockAlreadyRemoved() {
+        buildService();
+        // 模拟场景：过期扫描器读取到一个锁，但当 onApply 执行时，
+        // 该锁已被移除（例如被 CLEANUP_CONNECTION 清理）。
+        // expireLock 调用 getMutexLock()，该方法通过 computeIfAbsent 创建新的空锁。
+        
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        // getMutexLock 在 key 不存在时会创建新锁（computeIfAbsent）
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+            .thenAnswer(invocation -> {
+                LockKey key = invocation.getArgument(0);
+                return locks.computeIfAbsent(key, k -> new ReentrantAtomicLock(k.getKey()));
+            });
+        
+        WriteRequest request = buildExpireRequest("owner-1", "zombie-key");
+        Response response = lockOperationService.onApply(request);
+        assertTrue(response.getSuccess());
+        
+        // BUG: 虽然之前不存在锁，但 map 中创建了一个僵尸锁条目
+        LockKey zombieKey = new LockKey(LockConstants.NACOS_LOCK_TYPE, "zombie-key");
+        assertTrue(locks.containsKey(zombieKey),
+            "expireLock 不应为不存在的锁创建条目，但产生了僵尸锁");
+        AtomicLockService zombieLock = locks.get(zombieKey);
+        assertTrue(zombieLock.isClear(),
+            "僵尸锁应为空（无 owner）");
+    }
+    
     // ==================== CLEANUP_CONNECTION tests ====================
     
     @Test

@@ -42,11 +42,11 @@ public class NonReentrantAtomicLock extends AbstractAtomicLock {
     
     @Override
     protected Boolean doTryLock(LockInfo lockInfo) {
-        if (getOwner() == null) {
-            setOwner(lockInfo.getOwner());
-            setConnectionId(lockInfo.getConnectionId());
-            setReentrantCount(1);
-            setExpiredTimestamp(lockInfo.getEndTime());
+        if (owner == null) {
+            owner = lockInfo.getOwner();
+            connectionId = lockInfo.getConnectionId();
+            reentrantCount = 1;
+            expiredTimestamp = lockInfo.getEndTime();
             return true;
         }
         return false;
@@ -54,13 +54,13 @@ public class NonReentrantAtomicLock extends AbstractAtomicLock {
     
     @Override
     protected Boolean doUnLock(LockInfo lockInfo) {
-        if (getOwner() == null) {
+        if (owner == null) {
             return false;
         }
-        setOwner(null);
-        setConnectionId(null);
-        setReentrantCount(0);
-        setExpiredTimestamp(0);
+        owner = null;
+        connectionId = null;
+        reentrantCount = 0;
+        expiredTimestamp = 0;
         return true;
     }
 }

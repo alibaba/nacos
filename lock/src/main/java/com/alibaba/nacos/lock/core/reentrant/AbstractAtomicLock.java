@@ -45,13 +45,13 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
     
     private final String key;
     
-    private String owner;
+    protected String owner;
     
-    private String connectionId;
+    protected String connectionId;
     
-    private int reentrantCount;
+    protected int reentrantCount;
     
-    private long expiredTimestamp;
+    protected long expiredTimestamp;
     
     private final LinkedList<WaitEntry> waitQueue = new LinkedList<>();
     
@@ -65,7 +65,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
      * <p>Marked as transient because ReentrantLock is not serializable.
      * Must be reinitialized after deserialization via readObject().
      */
-    private transient ReentrantLock lock = new ReentrantLock();
+    protected transient ReentrantLock lock = new ReentrantLock();
     
     public AbstractAtomicLock(String key) {
         this.key = key;
@@ -120,42 +120,6 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
         lock.lock();
         try {
             return expiredTimestamp;
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    protected void setOwner(String owner) {
-        lock.lock();
-        try {
-            this.owner = owner;
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    protected void setConnectionId(String connectionId) {
-        lock.lock();
-        try {
-            this.connectionId = connectionId;
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    protected void setReentrantCount(int count) {
-        lock.lock();
-        try {
-            this.reentrantCount = count;
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    protected void setExpiredTimestamp(long timestamp) {
-        lock.lock();
-        try {
-            this.expiredTimestamp = timestamp;
         } finally {
             lock.unlock();
         }
@@ -288,8 +252,6 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             }
             
             if (lockInfo.getWaitTimeMs() > 0) {
-                long deadline = System.currentTimeMillis() + lockInfo.getWaitTimeMs();
-                head.setWaitDeadline(deadline);
                 return LockResult.waiting(0);
             }
             return LockResult.fail("Lock is held by another owner");
@@ -444,6 +406,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
             owner = null;
             reentrantCount = 0;
             expiredTimestamp = 0;
+            connectionId = null;
             return true;
         } finally {
             lock.unlock();

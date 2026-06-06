@@ -43,17 +43,17 @@ public class ReentrantAtomicLock extends AbstractAtomicLock {
     @Override
     protected Boolean doTryLock(LockInfo lockInfo) {
         String requestOwner = lockInfo.getOwner();
-        if (getOwner() == null) {
-            setOwner(requestOwner);
-            setConnectionId(lockInfo.getConnectionId());
-            setReentrantCount(1);
-            setExpiredTimestamp(lockInfo.getEndTime());
+        if (owner == null) {
+            owner = requestOwner;
+            connectionId = lockInfo.getConnectionId();
+            reentrantCount = 1;
+            expiredTimestamp = lockInfo.getEndTime();
             return true;
         }
-        if (requestOwner.equals(getOwner())) {
-            setReentrantCount(getReentrantCount() + 1);
-            setConnectionId(lockInfo.getConnectionId());
-            setExpiredTimestamp(lockInfo.getEndTime());
+        if (requestOwner.equals(owner)) {
+            reentrantCount++;
+            connectionId = lockInfo.getConnectionId();
+            expiredTimestamp = lockInfo.getEndTime();
             return true;
         }
         return false;
@@ -61,14 +61,14 @@ public class ReentrantAtomicLock extends AbstractAtomicLock {
     
     @Override
     protected Boolean doUnLock(LockInfo lockInfo) {
-        if (getReentrantCount() <= 0) {
+        if (reentrantCount <= 0) {
             return false;
         }
-        setReentrantCount(getReentrantCount() - 1);
-        if (getReentrantCount() == 0) {
-            setOwner(null);
-            setConnectionId(null);
-            setExpiredTimestamp(0);
+        reentrantCount--;
+        if (reentrantCount == 0) {
+            owner = null;
+            connectionId = null;
+            expiredTimestamp = 0;
         }
         return true;
     }
