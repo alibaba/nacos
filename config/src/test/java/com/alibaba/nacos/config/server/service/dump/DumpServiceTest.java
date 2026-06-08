@@ -19,7 +19,6 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
@@ -81,9 +80,6 @@ class DumpServiceTest {
     @MockitoBean
     ServerMemberManager memberManager;
     
-    @MockitoBean
-    ConfigMigrateService configMigrateService;
-    
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     MockedStatic<ConfigExecutor> configExecutorMocked;
@@ -113,8 +109,7 @@ class DumpServiceTest {
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService",
             dataSourceService);
         dumpService = new ExternalDumpService(configInfoPersistService, namespacePersistService,
-            historyConfigInfoPersistService, configInfoGrayPersistService, memberManager,
-            configMigrateService);
+            historyConfigInfoPersistService, configInfoGrayPersistService, memberManager);
         configExecutorMocked = Mockito.mockStatic(ConfigExecutor.class);
         historyConfigCleanerManagerMockedStatic =
             Mockito.mockStatic(HistoryConfigCleanerManager.class);

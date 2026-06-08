@@ -37,13 +37,10 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
@@ -62,7 +59,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -84,7 +80,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -104,20 +99,12 @@ class ConfigInnerHandlerTest {
     private ConfigListenerStateDelegate configListenerStateDelegate;
     
     @Mock
-    private ConfigMigrateService configMigrateService;
-    
-    @Mock
     private NamespacePersistService namespacePersistService;
-    
-    @Mock
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
     @Mock
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     ConfigInnerHandler configInnerHandler;
-    
-    private boolean cachedGrayCompatibleModel;
     
     private ConfigurableEnvironment cachedEnv;
     
@@ -125,18 +112,15 @@ class ConfigInnerHandlerTest {
     void setUp() {
         cachedEnv = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new MockEnvironment());
-        cachedGrayCompatibleModel = PropertyUtil.isGrayCompatibleModel();
         configInnerHandler =
             new ConfigInnerHandler(configOperationService, configInfoPersistService,
-                configDetailService, namespacePersistService, configInfoBetaPersistService,
-                configInfoGrayPersistService, configListenerStateDelegate, configMigrateService);
+                configDetailService, namespacePersistService, configInfoGrayPersistService,
+                configListenerStateDelegate);
     }
     
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnv);
-        PropertyUtil.setGrayCompatibleModel(cachedGrayCompatibleModel);
-        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", false);
     }
     
     @Test
@@ -544,52 +528,13 @@ class ConfigInnerHandlerTest {
     }
     
     @Test
-    void removeBetaConfigWithGrayCompatibleModelAndOldTableVersion() {
-        PropertyUtil.setGrayCompatibleModel(true);
-        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", true);
+    void removeBetaConfig() {
         assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
             "requestIpApp",
             "srcUser"));
         verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant",
             BetaGrayRule.TYPE_BETA,
             "remoteIp", "srcUser");
-        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configInfoBetaPersistService).removeConfigInfo4Beta("dataId", "group", "tenant");
-    }
-    
-    @Test
-    void removeBetaConfigWithGrayCompatibleModelAndLatestTableVersion() {
-        PropertyUtil.setGrayCompatibleModel(true);
-        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", false);
-        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
-            "requestIpApp",
-            "srcUser"));
-        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configInfoBetaPersistService, never()).removeConfigInfo4Beta("dataId", "group",
-            "tenant");
-    }
-    
-    @Test
-    void removeBetaConfigWithoutGrayCompatibleModel() {
-        PropertyUtil.setGrayCompatibleModel(false);
-        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
-            "requestIpApp",
-            "srcUser"));
-        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configInfoBetaPersistService, never()).removeConfigInfo4Beta("dataId", "group",
-            "tenant");
     }
     
     @Test

@@ -1292,7 +1292,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService"] }]
+  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService"] }]
 },
 {
   "name":"com.alibaba.nacos.config.server.service.ConfigReadinessCheckService",
@@ -1371,14 +1371,14 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.core.namespace.repository.NamespacePersistService","com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService","com.alibaba.nacos.config.server.service.merge.MergeDatumService","com.alibaba.nacos.core.cluster.ServerMemberManager","com.alibaba.nacos.core.distributed.ProtocolManager"] }, {"name":"init","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.core.namespace.repository.NamespacePersistService","com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService","com.alibaba.nacos.core.cluster.ServerMemberManager","com.alibaba.nacos.core.distributed.ProtocolManager"] }, {"name":"init","parameterTypes":[] }]
 },
 {
   "name":"com.alibaba.nacos.config.server.service.dump.ExternalDumpService",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.core.namespace.repository.NamespacePersistService","com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService","com.alibaba.nacos.config.server.service.merge.MergeDatumService","com.alibaba.nacos.core.cluster.ServerMemberManager"] }, {"name":"init","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.core.namespace.repository.NamespacePersistService","com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService","com.alibaba.nacos.core.cluster.ServerMemberManager"] }, {"name":"init","parameterTypes":[] }]
 },
 {
   "name":"com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor"

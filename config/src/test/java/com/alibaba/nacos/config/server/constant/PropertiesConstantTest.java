@@ -47,8 +47,5 @@ class PropertiesConstantTest {
         assertEquals("dumpChangeOn", PropertiesConstant.DUMP_CHANGE_ON);
         assertEquals("dumpChangeWorkerInterval", PropertiesConstant.DUMP_CHANGE_WORKER_INTERVAL);
         assertEquals("nacos.config.retention.days", PropertiesConstant.CONFIG_RENTENTION_DAYS);
-        assertEquals("nacos.config.gray.compatible.model", PropertiesConstant.GRAY_CAPATIBEL_MODEL);
-        assertEquals("nacos.config.namespace.compatible.mode",
-            PropertiesConstant.NAMESPACE_COMPATIBLE_MODE);
     }
 }

@@ -33,7 +33,6 @@ import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
@@ -42,7 +41,6 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.servlet.ServletContext;
@@ -60,7 +58,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
@@ -118,17 +115,16 @@ class ConfigControllerV3Test {
     @MockitoBean
     private ConfigDetailService configDetailService;
     
-    @MockitoBean
-    private ConfigMigrateService configMigrateService;
-    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
         configControllerV3 =
-            new ConfigControllerV3(configOperationService, configInfoPersistService,
-                configDetailService, configInfoGrayPersistService, configInfoBetaPersistService,
-                namespacePersistService, configListenerStateDelegate, configMigrateService);
+            new ConfigControllerV3(configOperationService,
+                configInfoPersistService, configDetailService,
+                configInfoGrayPersistService,
+                namespacePersistService,
+                configListenerStateDelegate);
         mockmvc = MockMvcBuilders.standaloneSetup(configControllerV3).build();
     }
     
@@ -974,27 +970,6 @@ class ConfigControllerV3Test {
             mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("0", code);
-    }
-    
-    @Test
-    void testStopBetaWithGrayCompatibleModel() throws Exception {
-        try (MockedStatic<PropertyUtil> propertyUtilMock =
-            Mockito.mockStatic(PropertyUtil.class)) {
-            propertyUtilMock.when(PropertyUtil::isGrayCompatibleModel).thenReturn(true);
-            ReflectionTestUtils.setField(configControllerV3, "oldTableVersion", true);
-            
-            MockHttpServletRequestBuilder builder =
-                MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH + "/beta")
-                    .param("dataId", "test").param("groupName", "test")
-                    .param("namespaceId", "");
-            
-            String actualValue =
-                mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-            String code = JacksonUtils.toObj(actualValue).get("code").toString();
-            assertEquals("0", code);
-            Mockito.verify(configInfoBetaPersistService)
-                .removeConfigInfo4Beta("test", "test", "public");
-        }
     }
     
     @Test

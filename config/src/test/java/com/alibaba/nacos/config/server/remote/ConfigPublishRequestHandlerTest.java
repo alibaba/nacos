@@ -30,7 +30,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -65,9 +64,6 @@ class ConfigPublishRequestHandlerTest {
     @Mock
     ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    @Mock
-    ConfigMigrateService configMigrateService;
-    
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     private ConfigPublishRequestHandler configPublishRequestHandler;
@@ -77,7 +73,7 @@ class ConfigPublishRequestHandlerTest {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         ConfigOperationService configOperationService =
             new ConfigOperationService(configInfoPersistService,
-                configInfoGrayPersistService, configMigrateService);
+                configInfoGrayPersistService);
         configPublishRequestHandler = new ConfigPublishRequestHandler(configOperationService);
         DatasourceConfiguration.setEmbeddedStorage(false);
     }

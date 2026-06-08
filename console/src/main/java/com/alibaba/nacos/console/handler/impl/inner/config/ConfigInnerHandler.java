@@ -42,16 +42,13 @@ import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.ResponseUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
@@ -110,35 +107,21 @@ public class ConfigInnerHandler implements ConfigHandler {
     
     private final ConfigListenerStateDelegate configListenerStateDelegate;
     
-    private final ConfigMigrateService configMigrateService;
-    
     private NamespacePersistService namespacePersistService;
     
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
-    
-    /**
-     * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
-     */
-    private boolean oldTableVersion;
     
     public ConfigInnerHandler(ConfigOperationService configOperationService,
         ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
         NamespacePersistService namespacePersistService,
-        ConfigInfoBetaPersistService configInfoBetaPersistService,
         ConfigInfoGrayPersistService configInfoGrayPersistService,
-        ConfigListenerStateDelegate configListenerStateDelegate,
-        ConfigMigrateService configMigrateService) {
+        ConfigListenerStateDelegate configListenerStateDelegate) {
         this.configOperationService = configOperationService;
         this.configInfoPersistService = configInfoPersistService;
         this.configDetailService = configDetailService;
         this.namespacePersistService = namespacePersistService;
-        this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configListenerStateDelegate = configListenerStateDelegate;
-        this.configMigrateService = configMigrateService;
-        this.oldTableVersion = namespacePersistService.isExistTable("config_info_beta");
     }
     
     @Override
@@ -528,9 +511,6 @@ public class ConfigInnerHandler implements ConfigHandler {
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, namespaceId,
                 BetaGrayRule.TYPE_BETA,
                 remoteIp, srcUser);
-            configMigrateService.removeConfigInfoGrayMigrate(dataId, group, namespaceId,
-                BetaGrayRule.TYPE_BETA,
-                remoteIp, srcUser);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             return false;
@@ -539,9 +519,6 @@ public class ConfigInnerHandler implements ConfigHandler {
             System.currentTimeMillis(),
             remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA,
             ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        if (PropertyUtil.isGrayCompatibleModel() && oldTableVersion) {
-            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
-        }
         ConfigChangePublisher.notifyConfigChange(
             new ConfigDataChangeEvent(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA,
                 System.currentTimeMillis()));

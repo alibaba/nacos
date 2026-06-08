@@ -22,7 +22,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -46,17 +45,13 @@ public class DumpChangeConfigWorker implements Runnable {
     
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
-    private ConfigMigrateService configMigrateService;
-    
     Timestamp startTime;
     
     public DumpChangeConfigWorker(ConfigInfoPersistService configInfoPersistService,
         HistoryConfigInfoPersistService historyConfigInfoPersistService,
-        ConfigMigrateService configMigrateService,
         Timestamp startTime) {
         this.configInfoPersistService = configInfoPersistService;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
-        this.configMigrateService = configMigrateService;
         this.startTime = startTime;
     }
     
@@ -97,7 +92,6 @@ public class DumpChangeConfigWorker implements Runnable {
                             new Object[] {GroupKey2.getKey(configInfo.getDataId(),
                                 configInfo.getGroup())},
                             configInfo.getTenant());
-                        configMigrateService.checkDeletedConfigMigrateState(configInfo);
                     }
                 }
                 if (configDeleted.size() < pageSize) {
@@ -117,7 +111,6 @@ public class DumpChangeConfigWorker implements Runnable {
                     configInfoPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
                 for (ConfigInfoStateWrapper cf : changeConfigs) {
-                    configMigrateService.checkChangedConfigMigrateState(cf);
                     if (StringUtils.isBlank(cf.getTenant())) {
                         continue;
                     }
