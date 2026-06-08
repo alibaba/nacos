@@ -107,8 +107,6 @@ class AsyncNotifyServiceTest {
                 any(TimeUnit.class)))
             .thenAnswer(invocation -> null);
         
-        notifySingleRpcTask.setTag("test");
-        notifySingleRpcTask.setBeta(false);
         AsyncRpcNotifyCallBack asyncRpcNotifyCallBack =
             new AsyncRpcNotifyCallBack(asyncNotifyService,
                 notifySingleRpcTask);

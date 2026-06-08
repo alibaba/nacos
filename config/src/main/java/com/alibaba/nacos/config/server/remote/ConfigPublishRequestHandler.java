@@ -76,8 +76,6 @@ public class ConfigPublishRequestHandler
             String dataId = request.getDataId();
             String group = request.getGroup();
             String content = request.getContent();
-            final boolean namespaceTransferred =
-                NamespaceUtil.isNeedTransferNamespace(request.getTenant());
             final String tenant = NamespaceUtil.processNamespaceParameter(request.getTenant());
             
             final String srcIp = meta.getClientIp();
@@ -116,7 +114,6 @@ public class ConfigPublishRequestHandler
             configRequestInfo.setRequestIpApp(meta.getLabels().get(Constants.APPNAME));
             configRequestInfo.setBetaIps(request.getAdditionParam("betaIps"));
             configRequestInfo.setCasMd5(request.getCasMd5());
-            configRequestInfo.setNamespaceTransferred(namespaceTransferred);
             
             String encryptedDataKeyFinal = null;
             if (StringUtils.isNotBlank(encryptedDataKey)) {

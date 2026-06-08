@@ -19,7 +19,6 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -84,9 +83,6 @@ class EmbeddedDumpServiceTest {
     private ProtocolManager protocolManager;
     
     @Mock
-    private ConfigMigrateService configMigrateService;
-    
-    @Mock
     private CPProtocol protocol;
     
     @Mock
@@ -114,8 +110,7 @@ class EmbeddedDumpServiceTest {
             dataSourceService);
         dumpService = new TestEmbeddedDumpService(configInfoPersistService,
             namespacePersistService, historyConfigInfoPersistService,
-            configInfoGrayPersistService, memberManager, protocolManager,
-            configMigrateService);
+            configInfoGrayPersistService, memberManager, protocolManager);
     }
     
     @AfterEach
@@ -303,12 +298,10 @@ class EmbeddedDumpServiceTest {
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoGrayPersistService configInfoGrayPersistService,
-            ServerMemberManager memberManager, ProtocolManager protocolManager,
-            ConfigMigrateService configMigrateService) {
+            ServerMemberManager memberManager, ProtocolManager protocolManager) {
             super(configInfoPersistService, namespacePersistService,
                 historyConfigInfoPersistService,
-                configInfoGrayPersistService, memberManager, protocolManager,
-                configMigrateService);
+                configInfoGrayPersistService, memberManager, protocolManager);
         }
         
         @Override

@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
@@ -66,9 +65,6 @@ class DumpProcessorTest {
     @Mock
     ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    @Mock
-    ConfigMigrateService configMigrateService;
-    
     ExternalDumpService dumpService;
     
     DumpProcessor dumpProcessor;
@@ -94,7 +90,7 @@ class DumpProcessorTest {
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         
         dumpService = new ExternalDumpService(configInfoPersistService, null, null,
-            configInfoGrayPersistService, null, configMigrateService);
+            configInfoGrayPersistService, null);
         dumpProcessor = new DumpProcessor(configInfoPersistService, configInfoGrayPersistService);
         Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
         for (Field filed : declaredFields) {

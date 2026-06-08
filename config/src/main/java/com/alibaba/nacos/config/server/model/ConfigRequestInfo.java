@@ -38,8 +38,6 @@ public class ConfigRequestInfo implements Serializable {
     
     private String casMd5;
     
-    private boolean namespaceTransferred;
-    
     private Boolean updateForExist = Boolean.TRUE;
     
     public ConfigRequestInfo(String srcIp, String srcType, String requestIpApp, String betaIps,
@@ -100,14 +98,6 @@ public class ConfigRequestInfo implements Serializable {
     
     public void setUpdateForExist(Boolean updateForExist) {
         this.updateForExist = updateForExist;
-    }
-    
-    public boolean isNamespaceTransferred() {
-        return namespaceTransferred;
-    }
-    
-    public void setNamespaceTransferred(boolean namespaceTransferred) {
-        this.namespaceTransferred = namespaceTransferred;
     }
     
     @Override
