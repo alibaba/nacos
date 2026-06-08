@@ -65,7 +65,7 @@ public class LockInstance implements Serializable {
     public long getExpiredTime() {
         return expiredTime;
     }
-
+    
     public void setExpiredTime(long expiredTime) {
         this.expiredTime = expiredTime;
     }
