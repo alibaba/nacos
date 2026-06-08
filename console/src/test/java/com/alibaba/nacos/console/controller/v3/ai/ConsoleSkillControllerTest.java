@@ -17,7 +17,10 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.param.SkillListHttpParamExtractor;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -26,6 +29,8 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.proxy.ai.SkillProxy;
+import com.alibaba.nacos.core.model.form.PageForm;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
@@ -182,6 +187,17 @@ class ConsoleSkillControllerTest {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(1, result.getData().getTotalCount());
+    }
+    
+    @Test
+    void testListSkillsUsesListParamExtractor() throws Exception {
+        ExtractorManager.Extractor extractor = ConsoleSkillController.class
+            .getMethod("listSkills", SkillListForm.class,
+                AiResourceFilterableForm.class, PageForm.class)
+            .getAnnotation(ExtractorManager.Extractor.class);
+        
+        assertNotNull(extractor);
+        assertEquals(SkillListHttpParamExtractor.class, extractor.httpExtractor());
     }
     
     @Test

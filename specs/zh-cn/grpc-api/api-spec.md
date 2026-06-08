@@ -186,7 +186,7 @@ inner 请求的详细规则由
 | `ConfigFuzzyWatchChangeNotifyRequest` | `ConfigFuzzyWatchChangeNotifyResponse` | server push | `groupKey`, `changeType` | 通知客户端模糊订阅资源变化。 |
 | `ConfigFuzzyWatchSyncRequest` | `ConfigFuzzyWatchSyncResponse` | server push | `syncType`, `groupKeyPattern`, `contexts`, `totalBatch`, `currentBatch` | 同步模糊订阅初始化或 diff 状态。 |
 | `ClientConfigMetricRequest` | `ClientConfigMetricResponse` | read | `metricsKeys` | 查询客户端配置指标。 |
-| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `isBeta`, `tag`, `grayName` | 通过[内部 RPC 模型](../design/foundation-internal-rpc-spec.md)在服务端节点之间同步配置变更事件；Config Notify 语义由[AP 一致性规范](../design/foundation-ap-consistency-spec.md)定义。 |
+| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `grayName`，legacy `isBeta`/`tag` | 通过[内部 RPC 模型](../design/foundation-internal-rpc-spec.md)在服务端节点之间同步配置变更事件；Config Notify 语义由[AP 一致性规范](../design/foundation-ap-consistency-spec.md)定义。从 Nacos 3.3 版本线开始，服务端处理不得再使用 legacy `isBeta` 或 `tag` 字段把 beta/tag 变更迁移为 `grayName`。 |
 
 ### 7.3 Naming
 

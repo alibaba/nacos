@@ -34,5 +34,6 @@
         <module>openapi-test</module>
         <module>lock-test</module>
         <module>java-sdk-test</module>
+        <module>maintainer-sdk-test</module>
     </modules>
 </project>

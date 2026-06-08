@@ -81,10 +81,15 @@ loaded together for a database family.
 Mapper implementations must provide base CRUD SQL and table-specific SQL for
 repository operations. Current mapper families cover:
 
-- config data, gray/beta data, tags, and history;
+- current config data, gray data, tags, and history;
 - namespace and capacity records;
-- config migration queries;
 - AI resource metadata and version records.
+
+Starting with the Nacos 3.3 line, datasource dialect plugins are not expected to
+provide runtime Config migration queries for empty-tenant/default-namespace
+duplicates or legacy beta/tag gray tables. Such migration, if needed for a
+pre-3.0 deployment, is an upgrade prerequisite rather than a server runtime
+mapper responsibility.
 
 `MapperManager` loads mapper SPI implementations and indexes them by
 `dataSource + tableName`. Missing data source or table mapper is a startup or

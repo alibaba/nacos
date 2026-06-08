@@ -104,9 +104,16 @@ Implemented Open API surface:
 
 ## 5. Admin API Implemented Behavior
 
-Admin APIs are operator-oriented and default to `ApiType.ADMIN_API`. Existing docs
-state that v3 Admin API is not compatible with v1/v2 Admin API, and that v1/v2
-Admin API compatibility requires `nacos.core.auth.admin.enabled=true`.
+Admin APIs are operator-oriented and default to `ApiType.ADMIN_API`. The standard
+Nacos 3.x Admin API uses the `/v3/admin/*` path. v1/v2 Admin APIs have been
+removed from the current Nacos main distribution, and new integrations should
+migrate to the v3 Admin API. If v1/v2 Admin APIs are still required during
+migration, use the
+[nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)
+approach and follow the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
+`nacos.core.auth.admin.enabled` only controls whether Admin API authentication is
+enabled; it is not a legacy Admin API compatibility switch.
 
 Current modules:
 

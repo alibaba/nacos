@@ -118,8 +118,10 @@ must refresh the gray serving cache for the corresponding `grayName`. Runtime
 query selection first evaluates gray rules and then falls back to formal config
 according to the [Config Gray Release Spec](config-gray-release-spec.md).
 
-Mixed-version compatibility for beta/tag gray models may translate old request
-fields into `grayName`, but new behavior must use the gray model.
+Starting with the Nacos 3.3 line, consistency and dump paths do not translate
+legacy beta/tag storage rows into `grayName`, and do not synchronize duplicate
+default-namespace records between empty tenant and `public`. Dump tasks operate
+only on the persisted Config identity for the current model.
 
 ## 8. Failure And Recovery
 

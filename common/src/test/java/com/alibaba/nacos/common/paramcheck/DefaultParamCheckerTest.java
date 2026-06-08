@@ -330,6 +330,13 @@ class DefaultParamCheckerTest {
         assertEquals(
             "Skill name may only contain lowercase letters, numbers, and hyphens, and must not start or end with a hyphen",
             actual.getMessage());
+        // Strict skill name should not start or end with hyphen
+        paramInfo.setSkillName("test-");
+        actual = paramChecker.checkParamInfoList(paramInfos);
+        assertFalse(actual.isSuccess());
+        assertEquals(
+            "Skill name may only contain lowercase letters, numbers, and hyphens, and must not start or end with a hyphen",
+            actual.getMessage());
         // Max Length
         paramInfo.setSkillName(buildStringLength(65));
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -344,6 +351,34 @@ class DefaultParamCheckerTest {
         paramInfo.setSkillName("skill-name1");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertTrue(actual.isSuccess());
+    }
+    
+    @Test
+    void testCheckParamInfoForSkillSearchName() {
+        ParamInfo paramInfo = new ParamInfo();
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        // Fuzzy search term should allow trailing hyphen
+        paramInfo.setSkillSearchName("test-");
+        ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
+        assertTrue(actual.isSuccess());
+        // Pattern
+        paramInfo.setSkillSearchName("Skill_Name");
+        actual = paramChecker.checkParamInfoList(paramInfos);
+        assertFalse(actual.isSuccess());
+        assertEquals("Skill search name may only contain lowercase letters, numbers, and hyphens",
+            actual.getMessage());
+        // Max Length
+        paramInfo.setSkillSearchName(buildStringLength(65));
+        actual = paramChecker.checkParamInfoList(paramInfos);
+        assertFalse(actual.isSuccess());
+        assertEquals("Skill search name must be 1-64 characters", actual.getMessage());
+        // Consecutive hyphens
+        paramInfo.setSkillSearchName("test--skill");
+        actual = paramChecker.checkParamInfoList(paramInfos);
+        assertFalse(actual.isSuccess());
+        assertEquals("Skill search name must not contain consecutive hyphens (--)",
+            actual.getMessage());
     }
     
     @Test

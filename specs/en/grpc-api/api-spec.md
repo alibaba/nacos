@@ -202,7 +202,7 @@ inner server-to-server rules are defined by the
 | `ConfigFuzzyWatchChangeNotifyRequest` | `ConfigFuzzyWatchChangeNotifyResponse` | server push | `groupKey`, `changeType` | Notify client of fuzzy-watch resource changes. |
 | `ConfigFuzzyWatchSyncRequest` | `ConfigFuzzyWatchSyncResponse` | server push | `syncType`, `groupKeyPattern`, `contexts`, `totalBatch`, `currentBatch` | Sync fuzzy-watch initial or diff state. |
 | `ClientConfigMetricRequest` | `ClientConfigMetricResponse` | read | `metricsKeys` | Query client config metrics. |
-| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `isBeta`, `tag`, `grayName` | Sync config change events between server nodes through the [internal RPC model](../design/foundation-internal-rpc-spec.md); Config Notify semantics are defined by the [AP Consistency Spec](../design/foundation-ap-consistency-spec.md). |
+| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `grayName`, legacy `isBeta`/`tag` | Sync config change events between server nodes through the [internal RPC model](../design/foundation-internal-rpc-spec.md); Config Notify semantics are defined by the [AP Consistency Spec](../design/foundation-ap-consistency-spec.md). Starting with the Nacos 3.3 line, server-side handling must not use legacy `isBeta` or `tag` fields to migrate beta/tag changes into `grayName`. |
 
 ### 7.3 Naming
 
