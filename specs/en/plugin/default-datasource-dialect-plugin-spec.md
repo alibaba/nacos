@@ -46,12 +46,17 @@ Each database package must register both
 
 Each built-in database family is expected to provide mapper implementations for:
 
-- config tables: `config_info`, `config_info_beta`, `config_info_tag`,
-  `config_info_gray`, `config_tags_relation`, `his_config_info`;
+- current config tables: `config_info`, `config_info_gray`,
+  `config_tags_relation`, `his_config_info`;
 - capacity and namespace tables: `tenant_info`, `tenant_capacity`,
   `group_capacity`;
-- config migration queries;
 - AI registry tables: AI resource metadata and AI resource versions.
+
+Starting with the Nacos 3.3 line, built-in database families are not required to
+provide runtime Config migration mappers for default-namespace storage
+duplicates or legacy beta/tag gray tables. Deployments that still carry
+pre-3.0 `config_info_beta` or `config_info_tag` data must migrate those rows
+before upgrading to a 3.3 server that relies on the current mapper set.
 
 If a future Nacos version adds a persistent table, the built-in database
 families must add the corresponding mapper before that table becomes a

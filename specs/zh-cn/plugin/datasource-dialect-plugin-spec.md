@@ -72,10 +72,13 @@ SQL。一个数据库族的方言和 mapper 实现必须一起打包和加载。
 Mapper 实现必须提供 repository 操作需要的基础 CRUD SQL 和表级专用 SQL。当前 mapper 族
 覆盖：
 
-- 配置数据、灰度/beta 数据、标签和历史；
+- 当前配置数据、灰度数据、标签和历史；
 - 命名空间和容量记录；
-- 配置迁移查询；
 - AI 资源元数据和版本记录。
+
+从 Nacos 3.3 版本线开始，数据源方言插件不再预期提供空 tenant/default namespace 重复记录或
+legacy beta/tag 灰度表的运行时 Config 迁移查询。如果 pre-3.0 部署仍需要这些迁移，应作为升级
+前置动作完成，而不是服务端运行时 mapper 的职责。
 
 `MapperManager` 通过 SPI 加载 mapper，并按 `dataSource + tableName` 建立索引。
 缺少数据源或表 mapper 是启动或操作错误，而不是空结果。

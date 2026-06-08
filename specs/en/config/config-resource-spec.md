@@ -28,7 +28,7 @@ namespaceId -> groupName -> dataId
 
 | Field | Meaning | Notes |
 | --- | --- | --- |
-| `namespaceId` | Namespace that owns the config. | Blank or omitted values are processed as the default namespace id, currently `public`. Storage and compatibility code may call this `tenant` or `tenantId`. |
+| `namespaceId` | Namespace that owns the config. | Blank or omitted request values are processed as the default namespace id, currently `public`. Storage code may still name this field `tenant` or `tenantId`, but the current model does not require duplicate default-namespace records for empty tenant and `public`. |
 | `groupName` | Business group inside a namespace. | New public specs and HTTP v3 forms use `groupName`; lower-level Config model fields and compatibility APIs may still call this value `group`. |
 | `dataId` | Config resource name. | `dataId` is the `resourceName` of Config. |
 

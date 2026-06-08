@@ -93,9 +93,14 @@ not silently return gray content.
 
 ## 6. Compatibility And Cleanup
 
-The current domain model is `config_info_gray` plus `GrayRule`. Compatibility
-paths may migrate older beta or tag state into this model, but new specs and
-new APIs should use the gray-rule model as the stable contract.
+The current domain model is `config_info_gray` plus `GrayRule`. Beta and tag
+gray variants are also represented in `config_info_gray` with their
+corresponding `grayName` and serialized rule metadata.
+
+Starting with the Nacos 3.3 line, runtime compatibility migration from the
+legacy `config_info_beta` and `config_info_tag` tables into `config_info_gray`
+is removed. Deployments that upgrade from versions before 3.0 and used beta
+gray release must migrate that data before upgrading.
 
 ## 7. Pending Specs
 
