@@ -19,6 +19,8 @@ package com.alibaba.nacos.test.maintainer;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.maintainer.client.NacosMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
@@ -73,6 +75,10 @@ public abstract class MaintainerSdkBaseITCase {
                 NamingMaintainerFactory.createNamingMaintainerService(maintainerProperties());
         shutdownActions.addFirst(service::shutdown);
         return service;
+    }
+    
+    protected AiMaintainerService createAiMaintainerService() throws NacosException {
+        return AiMaintainerFactory.createAiMaintainerService(maintainerProperties());
     }
     
     protected Properties maintainerProperties() {
