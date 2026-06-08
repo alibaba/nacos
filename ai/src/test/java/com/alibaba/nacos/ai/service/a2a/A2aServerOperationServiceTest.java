@@ -47,6 +47,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -60,6 +61,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -579,6 +581,26 @@ public class A2aServerOperationServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
         assertEquals(1, result.getPageItems().size());
+    }
+    
+    @Test
+    void testListAgentsNullAgentNameUsesSameWildcardAsEmptyString() throws NacosException {
+        Page<ConfigInfo> configPage = new Page<>();
+        configPage.setPageItems(Collections.emptyList());
+        configPage.setTotalCount(0);
+        when(agentIdCodecHolder.encodeForSearch("")).thenReturn("");
+        when(configDetailService.findConfigInfoPage(eq(Constants.A2A.SEARCH_BLUR), eq(1), eq(10),
+            anyString(),
+            eq(Constants.A2A.AGENT_GROUP), eq(TEST_NAMESPACE_ID), eq(null))).thenReturn(configPage);
+        
+        a2aServerOperationService.listAgents(TEST_NAMESPACE_ID, null,
+            Constants.A2A.SEARCH_BLUR, 1, 10);
+        
+        ArgumentCaptor<String> dataIdCaptor = forClass(String.class);
+        verify(configDetailService, times(1)).findConfigInfoPage(eq(Constants.A2A.SEARCH_BLUR),
+            eq(1), eq(10), dataIdCaptor.capture(), eq(Constants.A2A.AGENT_GROUP),
+            eq(TEST_NAMESPACE_ID), eq(null));
+        assertEquals("**", dataIdCaptor.getValue());
     }
     
     @Test

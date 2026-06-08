@@ -35,6 +35,12 @@ is defined by the [Client Runtime Specs](../client/README.md). The Java
 Maintainer SDK is the preferred Java entry point for management, UI, gateway,
 and operation scenarios.
 
+Java SDK behavior must be verified with scenario-oriented integration tests
+according to the
+[Java SDK Integration Test Spec](../testing/java-sdk-integration-test-spec.md)
+whenever public SDK interfaces, factories, models, listener behavior,
+lifecycle behavior, or exception mapping change.
+
 ## 2. Java Client SDK Factories and Lifecycle
 
 | Interface | Factory | Shutdown method |

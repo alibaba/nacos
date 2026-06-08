@@ -164,6 +164,39 @@ class ServerMemberManagerTest {
     }
     
     @Test
+    void testHasMemberShouldNotMatchIpPrefixOrSubstring() {
+        // serverList contains the member "1.1.1.1:8848".
+        assertTrue(serverMemberManager.hasMember("1.1.1.1"));
+        assertTrue(serverMemberManager.hasMember("1.1.1.1:8848"));
+        // None of the following are members; the previous substring match wrongly
+        // returned true for all of them.
+        assertFalse(serverMemberManager.hasMember("1.1.1"));
+        assertFalse(serverMemberManager.hasMember("1.1.1.1:88"));
+        assertFalse(serverMemberManager.hasMember("8848"));
+    }
+    
+    @Test
+    void testHasMemberIpv4PrefixCollision() {
+        Member member =
+            Member.builder().ip("192.168.1.100").port(8848).state(NodeState.UP).build();
+        assertTrue(serverMemberManager.memberJoin(Collections.singletonList(member)));
+        assertTrue(serverMemberManager.hasMember("192.168.1.100"));
+        assertTrue(serverMemberManager.hasMember("192.168.1.100:8848"));
+        // "192.168.1.10" is a prefix of the member IP but is not a member itself.
+        assertFalse(serverMemberManager.hasMember("192.168.1.10"));
+    }
+    
+    @Test
+    void testHasMemberIpv6() {
+        Member member = Member.builder().ip("[::1]").port(8848).state(NodeState.UP).build();
+        assertTrue(serverMemberManager.memberJoin(Collections.singletonList(member)));
+        // IPv6 lookups must work and must not be broken by naive ":" splitting.
+        assertTrue(serverMemberManager.hasMember(member.getIp()));
+        assertTrue(serverMemberManager.hasMember(member.getAddress()));
+        assertFalse(serverMemberManager.hasMember("[::2]"));
+    }
+    
+    @Test
     void testMemberLeave() {
         Member member = Member.builder().ip("1.1.3.3").port(8848).state(NodeState.DOWN).build();
         boolean joinResult = serverMemberManager.memberJoin(Collections.singletonList(member));

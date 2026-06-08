@@ -107,9 +107,17 @@ public abstract class OpenApiBaseITCase {
     protected static String url(String path) {
         return BASE_URL + path;
     }
+
+    protected String baseUrl() {
+        return BASE_URL;
+    }
+
+    protected String requestUrl(String path) {
+        return baseUrl() + path;
+    }
     
     protected HttpResponse getRaw(String pathAndQuery) throws Exception {
-        return executeRaw(new HttpGet(url(pathAndQuery)));
+        return executeRaw(new HttpGet(requestUrl(pathAndQuery)));
     }
     
     protected HttpResponse getRaw(String path, Query query) throws Exception {
@@ -117,23 +125,23 @@ public abstract class OpenApiBaseITCase {
     }
     
     protected ByteResponse getRawBytes(String path, Query query) throws Exception {
-        return executeRawBytes(new HttpGet(url(path + "?" + query.toQueryUrl())));
+        return executeRawBytes(new HttpGet(requestUrl(path + "?" + query.toQueryUrl())));
     }
     
     protected HttpResponse postRaw(String path, Query query) throws Exception {
-        return executeRaw(new HttpPost(url(path + "?" + query.toQueryUrl())));
+        return executeRaw(new HttpPost(requestUrl(path + "?" + query.toQueryUrl())));
     }
     
     protected HttpResponse putRaw(String path, Query query) throws Exception {
-        return executeRaw(new HttpPut(url(path + "?" + query.toQueryUrl())));
+        return executeRaw(new HttpPut(requestUrl(path + "?" + query.toQueryUrl())));
     }
     
     protected HttpResponse deleteRaw(String path, Query query) throws Exception {
-        return executeRaw(new HttpDelete(url(path + "?" + query.toQueryUrl())));
+        return executeRaw(new HttpDelete(requestUrl(path + "?" + query.toQueryUrl())));
     }
     
     protected JsonNode getJsonOk(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.get(url(path), Header.EMPTY, query, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.get(requestUrl(path), Header.EMPTY, query, String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -146,7 +154,7 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode postFormOk(String path, Header header, Map<String, String> form) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(path), header, form, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(requestUrl(path), header, form, String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -155,7 +163,7 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode postFormOk(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(path), Header.EMPTY, query,
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(requestUrl(path), Header.EMPTY, query,
                 Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
@@ -173,7 +181,7 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected HttpResponse postJsonRaw(String path, Query query, String json) throws Exception {
-        HttpPost post = new HttpPost(url(path + "?" + query.toQueryUrl()));
+        HttpPost post = new HttpPost(requestUrl(path + "?" + query.toQueryUrl()));
         post.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
         return executeRaw(post);
     }
@@ -187,7 +195,7 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected HttpResponse putJsonRaw(String path, Query query, String json) throws Exception {
-        HttpPut put = new HttpPut(url(path + "?" + query.toQueryUrl()));
+        HttpPut put = new HttpPut(requestUrl(path + "?" + query.toQueryUrl()));
         put.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
         return executeRaw(put);
     }
@@ -202,14 +210,15 @@ public abstract class OpenApiBaseITCase {
         body.write(("Content-Type: " + contentType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
         body.write(fileBytes);
         body.write(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
-        HttpPost post = new HttpPost(url(path + "?" + query.toQueryUrl()));
+        HttpPost post = new HttpPost(requestUrl(path + "?" + query.toQueryUrl()));
         post.setEntity(new ByteArrayEntity(body.toByteArray(),
                 ContentType.parse("multipart/form-data; boundary=" + boundary)));
         return executeRaw(post);
     }
 
     protected JsonNode putFormOk(String path, Map<String, String> form) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.putForm(url(path), Header.EMPTY, form, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.putForm(requestUrl(path), Header.EMPTY, form,
+                String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -218,7 +227,7 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode putFormOk(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.putForm(url(path), Header.EMPTY, query,
+        HttpRestResult<String> restResult = nacosRestTemplate.putForm(requestUrl(path), Header.EMPTY, query,
                 Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
@@ -228,7 +237,8 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode deleteJsonOk(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.delete(url(path), Header.EMPTY, query, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(requestUrl(path), Header.EMPTY, query,
+                String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -237,7 +247,8 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected void deleteQuietly(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.delete(url(path), Header.EMPTY, query, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(requestUrl(path), Header.EMPTY, query,
+                String.class);
         if (!restResult.ok()) {
             logger().warn("delete non-OK: path={} code={} body={}", path, restResult.getCode(), restResult.getData());
         }

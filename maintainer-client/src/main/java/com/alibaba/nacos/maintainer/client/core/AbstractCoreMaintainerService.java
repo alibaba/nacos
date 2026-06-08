@@ -74,7 +74,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
     @Override
     public Boolean readiness() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-            .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/readiness").build();
+            .setPath(Constants.AdminApiPath.CORE_STATE_ADMIN_PATH + "/readiness").build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         return httpRestResult.ok();
     }

@@ -36,6 +36,7 @@ import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -76,7 +77,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
-            .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH).setParamValue(params)
+            .setPath(appendQuery(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH, params))
             .build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -92,7 +93,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-            .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH).setParamValue(params)
+            .setPath(appendQuery(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH, params))
             .build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -209,8 +210,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
             .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/selector/types").build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<String>>() {
-        });
+        Result<List<String>> result =
+            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<List<String>>>() {
+            });
+        return result.getData();
     }
     
     @Override
@@ -236,7 +239,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("logLevel", logLevel);
         
         HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.PUT)
-            .setPath(Constants.AdminApiPath.NAMING_OPS_ADMIN_PATH + "/log").setParamValue(params)
+            .setPath(appendQuery(Constants.AdminApiPath.NAMING_OPS_ADMIN_PATH + "/log", params))
             .build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -264,7 +267,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, instance);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
-            .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params)
+            .setPath(appendQuery(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH, params))
             .build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -310,7 +313,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, instance);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-            .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params)
+            .setPath(appendQuery(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH, params))
             .build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -339,8 +342,9 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, instances, newMetadata);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-            .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch")
-            .setParamValue(params)
+            .setPath(
+                appendQuery(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch",
+                    params))
             .build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -389,8 +393,9 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, instance);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-            .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/partial")
-            .setParamValue(params).build();
+            .setPath(appendQuery(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/partial",
+                params))
+            .build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<String> result =
@@ -462,8 +467,9 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         }
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-            .setPath(Constants.AdminApiPath.NAMING_HEALTH_ADMIN_PATH + "/instance")
-            .setParamValue(params).build();
+            .setPath(appendQuery(Constants.AdminApiPath.NAMING_HEALTH_ADMIN_PATH + "/instance",
+                params))
+            .build();
         
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -479,9 +485,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
             .setPath(Constants.AdminApiPath.NAMING_HEALTH_ADMIN_PATH + "/checkers").build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Map<String, AbstractHealthChecker>>() {
+        Result<Map<String, AbstractHealthChecker>> result = JacksonUtils.toObj(
+            httpRestResult.getData(),
+            new TypeReference<Result<Map<String, AbstractHealthChecker>>>() {
             });
+        return result.getData();
     }
     
     @Override
@@ -491,7 +499,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, cluster);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-            .setPath(Constants.AdminApiPath.NAMING_CLUSTER_ADMIN_PATH).setParamValue(params)
+            .setPath(appendQuery(Constants.AdminApiPath.NAMING_CLUSTER_ADMIN_PATH, params))
             .build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -507,8 +515,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
             .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/list").build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<String>>() {
-        });
+        Result<List<String>> result =
+            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<List<String>>>() {
+            });
+        return result.getData();
     }
     
     @Override
@@ -610,6 +620,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     
     private HttpRequest.Builder buildRequestWithResource(RequestResource resource) {
         return new HttpRequest.Builder().setResource(resource);
+    }
+    
+    private String appendQuery(String path, Map<String, String> params) {
+        Query query = Query.newInstance().initParams(params);
+        return query.isEmpty() ? path : path + "?" + query.toQueryUrl();
     }
     
     private RequestResource buildRequestResource(Service service) {

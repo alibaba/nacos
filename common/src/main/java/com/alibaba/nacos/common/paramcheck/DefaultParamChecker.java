@@ -51,6 +51,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
     
     private Pattern skillNamePattern;
     
+    private Pattern skillSearchNamePattern;
+    
     private static final String CHECKER_TYPE = "default";
     
     private static final String MAX_METADATA_LENGTH_PROP_NAME =
@@ -100,6 +102,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         this.mcpNamePattern = Pattern.compile(this.paramCheckRule.mcpNamePatternString);
         this.agentNamePattern = Pattern.compile(this.paramCheckRule.agentNamePatternString);
         this.skillNamePattern = Pattern.compile(this.paramCheckRule.skillNamePatternString);
+        this.skillSearchNamePattern =
+            Pattern.compile(this.paramCheckRule.skillSearchNamePatternString);
     }
     
     /**
@@ -174,6 +178,10 @@ public class DefaultParamChecker extends AbstractParamChecker {
             return paramCheckResponse;
         }
         paramCheckResponse = checkSkillNameFormat(paramInfo.getSkillName());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkSkillSearchNameFormat(paramInfo.getSkillSearchName());
         if (!paramCheckResponse.isSuccess()) {
             return paramCheckResponse;
         }
@@ -559,6 +567,39 @@ public class DefaultParamChecker extends AbstractParamChecker {
         if (skillName.contains("--")) {
             paramCheckResponse.setSuccess(false);
             paramCheckResponse.setMessage("Skill name must not contain consecutive hyphens (--)");
+            return paramCheckResponse;
+        }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
+    }
+    
+    /**
+     * Check skill search name format.
+     *
+     * @param skillSearchName skill search name
+     * @return the param check response
+     */
+    public ParamCheckResponse checkSkillSearchNameFormat(String skillSearchName) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
+        if (StringUtils.isBlank(skillSearchName)) {
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
+        }
+        if (skillSearchName.length() > paramCheckRule.maxSkillNameLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Skill search name must be 1-64 characters");
+            return paramCheckResponse;
+        }
+        if (!skillSearchNamePattern.matcher(skillSearchName).matches()) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(
+                "Skill search name may only contain lowercase letters, numbers, and hyphens");
+            return paramCheckResponse;
+        }
+        if (skillSearchName.contains("--")) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse
+                .setMessage("Skill search name must not contain consecutive hyphens (--)");
             return paramCheckResponse;
         }
         paramCheckResponse.setSuccess(true);
