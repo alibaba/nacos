@@ -19,7 +19,7 @@ package com.alibaba.nacos.airegistry.config;
 import org.apache.catalina.connector.Connector;
 import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer;
+import org.springframework.boot.tomcat.TomcatConnectorCustomizer;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
