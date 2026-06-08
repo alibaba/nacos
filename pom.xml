@@ -127,7 +127,7 @@
         <extra-enforcer-rules.version>1.9.0</extra-enforcer-rules.version>
         
         <!-- dependency version -->
-        <nacos.logback.adapter.version>1.1.4</nacos.logback.adapter.version>
+        <nacos.logback.adapter.version>1.1.5</nacos.logback.adapter.version>
         <spring-boot-dependencies.version>3.5.14</spring-boot-dependencies.version>
         <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
