@@ -289,14 +289,16 @@ public class A2aServerOperationService {
         String search, int pageNo,
         int pageSize) throws NacosException {
         
+        String normalizedAgentName = agentName == null ? StringUtils.EMPTY : agentName;
         String dataId;
-        if (StringUtils.isEmpty(agentName) || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
+        if (StringUtils.isEmpty(normalizedAgentName)
+            || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
             search = Constants.A2A.SEARCH_BLUR;
-            dataId = Constants.ALL_PATTERN + agentIdCodecHolder.encodeForSearch(agentName)
+            dataId = Constants.ALL_PATTERN + agentIdCodecHolder.encodeForSearch(normalizedAgentName)
                 + Constants.ALL_PATTERN;
         } else {
             search = Constants.A2A.SEARCH_ACCURATE;
-            dataId = agentIdCodecHolder.encode(agentName);
+            dataId = agentIdCodecHolder.encode(normalizedAgentName);
         }
         
         Page<ConfigInfo> configInfoPage =
