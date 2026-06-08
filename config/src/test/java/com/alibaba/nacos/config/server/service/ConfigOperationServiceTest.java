@@ -75,15 +75,11 @@ class ConfigOperationServiceTest {
     @Mock
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    @Mock
-    ConfigMigrateService configMigrateService;
-    
     @BeforeEach
     void setUp() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
         this.configOperationService =
-            new ConfigOperationService(configInfoPersistService, configInfoGrayPersistService,
-                configMigrateService);
+            new ConfigOperationService(configInfoPersistService, configInfoGrayPersistService);
     }
     
     @Test
@@ -432,8 +428,6 @@ class ConfigOperationServiceTest {
         Boolean result = configOperationService.deleteConfig("test", "test", null, "", "1.1.1.1",
             "test", "http");
         verify(configInfoPersistService).removeConfigInfo(eq("test"), eq("test"),
-            eq(Constants.DEFAULT_NAMESPACE_ID), any(), any());
-        verify(configMigrateService).removeConfigInfoMigrate(eq("test"), eq("test"),
             eq(Constants.DEFAULT_NAMESPACE_ID), any(), any());
         assertTrue(result);
     }

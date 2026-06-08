@@ -118,8 +118,6 @@ public class ConsoleConfigController {
         throws NacosException {
         // check required field
         configForm.validateWithContent();
-        final boolean namespaceTransferred =
-            NamespaceUtil.isNeedTransferNamespace(configForm.getNamespaceId());
         configForm
             .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
@@ -141,7 +139,6 @@ public class ConsoleConfigController {
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
-        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
         
         return Result.success(configProxy.publishConfig(configForm, configRequestInfo));
     }

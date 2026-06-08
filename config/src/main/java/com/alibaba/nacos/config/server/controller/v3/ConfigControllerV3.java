@@ -50,16 +50,13 @@ import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtra
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.ResponseUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -133,35 +130,21 @@ public class ConfigControllerV3 {
     
     private final ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    private final ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
     private final NamespacePersistService namespacePersistService;
     
     private final ConfigListenerStateDelegate configListenerStateDelegate;
     
-    private final ConfigMigrateService configMigrateService;
-    
-    /**
-     * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
-     */
-    private boolean oldTableVersion;
-    
     public ConfigControllerV3(ConfigOperationService configOperationService,
         ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
         ConfigInfoGrayPersistService configInfoGrayPersistService,
-        ConfigInfoBetaPersistService configInfoBetaPersistService,
         NamespacePersistService namespacePersistService,
-        ConfigListenerStateDelegate configListenerStateDelegate,
-        ConfigMigrateService configMigrateService) {
+        ConfigListenerStateDelegate configListenerStateDelegate) {
         this.configOperationService = configOperationService;
         this.configInfoPersistService = configInfoPersistService;
         this.configDetailService = configDetailService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
-        this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.namespacePersistService = namespacePersistService;
         this.configListenerStateDelegate = configListenerStateDelegate;
-        this.configMigrateService = configMigrateService;
-        this.oldTableVersion = namespacePersistService.isExistTable("config_info_beta");
     }
     
     /**
@@ -204,8 +187,6 @@ public class ConfigControllerV3 {
         throws NacosException {
         // check required field
         configForm.validateWithContent();
-        final boolean namespaceTransferred =
-            NamespaceUtil.isNeedTransferNamespace(configForm.getNamespaceId());
         configForm
             .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
@@ -237,7 +218,6 @@ public class ConfigControllerV3 {
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
-        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
         
         return Result.success(
             configOperationService.publishConfig(configForm, configRequestInfo,
@@ -266,8 +246,6 @@ public class ConfigControllerV3 {
         String group = configForm.getGroup();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         configInfoPersistService.updateConfigInfoMetadata(dataId, group, namespaceId, configTags,
-            description);
-        configMigrateService.updateConfigMetadataMigrate(dataId, group, namespaceId, configTags,
             description);
         final Timestamp time = TimeUtils.getCurrentTime();
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(),
@@ -416,9 +394,6 @@ public class ConfigControllerV3 {
             configInfoGrayPersistService.removeConfigInfoGray(dataId, groupName, namespaceId,
                 BetaGrayRule.TYPE_BETA,
                 remoteIp, RequestUtil.getSrcUserName(httpServletRequest));
-            configMigrateService.removeConfigInfoGrayMigrate(dataId, groupName, namespaceId,
-                BetaGrayRule.TYPE_BETA,
-                remoteIp, RequestUtil.getSrcUserName(httpServletRequest));
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "remove beta data error",
@@ -429,9 +404,6 @@ public class ConfigControllerV3 {
             System.currentTimeMillis(),
             remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA,
             ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        if (PropertyUtil.isGrayCompatibleModel() && oldTableVersion) {
-            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, groupName, namespaceId);
-        }
         ConfigChangePublisher.notifyConfigChange(
             new ConfigDataChangeEvent(dataId, groupName, namespaceId, BetaGrayRule.TYPE_BETA,
                 System.currentTimeMillis()));
@@ -478,8 +450,6 @@ public class ConfigControllerV3 {
         @RequestParam(value = "grayMatchRuleExp", required = false) String grayMatchRuleExp)
         throws NacosException {
         configForm.validateWithContent();
-        final boolean namespaceTransferred =
-            NamespaceUtil.isNeedTransferNamespace(configForm.getNamespaceId());
         configForm
             .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         if (StringUtils.isNotBlank(grayMatchRuleExp)) {
@@ -510,7 +480,6 @@ public class ConfigControllerV3 {
         configRequestInfo.setSrcType(Constants.HTTP);
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
-        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
         
         return Result.success(
             configOperationService.publishConfigGray(grayType, configForm, configRequestInfo));
