@@ -56,7 +56,10 @@ AUTH_ARGS := -Dnacos.core.auth.server.identity.key=testKey \
 	install-and-run-bootstrap-microservice \
 	install-and-run-bootstrap-ai \
 	install-and-run-bootstrap-extension-ai-enabled \
-	install-and-run-bootstrap-extension-ai-disabled
+	install-and-run-bootstrap-extension-ai-disabled \
+	run-it-tests \
+	run-java-sdk-it-tests \
+	run-maintainer-sdk-it-tests
 
 # Clean all build artifacts and generated files
 clean: ## Clean the project
