@@ -31,8 +31,10 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -46,11 +48,16 @@ import com.alibaba.nacos.test.maintainer.MaintainerSdkBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -71,9 +78,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     force-publish when applicable, and delete isolated resources.</li>
  *     <li>Boundary/validation: null factory properties and invalid MCP
  *     local/remote specifications fail with controlled SDK exceptions.</li>
- *     <li>Known standalone limitation: ZIP upload/download and real pipeline
- *     approval workflows are documented as follow-up coverage because this IT
- *     uses force-publish instead of enabling review plugins.</li>
+ *     <li>Expected capability: Skill and AgentSpec ZIP uploads, including
+ *     Skill batch upload, create editable drafts that can be queried through
+ *     the maintainer SDK.</li>
+ *     <li>Known standalone limitation: real pipeline approval workflows are
+ *     documented as follow-up coverage because this IT uses force-publish
+ *     instead of enabling review plugins.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -107,6 +117,10 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
                 randomMaintainerName("missing-agentspec"), "blur", 1, 10));
         assertSuccessResult(maintainerService.pipeline()
                 .listPipelineExecutions("prompt", null, NAMESPACE_ID, null, 1, 10));
+        NacosException missingPipeline = assertThrows(NacosException.class,
+                () -> maintainerService.pipeline()
+                        .getPipelineDetail(randomMaintainerName("missing-pipeline")));
+        assertEquals(NacosException.NOT_FOUND, missingPipeline.getErrCode());
     }
     
     @Test
@@ -319,6 +333,97 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     }
     
     @Test
+    void shouldUploadSkillFromZipWithTargetVersion() throws Exception {
+        AiMaintainerService maintainerService = createAiMaintainerService();
+        String skillName = randomMaintainerName("skill-zip");
+        String targetVersion = "2.1.0";
+        String commitMsg = "upload skill zip";
+        
+        String uploadedName = maintainerService.skill()
+                .uploadSkillFromZip(NAMESPACE_ID,
+                        buildSkillZip(skillName, "Maintainer SDK IT uploaded skill", null),
+                        false, targetVersion, commitMsg);
+        assertEquals(skillName, uploadedName);
+        addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, skillName));
+        
+        Skill detail =
+                maintainerService.skill().getSkillVersionDetail(NAMESPACE_ID, skillName,
+                        targetVersion);
+        assertEquals(skillName, detail.getName());
+        assertEquals("Maintainer SDK IT uploaded skill", detail.getDescription());
+        assertTrue(detail.getSkillMd().contains("Maintainer SDK IT uploaded skill"));
+        
+        SkillMeta meta = maintainerService.skill().getSkillMeta(NAMESPACE_ID, skillName);
+        assertNotNull(meta.getVersions());
+        assertTrue(meta.getVersions().stream()
+                .anyMatch(version -> targetVersion.equals(version.getVersion())
+                        && commitMsg.equals(version.getCommitMsg())));
+        assertEquals(targetVersion,
+                maintainerService.skill().submit(NAMESPACE_ID, skillName, targetVersion));
+    }
+    
+    @Test
+    void shouldBatchUploadSkillsFromZip() throws Exception {
+        AiMaintainerService maintainerService = createAiMaintainerService();
+        String firstSkillName = randomMaintainerName("skill-batch-one");
+        String secondSkillName = randomMaintainerName("skill-batch-two");
+        addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, secondSkillName));
+        addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, firstSkillName));
+        
+        BatchUploadResult result = maintainerService.skill()
+                .batchUploadSkillsFromZip(NAMESPACE_ID,
+                        buildMultiSkillZip(
+                                buildSkill(firstSkillName, "Maintainer SDK IT batch skill one",
+                                        VERSION),
+                                buildSkill(secondSkillName, "Maintainer SDK IT batch skill two",
+                                        VERSION)),
+                        false);
+        
+        assertNotNull(result);
+        assertTrue(result.getFailed().isEmpty(), () -> result.getFailed().toString());
+        assertTrue(result.getSucceeded().contains(firstSkillName));
+        assertTrue(result.getSucceeded().contains(secondSkillName));
+        assertEquals(firstSkillName, maintainerService.skill()
+                .getSkillVersionDetail(NAMESPACE_ID, firstSkillName, VERSION).getName());
+        assertEquals(secondSkillName, maintainerService.skill()
+                .getSkillVersionDetail(NAMESPACE_ID, secondSkillName, VERSION).getName());
+    }
+    
+    @Test
+    void shouldUploadAgentSpecFromZip() throws Exception {
+        AiMaintainerService maintainerService = createAiMaintainerService();
+        String agentSpecName = randomMaintainerName("agentspec-zip");
+        
+        String uploadedName = maintainerService.agentSpec()
+                .uploadAgentSpecFromZip(NAMESPACE_ID,
+                        buildAgentSpecZip(agentSpecName,
+                                "Maintainer SDK IT uploaded AgentSpec"),
+                        false);
+        assertEquals(agentSpecName, uploadedName);
+        addCleanup(() -> maintainerService.agentSpec().deleteAgentSpec(NAMESPACE_ID,
+                agentSpecName));
+        
+        AgentSpec detail = maintainerService.agentSpec()
+                .getAgentSpecVersionDetail(NAMESPACE_ID, agentSpecName, "0.0.1");
+        assertEquals(agentSpecName, detail.getName());
+        assertEquals("Maintainer SDK IT uploaded AgentSpec", detail.getDescription());
+        assertNotNull(detail.getResource());
+        assertTrue(detail.getResource().values().stream()
+                .anyMatch(resource -> "README.md".equals(resource.getName())
+                        && "docs".equals(resource.getType())));
+        
+        AgentSpec meta = maintainerService.agentSpec()
+                .getAgentSpecVersionMeta(NAMESPACE_ID, agentSpecName, "0.0.1");
+        assertEquals(agentSpecName, meta.getName());
+        assertNotNull(meta.getResource());
+        assertTrue(meta.getResource().values().stream()
+                .anyMatch(resource -> "README.md".equals(resource.getName())
+                        && "docs".equals(resource.getType())));
+        assertEquals("0.0.1",
+                maintainerService.agentSpec().submit(NAMESPACE_ID, agentSpecName, "0.0.1"));
+    }
+    
+    @Test
     void shouldRejectInvalidAiMaintainerParameters() throws Exception {
         AiMaintainerService maintainerService = createAiMaintainerService();
         
@@ -383,13 +488,22 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     }
     
     private String buildSkillCard(String skillName, String description) {
+        return JacksonUtils.toJson(buildSkill(skillName, description, null));
+    }
+    
+    private Skill buildSkill(String skillName, String description, String version) {
         Skill skill = new Skill();
         skill.setNamespaceId(NAMESPACE_ID);
         skill.setName(skillName);
         skill.setDescription(description);
-        skill.setSkillMd("---\nname: " + skillName + "\ndescription: " + description
-                + "\n---\n\n" + description + "\n");
-        return JacksonUtils.toJson(skill);
+        StringBuilder skillMd = new StringBuilder("---\nname: ").append(skillName)
+                .append("\ndescription: ").append(description).append('\n');
+        if (null != version) {
+            skillMd.append("version: ").append(version).append('\n');
+        }
+        skillMd.append("---\n\n").append(description).append('\n');
+        skill.setSkillMd(skillMd.toString());
+        return skill;
     }
     
     private String buildAgentSpecCard(String agentSpecName, String description) {
@@ -401,6 +515,40 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         agentSpec.setContent(JacksonUtils.toJson(buildAgentSpecManifest(agentSpecName,
                 description)));
         return JacksonUtils.toJson(agentSpec);
+    }
+    
+    private byte[] buildSkillZip(String skillName, String description, String version)
+            throws IOException {
+        return SkillUtils.toZipBytes(buildSkill(skillName, description, version));
+    }
+    
+    private byte[] buildMultiSkillZip(Skill... skills) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+            for (Skill skill : skills) {
+                writeZipEntry(zipOutputStream, skill.getName() + "/SKILL.md",
+                        skill.getSkillMd());
+            }
+        }
+        return outputStream.toByteArray();
+    }
+    
+    private byte[] buildAgentSpecZip(String agentSpecName, String description)
+            throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+            writeZipEntry(zipOutputStream, "manifest.json",
+                    JacksonUtils.toJson(buildAgentSpecManifest(agentSpecName, description)));
+            writeZipEntry(zipOutputStream, "docs/README.md", description);
+        }
+        return outputStream.toByteArray();
+    }
+    
+    private void writeZipEntry(ZipOutputStream zipOutputStream, String name, String content)
+            throws IOException {
+        zipOutputStream.putNextEntry(new ZipEntry(name));
+        zipOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
+        zipOutputStream.closeEntry();
     }
     
     private Map<String, Object> buildAgentSpecManifest(String agentSpecName, String description) {
