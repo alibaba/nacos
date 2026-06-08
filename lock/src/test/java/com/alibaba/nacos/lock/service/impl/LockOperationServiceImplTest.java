@@ -23,21 +23,24 @@ import com.alibaba.nacos.api.lock.remote.LockOperationEnum;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.constant.PropertiesConstant;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.core.reentrant.mutex.MutexAtomicLock;
 import com.alibaba.nacos.lock.core.reentrant.mutex.ReentrantAtomicLock;
-import com.alibaba.nacos.core.remote.RpcPushService;
+import com.alibaba.nacos.lock.exception.NacosLockException;
 import com.alibaba.nacos.lock.model.LockInfo;
 import com.alibaba.nacos.lock.model.LockKey;
 import com.alibaba.nacos.lock.raft.request.MutexLockRequest;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.protobuf.ByteString;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -47,12 +50,16 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.lang.reflect.Method;
 
 import static com.alibaba.nacos.lock.constant.Constants.LOCK_ACQUIRE_SERVICE_GROUP_V2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -83,6 +90,13 @@ public class LockOperationServiceImplTest {
     private static MockedStatic<ApplicationUtils> mockedStatic;
     
     private static MockedStatic<EnvUtil> mockedEnv;
+    
+    @AfterEach
+    void tearDown() {
+        if (lockOperationService != null) {
+            lockOperationService.destroy();
+        }
+    }
     
     @BeforeAll
     public static void setUp() {
@@ -211,10 +225,500 @@ public class LockOperationServiceImplTest {
             .setData(ByteString.copyFrom(serializer.serialize(LockResult.success(1)))).build();
     }
     
+    private Response successResponse(Object data) {
+        return Response.newBuilder().setSuccess(true)
+            .setData(ByteString.copyFrom(serializer.serialize(data))).build();
+    }
+    
+    private Response failedResponse(String errorMessage) {
+        return Response.newBuilder().setSuccess(false).setErrMsg(errorMessage).build();
+    }
+    
     @AfterAll
     public static void destroy() {
         mockedStatic.close();
         mockedEnv.close();
+    }
+    
+    @Test
+    public void testDestroyShutdownsNotificationExecutor() {
+        buildService();
+        
+        lockOperationService.destroy();
+    }
+    
+    @Test
+    public void testOnApplyReturnsFailureWhenOperationIsInvalid() {
+        buildService();
+        MutexLockRequest mutexLockRequest = new MutexLockRequest();
+        WriteRequest request = WriteRequest.newBuilder().setGroup(lockOperationService.group())
+            .setData(ByteString.copyFrom(serializer.serialize(mutexLockRequest)))
+            .setOperation("UNKNOWN").build();
+        
+        Response response = lockOperationService.onApply(request);
+        
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().contains("UNKNOWN"));
+    }
+    
+    @Test
+    public void testOnApplyDebugLogging() {
+        buildService();
+        ch.qos.logback.classic.Logger logger =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory
+                .getLogger(LockOperationServiceImpl.class);
+        ch.qos.logback.classic.Level originLevel = logger.getLevel();
+        try {
+            logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+            MutexLockRequest mutexLockRequest = new MutexLockRequest();
+            mutexLockRequest.setConnectionId("conn-1");
+            WriteRequest request = WriteRequest.newBuilder().setGroup(lockOperationService.group())
+                .setData(ByteString.copyFrom(serializer.serialize(mutexLockRequest)))
+                .setOperation(LockOperationEnum.CLEANUP_CONNECTION.name()).build();
+            
+            Response response = lockOperationService.onApply(request);
+            
+            assertTrue(response.getSuccess());
+        } finally {
+            logger.setLevel(originLevel);
+        }
+    }
+    
+    @Test
+    public void testOnApplyReturnsFailureWhenLockOperationThrowsNacosLockException() {
+        buildService();
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+            .thenThrow(new NacosLockException("apply failed"));
+        
+        Response response = lockOperationService.onApply(getRequest(LockOperationEnum.RENEW));
+        
+        assertFalse(response.getSuccess());
+        assertEquals("apply failed", response.getErrMsg());
+    }
+    
+    @Test
+    public void testOnApplyReturnsFailureWhenLockOperationThrowsRuntimeException() {
+        buildService();
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+            .thenThrow(new IllegalStateException("runtime failed"));
+        
+        Response response = lockOperationService.onApply(getRequest(LockOperationEnum.RENEW));
+        
+        assertFalse(response.getSuccess());
+        assertEquals("runtime failed", response.getErrMsg());
+    }
+    
+    @Test
+    public void testPublicOperationsReturnSuccessfulRaftResponses() throws Exception {
+        buildService();
+        LockInstance lockInstance = new LockInstance("key", 1_000L, LockConstants.NACOS_LOCK_TYPE);
+        lockInstance.setOwner("owner-1");
+        Mockito.when(cpProtocol.write(Mockito.any())).thenAnswer(invocation -> {
+            WriteRequest request = invocation.getArgument(0);
+            LockOperationEnum operation = LockOperationEnum.valueOf(request.getOperation());
+            if (operation == LockOperationEnum.RENEW) {
+                return successResponse(Boolean.TRUE);
+            }
+            return successResponse(LockResult.success(1));
+        });
+        
+        assertTrue(lockOperationService.unLock(lockInstance).isSuccess());
+        assertTrue(lockOperationService.renew(lockInstance));
+        assertTrue(lockOperationService.expire(lockInstance).isSuccess());
+        assertTrue(lockOperationService.cancelWait(lockInstance, "conn-1").isSuccess());
+    }
+    
+    @Test
+    public void testRenewUsesDefaultExpireTimeWhenExpiredTimeIsNegative() throws Exception {
+        buildService();
+        long timestamp = 1 << 10;
+        Mockito.when(lockOperationService.getNowTimestamp()).thenReturn(timestamp);
+        Mockito.when(cpProtocol.write(Mockito.any())).thenAnswer(invocation -> {
+            WriteRequest request = invocation.getArgument(0);
+            MutexLockRequest mutexLockRequest =
+                serializer.deserialize(request.getData().toByteArray());
+            assertEquals(timestamp + PropertiesConstant.DEFAULT_AUTO_EXPIRE_TIME,
+                (long) mutexLockRequest.getLockInfo().getEndTime());
+            return successResponse(Boolean.TRUE);
+        });
+        LockInstance lockInstance = new LockInstance("key", -1L, LockConstants.NACOS_LOCK_TYPE);
+        lockInstance.setOwner("owner-1");
+        
+        assertTrue(lockOperationService.renew(lockInstance));
+    }
+    
+    @Test
+    public void testPublicOperationsRethrowFailedRaftResponses() throws Exception {
+        buildService();
+        LockInstance lockInstance = new LockInstance("key", 1_000L, LockConstants.NACOS_LOCK_TYPE);
+        lockInstance.setOwner("owner-1");
+        Mockito.when(cpProtocol.write(Mockito.any())).thenReturn(failedResponse("raft failed"));
+        
+        assertThrows(NacosLockException.class,
+            () -> lockOperationService.lock(lockInstance, "conn-1"));
+        assertThrows(NacosLockException.class, () -> lockOperationService.unLock(lockInstance));
+        assertThrows(NacosLockException.class, () -> lockOperationService.renew(lockInstance));
+        assertThrows(NacosLockException.class, () -> lockOperationService.expire(lockInstance));
+        assertThrows(NacosLockException.class,
+            () -> lockOperationService.cancelWait(lockInstance, "conn-1"));
+    }
+    
+    @Test
+    public void testPublicOperationsWrapWriteExceptions() throws Exception {
+        buildService();
+        LockInstance lockInstance = new LockInstance("key", 1_000L, LockConstants.NACOS_LOCK_TYPE);
+        lockInstance.setOwner("owner-1");
+        Mockito.when(cpProtocol.write(Mockito.any()))
+            .thenThrow(new RuntimeException("write failed"));
+        
+        assertEquals("tryLock error.",
+            assertThrows(NacosLockException.class,
+                () -> lockOperationService.lock(lockInstance, "conn-1")).getMessage());
+        assertEquals("unLock error.",
+            assertThrows(NacosLockException.class,
+                () -> lockOperationService.unLock(lockInstance)).getMessage());
+        assertEquals("renew error.",
+            assertThrows(NacosLockException.class,
+                () -> lockOperationService.renew(lockInstance)).getMessage());
+        assertEquals("expire error.",
+            assertThrows(NacosLockException.class,
+                () -> lockOperationService.expire(lockInstance)).getMessage());
+        assertEquals("cancel wait error.",
+            assertThrows(NacosLockException.class,
+                () -> lockOperationService.cancelWait(lockInstance, "conn-1")).getMessage());
+    }
+    
+    @Test
+    public void testLoadSnapshotOperateAndOnRequest() {
+        buildService();
+        
+        List<?> snapshotOperations = lockOperationService.loadSnapshotOperate();
+        
+        assertEquals(1, snapshotOperations.size());
+        assertNull(lockOperationService.onRequest(ReadRequest.newBuilder().build()));
+    }
+    
+    @Test
+    public void testReleaseLockNotifiesFirstWaiterAndKeepsLockEntry() throws Exception {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("release-waiter-key");
+        LockKey lockKey = new LockKey(LockConstants.NACOS_LOCK_TYPE, "release-waiter-key");
+        LockInfo holderInfo = newLockInfo("owner-1", "conn-holder", "release-waiter-key");
+        reentrantLock.tryLock(holderInfo);
+        reentrantLock.addWaiter(newLockInfo("waiter-1", "conn-waiter", "release-waiter-key"));
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey, reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        
+        Response response = lockOperationService.onApply(
+            buildReleaseRequest("owner-1", "release-waiter-key", false));
+        
+        assertTrue(response.getSuccess());
+        LockResult result = serializer.deserialize(response.getData().toByteArray());
+        assertTrue(result.isSuccess());
+        TimeUnit.MILLISECONDS.sleep(100);
+        Mockito.verify(rpcPushService, Mockito.timeout(1000))
+            .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+        Mockito.verify(lockManager, Mockito.never()).removeMutexLock(lockKey);
+    }
+    
+    @Test
+    public void testReleaseLockIgnoresNotificationFailure() throws Exception {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("release-notify-fail-key");
+        LockInfo holderInfo = newLockInfo("owner-1", "conn-holder", "release-notify-fail-key");
+        reentrantLock.tryLock(holderInfo);
+        reentrantLock.addWaiter(newLockInfo("waiter-1", "conn-waiter", "release-notify-fail-key"));
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(new LockKey(LockConstants.NACOS_LOCK_TYPE, "release-notify-fail-key"),
+            reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        Mockito.doThrow(new RuntimeException("push failed")).when(rpcPushService)
+            .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+        
+        Response response = lockOperationService.onApply(
+            buildReleaseRequest("owner-1", "release-notify-fail-key", false));
+        
+        assertTrue(response.getSuccess());
+        Mockito.verify(rpcPushService, Mockito.timeout(1000))
+            .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+    }
+    
+    @Test
+    public void testReleaseLockReturnsFailureForWrongOwner() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("wrong-owner-key");
+        LockInfo holderInfo = newLockInfo("owner-1", "conn-holder", "wrong-owner-key");
+        reentrantLock.tryLock(holderInfo);
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(new LockKey(LockConstants.NACOS_LOCK_TYPE, "wrong-owner-key"), reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        
+        Response response = lockOperationService.onApply(
+            buildReleaseRequest("other-owner", "wrong-owner-key", false));
+        
+        assertTrue(response.getSuccess());
+        LockResult result = serializer.deserialize(response.getData().toByteArray());
+        assertFalse(result.isSuccess());
+        assertEquals("Unlock failed: not held by this owner", result.getErrorMessage());
+    }
+    
+    @Test
+    public void testAcquireLockHeldByAnotherOwnerReturnsWaitingOrFailure() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("fifo-key");
+        reentrantLock.tryLock(newLockInfo("owner-1", "conn-holder", "fifo-key"));
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+            .thenReturn(reentrantLock);
+        
+        Response waitResponse = lockOperationService.onApply(
+            buildAcquireRequest("waiter-1", "conn-waiter", 5000L, false));
+        LockResult waitResult = serializer.deserialize(waitResponse.getData().toByteArray());
+        assertFalse(waitResult.isSuccess());
+        assertTrue(waitResult.isWaiting());
+        
+        Response failResponse = lockOperationService.onApply(
+            buildAcquireRequest("other-owner", "conn-other", 0L, false));
+        LockResult failResult = serializer.deserialize(failResponse.getData().toByteArray());
+        assertFalse(failResult.isSuccess());
+        assertEquals("Lock is held by another owner", failResult.getErrorMessage());
+    }
+    
+    @Test
+    public void testAcquireLockRejectsNewRequestWhenWaitersExistAndWaitTimeIsZero() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("fifo-key");
+        reentrantLock.addWaiter(newLockInfo("waiter-1", "conn-waiter", "fifo-key"));
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+            .thenReturn(reentrantLock);
+        
+        Response response = lockOperationService.onApply(
+            buildAcquireRequest("owner-1", "conn-1", 0L, false));
+        
+        assertTrue(response.getSuccess());
+        LockResult result = serializer.deserialize(response.getData().toByteArray());
+        assertFalse(result.isSuccess());
+        assertEquals("Lock is held by another owner", result.getErrorMessage());
+    }
+    
+    @Test
+    public void testAcquireLockRejectsWhenHeldWithoutWaitersAndWaitTimeIsZero() {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("fifo-key");
+        reentrantLock.tryLock(newLockInfo("owner-1", "conn-holder", "fifo-key"));
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+            .thenReturn(reentrantLock);
+        
+        Response response = lockOperationService.onApply(
+            buildAcquireRequest("owner-2", "conn-2", 0L, false));
+        
+        assertTrue(response.getSuccess());
+        LockResult result = serializer.deserialize(response.getData().toByteArray());
+        assertFalse(result.isSuccess());
+        assertEquals("Lock is held by another owner", result.getErrorMessage());
+    }
+    
+    @Test
+    public void testAcquireLockWithNonAbstractAtomicLock() {
+        buildService();
+        AtomicLockService atomicLock = Mockito.mock(AtomicLockService.class);
+        Mockito.when(atomicLock.tryLock(Mockito.any())).thenReturn(true, false);
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class))).thenReturn(atomicLock);
+        
+        Response successResponse = lockOperationService.onApply(
+            buildAcquireRequest("owner-1", "conn-1", 0L, false));
+        LockResult successResult = serializer.deserialize(successResponse.getData().toByteArray());
+        assertTrue(successResult.isSuccess());
+        
+        Response failResponse = lockOperationService.onApply(
+            buildAcquireRequest("owner-2", "conn-2", 0L, false));
+        LockResult failResult = serializer.deserialize(failResponse.getData().toByteArray());
+        assertFalse(failResult.isSuccess());
+        assertEquals("Lock is held by another owner", failResult.getErrorMessage());
+    }
+    
+    @Test
+    public void testCancelWaitReturnsSuccessWhenLockMissingOrNonAbstract() {
+        buildService();
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        
+        Response missingResponse = lockOperationService.onApply(
+            buildCancelWaitRequest("owner-1", "conn-1"));
+        LockResult missingResult = serializer.deserialize(missingResponse.getData().toByteArray());
+        assertTrue(missingResult.isSuccess());
+        
+        locks.put(new LockKey(LockConstants.NACOS_LOCK_TYPE, "fifo-key"),
+            Mockito.mock(AtomicLockService.class));
+        Response nonAbstractResponse = lockOperationService.onApply(
+            buildCancelWaitRequest("owner-1", "conn-1"));
+        LockResult nonAbstractResult =
+            serializer.deserialize(nonAbstractResponse.getData().toByteArray());
+        assertTrue(nonAbstractResult.isSuccess());
+    }
+    
+    @Test
+    public void testCancelWaitRemovesClearLockWithoutRemainingWaiters() {
+        buildService();
+        LockKey lockKey = new LockKey(LockConstants.NACOS_LOCK_TYPE, "fifo-key");
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("fifo-key");
+        reentrantLock.addWaiter(newLockInfo("waiter-1", "conn-1", "fifo-key"));
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey, reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        
+        Response response =
+            lockOperationService.onApply(buildCancelWaitRequest("waiter-1", "conn-1"));
+        
+        assertTrue(response.getSuccess());
+        Mockito.verify(lockManager).removeMutexLock(lockKey);
+    }
+    
+    @Test
+    public void testCancelWaitNotifiesNextWaiterWhenClearLockStillHasWaiters() throws Exception {
+        buildService();
+        LockKey lockKey = new LockKey(LockConstants.NACOS_LOCK_TYPE, "fifo-key");
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("fifo-key");
+        reentrantLock.addWaiter(newLockInfo("waiter-1", "conn-1", "fifo-key"));
+        reentrantLock.addWaiter(newLockInfo("waiter-2", "conn-2", "fifo-key"));
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey, reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        
+        Response response =
+            lockOperationService.onApply(buildCancelWaitRequest("waiter-1", "conn-1"));
+        
+        assertTrue(response.getSuccess());
+        TimeUnit.MILLISECONDS.sleep(100);
+        Mockito.verify(rpcPushService, Mockito.timeout(1000))
+            .pushWithoutAck(Mockito.eq("conn-2"), Mockito.any());
+    }
+    
+    @Test
+    public void testCleanupConnectionBatchMode() {
+        buildService();
+        LockKey lockKey = new LockKey(LockConstants.NACOS_LOCK_TYPE, "batch-key");
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("batch-key");
+        reentrantLock.tryLock(newLockInfo("owner-1", "conn-1", "batch-key"));
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey, reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        
+        Response response =
+            lockOperationService.onApply(buildBatchCleanupConnectionRequest("conn-1"));
+        
+        assertTrue(response.getSuccess());
+        assertTrue(reentrantLock.isClear());
+    }
+    
+    @Test
+    public void testCleanupConnectionHeldLockNotifiesRemainingWaiter() throws Exception {
+        buildService();
+        LockKey lockKey = new LockKey(LockConstants.NACOS_LOCK_TYPE, "cleanup-notify-key");
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("cleanup-notify-key");
+        reentrantLock.tryLock(newLockInfo("owner-1", "conn-1", "cleanup-notify-key"));
+        reentrantLock.addWaiter(newLockInfo("waiter-1", "conn-waiter", "cleanup-notify-key"));
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey, reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        
+        Response response = lockOperationService.onApply(
+            buildCleanupConnectionRequest("cleanup-notify-key", "conn-1"));
+        
+        assertTrue(response.getSuccess());
+        Mockito.verify(rpcPushService, Mockito.timeout(1000))
+            .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+    }
+    
+    @Test
+    public void testNotifyFirstWaiterIgnoresPushFailure() throws Exception {
+        buildService();
+        LockKey lockKey = new LockKey(LockConstants.NACOS_LOCK_TYPE, "cleanup-push-fail-key");
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("cleanup-push-fail-key");
+        reentrantLock.tryLock(newLockInfo("holder", "conn-holder", "cleanup-push-fail-key"));
+        reentrantLock.addWaiter(newLockInfo("waiter-1", "conn-waiter", "cleanup-push-fail-key"));
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey, reentrantLock);
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        Mockito.doThrow(new RuntimeException("push failed")).when(rpcPushService)
+            .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+        
+        Response response = lockOperationService.onApply(
+            buildCleanupConnectionRequest("cleanup-push-fail-key", "conn-holder"));
+        
+        assertTrue(response.getSuccess());
+        Mockito.verify(rpcPushService, Mockito.timeout(1000))
+            .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+    }
+    
+    @Test
+    public void testNotifyFirstWaiterReturnsWhenQueueIsEmpty() throws Exception {
+        buildService();
+        Method method = LockOperationServiceImpl.class.getDeclaredMethod("notifyFirstWaiter",
+            LockKey.class, com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock.class);
+        method.setAccessible(true);
+        
+        method.invoke(lockOperationService,
+            new LockKey(LockConstants.NACOS_LOCK_TYPE, "empty-waiter-key"),
+            new ReentrantAtomicLock("empty-waiter-key"));
+        
+        Mockito.verifyNoInteractions(rpcPushService);
+    }
+    
+    @Test
+    public void testCleanupConnectionReturnsWhenLockIsNonAbstract() {
+        buildService();
+        LockKey lockKey = new LockKey(LockConstants.NACOS_LOCK_TYPE, "cleanup-non-abstract-key");
+        ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();
+        locks.put(lockKey, Mockito.mock(AtomicLockService.class));
+        Mockito.when(lockManager.showLocks()).thenReturn(locks);
+        
+        Response response = lockOperationService.onApply(
+            buildCleanupConnectionRequest("cleanup-non-abstract-key", "conn-1"));
+        
+        assertTrue(response.getSuccess());
+    }
+    
+    @Test
+    public void testExpireLockNotifiesWaiterAndIgnoresNotificationFailure() throws Exception {
+        buildService();
+        ReentrantAtomicLock reentrantLock = new ReentrantAtomicLock("expire-notify-key");
+        LockInfo holderInfo = newLockInfo("owner-1", "conn-holder", "expire-notify-key");
+        holderInfo.setEndTime(System.currentTimeMillis() - 1000);
+        reentrantLock.tryLock(holderInfo);
+        reentrantLock.addWaiter(newLockInfo("waiter-1", "conn-waiter", "expire-notify-key"));
+        Mockito.when(lockManager.getMutexLock(Mockito.any(LockKey.class)))
+            .thenReturn(reentrantLock);
+        Mockito.doThrow(new RuntimeException("push failed")).when(rpcPushService)
+            .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+        
+        Response response = lockOperationService.onApply(
+            buildExpireRequest("owner-1", "expire-notify-key"));
+        
+        assertTrue(response.getSuccess());
+        LockResult result = serializer.deserialize(response.getData().toByteArray());
+        assertTrue(result.isSuccess());
+        Mockito.verify(rpcPushService, Mockito.timeout(1000))
+            .pushWithoutAck(Mockito.eq("conn-waiter"), Mockito.any());
+    }
+    
+    @Test
+    public void testReleaseLocksByConnectionSuccess() throws Exception {
+        buildService();
+        Mockito.when(cpProtocol.write(Mockito.any()))
+            .thenReturn(successResponse(LockResult.success(0)));
+        
+        lockOperationService.releaseLocksByConnection("conn-success");
+    }
+    
+    @Test
+    public void testReleaseLocksByConnectionIgnoresRaftFailures() throws Exception {
+        buildService();
+        Mockito.when(cpProtocol.write(Mockito.any())).thenReturn(failedResponse("cleanup failed"))
+            .thenThrow(new RuntimeException("write failed"));
+        
+        lockOperationService.releaseLocksByConnection("conn-1");
+        lockOperationService.releaseLocksByConnection("conn-2");
     }
     
     // ==================== acquireLock FIFO enforcement tests ====================
@@ -766,5 +1270,23 @@ public class LockOperationServiceImplTest {
         return WriteRequest.newBuilder().setGroup(lockOperationService.group())
             .setData(ByteString.copyFrom(serializer.serialize(mutexLockRequest)))
             .setOperation(LockOperationEnum.CLEANUP_CONNECTION.name()).build();
+    }
+    
+    private WriteRequest buildBatchCleanupConnectionRequest(String connectionId) {
+        MutexLockRequest mutexLockRequest = new MutexLockRequest();
+        mutexLockRequest.setConnectionId(connectionId);
+        return WriteRequest.newBuilder().setGroup(lockOperationService.group())
+            .setData(ByteString.copyFrom(serializer.serialize(mutexLockRequest)))
+            .setOperation(LockOperationEnum.CLEANUP_CONNECTION.name()).build();
+    }
+    
+    private LockInfo newLockInfo(String owner, String connectionId, String key) {
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, key));
+        lockInfo.setOwner(owner);
+        lockInfo.setConnectionId(connectionId);
+        lockInfo.setWaitTime(5000L);
+        lockInfo.setEndTime(System.currentTimeMillis() + 30000);
+        return lockInfo;
     }
 }

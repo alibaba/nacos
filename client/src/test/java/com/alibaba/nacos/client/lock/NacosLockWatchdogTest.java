@@ -29,12 +29,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -77,6 +82,17 @@ class NacosLockWatchdogTest {
         // BUG: 如果 unregister() 在 renewTasks.put() 之前执行，future 会泄漏
         assertTrue(renewTasks.isEmpty(),
             "register+unregister 后 renewTasks 应为空，但包含: " + renewTasks.keySet());
+    }
+    
+    @Test
+    @DisplayName("默认构造器创建可用 watchdog")
+    void testDefaultConstructor() {
+        NacosLockWatchdog defaultWatchdog = new NacosLockWatchdog();
+        try {
+            assertFalse(defaultWatchdog.isShutdown());
+        } finally {
+            defaultWatchdog.shutdown();
+        }
     }
     
     @Test
@@ -130,6 +146,22 @@ class NacosLockWatchdogTest {
     }
     
     @Test
+    @DisplayName("续约抛 RuntimeException 时应注销锁")
+    void testRuntimeExceptionDuringRenewShouldUnregister() throws Exception {
+        LockInstance instance = createInstance("key-1", "owner-1");
+        
+        when(lockGrpcClient.renew(any())).thenThrow(new RuntimeException("boom"));
+        
+        watchdog.register("key-1", lockGrpcClient, instance);
+        
+        Map<String, LockInstance> lockInstances = getLockInstances();
+        waitUntilLockRemoved(lockInstances, "key-1");
+        
+        assertNull(lockInstances.get("key-1"),
+            "续约抛 RuntimeException 后锁应被注销");
+    }
+    
+    @Test
     @DisplayName("renew 返回 false 时正确注销")
     void testRenewReturningFalseCorrectlyUnregisters() throws Exception {
         LockInstance instance = createInstance("key-1", "owner-1");
@@ -153,6 +185,18 @@ class NacosLockWatchdogTest {
         // renew 返回 false 时正确触发注销
         assertNull(lockInstances.get("key-1"),
             "renew 返回 false 后锁应被注销");
+    }
+    
+    @Test
+    @DisplayName("实例已被移除时续约任务应跳过")
+    void testRenewTaskSkipsRemovedInstance() throws Exception {
+        LockInstance instance = createInstance("key-1", "owner-1");
+        
+        watchdog.register("key-1", lockGrpcClient, instance);
+        getLockInstances().remove("key-1");
+        Thread.sleep(1200L);
+        
+        assertNull(getLockInstances().get("key-1"));
     }
     
     @Test
@@ -215,6 +259,16 @@ class NacosLockWatchdogTest {
     }
     
     @Test
+    @DisplayName("shutdown 被中断时保留中断标记")
+    void testShutdownPreservesInterruptedFlag() {
+        Thread.currentThread().interrupt();
+        
+        watchdog.shutdown();
+        
+        assertTrue(Thread.interrupted());
+    }
+    
+    @Test
     @DisplayName("shutdown 后 register 被拒绝")
     void testRegisterAfterShutdownRejected() throws Exception {
         watchdog.shutdown();
@@ -243,6 +297,48 @@ class NacosLockWatchdogTest {
                 "renewIntervalMs=0 时 register 应被拒绝");
         } finally {
             zeroWatchdog.shutdown();
+        }
+    }
+    
+    @Test
+    @DisplayName("expiredTime<=0 时使用默认 TTL 注册续约任务")
+    void testRegisterWithNonPositiveExpiredTimeUsesDefaultTtl() throws Exception {
+        LockInstance instance = createInstance("key-1", "owner-1");
+        instance.setExpiredTime(-1L);
+        
+        watchdog.register("key-1", lockGrpcClient, instance);
+        
+        assertTrue(getRenewTasks().containsKey("key-1"));
+        assertEquals(instance, getLockInstances().get("key-1"));
+    }
+    
+    @Test
+    @DisplayName("shutdown 超时等待未结束时调用 shutdownNow")
+    void testShutdownNowWhenAwaitTerminationTimesOut() throws Exception {
+        ScheduledExecutorService scheduler = replaceSchedulerWithMock();
+        when(scheduler.awaitTermination(5, TimeUnit.SECONDS)).thenReturn(false);
+        
+        watchdog.shutdown();
+        
+        verify(scheduler).shutdown();
+        verify(scheduler).shutdownNow();
+    }
+    
+    @Test
+    @DisplayName("shutdown 等待被中断时调用 shutdownNow 并保留中断标记")
+    void testShutdownNowAndPreserveInterruptWhenAwaitTerminationInterrupted()
+        throws Exception {
+        ScheduledExecutorService scheduler = replaceSchedulerWithMock();
+        when(scheduler.awaitTermination(5, TimeUnit.SECONDS))
+            .thenThrow(new InterruptedException("interrupted"));
+        
+        try {
+            watchdog.shutdown();
+            verify(scheduler).shutdown();
+            verify(scheduler).shutdownNow();
+            assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
         }
     }
     
@@ -283,6 +379,27 @@ class NacosLockWatchdogTest {
         Field field = NacosLockWatchdog.class.getDeclaredField("lockInstances");
         field.setAccessible(true);
         return (Map<String, LockInstance>) field.get(watchdog);
+    }
+    
+    private ScheduledExecutorService replaceSchedulerWithMock() throws Exception {
+        Field field = NacosLockWatchdog.class.getDeclaredField("scheduler");
+        field.setAccessible(true);
+        ScheduledExecutorService original = (ScheduledExecutorService) field.get(watchdog);
+        original.shutdownNow();
+        
+        ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
+        field.set(watchdog, scheduler);
+        return scheduler;
+    }
+    
+    private void waitUntilLockRemoved(Map<String, LockInstance> lockInstances, String key)
+        throws InterruptedException {
+        for (int i = 0; i < 50; i++) {
+            if (!lockInstances.containsKey(key)) {
+                return;
+            }
+            Thread.sleep(100);
+        }
     }
     
     private LockInstance createInstance(String key, String owner) {

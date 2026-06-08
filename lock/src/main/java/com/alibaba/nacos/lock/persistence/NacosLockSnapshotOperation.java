@@ -101,7 +101,7 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         });
     }
     
-    private boolean writeSnapshot(Writer writer) throws IOException {
+    boolean writeSnapshot(Writer writer) throws IOException {
         final String writePath = writer.getPath();
         final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
         final Checksum checksum = new CRC64();
@@ -113,7 +113,7 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         return writer.addFile(SNAPSHOT_ARCHIVE, meta);
     }
     
-    private InputStream dumpSnapshot() {
+    InputStream dumpSnapshot() {
         Map<LockKey, AtomicLockService> lockMap = new HashMap<>(lockManager.showLocks());
         return new ByteArrayInputStream(serializer.serialize(lockMap));
     }
@@ -136,7 +136,7 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         }
     }
     
-    private boolean readSnapshot(Reader reader) throws Exception {
+    boolean readSnapshot(Reader reader) throws Exception {
         final String readerPath = reader.getPath();
         Loggers.RAFT.info("snapshot start to load from : {}", readerPath);
         final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
@@ -153,9 +153,10 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         return true;
     }
     
-    private void loadSnapshot(byte[] snapshotBytes) {
+    void loadSnapshot(byte[] snapshotBytes) {
+        Map<LockKey, AtomicLockService> snapshotData = serializer.deserialize(snapshotBytes);
         ConcurrentHashMap<LockKey, AtomicLockService> newData =
-            serializer.deserialize(snapshotBytes);
+            new ConcurrentHashMap<>(snapshotData);
         
         // Initialize transient fields for all deserialized locks
         // Hessian deserialization does not call readObject(), so transient fields remain null
