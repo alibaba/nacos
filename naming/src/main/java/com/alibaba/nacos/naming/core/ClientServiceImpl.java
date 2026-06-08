@@ -43,6 +43,8 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -320,8 +322,8 @@ public class ClientServiceImpl implements ClientService {
     }
     
     @Override
-    public ObjectNode getResponsibleServer4Client(String ip, String port) {
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+    public Map<String, Object> getResponsibleServer4Client(String ip, String port) {
+        Map<String, Object> result = new HashMap<>();
         String tag = ip + InternetAddressUtil.IP_PORT_SPLITER + port;
         result.put("responsibleServer", distroMapper.mapSrv(tag));
         

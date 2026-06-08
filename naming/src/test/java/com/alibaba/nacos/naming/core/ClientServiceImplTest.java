@@ -338,9 +338,9 @@ class ClientServiceImplTest {
     void testGetResponsibleServer4Client() {
         when(distroMapper.mapSrv("1.1.1.1:8848")).thenReturn("server-a");
         
-        ObjectNode actual = clientService.getResponsibleServer4Client("1.1.1.1", "8848");
+        Map<String, Object> actual = clientService.getResponsibleServer4Client("1.1.1.1", "8848");
         
-        assertEquals("server-a", actual.get("responsibleServer").asText());
+        assertEquals("server-a", actual.get("responsibleServer").toString());
     }
     
     private Client mockPublishedClient(String clientId, List<Service> services,

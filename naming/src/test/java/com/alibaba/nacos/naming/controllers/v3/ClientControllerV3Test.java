@@ -32,7 +32,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.ClientServiceForm;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,6 +50,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -207,14 +208,14 @@ class ClientControllerV3Test extends BaseTest {
     
     @Test
     void testGetResponsibleServer4Client() {
-        ObjectNode responsibleServer = JacksonUtils.createEmptyJsonNode();
+        Map<String, Object> responsibleServer = new HashMap<>();
         responsibleServer.put("responsibleServer", "server-a");
         when(clientServiceV2Impl.getResponsibleServer4Client("127.0.0.1", "8848"))
             .thenReturn(responsibleServer);
         
-        Result<ObjectNode> actual =
+        Result<Map<String, Object>> actual =
             clientControllerV3.getResponsibleServer4Client("127.0.0.1", "8848");
         
-        assertEquals("server-a", actual.getData().get("responsibleServer").asText());
+        assertEquals("server-a", actual.getData().get("responsibleServer").toString());
     }
 }
