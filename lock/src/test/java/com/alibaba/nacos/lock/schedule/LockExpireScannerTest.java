@@ -118,7 +118,7 @@ public class LockExpireScannerTest {
         LockInfo waiterInfo = new LockInfo();
         waiterInfo.setOwner("waiter-1");
         waiterInfo.setConnectionId("conn-waiter");
-        waiterInfo.setWaitTimeMs(5000);
+        waiterInfo.setWaitTime(5000L);
         waiterInfo.setEndTime(System.currentTimeMillis() + 30000);
         lockWithWaiters.addWaiter(waiterInfo);
         

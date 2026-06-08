@@ -34,7 +34,7 @@ public class LockInstance implements Serializable {
     
     private String key;
     
-    private long expiredTime;
+    private Long expiredTime;
     
     private Map<String, ? extends Serializable> params;
     
@@ -42,7 +42,7 @@ public class LockInstance implements Serializable {
     
     private String owner;
     
-    private long waitTimeMs = -1L;
+    private Long waitTime = -1L;
     
     /**
      * Whether this request is a retry from the wait queue.
@@ -53,7 +53,7 @@ public class LockInstance implements Serializable {
      */
     private boolean waiterRetry;
     
-    public LockInstance(String key, long expiredTime, String lockType) {
+    public LockInstance(String key, Long expiredTime, String lockType) {
         this.key = key;
         this.expiredTime = expiredTime;
         this.lockType = lockType;
@@ -62,11 +62,11 @@ public class LockInstance implements Serializable {
     public LockInstance() {
     }
     
-    public long getExpiredTime() {
+    public Long getExpiredTime() {
         return expiredTime;
     }
     
-    public void setExpiredTime(long expiredTime) {
+    public void setExpiredTime(Long expiredTime) {
         this.expiredTime = expiredTime;
     }
     
@@ -131,12 +131,12 @@ public class LockInstance implements Serializable {
         this.owner = owner;
     }
     
-    public long getWaitTimeMs() {
-        return waitTimeMs;
+    public Long getWaitTime() {
+        return waitTime;
     }
     
-    public void setWaitTimeMs(long waitTimeMs) {
-        this.waitTimeMs = waitTimeMs;
+    public void setWaitTime(Long waitTime) {
+        this.waitTime = waitTime;
     }
     
     public boolean isWaiterRetry() {
@@ -155,7 +155,7 @@ public class LockInstance implements Serializable {
             + ", params=" + params
             + ", lockType='" + lockType + '\''
             + ", owner='" + owner + '\''
-            + ", waitTimeMs=" + waitTimeMs
+            + ", waitTime=" + waitTime
             + ", waiterRetry=" + waiterRetry
             + '}';
     }

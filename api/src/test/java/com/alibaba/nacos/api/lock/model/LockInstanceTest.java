@@ -59,6 +59,7 @@ class LockInstanceTest {
         assertNull(instance.getExpiredTime());
         assertNull(instance.getLockType());
         assertNull(instance.getParams());
+        assertEquals(-1L, instance.getWaitTime());
     }
     
     @Test

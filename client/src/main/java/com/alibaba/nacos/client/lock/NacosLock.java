@@ -113,12 +113,12 @@ public class NacosLock implements Lock {
         return clientId + ":" + Thread.currentThread().getId();
     }
     
-    private LockInstance buildInstance(long expiredTimeMs) {
+    private LockInstance buildInstance(long expiredTime) {
         LockInstance instance = new LockInstance();
         instance.setKey(key);
         instance.setLockType(lockType);
         instance.setOwner(currentOwner());
-        instance.setExpiredTime(expiredTimeMs);
+        instance.setExpiredTime(expiredTime);
         return instance;
     }
     
@@ -146,7 +146,7 @@ public class NacosLock implements Lock {
         while (true) {
             try {
                 LockInstance instance = buildInstance(-1);
-                instance.setWaitTimeMs(DEFAULT_SERVER_WAIT_TIME_MS);
+                instance.setWaitTime(DEFAULT_SERVER_WAIT_TIME_MS);
                 if (!firstAttempt) {
                     instance.setWaiterRetry(true);
                 }
@@ -191,7 +191,7 @@ public class NacosLock implements Lock {
             }
             try {
                 LockInstance instance = buildInstance(-1);
-                instance.setWaitTimeMs(DEFAULT_SERVER_WAIT_TIME_MS);
+                instance.setWaitTime(DEFAULT_SERVER_WAIT_TIME_MS);
                 if (!firstAttempt) {
                     instance.setWaiterRetry(true);
                 }
@@ -258,7 +258,7 @@ public class NacosLock implements Lock {
                 grpcClient.cancelWait(key, lockType, currentOwner());
                 return false;
             }
-            instance.setWaitTimeMs(remaining);
+            instance.setWaitTime(remaining);
             if (!firstAttempt) {
                 instance.setWaiterRetry(true);
             }

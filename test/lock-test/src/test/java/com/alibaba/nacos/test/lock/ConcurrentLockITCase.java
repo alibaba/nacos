@@ -143,7 +143,7 @@ public class ConcurrentLockITCase extends BaseLockITCase {
                 try {
                     lock.setOwner("iteration-" + iteration);
                     lock.setExpiredTime(5000L);
-                    lock.setWaitTimeMs(30000L);
+                    lock.setWaitTime(30000L);
 
                     Boolean lockResult = lockService.lock(lock);
                     if (lockResult) {

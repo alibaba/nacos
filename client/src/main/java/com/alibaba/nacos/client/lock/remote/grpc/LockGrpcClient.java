@@ -145,15 +145,15 @@ public class LockGrpcClient extends AbstractLockClient {
         copy.setLockType(instance.getLockType());
         copy.setOwner(instance.getOwner());
         copy.setExpiredTime(instance.getExpiredTime());
-        copy.setWaitTimeMs(instance.getWaitTimeMs());
+        copy.setWaitTime(instance.getWaitTime());
         copy.setParams(instance.getParams());
         
-        long waitTimeMs = copy.getWaitTimeMs();
-        if (waitTimeMs == 0) {
-            waitTimeMs = DEFAULT_REQUEST_TIMEOUT_MS;
+        long waitTime = copy.getWaitTime();
+        if (waitTime == 0) {
+            waitTime = DEFAULT_REQUEST_TIMEOUT_MS;
         }
-        boolean useWaitQueue = waitTimeMs > 0;
-        long deadline = useWaitQueue ? System.currentTimeMillis() + waitTimeMs : 0;
+        boolean useWaitQueue = waitTime > 0;
+        long deadline = useWaitQueue ? System.currentTimeMillis() + waitTime : 0;
         boolean acquired = false;
         
         // Register for notification ONCE before the loop to avoid TOCTOU race condition.

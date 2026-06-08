@@ -151,14 +151,14 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
     /**
      * Add a waiter to the queue when lock acquisition fails.
      *
-     * @param lockInfo lock request info with connectionId and waitTimeMs
+     * @param lockInfo lock request info with connectionId and waitTime
      * @return position in queue (0-based)
      */
     public int addWaiter(LockInfo lockInfo) {
         lock.lock();
         try {
             long now = System.currentTimeMillis();
-            long deadline = lockInfo.getWaitTimeMs() > 0 ? now + lockInfo.getWaitTimeMs() : 0;
+            long deadline = lockInfo.getWaitTime() > 0 ? now + lockInfo.getWaitTime() : 0;
             for (int i = 0; i < waitQueue.size(); i++) {
                 WaitEntry existing = waitQueue.get(i);
                 if (existing.getOwner().equals(lockInfo.getOwner())
@@ -251,7 +251,7 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
                 return LockResult.success(reentrantCount);
             }
             
-            if (lockInfo.getWaitTimeMs() > 0) {
+            if (lockInfo.getWaitTime() > 0) {
                 return LockResult.waiting(0);
             }
             return LockResult.fail("Lock is held by another owner");

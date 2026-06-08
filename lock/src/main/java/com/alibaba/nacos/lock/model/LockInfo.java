@@ -31,7 +31,7 @@ public class LockInfo implements Serializable {
     
     private LockKey key;
     
-    private long endTime;
+    private Long endTime;
     
     private Map<String, ? extends Serializable> params;
     
@@ -39,7 +39,7 @@ public class LockInfo implements Serializable {
     
     private String connectionId;
     
-    private long waitTimeMs;
+    private Long waitTime;
     
     private boolean waiterRetry;
     
@@ -54,11 +54,11 @@ public class LockInfo implements Serializable {
         this.key = key;
     }
     
-    public long getEndTime() {
+    public Long getEndTime() {
         return endTime;
     }
     
-    public void setEndTime(long endTime) {
+    public void setEndTime(Long endTime) {
         this.endTime = endTime;
     }
     
@@ -86,12 +86,12 @@ public class LockInfo implements Serializable {
         this.connectionId = connectionId;
     }
     
-    public long getWaitTimeMs() {
-        return waitTimeMs;
+    public Long getWaitTime() {
+        return waitTime;
     }
     
-    public void setWaitTimeMs(long waitTimeMs) {
-        this.waitTimeMs = waitTimeMs;
+    public void setWaitTime(Long waitTime) {
+        this.waitTime = waitTime;
     }
     
     public boolean isWaiterRetry() {

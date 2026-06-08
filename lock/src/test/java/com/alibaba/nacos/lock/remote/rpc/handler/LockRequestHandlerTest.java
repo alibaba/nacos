@@ -81,7 +81,7 @@ public class LockRequestHandlerTest {
         lockInstance.setKey("key");
         lockInstance.setOwner("test-owner");
         lockInstance.setLockType(LockConstants.REENTRANT_LOCK_TYPE);
-        // expiredTime 默认为 0（long 未设置）
+        lockInstance.setExpiredTime(0L);
         
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(lockInstance);
@@ -104,7 +104,7 @@ public class LockRequestHandlerTest {
         lockInstance.setKey("key");
         lockInstance.setOwner("test-owner");
         lockInstance.setLockType(LockConstants.REENTRANT_LOCK_TYPE);
-        // expiredTime 默认为 0（long 未设置）
+        lockInstance.setExpiredTime(0L);
         
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(lockInstance);

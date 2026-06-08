@@ -38,8 +38,8 @@ class LockInfoTest {
         assertNull(info.getOwner());
         assertNull(info.getConnectionId());
         assertNull(info.getParams());
-        assertEquals(0, info.getEndTime());
-        assertEquals(0, info.getWaitTimeMs());
+        assertNull(info.getEndTime());
+        assertNull(info.getWaitTime());
         assertFalse(info.isWaiterRetry());
     }
     
@@ -52,14 +52,14 @@ class LockInfoTest {
         info.setOwner("owner-1");
         info.setConnectionId("conn-1");
         info.setEndTime(12345L);
-        info.setWaitTimeMs(5000L);
+        info.setWaitTime(5000L);
         info.setWaiterRetry(true);
         
         assertEquals(key, info.getKey());
         assertEquals("owner-1", info.getOwner());
         assertEquals("conn-1", info.getConnectionId());
         assertEquals(12345L, info.getEndTime());
-        assertEquals(5000L, info.getWaitTimeMs());
+        assertEquals(5000L, info.getWaitTime());
         assertTrue(info.isWaiterRetry());
     }
     

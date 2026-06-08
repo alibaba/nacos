@@ -438,7 +438,7 @@ public class JucLockITCase extends BaseLockITCase {
 
             // D 用底层 RPC 观察服务端队列：若 B 的 cancel 已生效，C 是队头，D 应排在 C 后面。
             LockInstance lockD = createOwnedReentrantLock(key, "client-D");
-            lockD.setWaitTimeMs(5000L);
+            lockD.setWaitTime(5000L);
             LockResult waitD = grpcClient.lockWithResult(lockD);
             assertTrue(waitD.isWaiting(), "Client D should wait while A still holds the lock");
             assertEquals(1, waitD.getWaitPosition(),

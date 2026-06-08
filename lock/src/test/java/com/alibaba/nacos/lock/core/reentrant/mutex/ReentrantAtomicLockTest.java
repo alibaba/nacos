@@ -138,11 +138,11 @@ class ReentrantAtomicLockTest {
         lock.tryLock(lockInfo);
         
         LockInfo waiter1 = createLockInfo("owner-2", "conn-2", 30000);
-        waiter1.setWaitTimeMs(5000);
+        waiter1.setWaitTime(5000L);
         lock.addWaiter(waiter1);
         
         LockInfo waiter2 = createLockInfo("owner-3", "conn-3", 30000);
-        waiter2.setWaitTimeMs(5000);
+        waiter2.setWaitTime(5000L);
         lock.addWaiter(waiter2);
         
         assertEquals(2, lock.getWaitQueue().size());

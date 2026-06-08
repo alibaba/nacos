@@ -454,7 +454,7 @@ class AbstractAtomicLockTest {
         Thread.sleep(100);
         
         LockInfo retryInfo = createLockInfo("owner-1", "conn-1", 5000);
-        retryInfo.setWaitTimeMs(5000);
+        retryInfo.setWaitTime(5000L);
         LockResult result = lock.tryLockAsQueueHead(retryInfo);
         
         assertFalse(result.isSuccess());
@@ -478,7 +478,7 @@ class AbstractAtomicLockTest {
         
         for (int i = 0; i < 5; i++) {
             LockInfo retryInfo = createLockInfo("owner-1", "conn-1", 100);
-            retryInfo.setWaitTimeMs(100);
+            retryInfo.setWaitTime(100L);
             lock.tryLockAsQueueHead(retryInfo);
             try {
                 Thread.sleep(50);
@@ -586,7 +586,7 @@ class AbstractAtomicLockTest {
     }
     
     @Test
-    @DisplayName("tryLockAsQueueHead 锁被持有且 waitTimeMs<=0 时返回 fail")
+    @DisplayName("tryLockAsQueueHead 锁被持有且 waitTime<=0 时返回 fail")
     void testTryLockAsQueueHeadLockHeldNoWait() {
         LockInfo holder = createLockInfo("owner-0", "conn-0", 30000);
         lock.tryLock(holder);
@@ -594,7 +594,7 @@ class AbstractAtomicLockTest {
         LockInfo waiter = createLockInfo("owner-1", "conn-1", 0);
         lock.addWaiter(waiter);
         
-        // waitTimeMs=0, 锁被持有 → 返回 fail 而非 waiting
+        // waitTime=0, 锁被持有 → 返回 fail 而非 waiting
         LockResult result = lock.tryLockAsQueueHead(waiter);
         assertFalse(result.isSuccess());
         assertFalse(result.isWaiting());
@@ -633,11 +633,11 @@ class AbstractAtomicLockTest {
         assertNull(lock.getConnectionId());
     }
     
-    private LockInfo createLockInfo(String owner, String connectionId, long waitTimeMs) {
+    private LockInfo createLockInfo(String owner, String connectionId, long waitTime) {
         LockInfo lockInfo = new LockInfo();
         lockInfo.setOwner(owner);
         lockInfo.setConnectionId(connectionId);
-        lockInfo.setWaitTimeMs(waitTimeMs);
+        lockInfo.setWaitTime(waitTime);
         lockInfo.setEndTime(System.currentTimeMillis() + 30000);
         return lockInfo;
     }

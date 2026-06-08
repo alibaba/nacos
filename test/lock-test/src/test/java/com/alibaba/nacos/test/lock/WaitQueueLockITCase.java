@@ -59,7 +59,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         // 客户端 B 尝试获取锁，设置等待超时
         LockInstance lockB = createReentrantLock(key);
         lockB.setOwner("client-B");
-        lockB.setWaitTimeMs(5000L); // 等待5秒
+        lockB.setWaitTime(5000L); // 等待5秒
 
         // 在另一个线程中尝试加锁
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -95,7 +95,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         // 客户端 B 尝试获取锁，设置较短的等待超时
         LockInstance lockB = createReentrantLock(key);
         lockB.setOwner("client-B");
-        lockB.setWaitTimeMs(2000L); // 只等待2秒
+        lockB.setWaitTime(2000L); // 只等待2秒
 
         long startTime = System.currentTimeMillis();
         Boolean resultB = lockService.lock(lockB);
@@ -137,7 +137,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
                 try {
                     LockInstance lock = createReentrantLock(key);
                     lock.setOwner("client-" + clientId);
-                    lock.setWaitTimeMs(10000L);
+                    lock.setWaitTime(10000L);
 
                     startLatch.countDown();
                     startLatch.await();
@@ -194,7 +194,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         executor.submit(() -> {
             LockInstance lockB = createReentrantLock(key);
             lockB.setOwner("client-B");
-            lockB.setWaitTimeMs(10000L);
+            lockB.setWaitTime(10000L);
 
             bStarted.countDown();
             try {
@@ -217,7 +217,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         executor.submit(() -> {
             LockInstance lockC = createReentrantLock(key);
             lockC.setOwner("client-C");
-            lockC.setWaitTimeMs(10000L);
+            lockC.setWaitTime(10000L);
 
             try {
                 Boolean resultC = lockService.lock(lockC);
@@ -259,7 +259,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         // 客户端 B 尝试获取锁，不等待
         LockInstance lockB = createReentrantLock(key);
         lockB.setOwner("client-B");
-        lockB.setWaitTimeMs(-1L); // 不等待，立即失败
+        lockB.setWaitTime(-1L); // 不等待，立即失败
 
         long startTime = System.currentTimeMillis();
         Boolean resultB = lockService.lock(lockB);
@@ -285,13 +285,13 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         assertTrue(resultA.isSuccess(), "Client A should acquire the lock");
 
         LockInstance lockB = createOwnedReentrantLock(key, "client-B");
-        lockB.setWaitTimeMs(10000L);
+        lockB.setWaitTime(10000L);
         LockResult resultB = grpcClient.lockWithResult(lockB);
         assertFalse(resultB.isSuccess(), "Client B should wait while A holds the lock");
         assertTrue(resultB.isWaiting(), "Client B should be queued as the first waiter");
 
         LockInstance lockC = createOwnedReentrantLock(key, "client-C");
-        lockC.setWaitTimeMs(10000L);
+        lockC.setWaitTime(10000L);
         LockResult resultC = grpcClient.lockWithResult(lockC);
         assertFalse(resultC.isSuccess(), "Client C should wait while A holds the lock");
         assertTrue(resultC.isWaiting(), "Client C should be queued behind B");
@@ -330,12 +330,12 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         assertTrue(grpcClient.lockWithResult(lockA).isSuccess(), "Client A should acquire the lock");
 
         LockInstance lockB = createOwnedReentrantLock(key, "client-B");
-        lockB.setWaitTimeMs(10000L);
+        lockB.setWaitTime(10000L);
         LockResult waitB = grpcClient.lockWithResult(lockB);
         assertTrue(waitB.isWaiting(), "Client B should be queued as the first waiter");
 
         LockInstance lockC = createOwnedReentrantLock(key, "client-C");
-        lockC.setWaitTimeMs(10000L);
+        lockC.setWaitTime(10000L);
         LockResult waitC = grpcClient.lockWithResult(lockC);
         assertTrue(waitC.isWaiting(), "Client C should be queued behind B");
 
@@ -397,7 +397,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         
         // 客户端 B 进入服务端等待队列，并成为当前队头。
         LockInstance lockB = createOwnedReentrantLock(key, "client-B");
-        lockB.setWaitTimeMs(5000L);
+        lockB.setWaitTime(5000L);
         grpcClient.registerForNotification(key, "client-B");
         LockResult waitB = grpcClient.lockWithResult(lockB);
         assertTrue(waitB.isWaiting(), "Client B should be queued as the first waiter");
@@ -408,7 +408,7 @@ public class WaitQueueLockITCase extends BaseLockITCase {
         
         // C 随后入队。如果 B 已从服务端删除，A 释放后 C 应成为队头。
         LockInstance lockC = createOwnedReentrantLock(key, "client-C");
-        lockC.setWaitTimeMs(5000L);
+        lockC.setWaitTime(5000L);
         LockResult waitC = grpcClient.lockWithResult(lockC);
         assertTrue(waitC.isWaiting(), "Client C should wait while A holds the lock");
         assertEquals(0, waitC.getWaitPosition(), "Client C should become the queue head");

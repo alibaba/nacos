@@ -220,7 +220,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             
             // Strict FIFO: non-retry requests must queue behind existing waiters
             if (!lockInfo.isWaiterRetry() && atomicLock.hasWaiters()) {
-                if (lockInfo.getWaitTimeMs() > 0) {
+                if (lockInfo.getWaitTime() > 0) {
                     int position = atomicLock.addWaiter(lockInfo);
                     return LockResult.waiting(position);
                 }
@@ -232,7 +232,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 return LockResult.success(atomicLock.getReentrantCount());
             }
             
-            if (lockInfo.getWaitTimeMs() > 0) {
+            if (lockInfo.getWaitTime() > 0) {
                 int position = atomicLock.addWaiter(lockInfo);
                 return LockResult.waiting(position);
             }
@@ -417,7 +417,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         lockInfo.setParams(lockInstance.getParams());
         lockInfo.setOwner(lockInstance.getOwner());
         lockInfo.setConnectionId(connectionId);
-        lockInfo.setWaitTimeMs(lockInstance.getWaitTimeMs());
+        lockInfo.setWaitTime(lockInstance.getWaitTime());
         lockInfo.setWaiterRetry(lockInstance.isWaiterRetry());
         
         long expiredTime = lockInstance.getExpiredTime();

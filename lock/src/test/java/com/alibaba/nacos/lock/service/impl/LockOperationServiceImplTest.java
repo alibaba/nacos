@@ -228,7 +228,7 @@ public class LockOperationServiceImplTest {
         LockInfo waiterInfo = new LockInfo();
         waiterInfo.setOwner("waiter-1");
         waiterInfo.setConnectionId("conn-waiter");
-        waiterInfo.setWaitTimeMs(5000);
+        waiterInfo.setWaitTime(5000L);
         waiterInfo.setEndTime(System.currentTimeMillis() + 30000);
         reentrantLock.addWaiter(waiterInfo);
         
@@ -260,7 +260,7 @@ public class LockOperationServiceImplTest {
         LockInfo waiterInfo = new LockInfo();
         waiterInfo.setOwner("waiter-1");
         waiterInfo.setConnectionId("conn-1");
-        waiterInfo.setWaitTimeMs(5000);
+        waiterInfo.setWaitTime(5000L);
         waiterInfo.setEndTime(System.currentTimeMillis() + 30000);
         reentrantLock.addWaiter(waiterInfo);
         
@@ -294,14 +294,14 @@ public class LockOperationServiceImplTest {
         LockInfo waiterInfoB = new LockInfo();
         waiterInfoB.setOwner("waiter-1");
         waiterInfoB.setConnectionId("conn-1");
-        waiterInfoB.setWaitTimeMs(5000);
+        waiterInfoB.setWaitTime(5000L);
         waiterInfoB.setEndTime(System.currentTimeMillis() + 30000);
         reentrantLock.addWaiter(waiterInfoB);
         
         LockInfo waiterInfoC = new LockInfo();
         waiterInfoC.setOwner("waiter-2");
         waiterInfoC.setConnectionId("conn-2");
-        waiterInfoC.setWaitTimeMs(5000);
+        waiterInfoC.setWaitTime(5000L);
         waiterInfoC.setEndTime(System.currentTimeMillis() + 30000);
         reentrantLock.addWaiter(waiterInfoC);
         
@@ -335,14 +335,14 @@ public class LockOperationServiceImplTest {
         LockInfo waiterInfoB = new LockInfo();
         waiterInfoB.setOwner("waiter-1");
         waiterInfoB.setConnectionId("conn-1");
-        waiterInfoB.setWaitTimeMs(5000);
+        waiterInfoB.setWaitTime(5000L);
         waiterInfoB.setEndTime(System.currentTimeMillis() + 30000);
         reentrantLock.addWaiter(waiterInfoB);
         
         LockInfo waiterInfoC = new LockInfo();
         waiterInfoC.setOwner("waiter-2");
         waiterInfoC.setConnectionId("conn-2");
-        waiterInfoC.setWaitTimeMs(5000);
+        waiterInfoC.setWaitTime(5000L);
         waiterInfoC.setEndTime(System.currentTimeMillis() + 30000);
         reentrantLock.addWaiter(waiterInfoC);
         
@@ -388,7 +388,7 @@ public class LockOperationServiceImplTest {
         LockInfo waiterInfo = new LockInfo();
         waiterInfo.setOwner("waiter-1");
         waiterInfo.setConnectionId("conn-waiter");
-        waiterInfo.setWaitTimeMs(30000);
+        waiterInfo.setWaitTime(30000L);
         waiterInfo.setEndTime(System.currentTimeMillis() + 30000);
         reentrantLock.addWaiter(waiterInfo);
         
@@ -527,7 +527,7 @@ public class LockOperationServiceImplTest {
         LockInfo waiterInfo = new LockInfo();
         waiterInfo.setOwner("owner-2");
         waiterInfo.setConnectionId("conn-2");
-        waiterInfo.setWaitTimeMs(30000);
+        waiterInfo.setWaitTime(30000L);
         waiterInfo.setEndTime(System.currentTimeMillis() + 30000);
         reentrantLock.addWaiter(waiterInfo);
         
@@ -562,13 +562,13 @@ public class LockOperationServiceImplTest {
     // ==================== helper methods ====================
     
     private WriteRequest buildAcquireRequest(String owner, String connectionId,
-        long waitTimeMs, boolean waiterRetry) {
+        long waitTime, boolean waiterRetry) {
         MutexLockRequest mutexLockRequest = new MutexLockRequest();
         LockInfo lockInfo = new LockInfo();
         lockInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, "fifo-key"));
         lockInfo.setOwner(owner);
         lockInfo.setConnectionId(connectionId);
-        lockInfo.setWaitTimeMs(waitTimeMs);
+        lockInfo.setWaitTime(waitTime);
         lockInfo.setWaiterRetry(waiterRetry);
         lockInfo.setEndTime(System.currentTimeMillis() + 30000);
         mutexLockRequest.setLockInfo(lockInfo);
@@ -694,14 +694,14 @@ public class LockOperationServiceImplTest {
         LockInfo waiterInfo = new LockInfo();
         waiterInfo.setOwner("waiter-disconnected");
         waiterInfo.setConnectionId("conn-disconnected");
-        waiterInfo.setWaitTimeMs(5000);
+        waiterInfo.setWaitTime(5000L);
         reentrantLock.addWaiter(waiterInfo);
         
         // Another waiter also in queue
         LockInfo waiterInfo2 = new LockInfo();
         waiterInfo2.setOwner("waiter-other");
         waiterInfo2.setConnectionId("conn-other");
-        waiterInfo2.setWaitTimeMs(5000);
+        waiterInfo2.setWaitTime(5000L);
         reentrantLock.addWaiter(waiterInfo2);
         
         ConcurrentHashMap<LockKey, AtomicLockService> locks = new ConcurrentHashMap<>();

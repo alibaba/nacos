@@ -105,7 +105,7 @@ public class JucLockRegressionITCase extends BaseLockITCase {
 
         // 客户端 D 观察队列：B 被清理后 D 应排在位置 0
         LockInstance lockD = createOwnedReentrantLock(key, "client-D");
-        lockD.setWaitTimeMs(5000L);
+        lockD.setWaitTime(5000L);
         LockResult waitD = grpcClient.lockWithResult(lockD);
         assertTrue(waitD.isWaiting(), "D should wait while A holds");
         assertEquals(0, waitD.getWaitPosition(),
@@ -224,7 +224,7 @@ public class JucLockRegressionITCase extends BaseLockITCase {
         // B 超时后，D 应排在位置 0（B 的条目已清理）
         Thread.sleep(200);
         LockInstance lockD = createOwnedReentrantLock(key, "client-D");
-        lockD.setWaitTimeMs(5000L);
+        lockD.setWaitTime(5000L);
         LockResult waitD = grpcClient.lockWithResult(lockD);
         assertTrue(waitD.isWaiting());
         assertEquals(0, waitD.getWaitPosition(),
