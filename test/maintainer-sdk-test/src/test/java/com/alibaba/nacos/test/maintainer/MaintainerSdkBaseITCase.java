@@ -142,8 +142,10 @@ public abstract class MaintainerSdkBaseITCase {
             return false;
         }
         NacosException nacosException = (NacosException) exception;
+        String message = String.valueOf(nacosException.getMessage()).toLowerCase(Locale.ROOT);
         return NacosException.NOT_FOUND == nacosException.getErrCode()
-                || NacosException.RESOURCE_NOT_FOUND == nacosException.getErrCode();
+                || NacosException.RESOURCE_NOT_FOUND == nacosException.getErrCode()
+                || message.contains("not found") || message.contains("not exist");
     }
     
     @FunctionalInterface

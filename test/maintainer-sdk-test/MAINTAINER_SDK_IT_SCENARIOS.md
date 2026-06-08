@@ -29,12 +29,12 @@ remain, and `Pending` means no IT verifies that surface yet.
 | `BetaConfigMaintainerService` | Publish/query/delete beta config, required beta IP validation, and normal config compatibility. | Covered | Covers required beta IP validation, beta publish/query/stop lifecycle, beta content assertion, and missing-after-stop controlled exception. |
 | `ConfigHistoryMaintainerService` | Config history list/detail/previous lookup across publish/update/delete lifecycle. | Partial | Covers history list/detail/previous lookup after publish and update. Delete-history behavior remains pending to avoid coupling this batch to delete trace timing. |
 | `ConfigOpsMaintainerService` | Config listener/client/search diagnostics with stable setup and empty-result behavior. | Covered | Covers config listener diagnostics by dataId/group/namespace, IP listener diagnostics, local-cache dump command, and config log-level command. |
-| `NamingMaintainerService` and sub-services | Service/instance/cluster/client/health/ops admin workflows, defaulting, validation, idempotency, and cleanup. | Partial | Covers persistent service create/get/update/list/remove lifecycle, missing service controlled exception, invalid service parameter validation, persistent instance register/list/detail/update/partial-update/batch-metadata-update/batch-metadata-delete/deregister lifecycle, invalid instance parameter validation, subscriber diagnostics, naming metrics/log operations, and cleanup. Cluster health, health-checker queries, selector types, naming client diagnostics, and auth-enabled behavior remain pending. |
+| `NamingMaintainerService` and sub-services | Service/instance/cluster/client/health/ops admin workflows, defaulting, validation, idempotency, and cleanup. | Covered | Covers persistent service create/get/update/list/detail-list/remove lifecycle, missing service controlled exception, invalid service parameter validation, persistent instance register/list/detail/update/partial-update/batch-metadata-update/batch-metadata-delete/deregister lifecycle, invalid instance parameter validation, selector type and health-checker queries, cluster health-checker metadata update, manual persistent instance health status update, naming client list/detail/publisher/subscriber diagnostics, subscriber diagnostics, naming metrics/log operations, and cleanup. Auth-enabled behavior is intentionally deferred because standalone maintainer SDK IT does not enable auth. |
 | `AiMaintainerService` and delegate services | MCP, A2A, Prompt, Skill, AgentSpec, and Pipeline admin workflows, version behavior, validation, upload/download boundaries, and cleanup. | Pending | No maintainer SDK IT yet. |
 
 ## Coverage Summary
 
 Current in-scope maintained surfaces: 9.
 
-- Strict coverage: 4 / 9 = 44.4%
-- Effective coverage: (4 + 3 * 0.5) / 9 = 61.1%
+- Strict coverage: 5 / 9 = 55.6%
+- Effective coverage: (5 + 3 * 0.5) / 9 = 72.2%

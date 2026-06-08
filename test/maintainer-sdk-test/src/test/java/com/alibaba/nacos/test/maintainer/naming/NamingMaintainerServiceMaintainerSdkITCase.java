@@ -21,6 +21,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientPublisherInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSubscriberInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSummaryInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
@@ -52,6 +58,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: maintainer SDK can register, query, update,
  *     partially update, batch update metadata, and deregister persistent
  *     instances.</li>
+ *     <li>Expected capability: maintainer SDK can query selector types,
+ *     health checkers, service detail pages, cluster metadata, manual
+ *     persistent instance health, and naming client diagnostics.</li>
  *     <li>Boundary/validation: missing service and invalid service/instance
  *     required parameters fail with controlled SDK exceptions.</li>
  * </ul>
@@ -71,6 +80,7 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 () -> maintainerService.getServiceDetail(namespaceId, groupName, serviceName));
         assertNotNull(maintainerService.createService(namespaceId, groupName, serviceName, false,
                 0.3F));
+        addCleanup(() -> maintainerService.removeService(namespaceId, groupName, serviceName));
         
         ServiceDetailInfo detail =
                 maintainerService.getServiceDetail(namespaceId, groupName, serviceName);
@@ -95,6 +105,10 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 maintainerService.listServices(namespaceId, groupName, serviceName, false, 1, 10);
         assertContainsService(services, groupName, serviceName);
         
+        Page<ServiceDetailInfo> detailedServices =
+                maintainerService.listServicesWithDetail(namespaceId, groupName, serviceName, 1, 10);
+        assertContainsServiceDetail(detailedServices, groupName, serviceName);
+        
         assertNotNull(maintainerService.removeService(namespaceId, groupName, serviceName));
         assertThrows(NacosException.class,
                 () -> maintainerService.getServiceDetail(namespaceId, groupName, serviceName));
@@ -114,6 +128,7 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertNotNull(maintainerService.createService(service));
         addCleanup(() -> maintainerService.removeService(service));
         assertNotNull(maintainerService.registerInstance(service, instance));
+        addCleanup(() -> maintainerService.deregisterInstance(service, instance));
         
         Instance detail = maintainerService.getInstanceDetail(service, instance);
         assertInstance(detail, ip, port, true, true);
@@ -168,6 +183,55 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
     }
     
     @Test
+    void shouldManageClusterAndInstanceHealth() throws Exception {
+        NamingMaintainerService maintainerService = createNamingMaintainerService();
+        String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        String groupName = randomGroup("naming");
+        String serviceName = randomMaintainerName("cluster");
+        String ip = "127.0.0.1";
+        int port = randomPort();
+        Service service = service(namespaceId, groupName, serviceName, false);
+        Instance instance = instance(ip, port, false);
+        
+        assertNotNull(maintainerService.createService(service));
+        addCleanup(() -> maintainerService.removeService(service));
+        assertNotNull(maintainerService.registerInstance(service, instance));
+        addCleanup(() -> maintainerService.deregisterInstance(service, instance));
+        
+        ClusterInfo cluster = new ClusterInfo();
+        cluster.setClusterName(Constants.DEFAULT_CLUSTER_NAME);
+        cluster.setHealthChecker(new AbstractHealthChecker.None());
+        cluster.setHealthyCheckPort(port);
+        cluster.setUseInstancePortForCheck(true);
+        cluster.setMetadata(Collections.singletonMap("scenario", "cluster-health"));
+        assertEquals("ok", maintainerService.updateCluster(service, cluster));
+        
+        waitUntil("cluster metadata should be visible", () -> {
+            ServiceDetailInfo detail = maintainerService.getServiceDetail(service);
+            ClusterInfo updatedCluster =
+                    detail.getClusterMap().get(Constants.DEFAULT_CLUSTER_NAME);
+            return null != updatedCluster
+                    && null != updatedCluster.getHealthChecker()
+                    && AbstractHealthChecker.None.TYPE.equals(
+                            updatedCluster.getHealthChecker().getType())
+                    && null != updatedCluster.getMetadata()
+                    && "cluster-health".equals(updatedCluster.getMetadata().get("scenario"));
+        });
+        
+        Instance unhealthy = instance(ip, port, false);
+        unhealthy.setHealthy(false);
+        assertEquals("ok", maintainerService.updateInstanceHealthStatus(service, unhealthy));
+        waitUntil("manual unhealthy status should be visible",
+                () -> !maintainerService.getInstanceDetail(service, instance).isHealthy());
+        
+        Instance healthy = instance(ip, port, false);
+        healthy.setHealthy(true);
+        assertEquals("ok", maintainerService.updateInstanceHealthStatus(service, healthy));
+        waitUntil("manual healthy status should be visible",
+                () -> maintainerService.getInstanceDetail(service, instance).isHealthy());
+    }
+    
+    @Test
     void shouldRejectInvalidNamingParameters() throws Exception {
         NamingMaintainerService maintainerService = createNamingMaintainerService();
         String groupName = randomGroup("naming");
@@ -183,6 +247,72 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         Instance invalidPort = instance("127.0.0.1", 70000, false);
         assertThrows(NacosException.class, () -> maintainerService.registerInstance(service,
                 invalidPort));
+    }
+    
+    @Test
+    void shouldQueryNamingStaticDiagnostics() throws Exception {
+        NamingMaintainerService maintainerService = createNamingMaintainerService();
+        
+        List<String> selectorTypes = maintainerService.listSelectorTypes();
+        assertNotNull(selectorTypes);
+        assertTrue(selectorTypes.contains("none"));
+        
+        Map<String, AbstractHealthChecker> healthCheckers =
+                maintainerService.getHealthCheckers();
+        assertNotNull(healthCheckers);
+        assertTrue(healthCheckers.containsKey(AbstractHealthChecker.None.TYPE));
+    }
+    
+    @Test
+    void shouldQueryNamingClientDiagnostics() throws Exception {
+        NamingMaintainerService maintainerService = createNamingMaintainerService();
+        String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        String groupName = randomGroup("naming");
+        String serviceName = randomMaintainerName("client-diagnostics");
+        String ip = "127.0.0.1";
+        int port = randomPort();
+        Service service = service(namespaceId, groupName, serviceName, false);
+        Instance instance = instance(ip, port, false);
+        
+        assertNotNull(maintainerService.createService(service));
+        addCleanup(() -> maintainerService.removeService(service));
+        assertNotNull(maintainerService.registerInstance(service, instance));
+        addCleanup(() -> maintainerService.deregisterInstance(service, instance));
+        waitUntil("published client should be visible", () -> maintainerService
+                .getPublishedClientList(namespaceId, groupName, serviceName, ip, port).stream()
+                .anyMatch(publisher -> ip.equals(publisher.getIp())
+                        && port == publisher.getPort()));
+        
+        List<ClientPublisherInfo> publishers =
+                maintainerService.getPublishedClientList(namespaceId, groupName, serviceName, ip,
+                        port);
+        assertTrue(publishers.stream().anyMatch(publisher -> ip.equals(publisher.getIp())
+                && port == publisher.getPort()));
+        
+        List<ClientSubscriberInfo> subscribers =
+                maintainerService.getSubscribeClientList(namespaceId, groupName, serviceName, ip,
+                        port);
+        assertNotNull(subscribers);
+        
+        List<String> clientIds = maintainerService.getClientList();
+        assertNotNull(clientIds);
+        String clientId = publishers.stream().map(ClientPublisherInfo::getClientId)
+                .filter(value -> null != value).findFirst().orElseThrow();
+        assertTrue(clientIds.contains(clientId));
+        
+        ClientSummaryInfo clientDetail = maintainerService.getClientDetail(clientId);
+        assertEquals(clientId, clientDetail.getClientId());
+        
+        List<ClientServiceInfo> publishedServices =
+                maintainerService.getPublishedServiceList(clientId);
+        assertTrue(publishedServices.stream()
+                .anyMatch(each -> namespaceId.equals(each.getNamespaceId())
+                        && groupName.equals(each.getGroupName())
+                        && serviceName.equals(each.getServiceName())));
+        
+        List<ClientServiceInfo> subscribeServices =
+                maintainerService.getSubscribeServiceList(clientId);
+        assertNotNull(subscribeServices);
     }
     
     @Test
@@ -244,6 +374,14 @@ class NamingMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertNotNull(page);
         assertTrue(page.getPageItems().stream()
                 .anyMatch(service -> serviceName.equals(service.getName())
+                        && groupName.equals(service.getGroupName())));
+    }
+    
+    private void assertContainsServiceDetail(Page<ServiceDetailInfo> page, String groupName,
+            String serviceName) {
+        assertNotNull(page);
+        assertTrue(page.getPageItems().stream()
+                .anyMatch(service -> serviceName.equals(service.getServiceName())
                         && groupName.equals(service.getGroupName())));
     }
     

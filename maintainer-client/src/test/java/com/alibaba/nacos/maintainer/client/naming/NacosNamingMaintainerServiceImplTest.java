@@ -255,7 +255,8 @@ public class NacosNamingMaintainerServiceImplTest {
         // Arrange
         List<String> expectedList = Arrays.asList("type1", "type2");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedList));
+        mockHttpRestResult.setData(
+            new ObjectMapper().writeValueAsString(Result.success(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -264,6 +265,7 @@ public class NacosNamingMaintainerServiceImplTest {
         
         // Assert
         assertNotNull(result);
+        assertEquals(expectedList, result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     
@@ -652,7 +654,8 @@ public class NacosNamingMaintainerServiceImplTest {
         // Arrange
         Map<String, AbstractHealthChecker> expectedCheckers = new HashMap<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedCheckers));
+        mockHttpRestResult.setData(
+            new ObjectMapper().writeValueAsString(Result.success(expectedCheckers)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -699,7 +702,8 @@ public class NacosNamingMaintainerServiceImplTest {
         // Arrange
         List<String> expectedList = Arrays.asList("client1", "client2");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedList));
+        mockHttpRestResult.setData(
+            new ObjectMapper().writeValueAsString(Result.success(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -708,6 +712,7 @@ public class NacosNamingMaintainerServiceImplTest {
         
         // Assert
         assertNotNull(result);
+        assertEquals(expectedList, result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     

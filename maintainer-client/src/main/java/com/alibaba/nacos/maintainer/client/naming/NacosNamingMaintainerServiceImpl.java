@@ -210,8 +210,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
             .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/selector/types").build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<String>>() {
-        });
+        Result<List<String>> result =
+            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<List<String>>>() {
+            });
+        return result.getData();
     }
     
     @Override
@@ -483,9 +485,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
             .setPath(Constants.AdminApiPath.NAMING_HEALTH_ADMIN_PATH + "/checkers").build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Map<String, AbstractHealthChecker>>() {
+        Result<Map<String, AbstractHealthChecker>> result = JacksonUtils.toObj(
+            httpRestResult.getData(),
+            new TypeReference<Result<Map<String, AbstractHealthChecker>>>() {
             });
+        return result.getData();
     }
     
     @Override
@@ -511,8 +515,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
             .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/list").build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<String>>() {
-        });
+        Result<List<String>> result =
+            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<List<String>>>() {
+            });
+        return result.getData();
     }
     
     @Override
