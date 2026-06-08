@@ -40,12 +40,13 @@ MVN ?= $(shell command -v mvn >/dev/null 2>&1 && echo "mvn" || echo "./mvnw")
 MAVEN_ARGS ?= -T 4C -e -B -V
 
 JVM_BASE_ARGS := --add-opens java.base/java.util=ALL-UNNAMED
+AUTH_DISABLED_ARGS := -Dnacos.core.auth.enabled=false \
+                      -Dnacos.core.auth.admin.enabled=false \
+                      -Dnacos.core.auth.console.enabled=false
 AUTH_ARGS := -Dnacos.core.auth.server.identity.key=testKey \
              -Dnacos.core.auth.server.identity.value=testValue \
              -Dnacos.core.auth.plugin.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg= \
-             -Dnacos.core.auth.enabled=false \
-             -Dnacos.core.auth.admin.enabled=false \
-             -Dnacos.core.auth.console.enabled=false
+             $(AUTH_DISABLED_ARGS)
 
 # Mark additional targets as phony
 .PHONY: clean build-frontend build-maven build \
