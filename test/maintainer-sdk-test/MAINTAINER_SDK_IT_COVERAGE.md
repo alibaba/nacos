@@ -34,6 +34,7 @@ maintainer SDK IT cases.
 | --- | --- | --- | --- | --- |
 | `CoreMaintainerService` | `CoreMaintainerServiceMaintainerSdkITCase` | Partial | Verifies factory creation through `NacosMaintainerFactory`, standalone server liveness/readiness, server-state result mapping, ID generator list, cluster node list, current client map, cluster loader metrics, plugin list, namespace create/get/list/update/check/delete lifecycle, duplicate namespace controlled error, invalid namespace parameter errors, default namespace lookup, default `nacos.host`/`nacos.port` profile wiring, and shutdown cleanup. | Unavailable-server error mapping, auth-enabled behavior, mutating cluster/plugin/loader controls, and wider maintainer SDK surfaces remain pending for later batches. |
 | `ConfigMaintainerService` / `ConfigHistoryMaintainerService` / `BetaConfigMaintainerService` / `ConfigOpsMaintainerService` | `ConfigMaintainerServiceMaintainerSdkITCase` | Partial | Verifies publish/get/list/search/update-metadata/update/delete lifecycle, namespace config list, delete by storage ID, missing config controlled exception, invalid publish parameters, config history list/detail/previous queries across updates, beta publish/query/stop and missing beta IP validation, config listener diagnostics by config and IP, local-cache dump command, config log-level command, default host/port wiring, and cleanup. | Clone/import/export and auth-enabled behavior remain pending for later batches. |
+| `NamingMaintainerService` / `ServiceMaintainerService` / `InstanceMaintainerService` | `NamingMaintainerServiceMaintainerSdkITCase` | Partial | Verifies persistent service create/get/update/list/remove lifecycle, missing service controlled exception, invalid service parameter validation, persistent instance register/list/detail/update/partial-update/batch-metadata-update/batch-metadata-delete/deregister lifecycle, invalid instance parameter validation, subscriber diagnostics, naming metrics/log operations, default host/port wiring, and cleanup. | Cluster health, health-checker queries, selector types, naming client diagnostics, and auth-enabled behavior remain pending for later batches. |
 
 ## Pending Maintainer SDK Surfaces
 
@@ -42,8 +43,8 @@ maintainer SDK IT cases.
 - `BetaConfigMaintainerService`
 - `ConfigHistoryMaintainerService`
 - `ConfigOpsMaintainerService`
-- `NamingMaintainerService`, `ServiceMaintainerService`,
-  `InstanceMaintainerService`, and `NamingClientMaintainerService`
+- `NamingMaintainerService` cluster, health-checker, selector, and client
+  diagnostics operations
 - `AiMaintainerService`, `McpMaintainerService`, `A2aMaintainerService`,
   `PromptMaintainerService`, `SkillMaintainerService`,
   `AgentSpecMaintainerService`, and `PipelineMaintainerService`
