@@ -102,7 +102,9 @@ Dump 完成后更新本地 content cache 和本地磁盘 dump。Listener 和 fuz
 cache。运行时查询选择先按[Config 灰度发布规范](config-gray-release-spec.md)评估灰度规则，然后再
 fallback 到正式配置。
 
-混合版本兼容可以把 beta/tag 旧字段转换为 `grayName`，但新行为必须使用灰度模型。
+从 Nacos 3.3 版本线开始，一致性和 dump 路径不再把 legacy beta/tag 存储行转换为
+`grayName`，也不再同步空 tenant 与 `public` 之间的默认 namespace 重复记录。Dump task
+只处理当前模型下持久化的 Config identity。
 
 ## 8. 失败与恢复
 

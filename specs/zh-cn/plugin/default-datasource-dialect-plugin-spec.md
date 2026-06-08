@@ -43,11 +43,13 @@ Nacos 服务端发行包一起发布的数据库方言和表级 mapper，是
 
 每个内置数据库族都应提供以下 mapper 实现：
 
-- 配置表：`config_info`、`config_info_beta`、`config_info_tag`、
-  `config_info_gray`、`config_tags_relation`、`his_config_info`；
+- 当前配置表：`config_info`、`config_info_gray`、`config_tags_relation`、`his_config_info`；
 - 容量和命名空间表：`tenant_info`、`tenant_capacity`、`group_capacity`；
-- 配置迁移查询；
 - AI Registry 表：AI 资源元数据和 AI 资源版本。
+
+从 Nacos 3.3 版本线开始，内置数据库族不再要求提供默认 namespace 存储重复记录或 legacy
+beta/tag 灰度表的运行时 Config 迁移 mapper。仍保留 pre-3.0 `config_info_beta` 或
+`config_info_tag` 数据的部署，必须在升级到依赖当前 mapper 集合的 3.3 服务端前完成迁移。
 
 如果未来 Nacos 版本新增持久化表，在该表成为文档化服务端能力之前，内置数据库族必须补充
 对应 mapper。
