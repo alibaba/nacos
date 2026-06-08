@@ -28,7 +28,7 @@ namespaceId -> groupName -> dataId
 
 | 字段 | 含义 | 说明 |
 | --- | --- | --- |
-| `namespaceId` | 配置所属 namespace。 | 空值或缺省值会被处理为默认 namespace id，当前为 `public`。存储和兼容代码中可能称为 `tenant` 或 `tenantId`。 |
+| `namespaceId` | 配置所属 namespace。 | 请求中的空值或缺省值会被处理为默认 namespace id，当前为 `public`。存储代码中仍可能称为 `tenant` 或 `tenantId`，但当前模型不要求为空 tenant 与 `public` 保留重复默认 namespace 记录。 |
 | `groupName` | namespace 内的业务分组。 | 新公开规范和 HTTP v3 表单使用 `groupName`；底层 Config 模型和兼容 API 仍可能将该值称为 `group`。 |
 | `dataId` | 配置资源名。 | `dataId` 是 Config 的 `resourceName`。 |
 
