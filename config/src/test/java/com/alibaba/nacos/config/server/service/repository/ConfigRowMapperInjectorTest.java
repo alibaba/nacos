@@ -20,22 +20,15 @@ import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
-import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.ConfigHistoryDetailRowMapper;
-import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.ConfigInfo4BetaRowMapper;
-import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.ConfigInfoBetaWrapperRowMapper;
 import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.ConfigInfoChangedRowMapper;
 import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.ConfigInfoStateWrapperRowMapper;
-import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.ConfigInfoTagWrapperRowMapper;
 import com.alibaba.nacos.persistence.repository.RowMapperManager;
 import com.mysql.cj.jdbc.result.ResultSetImpl;
 import org.junit.jupiter.api.Test;
@@ -60,104 +53,6 @@ class ConfigRowMapperInjectorTest {
             RowMapperManager.getRowMapper(
                 ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass()
                     .getCanonicalName()));
-    }
-    
-    @Test
-    void testConfigInfoTagWrapperRowMapper() throws SQLException {
-        ConfigInfoTagWrapper preConfig = new ConfigInfoTagWrapper();
-        preConfig.setDataId("testDataId");
-        preConfig.setGroup("group_id11");
-        preConfig.setTenant("tenant_id11111");
-        preConfig.setId(1243567898L);
-        preConfig.setTag("tag345678");
-        preConfig.setLastModified(System.currentTimeMillis());
-        preConfig.setAppName("app_name11111");
-        preConfig.setType("type55555");
-        preConfig.setContent("content1123434t");
-        preConfig.setMd5("md54567");
-        preConfig.setEncryptedDataKey("encrypted_data_key1324");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
-        Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
-        Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
-        Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
-        Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
-        Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
-            .thenReturn(new Timestamp(preConfig.getLastModified()));
-        Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
-        Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
-        Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
-            .thenReturn(preConfig.getEncryptedDataKey());
-        Mockito.when(resultSet.getString(eq("tag_id"))).thenReturn(preConfig.getTag());
-        ConfigInfoTagWrapperRowMapper configInfoWrapperRowMapper =
-            new ConfigInfoTagWrapperRowMapper();
-        ConfigInfoTagWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        assertEquals(preConfig, configInfoWrapper);
-        assertEquals(preConfig.getTag(), configInfoWrapper.getTag());
-    }
-    
-    @Test
-    void testConfigInfo4BetaRowMapper() throws SQLException {
-        ConfigInfo4Beta preConfig = new ConfigInfo4Beta();
-        preConfig.setDataId("testDataId");
-        preConfig.setGroup("group_id11");
-        preConfig.setTenant("tenant_id11111");
-        preConfig.setId(1243567898L);
-        preConfig.setAppName("app_name11111");
-        preConfig.setType("type55555");
-        preConfig.setContent("content1123434t");
-        preConfig.setMd5("md54567");
-        preConfig.setEncryptedDataKey("encrypted_data_key1324");
-        preConfig.setBetaIps("127.0.0.1,127.0.0.2");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
-        Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
-        Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
-        Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
-        Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
-        Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
-        Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
-        Mockito.when(resultSet.getString(eq("beta_ips"))).thenReturn(preConfig.getBetaIps());
-        Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
-        Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
-            .thenReturn(preConfig.getEncryptedDataKey());
-        ConfigInfo4BetaRowMapper configInfoWrapperRowMapper = new ConfigInfo4BetaRowMapper();
-        ConfigInfo4Beta configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        assertEquals(preConfig, configInfoWrapper);
-        assertEquals(preConfig.getBetaIps(), configInfoWrapper.getBetaIps());
-    }
-    
-    @Test
-    void testConfigInfoBetaWrapperRowMapper() throws SQLException {
-        ConfigInfoBetaWrapper preConfig = new ConfigInfoBetaWrapper();
-        preConfig.setDataId("testDataId");
-        preConfig.setGroup("group_id11");
-        preConfig.setTenant("tenant_id11111");
-        preConfig.setId(1243567898L);
-        preConfig.setLastModified(System.currentTimeMillis());
-        preConfig.setAppName("app_name11111");
-        preConfig.setType("type55555");
-        preConfig.setContent("content1123434t");
-        preConfig.setMd5("md54567");
-        preConfig.setEncryptedDataKey("encrypted_data_key1324");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
-        Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
-        Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
-        Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
-        Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
-        Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
-        Mockito.when(resultSet.getTimestamp(eq("gmt_modified")))
-            .thenReturn(new Timestamp(preConfig.getLastModified()));
-        Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
-        Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
-        Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
-            .thenReturn(preConfig.getEncryptedDataKey());
-        ConfigInfoBetaWrapperRowMapper configInfoWrapperRowMapper =
-            new ConfigInfoBetaWrapperRowMapper();
-        ConfigInfoBetaWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        assertEquals(preConfig, configInfoWrapper);
     }
     
     @Test
@@ -324,39 +219,6 @@ class ConfigRowMapperInjectorTest {
         ConfigRowMapperInjector.ConfigInfoWrapperRowMapper configInfoWrapperRowMapper =
             new ConfigRowMapperInjector.ConfigInfoWrapperRowMapper();
         ConfigInfoWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        assertEquals(preConfig, configInfoWrapper);
-        
-    }
-    
-    @Test
-    void testConfigInfo4TagRowMapper() throws SQLException {
-        
-        ConfigInfo4Tag preConfig = new ConfigInfo4Tag();
-        preConfig.setDataId("testDataId");
-        preConfig.setGroup("group_id11");
-        preConfig.setTenant("tenant_id11111");
-        preConfig.setId(1243567898L);
-        preConfig.setAppName("app_name11111");
-        preConfig.setType("type55555");
-        preConfig.setContent("content1123434t");
-        preConfig.setMd5("md54567");
-        preConfig.setEncryptedDataKey("encrypted_data_key1324");
-        preConfig.setTag("tag567890");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
-        Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
-        Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
-        Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
-        Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
-        Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
-        Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
-        Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
-        Mockito.when(resultSet.getString(eq("tag_id"))).thenReturn(preConfig.getTag());
-        Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
-        Mockito.when(resultSet.getString(eq("encrypted_data_key")))
-            .thenReturn(preConfig.getEncryptedDataKey());
-        ConfigRowMapperInjector.ConfigInfo4TagRowMapper configInfoWrapperRowMapper =
-            new ConfigRowMapperInjector.ConfigInfo4TagRowMapper();
-        ConfigInfo4Tag configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
         
     }
@@ -739,41 +601,6 @@ class ConfigRowMapperInjectorTest {
     }
     
     @Test
-    void testConfigInfoBetaWrapperRowMapperMissingOptionalColumns() throws SQLException {
-        ResultSetImpl resultSet = mockResultSetWithConfigKey();
-        Mockito.when(resultSet.getString(eq("app_name"))).thenReturn("app");
-        Mockito.when(resultSet.getString(eq("beta_ips"))).thenReturn("127.0.0.1");
-        mockMissingString(resultSet, "content");
-        mockMissingLong(resultSet, "id");
-        mockMissingTimestamp(resultSet, "gmt_modified");
-        mockMissingString(resultSet, "md5");
-        mockMissingString(resultSet, "encrypted_data_key");
-        
-        ConfigInfoBetaWrapper result = new ConfigInfoBetaWrapperRowMapper().mapRow(resultSet, 1);
-        
-        assertEquals("d", result.getDataId());
-        assertEquals("g", result.getGroup());
-        assertEquals("127.0.0.1", result.getBetaIps());
-    }
-    
-    @Test
-    void testConfigInfoTagWrapperRowMapperMissingOptionalColumns() throws SQLException {
-        ResultSetImpl resultSet = mockResultSetWithConfigKey();
-        Mockito.when(resultSet.getString(eq("tag_id"))).thenReturn("tag");
-        Mockito.when(resultSet.getString(eq("app_name"))).thenReturn("app");
-        mockMissingString(resultSet, "content");
-        mockMissingLong(resultSet, "id");
-        mockMissingTimestamp(resultSet, "gmt_modified");
-        mockMissingString(resultSet, "md5");
-        
-        ConfigInfoTagWrapper result = new ConfigInfoTagWrapperRowMapper().mapRow(resultSet, 1);
-        
-        assertEquals("d", result.getDataId());
-        assertEquals("g", result.getGroup());
-        assertEquals("tag", result.getTag());
-    }
-    
-    @Test
     void testConfigAllInfoRowMapperMissingOptionalColumns() throws SQLException {
         ResultSetImpl resultSet = mockResultSetWithConfigKey();
         Mockito.when(resultSet.getString(eq("app_name"))).thenReturn("app");
@@ -797,39 +624,6 @@ class ConfigRowMapperInjectorTest {
         assertEquals("d", result.getDataId());
         assertEquals("g", result.getGroup());
         assertEquals("app", result.getAppName());
-    }
-    
-    @Test
-    void testConfigInfo4BetaRowMapperMissingOptionalColumns() throws SQLException {
-        ResultSetImpl resultSet = mockResultSetWithConfigKey();
-        Mockito.when(resultSet.getString(eq("app_name"))).thenReturn("app");
-        Mockito.when(resultSet.getString(eq("beta_ips"))).thenReturn("127.0.0.1");
-        mockMissingString(resultSet, "content");
-        mockMissingLong(resultSet, "id");
-        mockMissingString(resultSet, "md5");
-        
-        ConfigInfo4Beta result = new ConfigInfo4BetaRowMapper().mapRow(resultSet, 1);
-        
-        assertEquals("d", result.getDataId());
-        assertEquals("g", result.getGroup());
-        assertEquals("127.0.0.1", result.getBetaIps());
-    }
-    
-    @Test
-    void testConfigInfo4TagRowMapperMissingOptionalColumns() throws SQLException {
-        ResultSetImpl resultSet = mockResultSetWithConfigKey();
-        Mockito.when(resultSet.getString(eq("tag_id"))).thenReturn("tag");
-        Mockito.when(resultSet.getString(eq("app_name"))).thenReturn("app");
-        mockMissingString(resultSet, "content");
-        mockMissingLong(resultSet, "id");
-        mockMissingString(resultSet, "md5");
-        
-        ConfigInfo4Tag result =
-            new ConfigRowMapperInjector.ConfigInfo4TagRowMapper().mapRow(resultSet, 1);
-        
-        assertEquals("d", result.getDataId());
-        assertEquals("g", result.getGroup());
-        assertEquals("tag", result.getTag());
     }
     
     @Test

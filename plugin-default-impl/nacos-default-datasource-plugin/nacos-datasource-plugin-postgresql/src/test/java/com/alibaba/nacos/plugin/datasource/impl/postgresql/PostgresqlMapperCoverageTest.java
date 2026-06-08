@@ -214,22 +214,6 @@ class PostgresqlMapperCoverageTest {
         ConfigInfoMapperByPostgresql configInfoMapper = new ConfigInfoMapperByPostgresql();
         assertEquals("NOW()", configInfoMapper.getFunction("NOW()"));
         
-        ConfigInfoTagMapperByPostgresql tagMapper = new ConfigInfoTagMapperByPostgresql();
-        assertEquals(DatabaseTypeConstant.POSTGRESQL, tagMapper.getDataSource());
-        assertEquals("NOW()", tagMapper.getFunction("NOW()"));
-        assertResult(tagMapper.findAllConfigInfoTagForDumpAllFetchRows(context),
-            " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
-                + " FROM (  SELECT id FROM config_info_tag  ORDER BY id   OFFSET 3 LIMIT 7  ) "
-                + "g, config_info_tag t  WHERE g.id = t.id  ");
-        
-        ConfigInfoBetaMapperByPostgresql betaMapper = new ConfigInfoBetaMapperByPostgresql();
-        assertEquals(DatabaseTypeConstant.POSTGRESQL, betaMapper.getDataSource());
-        assertEquals("NOW()", betaMapper.getFunction("NOW()"));
-        assertResult(betaMapper.findAllConfigInfoBetaForDumpAllFetchRows(context),
-            " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,"
-                + "beta_ips,encrypted_data_key  FROM ( SELECT id FROM config_info_beta "
-                + " ORDER BY id   OFFSET 3 LIMIT 7  )  g, config_info_beta t WHERE g.id = t.id ");
-        
         ConfigInfoGrayMapperByPostgresql grayMapper = new ConfigInfoGrayMapperByPostgresql();
         assertEquals(DatabaseTypeConstant.POSTGRESQL, grayMapper.getDataSource());
         assertEquals("NOW()", grayMapper.getFunction("NOW()"));
@@ -238,10 +222,6 @@ class PostgresqlMapperCoverageTest {
             " SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,"
                 + "md5,gmt_modified  FROM  config_info_gray  ORDER BY id LIMIT 7 OFFSET 3");
         
-        ConfigMigrateMapperByPostgresql migrateMapper = new ConfigMigrateMapperByPostgresql();
-        assertEquals(DatabaseTypeConstant.POSTGRESQL, migrateMapper.getDataSource());
-        assertEquals("NOW()", migrateMapper.getFunction("NOW()"));
-        assertEquals(TableConstant.MIGRATE_CONFIG, migrateMapper.getTableName());
     }
     
     @Test

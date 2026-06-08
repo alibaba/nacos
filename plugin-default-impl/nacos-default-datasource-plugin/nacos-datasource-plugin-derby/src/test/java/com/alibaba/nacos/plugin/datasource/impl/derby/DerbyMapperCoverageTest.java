@@ -145,21 +145,6 @@ class DerbyMapperCoverageTest {
     }
     
     @Test
-    void testConfigMigrateMapper() {
-        ConfigMigrateMapperByDerby mapper = new ConfigMigrateMapperByDerby();
-        assertEquals(DataSourceConstant.DERBY, mapper.getDataSource());
-        assertResult(mapper.findConfigIdNeedInsertMigrate(context), 12L, pageSize);
-        assertResult(mapper.findConfigNeedUpdateMigrate(context),
-            "srcTenant", "srcUser", "targetTenant", "srcUser", 12L, pageSize);
-        assertResult(mapper.findConfigGrayIdNeedInsertMigrate(context), 12L, pageSize);
-        assertResult(mapper.findConfigGrayNeedUpdateMigrate(context),
-            "srcTenant", "srcUser", "targetTenant", "srcUser", 12L, pageSize);
-        assertResult(mapper.migrateConfigInsertByIds(context), 12L, "srcUser", 100L);
-        assertResult(mapper.migrateConfigGrayInsertByIds(context), 12L, "srcUser", 100L);
-        assertSqlContains(mapper.migrateConfigGrayInsertByIds(context), "config_info_gray");
-    }
-    
-    @Test
     void testConfigInfoGrayAndHistoryMappers() {
         ConfigInfoGrayMapperByDerby grayMapper = new ConfigInfoGrayMapperByDerby();
         assertEquals(DataSourceConstant.DERBY, grayMapper.getDataSource());
