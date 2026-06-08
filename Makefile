@@ -42,7 +42,10 @@ MAVEN_ARGS ?= -T 4C -e -B -V
 JVM_BASE_ARGS := --add-opens java.base/java.util=ALL-UNNAMED
 AUTH_ARGS := -Dnacos.core.auth.server.identity.key=testKey \
              -Dnacos.core.auth.server.identity.value=testValue \
-             -Dnacos.core.auth.plugin.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg=
+             -Dnacos.core.auth.plugin.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg= \
+             -Dnacos.core.auth.enabled=false \
+             -Dnacos.core.auth.admin.enabled=false \
+             -Dnacos.core.auth.console.enabled=false
 
 # Mark additional targets as phony
 .PHONY: clean build-frontend build-maven build \
@@ -64,9 +67,9 @@ build-frontend: ## Build frontend (console-ui and console-ui-next)
 	@echo "Building console-ui-next..."
 	cd console-ui-next && npm i && npm run build
 
-build-maven: ## Build Maven project (skip tests)
+build-maven: ## Build Maven project (skip tests, activation profile release-nacos)
 	@echo "Building and Install..."
-	$(MVN) $(MAVEN_ARGS) clean install -DskipTests
+	$(MVN) $(MAVEN_ARGS) clean install -Prelease-nacos -DskipTests
 
 build: build-frontend build-maven ## Build both frontend and Maven project
 
@@ -76,7 +79,7 @@ build: build-frontend build-maven ## Build both frontend and Maven project
 #   2. Build console-ui-next (new React UI)
 #   3. Maven clean install (skip tests for faster build)
 #   4. Run bootstrap module with Spring Boot
-install-and-run-bootstrap: build ## Run Nacos bootstrap module
+install-and-run-bootstrap: build ## Build and run Nacos bootstrap module
 	cd bootstrap && $(MVN) $(MAVEN_ARGS) spring-boot:run -Prelease-nacos -DskipTests \
   -Dspring-boot.run.jvmArguments="$(JVM_BASE_ARGS) $(AUTH_ARGS) -Dnacos.standalone=true"
 
@@ -103,3 +106,12 @@ install-and-run-bootstrap-extension-ai-enabled: build ## Build and run Nacos wit
 install-and-run-bootstrap-extension-ai-disabled: build ## Build and run Nacos with nacos.extension.ai.enabled=false
 	cd bootstrap && $(MVN) $(MAVEN_ARGS) spring-boot:run -Prelease-nacos -DskipTests \
   -Dspring-boot.run.jvmArguments="$(JVM_BASE_ARGS) $(AUTH_ARGS) -Dnacos.standalone=true -Dnacos.extension.ai.enabled=false"
+
+run-it-tests: ## Run IT Tests
+	cd test && $(MVN) $(MAVEN_ARGS) clean verify -Pintegration-test
+
+run-java-sdk-it-tests: ## Run Java SDK IT Tests
+	$(MVN) $(MAVEN_ARGS) -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test -DskipTests=false
+
+run-maintainer-sdk-it-tests: ## Run Maintainer SDK IT Tests
+	$(MVN) $(MAVEN_ARGS) -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test -DskipTests=false
