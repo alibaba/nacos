@@ -70,4 +70,9 @@ public class LockKey implements Serializable {
     public int hashCode() {
         return Objects.hash(lockType, key);
     }
+    
+    @Override
+    public String toString() {
+        return lockType + ":" + key;
+    }
 }

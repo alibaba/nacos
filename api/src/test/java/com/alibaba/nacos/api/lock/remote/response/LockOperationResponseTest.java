@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.lock.remote.response;
 
+import com.alibaba.nacos.api.lock.model.LockResult;
 import com.alibaba.nacos.api.remote.request.BasicRequestTest;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,21 @@ class LockOperationResponseTest extends BasicRequestTest {
     }
     
     @Test
+    void testSuccessWithLockResult() {
+        LockResult lockResult = LockResult.success(2);
+        
+        LockOperationResponse response = LockOperationResponse.success(lockResult);
+        
+        assertTrue((Boolean) response.getResult());
+        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+        assertEquals(lockResult, response.getLockResult());
+        
+        LockResult waiting = LockResult.waiting(1);
+        response.setLockResult(waiting);
+        assertEquals(waiting, response.getLockResult());
+    }
+    
+    @Test
     void testFail() {
         String errorMessage = "test error";
         LockOperationResponse response = LockOperationResponse.fail(errorMessage);
@@ -57,11 +73,13 @@ class LockOperationResponseTest extends BasicRequestTest {
         LockOperationResponse response = new LockOperationResponse();
         response.setRequestId("1");
         response.setResult(true);
+        response.setLockResult(LockResult.success(1));
         
         String json = mapper.writeValueAsString(response);
         assertNotNull(json);
         assertTrue(json.contains("\"requestId\":\"1\""));
         assertTrue(json.contains("\"result\":true"));
+        assertTrue(json.contains("\"lockResult\":{"));
     }
     
     @Test

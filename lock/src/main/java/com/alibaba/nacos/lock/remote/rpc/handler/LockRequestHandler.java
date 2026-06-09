@@ -18,7 +18,9 @@ package com.alibaba.nacos.lock.remote.rpc.handler;
 
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.lock.common.LockConstants;
 import com.alibaba.nacos.api.lock.model.LockInstance;
+import com.alibaba.nacos.api.lock.model.LockResult;
 import com.alibaba.nacos.api.lock.remote.LockOperationEnum;
 import com.alibaba.nacos.api.lock.remote.request.LockOperationRequest;
 import com.alibaba.nacos.api.lock.remote.response.LockOperationResponse;
@@ -50,25 +52,60 @@ public class LockRequestHandler
         this.lockOperationService = lockOperationService;
     }
     
-    /**
-     * TODO Support auth.
-     */
     @Override
     public LockOperationResponse handle(LockOperationRequest request, RequestMeta meta)
         throws NacosException {
-        Boolean lock = null;
-        LOGGER.info("request: {}, instance: {}", request.getLockOperationEnum(),
+        LOGGER.debug("request: {}, instance: {}", request.getLockOperationEnum(),
             request.getLockInstance());
         try {
+            LockInstance lockInstance = request.getLockInstance();
+            
+            // Validate lock instance
+            if (lockInstance == null) {
+                return LockOperationResponse.fail("LockInstance cannot be null");
+            }
+            if (lockInstance.getKey() == null || lockInstance.getKey().isEmpty()) {
+                return LockOperationResponse.fail("Lock key cannot be null or empty");
+            }
+            String connectionId = meta.getConnectionId();
+            
+            if (lockInstance.getOwner() == null || lockInstance.getOwner().isEmpty()) {
+                lockInstance.setOwner(connectionId);
+            }
+            String lockType = lockInstance.getLockType();
+            if (!LockConstants.REENTRANT_LOCK_TYPE.equals(lockType)
+                && !LockConstants.NON_REENTRANT_LOCK_TYPE.equals(lockType)
+                && !LockConstants.NACOS_LOCK_TYPE.equals(lockType)) {
+                return LockOperationResponse.fail("Invalid lock type: " + lockType
+                    + ", expected " + LockConstants.REENTRANT_LOCK_TYPE
+                    + ", " + LockConstants.NON_REENTRANT_LOCK_TYPE
+                    + " or " + LockConstants.NACOS_LOCK_TYPE);
+            }
+            
             if (request.getLockOperationEnum() == LockOperationEnum.ACQUIRE) {
-                LockInstance lockInstance = request.getLockInstance();
-                lock = lockOperationService.lock(lockInstance);
+                if (lockInstance.getExpiredTime() == 0) {
+                    return LockOperationResponse
+                        .fail("Lock expiredTime must be non-zero for ACQUIRE");
+                }
+                LockResult result = lockOperationService.lock(lockInstance, connectionId);
+                return LockOperationResponse.success(result);
             } else if (request.getLockOperationEnum() == LockOperationEnum.RELEASE) {
-                lock = lockOperationService.unLock(request.getLockInstance());
+                LockResult releaseResult = lockOperationService.unLock(lockInstance);
+                return LockOperationResponse.success(releaseResult);
+            } else if (request.getLockOperationEnum() == LockOperationEnum.RENEW) {
+                if (lockInstance.getExpiredTime() == 0) {
+                    return LockOperationResponse
+                        .fail("Lock expiredTime must be non-zero for RENEW");
+                }
+                Boolean renewed = lockOperationService.renew(lockInstance);
+                return LockOperationResponse.success(renewed);
+            } else if (request.getLockOperationEnum() == LockOperationEnum.CANCEL_WAIT) {
+                LockResult cancelResult =
+                    lockOperationService.cancelWait(lockInstance, connectionId);
+                return LockOperationResponse.success(cancelResult);
             } else {
                 return LockOperationResponse.fail("There is no Handler of such operations!");
             }
-            return LockOperationResponse.success(lock);
         } catch (NacosLockException e) {
             return LockOperationResponse.fail(e.getMessage());
         }

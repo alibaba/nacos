@@ -58,10 +58,6 @@ import static org.mockito.Mockito.times;
 @ExtendWith(SpringExtension.class)
 class DumpServiceTest {
     
-    private static final String BETA_TABLE_NAME = "config_info_beta";
-    
-    private static final String TAG_TABLE_NAME = "config_info_tag";
-    
     @Mock
     DefaultHistoryConfigCleaner defaultHistoryConfigCleaner = new DefaultHistoryConfigCleaner();
     
@@ -163,9 +159,6 @@ class DumpServiceTest {
             () -> ConfigExecutor.scheduleConfigChangeTask(any(Runnable.class), anyInt(),
                 any(TimeUnit.class)))
             .thenAnswer(invocation -> null);
-        Mockito.when(namespacePersistService.isExistTable(BETA_TABLE_NAME)).thenReturn(true);
-        Mockito.when(namespacePersistService.isExistTable(TAG_TABLE_NAME)).thenReturn(true);
-        
         Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(300L);
         dumpService.init();
         
