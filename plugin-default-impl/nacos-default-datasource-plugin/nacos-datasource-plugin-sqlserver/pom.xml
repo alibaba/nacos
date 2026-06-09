@@ -19,22 +19,24 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>nacos-plugin-default-impl</artifactId>
+        <artifactId>default-datasource-plugin</artifactId>
         <groupId>com.alibaba.nacos</groupId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>default-datasource-plugin</artifactId>
-    <packaging>pom</packaging>
-    <name>nacos-default-datasource-plugin ${project.version}</name>
+    <artifactId>nacos-datasource-plugin-sqlserver</artifactId>
+    <name>nacos-datasource-plugin-sqlserver ${project.version}</name>
 
-    <modules>
-        <module>nacos-datasource-plugin-base</module>
-        <module>nacos-datasource-plugin-mysql</module>
-        <module>nacos-datasource-plugin-derby</module>
-        <module>nacos-datasource-plugin-postgresql</module>
-        <module>nacos-datasource-plugin-oracle</module>
-        <module>nacos-datasource-plugin-sqlserver</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-base</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+        </dependency>
+    </dependencies>
 </project>
