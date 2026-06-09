@@ -284,27 +284,6 @@
   "name":"co.elastic.clients.transport.ElasticsearchTransport"
 },
 {
-  "name":"com.alibaba.nacos.Nacos",
-  "allDeclaredFields":true,
-  "allDeclaredClasses":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"main","parameterTypes":["java.lang.String[]"] }, {"name":"setBeanFactory","parameterTypes":["org.springframework.beans.factory.BeanFactory"] }]
-},
-{
-  "name":"com.alibaba.nacos.Nacos$$SpringCGLIB$$0",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "fields":[{"name":"CGLIB$FACTORY_DATA"}],
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"CGLIB$SET_STATIC_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }, {"name":"CGLIB$SET_THREAD_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }]
-},
-{
-  "name":"com.alibaba.nacos.Nacos$NacosRuntimeHints",
-  "queryAllDeclaredMethods":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
   "name":"com.alibaba.nacos.api.ability.ServerAbilities",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
