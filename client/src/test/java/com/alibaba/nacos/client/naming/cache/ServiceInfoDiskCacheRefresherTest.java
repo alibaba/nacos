@@ -20,14 +20,20 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServiceInfoDiskCacheRefresherTest {
@@ -58,6 +64,28 @@ class ServiceInfoDiskCacheRefresherTest {
             assertEquals(0, refresher.pendingEventSize());
         } finally {
             refresher.shutdown();
+        }
+    }
+    
+    @Test
+    void testDefaultConstructorShutdownFlushPendingEvents() throws Exception {
+        ServiceInfoDiskCacheRefresher refresher = new ServiceInfoDiskCacheRefresher();
+        Path cacheDir = Files.createTempDirectory("service-info-disk-cache-refresher");
+        try {
+            ServiceInfo serviceInfo = createServiceInfo("a@@b@@c", "1.1.1.1", 1);
+            refresher.publishEvent(
+                new ServiceInfoDiskCacheRefreshEvent(serviceInfo.getKeyWithoutClusters(),
+                    serviceInfo,
+                    cacheDir.toString()));
+            
+            refresher.shutdown();
+            
+            assertEquals(0, refresher.pendingEventSize());
+            assertTrue(Files.exists(cacheDir.resolve(serviceInfo.getKeyEncoded())));
+        } finally {
+            if (!refresher.isShutdown()) {
+                refresher.shutdown();
+            }
         }
     }
     
@@ -122,6 +150,31 @@ class ServiceInfoDiskCacheRefresherTest {
     }
     
     @Test
+    void testFlushWriterExceptionWillBeCaught() throws Exception {
+        AtomicBoolean shouldThrow = new AtomicBoolean(true);
+        ServiceInfoDiskCacheRefresher refresher = createRefresher((serviceInfo, cacheDir) -> {
+            if (shouldThrow.get()) {
+                throw new IllegalStateException("test");
+            }
+            return true;
+        });
+        try {
+            ServiceInfo serviceInfo = createServiceInfo("a@@b@@c", "1.1.1.1", 1);
+            refresher.publishEvent(
+                new ServiceInfoDiskCacheRefreshEvent(serviceInfo.getKeyWithoutClusters(),
+                    serviceInfo,
+                    "cache"));
+            
+            refresher.flushNow();
+            
+            assertEquals(1, refresher.pendingEventSize());
+        } finally {
+            shouldThrow.set(false);
+            refresher.shutdown();
+        }
+    }
+    
+    @Test
     void testShutdownFlushPendingEvents() throws Exception {
         AtomicInteger writeCount = new AtomicInteger();
         ServiceInfoDiskCacheRefresher refresher = createRefresher((serviceInfo, cacheDir) -> {
@@ -141,6 +194,47 @@ class ServiceInfoDiskCacheRefresherTest {
     }
     
     @Test
+    void testShutdownTimeoutWillExit() throws Exception {
+        ServiceInfoDiskCacheRefresher refresher = createRefresher((serviceInfo, cacheDir) -> true);
+        CountDownLatch taskStarted = new CountDownLatch(1);
+        CountDownLatch releaseTask = new CountDownLatch(1);
+        ScheduledThreadPoolExecutor refreshExecutor = getRefreshExecutor(refresher);
+        refreshExecutor.execute(() -> {
+            taskStarted.countDown();
+            try {
+                releaseTask.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        assertTrue(taskStarted.await(1, TimeUnit.SECONDS));
+        
+        try {
+            refresher.shutdown();
+            assertTrue(refresher.isShutdown());
+        } finally {
+            releaseTask.countDown();
+            refreshExecutor.awaitTermination(1, TimeUnit.SECONDS);
+        }
+    }
+    
+    @Test
+    void testShutdownWhenInterruptedThrowException() throws Exception {
+        ServiceInfoDiskCacheRefresher refresher = createRefresher((serviceInfo, cacheDir) -> true);
+        try {
+            Thread.currentThread().interrupt();
+            assertThrows(com.alibaba.nacos.api.exception.NacosException.class, refresher::shutdown);
+            assertTrue(Thread.currentThread().isInterrupted());
+            assertTrue(refresher.isShutdown());
+        } finally {
+            Thread.interrupted();
+            if (!refresher.isShutdown()) {
+                refresher.shutdown();
+            }
+        }
+    }
+    
+    @Test
     void testShutdownWithRepeatedFailureWillExit() throws Exception {
         ServiceInfoDiskCacheRefresher refresher = createRefresher((serviceInfo, cacheDir) -> false);
         ServiceInfo serviceInfo = createServiceInfo("a@@b@@c", "1.1.1.1", 1);
@@ -157,6 +251,14 @@ class ServiceInfoDiskCacheRefresherTest {
     private ServiceInfoDiskCacheRefresher createRefresher(
         ServiceInfoDiskCacheRefresher.DiskCacheWriter writer) {
         return new ServiceInfoDiskCacheRefresher(TimeUnit.DAYS.toMillis(1), 50L, writer);
+    }
+    
+    private ScheduledThreadPoolExecutor getRefreshExecutor(ServiceInfoDiskCacheRefresher refresher)
+        throws NoSuchFieldException, IllegalAccessException {
+        Field refreshExecutorField =
+            ServiceInfoDiskCacheRefresher.class.getDeclaredField("refreshExecutor");
+        refreshExecutorField.setAccessible(true);
+        return (ScheduledThreadPoolExecutor) refreshExecutorField.get(refresher);
     }
     
     private ServiceInfo createServiceInfo(String serviceKey, String ip, int port) {
