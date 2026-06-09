@@ -51,7 +51,7 @@ AUTH_ARGS := -Dnacos.core.auth.server.identity.key=testKey \
              $(AUTH_DISABLED_ARGS)
 
 # Mark additional targets as phony
-.PHONY: clean build-frontend build-maven build \
+.PHONY: clean test check-maven build-maven-test build-frontend build-maven build \
 	install-and-run-bootstrap \
 	install-and-run-bootstrap-config \
 	install-and-run-bootstrap-naming \
@@ -67,6 +67,9 @@ AUTH_ARGS := -Dnacos.core.auth.server.identity.key=testKey \
 clean: ## Clean the project
 	$(MVN) $(MAVEN_ARGS) clean
 
+test: ## Run unit tests
+	$(MVN) $(MAVEN_ARGS) test
+
 build-frontend: ## Build frontend (console-ui and console-ui-next)
 	@echo "Building console-ui..."
 	cd console-ui && npm i && npm run build
@@ -76,6 +79,12 @@ build-frontend: ## Build frontend (console-ui and console-ui-next)
 build-maven: ## Build Maven project (skip tests, activation profile release-nacos)
 	@echo "Building and Install..."
 	$(MVN) $(MAVEN_ARGS) clean install -Prelease-nacos -DskipTests
+
+check-maven: ## Run pre-submission checks (compile, rat, checkstyle, spotbugs, spotless)
+	$(MVN) $(MAVEN_ARGS) clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
+build-maven-test: ## Build Maven project with tests (skip rat, spotbugs checks)
+	$(MVN) $(MAVEN_ARGS) '-Prelease-nacos,!dev' clean install -Drat.skip=true -Dspotbugs.skip=true -DtrimStackTrace=false -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 build: build-frontend build-maven ## Build both frontend and Maven project
 
