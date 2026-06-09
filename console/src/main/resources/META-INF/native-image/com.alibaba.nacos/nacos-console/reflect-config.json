@@ -7125,15 +7125,15 @@
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"javax.annotation.PostConstruct",
+  "name":"jakarta.annotation.PostConstruct",
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"javax.annotation.PreDestroy",
+  "name":"jakarta.annotation.PreDestroy",
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"javax.annotation.Resource",
+  "name":"jakarta.annotation.Resource",
   "queryAllDeclaredMethods":true
 },
 {

@@ -44,13 +44,13 @@ import com.alibaba.nacos.lock.raft.request.MutexLockRequest;
 import com.alibaba.nacos.lock.service.LockOperationService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.protobuf.ByteString;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
