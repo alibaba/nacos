@@ -52,15 +52,15 @@ public class ServiceInfoHolder implements Closeable {
     private final boolean pushEmptyProtection;
     
     private final InstancesDiffer instancesDiffer;
-
+    
     private final ServiceInfoDiskCacheRefresher serviceInfoDiskCacheRefresher;
-
+    
     private String cacheDir;
     
     private String notifierEventScope;
     
     private boolean enableClientMetrics = true;
-
+    
     public ServiceInfoHolder(String namespace, String notifierEventScope,
         NacosClientProperties properties) {
         cacheDir = CacheDirUtil.initCacheDir(namespace, properties);
