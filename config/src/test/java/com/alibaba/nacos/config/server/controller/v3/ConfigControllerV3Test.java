@@ -35,7 +35,6 @@ import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
@@ -96,9 +95,6 @@ class ConfigControllerV3Test {
     
     @MockitoBean
     private ConfigInfoPersistService configInfoPersistService;
-    
-    @MockitoBean
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
     @MockitoBean
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
