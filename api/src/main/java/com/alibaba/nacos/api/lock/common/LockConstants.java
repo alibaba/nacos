@@ -25,4 +25,8 @@ package com.alibaba.nacos.api.lock.common;
 public class LockConstants {
     
     public static final String NACOS_LOCK_TYPE = "NACOS_LOCK";
+    
+    public static final String REENTRANT_LOCK_TYPE = "REENTRANT";
+    
+    public static final String NON_REENTRANT_LOCK_TYPE = "NON_REENTRANT";
 }

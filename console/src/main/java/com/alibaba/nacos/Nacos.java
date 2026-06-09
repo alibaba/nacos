@@ -17,6 +17,8 @@
 package com.alibaba.nacos;
 
 import com.alibaba.nacos.console.aot.NacosRuntimeHints;
+import com.alibaba.nacos.core.listener.startup.NacosStartUp;
+import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
 import com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
@@ -46,6 +48,8 @@ import org.springframework.context.annotation.ImportRuntimeHints;
 public class Nacos {
     
     public static void main(String[] args) {
+        NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
+        NacosStartUpManager.start(NacosStartUp.WEB_START_UP_PHASE);
         SpringApplication.run(Nacos.class, args);
     }
     

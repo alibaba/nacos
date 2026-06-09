@@ -15,3 +15,5 @@
 #
 
 com.alibaba.nacos.lock.factory.SimpleLockFactory
+com.alibaba.nacos.lock.factory.ReentrantLockFactory
+com.alibaba.nacos.lock.factory.NonReentrantLockFactory
