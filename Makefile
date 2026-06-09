@@ -17,6 +17,8 @@
 # under the License.
 # ----------------------------------------------------------------------------
 
+# Makefile usage guide: https://github.com/alibaba/nacos/issues/15338
+
 # Set shell to bash for better compatibility
 SHELL := /usr/bin/env bash
 
