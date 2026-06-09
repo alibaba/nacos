@@ -26,6 +26,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -59,6 +60,22 @@ class LockInstanceTest {
         assertNull(instance.getExpiredTime());
         assertNull(instance.getLockType());
         assertNull(instance.getParams());
+        assertNull(instance.getOwner());
+        assertEquals(-1L, instance.getWaitTime());
+    }
+    
+    @Test
+    void testOwnerWaitTimeWaiterRetryAndToString() {
+        lockInstance.setOwner("owner");
+        lockInstance.setWaitTime(100L);
+        lockInstance.setWaiterRetry(true);
+        
+        assertEquals("owner", lockInstance.getOwner());
+        assertEquals(100L, lockInstance.getWaitTime());
+        assertTrue(lockInstance.isWaiterRetry());
+        assertTrue(lockInstance.toString().contains("owner='owner'"));
+        assertTrue(lockInstance.toString().contains("waitTime=100"));
+        assertTrue(lockInstance.toString().contains("waiterRetry=true"));
     }
     
     @Test

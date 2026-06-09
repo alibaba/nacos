@@ -28,36 +28,54 @@ import com.alibaba.nacos.lock.model.LockInfo;
 public interface AtomicLockService {
     
     /**
-     * try lock with expireTime.
+     * Try to acquire the lock.
      *
-     * @param lockInfo request Lock
-     * @return boolean
+     * @param lockInfo lock request info with owner
+     * @return true if acquired successfully
      */
     Boolean tryLock(LockInfo lockInfo);
     
     /**
-     * release lock.
+     * Release the lock. Only the owner can release.
      *
-     * @param lockInfo instance
-     * @return boolean
+     * @param lockInfo lock info with owner
+     * @return true if released successfully
      */
     Boolean unLock(LockInfo lockInfo);
     
     /**
-     * return is auto expire.
-     * @return Boolean
+     * Renew the lock lease time (watchdog heartbeat). Only the owner can renew.
+     *
+     * @param lockInfo lock info with owner and new endTime
+     * @return true if renewed successfully
+     */
+    Boolean renew(LockInfo lockInfo);
+    
+    /**
+     * Check if the lock has auto-expired.
+     *
+     * @return true if expired
      */
     Boolean autoExpire();
     
     /**
-     * get key.
-     * @return key
+     * Get the lock key identifier.
+     *
+     * @return lock key string
      */
     String getKey();
     
     /**
-     * judge lock is clear to gc.
-     * @return boolean
+     * Check if the lock is clear (not held by anyone).
+     *
+     * @return true if lock is not held
      */
     Boolean isClear();
+    
+    /**
+     * Force release the lock regardless of owner. Used for connection disconnect cleanup.
+     *
+     * @return true if was held and released
+     */
+    Boolean forceRelease();
 }

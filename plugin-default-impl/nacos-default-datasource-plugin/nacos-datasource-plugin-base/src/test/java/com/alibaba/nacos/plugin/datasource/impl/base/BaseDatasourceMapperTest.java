@@ -263,23 +263,6 @@ class BaseDatasourceMapperTest {
     
     @Test
     void testOtherBaseMappers() {
-        TestConfigInfoBetaMapper betaMapper = new TestConfigInfoBetaMapper();
-        assertEquals(TableConstant.CONFIG_INFO_BETA, betaMapper.getTableName());
-        assertEquals("SELECT  LIMIT 1 , 3", betaMapper.getLimitPageSqlWithOffset("SELECT", 1, 3));
-        assertEquals(FUNCTION_PREFIX + "NOW()", betaMapper.getFunction("NOW()"));
-        assertResult(betaMapper.findAllConfigInfoBetaForDumpAllFetchRows(context),
-            " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,"
-                + "beta_ips,encrypted_data_key  FROM ( SELECT id FROM config_info_beta "
-                + " ORDER BY id   LIMIT 2 , 5  )  g, config_info_beta t WHERE g.id = t.id ");
-        
-        TestConfigInfoTagMapper tagMapper = new TestConfigInfoTagMapper();
-        assertEquals(TableConstant.CONFIG_INFO_TAG, tagMapper.getTableName());
-        assertEquals(FUNCTION_PREFIX + "NOW()", tagMapper.getFunction("NOW()"));
-        assertResult(tagMapper.findAllConfigInfoTagForDumpAllFetchRows(context),
-            " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,"
-                + "gmt_modified  FROM (  SELECT id FROM config_info_tag  ORDER BY id "
-                + "  LIMIT 2 , 5  ) g, config_info_tag t  WHERE g.id = t.id  ");
-        
         TestTenantCapacityMapper tenantCapacityMapper = new TestTenantCapacityMapper();
         assertResult(tenantCapacityMapper.getCapacityList4CorrectUsage(context),
             "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ? ", id, pageSize);
@@ -340,22 +323,6 @@ class BaseDatasourceMapperTest {
     }
     
     private static class TestConfigTagsRelationMapper extends BaseConfigTagsRelationMapper {
-        
-        @Override
-        public String getDataSource() {
-            return DATA_SOURCE;
-        }
-    }
-    
-    private static class TestConfigInfoBetaMapper extends BaseConfigInfoBetaMapper {
-        
-        @Override
-        public String getDataSource() {
-            return DATA_SOURCE;
-        }
-    }
-    
-    private static class TestConfigInfoTagMapper extends BaseConfigInfoTagMapper {
         
         @Override
         public String getDataSource() {

@@ -77,28 +77,6 @@ class DatasourceMapperDefaultMethodTest {
     }
     
     @Test
-    void testConfigInfoBetaAndTagCasUpdates() {
-        ConfigInfoBetaMapper betaMapper = new TestConfigInfoBetaMapper();
-        ConfigInfoTagMapper tagMapper = new TestConfigInfoTagMapper();
-        MapperContext context = createUpdateContext();
-        context.putUpdateParameter(FieldConstant.BETA_IPS, "1.1.1.1");
-        context.putWhereParameter(FieldConstant.TAG_ID, "tag");
-        
-        MapperResult beta = betaMapper.updateConfigInfo4BetaCas(context);
-        MapperResult tag = tagMapper.updateConfigInfo4TagCas(context);
-        
-        assertTrue(beta.getSql().contains("UPDATE config_info_beta SET content"));
-        assertTrue(beta.getSql().contains("gmt_modified = NOW()"));
-        assertEquals("config_info_beta", betaMapper.getTableName());
-        assertEquals(Arrays.asList("content", "md5-new", "1.1.1.1", "127.0.0.1", "nacos",
-            "app", "data", "group", "tenant", "md5-old"), beta.getParamList());
-        assertTrue(tag.getSql().contains("UPDATE config_info_tag SET content"));
-        assertEquals("config_info_tag", tagMapper.getTableName());
-        assertEquals(Arrays.asList("content", "md5-new", "127.0.0.1", "nacos", "now", "app",
-            "data", "group", "tenant", "tag", "md5-old"), tag.getParamList());
-    }
-    
-    @Test
     void testConfigInfoGrayDefaults() {
         ConfigInfoGrayMapper mapper = new TestConfigInfoGrayMapper();
         MapperContext context = createUpdateContext();
@@ -342,36 +320,6 @@ class DatasourceMapperDefaultMethodTest {
     }
     
     @Test
-    void testConfigMigrateDefaults() {
-        ConfigMigrateMapper mapper = new TestConfigMigrateMapper();
-        MapperContext context = new MapperContext();
-        context.setPageSize(100);
-        context.putWhereParameter(FieldConstant.ID, 10L);
-        context.putWhereParameter(FieldConstant.IDS, Arrays.asList(1L, 2L));
-        context.putWhereParameter(FieldConstant.SRC_USER, "nacos");
-        context.putWhereParameter(FieldConstant.SRC_TENANT, "");
-        context.putWhereParameter(FieldConstant.TARGET_TENANT, "public");
-        
-        assertEquals(Arrays.asList("nacos", "nacos"),
-            mapper.getConfigConflictCount(context).getParamList());
-        assertEquals(Arrays.asList(10L, 100),
-            mapper.findConfigIdNeedInsertMigrate(context).getParamList());
-        assertEquals(Arrays.asList("", "nacos", "public", "nacos", 10L, 100),
-            mapper.findConfigNeedUpdateMigrate(context).getParamList());
-        assertEquals(Arrays.asList("", "nacos", "public", "nacos", 10L, 100),
-            mapper.findConfigGrayNeedUpdateMigrate(context).getParamList());
-        assertEquals(Arrays.asList("nacos", 1L, 2L),
-            mapper.migrateConfigInsertByIds(context).getParamList());
-        assertEquals(Arrays.asList("nacos", "nacos"),
-            mapper.getConfigGrayConflictCount(context).getParamList());
-        assertEquals(Arrays.asList(10L, 100),
-            mapper.findConfigGrayIdNeedInsertMigrate(context).getParamList());
-        assertEquals(Arrays.asList("nacos", 1L, 2L),
-            mapper.migrateConfigGrayInsertByIds(context).getParamList());
-        assertEquals("migrate_config", mapper.getTableName());
-    }
-    
-    @Test
     void testHistoryConfigInfoDefaults() {
         HistoryConfigInfoMapper mapper = new TestHistoryConfigInfoMapper();
         MapperContext context = createHistoryContext();
@@ -462,34 +410,6 @@ class DatasourceMapperDefaultMethodTest {
         
         @Override
         public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
-            return null;
-        }
-    }
-    
-    private static class TestConfigInfoBetaMapper extends TestAbstractMapper
-        implements ConfigInfoBetaMapper {
-        
-        @Override
-        public String getTableName() {
-            return ConfigInfoBetaMapper.super.getTableName();
-        }
-        
-        @Override
-        public MapperResult findAllConfigInfoBetaForDumpAllFetchRows(MapperContext context) {
-            return null;
-        }
-    }
-    
-    private static class TestConfigInfoTagMapper extends TestAbstractMapper
-        implements ConfigInfoTagMapper {
-        
-        @Override
-        public String getTableName() {
-            return ConfigInfoTagMapper.super.getTableName();
-        }
-        
-        @Override
-        public MapperResult findAllConfigInfoTagForDumpAllFetchRows(MapperContext context) {
             return null;
         }
     }
@@ -607,15 +527,6 @@ class DatasourceMapperDefaultMethodTest {
         @Override
         public MapperResult findAllConfigInfoFetchRows(MapperContext context) {
             return null;
-        }
-    }
-    
-    private static class TestConfigMigrateMapper extends TestAbstractMapper
-        implements ConfigMigrateMapper {
-        
-        @Override
-        public String getTableName() {
-            return ConfigMigrateMapper.super.getTableName();
         }
     }
     

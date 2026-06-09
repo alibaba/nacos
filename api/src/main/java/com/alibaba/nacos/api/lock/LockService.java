@@ -75,6 +75,16 @@ public interface LockService {
     Boolean remoteReleaseLock(LockInstance instance) throws NacosException;
     
     /**
+     * Renew lock lease time (watchdog heartbeat).
+     *
+     * @param instance instance with owner set
+     * @return true if renewed successfully, false if lock not held by this owner
+     * @throws NacosException NacosException
+     */
+    @Since("3.3.0")
+    Boolean renew(LockInstance instance) throws NacosException;
+    
+    /**
      * Shutdown the Resources, such as Thread Pool.
      *
      * @throws NacosException exception.

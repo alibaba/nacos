@@ -14,15 +14,12 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoBetaMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoMapperByDerby
-com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoTagMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoGrayMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoTagsRelationMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.HistoryConfigInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantCapacityMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.GroupCapacityMapperByDerby
-com.alibaba.nacos.plugin.datasource.impl.derby.ConfigMigrateMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.AiResourceMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.AiResourceVersionMapperByDerby
