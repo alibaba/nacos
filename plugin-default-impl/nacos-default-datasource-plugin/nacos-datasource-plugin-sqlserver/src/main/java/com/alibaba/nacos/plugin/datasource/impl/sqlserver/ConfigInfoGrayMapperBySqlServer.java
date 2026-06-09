@@ -28,10 +28,16 @@ import java.util.Collections;
 /**
  * The SQL Server implementation of ConfigInfoGrayMapper.
  *
- * @author QY Li
+ * @author ThinkGem
  **/
 public class ConfigInfoGrayMapperBySqlServer extends AbstractMapperBySqlServer implements ConfigInfoGrayMapper {
     
+    /**
+     * Find changed gray config.
+     *
+     * @param context the mapper context
+     * @return the mapper result
+     */
     @Override
     public MapperResult findChangeConfig(MapperContext context) {
         String sql = getLimitTopSqlWithMark(
@@ -42,6 +48,12 @@ public class ConfigInfoGrayMapperBySqlServer extends AbstractMapperBySqlServer i
                 context.getWhereParameter(FieldConstant.PAGE_SIZE)));
     }
     
+    /**
+     * Find all gray config info for dump all with pagination.
+     *
+     * @param context the mapper context
+     * @return the mapper result
+     */
     @Override
     public MapperResult findAllConfigInfoGrayForDumpAllFetchRows(MapperContext context) {
         String sql = getLimitPageSqlWithOffset(

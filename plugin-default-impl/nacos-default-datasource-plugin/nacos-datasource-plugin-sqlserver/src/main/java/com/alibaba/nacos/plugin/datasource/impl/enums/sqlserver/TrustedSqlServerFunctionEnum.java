@@ -20,16 +20,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The TrustedSqlServerFunctionEnum enum class is used to enumerate and manage a list of trusted built-in SQL functions.
- * By using this enum, you can verify whether a given SQL function is part of the trusted functions list
- * to avoid potential SQL injection risks.
+ * SQL Server trusted function enum.
  *
- * @author blake.qiu
+ * @author ThinkGem
  */
 public enum TrustedSqlServerFunctionEnum {
     
     /**
-     * NOW().
+     * NOW() function maps to SQL Server's SYSDATETIME().
      */
     NOW("NOW()", "SYSDATETIME()");
     
@@ -51,10 +49,11 @@ public enum TrustedSqlServerFunctionEnum {
     }
     
     /**
-     * Get the function name.
+     * Get the SQL Server function by function name.
      *
-     * @param functionName function name
-     * @return function
+     * @param functionName the function name (e.g. NOW())
+     * @return the SQL Server function (e.g. SYSDATETIME())
+     * @throws IllegalArgumentException if the function name is not in the trusted list
      */
     public static String getFunctionByName(String functionName) {
         TrustedSqlServerFunctionEnum entry = LOOKUP_MAP.get(functionName);

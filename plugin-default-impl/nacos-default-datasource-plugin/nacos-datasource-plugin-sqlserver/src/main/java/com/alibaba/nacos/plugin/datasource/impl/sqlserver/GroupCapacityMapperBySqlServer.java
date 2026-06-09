@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * The SQL Server implementation of GroupCapacityMapper.
  *
- * @author QY Li
+ * @author ThinkGem
  */
 public class GroupCapacityMapperBySqlServer extends AbstractMapperBySqlServer implements GroupCapacityMapper {
     

@@ -23,14 +23,19 @@ import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 
 /**
- * The abstract sqlserver mapper contains CRUD methods.
+ * The abstract SQL Server mapper contains CRUD methods.
  *
- * @author QY Li
+ * @author ThinkGem
  **/
 public abstract class AbstractMapperBySqlServer extends AbstractMapper {
     
     private volatile DatabaseDialect databaseDialect;
     
+    /**
+     * Get the SQL Server database dialect instance.
+     *
+     * @return the SQL Server database dialect instance
+     */
     public DatabaseDialect getDatabaseDialect() {
         if (databaseDialect == null) {
             synchronized (this) {

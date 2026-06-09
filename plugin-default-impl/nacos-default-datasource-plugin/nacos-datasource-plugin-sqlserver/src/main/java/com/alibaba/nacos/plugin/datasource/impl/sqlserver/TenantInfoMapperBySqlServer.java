@@ -22,7 +22,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 /**
  * The SQL Server implementation of TenantInfoMapper.
  *
- * @author QY Li
+ * @author ThinkGem
  **/
 public class TenantInfoMapperBySqlServer extends AbstractMapperBySqlServer implements TenantInfoMapper {
     

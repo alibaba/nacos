@@ -26,7 +26,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 /**
  * The SQL Server implementation of HistoryConfigInfoMapper.
  *
- * @author QY Li
+ * @author ThinkGem
  **/
 public class HistoryConfigInfoMapperBySqlServer extends AbstractMapperBySqlServer implements HistoryConfigInfoMapper {
     

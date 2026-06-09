@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * The SQL Server implementation of TenantCapacityMapper.
  *
- * @author QY Li
+ * @author ThinkGem
  **/
 public class TenantCapacityMapperBySqlServer extends AbstractMapperBySqlServer implements TenantCapacityMapper {
     

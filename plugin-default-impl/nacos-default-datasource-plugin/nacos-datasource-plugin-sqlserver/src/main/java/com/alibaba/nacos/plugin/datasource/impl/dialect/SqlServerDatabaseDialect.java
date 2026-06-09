@@ -22,7 +22,7 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.sqlserver.TrustedSqlServer
 /**
  * Microsoft SQL Server database dialect.
  *
- * @author QY Li
+ * @author ThinkGem
  */
 public class SqlServerDatabaseDialect extends AbstractDatabaseDialect {
     
@@ -36,22 +36,50 @@ public class SqlServerDatabaseDialect extends AbstractDatabaseDialect {
         return TrustedSqlServerFunctionEnum.getFunctionByName(functionName);
     }
     
+    /**
+     * Get the TopN query SQL with parameter marker.
+     *
+     * @param sql the original SQL
+     * @return the SQL with TopN limit
+     */
     @Override
     public String getLimitTopSqlWithMark(String sql) {
         return sql + " ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY ";
     }
     
+    /**
+     * Get the pagination query SQL with parameter markers.
+     *
+     * @param sql the original SQL
+     * @return the SQL with pagination parameters
+     */
     @Override
     public String getLimitPageSqlWithMark(String sql) {
         return sql + " ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ";
     }
     
+    /**
+     * Get the pagination query SQL.
+     *
+     * @param sql the original SQL
+     * @param pageNo the page number (starting from 1)
+     * @param pageSize the page size
+     * @return the SQL with pagination
+     */
     @Override
     public String getLimitPageSql(String sql, int pageNo, int pageSize) {
         return sql + " ORDER BY id OFFSET " + getPagePrevNum(pageNo, pageSize)
                 + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY ";
     }
     
+    /**
+     * Get the pagination query SQL with start offset.
+     *
+     * @param sql the original SQL
+     * @param startOffset the start offset
+     * @param pageSize the page size
+     * @return the SQL with pagination
+     */
     @Override
     public String getLimitPageSqlWithOffset(String sql, int startOffset, int pageSize) {
         return sql + " ORDER BY id OFFSET " + startOffset + " ROWS FETCH NEXT "

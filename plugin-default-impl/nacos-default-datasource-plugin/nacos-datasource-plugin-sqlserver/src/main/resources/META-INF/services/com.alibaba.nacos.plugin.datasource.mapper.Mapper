@@ -14,15 +14,12 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.datasource.impl.sqlserver.ConfigInfoBetaMapperBySqlServer
 com.alibaba.nacos.plugin.datasource.impl.sqlserver.ConfigInfoMapperBySqlServer
-com.alibaba.nacos.plugin.datasource.impl.sqlserver.ConfigInfoTagMapperBySqlServer
 com.alibaba.nacos.plugin.datasource.impl.sqlserver.ConfigInfoGrayMapperBySqlServer
 com.alibaba.nacos.plugin.datasource.impl.sqlserver.ConfigTagsRelationMapperBySqlServer
 com.alibaba.nacos.plugin.datasource.impl.sqlserver.HistoryConfigInfoMapperBySqlServer
 com.alibaba.nacos.plugin.datasource.impl.sqlserver.TenantInfoMapperBySqlServer
 com.alibaba.nacos.plugin.datasource.impl.sqlserver.TenantCapacityMapperBySqlServer
 com.alibaba.nacos.plugin.datasource.impl.sqlserver.GroupCapacityMapperBySqlServer
-com.alibaba.nacos.plugin.datasource.impl.sqlserver.ConfigMigrateMapperBySqlServer
 com.alibaba.nacos.plugin.datasource.impl.sqlserver.AiResourceMapperBySqlServer
 com.alibaba.nacos.plugin.datasource.impl.sqlserver.AiResourceVersionMapperBySqlServer

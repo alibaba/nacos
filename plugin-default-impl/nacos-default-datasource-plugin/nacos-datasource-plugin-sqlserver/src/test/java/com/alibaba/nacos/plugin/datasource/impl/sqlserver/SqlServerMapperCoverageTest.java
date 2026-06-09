@@ -103,13 +103,6 @@ class SqlServerMapperCoverageTest {
     }
     
     @Test
-    void testConfigInfoTagMapper() {
-        ConfigInfoTagMapperBySqlServer mapper = new ConfigInfoTagMapperBySqlServer();
-        assertEquals(DatabaseTypeConstant.SQLSERVER, mapper.getDataSource());
-        assertResult(mapper.findAllConfigInfoTagForDumpAllFetchRows(context));
-    }
-    
-    @Test
     void testGroupCapacityMapper() {
         GroupCapacityMapperBySqlServer mapper = new GroupCapacityMapperBySqlServer();
         assertEquals(DatabaseTypeConstant.SQLSERVER, mapper.getDataSource());
@@ -127,21 +120,6 @@ class SqlServerMapperCoverageTest {
     void testTenantInfoMapper() {
         TenantInfoMapperBySqlServer mapper = new TenantInfoMapperBySqlServer();
         assertEquals(DatabaseTypeConstant.SQLSERVER, mapper.getDataSource());
-    }
-    
-    @Test
-    void testConfigMigrateMapper() {
-        ConfigMigrateMapperBySqlServer mapper = new ConfigMigrateMapperBySqlServer();
-        assertEquals(DatabaseTypeConstant.SQLSERVER, mapper.getDataSource());
-        assertResult(mapper.findConfigIdNeedInsertMigrate(context), 12L, pageSize);
-        assertResult(mapper.findConfigNeedUpdateMigrate(context),
-            "srcTenant", "srcUser", "targetTenant", "srcUser", 12L, pageSize);
-        assertResult(mapper.findConfigGrayIdNeedInsertMigrate(context), 12L, pageSize);
-        assertResult(mapper.findConfigGrayNeedUpdateMigrate(context),
-            "srcTenant", "srcUser", "targetTenant", "srcUser", 12L, pageSize);
-        assertResult(mapper.migrateConfigInsertByIds(context), 12L, "srcUser", 100L);
-        assertResult(mapper.migrateConfigGrayInsertByIds(context), 12L, "srcUser", 100L);
-        assertSqlContains(mapper.migrateConfigGrayInsertByIds(context), "config_info_gray");
     }
     
     @Test
@@ -165,13 +143,6 @@ class SqlServerMapperCoverageTest {
         assertEquals(DatabaseTypeConstant.SQLSERVER, mapper.getDataSource());
         assertResult(mapper.findAllConfigInfoGrayForDumpAllFetchRows(context));
         assertResult(mapper.findChangeConfig(context), startTime, 8L, pageSize);
-    }
-    
-    @Test
-    void testConfigInfoBetaMapper() {
-        ConfigInfoBetaMapperBySqlServer mapper = new ConfigInfoBetaMapperBySqlServer();
-        assertEquals(DatabaseTypeConstant.SQLSERVER, mapper.getDataSource());
-        assertResult(mapper.findAllConfigInfoBetaForDumpAllFetchRows(context), startRow, pageSize);
     }
     
     @Test

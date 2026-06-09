@@ -29,10 +29,16 @@ import java.util.List;
 /**
  * The SQL Server implementation of ConfigTagsRelationMapper.
  *
- * @author QY Li
+ * @author ThinkGem
  **/
 public class ConfigTagsRelationMapperBySqlServer extends AbstractMapperBySqlServer implements ConfigTagsRelationMapper {
     
+    /**
+     * Find config info by tags with pagination.
+     *
+     * @param context the mapper context
+     * @return the mapper result
+     */
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -44,9 +50,24 @@ public class ConfigTagsRelationMapperBySqlServer extends AbstractMapperBySqlServ
         
         List<Object> paramList = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE ");
+        StringBuilder joinCondition = new StringBuilder(" ON a.id = b.id");
+        
         final String sql =
                 "SELECT a.id, a.data_id, a.group_id, a.tenant_id, a.app_name, a.content "
-                        + " FROM config_info a LEFT JOIN config_tags_relation b ON a.id = b.id ";
+                        + " FROM config_info a LEFT JOIN config_tags_relation b ";
+        
+        // 先添加 JOIN 条件的参数（标签）- 因为 JOIN 在 SQL 中先于 WHERE
+        if (tagArr != null && tagArr.length > 0) {
+            joinCondition.append(" AND b.tag_name IN (");
+            for (int i = 0; i < tagArr.length; i++) {
+                if (i != 0) {
+                    joinCondition.append(", ");
+                }
+                joinCondition.append('?');
+                paramList.add(tagArr[i]);
+            }
+            joinCondition.append(") ");
+        }
         
         where.append(" a.tenant_id=? ");
         paramList.add(tenant);
@@ -67,20 +88,19 @@ public class ConfigTagsRelationMapperBySqlServer extends AbstractMapperBySqlServ
             where.append(" AND a.content LIKE ? ");
             paramList.add(content);
         }
-        where.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagArr.length; i++) {
-            if (i != 0) {
-                where.append(", ");
-            }
-            where.append('?');
-            paramList.add(tagArr[i]);
-        }
-        where.append(") ");
-        return new MapperResult(sql + where + " ORDER BY id OFFSET " + context.getStartRow()
-                + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY",
-                paramList);
+        
+        String finalSql = sql + joinCondition + where + " ORDER BY id OFFSET " + context.getStartRow()
+                + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
+        
+        return new MapperResult(finalSql, paramList);
     }
     
+    /**
+     * Find config info like by tags with pagination.
+     *
+     * @param context the mapper context
+     * @return the mapper result
+     */
     @Override
     public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -93,8 +113,22 @@ public class ConfigTagsRelationMapperBySqlServer extends AbstractMapperBySqlServ
         List<Object> paramList = new ArrayList<>();
         
         StringBuilder where = new StringBuilder(" WHERE ");
+        StringBuilder joinCondition = new StringBuilder(" ON a.id = b.id");
         final String sqlFetchRows = "SELECT a.id, a.data_id, a.group_id, a.tenant_id, a.app_name, a.content "
-                + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id = b.id ";
+                + "FROM config_info a LEFT JOIN config_tags_relation b ";
+        
+        // 先添加 JOIN 条件的参数（标签）- 因为 JOIN 在 SQL 中先于 WHERE
+        if (tagArr != null && tagArr.length > 0) {
+            joinCondition.append(" AND b.tag_name IN (");
+            for (int i = 0; i < tagArr.length; i++) {
+                if (i != 0) {
+                    joinCondition.append(", ");
+                }
+                joinCondition.append('?');
+                paramList.add(tagArr[i]);
+            }
+            joinCondition.append(") ");
+        }
         
         where.append(" a.tenant_id LIKE ? ");
         paramList.add(tenant);
@@ -115,19 +149,11 @@ public class ConfigTagsRelationMapperBySqlServer extends AbstractMapperBySqlServ
             where.append(" AND a.content LIKE ? ");
             paramList.add(content);
         }
-        where.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagArr.length; i++) {
-            if (i != 0) {
-                where.append(", ");
-            }
-            where.append('?');
-            paramList.add(tagArr[i]);
-        }
-        where.append(") ");
-        return new MapperResult(
-                sqlFetchRows + where + " ORDER BY id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-                        + context.getPageSize() + " ROWS ONLY",
-                paramList);
+        
+        String finalSql = sqlFetchRows + joinCondition + where + " ORDER BY id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
+                        + context.getPageSize() + " ROWS ONLY";
+        
+        return new MapperResult(finalSql, paramList);
     }
     
     @Override

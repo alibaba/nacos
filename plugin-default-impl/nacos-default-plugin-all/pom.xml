@@ -135,6 +135,8 @@
                                       tofile="${project.basedir}/../../distribution/conf/pg-upgrade-null-tenant-id.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/oracle-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-sqlserver/src/main/resources/META-INF/sqlserver-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/sqlserver-schema.sql" overwrite="true"/>
                             </target>
                         </configuration>
                     </execution>

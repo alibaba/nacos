@@ -875,6 +875,14 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags =
             configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+        
+        // 添加调试日志
+        System.out.println("[SQLSERVER_DEBUG] findConfigInfo4Page - pageNo=" + pageNo + ", pageSize=" + pageSize 
+            + ", dataId=" + dataId + ", group=" + group + ", tenant=" + tenant 
+            + ", appName=" + appName + ", content=" + content + ", configTags=" + configTags);
+        LogUtil.DEFAULT_LOG.warn("[SQLSERVER_DEBUG] findConfigInfo4Page - pageNo={}, pageSize={}, dataId={}, group={}, tenant={}, appName={}, content={}, configTags={}",
+            pageNo, pageSize, dataId, group, tenant, appName, content, configTags);
+        
         MapperResult sql;
         MapperResult sqlCount;
         
@@ -882,10 +890,13 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
         if (StringUtils.isNotBlank(dataId)) {
             context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+            System.out.println("[SQLSERVER_DEBUG] dataId parameter set: " + dataId);
+            LogUtil.DEFAULT_LOG.warn("[SQLSERVER_DEBUG] dataId parameter set: {}", dataId);
         }
         if (StringUtils.isNotBlank(group)) {
             context.putWhereParameter(FieldConstant.GROUP_ID, group);
-            
+            System.out.println("[SQLSERVER_DEBUG] group parameter set: " + group);
+            LogUtil.DEFAULT_LOG.warn("[SQLSERVER_DEBUG] group parameter set: {}", group);
         }
         if (StringUtils.isNotBlank(appName)) {
             context.putWhereParameter(FieldConstant.APP_NAME, appName);
@@ -899,21 +910,33 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
             context.putWhereParameter(FieldConstant.TAG_ARR, tagArr);
+            System.out.println("[SQLSERVER_DEBUG] configTags found: " + configTags + ", tagArr length: " + tagArr.length + ", tagArr: " + java.util.Arrays.toString(tagArr));
+            LogUtil.DEFAULT_LOG.warn("[SQLSERVER_DEBUG] configTags found: {}, tagArr length: {}, tagArr: {}", configTags, tagArr.length, java.util.Arrays.toString(tagArr));
             ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.CONFIG_TAGS_RELATION);
             sqlCount = configTagsRelationMapper.findConfigInfo4PageCountRows(context);
             sql = configTagsRelationMapper.findConfigInfo4PageFetchRows(context);
+            System.out.println("[SQLSERVER_DEBUG] Using ConfigTagsRelationMapper, count SQL: " + sqlCount.getSql() + ", fetch SQL: " + sql.getSql());
+            System.out.println("[SQLSERVER_DEBUG] count params: " + sqlCount.getParamList() + ", fetch params: " + sql.getParamList());
+            LogUtil.DEFAULT_LOG.warn("[SQLSERVER_DEBUG] Using ConfigTagsRelationMapper, count SQL: {}, fetch SQL: {}", sqlCount.getSql(), sql.getSql());
+            LogUtil.DEFAULT_LOG.warn("[SQLSERVER_DEBUG] count params: {}, fetch params: {}", sqlCount.getParamList(), sql.getParamList());
         } else {
+            System.out.println("[SQLSERVER_DEBUG] No configTags, using ConfigInfoMapper");
+            LogUtil.DEFAULT_LOG.warn("[SQLSERVER_DEBUG] No configTags, using ConfigInfoMapper");
             ConfigInfoMapper configInfoMapper =
                 mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
             
             sqlCount = configInfoMapper.findConfigInfo4PageCountRows(context);
             sql = configInfoMapper.findConfigInfo4PageFetchRows(context);
+            System.out.println("[SQLSERVER_DEBUG] Using ConfigInfoMapper, count SQL: " + sqlCount.getSql() + ", fetch SQL: " + sql.getSql());
+            LogUtil.DEFAULT_LOG.warn("[SQLSERVER_DEBUG] Using ConfigInfoMapper, count SQL: {}, fetch SQL: {}", sqlCount.getSql(), sql.getSql());
         }
         try {
             Page<ConfigInfo> page =
                 helper.fetchPageLimit(sqlCount, sql, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
+            System.out.println("[SQLSERVER_DEBUG] Query result - total pages: " + page.getPagesAvailable() + ", page items count: " + page.getPageItems().size());
+            LogUtil.DEFAULT_LOG.warn("[SQLSERVER_DEBUG] Query result - total pages: {}, page items count: {}", page.getPagesAvailable(), page.getPageItems().size());
             for (ConfigInfo configInfo : page.getPageItems()) {
                 Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
                     configInfo.getEncryptedDataKey(), configInfo.getContent());

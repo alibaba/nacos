@@ -27,7 +27,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 /**
  * The SQL Server implementation of AiResourceVersionMapper.
  *
- * @author QY Li
+ * @author ThinkGem
  */
 public class AiResourceVersionMapperBySqlServer extends AbstractMapperBySqlServer implements AiResourceVersionMapper {
     

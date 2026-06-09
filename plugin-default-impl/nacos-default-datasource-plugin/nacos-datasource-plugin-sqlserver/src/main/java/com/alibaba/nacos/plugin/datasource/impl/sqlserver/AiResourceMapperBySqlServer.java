@@ -26,7 +26,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 /**
  * The SQL Server implementation of AiResourceMapper.
  *
- * @author QY Li
+ * @author ThinkGem
  */
 public class AiResourceMapperBySqlServer extends AbstractMapperBySqlServer implements AiResourceMapper {
     
@@ -39,7 +39,7 @@ public class AiResourceMapperBySqlServer extends AbstractMapperBySqlServer imple
         appendExtraQueryCondition(where, context);
         
         MapperResult built = where.build();
-        String sql = built.getSql() + " ORDER BY gmt_modified DESC OFFSET "
+        String sql = built.getSql() + resolveOrderByClause(context) + " OFFSET "
                 + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY ";
         return new MapperResult(sql, built.getParamList());
     }

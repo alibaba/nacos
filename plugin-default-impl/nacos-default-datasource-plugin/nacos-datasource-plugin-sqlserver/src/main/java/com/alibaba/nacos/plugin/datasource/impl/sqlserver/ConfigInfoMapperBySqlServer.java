@@ -34,7 +34,7 @@ import java.util.List;
 /**
  * The SQL Server implementation of ConfigInfoMapper.
  *
- * @author QY Li
+ * @author ThinkGem
  **/
 
 public class ConfigInfoMapperBySqlServer extends AbstractMapperBySqlServer implements ConfigInfoMapper {
