@@ -73,9 +73,10 @@ mvn '-Prelease-nacos,!dev' -Dmaven.test.skip=true clean install -U
 # Run all unit tests
 mvn test
 
-# Run config / naming integration tests
-mvn test -Pcit-test
-mvn test -Pnit-test
+# Run standalone-server integration tests
+mvn -pl test/openapi-test -Pintegration-test -DskipTests=false verify
+mvn -pl test/java-sdk-test -Pjava-sdk-integration-test -DskipTests=false verify
+mvn -pl test/maintainer-sdk-test -Pmaintainer-sdk-integration-test -DskipTests=false verify
 
 # Format code (run before commit)
 mvn spotless:apply
