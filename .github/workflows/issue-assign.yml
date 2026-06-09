@@ -7,10 +7,6 @@ on:
 permissions:
   issues: write
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
   handle-command:
     if: github.event_name == 'issue_comment' && !github.event.issue.pull_request

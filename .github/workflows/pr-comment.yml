@@ -4,10 +4,6 @@ on:
   pull_request_target:
     types: [opened, reopened]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
   thanks-and-hint-to-document:
     runs-on: ubuntu-latest

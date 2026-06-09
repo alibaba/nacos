@@ -3,10 +3,6 @@ on:
   schedule:
     - cron: "0 17 * * *"   # UTC+8 01:00（UTC 17:00）
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
   close-issues:
     runs-on: ubuntu-latest
