@@ -61,6 +61,13 @@ partial set is limited to operations whose remaining success paths mutate
 shared runtime/storage state, require publish-pipeline plugin data, or require
 an external LLM provider.
 
+Config scenario rows cover the current 3.3 Config model. Blank or omitted
+namespace inputs are expected to use `public`, and beta/tag gray behavior is
+verified through the current gray model. Removed pre-3.0 compatibility
+migration paths, including empty-tenant storage migration and legacy
+`config_info_beta` / `config_info_tag` old-table migration, are not counted as
+missing OpenAPI IT coverage.
+
 ## Coverage Documents
 
 | API surface | Scenario document | Test package |
