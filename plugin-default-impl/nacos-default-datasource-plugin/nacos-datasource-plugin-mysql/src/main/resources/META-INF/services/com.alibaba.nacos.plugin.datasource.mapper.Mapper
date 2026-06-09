@@ -14,15 +14,12 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoBetaMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoMapperByMySql
-com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoTagMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoGrayMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigTagsRelationMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.HistoryConfigInfoMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.TenantInfoMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.TenantCapacityMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.GroupCapacityMapperByMysql
-com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigMigrateMapperByMysql
 com.alibaba.nacos.plugin.datasource.impl.mysql.AiResourceMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.AiResourceVersionMapperByMySql

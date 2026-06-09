@@ -119,34 +119,4 @@ class ConfigInfoTest {
         assertTrue(result.contains("configTags='tag'"));
     }
     
-    @Test
-    void testConfigInfo4BetaAccessorsAndEqualityDelegate() {
-        ConfigInfo4Beta configInfo = new ConfigInfo4Beta("dataId", "group", "appName",
-            "content", "1.1.1.1");
-        ConfigInfo4Beta sameConfigInfo = new ConfigInfo4Beta("dataId", "group", "appName",
-            "content", "2.2.2.2");
-        
-        assertEquals("1.1.1.1", configInfo.getBetaIps());
-        configInfo.setBetaIps("3.3.3.3");
-        
-        assertEquals("3.3.3.3", configInfo.getBetaIps());
-        assertEquals(configInfo, sameConfigInfo);
-        assertEquals(configInfo.hashCode(), sameConfigInfo.hashCode());
-    }
-    
-    @Test
-    void testConfigInfo4TagAccessorsAndEqualityDelegate() {
-        ConfigInfo4Tag configInfo = new ConfigInfo4Tag("dataId", "group", "tagA",
-            "appName", "content");
-        ConfigInfo4Tag sameConfigInfo = new ConfigInfo4Tag("dataId", "group", "tagB",
-            "appName", "content");
-        
-        assertEquals("tagA", configInfo.getTag());
-        configInfo.setTag("tagC");
-        
-        assertEquals("tagC", configInfo.getTag());
-        assertEquals(configInfo, sameConfigInfo);
-        assertEquals(configInfo.hashCode(), sameConfigInfo.hashCode());
-    }
-    
 }

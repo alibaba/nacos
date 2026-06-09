@@ -145,7 +145,7 @@ class MySqlMapperCoverageTest {
     }
     
     @Test
-    void testHistoryAndGrayAndMigrateMappers() {
+    void testHistoryAndGrayMappers() {
         HistoryConfigInfoMapperByMySql historyMapper = new HistoryConfigInfoMapperByMySql();
         assertEquals(DataSourceConstant.MYSQL, historyMapper.getDataSource());
         assertEquals("NOW(3)", historyMapper.getFunction("NOW()"));
@@ -166,10 +166,6 @@ class MySqlMapperCoverageTest {
             "SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,"
                 + "md5,gmt_modified FROM config_info_gray ORDER BY id LIMIT 3,7");
         
-        ConfigMigrateMapperByMysql migrateMapper = new ConfigMigrateMapperByMysql();
-        assertEquals(DataSourceConstant.MYSQL, migrateMapper.getDataSource());
-        assertEquals("NOW(3)", migrateMapper.getFunction("NOW()"));
-        assertEquals(TableConstant.MIGRATE_CONFIG, migrateMapper.getTableName());
     }
     
     @Test

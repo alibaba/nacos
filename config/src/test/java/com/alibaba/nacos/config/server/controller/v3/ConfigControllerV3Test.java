@@ -330,16 +330,16 @@ class ConfigControllerV3Test {
     @Test
     void testQueryBeta() throws Exception {
         
-        ConfigInfoGrayWrapper configInfoBetaWrapper = new ConfigInfoGrayWrapper();
-        configInfoBetaWrapper.setDataId("test");
-        configInfoBetaWrapper.setGroup("test");
-        configInfoBetaWrapper.setContent("test");
-        configInfoBetaWrapper.setGrayName("beta");
-        configInfoBetaWrapper.setGrayRule(
+        ConfigInfoGrayWrapper configInfoGrayWrapper = new ConfigInfoGrayWrapper();
+        configInfoGrayWrapper.setDataId("test");
+        configInfoGrayWrapper.setGroup("test");
+        configInfoGrayWrapper.setContent("test");
+        configInfoGrayWrapper.setGrayName("beta");
+        configInfoGrayWrapper.setGrayRule(
             "{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}");
         when(configInfoGrayPersistService.findConfigInfo4Gray("test", "test", "public", "beta"))
             .thenReturn(
-                configInfoBetaWrapper);
+                configInfoGrayWrapper);
         
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/beta")
@@ -350,16 +350,16 @@ class ConfigControllerV3Test {
             mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
-        ConfigGrayInfo resConfigInfoBetaWrapper = JacksonUtils.toObj(data, ConfigGrayInfo.class);
+        ConfigGrayInfo resConfigInfoGrayWrapper = JacksonUtils.toObj(data, ConfigGrayInfo.class);
         
         assertEquals("0", code);
-        assertEquals(configInfoBetaWrapper.getDataId(), resConfigInfoBetaWrapper.getDataId());
-        assertEquals(configInfoBetaWrapper.getGroup(), resConfigInfoBetaWrapper.getGroupName());
-        assertEquals(configInfoBetaWrapper.getContent(), resConfigInfoBetaWrapper.getContent());
-        assertEquals(configInfoBetaWrapper.getGrayName(), resConfigInfoBetaWrapper.getGrayName());
+        assertEquals(configInfoGrayWrapper.getDataId(), resConfigInfoGrayWrapper.getDataId());
+        assertEquals(configInfoGrayWrapper.getGroup(), resConfigInfoGrayWrapper.getGroupName());
+        assertEquals(configInfoGrayWrapper.getContent(), resConfigInfoGrayWrapper.getContent());
+        assertEquals(configInfoGrayWrapper.getGrayName(), resConfigInfoGrayWrapper.getGrayName());
         assertEquals(
             "{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}",
-            resConfigInfoBetaWrapper.getGrayRule());
+            resConfigInfoGrayWrapper.getGrayRule());
         
     }
     
