@@ -109,10 +109,6 @@
   }, {
     "pattern":"\\Qbanner.txt\\E"
   }, {
-    "pattern":"\\Qcom/alibaba/nacos/Nacos$$SpringCGLIB$$0.class\\E"
-  }, {
-    "pattern":"\\Qcom/alibaba/nacos/Nacos.class\\E"
-  }, {
     "pattern":"\\Qcom/alibaba/nacos/\\E"
   }, {
     "pattern":"\\Qcom/alibaba/nacos/api/annotation/NacosApi.class\\E"
