@@ -53,27 +53,28 @@ class FuzzyWatchSyncNotifyCallback implements PushCallBack {
         long now = System.currentTimeMillis();
         if (isFinishInitTask()) {
             Loggers.PUSH.info(
-                "[fuzzy watch] init notify finish push success  ,clientId={}, pattern ={},total cost time={}ms",
+                "[fuzzy watch] init notify finish push success, clientId={}, pattern={}, total cost time={}ms",
                 fuzzyWatchSyncNotifyTask.getClientId(), fuzzyWatchSyncNotifyTask.getPattern(),
                 (now - fuzzyWatchSyncNotifyTask.getExecuteStartTime()));
         } else {
             Loggers.PUSH.info(
-                "[fuzzy watch] sync notify task success, pattern {}, syncType={},clientId={},current batch size {},currentBatch={},totalBatch={}",
+                "[fuzzy watch] sync notify task success, pattern={}, syncType={}, clientId={}, current batch size={}, currentBatch={}, totalBatch={}",
                 fuzzyWatchSyncNotifyTask.getPattern(), fuzzyWatchSyncNotifyTask.getSyncType(),
                 fuzzyWatchSyncNotifyTask.getClientId(),
                 fuzzyWatchSyncNotifyTask.getSyncServiceKeys().size(),
-                fuzzyWatchSyncNotifyTask.getCurrentBatch());
+                fuzzyWatchSyncNotifyTask.getCurrentBatch(),
+                fuzzyWatchSyncNotifyTask.getTotalBatch());
             // if total batch is success sync to client send
             if (isInitNotifyTask()) {
                 Loggers.PUSH.info(
-                    "[fuzzy watch] init notify push success  ,clientId={}, pattern ={} ,currentBatch={},totalBatch={}",
+                    "[fuzzy watch] init notify push success, clientId={}, pattern ={}, currentBatch={}, totalBatch={}",
                     fuzzyWatchSyncNotifyTask.getClientId(), fuzzyWatchSyncNotifyTask.getPattern(),
                     fuzzyWatchSyncNotifyTask.getCurrentBatch(),
                     fuzzyWatchSyncNotifyTask.getTotalBatch());
                 batchTaskCounter.batchSuccess(fuzzyWatchSyncNotifyTask.getCurrentBatch());
                 if (batchTaskCounter.batchCompleted()) {
                     Loggers.PUSH.info(
-                        "[fuzzy watch] init notify all batch finish ,clientId={}, pattern ={},start notify init finish task",
+                        "[fuzzy watch] init notify all batch finish, clientId={}, pattern={}, start notify init finish task",
                         fuzzyWatchSyncNotifyTask.getClientId(),
                         fuzzyWatchSyncNotifyTask.getPattern());
                     FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTaskFinish =
