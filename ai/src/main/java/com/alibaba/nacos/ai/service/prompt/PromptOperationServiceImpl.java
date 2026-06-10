@@ -495,66 +495,25 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResource meta = requireMeta(namespaceId, promptKey);
         VisibilityHelper.checkWritableResource(meta);
         PromptVersionInfoPojo info = requireVersionInfo(meta);
-        
+        ResourceVersionInfo resourceInfo = toResourceVersionInfo(info);
+        String oldLatest =
+            resourceInfo.getLabels() == null ? null : resourceInfo.getLabels().get(LABEL_LATEST);
         AiResourceVersion v =
-            resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
-                version);
+            resourceManager.toggleVersionOnlineStatus(namespaceId, meta, resourceInfo, version,
+                online);
         if (v == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "Prompt version not found: " + promptKey + "@" + version);
-        }
-        String targetStatus = online ? VERSION_STATUS_ONLINE : VERSION_STATUS_OFFLINE;
-        String currentStatus = v.getStatus();
-        
-        // Skip if already in target status
-        if (targetStatus.equalsIgnoreCase(currentStatus)) {
             return;
         }
-        
-        resourceManager.updateVersionStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
-            targetStatus);
-        
-        Integer cnt = info.getOnlineCnt() == null ? 0 : info.getOnlineCnt();
-        if (online) {
-            info.setOnlineCnt(cnt + 1);
-        } else {
-            info.setOnlineCnt(Math.max(0, cnt - 1));
-        }
-        updateMetaVersionInfoCas(namespaceId, meta, info);
-        String traceOp = online ? AiResourceTraceService.OP_ONLINE_VERSION
-            : AiResourceTraceService.OP_OFFLINE_VERSION;
-        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, version, traceOp,
-            VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        String newLatest =
+            resourceInfo.getLabels() == null ? null : resourceInfo.getLabels().get(LABEL_LATEST);
+        syncLatestMirrorIfChanged(namespaceId, promptKey, oldLatest, newLatest);
     }
     
     @Override
     public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels)
         throws NacosException {
-        AiResource meta = requireMeta(namespaceId, promptKey);
-        VisibilityHelper.checkWritableResource(meta);
-        PromptVersionInfoPojo info = requireVersionInfo(meta);
-        
-        // Protect latest label: if it already exists, prevent removal
-        Map<String, String> newLabels = labels == null ? new HashMap<>(4) : new HashMap<>(labels);
-        if (!newLabels.containsKey(LABEL_LATEST) && info.getLabels() != null
-            && info.getLabels().containsKey(LABEL_LATEST)) {
-            newLabels.put(LABEL_LATEST, info.getLabels().get(LABEL_LATEST));
-        }
-        
-        info.setLabels(newLabels);
-        updateMetaVersionInfoCas(namespaceId, meta, info);
-        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
-            AiResourceTraceService.OP_UPDATE_LABELS, VisibilityHelper.resolveCurrentIdentity(),
-            VisibilityHelper.resolveClientIp());
-        
-        // Refresh latest mirror if latest label changed
-        if (labels != null && labels.containsKey(LABEL_LATEST)) {
-            try {
-                refreshLatestMirror(namespaceId, promptKey);
-            } catch (Exception e) {
-                LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
-            }
-        }
+        resourceManager.validateAndUpdateLabels(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+            labels);
     }
     
     @Override
@@ -847,6 +806,11 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         if (StringUtils.isBlank(latestVersion)) {
             return;
         }
+        refreshLatestMirror(namespaceId, promptKey, latestVersion);
+    }
+    
+    private void refreshLatestMirror(String namespaceId, String promptKey, String latestVersion)
+        throws NacosException {
         
         // Read content from new storage
         PromptVersionInfo content = loadPromptFromStorage(namespaceId, promptKey, latestVersion);
@@ -865,6 +829,22 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         ConfigRequestInfo requestInfo = new ConfigRequestInfo();
         requestInfo.setUpdateForExist(true);
         configOperationService.publishConfig(form, requestInfo, null);
+    }
+    
+    private void syncLatestMirrorIfChanged(String namespaceId, String promptKey, String oldLatest,
+        String newLatest) {
+        if (StringUtils.equals(oldLatest, newLatest)) {
+            return;
+        }
+        if (StringUtils.isBlank(newLatest)) {
+            deleteLegacyLatestMirror(namespaceId, promptKey);
+            return;
+        }
+        try {
+            refreshLatestMirror(namespaceId, promptKey, newLatest);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
+        }
     }
     
     // ========== Private methods ==========
@@ -1294,9 +1274,11 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public boolean bindLabel(String namespaceId, String promptKey, String label, String version)
         throws NacosException {
+        rejectReservedLatestLabel(label);
         PromptMetaInfo detail = getPromptDetail(namespaceId, promptKey);
         Map<String, String> labels =
             detail.getLabels() != null ? new HashMap<>(detail.getLabels()) : new HashMap<>();
+        removeReservedLatestLabel(labels);
         labels.put(label, version);
         updateLabels(namespaceId, promptKey, labels);
         return true;
@@ -1306,12 +1288,29 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public boolean unbindLabel(String namespaceId, String promptKey, String label)
         throws NacosException {
+        rejectReservedLatestLabel(label);
         PromptMetaInfo detail = getPromptDetail(namespaceId, promptKey);
         Map<String, String> labels =
             detail.getLabels() != null ? new HashMap<>(detail.getLabels()) : new HashMap<>();
+        removeReservedLatestLabel(labels);
         labels.remove(label);
         updateLabels(namespaceId, promptKey, labels);
         return true;
+    }
+    
+    private static void rejectReservedLatestLabel(String label) throws NacosException {
+        if (StringUtils.equalsIgnoreCase(LABEL_LATEST, label)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Label `latest` is reserved and cannot be updated manually.");
+        }
+    }
+    
+    private static void removeReservedLatestLabel(Map<String, String> labels) {
+        if (labels == null || labels.isEmpty()) {
+            return;
+        }
+        labels.keySet().removeIf(label -> StringUtils.equalsIgnoreCase(LABEL_LATEST, label));
     }
     
     @Deprecated

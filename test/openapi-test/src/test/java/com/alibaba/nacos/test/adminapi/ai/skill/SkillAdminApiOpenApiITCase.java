@@ -38,8 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     version online and latest; admin detail, version detail, list, ZIP download, labels, bizTags, scope,
  *     online/offline, and delete expose the expected skill state.</li>
  *     <li>Boundary/validation: namespace defaults to public; list supports accurate/blur, scope, and bizTag
- *     filters; skillName, skillCard, targetVersion, version, labels, scope, and positive pagination validation
- *     follows the controller forms; draft forking and draft deletion are covered explicitly.</li>
+ *     filters; skillName, skillCard, targetVersion, version, labels, latest label preservation, scope,
+ *     and positive pagination validation follows the controller forms;
+ *     draft forking and draft deletion are covered explicitly.</li>
  *     <li>Exception/error handling: absent skills and versions return controlled RESOURCE_NOT_FOUND bodies, direct
  *     publish from draft and redraft from online return validation errors instead of HTTP 500, and invalid search
  *     or scope parameters return HTTP 400.</li>
@@ -70,7 +71,7 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertError(postRaw(ADMIN_SKILL_PATH + "/publish", queryFrom(skillPublishForm(skillName, "1.0.0"))),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "Only reviewing version can be published");
         JsonNode published = postFormOk(ADMIN_SKILL_PATH + "/force-publish",
-                skillPublishForm(skillName, "1.0.0"));
+                withUpdateLatestLabel(skillPublishForm(skillName, "1.0.0")));
         assertEquals("ok", published.get("data").asText(), published.toString());
 
         JsonNode meta = getJsonOk(ADMIN_SKILL_PATH, skillQuery(skillName)).get("data");
@@ -108,8 +109,17 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 skillScopeForm(skillName, "PRIVATE")).get("data").asText());
         JsonNode governed = getJsonOk(ADMIN_SKILL_PATH, skillQuery(skillName)).get("data");
         assertEquals("1.0.0", governed.get("labels").get("stable").asText(), governed.toString());
+        assertEquals("1.0.0", governed.get("labels").get("latest").asText(), governed.toString());
         assertEquals("[\"openapi\",\"admin\"]", governed.get("bizTags").asText(), governed.toString());
         assertEquals("PRIVATE", governed.get("scope").asText(), governed.toString());
+        assertEquals("ok", putFormOk(ADMIN_SKILL_PATH + "/labels",
+                skillLabelsForm(skillName, "{\"stable\":\"1.0.0\",\"latest\":\"9.9.9\"}"))
+                .get("data").asText());
+        governed = getJsonOk(ADMIN_SKILL_PATH, skillQuery(skillName)).get("data");
+        assertEquals("1.0.0", governed.get("labels").get("stable").asText(),
+                governed.toString());
+        assertEquals("1.0.0", governed.get("labels").get("latest").asText(),
+                governed.toString());
         assertSkillListContains(Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
                 .addParam("scope", "PRIVATE").addParam("bizTag", "openapi")
                 .addParam("skillName", skillName).addParam("search", "accurate"), skillName);
@@ -117,9 +127,14 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals("ok", postFormOk(ADMIN_SKILL_PATH + "/offline",
                 skillOnlineForm(skillName, "1.0.0", null)).get("data").asText());
         assertSkillVersionStatus(skillName, "1.0.0", "offline");
+        JsonNode offlineMeta = getJsonOk(ADMIN_SKILL_PATH, skillQuery(skillName)).get("data");
+        assertTrue(offlineMeta.get("labels").get("latest") == null, offlineMeta.toString());
         assertEquals("ok", postFormOk(ADMIN_SKILL_PATH + "/online",
                 skillOnlineForm(skillName, "1.0.0", null)).get("data").asText());
         assertSkillVersionStatus(skillName, "1.0.0", "online");
+        JsonNode reonlineMeta = getJsonOk(ADMIN_SKILL_PATH, skillQuery(skillName)).get("data");
+        assertEquals("1.0.0", reonlineMeta.get("labels").get("latest").asText(),
+                reonlineMeta.toString());
 
         assertEquals("ok", postFormOk(ADMIN_SKILL_PATH + "/offline",
                 skillOnlineForm(skillName, null, "skill")).get("data").asText());

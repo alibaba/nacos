@@ -78,9 +78,15 @@ create/upload draft
 - 流水线执行状态可以写入 `publishPipelineInfo` 和 `pipeline_execution`。
 - 流水线通过和拒绝都会把版本改为 `reviewed`；拒绝后如果需要继续编辑，用户必须显式
   redraft 该版本。
-- Publish 会把版本改为 `online`，清理 working 指针，按需增加 `onlineCnt`，并可更新
+- Publish 会把版本改为 `online`，清理 working 指针，按需增加 `onlineCnt`，并由服务端维护
   `latest` label。
+- Publish 和 force-publish 请求可以为兼容历史调用保留 `updateLatestLabel` 参数；
+  该参数已废弃，新客户端不得继续发送。未指定或指定为 `true` 时，发布版本成为服务端维护的
+  最新版本。标签更新 API 必须忽略客户端传入的 `latest` label key，并把当前服务端维护的
+  `latest` 值合并回最终 labels map。
 - Force publish 会在跳过流水线通过校验的同时，执行与 publish 成功时一致的状态转换。
+- 任意上线/下线状态变更完成后，服务端必须基于当前在线版本重新计算 `latest`，
+  并指向最大的在线版本；没有任何在线版本时，服务端必须删除 `latest`。
 
 流水线扩展行为由 [AI 发布流水线插件规范](../plugin/ai-pipeline-plugin-spec.md)定义。
 本领域规范只定义 AI 资源生命周期如何响应流水线结果。
@@ -88,6 +94,9 @@ create/upload draft
 ## 5. Labels
 
 - `latest` 是保留的默认 label，表示最近发布版本。
+- `latest` 由服务端维护。为了兼容性，手动更新 labels 的请求可以包含
+  `latest`，但服务端必须忽略客户端传入的 `latest` 值，并将当前服务端维护的
+  `latest` 合并到最终 labels 中。
 - Labels 映射到版本字符串，且不得指向 `draft` 或 `reviewing` 版本。
 - 修改 labels 不应直接修改版本内容或版本状态。
 - 运行时通过 label 查询时，应在请求时解析 label。

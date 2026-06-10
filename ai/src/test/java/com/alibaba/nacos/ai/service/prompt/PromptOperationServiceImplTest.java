@@ -541,6 +541,33 @@ class PromptOperationServiceImplTest {
     }
     
     @Test
+    void testChangeOnlineStatusShouldRemoveLatestAndLegacyMirrorWhenNoOnlineVersionRemains()
+        throws NacosException {
+        AiResource meta =
+            createMeta(PROMPT_KEY, 1L, "{\"labels\":{\"latest\":\"0.0.1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(createVersionRow("0.0.1", "online"));
+        Page<AiResourceVersion> emptyOnlinePage = new Page<>();
+        emptyOnlinePage.setPageItems(Collections.emptyList());
+        when(aiResourceVersionPersistService.list(NS, PROMPT_KEY, PROMPT_TYPE, "online", 1, 500))
+            .thenReturn(emptyOnlinePage);
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L),
+            any(AiResource.class))).thenReturn(true);
+        
+        service.changeOnlineStatus(NS, PROMPT_KEY, "0.0.1", false);
+        
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            eq(1L), captor.capture());
+        Map<?, ?> info = JacksonUtils.toObj(captor.getValue().getVersionInfo(), Map.class);
+        Map<?, ?> labels = (Map<?, ?>) info.get("labels");
+        assertEquals(false, labels.containsKey("latest"));
+        verify(configOperationService).deleteConfig(eq(PROMPT_KEY + ".json"),
+            eq("nacos-ai-prompt"), eq(NS), any(), any(), eq("nacos"), any());
+    }
+    
+    @Test
     void testChangeOnlineStatusShouldThrowWhenVersionNotFound() {
         AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
@@ -554,7 +581,7 @@ class PromptOperationServiceImplTest {
     // ========== updateLabels ==========
     
     @Test
-    void testUpdateLabelsShouldRefreshMirrorWhenLatestChanged() throws NacosException {
+    void testUpdateLabelsShouldIgnoreProvidedLatestLabel() throws NacosException {
         AiResource meta =
             createMeta(PROMPT_KEY, 1L, "{\"labels\":{\"latest\":\"0.0.1\"},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
@@ -562,16 +589,83 @@ class PromptOperationServiceImplTest {
             anyLong(),
             any(AiResource.class))).thenReturn(true);
         
-        PromptVersionInfo content = new PromptVersionInfo();
-        content.setTemplate("hello");
-        mockStorageGet(JacksonUtils.toJson(content).getBytes(StandardCharsets.UTF_8));
-        
         Map<String, String> labels = new HashMap<>();
         labels.put("latest", "0.0.2");
+        labels.put("stable", "0.0.1");
         
         service.updateLabels(NS, PROMPT_KEY, labels);
         
-        verify(configOperationService).publishConfig(any(), any(), any());
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            anyLong(), captor.capture());
+        Map<String, Object> versionInfo =
+            JacksonUtils.toObj(captor.getValue().getVersionInfo(), Map.class);
+        Map<String, String> effectiveLabels =
+            (Map<String, String>) versionInfo.get("labels");
+        assertEquals("0.0.1", effectiveLabels.get("stable"));
+        assertEquals("0.0.1", effectiveLabels.get("latest"));
+    }
+    
+    @Test
+    void testUpdateLabelsShouldPreserveLatestLabel() throws NacosException {
+        AiResource meta =
+            createMeta(PROMPT_KEY, 1L, "{\"labels\":{\"latest\":\"0.0.1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            anyLong(),
+            any(AiResource.class))).thenReturn(true);
+        
+        Map<String, String> labels = new HashMap<>();
+        labels.put("stable", "0.0.1");
+        
+        service.updateLabels(NS, PROMPT_KEY, labels);
+        
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            anyLong(), captor.capture());
+        Map<String, Object> versionInfo =
+            JacksonUtils.toObj(captor.getValue().getVersionInfo(), Map.class);
+        Map<String, String> effectiveLabels =
+            (Map<String, String>) versionInfo.get("labels");
+        assertEquals("0.0.1", effectiveLabels.get("stable"));
+        assertEquals("0.0.1", effectiveLabels.get("latest"));
+    }
+    
+    @Test
+    void testUpdateLabelsShouldRejectDraftVersion() {
+        AiResource meta = createMeta(PROMPT_KEY, 1L,
+            "{\"labels\":{\"latest\":\"0.0.1\"},\"editingVersion\":\"0.0.2\",\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        Map<String, String> labels = new HashMap<>();
+        labels.put("stable", "0.0.2");
+        
+        assertThrows(NacosApiException.class,
+            () -> service.updateLabels(NS, PROMPT_KEY, labels));
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
+            anyString(), anyLong(), any());
+    }
+    
+    @Test
+    void testBindLabelShouldPreserveLatestWithoutSubmittingReservedLabel() throws NacosException {
+        AiResource meta =
+            createMeta(PROMPT_KEY, 1L, "{\"labels\":{\"latest\":\"0.0.1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        Page<AiResourceVersion> versionPage = new Page<>();
+        versionPage.setPageItems(Collections.singletonList(createVersionRow("0.0.1", "online")));
+        when(aiResourceVersionPersistService.list(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), any(),
+            eq(1), eq(200))).thenReturn(versionPage);
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            eq(1L), any(AiResource.class))).thenReturn(true);
+        
+        service.bindLabel(NS, PROMPT_KEY, "legacy", "0.0.1");
+        
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            eq(1L), captor.capture());
+        Map<?, ?> info = JacksonUtils.toObj(captor.getValue().getVersionInfo(), Map.class);
+        Map<?, ?> labels = (Map<?, ?>) info.get("labels");
+        assertEquals("0.0.1", labels.get("legacy"));
+        assertEquals("0.0.1", labels.get("latest"));
     }
     
     // ========== updateBizTags / updateDescription ==========

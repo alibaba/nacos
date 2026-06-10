@@ -257,9 +257,11 @@ public class AgentSpecAdminController {
     @Since("3.2.0")
     @PostMapping("/publish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @SuppressWarnings("deprecation")
     public Result<String> publish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
+        boolean updateLatest = form.getUpdateLatestLabel() == null
+            || form.getUpdateLatestLabel();
         agentSpecOperationService.publish(form.getNamespaceId(), form.getAgentSpecName(),
             form.getVersion(),
             updateLatest);
@@ -275,9 +277,11 @@ public class AgentSpecAdminController {
     @Secured(resource = Constants.AgentSpecs.ADMIN_PATH
         + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
         apiType = ApiType.ADMIN_API)
+    @SuppressWarnings("deprecation")
     public Result<String> forcePublish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
+        boolean updateLatest = form.getUpdateLatestLabel() == null
+            || form.getUpdateLatestLabel();
         agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(),
             form.getVersion(),
             updateLatest);

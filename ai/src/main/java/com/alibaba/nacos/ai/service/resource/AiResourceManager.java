@@ -896,16 +896,26 @@ public class AiResourceManager {
     
     /**
      * Validate that labels don't reference draft/reviewing versions, then CAS-update labels.
+     *
+     * @return effective labels after preserving service-managed labels such as {@code latest}
      */
-    public void validateAndUpdateLabels(String namespaceId, String name, String type,
+    public Map<String, String> validateAndUpdateLabels(String namespaceId, String name, String type,
         Map<String, String> labels) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name, type);
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = requireVersionInfo(meta);
-        if (labels != null) {
+        Map<String, String> newLabels =
+            labels == null ? new LinkedHashMap<>(4) : new LinkedHashMap<>(labels);
+        removeReservedLatestLabel(newLabels);
+        if (info.getLabels() != null
+            && info.getLabels().containsKey(AiResourceConstants.LABEL_LATEST)) {
+            newLabels.put(AiResourceConstants.LABEL_LATEST,
+                info.getLabels().get(AiResourceConstants.LABEL_LATEST));
+        }
+        if (!newLabels.isEmpty()) {
             String editing = info.getEditingVersion();
             String reviewing = info.getReviewingVersion();
-            for (Map.Entry<String, String> entry : labels.entrySet()) {
+            for (Map.Entry<String, String> entry : newLabels.entrySet()) {
                 String targetVersion = entry.getValue();
                 if (StringUtils.isNotBlank(editing) && editing.equals(targetVersion)) {
                     throw new NacosApiException(NacosException.INVALID_PARAM,
@@ -921,10 +931,21 @@ public class AiResourceManager {
                 }
             }
         }
-        info.setLabels(labels == null ? null : new LinkedHashMap<>(labels));
+        info.setLabels(newLabels);
         updateVersionInfoCas(namespaceId, meta, info);
         AiResourceTraceService.logSuccess(type, name, null, AiResourceTraceService.OP_UPDATE_LABELS,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        return newLabels;
+    }
+    
+    /**
+     * Remove client-provided {@code latest} label so service-managed value wins.
+     */
+    private static void removeReservedLatestLabel(Map<String, String> labels) {
+        if (labels == null || labels.isEmpty()) {
+            return;
+        }
+        labels.keySet().removeIf(label -> AiResourceConstants.LABEL_LATEST.equalsIgnoreCase(label));
     }
     
     /**
@@ -948,7 +969,8 @@ public class AiResourceManager {
     }
     
     /**
-     * Toggle a single version's online/offline status and adjust meta onlineCnt.
+     * Toggle a single version's online/offline status, adjust meta onlineCnt and maintain
+     * service-managed labels.
      *
      * @return the version row if a status change occurred, or {@code null} if already in the target status
      */
@@ -971,12 +993,56 @@ public class AiResourceManager {
             targetStatus);
         Integer cnt = info.getOnlineCnt() == null ? 0 : info.getOnlineCnt();
         info.setOnlineCnt(online ? cnt + 1 : Math.max(0, cnt - 1));
+        refreshLatestLabelForOnlineVersions(namespaceId, name, type, info);
         updateVersionInfoCas(namespaceId, meta, info);
         String operation = online ? AiResourceTraceService.OP_ONLINE_VERSION
             : AiResourceTraceService.OP_OFFLINE_VERSION;
         AiResourceTraceService.logSuccess(type, name, version, operation,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return v;
+    }
+    
+    private void refreshLatestLabelForOnlineVersions(String namespaceId, String name, String type,
+        ResourceVersionInfo info) {
+        if (info.getLabels() == null) {
+            info.setLabels(new LinkedHashMap<>(4));
+        }
+        String nextLatest = resolveLatestOnlineVersion(namespaceId, name, type);
+        if (StringUtils.isBlank(nextLatest)) {
+            info.getLabels().remove(AiResourceConstants.LABEL_LATEST);
+        } else {
+            info.getLabels().put(AiResourceConstants.LABEL_LATEST, nextLatest);
+        }
+    }
+    
+    private String resolveLatestOnlineVersion(String namespaceId, String name, String type) {
+        Page<AiResourceVersion> page =
+            aiResourceVersionPersistService.list(namespaceId, name, type,
+                AiResourceConstants.VERSION_STATUS_ONLINE, 1, 500);
+        if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
+            return null;
+        }
+        List<String> versions = new ArrayList<>(page.getPageItems().size());
+        for (AiResourceVersion v : page.getPageItems()) {
+            if (v != null && StringUtils.isNotBlank(v.getVersion())) {
+                versions.add(v.getVersion().trim());
+            }
+        }
+        String maxSemver = VersionUtils.maxSemver(versions);
+        if (StringUtils.isNotBlank(maxSemver)) {
+            return maxSemver;
+        }
+        String maxVNumber = VersionUtils.maxVNumberVersion(versions);
+        if (StringUtils.isNotBlank(maxVNumber)) {
+            return maxVNumber;
+        }
+        String latest = null;
+        for (String item : versions) {
+            if (latest == null || item.compareTo(latest) > 0) {
+                latest = item;
+            }
+        }
+        return latest;
     }
     
     /**

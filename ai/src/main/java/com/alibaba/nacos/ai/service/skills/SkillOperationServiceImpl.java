@@ -966,16 +966,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     /**
-     * Update version labels (e.g., "latest") for a skill. Syncs both meta versionInfo and index manifest.
+     * Update custom version labels for a skill. Syncs both meta versionInfo and index manifest.
      */
     @Override
     public void updateLabels(String namespaceId, String name, Map<String, String> labels)
         throws NacosException {
-        resourceManager.validateAndUpdateLabels(namespaceId, name, RESOURCE_TYPE_SKILL, labels);
+        Map<String, String> effectiveLabels =
+            resourceManager.validateAndUpdateLabels(namespaceId, name, RESOURCE_TYPE_SKILL, labels);
         
         SkillIndexManifest manifest = manifestService.query(namespaceId, name);
         if (manifest != null) {
-            manifest.setLabels(labels == null ? new HashMap<>(4) : new LinkedHashMap<>(labels));
+            manifest.setLabels(new LinkedHashMap<>(effectiveLabels));
             manifestService.write(namespaceId, name, manifest);
         }
     }
@@ -1038,6 +1039,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             if (files != null && !files.isEmpty()) {
                 SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
                 manifest.getVersions().put(version, files);
+                manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
                 manifestService.write(namespaceId, name, manifest);
             }
         } else {
@@ -1045,6 +1047,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             SkillIndexManifest manifest = manifestService.query(namespaceId, name);
             if (manifest != null && manifest.getVersions() != null) {
                 manifest.getVersions().remove(version);
+                manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
                 manifestService.write(namespaceId, name, manifest);
             }
         }

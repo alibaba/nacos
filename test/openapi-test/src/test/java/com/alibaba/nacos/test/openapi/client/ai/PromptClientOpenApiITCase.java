@@ -61,7 +61,7 @@ public class PromptClientOpenApiITCase extends AiOpenApiBaseITCase {
         publishPrompt(promptKey, "1.0.0", "Hello {{name}} from v1");
         addCleanup(() -> deletePrompt(promptKey));
         publishPrompt(promptKey, "2.0.0", "Hello {{name}} from v2");
-        updateLabels(promptKey, "{\"stable\":\"1.0.0\",\"latest\":\"2.0.0\"}");
+        updateLabels(promptKey, "{\"stable\":\"1.0.0\"}");
         
         JsonNode latest = getPrompt(Query.newInstance().addParam("promptKey", promptKey));
         JsonNode latestData = latest.get("data");
@@ -133,7 +133,6 @@ public class PromptClientOpenApiITCase extends AiOpenApiBaseITCase {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("promptKey", promptKey);
         form.put("version", version);
-        form.put("updateLatestLabel", "true");
         JsonNode published = postFormOk(PROMPT_ADMIN_PATH + "/force-publish", form);
         assertEquals("ok", published.get("data").asText(), published.toString());
     }

@@ -574,7 +574,7 @@ class SkillOperationServiceImplTest {
         meta.setType("skill");
         meta.setStatus("enable");
         meta.setMetaVersion(2L);
-        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
         com.alibaba.nacos.ai.model.AiResourceVersion v1 =
             new com.alibaba.nacos.ai.model.AiResourceVersion();
@@ -610,7 +610,7 @@ class SkillOperationServiceImplTest {
         meta.setType("skill");
         meta.setStatus("enable");
         meta.setMetaVersion(2L);
-        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
         com.alibaba.nacos.ai.model.AiResourceVersion v1 =
             new com.alibaba.nacos.ai.model.AiResourceVersion();
@@ -643,7 +643,7 @@ class SkillOperationServiceImplTest {
         meta.setType("skill");
         meta.setStatus("enable");
         meta.setMetaVersion(2L);
-        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
         com.alibaba.nacos.ai.model.AiResourceVersion v1 =
             new com.alibaba.nacos.ai.model.AiResourceVersion();
@@ -2078,7 +2078,7 @@ class SkillOperationServiceImplTest {
         meta.setNamespaceId(namespaceId);
         meta.setStatus("enable");
         meta.setMetaVersion(1L);
-        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
             .thenReturn(meta);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
@@ -2089,9 +2089,58 @@ class SkillOperationServiceImplTest {
         manifest.setLabels(new HashMap<>());
         manifest.setVersions(new HashMap<>());
         when(manifestService.query(eq(namespaceId), eq(skillName))).thenReturn(manifest);
-        Map<String, String> labels = Map.of("latest", "v2");
+        Map<String, String> labels = Map.of("stable", "v1");
         skillOperationService.updateLabels(namespaceId, skillName, labels);
-        verify(manifestService).write(eq(namespaceId), eq(skillName), any());
+        ArgumentCaptor<com.alibaba.nacos.ai.model.skills.SkillIndexManifest> manifestCaptor =
+            ArgumentCaptor.forClass(com.alibaba.nacos.ai.model.skills.SkillIndexManifest.class);
+        verify(manifestService).write(eq(namespaceId), eq(skillName), manifestCaptor.capture());
+        assertEquals("v1", manifestCaptor.getValue().getLabels().get("stable"));
+        assertEquals("v1", manifestCaptor.getValue().getLabels().get("latest"));
+    }
+    
+    @Test
+    void testVersionOfflineShouldRemoveLatestFromManifestWhenNoOnlineVersionRemains()
+        throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        String version = "v1";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
+            eq(1L), any())).thenReturn(true);
+        com.alibaba.nacos.ai.model.AiResourceVersion v =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("online");
+        v.setStorage(
+            "{\"provider\":\"nacos_config\",\"scope\":\"test-ns:my-skill:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq(version))).thenReturn(v);
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> emptyOnlinePage = new Page<>();
+        emptyOnlinePage.setPageItems(List.of());
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(),
+            eq("online"), eq(1), eq(500))).thenReturn(emptyOnlinePage);
+        com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest =
+            new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
+        manifest.setLabels(new HashMap<>(Map.of("latest", version)));
+        manifest.setVersions(new HashMap<>(Map.of(version, List.of("SKILL.md"))));
+        when(manifestService.query(eq(namespaceId), eq(skillName))).thenReturn(manifest);
+        
+        skillOperationService.changeOnlineStatus(namespaceId, skillName, "version", version,
+            false);
+        
+        ArgumentCaptor<com.alibaba.nacos.ai.model.skills.SkillIndexManifest> manifestCaptor =
+            ArgumentCaptor.forClass(com.alibaba.nacos.ai.model.skills.SkillIndexManifest.class);
+        verify(manifestService).write(eq(namespaceId), eq(skillName), manifestCaptor.capture());
+        assertTrue(!manifestCaptor.getValue().getLabels().containsKey("latest"));
+        assertTrue(!manifestCaptor.getValue().getVersions().containsKey(version));
     }
     
     @Test

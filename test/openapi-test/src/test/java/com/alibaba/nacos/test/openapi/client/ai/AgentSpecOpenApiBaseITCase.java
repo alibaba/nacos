@@ -50,7 +50,6 @@ public abstract class AgentSpecOpenApiBaseITCase extends AiOpenApiBaseITCase {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("agentSpecName", name);
         form.put("version", version);
-        form.put("updateLatestLabel", "true");
         JsonNode published = postFormOk(AGENT_SPEC_ADMIN_PATH + "/force-publish", form);
         assertEquals("ok", published.get("data").asText(), published.toString());
     }

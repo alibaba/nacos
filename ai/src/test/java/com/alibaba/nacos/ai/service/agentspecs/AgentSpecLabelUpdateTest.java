@@ -32,7 +32,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Property 10: Label update does not affect version status.
@@ -78,11 +77,11 @@ class AgentSpecLabelUpdateTest {
     private static List<Map<String, String>> sampleLabelMaps() {
         List<Map<String, String>> list = new ArrayList<>();
         Map<String, String> m1 = new LinkedHashMap<>();
-        m1.put("latest", "v2");
+        m1.put("stable", "v1");
         list.add(m1);
         Map<String, String> m2 = new LinkedHashMap<>();
-        m2.put("latest", "v1");
         m2.put("stable", "v2");
+        m2.put("beta", "v1");
         list.add(m2);
         list.add(new LinkedHashMap<>());
         return list;
@@ -126,10 +125,8 @@ class AgentSpecLabelUpdateTest {
                         storageBefore.put(entry.version, v.getStorage());
                     }
                     
-                    // Simulate label update (mirrors AgentSpecOperationServiceImpl.updateLabels)
-                    VersionInfo currentInfo = parseVersionInfo(meta.getVersionInfo());
-                    currentInfo.labels = newLabels == null ? null : new LinkedHashMap<>(newLabels);
-                    meta.setVersionInfo(JacksonUtils.toJson(currentInfo));
+                    // Simulate label update (mirrors AiResourceManager.validateAndUpdateLabels)
+                    applyLabelUpdatePreservingLatest(meta, newLabels);
                     persistService.updateResource(meta);
                     
                     // Verify: all version statuses and storage unchanged
@@ -170,17 +167,15 @@ class AgentSpecLabelUpdateTest {
                 persistService.insertResource(meta);
                 
                 // Simulate label update
-                VersionInfo currentInfo = parseVersionInfo(meta.getVersionInfo());
-                currentInfo.labels = newLabels == null ? null : new LinkedHashMap<>(newLabels);
-                meta.setVersionInfo(JacksonUtils.toJson(currentInfo));
+                applyLabelUpdatePreservingLatest(meta, newLabels);
                 persistService.updateResource(meta);
                 
                 // Verify: labels match
                 AiResource updated = persistService.findResource(NAMESPACE_ID, agentSpecName,
                     RESOURCE_TYPE_AGENTSPEC);
                 VersionInfo updatedInfo = parseVersionInfo(updated.getVersionInfo());
-                assertEquals(newLabels, updatedInfo.labels,
-                    "Persisted labels must exactly match the provided mapping");
+                assertEquals(expectedLabelsWithLatest(newLabels, "v1"), updatedInfo.labels,
+                    "Persisted labels must match custom labels and preserve latest");
             }
         }
     }
@@ -213,9 +208,7 @@ class AgentSpecLabelUpdateTest {
                 Integer onlineCntBefore = before.onlineCnt;
                 
                 // Simulate label update
-                VersionInfo currentInfo = parseVersionInfo(meta.getVersionInfo());
-                currentInfo.labels = newLabels == null ? null : new LinkedHashMap<>(newLabels);
-                meta.setVersionInfo(JacksonUtils.toJson(currentInfo));
+                applyLabelUpdatePreservingLatest(meta, newLabels);
                 persistService.updateResource(meta);
                 
                 // Verify: working pointers unchanged
@@ -233,13 +226,13 @@ class AgentSpecLabelUpdateTest {
     }
     
     /**
-     * Label update with null labels clears the mapping without affecting versions.
+     * Label update with null labels preserves latest without affecting versions.
      *
-     * <p>Setting labels to null SHALL clear the label mapping but SHALL NOT affect any
-     * version status or content.</p>
+     * <p>Setting labels to null SHALL clear custom labels, preserve latest, and SHALL
+     * NOT affect any version status or content.</p>
      */
     @Test
-    void nullLabelUpdateClearsMappingWithoutAffectingVersions() {
+    void nullLabelUpdatePreservesLatestWithoutAffectingVersions() {
         for (String agentSpecName : sampleAgentSpecNames()) {
             for (List<VersionEntry> versionEntries : sampleVersionSets()) {
                 InMemoryPersistService persistService = new InMemoryPersistService();
@@ -264,19 +257,15 @@ class AgentSpecLabelUpdateTest {
                 }
                 
                 // Simulate label update with null
-                VersionInfo currentInfo = parseVersionInfo(meta.getVersionInfo());
-                currentInfo.labels = null;
-                meta.setVersionInfo(JacksonUtils.toJson(currentInfo));
+                applyLabelUpdatePreservingLatest(meta, null);
                 persistService.updateResource(meta);
                 
-                // Verify: labels cleared, statuses unchanged
+                // Verify: custom labels cleared, latest preserved, statuses unchanged
                 AiResource updated = persistService.findResource(NAMESPACE_ID, agentSpecName,
                     RESOURCE_TYPE_AGENTSPEC);
                 VersionInfo updatedInfo = parseVersionInfo(updated.getVersionInfo());
-                // When labels is set to null, Jackson serialization + deserialization may produce
-                // null or empty map depending on the VersionInfo default. Either is acceptable.
-                assertTrue(updatedInfo.labels == null || updatedInfo.labels.isEmpty(),
-                    "Labels should be null or empty after null update");
+                assertEquals(Collections.singletonMap("latest", "v1"), updatedInfo.labels,
+                    "Null custom label update should preserve latest");
                 
                 for (VersionEntry entry : versionEntries) {
                     AiResourceVersion v = persistService.findVersion(agentSpecName, entry.version);
@@ -289,6 +278,28 @@ class AgentSpecLabelUpdateTest {
     }
     
     // ---- Data classes ----
+    
+    private static void applyLabelUpdatePreservingLatest(AiResource meta,
+        Map<String, String> customLabels) {
+        VersionInfo currentInfo = parseVersionInfo(meta.getVersionInfo());
+        String latest = currentInfo.labels == null ? null : currentInfo.labels.get("latest");
+        Map<String, String> effectiveLabels =
+            customLabels == null ? new LinkedHashMap<>() : new LinkedHashMap<>(customLabels);
+        effectiveLabels.keySet().removeIf(label -> StringUtils.equalsIgnoreCase(label, "latest"));
+        if (StringUtils.isNotBlank(latest)) {
+            effectiveLabels.put("latest", latest);
+        }
+        currentInfo.labels = effectiveLabels;
+        meta.setVersionInfo(JacksonUtils.toJson(currentInfo));
+    }
+    
+    private static Map<String, String> expectedLabelsWithLatest(Map<String, String> customLabels,
+        String latest) {
+        Map<String, String> expected =
+            customLabels == null ? new LinkedHashMap<>() : new LinkedHashMap<>(customLabels);
+        expected.put("latest", latest);
+        return expected;
+    }
     
     record VersionEntry(String version, String status) {
     }

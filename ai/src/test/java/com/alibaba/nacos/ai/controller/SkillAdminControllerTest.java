@@ -368,7 +368,7 @@ class SkillAdminControllerTest {
     void testUpdateLabelsSuccess() throws Exception {
         doNothing().when(skillOperationService).updateLabels(eq("public"), eq("test-skill"),
             any(Map.class));
-        String labelsJson = "{\"latest\":\"v2\"}";
+        String labelsJson = "{\"stable\":\"v2\"}";
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.put(SKILL_ADMIN_PATH + "/labels")
                 .param("skillName", "test-skill").param("labels", labelsJson);

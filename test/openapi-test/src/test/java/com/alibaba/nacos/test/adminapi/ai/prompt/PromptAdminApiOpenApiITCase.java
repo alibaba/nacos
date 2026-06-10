@@ -39,8 +39,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     governance, version detail, version list, list, Markdown download, labels, description, bizTags,
  *     online/offline, and delete expose the expected prompt state.</li>
  *     <li>Boundary/validation: namespace defaults to public; list supports accurate/blur and bizTags filters while
- *     clamping page arguments; promptKey, template or basedOnVersion, version, labels, and description are required
- *     where controller forms require them; legacy version format is validated.</li>
+ *     clamping page arguments; promptKey, template or basedOnVersion, version, labels, latest label preservation,
+ *     and description are required where controller forms require them;
+ *     legacy version format is validated.</li>
  *     <li>Exception/error handling: absent prompts and versions return controlled RESOURCE_NOT_FOUND bodies, direct
  *     publish from draft and redraft from online return validation errors instead of HTTP 500, and invalid search
  *     returns HTTP 400.</li>
@@ -70,7 +71,7 @@ public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertError(postRaw(ADMIN_PROMPT_PATH + "/publish", queryFrom(promptPublishForm(promptKey, "1.0.0"))),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "Only reviewing version can be published");
         JsonNode published = postFormOk(ADMIN_PROMPT_PATH + "/force-publish",
-                promptPublishForm(promptKey, "1.0.0"));
+                withUpdateLatestLabel(promptPublishForm(promptKey, "1.0.0")));
         assertEquals("ok", published.get("data").asText(), published.toString());
 
         JsonNode governance = getJsonOk(ADMIN_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey)).get("data");
@@ -116,6 +117,15 @@ public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 updatedGovernance.toString());
         assertEquals("1.0.0", updatedGovernance.get("labels").get("latest").asText(),
                 updatedGovernance.toString());
+        assertEquals("ok", putFormOk(ADMIN_PROMPT_PATH + "/labels",
+                promptLabelsForm(promptKey, "{\"stable\":\"1.0.0\",\"latest\":\"9.9.9\"}"))
+                .get("data").asText());
+        updatedGovernance = getJsonOk(ADMIN_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey))
+                .get("data");
+        assertEquals("1.0.0", updatedGovernance.get("labels").get("stable").asText(),
+                updatedGovernance.toString());
+        assertEquals("1.0.0", updatedGovernance.get("labels").get("latest").asText(),
+                updatedGovernance.toString());
         assertEquals("updated description", updatedGovernance.get("description").asText(),
                 updatedGovernance.toString());
         assertEquals("updated,openapi", updatedGovernance.get("bizTagsStr").asText(),
@@ -125,10 +135,18 @@ public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 promptPublishForm(promptKey, "1.0.0")).get("data").asText());
         assertPromptVersion(getJsonOk(ADMIN_PROMPT_VERSION_PATH, promptVersionQuery(promptKey, "1.0.0"))
                 .get("data"), promptKey, "1.0.0", "offline", updatedTemplate);
+        JsonNode offlineGovernance = getJsonOk(ADMIN_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey))
+                .get("data");
+        assertTrue(offlineGovernance.get("labels").get("latest") == null,
+                offlineGovernance.toString());
         assertEquals("ok", postFormOk(ADMIN_PROMPT_PATH + "/online",
                 promptPublishForm(promptKey, "1.0.0")).get("data").asText());
         assertPromptVersion(getJsonOk(ADMIN_PROMPT_VERSION_PATH, promptVersionQuery(promptKey, "1.0.0"))
                 .get("data"), promptKey, "1.0.0", "online", updatedTemplate);
+        JsonNode reonlineGovernance = getJsonOk(ADMIN_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey))
+                .get("data");
+        assertEquals("1.0.0", reonlineGovernance.get("labels").get("latest").asText(),
+                reonlineGovernance.toString());
 
         assertError(postRaw(ADMIN_PROMPT_PATH + "/redraft", queryFrom(promptPublishForm(promptKey, "1.0.0"))),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "Only reviewed version can be re-edited");
@@ -213,6 +231,11 @@ public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertTrue(putFormOk(ADMIN_PROMPT_PATH + "/label", bindLabel).get("data").asBoolean());
         assertEquals("1.0.0", getJsonOk(ADMIN_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey))
                 .get("data").get("labels").get("legacy").asText());
+        Map<String, String> latestBindLabel = promptQueryForm(promptKey);
+        latestBindLabel.put("label", "latest");
+        latestBindLabel.put("version", "1.0.0");
+        assertError(putRaw(ADMIN_PROMPT_PATH + "/label", queryFrom(latestBindLabel)), 400,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "reserved");
 
         Map<String, String> metadataUpdate = promptQueryForm(promptKey);
         metadataUpdate.put("description", "legacy metadata");
@@ -225,6 +248,10 @@ public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         Map<String, String> unbindLabel = promptQueryForm(promptKey);
         unbindLabel.put("label", "legacy");
         assertTrue(deleteJsonOk(ADMIN_PROMPT_PATH + "/label", queryFrom(unbindLabel)).get("data").asBoolean());
+        Map<String, String> latestUnbindLabel = promptQueryForm(promptKey);
+        latestUnbindLabel.put("label", "latest");
+        assertError(deleteRaw(ADMIN_PROMPT_PATH + "/label", queryFrom(latestUnbindLabel)), 400,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "reserved");
     }
 
     @Test

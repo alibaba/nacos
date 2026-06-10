@@ -66,7 +66,7 @@ public class SkillClientOpenApiITCase extends AiOpenApiBaseITCase {
         publishSkill(skillName, "1.0.0", null, "Use the v1 skill body.", "guide v1");
         addCleanup(() -> deleteSkill(skillName));
         publishSkill(skillName, "2.0.0", "1.0.0", "Use the v2 skill body.", "guide v2");
-        updateLabels(skillName, "{\"stable\":\"1.0.0\",\"latest\":\"2.0.0\"}");
+        updateLabels(skillName, "{\"stable\":\"1.0.0\"}");
         
         assertSkillZip(Query.newInstance().addParam("name", skillName), skillName, "2.0.0",
                 "Use the v2 skill body.", "guide v2");
@@ -128,7 +128,6 @@ public class SkillClientOpenApiITCase extends AiOpenApiBaseITCase {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("skillName", skillName);
         form.put("version", version);
-        form.put("updateLatestLabel", "true");
         JsonNode published = postFormOk(SKILL_ADMIN_PATH + "/force-publish", form);
         assertEquals("ok", published.get("data").asText(), published.toString());
     }

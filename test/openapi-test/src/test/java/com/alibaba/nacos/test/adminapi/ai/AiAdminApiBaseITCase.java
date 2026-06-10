@@ -261,6 +261,10 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     protected Map<String, String> promptPublishForm(String promptKey, String version) {
         Map<String, String> form = promptQueryForm(promptKey);
         form.put("version", version);
+        return form;
+    }
+
+    protected Map<String, String> withUpdateLatestLabel(Map<String, String> form) {
         form.put("updateLatestLabel", "true");
         return form;
     }
@@ -337,7 +341,6 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     protected Map<String, String> skillPublishForm(String skillName, String version) {
         Map<String, String> form = skillQueryForm(skillName);
         form.put("version", version);
-        form.put("updateLatestLabel", "true");
         return form;
     }
 
@@ -497,7 +500,6 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     protected Map<String, String> agentSpecPublishForm(String agentSpecName, String version) {
         Map<String, String> form = agentSpecQueryForm(agentSpecName);
         form.put("version", version);
-        form.put("updateLatestLabel", "true");
         return form;
     }
 

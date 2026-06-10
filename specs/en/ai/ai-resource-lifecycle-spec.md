@@ -86,9 +86,19 @@ operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
   must explicitly redraft the version when further editing is required after a
   rejected result.
 - Publish moves the version to `online`, clears working pointers, increments
-  `onlineCnt` when needed, and optionally updates the `latest` label.
+  `onlineCnt` when needed, and the server manages the `latest` label.
+- Publish and force-publish requests may keep the historical
+  `updateLatestLabel` parameter for compatibility. This parameter is deprecated;
+  new clients must not send it. When it is absent or `true`, the published
+  version becomes the server-managed latest version.
+  Label update APIs must ignore any client-provided `latest` label key and
+  merge the current server-managed `latest` value back into the effective label
+  map.
 - Force publish applies the same successful state transition as publish while
   skipping pipeline approval checks.
+- After any online/offline status change, the server must recalculate `latest`
+  from the current online versions and point it to the greatest online version.
+  If no online version remains, the server must remove `latest`.
 
 Pipeline extension behavior is defined by the
 [AI Publish Pipeline Plugin Spec](../plugin/ai-pipeline-plugin-spec.md). This
@@ -97,6 +107,10 @@ domain spec defines only how AI resource lifecycle reacts to pipeline results.
 ## 5. Labels
 
 - `latest` is the reserved default label for the latest published version.
+- `latest` is managed by the server. Manual label update requests may contain
+  `latest` for compatibility, but the server must ignore the client-provided
+  `latest` value and merge the current server-managed `latest` value into the
+  effective labels.
 - Labels map to version strings and must not point to `draft` or `reviewing`
   versions.
 - Changing labels does not by itself mutate version content or version status.

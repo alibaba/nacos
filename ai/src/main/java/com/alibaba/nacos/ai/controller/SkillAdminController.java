@@ -295,6 +295,7 @@ public class SkillAdminController {
     @Since("3.2.0")
     @PostMapping("/publish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @SuppressWarnings("deprecation")
     public Result<String> publish(SkillPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
@@ -312,6 +313,7 @@ public class SkillAdminController {
     @Secured(resource = ADMIN_PATH
         + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
         apiType = ApiType.ADMIN_API)
+    @SuppressWarnings("deprecation")
     public Result<String> forcePublish(SkillPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();

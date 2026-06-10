@@ -39,8 +39,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     state.</li>
  *     <li>Boundary/validation: namespace defaults to public; list supports accurate/blur and scope filters while
  *     the shared {@code bizTag} request parameter is accepted but not applied by the AgentSpec service; required
- *     agentSpecName, agentSpecCard, targetVersion, version, labels, scope, and positive pagination validation
- *     follows the controller forms; draft forking, auto-create-by-update, and draft deletion are covered.</li>
+ *     agentSpecName, agentSpecCard, targetVersion, version, labels, latest label preservation, scope,
+ *     and positive pagination validation follows the controller forms;
+ *     draft forking, auto-create-by-update, and draft deletion are covered.</li>
  *     <li>Exception/error handling: absent AgentSpecs and versions return controlled RESOURCE_NOT_FOUND bodies,
  *     direct publish from draft and redraft from online return validation errors instead of HTTP 500, and invalid
  *     search or scope parameters return HTTP 400.</li>
@@ -75,7 +76,8 @@ public class AgentSpecAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 queryFrom(agentSpecPublishForm(agentSpecName, "1.0.0"))), 400,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, "Only reviewing version can be published");
         assertEquals("ok", postFormOk(ADMIN_AGENT_SPEC_PATH + "/force-publish",
-                agentSpecPublishForm(agentSpecName, "1.0.0")).get("data").asText());
+                withUpdateLatestLabel(agentSpecPublishForm(agentSpecName, "1.0.0"))).get("data")
+                .asText());
 
         JsonNode meta = getJsonOk(ADMIN_AGENT_SPEC_PATH, agentSpecQuery(agentSpecName)).get("data");
         assertEquals(agentSpecName, meta.get("name").asText(), meta.toString());
@@ -106,8 +108,17 @@ public class AgentSpecAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 agentSpecScopeForm(agentSpecName, "PRIVATE")).get("data").asText());
         JsonNode governed = getJsonOk(ADMIN_AGENT_SPEC_PATH, agentSpecQuery(agentSpecName)).get("data");
         assertEquals("1.0.0", governed.get("labels").get("stable").asText(), governed.toString());
+        assertEquals("1.0.0", governed.get("labels").get("latest").asText(), governed.toString());
         assertEquals("[\"openapi\",\"admin\"]", governed.get("bizTags").asText(), governed.toString());
         assertEquals("PRIVATE", governed.get("scope").asText(), governed.toString());
+        assertEquals("ok", putFormOk(ADMIN_AGENT_SPEC_PATH + "/labels",
+                agentSpecLabelsForm(agentSpecName, "{\"stable\":\"1.0.0\",\"latest\":\"9.9.9\"}"))
+                .get("data").asText());
+        governed = getJsonOk(ADMIN_AGENT_SPEC_PATH, agentSpecQuery(agentSpecName)).get("data");
+        assertEquals("1.0.0", governed.get("labels").get("stable").asText(),
+                governed.toString());
+        assertEquals("1.0.0", governed.get("labels").get("latest").asText(),
+                governed.toString());
         assertAgentSpecListContains(Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
                 .addParam("scope", "PRIVATE").addParam("agentSpecName", agentSpecName)
                 .addParam("search", "accurate"), agentSpecName);
@@ -118,9 +129,14 @@ public class AgentSpecAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals("ok", postFormOk(ADMIN_AGENT_SPEC_PATH + "/offline",
                 agentSpecOnlineForm(agentSpecName, "1.0.0", null)).get("data").asText());
         assertAgentSpecVersionStatus(agentSpecName, "1.0.0", "offline");
+        JsonNode offlineMeta = getJsonOk(ADMIN_AGENT_SPEC_PATH, agentSpecQuery(agentSpecName)).get("data");
+        assertTrue(offlineMeta.get("labels").get("latest") == null, offlineMeta.toString());
         assertEquals("ok", postFormOk(ADMIN_AGENT_SPEC_PATH + "/online",
                 agentSpecOnlineForm(agentSpecName, "1.0.0", null)).get("data").asText());
         assertAgentSpecVersionStatus(agentSpecName, "1.0.0", "online");
+        JsonNode reonlineMeta = getJsonOk(ADMIN_AGENT_SPEC_PATH, agentSpecQuery(agentSpecName)).get("data");
+        assertEquals("1.0.0", reonlineMeta.get("labels").get("latest").asText(),
+                reonlineMeta.toString());
 
         assertEquals("ok", postFormOk(ADMIN_AGENT_SPEC_PATH + "/offline",
                 agentSpecOnlineForm(agentSpecName, null, "agentspec")).get("data").asText());
