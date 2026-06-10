@@ -30,6 +30,7 @@ import {
   Power,
   PowerOff,
   CheckCircle2,
+  ShieldAlert,
   Tag,
   GitBranch,
   Download,
@@ -68,6 +69,7 @@ import {
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { usePromptStore } from '@/stores/prompt-store';
 import { useServerStore } from '@/stores/server-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { promptApi } from '@/api/prompt';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
@@ -106,6 +108,7 @@ export default function PromptDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { currentNamespace } = useNamespaceStore();
+  const { globalAdmin } = useAuthStore();
   const copilotEnabled = useServerStore((s) => s.copilotEnabled);
   const {
     currentGovernance,
@@ -141,6 +144,8 @@ export default function PromptDetailPage() {
 
   // Version history sheet
   const [versionSheetOpen, setVersionSheetOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [forcePublishConfirmOpen, setForcePublishConfirmOpen] = useState(false);
 
   // Create draft from version dialog
   const [createDraftDialogOpen, setCreateDraftDialogOpen] = useState(false);
@@ -304,47 +309,82 @@ export default function PromptDetailPage() {
   };
 
   const handleSubmit = async (version: string) => {
-    const ok = await submitVersion({ promptKey, version, namespaceId });
-    if (ok) { toast.success(t('prompt.submitSuccess')); await refreshAfterAction(version); }
+    setActionLoading(true);
+    try {
+      const ok = await submitVersion({ promptKey, version, namespaceId });
+      if (ok) { toast.success(t('prompt.submitSuccess')); await refreshAfterAction(version); }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handlePublish = async (version: string) => {
-    const ok = await publishVersion({ promptKey, version, namespaceId });
-    if (ok) { toast.success(t('prompt.publishSuccess')); await refreshAfterAction(version); }
+    setActionLoading(true);
+    try {
+      const ok = await publishVersion({ promptKey, version, namespaceId });
+      if (ok) { toast.success(t('prompt.publishSuccess')); await refreshAfterAction(version); }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleForcePublish = async (version: string) => {
-    const ok = await forcePublishVersion({ promptKey, version, namespaceId });
-    if (ok) { toast.success(t('prompt.forcePublishSuccess')); await refreshAfterAction(version); }
+    setActionLoading(true);
+    try {
+      const ok = await forcePublishVersion({ promptKey, version, namespaceId });
+      if (ok) { toast.success(t('prompt.forcePublishSuccess')); await refreshAfterAction(version); }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleRedraft = async (version: string) => {
+    setActionLoading(true);
     try {
       await promptApi.redraft({ promptKey, version, namespaceId });
       toast.success(t('prompt.redraftSuccess'));
       await refreshAfterAction(version);
       setIsEditingDraft(true);
-    } catch { /* handled by interceptor */ }
+    } catch {
+      /* handled by interceptor */
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleOnline = async (version: string) => {
-    const ok = await onlineVersion({ promptKey, version, namespaceId });
-    if (ok) { toast.success(t('prompt.onlineSuccess')); await refreshAfterAction(version); }
+    setActionLoading(true);
+    try {
+      const ok = await onlineVersion({ promptKey, version, namespaceId });
+      if (ok) { toast.success(t('prompt.onlineSuccess')); await refreshAfterAction(version); }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleOffline = async (version: string) => {
-    const ok = await offlineVersion({ promptKey, version, namespaceId });
-    if (ok) { toast.success(t('prompt.offlineSuccess')); await refreshAfterAction(version); }
+    setActionLoading(true);
+    try {
+      const ok = await offlineVersion({ promptKey, version, namespaceId });
+      if (ok) { toast.success(t('prompt.offlineSuccess')); await refreshAfterAction(version); }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleDeleteDraft = async () => {
-    const ok = await storeDraftDelete(namespaceId, promptKey);
-    if (ok) {
-      toast.success(t('prompt.draftDeleteSuccess'));
-      setSelectedVersion(null);
-      setTemplate('');
-      setIsEditingDraft(false);
-      await loadGovernance();
+    setActionLoading(true);
+    try {
+      const ok = await storeDraftDelete(namespaceId, promptKey);
+      if (ok) {
+        toast.success(t('prompt.draftDeleteSuccess'));
+        setSelectedVersion(null);
+        setTemplate('');
+        setIsEditingDraft(false);
+        await loadGovernance();
+      }
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -660,6 +700,7 @@ export default function PromptDetailPage() {
                   <SelectContent>
                     {meta.versionDetails.map((v) => {
                       const vPipeline = parsePipelineInfo(v.publishPipelineInfo);
+                      const isVersionPendingPublish = (v.status === 'reviewed' && vPipeline?.status !== 'REJECTED') || (v.status === 'reviewing' && vPipeline?.status === 'APPROVED');
                       const isVersionRejected = v.status === 'reviewed' && vPipeline?.status === 'REJECTED';
                       return (
                       <SelectItem key={v.version} value={v.version}>
@@ -675,17 +716,17 @@ export default function PromptDetailPage() {
                               {t('prompt.versionStatus.draft')}
                             </Badge>
                           )}
-                          {v.status === 'reviewing' && (
-                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0">
-                              {t('prompt.versionStatus.reviewing')}
+                          {isVersionRejected && (
+                            <Badge className="bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 text-[10px] px-1 py-0 border-0">
+                              {t('prompt.versionStatus.rejected')}
                             </Badge>
                           )}
-                          {v.status === 'reviewed' && (
-                            <Badge className={isVersionRejected
-                              ? 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 text-[10px] px-1 py-0 border-0'
-                              : 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
+                          {!isVersionRejected && (v.status === 'reviewing' || v.status === 'reviewed') && (
+                            <Badge className={isVersionPendingPublish
+                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
+                              : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0'
                             }>
-                              {t(isVersionRejected ? 'prompt.versionStatus.rejected' : 'prompt.versionStatus.pendingPublish')}
+                              {t(isVersionPendingPublish ? 'prompt.versionStatus.pendingPublish' : 'prompt.versionStatus.reviewing')}
                             </Badge>
                           )}
                         </span>
@@ -778,19 +819,36 @@ export default function PromptDetailPage() {
                           </>
                         ) : (
                           <>
-                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleStartEdit}>
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleStartEdit} disabled={actionLoading}>
                               <Pencil className="h-3 w-3" />
                               {t('prompt.editDraft')}
                             </Button>
                             <div className="h-4 w-px bg-border mx-0.5" />
-                            <Button size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleSubmit(selectedVersion)}>
+                            <Button size="sm" className="h-7 text-xs gap-1.5" disabled={actionLoading} onClick={() => handleSubmit(selectedVersion)}>
                               <Send className="h-3 w-3" />
-                              {t('prompt.submit')}
+                              {currentPipelineInfo && currentPipelineInfo.status === 'REJECTED'
+                                ? t('prompt.resubmit')
+                                : t('prompt.submit')}
                             </Button>
-                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteDraft()}>
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" disabled={actionLoading} onClick={() => handleDeleteDraft()}>
                               <Trash2 className="h-3 w-3" />
                               {t('prompt.deleteDraft')}
                             </Button>
+                            {currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
+                              <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
+                            )}
+                            {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && !currentPipelineInfo.historical && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/40"
+                                disabled={actionLoading}
+                                onClick={() => setForcePublishConfirmOpen(true)}
+                              >
+                                <ShieldAlert className="h-3 w-3" />
+                                {t('prompt.forcePublish')}
+                              </Button>
+                            )}
                           </>
                         )}
                       </>
@@ -802,7 +860,7 @@ export default function PromptDetailPage() {
                         <Button
                           size="sm"
                           className="h-7 text-xs gap-1.5"
-                          disabled={!!(currentPipelineInfo && currentPipelineInfo.status !== 'APPROVED')}
+                          disabled={actionLoading || !!(currentPipelineInfo && currentPipelineInfo.status !== 'APPROVED')}
                           onClick={() => handlePublish(selectedVersion)}
                         >
                           <CheckCircle2 className="h-3 w-3" />
@@ -816,6 +874,7 @@ export default function PromptDetailPage() {
                               variant="outline"
                               size="sm"
                               className="h-7 text-xs gap-1.5"
+                              disabled={actionLoading}
                               onClick={() => handleRedraft(selectedVersion)}
                             >
                               <Pencil className="h-3 w-3" />
@@ -825,6 +884,7 @@ export default function PromptDetailPage() {
                               variant="outline"
                               size="sm"
                               className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={actionLoading}
                               onClick={() => handleDeleteDraft()}
                             >
                               <Trash2 className="h-3 w-3" />
@@ -832,15 +892,30 @@ export default function PromptDetailPage() {
                             </Button>
                           </>
                         )}
-                        {currentPipelineInfo && (
+                        {currentPipelineInfo && currentPipelineInfo.status === 'APPROVED' && (
                           <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
+                        )}
+                        {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
+                          <>
+                            <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/40"
+                              disabled={actionLoading}
+                              onClick={() => setForcePublishConfirmOpen(true)}
+                            >
+                              <ShieldAlert className="h-3 w-3" />
+                              {t('prompt.forcePublish')}
+                            </Button>
+                          </>
                         )}
                       </>
                     )}
 
                     {/* Online actions */}
                     {currentVersionStatus === 'online' && (
-                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleOffline(selectedVersion)}>
+                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" disabled={actionLoading} onClick={() => handleOffline(selectedVersion)}>
                         <PowerOff className="h-3 w-3" />
                         {t('prompt.offline')}
                       </Button>
@@ -848,7 +923,7 @@ export default function PromptDetailPage() {
 
                     {/* Offline actions */}
                     {currentVersionStatus === 'offline' && (
-                      <Button size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleOnline(selectedVersion)}>
+                      <Button size="sm" className="h-7 text-xs gap-1.5" disabled={actionLoading} onClick={() => handleOnline(selectedVersion)}>
                         <Power className="h-3 w-3" />
                         {t('prompt.online')}
                       </Button>
@@ -857,7 +932,7 @@ export default function PromptDetailPage() {
                     {/* Create draft from (online/offline) */}
                     {(currentVersionStatus === 'online' || currentVersionStatus === 'offline') && (() => {
                       const btn = (
-                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" disabled={hasDraft} onClick={() => handleCreateDraft(selectedVersion)}>
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" disabled={hasDraft || actionLoading} onClick={() => handleCreateDraft(selectedVersion)}>
                           <Plus className="h-3 w-3" />
                           {t('prompt.createDraftFrom')}
                         </Button>
@@ -1240,10 +1315,44 @@ export default function PromptDetailPage() {
               onOffline={handleOffline}
               allLabels={labelsMap}
               onSaveLabels={handleSaveLabels}
+              isGlobalAdmin={globalAdmin}
             />
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Force-publish confirmation dialog */}
+      <Dialog open={forcePublishConfirmOpen} onOpenChange={setForcePublishConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-destructive" />
+              {t('prompt.forcePublishConfirmTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('prompt.forcePublishConfirmDesc', { version: selectedVersion })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setForcePublishConfirmOpen(false)} disabled={actionLoading}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={actionLoading}
+              onClick={async () => {
+                setForcePublishConfirmOpen(false);
+                if (selectedVersion) {
+                  await handleForcePublish(selectedVersion);
+                }
+              }}
+            >
+              <ShieldAlert className="h-4 w-4 mr-1" />
+              {t('prompt.forcePublishConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ===== Create Draft From Version Dialog ===== */}
       <Dialog open={createDraftDialogOpen} onOpenChange={setCreateDraftDialogOpen}>
@@ -1427,6 +1536,7 @@ function StatusBadge({ status, label }: { status?: string; label: string }) {
   const statusStyles: Record<string, string> = {
     draft: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
     reviewing: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+    reviewed: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
     online: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
     offline: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
   };

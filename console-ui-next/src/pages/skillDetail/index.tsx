@@ -1628,6 +1628,7 @@ function StatusBadge({
   const statusStyles: Record<string, string> = {
     draft: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
     reviewing: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+    reviewed: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
     online: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
     offline: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
   };

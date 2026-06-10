@@ -92,10 +92,6 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private static final String VERSION_STATUS_REVIEWING = "reviewing";
     
-    private static final String VERSION_STATUS_REVIEWED = "reviewed";
-    
-    private static final String VERSION_STATUS_OFFLINE = "offline";
-    
     private static final String DEFAULT_AUTHOR = "-";
     
     private static final String LABEL_LATEST = "latest";
