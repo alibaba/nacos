@@ -67,9 +67,16 @@ public class DistroClientDataProcessor extends SmartSubscriber
     private volatile boolean isFinishInitial;
     
     public DistroClientDataProcessor(ClientManager clientManager, DistroProtocol distroProtocol) {
+        this(clientManager, distroProtocol, true);
+    }
+    
+    DistroClientDataProcessor(ClientManager clientManager, DistroProtocol distroProtocol,
+        boolean registerSubscriber) {
         this.clientManager = clientManager;
         this.distroProtocol = distroProtocol;
-        NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
+        if (registerSubscriber) {
+            NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
+        }
     }
     
     @Override

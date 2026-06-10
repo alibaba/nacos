@@ -99,7 +99,8 @@ class DistroClientDataProcessorTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        distroClientDataProcessor = new DistroClientDataProcessor(clientManager, distroProtocol);
+        distroClientDataProcessor = new DistroClientDataProcessor(clientManager, distroProtocol,
+            false);
         EnvUtil.setIsStandalone(false);
         client = new ConnectionBasedClient(CLIENT_ID, true, 0L);
         when(clientManager.getClient(CLIENT_ID)).thenReturn(client);
@@ -132,6 +133,7 @@ class DistroClientDataProcessorTest {
     @AfterEach
     void tearDown() throws Exception {
         NotifyCenter.deregisterSubscriber(distroClientDataProcessor);
+        ApplicationUtils.injectContext(null);
     }
     
     @Test
