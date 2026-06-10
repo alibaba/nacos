@@ -23,7 +23,10 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
 import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
+import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
 import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
@@ -386,6 +389,16 @@ class PromptOperationServiceImplTest {
         String result = service.submit(NS, PROMPT_KEY, null);
         
         assertEquals("0.0.2", result);
+    }
+    
+    @Test
+    void testSubmitPipelineApprovedShouldMoveVersionToReviewed() throws NacosException {
+        assertSubmitPipelineCompletionMovesVersionToReviewed(PipelineExecutionStatus.APPROVED);
+    }
+    
+    @Test
+    void testSubmitPipelineRejectedShouldMoveVersionToReviewed() throws NacosException {
+        assertSubmitPipelineCompletionMovesVersionToReviewed(PipelineExecutionStatus.REJECTED);
     }
     
     @Test
@@ -1022,6 +1035,49 @@ class PromptOperationServiceImplTest {
         row.setStatus(status);
         row.setAuthor("-");
         return row;
+    }
+    
+    private void assertSubmitPipelineCompletionMovesVersionToReviewed(
+        PipelineExecutionStatus status)
+        throws NacosException {
+        AiResource meta =
+            createMeta(PROMPT_KEY, 1L, "{\"labels\":{},\"editingVersion\":\"0.0.1\"}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(createVersionRow("0.0.1", "draft"));
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            anyLong(), any(AiResource.class))).thenReturn(true);
+        
+        PromptVersionInfo content = new PromptVersionInfo();
+        content.setTemplate("hello");
+        mockStorageGet(JacksonUtils.toJson(content).getBytes(StandardCharsets.UTF_8));
+        
+        PublishPipelineExecutor pipelineExecutor = mock(PublishPipelineExecutor.class);
+        when(pipelineExecutor.isPipelineAvailable(any())).thenReturn(true);
+        when(pipelineExecutor.execute(any(), any(), anyString())).thenAnswer(invocation -> {
+            PipelineCallback callback = invocation.getArgument(1);
+            PipelineExecutionResult pipelineResult = new PipelineExecutionResult();
+            pipelineResult.setExecutionId(invocation.getArgument(2));
+            pipelineResult.setStatus(status);
+            pipelineResult.setPipeline(Collections.emptyList());
+            callback.onComplete(pipelineResult);
+            return invocation.getArgument(2);
+        });
+        PromptOperationServiceImpl serviceWithPipeline =
+            new PromptOperationServiceImpl(pipelineExecutor, configOperationService,
+                new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                    pipelineExecutionRepository),
+                promptDataMigrationTask);
+        
+        String result = serviceWithPipeline.submit(NS, PROMPT_KEY, null);
+        
+        assertEquals("0.0.1", result);
+        ArgumentCaptor<String> statusCaptor = ArgumentCaptor.forClass(String.class);
+        verify(aiResourceVersionPersistService, org.mockito.Mockito.atLeast(2))
+            .updateStatus(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq("0.0.1"),
+                statusCaptor.capture());
+        assertEquals("reviewed",
+            statusCaptor.getAllValues().get(statusCaptor.getAllValues().size() - 1));
     }
     
     private void mockStorageGet(byte[] content) throws NacosException {

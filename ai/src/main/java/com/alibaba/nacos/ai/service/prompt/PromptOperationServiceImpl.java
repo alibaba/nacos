@@ -855,17 +855,6 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         }
     }
     
-    private static PromptPublishPipelineInfo parsePublishPipelineInfo(String json) {
-        if (StringUtils.isBlank(json)) {
-            return null;
-        }
-        try {
-            return JacksonUtils.toObj(json, PromptPublishPipelineInfo.class);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-    
     private void updateMetaVersionInfoCas(String namespaceId, AiResource meta,
         PromptVersionInfoPojo info)
         throws NacosException {
@@ -976,59 +965,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private void onPipelineComplete(String namespaceId, String promptKey, String version,
         PipelineExecutionResult result) {
-        try {
-            AiResourceVersion v =
-                resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
-                    version);
-            if (v == null) {
-                LOGGER.warn("Pipeline complete but version row not found: {}@{}", promptKey,
-                    version);
-                return;
-            }
-            
-            PromptPublishPipelineInfo pipelineInfo =
-                parsePublishPipelineInfo(v.getPublishPipelineInfo());
-            if (pipelineInfo == null) {
-                pipelineInfo = new PromptPublishPipelineInfo();
-            }
-            pipelineInfo.setStatus(result.getStatus());
-            pipelineInfo.setPipeline(result.getPipeline());
-            resourceManager.updateVersionPublishPipelineInfo(namespaceId, promptKey,
-                RESOURCE_TYPE_PROMPT,
-                version, JacksonUtils.toJson(pipelineInfo));
-            
-            if (result.getStatus() == PipelineExecutionStatus.APPROVED) {
-                AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, version,
-                    AiResourceTraceService.OP_REVIEW_APPROVED, "system", "",
-                    result.getExecutionId());
-            } else {
-                // Reject back to draft and move reviewing -> editing (best effort).
-                resourceManager.updateVersionStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
-                    version,
-                    VERSION_STATUS_DRAFT);
-                AiResource meta =
-                    resourceManager.findMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
-                if (meta != null) {
-                    PromptVersionInfoPojo info = requireVersionInfo(meta);
-                    if (StringUtils.equals(info.getReviewingVersion(), version)) {
-                        info.setReviewingVersion(null);
-                        info.setEditingVersion(version);
-                        try {
-                            updateMetaVersionInfoCas(namespaceId, meta, info);
-                        } catch (Exception ex) {
-                            LOGGER.warn("Failed to rollback meta working pointers for {}@{}",
-                                promptKey, version, ex);
-                        }
-                    }
-                }
-                AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, version,
-                    AiResourceTraceService.OP_REVIEW_REJECTED, "system", "",
-                    result.getExecutionId());
-            }
-        } catch (Exception e) {
-            LOGGER.error("Failed to handle pipeline completion for prompt: {}@{}", promptKey,
-                version, e);
-        }
+        resourceManager.onPipelineComplete(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
+            result);
     }
     
     // ========== Inner classes ==========
