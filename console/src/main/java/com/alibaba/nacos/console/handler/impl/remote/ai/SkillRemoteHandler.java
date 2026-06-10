@@ -157,14 +157,14 @@ public class SkillRemoteHandler implements SkillHandler {
     public void publish(SkillPublishForm form) throws NacosException {
         clientHolder.getAiMaintainerService().skill()
             .publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(),
-                form.getUpdateLatestLabel());
+                true);
     }
     
     @Override
     public void forcePublish(SkillPublishForm form) throws NacosException {
         clientHolder.getAiMaintainerService().skill()
             .forcePublish(form.getNamespaceId(), form.getSkillName(), form.getVersion(),
-                form.getUpdateLatestLabel());
+                true);
     }
     
     @Override

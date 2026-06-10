@@ -342,14 +342,11 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public void publish(String namespaceId, String promptKey, String version,
         boolean updateLatestLabel)
         throws NacosException {
-        resourceManager.doPublish(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
-            updateLatestLabel);
-        if (updateLatestLabel) {
-            try {
-                refreshLatestMirror(namespaceId, promptKey);
-            } catch (Exception e) {
-                LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
-            }
+        resourceManager.doPublish(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version, true);
+        try {
+            refreshLatestMirror(namespaceId, promptKey);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
         }
     }
     
@@ -358,13 +355,11 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         boolean updateLatestLabel)
         throws NacosException {
         resourceManager.doForcePublish(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
-            updateLatestLabel);
-        if (updateLatestLabel) {
-            try {
-                refreshLatestMirror(namespaceId, promptKey);
-            } catch (Exception e) {
-                LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
-            }
+            true);
+        try {
+            refreshLatestMirror(namespaceId, promptKey);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
         }
     }
     

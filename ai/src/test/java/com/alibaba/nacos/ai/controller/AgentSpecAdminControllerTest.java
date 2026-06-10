@@ -149,7 +149,8 @@ class AgentSpecAdminControllerTest {
             .forcePublish(eq("public"), eq("test-agentspec"), eq("v1"), eq(true));
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post(AGENTSPEC_ADMIN_PATH + "/force-publish")
-                .param("agentSpecName", "test-agentspec").param("version", "v1");
+                .param("agentSpecName", "test-agentspec").param("version", "v1")
+                .param("updateLatestLabel", "false");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         verify(agentSpecOperationService).forcePublish("public", "test-agentspec", "v1", true);

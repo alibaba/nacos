@@ -36,10 +36,10 @@ public class SkillPublishForm extends SkillForm {
     private String version;
     
     /**
-     * Whether to update the latest label when publishing.
+     * Legacy latest label update flag.
      *
      * @deprecated since 3.3.0, the latest label is managed by the server. This
-     * parameter is retained only for compatibility with legacy clients.
+     * parameter is ignored and retained only for compatibility with legacy clients.
      */
     @Deprecated(since = "3.3.0")
     private Boolean updateLatestLabel;
@@ -68,9 +68,9 @@ public class SkillPublishForm extends SkillForm {
     /**
      * Get update latest label flag.
      *
-     * @return update latest label flag
+     * @return ignored update latest label flag
      * @deprecated since 3.3.0, the latest label is managed by the server. This
-     * parameter is retained only for compatibility with legacy clients.
+     * parameter is ignored and retained only for compatibility with legacy clients.
      */
     @Deprecated(since = "3.3.0")
     public Boolean getUpdateLatestLabel() {
@@ -80,9 +80,9 @@ public class SkillPublishForm extends SkillForm {
     /**
      * Set update latest label flag.
      *
-     * @param updateLatestLabel update latest label flag
+     * @param updateLatestLabel ignored update latest label flag
      * @deprecated since 3.3.0, the latest label is managed by the server. This
-     * parameter is retained only for compatibility with legacy clients.
+     * parameter is ignored and retained only for compatibility with legacy clients.
      */
     @Deprecated(since = "3.3.0")
     public void setUpdateLatestLabel(Boolean updateLatestLabel) {

@@ -211,7 +211,7 @@ public interface PromptMaintainerService {
      * @param namespaceId       namespace ID
      * @param promptKey         prompt key
      * @param version           version to publish
-     * @param updateLatestLabel whether to update the latest label
+     * @param updateLatestLabel retained for compatibility and ignored by server
      * @throws NacosException if fail to publish
      */
     @Since("3.2.1")
@@ -224,7 +224,7 @@ public interface PromptMaintainerService {
      * @param namespaceId       namespace ID
      * @param promptKey         prompt key
      * @param version           version to force-publish
-     * @param updateLatestLabel whether to update the latest label
+     * @param updateLatestLabel retained for compatibility and ignored by server
      * @throws NacosException if fail to force-publish
      */
     @Since("3.2.1")

@@ -637,7 +637,9 @@ public class AiResourceManager {
     
     /**
      * Publish a version directly (bypass pipeline). Sets version online, clears editing/reviewing pointers,
-     * increments onlineCnt, and optionally updates the latest label.
+     * increments onlineCnt, and updates the server-managed latest label.
+     *
+     * @param updateLatestLabel retained for compatibility and ignored; latest is always updated
      */
     public void directPublishVersion(String namespaceId, AiResource meta, ResourceVersionInfo info,
         String version, boolean updateLatestLabel) throws NacosException {
@@ -656,9 +658,7 @@ public class AiResourceManager {
         if (info.getLabels() == null) {
             info.setLabels(new HashMap<>(4));
         }
-        if (updateLatestLabel) {
-            info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
-        }
+        info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         updateVersionInfoCas(namespaceId, meta, info);
     }
     
@@ -757,19 +757,20 @@ public class AiResourceManager {
     // ---- 2.5 High-level domain-agnostic operations ----
     
     /**
-     * Core publish logic: validate pipeline result, set version online, update meta pointers.
+     * Core publish logic: validate pipeline result, set version online, update meta pointers,
+     * and update the server-managed latest label.
      *
+     * @param updateLatestLabel retained for compatibility and ignored; latest is always updated
      * @return the version row (caller may need it for post-processing, e.g. manifest sync)
      */
     public AiResourceVersion doPublish(String namespaceId, String name, String type, String version,
         boolean updateLatestLabel) throws NacosException {
-        return doPublish(namespaceId, name, type, version, updateLatestLabel, true,
+        return doPublish(namespaceId, name, type, version, true,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     private AiResourceVersion doPublish(String namespaceId, String name, String type,
-        String version,
-        boolean updateLatestLabel, boolean checkVisibility, String operator, String clientIp)
+        String version, boolean checkVisibility, String operator, String clientIp)
         throws NacosException {
         AiResource meta = requireMeta(namespaceId, name, type);
         if (checkVisibility) {
@@ -823,9 +824,7 @@ public class AiResourceManager {
         if (info.getLabels() == null) {
             info.setLabels(new HashMap<>(4));
         }
-        if (updateLatestLabel) {
-            info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
-        }
+        info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         updateVersionInfoCas(namespaceId, meta, info);
         AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_PUBLISH,
             operator, clientIp);
@@ -835,17 +834,20 @@ public class AiResourceManager {
     /**
      * Core publish logic for system-triggered pipeline callbacks.
      *
+     * @param updateLatestLabel retained for compatibility and ignored; latest is always updated
      * @return the version row (caller may need it for post-processing, e.g. manifest sync)
      */
     public AiResourceVersion doSystemPublish(String namespaceId, String name, String type,
         String version,
         boolean updateLatestLabel) throws NacosException {
-        return doPublish(namespaceId, name, type, version, updateLatestLabel, false, "system", "");
+        return doPublish(namespaceId, name, type, version, false, "system", "");
     }
     
     /**
-     * Core force-publish logic: bypass pipeline validation, set version online, update meta pointers.
+     * Core force-publish logic: bypass pipeline validation, set version online, update meta pointers,
+     * and update the server-managed latest label.
      *
+     * @param updateLatestLabel retained for compatibility and ignored; latest is always updated
      * @return the version row (caller may need it for post-processing, e.g. manifest sync)
      */
     public AiResourceVersion doForcePublish(String namespaceId, String name, String type,
@@ -884,9 +886,7 @@ public class AiResourceManager {
         if (info.getLabels() == null) {
             info.setLabels(new HashMap<>(4));
         }
-        if (updateLatestLabel) {
-            info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
-        }
+        info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         updateVersionInfoCas(namespaceId, meta, info);
         AiResourceTraceService.logSuccess(type, name, version,
             AiResourceTraceService.OP_FORCE_PUBLISH,

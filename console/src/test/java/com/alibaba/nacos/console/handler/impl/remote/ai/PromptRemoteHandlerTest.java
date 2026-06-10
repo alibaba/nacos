@@ -241,11 +241,11 @@ class PromptRemoteHandlerTest {
     @Test
     void testForcePublish() throws NacosException {
         doNothing().when(promptMaintainerService).forcePublish(NS, PROMPT_KEY,
-            VERSION, false);
+            VERSION, true);
         
         handler.forcePublish(NS, PROMPT_KEY, VERSION, false);
         
-        verify(promptMaintainerService).forcePublish(NS, PROMPT_KEY, VERSION, false);
+        verify(promptMaintainerService).forcePublish(NS, PROMPT_KEY, VERSION, true);
     }
     
     @Test

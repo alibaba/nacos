@@ -61,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
@@ -1377,7 +1378,7 @@ class AiResourceManagerTest {
     }
     
     @Test
-    void directPublishVersionShouldNotUpdateLatestLabelWhenFlagFalse() throws NacosException {
+    void directPublishVersionShouldUpdateLatestLabelWhenFlagFalse() throws NacosException {
         AiResource meta = buildMeta("res");
         ResourceVersionInfo info = new ResourceVersionInfo();
         info.setReviewingVersion("1.0.0");
@@ -1389,7 +1390,7 @@ class AiResourceManagerTest {
         manager.directPublishVersion(NAMESPACE_ID, meta, info, "1.0.0", false);
         assertNull(info.getReviewingVersion());
         assertEquals(3, info.getOnlineCnt());
-        assertFalse(info.getLabels().containsKey(AiResourceConstants.LABEL_LATEST));
+        assertEquals("1.0.0", info.getLabels().get(AiResourceConstants.LABEL_LATEST));
     }
     
     // ---- resolveSubmitTarget ----
@@ -1612,6 +1613,13 @@ class AiResourceManagerTest {
         verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
             anyString(),
             anyString(), anyString());
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(1L),
+            argThat(resource -> {
+                Map<?, ?> info = JacksonUtils.toObj(resource.getVersionInfo(), Map.class);
+                Map<?, ?> labels = (Map<?, ?>) info.get("labels");
+                return "v1".equals(labels.get(AiResourceConstants.LABEL_LATEST));
+            }));
     }
     
     @Test

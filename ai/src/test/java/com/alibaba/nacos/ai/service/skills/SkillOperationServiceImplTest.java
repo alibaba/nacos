@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
@@ -1404,13 +1405,13 @@ class SkillOperationServiceImplTest {
         manifest.setLabels(new HashMap<>());
         when(manifestService.loadForUpdate(eq(namespaceId), eq(skillName))).thenReturn(manifest);
         
-        skillOperationService.forcePublish(namespaceId, skillName, version, true);
+        skillOperationService.forcePublish(namespaceId, skillName, version, false);
         
         verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName),
             anyString(),
             eq(version), eq("online"));
-        verify(manifestService).write(eq(namespaceId), eq(skillName), any(
-            com.alibaba.nacos.ai.model.skills.SkillIndexManifest.class));
+        verify(manifestService).write(eq(namespaceId), eq(skillName), argThat(
+            written -> version.equals(written.getLabels().get(AiResourceConstants.LABEL_LATEST))));
     }
     
     @Test

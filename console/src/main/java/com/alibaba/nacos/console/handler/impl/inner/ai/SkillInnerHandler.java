@@ -132,16 +132,14 @@ public class SkillInnerHandler implements SkillHandler {
     
     @Override
     public void publish(SkillPublishForm form) throws NacosException {
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         skillOperationService.publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(),
-            updateLatest);
+            true);
     }
     
     @Override
     public void forcePublish(SkillPublishForm form) throws NacosException {
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         skillOperationService.forcePublish(form.getNamespaceId(), form.getSkillName(),
-            form.getVersion(), updateLatest);
+            form.getVersion(), true);
     }
     
     @Override

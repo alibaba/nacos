@@ -249,6 +249,8 @@ public interface SkillOperationService {
     
     /**
      * Publish a reviewing version. Must have pipeline all passed when pipeline exists.
+     *
+     * @param updateLatestLabel retained for compatibility and ignored; latest is server-managed
      */
     void publish(String namespaceId, String name, String version, boolean updateLatestLabel)
         throws NacosException;
@@ -261,7 +263,7 @@ public interface SkillOperationService {
      * @param namespaceId      namespace ID
      * @param name             skill name
      * @param version          version to force-publish
-     * @param updateLatestLabel whether to update the "latest" label
+     * @param updateLatestLabel retained for compatibility and ignored; latest is server-managed
      */
     void forcePublish(String namespaceId, String name, String version, boolean updateLatestLabel)
         throws NacosException;

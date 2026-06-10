@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agentspecs;
 
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
@@ -552,11 +553,18 @@ class AgentSpecOperationServiceImplTest {
             eq("agentspec"), eq(1L), any()))
             .thenReturn(true);
         
-        service.forcePublish(namespaceId, agentSpecName, version, true);
+        service.forcePublish(namespaceId, agentSpecName, version, false);
         
         verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(agentSpecName),
             anyString(),
             eq(version), eq("online"));
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(agentSpecName),
+            eq("agentspec"), eq(1L),
+            argThat(resource -> {
+                Map<?, ?> info = JacksonUtils.toObj(resource.getVersionInfo(), Map.class);
+                Map<?, ?> labels = (Map<?, ?>) info.get("labels");
+                return version.equals(labels.get(AiResourceConstants.LABEL_LATEST));
+            }));
     }
     
     @Test

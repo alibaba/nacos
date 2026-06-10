@@ -432,7 +432,8 @@ class PromptOperationServiceImplTest {
     }
     
     @Test
-    void testPublishShouldUpdateLatestLabelAndRefreshMirror() throws NacosException {
+    void testPublishShouldUpdateLatestLabelAndRefreshMirrorEvenWhenFlagFalse()
+        throws NacosException {
         AiResource meta = createMeta(PROMPT_KEY, 1L,
             "{\"labels\":{},\"reviewingVersion\":\"0.0.1\",\"onlineCnt\":0}");
         AiResource updatedMeta = createMeta(PROMPT_KEY, 2L,
@@ -449,7 +450,7 @@ class PromptOperationServiceImplTest {
         content.setTemplate("hello");
         mockStorageGet(JacksonUtils.toJson(content).getBytes(StandardCharsets.UTF_8));
         
-        service.publish(NS, PROMPT_KEY, "0.0.1", true);
+        service.publish(NS, PROMPT_KEY, "0.0.1", false);
         
         verify(configOperationService).publishConfig(any(), any(), any());
     }
@@ -495,7 +496,8 @@ class PromptOperationServiceImplTest {
     // ========== forcePublish ==========
     
     @Test
-    void testForcePublishShouldUpdateLatestLabelAndRefreshMirror() throws NacosException {
+    void testForcePublishShouldUpdateLatestLabelAndRefreshMirrorEvenWhenFlagFalse()
+        throws NacosException {
         AiResource meta = createMeta(PROMPT_KEY, 1L,
             "{\"labels\":{},\"editingVersion\":\"0.0.1\",\"onlineCnt\":0}");
         AiResource updatedMeta = createMeta(PROMPT_KEY, 2L,
@@ -512,7 +514,7 @@ class PromptOperationServiceImplTest {
         content.setTemplate("hello");
         mockStorageGet(JacksonUtils.toJson(content).getBytes(StandardCharsets.UTF_8));
         
-        service.forcePublish(NS, PROMPT_KEY, "0.0.1", true);
+        service.forcePublish(NS, PROMPT_KEY, "0.0.1", false);
         
         verify(configOperationService).publishConfig(any(), any(), any());
     }

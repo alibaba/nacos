@@ -982,8 +982,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void publish(String namespaceId, String name, String version,
         boolean updateLatestLabel) throws NacosException {
-        resourceManager.doPublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version,
-            updateLatestLabel);
+        resourceManager.doPublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version, true);
         computeAndStoreContentMd5(namespaceId, name, version);
     }
     
@@ -993,8 +992,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void forcePublish(String namespaceId, String name, String version,
         boolean updateLatestLabel) throws NacosException {
-        resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version,
-            updateLatestLabel);
+        resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version, true);
         computeAndStoreContentMd5(namespaceId, name, version);
     }
     

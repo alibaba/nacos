@@ -128,14 +128,14 @@ public class PromptInnerHandler implements PromptHandler {
     public void publish(String namespaceId, String promptKey, String version,
         boolean updateLatestLabel)
         throws NacosException {
-        promptOperationService.publish(namespaceId, promptKey, version, updateLatestLabel);
+        promptOperationService.publish(namespaceId, promptKey, version, true);
     }
     
     @Override
     public void forcePublish(String namespaceId, String promptKey, String version,
         boolean updateLatestLabel)
         throws NacosException {
-        promptOperationService.forcePublish(namespaceId, promptKey, version, updateLatestLabel);
+        promptOperationService.forcePublish(namespaceId, promptKey, version, true);
     }
     
     @Override
