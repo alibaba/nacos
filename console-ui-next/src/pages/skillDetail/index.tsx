@@ -521,7 +521,6 @@ export default function SkillDetailPage() {
         namespaceId,
         skillName,
         version,
-        updateLatestLabel: true,
       });
       toast.success(t('skill.publishSuccess'));
       await loadDetail();
@@ -539,7 +538,6 @@ export default function SkillDetailPage() {
         namespaceId,
         skillName,
         version,
-        updateLatestLabel: true,
       });
       toast.success(t('skill.forcePublishSuccess'));
       await loadDetail();

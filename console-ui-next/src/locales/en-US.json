@@ -96,6 +96,7 @@
       "keyRequired": "Label key is required",
       "keyDuplicate": "Label key already exists",
       "keyInvalid": "Invalid label key format (only letters, digits, . _ -)",
+      "reservedLatest": "latest is managed by the server and cannot be set or removed manually",
       "save": "Save Version Labels",
       "updateSuccess": "Version labels updated",
       "editLabels": "Edit Version Labels",

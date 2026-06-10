@@ -13,7 +13,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { isValidLabelKey } from '@/pages/agentSpecManagement/components/label-utils';
+import {
+  isReservedLabelKey,
+  isValidLabelKey,
+} from '@/pages/agentSpecManagement/components/label-utils';
 
 interface LabelBindDialogProps {
   open: boolean;
@@ -67,7 +70,9 @@ export function LabelBindDialog({
   const allLabelNames = useMemo(() => {
     const names = new Set(Object.keys(allLabels));
     for (const n of newLabels) {
-      names.add(n);
+      if (!isReservedLabelKey(n)) {
+        names.add(n);
+      }
     }
     return Array.from(names).sort();
   }, [allLabels, newLabels]);
@@ -78,15 +83,26 @@ export function LabelBindDialog({
     if (!q) return allLabelNames;
     return allLabelNames.filter((name) => name.toLowerCase().includes(q));
   }, [allLabelNames, searchText]);
+  const selectableFilteredLabels = useMemo(
+    () => filteredLabels.filter((name) => !isReservedLabelKey(name)),
+    [filteredLabels],
+  );
 
   // Whether search text matches an existing label exactly
   const exactMatch = allLabelNames.some(
     (n) => n.toLowerCase() === searchText.trim().toLowerCase(),
   );
 
-  const canCreate = searchText.trim() && !exactMatch && isValidLabelKey(searchText.trim(), []);
+  const isSearchingReservedLabel = isReservedLabelKey(searchText.trim());
+  const canCreate = searchText.trim()
+    && !isSearchingReservedLabel
+    && !exactMatch
+    && isValidLabelKey(searchText.trim(), []);
 
   const handleToggle = (label: string, checked: boolean) => {
+    if (isReservedLabelKey(label)) {
+      return;
+    }
     const next = new Set(checkedLabels);
     if (checked) {
       next.add(label);
@@ -122,7 +138,7 @@ export function LabelBindDialog({
 
   const handleSelectAll = () => {
     const next = new Set(checkedLabels);
-    for (const name of filteredLabels) {
+    for (const name of selectableFilteredLabels) {
       next.add(name);
     }
     setCheckedLabels(next);
@@ -130,7 +146,7 @@ export function LabelBindDialog({
 
   const handleClearAll = () => {
     const next = new Set(checkedLabels);
-    for (const name of filteredLabels) {
+    for (const name of selectableFilteredLabels) {
       next.delete(name);
     }
     setCheckedLabels(next);
@@ -144,6 +160,9 @@ export function LabelBindDialog({
 
       // Keep labels that are NOT being modified (pointing to other versions)
       for (const [key, val] of Object.entries(allLabels)) {
+        if (isReservedLabelKey(key)) {
+          continue;
+        }
         if (val !== version) {
           // If this label is now checked for this version, override it
           if (checkedLabels.has(key)) {
@@ -162,7 +181,7 @@ export function LabelBindDialog({
 
       // Add newly created labels that are checked
       for (const name of newLabels) {
-        if (checkedLabels.has(name) && !(name in result)) {
+        if (!isReservedLabelKey(name) && checkedLabels.has(name) && !(name in result)) {
           result[name] = version;
         }
       }
@@ -207,6 +226,12 @@ export function LabelBindDialog({
             <p className="text-xs text-destructive">{error}</p>
           )}
 
+          {isSearchingReservedLabel && (
+            <p className="text-xs text-muted-foreground">
+              {t('common.versionLabels.reservedLatest')}
+            </p>
+          )}
+
           {/* Create hint */}
           {canCreate && (
             <button
@@ -223,37 +248,46 @@ export function LabelBindDialog({
           {filteredLabels.length > 0 && (
             <div className="space-y-1">
               {/* Select all / Clear */}
-              <div className="flex items-center gap-2 px-1 pb-1 text-xs text-muted-foreground">
-                <button
-                  type="button"
-                  className="hover:text-foreground transition-colors"
-                  onClick={handleSelectAll}
-                >
-                  {t('common.versionLabels.selectAll', { count: filteredLabels.length })}
-                </button>
-                <span>·</span>
-                <button
-                  type="button"
-                  className="hover:text-foreground transition-colors"
-                  onClick={handleClearAll}
-                >
-                  {t('common.versionLabels.clearAll')}
-                </button>
-              </div>
+              {selectableFilteredLabels.length > 0 && (
+                <div className="flex items-center gap-2 px-1 pb-1 text-xs text-muted-foreground">
+                  <button
+                    type="button"
+                    className="hover:text-foreground transition-colors"
+                    onClick={handleSelectAll}
+                  >
+                    {t('common.versionLabels.selectAll', {
+                      count: selectableFilteredLabels.length,
+                    })}
+                  </button>
+                  <span>·</span>
+                  <button
+                    type="button"
+                    className="hover:text-foreground transition-colors"
+                    onClick={handleClearAll}
+                  >
+                    {t('common.versionLabels.clearAll')}
+                  </button>
+                </div>
+              )}
 
               <div className="max-h-[240px] overflow-y-auto space-y-0.5">
                 {filteredLabels.map((name) => {
                   const isChecked = checkedLabels.has(name);
                   const boundVersion = allLabels[name];
                   const isBoundToOther = boundVersion && boundVersion !== version;
+                  const isReserved = isReservedLabelKey(name);
 
                   return (
                     <label
                       key={name}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted/60 transition-colors cursor-pointer"
+                      className={`flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted/60 transition-colors ${
+                        isReserved ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                      }`}
+                      title={isReserved ? t('common.versionLabels.reservedLatest') : undefined}
                     >
                       <Checkbox
                         checked={isChecked}
+                        disabled={isReserved}
                         onCheckedChange={(checked) =>
                           handleToggle(name, checked === true)
                         }

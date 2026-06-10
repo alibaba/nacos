@@ -309,12 +309,12 @@ export default function PromptDetailPage() {
   };
 
   const handlePublish = async (version: string) => {
-    const ok = await publishVersion({ promptKey, version, updateLatestLabel: true, namespaceId });
+    const ok = await publishVersion({ promptKey, version, namespaceId });
     if (ok) { toast.success(t('prompt.publishSuccess')); await refreshAfterAction(version); }
   };
 
   const handleForcePublish = async (version: string) => {
-    const ok = await forcePublishVersion({ promptKey, version, updateLatestLabel: true, namespaceId });
+    const ok = await forcePublishVersion({ promptKey, version, namespaceId });
     if (ok) { toast.success(t('prompt.forcePublishSuccess')); await refreshAfterAction(version); }
   };
 
@@ -337,7 +337,7 @@ export default function PromptDetailPage() {
     if (ok) { toast.success(t('prompt.offlineSuccess')); await refreshAfterAction(version); }
   };
 
-  const handleDeleteDraft = async (_version: string) => {
+  const handleDeleteDraft = async () => {
     const ok = await storeDraftDelete(namespaceId, promptKey);
     if (ok) {
       toast.success(t('prompt.draftDeleteSuccess'));
@@ -787,7 +787,7 @@ export default function PromptDetailPage() {
                               <Send className="h-3 w-3" />
                               {t('prompt.submit')}
                             </Button>
-                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteDraft(selectedVersion)}>
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteDraft()}>
                               <Trash2 className="h-3 w-3" />
                               {t('prompt.deleteDraft')}
                             </Button>
@@ -825,7 +825,7 @@ export default function PromptDetailPage() {
                               variant="outline"
                               size="sm"
                               className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDeleteDraft(selectedVersion)}
+                              onClick={() => handleDeleteDraft()}
                             >
                               <Trash2 className="h-3 w-3" />
                               {t('prompt.deleteDraft')}

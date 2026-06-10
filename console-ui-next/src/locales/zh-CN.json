@@ -96,6 +96,7 @@
       "keyRequired": "标签键不能为空",
       "keyDuplicate": "标签键已存在",
       "keyInvalid": "标签键格式不合法（仅支持字母、数字、. _ -）",
+      "reservedLatest": "latest 由服务端维护，不支持手动设置或取消",
       "save": "保存版本标签",
       "updateSuccess": "版本标签更新成功",
       "editLabels": "编辑版本标签",

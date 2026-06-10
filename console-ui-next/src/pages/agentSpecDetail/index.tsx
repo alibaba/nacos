@@ -309,7 +309,6 @@ export default function AgentSpecDetailPage() {
         namespaceId,
         agentSpecName,
         version,
-        updateLatestLabel: true,
       });
       toast.success(t('agentSpec.publishSuccess'));
       await loadDetail();
@@ -380,12 +379,10 @@ export default function AgentSpecDetailPage() {
   };
 
   const handleSaveLabels = async (newLabels: Record<string, string>) => {
-    const latestValue = detail?.labels?.latest;
-    const merged = latestValue ? { ...newLabels, latest: latestValue } : newLabels;
     await agentSpecApi.updateLabels({
       namespaceId,
       agentSpecName,
-      labels: JSON.stringify(merged),
+      labels: JSON.stringify(newLabels),
     });
     toast.success(t('common.versionLabels.updateSuccess'));
     await loadDetail();

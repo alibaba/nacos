@@ -112,7 +112,6 @@ export const skillApi = {
     namespaceId?: string;
     skillName: string;
     version: string;
-    updateLatestLabel?: boolean;
   }): ApiResult<string> =>
     client.post(`${BASE}/publish`, data) as ApiResult<string>,
 
@@ -121,7 +120,6 @@ export const skillApi = {
     namespaceId?: string;
     skillName: string;
     version: string;
-    updateLatestLabel?: boolean;
   }): ApiResult<string> =>
     client.post(`${BASE}/force-publish`, data) as ApiResult<string>,
 

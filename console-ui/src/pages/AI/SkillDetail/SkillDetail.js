@@ -44,6 +44,8 @@ import { fetchPipelineExecutionDetail, mapExecutionToPipelineInfo } from '@/util
 
 const { Row, Col } = Grid;
 const { Panel } = Collapse;
+const RESERVED_LABEL_LATEST = 'latest';
+const isReservedLatestLabel = label => String(label || '').toLowerCase() === RESERVED_LABEL_LATEST;
 
 @ConfigProvider.config
 class SkillDetail extends React.Component {
@@ -94,7 +96,6 @@ class SkillDetail extends React.Component {
       publishing: false,
       onlining: false,
       creatingDraft: false,
-      publishUpdateLatest: true,
     };
     this.optimizeSuccessTimer = null; // 优化成功提示的定时器
   }
@@ -494,6 +495,15 @@ class SkillDetail extends React.Component {
     });
   };
 
+  normalizeLabelEditorSelection = selectedLabels => {
+    const { labelEditorAll, labelEditorSelected } = this.state;
+    const reservedSelected = (labelEditorAll || []).filter(
+      label => isReservedLatestLabel(label) && labelEditorSelected.includes(label)
+    );
+    const editableSelected = (selectedLabels || []).filter(label => !isReservedLatestLabel(label));
+    return [...new Set([...editableSelected, ...reservedSelected])];
+  };
+
   closeLabelEditor = () => {
     this.setState({
       labelEditorVisible: false,
@@ -514,6 +524,10 @@ class SkillDetail extends React.Component {
     }
     if (!/^[A-Za-z0-9._-]+$/.test(newLabel)) {
       Message.error(locale.labelInvalid || 'Label only supports letters, numbers, .-_');
+      return;
+    }
+    if (isReservedLatestLabel(newLabel)) {
+      Message.error(locale.latestLabelReserved || 'latest is managed by server');
       return;
     }
     if (labelEditorAll.includes(newLabel)) {
@@ -541,12 +555,14 @@ class SkillDetail extends React.Component {
     // Build new labels map: keep labels for other versions, update for this version
     const newLabelsMap = {};
     Object.keys(labelsMap || {}).forEach(label => {
-      if (labelsMap[label] !== labelEditorVersion) {
+      if (!isReservedLatestLabel(label) && labelsMap[label] !== labelEditorVersion) {
         newLabelsMap[label] = labelsMap[label];
       }
     });
     labelEditorSelected.forEach(label => {
-      newLabelsMap[label] = labelEditorVersion;
+      if (!isReservedLatestLabel(label)) {
+        newLabelsMap[label] = labelEditorVersion;
+      }
     });
 
     this.setState({ labelEditorSaving: true });
@@ -708,25 +724,15 @@ class SkillDetail extends React.Component {
       return;
     }
 
-    this.setState({ publishUpdateLatest: true });
-
     Dialog.confirm({
       title: locale.publishVersion || 'Publish Version',
       content: (
-        <div>
-          <p>
-            {(locale.publishConfirm || 'Are you sure you want to publish version {0}?').replace(
-              '{0}',
-              selectedVersion
-            )}
-          </p>
-          <Checkbox
-            defaultChecked
-            onChange={checked => this.setState({ publishUpdateLatest: checked })}
-          >
-            {locale.updateLatestLabel || 'Update latest label'}
-          </Checkbox>
-        </div>
+        <p>
+          {(locale.publishConfirm || 'Are you sure you want to publish version {0}?').replace(
+            '{0}',
+            selectedVersion
+          )}
+        </p>
       ),
       onOk: () => {
         const skillName = getParams('name');
@@ -740,7 +746,6 @@ class SkillDetail extends React.Component {
           data: {
             skillName,
             version: selectedVersion,
-            updateLatestLabel: this.state.publishUpdateLatest,
             namespaceId,
           },
           contentType: 'application/x-www-form-urlencoded',
@@ -2423,13 +2428,24 @@ class SkillDetail extends React.Component {
               <div style={{ fontWeight: 500 }}>{locale.customLabels || 'Custom labels'}</div>
               <Checkbox.Group
                 value={labelEditorSelected}
-                onChange={value => this.setState({ labelEditorSelected: value || [] })}
+                onChange={value =>
+                  this.setState({ labelEditorSelected: this.normalizeLabelEditorSelection(value) })
+                }
               >
-                {(labelEditorAll || []).map(each => (
-                  <div key={each} style={{ marginBottom: 8 }}>
-                    <Checkbox value={each}>{each}</Checkbox>
-                  </div>
-                ))}
+                {(labelEditorAll || []).map(each => {
+                  const isReserved = isReservedLatestLabel(each);
+                  return (
+                    <div
+                      key={each}
+                      style={{ marginBottom: 8, opacity: isReserved ? 0.7 : 1 }}
+                      title={isReserved ? locale.latestLabelReserved : undefined}
+                    >
+                      <Checkbox value={each} disabled={isReserved}>
+                        {each}
+                      </Checkbox>
+                    </div>
+                  );
+                })}
               </Checkbox.Group>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>

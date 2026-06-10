@@ -84,7 +84,6 @@ export const agentSpecApi = {
     namespaceId?: string;
     agentSpecName: string;
     version: string;
-    updateLatestLabel?: boolean;
   }): ApiResult<string> =>
     client.post(`${BASE}/publish`, data) as ApiResult<string>,
 
@@ -93,7 +92,6 @@ export const agentSpecApi = {
     namespaceId?: string;
     agentSpecName: string;
     version: string;
-    updateLatestLabel?: boolean;
   }): ApiResult<string> =>
     client.post(`${BASE}/force-publish`, data) as ApiResult<string>,
 

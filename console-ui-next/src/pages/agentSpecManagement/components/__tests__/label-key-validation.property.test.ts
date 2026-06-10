@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { isValidLabelKey } from '../label-utils';
+import { isReservedLabelKey, isValidLabelKey } from '../label-utils';
 
 // ── Valid key pattern ──────────────────────────────────────────────────────
 
@@ -45,6 +45,7 @@ describe('Property 7: 标签 key 验证', () => {
   it('property: valid keys not in existingKeys are accepted', () => {
     fc.assert(
       fc.property(arbValidKey, arbExistingKeys, (key, existingKeys) => {
+        fc.pre(!isReservedLabelKey(key));
         // Ensure the key is NOT in existingKeys for this test
         const filtered = existingKeys.filter((k) => k !== key);
         expect(isValidLabelKey(key, filtered)).toBe(true);
@@ -80,6 +81,12 @@ describe('Property 7: 标签 key 验证', () => {
       }),
       { numRuns: 100 },
     );
+  });
+
+  it('reserved latest label is rejected', () => {
+    expect(isReservedLabelKey('latest')).toBe(true);
+    expect(isReservedLabelKey('LATEST')).toBe(true);
+    expect(isValidLabelKey('latest', [])).toBe(false);
   });
 
   it('property: isValidLabelKey is deterministic (same input → same output)', () => {
