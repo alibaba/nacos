@@ -38,4 +38,15 @@ describe('Service detail instance update refresh (#15296)', () => {
     expect(body).not.toContain('refreshDetail');
     expect(body).not.toContain('refreshClusterInstances');
   });
+
+  it('handleDeleteInstance removes the row locally and does not refetch service detail', () => {
+    const body = sliceBetween('const handleDeleteInstance', '// ===== Cluster pagination');
+    expect(body).toContain('removeInstance(');
+    expect(body).not.toContain('refreshDetail');
+    expect(body).not.toContain('refreshClusterInstances');
+    // The previous-page navigation is the one path that still has to fetch
+    // (the page is not held locally); the local removal then scrubs the
+    // deleted row if the fetched page is still served from the stale cache.
+    expect(body).toContain('await fetchClusterInstances(');
+  });
 });

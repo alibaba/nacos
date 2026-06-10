@@ -8,7 +8,7 @@ import { serviceApi } from '@/api/service';
 import { useServiceStore } from '@/stores/service-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import type { Instance, InstanceListResponse, ClusterInfo, ServiceDetailInfo } from '@/types/service';
-import { patchInstance, type InstancesByCluster } from './instance-state';
+import { patchInstance, removeInstance, type InstancesByCluster } from './instance-state';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -203,10 +203,6 @@ export default function ServiceDetailPage() {
   const refreshDetail = () => {
     fetchServiceDetail(activeNamespace, serviceName, groupName);
     // Instances will re-fetch via the useEffect on currentService change
-  };
-
-  const refreshClusterInstances = (clusterName: string) => {
-    fetchClusterInstances(clusterName);
   };
 
   // ===== Edit Service =====
@@ -417,16 +413,27 @@ export default function ServiceDetailPage() {
       const currentPage = getClusterPage(clusterName);
       const currentInstances = instancesByCluster[clusterName]?.list || [];
       if (currentInstances.length === 1 && currentPage.pageNo > 1) {
+        // Deleting the last row of a page > 1: the previous page is not held
+        // locally, so this branch must fetch. That page may still be served
+        // from the pre-delete cache (#15296); the removeInstance call below
+        // scrubs the deleted row if so. If the stale page lacks it, total can
+        // stay one too high (an extra empty page) until the next fetch — a
+        // milder glitch than re-rendering the deleted row.
         const previousPage = { ...currentPage, pageNo: currentPage.pageNo - 1 };
         setClusterPages((prev) => ({
           ...prev,
           [clusterName]: previousPage,
         }));
-        fetchClusterInstances(clusterName, previousPage);
-      } else {
-        refreshClusterInstances(clusterName);
+        await fetchClusterInstances(clusterName, previousPage);
       }
-      refreshDetail();
+      // Same stale-cache reason as toggleInstance (#15296): an immediate refetch
+      // can resurrect the just-deleted row, so drop it from local state instead.
+      // The service detail refetch is dropped too — the only service-level field
+      // a delete can change is the cluster set (a cluster losing its last
+      // instance), which the detail endpoint reads from the same lagging cache.
+      setInstancesByCluster((prev) =>
+        removeInstance(prev, clusterName, instance.ip, instance.port),
+      );
     } catch { /* interceptor */ } finally {
       setDeleteInstanceSubmitting(false);
     }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { patchInstance, type InstancesByCluster } from '../instance-state';
+import { patchInstance, removeInstance, type InstancesByCluster } from '../instance-state';
 import type { Instance } from '@/types/service';
 
 const makeInstance = (over: Partial<Instance> = {}): Instance => ({
@@ -96,6 +96,67 @@ describe('patchInstance', () => {
 
     patchInstance(prev, 'DEFAULT', '10.0.0.1', 8080, { enabled: false, weight: 9 });
     patchInstance(prev, 'NOPE', '10.0.0.1', 8080, { enabled: false });
+
+    expect(JSON.stringify(prev)).toBe(snapshot);
+  });
+});
+
+describe('removeInstance', () => {
+  it('removes the target instance, decrements total and touches nothing else', () => {
+    const prev = makeState();
+    const result = removeInstance(prev, 'DEFAULT', '10.0.0.1', 8080);
+
+    expect(result.DEFAULT.list).toHaveLength(1);
+    expect(result.DEFAULT.list[0]).toBe(prev.DEFAULT.list[1]);
+    expect(result.DEFAULT.total).toBe(1);
+    expect(result.DEFAULT.loading).toBe(prev.DEFAULT.loading);
+    expect(result.OTHER).toBe(prev.OTHER);
+  });
+
+  it('returns new references along the changed path so React re-renders', () => {
+    const prev = makeState();
+    const result = removeInstance(prev, 'DEFAULT', '10.0.0.1', 8080);
+
+    expect(result).not.toBe(prev);
+    expect(result.DEFAULT).not.toBe(prev.DEFAULT);
+    expect(result.DEFAULT.list).not.toBe(prev.DEFAULT.list);
+  });
+
+  it('empties the cluster when its last listed instance is removed', () => {
+    const prev = makeState();
+    const result = removeInstance(prev, 'OTHER', '10.0.0.3', 8080);
+
+    expect(result.OTHER.list).toHaveLength(0);
+    expect(result.OTHER.total).toBe(0);
+  });
+
+  it('is a no-op returning the same reference when the cluster is missing', () => {
+    const prev = makeState();
+    expect(removeInstance(prev, 'NOPE', '10.0.0.1', 8080)).toBe(prev);
+  });
+
+  it('is a no-op returning the same reference when ip:port does not match', () => {
+    const prev = makeState();
+    expect(removeInstance(prev, 'DEFAULT', '10.0.0.1', 9999)).toBe(prev);
+    expect(removeInstance(prev, 'DEFAULT', '10.9.9.9', 8080)).toBe(prev);
+  });
+
+  it('does not decrement total below zero on inconsistent state', () => {
+    const prev: InstancesByCluster = {
+      DEFAULT: { list: [makeInstance()], total: 0, loading: false },
+    };
+    const result = removeInstance(prev, 'DEFAULT', '10.0.0.1', 8080);
+
+    expect(result.DEFAULT.list).toHaveLength(0);
+    expect(result.DEFAULT.total).toBe(0);
+  });
+
+  it('does not mutate its input', () => {
+    const prev = deepFreeze(makeState());
+    const snapshot = JSON.stringify(prev);
+
+    removeInstance(prev, 'DEFAULT', '10.0.0.1', 8080);
+    removeInstance(prev, 'NOPE', '10.0.0.1', 8080);
 
     expect(JSON.stringify(prev)).toBe(snapshot);
   });

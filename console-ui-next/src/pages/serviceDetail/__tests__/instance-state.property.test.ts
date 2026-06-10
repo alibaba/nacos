@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import {
   patchInstance,
+  removeInstance,
   type InstancePatch,
   type InstancesByCluster,
 } from '../instance-state';
@@ -101,6 +102,72 @@ describe('patchInstance properties', () => {
         state[clusterName].list.forEach((inst, i) => {
           if (i !== index) {
             expect(result[clusterName].list[i]).toBe(inst);
+          }
+        });
+        Object.keys(state).forEach((name) => {
+          if (name !== clusterName) {
+            expect(result[name]).toBe(state[name]);
+          }
+        });
+      }),
+      { numRuns: 100 },
+    );
+  });
+});
+
+describe('removeInstance properties', () => {
+  it('never mutates its input', () => {
+    fc.assert(
+      fc.property(
+        stateArb,
+        fc.string(),
+        ipArb,
+        fc.integer({ min: 1, max: 65535 }),
+        (state, clusterName, ip, port) => {
+          const snapshot = JSON.stringify(state);
+          removeInstance(state, clusterName, ip, port);
+          expect(JSON.stringify(state)).toBe(snapshot);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+
+  it('returns the same reference when the target is absent', () => {
+    fc.assert(
+      fc.property(
+        stateArb,
+        fc.string(),
+        ipArb,
+        fc.integer({ min: 1, max: 65535 }),
+        (state, clusterName, ip, port) => {
+          const cluster = Object.hasOwn(state, clusterName) ? state[clusterName] : undefined;
+          const miss =
+            !cluster || !cluster.list.some((inst) => inst.ip === ip && inst.port === port);
+          fc.pre(miss);
+          expect(removeInstance(state, clusterName, ip, port)).toBe(state);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+
+  it('removes exactly the target, decrements total and leaves everything else reference-equal', () => {
+    fc.assert(
+      fc.property(stateWithTargetArb, ({ state, clusterName, index, target }) => {
+        const result = removeInstance(state, clusterName, target.ip, target.port);
+
+        expect(result[clusterName].list).toHaveLength(state[clusterName].list.length - 1);
+        expect(
+          result[clusterName].list.some(
+            (inst) => inst.ip === target.ip && inst.port === target.port,
+          ),
+        ).toBe(false);
+        expect(result[clusterName].total).toBe(Math.max(0, state[clusterName].total - 1));
+        expect(result[clusterName].loading).toBe(state[clusterName].loading);
+        state[clusterName].list.forEach((inst, i) => {
+          if (i !== index) {
+            expect(result[clusterName].list).toContain(inst);
           }
         });
         Object.keys(state).forEach((name) => {
