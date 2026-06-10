@@ -136,8 +136,8 @@ class PromptOperationServiceImplTest {
             new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
                 pipelineExecutionRepository);
         service =
-            new PromptOperationServiceImpl(publishPipelineExecutor, pipelineExecutionRepository,
-                configOperationService, resourceManager, promptDataMigrationTask);
+            new PromptOperationServiceImpl(publishPipelineExecutor, configOperationService,
+                resourceManager, promptDataMigrationTask);
         mockVisibilityManager = mock(VisibilityPluginManager.class);
         lenient().when(mockVisibilityManager.findVisibilityService(anyString()))
             .thenReturn(Optional.empty());
@@ -435,11 +435,7 @@ class PromptOperationServiceImplTest {
     void testPublishShouldUpdateLatestLabelAndRefreshMirror() throws NacosException {
         AiResource meta = createMeta(PROMPT_KEY, 1L,
             "{\"labels\":{},\"reviewingVersion\":\"0.0.1\",\"onlineCnt\":0}");
-        // publish reads meta, then refreshLatestMirror re-reads meta (needs updated labels)
-        AiResource updatedMeta = createMeta(PROMPT_KEY, 2L,
-            "{\"labels\":{\"latest\":\"0.0.1\"},\"onlineCnt\":1}");
-        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE))
-            .thenReturn(meta).thenReturn(updatedMeta);
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
         when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
             .thenReturn(createVersionRow("0.0.1", "reviewing"));
         when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
@@ -456,6 +452,22 @@ class PromptOperationServiceImplTest {
     }
     
     @Test
+    void testPublishShouldAllowReviewedVersion() throws NacosException {
+        AiResource meta = createMeta(PROMPT_KEY, 1L,
+            "{\"labels\":{},\"reviewingVersion\":\"0.0.1\",\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(createVersionRow("0.0.1", "reviewed"));
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L),
+            any(AiResource.class))).thenReturn(true);
+        
+        service.publish(NS, PROMPT_KEY, "0.0.1", false);
+        
+        verify(aiResourceVersionPersistService).updateStatus(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1",
+            "online");
+    }
+    
+    @Test
     void testPublishShouldThrowWhenVersionNotFound() {
         AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
@@ -467,7 +479,7 @@ class PromptOperationServiceImplTest {
     }
     
     @Test
-    void testPublishShouldThrowWhenVersionNotReviewingOrOnline() {
+    void testPublishShouldThrowWhenVersionNotReviewingReviewedOrOnline() {
         AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
         when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
@@ -521,6 +533,32 @@ class PromptOperationServiceImplTest {
         
         assertThrows(NacosApiException.class,
             () -> service.forcePublish(NS, PROMPT_KEY, "0.0.1", false));
+    }
+    
+    @Test
+    void testForcePublishShouldThrowWhenVersionAlreadyOnline() {
+        AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(createVersionRow("0.0.1", "online"));
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> service.forcePublish(NS, PROMPT_KEY, "0.0.1", false));
+        
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+    
+    @Test
+    void testForcePublishShouldThrowWhenVersionOffline() {
+        AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(createVersionRow("0.0.1", "offline"));
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> service.forcePublish(NS, PROMPT_KEY, "0.0.1", false));
+        
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
     
     // ========== changeOnlineStatus ==========
