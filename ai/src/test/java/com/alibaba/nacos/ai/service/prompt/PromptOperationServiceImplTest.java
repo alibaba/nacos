@@ -435,7 +435,10 @@ class PromptOperationServiceImplTest {
     void testPublishShouldUpdateLatestLabelAndRefreshMirror() throws NacosException {
         AiResource meta = createMeta(PROMPT_KEY, 1L,
             "{\"labels\":{},\"reviewingVersion\":\"0.0.1\",\"onlineCnt\":0}");
-        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        AiResource updatedMeta = createMeta(PROMPT_KEY, 2L,
+            "{\"labels\":{\"latest\":\"0.0.1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta,
+            updatedMeta);
         when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
             .thenReturn(createVersionRow("0.0.1", "reviewing"));
         when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
@@ -490,6 +493,29 @@ class PromptOperationServiceImplTest {
     }
     
     // ========== forcePublish ==========
+    
+    @Test
+    void testForcePublishShouldUpdateLatestLabelAndRefreshMirror() throws NacosException {
+        AiResource meta = createMeta(PROMPT_KEY, 1L,
+            "{\"labels\":{},\"editingVersion\":\"0.0.1\",\"onlineCnt\":0}");
+        AiResource updatedMeta = createMeta(PROMPT_KEY, 2L,
+            "{\"labels\":{\"latest\":\"0.0.1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta,
+            updatedMeta);
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(createVersionRow("0.0.1", "draft"));
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            anyLong(),
+            any(AiResource.class))).thenReturn(true);
+        
+        PromptVersionInfo content = new PromptVersionInfo();
+        content.setTemplate("hello");
+        mockStorageGet(JacksonUtils.toJson(content).getBytes(StandardCharsets.UTF_8));
+        
+        service.forcePublish(NS, PROMPT_KEY, "0.0.1", true);
+        
+        verify(configOperationService).publishConfig(any(), any(), any());
+    }
     
     @Test
     void testForcePublishFromDraftStatus() throws NacosException {
