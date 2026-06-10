@@ -1643,6 +1643,40 @@ class AiResourceManagerTest {
             AiResourceConstants.VERSION_STATUS_ONLINE);
     }
     
+    @Test
+    void doPublishShouldPreserveUserLabelsOnCasRetry() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"reviewingVersion\":\"v2\",\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        AiResource latestMeta = buildMeta("res");
+        latestMeta.setMetaVersion(2L);
+        latestMeta.setVersionInfo(
+            "{\"reviewingVersion\":\"v2\",\"labels\":{\"latest\":\"v1\",\"stable\":\"v1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(meta, latestMeta);
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion("v2");
+        v.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWING);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v2"))
+            .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any()))
+            .thenReturn(false);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(2L), any()))
+            .thenReturn(true);
+        
+        manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v2", false);
+        
+        ArgumentCaptor<AiResource> retryCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(2L), retryCaptor.capture());
+        ResourceVersionInfo savedInfo =
+            JacksonUtils.toObj(retryCaptor.getValue().getVersionInfo(), ResourceVersionInfo.class);
+        assertEquals("v1", savedInfo.getLabels().get("stable"));
+        assertEquals("v2", savedInfo.getLabels().get(AiResourceConstants.LABEL_LATEST));
+    }
+    
     // ---- doForcePublish ----
     
     @Test
@@ -1802,6 +1836,40 @@ class AiResourceManagerTest {
     }
     
     @Test
+    void validateAndUpdateLabelsShouldPreserveLatestLabelOnCasRetry() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        
+        AiResource latestMeta = buildMeta("res");
+        latestMeta.setMetaVersion(2L);
+        latestMeta.setVersionInfo("{\"labels\":{\"latest\":\"v2\"},\"onlineCnt\":2}");
+        
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(meta, latestMeta);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any()))
+            .thenReturn(false);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(2L), any()))
+            .thenReturn(true);
+        
+        Map<String, String> labels = new LinkedHashMap<>();
+        labels.put("stable", "v1");
+        Map<String, String> effectiveLabels =
+            manager.validateAndUpdateLabels(NAMESPACE_ID, "res", RESOURCE_TYPE, labels);
+        
+        assertEquals("v1", effectiveLabels.get("stable"));
+        assertEquals("v2", effectiveLabels.get(AiResourceConstants.LABEL_LATEST));
+        ArgumentCaptor<AiResource> retryCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(2L), retryCaptor.capture());
+        ResourceVersionInfo savedInfo =
+            JacksonUtils.toObj(retryCaptor.getValue().getVersionInfo(), ResourceVersionInfo.class);
+        assertEquals("v1", savedInfo.getLabels().get("stable"));
+        assertEquals("v2", savedInfo.getLabels().get(AiResourceConstants.LABEL_LATEST));
+    }
+    
+    @Test
     void validateAndUpdateLabelsShouldThrowWhenPointingToEditing() {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":0}");
@@ -1942,6 +2010,49 @@ class AiResourceManagerTest {
         
         assertEquals(1, info.getOnlineCnt());
         assertEquals("1.1.0", info.getLabels().get(AiResourceConstants.LABEL_LATEST));
+    }
+    
+    @Test
+    void toggleVersionOnlineStatusShouldScanAllOnlineVersionPagesForLatest()
+        throws NacosException {
+        final AiResource meta = buildMeta("res");
+        ResourceVersionInfo info = new ResourceVersionInfo();
+        info.setOnlineCnt(502);
+        info.setLabels(new HashMap<>(Map.of(AiResourceConstants.LABEL_LATEST, "1.0.0")));
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion("1.0.0");
+        v.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0"))
+            .thenReturn(v);
+        
+        List<AiResourceVersion> firstPageItems = new ArrayList<>();
+        for (int i = 0; i < 500; i++) {
+            AiResourceVersion item = new AiResourceVersion();
+            item.setVersion("0.0." + i);
+            item.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
+            firstPageItems.add(item);
+        }
+        Page<AiResourceVersion> firstPage = new Page<>();
+        firstPage.setPageItems(firstPageItems);
+        AiResourceVersion maxVersion = new AiResourceVersion();
+        maxVersion.setVersion("2.0.0");
+        maxVersion.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
+        Page<AiResourceVersion> secondPage = new Page<>();
+        secondPage.setPageItems(List.of(maxVersion));
+        when(aiResourceVersionPersistService.list(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            AiResourceConstants.VERSION_STATUS_ONLINE, 1, 500)).thenReturn(firstPage);
+        when(aiResourceVersionPersistService.list(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            AiResourceConstants.VERSION_STATUS_ONLINE, 2, 500)).thenReturn(secondPage);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any())).thenReturn(true);
+        
+        manager.toggleVersionOnlineStatus(NAMESPACE_ID, meta, info, "1.0.0", false);
+        
+        assertEquals("2.0.0", info.getLabels().get(AiResourceConstants.LABEL_LATEST));
+        verify(aiResourceVersionPersistService).list(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            AiResourceConstants.VERSION_STATUS_ONLINE, 1, 500);
+        verify(aiResourceVersionPersistService).list(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            AiResourceConstants.VERSION_STATUS_ONLINE, 2, 500);
     }
     
     @Test
