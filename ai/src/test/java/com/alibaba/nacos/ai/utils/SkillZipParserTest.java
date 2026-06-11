@@ -75,6 +75,26 @@ class SkillZipParserTest {
     }
     
     @Test
+    void testParseSkillFromZipPrefersRootSkillMdOverNestedSkillMd() throws Exception {
+        // Given: nested SKILL.md appears before root SKILL.md in the zip entry order.
+        byte[] zipBytes = createZipWithRootAndNestedSkillMd();
+        
+        // When
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+        
+        // Then: root SKILL.md is the descriptor; nested SKILL.md remains a normal resource.
+        assertNotNull(skill);
+        assertEquals("root-skill", skill.getName());
+        assertEquals("Root skill description", skill.getDescription());
+        String nestedSkillMdKey = SkillUtils.generateResourceId("nested", "SKILL.md");
+        assertTrue(skill.getResource().containsKey(nestedSkillMdKey));
+        SkillResource nestedSkillMd = skill.getResource().get(nestedSkillMdKey);
+        assertEquals("SKILL.md", nestedSkillMd.getName());
+        assertEquals("nested", nestedSkillMd.getType());
+        assertTrue(nestedSkillMd.getContent().contains("Nested instructions"));
+    }
+    
+    @Test
     void testParseSkillFromZipWithResources() throws Exception {
         // Given
         byte[] zipBytes = createSkillZipWithResources();
@@ -195,6 +215,15 @@ class SkillZipParserTest {
     }
     
     @Test
+    void testResolveVersionFromZipPrefersRootSkillMdSiblingMetaJson() throws Exception {
+        byte[] zipBytes = createZipWithRootAndNestedSkillMdAndMetaJson();
+        
+        String version = SkillZipParser.resolveVersionFromZip(zipBytes);
+        
+        assertEquals("1.0.0", version);
+    }
+    
+    @Test
     void testParseYamlFrontMatterFromMarkdownSupportsMetadataVersion() {
         String markdown =
             "---\n" + "name: baidu-search\n" + "description: test\n" + "metadata:\n"
@@ -271,6 +300,23 @@ class SkillZipParserTest {
         assertNotNull(result.getSkills());
         assertEquals(1, result.getSkills().size());
         assertEquals("test-skill", result.getSkills().get(0).getName());
+        assertTrue(result.getFailures().isEmpty());
+    }
+    
+    @Test
+    void testParseMultipleSkillsFromZipWithRootSkillMdTreatsArchiveAsSingleSkill()
+        throws Exception {
+        byte[] zipBytes = createZipWithRootAndNestedSkillMd();
+        
+        SkillZipParser.MultiSkillParseResult result =
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
+        assertNotNull(result.getSkills());
+        assertEquals(1, result.getSkills().size());
+        Skill skill = result.getSkills().get(0);
+        assertEquals("root-skill", skill.getName());
+        String nestedSkillMdKey = SkillUtils.generateResourceId("nested", "SKILL.md");
+        assertTrue(skill.getResource().containsKey(nestedSkillMdKey));
         assertTrue(result.getFailures().isEmpty());
     }
     
@@ -471,6 +517,60 @@ class SkillZipParserTest {
                     + "  \"version\": \"" + metaVersion + "\",\n"
                     + "  \"publishedAt\": 1773828934466\n" + "}";
             zos.write(metaJson.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+    
+    private byte[] createZipWithRootAndNestedSkillMd() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("nested/SKILL.md");
+            zos.putNextEntry(entry);
+            String nestedSkillMd =
+                "---\n" + "name: nested-skill\n" + "description: Nested skill description\n"
+                    + "---\n\n" + "Nested instructions";
+            zos.write(nestedSkillMd.getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            String rootSkillMd =
+                "---\n" + "name: root-skill\n" + "description: Root skill description\n"
+                    + "---\n\n" + "Root instructions";
+            zos.write(rootSkillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+    
+    private byte[] createZipWithRootAndNestedSkillMdAndMetaJson() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("nested/SKILL.md");
+            zos.putNextEntry(entry);
+            String nestedSkillMd =
+                "---\n" + "name: nested-skill\n" + "description: Nested skill description\n"
+                    + "version: 9.9.9\n" + "---\n\n" + "Nested instructions";
+            zos.write(nestedSkillMd.getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("nested/_meta.json");
+            zos.putNextEntry(entry);
+            zos.write("{\"version\":\"9.9.9\"}".getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            String rootSkillMd =
+                "---\n" + "name: root-skill\n" + "description: Root skill description\n"
+                    + "---\n\n" + "Root instructions";
+            zos.write(rootSkillMd.getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("_meta.json");
+            zos.putNextEntry(entry);
+            zos.write("{\"version\":\"1.0.0\"}".getBytes());
             zos.closeEntry();
         }
         return baos.toByteArray();

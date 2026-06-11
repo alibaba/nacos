@@ -218,21 +218,10 @@ public class SkillZipParser {
         }
         try {
             List<ZipEntryData> entries = unzipToEntries(zipBytes);
-            String skillMdContent = null;
-            for (ZipEntryData entry : entries) {
-                String name = entry.name;
-                if (isMacOsMetadataFile(name)) {
-                    continue;
-                }
-                boolean isSkillMdFile = SKILL_MD_FILE.equals(name);
-                boolean isSkillMdInSubdir = name.endsWith(SLASH + SKILL_MD_FILE);
-                boolean endsWithSkillMd = name.endsWith(SKILL_MD_FILE);
-                boolean isSkillMd = isSkillMdFile || isSkillMdInSubdir;
-                if (endsWithSkillMd && isSkillMd) {
-                    skillMdContent = stripBom(new String(entry.data, StandardCharsets.UTF_8));
-                    break;
-                }
-            }
+            ZipEntryData skillMdEntry = findSkillMdEntry(entries);
+            String skillMdContent =
+                skillMdEntry == null ? null : stripBom(new String(skillMdEntry.data,
+                    StandardCharsets.UTF_8));
             
             if (StringUtils.isBlank(skillMdContent)) {
                 throw new NacosApiException(NacosApiException.INVALID_PARAM,
@@ -241,7 +230,8 @@ public class SkillZipParser {
             }
             
             Skill skill = parseSkillMarkdown(skillMdContent, namespaceId);
-            Map<String, SkillResource> resources = parseResources(entries, skill.getName());
+            Map<String, SkillResource> resources =
+                parseResources(entries, skill.getName(), skillMdEntry.name);
             skill.setResource(resources);
             
             return skill;
@@ -313,8 +303,9 @@ public class SkillZipParser {
                     "SKILL.md file not found in zip");
             }
             
-            // If only one SKILL.md, delegate to single-skill parsing (preserves existing behavior)
-            if (skillMdEntries.size() == 1) {
+            // If root SKILL.md exists, the archive is a single skill package. Nested SKILL.md files
+            // are regular resources referenced by the root descriptor.
+            if (containsRootSkillMdEntry(skillMdEntries)) {
                 MultiSkillParseResult result = new MultiSkillParseResult();
                 result.addSkill(parseSkillFromZip(zipBytes, namespaceId));
                 return result;
@@ -378,7 +369,7 @@ public class SkillZipParser {
                     // Filter entries belonging to this skill's directory
                     List<ZipEntryData> scopedEntries = filterEntriesByPrefix(entries, prefix);
                     Map<String, SkillResource> resources =
-                        parseResources(scopedEntries, skill.getName());
+                        parseResources(scopedEntries, skill.getName(), SKILL_MD_FILE);
                     skill.setResource(resources);
                     parseResult.addSkill(skill);
                 } catch (Exception e) {
@@ -552,19 +543,32 @@ public class SkillZipParser {
         if (entries == null || entries.isEmpty()) {
             return null;
         }
+        ZipEntryData firstNestedSkillMdEntry = null;
         for (ZipEntryData entry : entries) {
             String name = entry.name;
             if (isMacOsMetadataFile(name)) {
                 continue;
             }
-            boolean isSkillMdFile = SKILL_MD_FILE.equals(name);
-            boolean isSkillMdInSubdir = name.endsWith(SLASH + SKILL_MD_FILE);
-            boolean endsWithSkillMd = name.endsWith(SKILL_MD_FILE);
-            if (endsWithSkillMd && (isSkillMdFile || isSkillMdInSubdir)) {
+            if (SKILL_MD_FILE.equals(name)) {
                 return entry;
             }
+            if (firstNestedSkillMdEntry == null && name.endsWith(SLASH + SKILL_MD_FILE)) {
+                firstNestedSkillMdEntry = entry;
+            }
         }
-        return null;
+        return firstNestedSkillMdEntry;
+    }
+    
+    private static boolean containsRootSkillMdEntry(List<ZipEntryData> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return false;
+        }
+        for (ZipEntryData entry : entries) {
+            if (SKILL_MD_FILE.equals(entry.name)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     private static String buildSiblingMetaJsonPath(String skillMdPath) {
@@ -594,7 +598,7 @@ public class SkillZipParser {
      * Parse resources from zip entries. Text files use UTF-8 content; binary (by extension) use Base64 content and metadata encoding=base64.
      */
     private static Map<String, SkillResource> parseResources(List<ZipEntryData> entries,
-        String skillName) {
+        String skillName, String descriptorPath) {
         Map<String, SkillResource> resources = new HashMap<>(16);
         
         for (ZipEntryData entry : entries) {
@@ -602,7 +606,7 @@ public class SkillZipParser {
             if (isMacOsMetadataFile(itemName)) {
                 continue;
             }
-            if (itemName.endsWith(SKILL_MD_FILE) || itemName.endsWith("/")) {
+            if (itemName.equals(descriptorPath) || itemName.endsWith("/")) {
                 continue;
             }
             
