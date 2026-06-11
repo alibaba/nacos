@@ -765,8 +765,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     SkillContentDigestUtils.computeContentMd5(baseSkill)));
             
             // Step 3: Update meta's editingVersion pointer
-            info.setEditingVersion(newVersion);
-            resourceManager.updateVersionInfoCas(namespaceId, meta, info);
+            resourceManager.markEditingVersionCas(namespaceId, meta, info, newVersion,
+                "create draft");
         }
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, newVersion,
             AiResourceTraceService.OP_CREATE_DRAFT,

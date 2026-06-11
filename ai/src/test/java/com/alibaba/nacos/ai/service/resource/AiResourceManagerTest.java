@@ -51,6 +51,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -487,6 +488,58 @@ class AiResourceManagerTest {
         NacosApiException ex = assertThrows(NacosApiException.class,
             () -> manager.updateVersionInfoCas(NAMESPACE_ID, meta, new ResourceVersionInfo()));
         assertEquals(NacosException.SERVER_ERROR, ex.getErrCode());
+    }
+    
+    @Test
+    void markEditingVersionCasShouldPreserveLatestLabelOnCasRetry() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        AiResource latestMeta = buildMeta("res");
+        latestMeta.setMetaVersion(2L);
+        latestMeta.setVersionInfo(
+            "{\"labels\":{\"latest\":\"v2\",\"stable\":\"v1\"},\"onlineCnt\":2}");
+        
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any()))
+            .thenReturn(false);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(latestMeta);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(2L), any()))
+            .thenReturn(true);
+        
+        manager.markEditingVersionCas(NAMESPACE_ID, meta,
+            AiResourceManager.requireVersionInfo(meta), "v3", "create draft");
+        
+        ArgumentCaptor<AiResource> retryCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(2L), retryCaptor.capture());
+        ResourceVersionInfo savedInfo =
+            JacksonUtils.toObj(retryCaptor.getValue().getVersionInfo(), ResourceVersionInfo.class);
+        assertEquals("v3", savedInfo.getEditingVersion());
+        assertEquals("v2", savedInfo.getLabels().get(AiResourceConstants.LABEL_LATEST));
+        assertEquals("v1", savedInfo.getLabels().get("stable"));
+    }
+    
+    @Test
+    void markEditingVersionCasShouldThrowWhenWorkingVersionAppearsOnCasRetry() {
+        AiResource meta = buildMeta("res");
+        AiResource latestMeta = buildMeta("res");
+        latestMeta.setMetaVersion(2L);
+        latestMeta.setVersionInfo("{\"editingVersion\":\"other\",\"labels\":{},\"onlineCnt\":0}");
+        
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any()))
+            .thenReturn(false);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(latestMeta);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.markEditingVersionCas(NAMESPACE_ID, meta,
+                AiResourceManager.requireVersionInfo(meta), "v3", "create draft"));
+        assertEquals(NacosException.CONFLICT, ex.getErrCode());
+        verify(aiResourcePersistService, never()).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(2L), any());
     }
     
     // ---- updateBizTagsCas ----
@@ -1102,6 +1155,44 @@ class AiResourceManagerTest {
     }
     
     @Test
+    void doRedraftShouldPreserveLatestLabelOnCasRetry() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"reviewingVersion\":\"v1\",\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        AiResource latestMeta = buildMeta("res");
+        latestMeta.setMetaVersion(2L);
+        latestMeta.setVersionInfo(
+            "{\"reviewingVersion\":\"v1\",\"labels\":{\"latest\":\"v2\","
+                + "\"stable\":\"v1\"},\"onlineCnt\":2}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(meta, latestMeta);
+        
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion("v1");
+        v.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any()))
+            .thenReturn(false);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(2L), any()))
+            .thenReturn(true);
+        
+        manager.doRedraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1");
+        
+        ArgumentCaptor<AiResource> retryCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(2L), retryCaptor.capture());
+        ResourceVersionInfo savedInfo =
+            JacksonUtils.toObj(retryCaptor.getValue().getVersionInfo(), ResourceVersionInfo.class);
+        assertEquals("v1", savedInfo.getEditingVersion());
+        assertNull(savedInfo.getReviewingVersion());
+        assertEquals("v2", savedInfo.getLabels().get(AiResourceConstants.LABEL_LATEST));
+        assertEquals("v1", savedInfo.getLabels().get("stable"));
+    }
+    
+    @Test
     void doRedraftShouldThrowWhenVersionNotReviewed() {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
@@ -1129,6 +1220,48 @@ class AiResourceManagerTest {
         NacosApiException ex = assertThrows(NacosApiException.class,
             () -> manager.doRedraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99"));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    // ---- doDeleteDraft ----
+    
+    @Test
+    void doDeleteDraftShouldPreserveLatestLabelOnCasRetry() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"editingVersion\":\"v1\",\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        AiResource latestMeta = buildMeta("res");
+        latestMeta.setMetaVersion(2L);
+        latestMeta.setVersionInfo(
+            "{\"editingVersion\":\"v1\",\"labels\":{\"latest\":\"v2\","
+                + "\"stable\":\"v1\"},\"onlineCnt\":2}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(meta, latestMeta);
+        
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion("v1");
+        v.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any()))
+            .thenReturn(false);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(2L), any()))
+            .thenReturn(true);
+        
+        AtomicReference<String> deletedVersion = new AtomicReference<>();
+        manager.doDeleteDraft(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            version -> deletedVersion.set(version.getVersion()));
+        
+        ArgumentCaptor<AiResource> retryCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(2L), retryCaptor.capture());
+        ResourceVersionInfo savedInfo =
+            JacksonUtils.toObj(retryCaptor.getValue().getVersionInfo(), ResourceVersionInfo.class);
+        assertNull(savedInfo.getEditingVersion());
+        assertEquals("v2", savedInfo.getLabels().get(AiResourceConstants.LABEL_LATEST));
+        assertEquals("v1", savedInfo.getLabels().get("stable"));
+        assertEquals("v1", deletedVersion.get());
     }
     
     // ---- resolveBaseVersion ----
@@ -1440,6 +1573,44 @@ class AiResourceManagerTest {
             AiResourceConstants.VERSION_STATUS_REVIEWING);
         assertNull(info.getEditingVersion());
         assertEquals("v1", info.getReviewingVersion());
+    }
+    
+    @Test
+    void moveToReviewingShouldPreserveLatestLabelOnCasRetry() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"editingVersion\":\"v1\",\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
+        AiResource latestMeta = buildMeta("res");
+        latestMeta.setMetaVersion(2L);
+        latestMeta.setVersionInfo(
+            "{\"editingVersion\":\"v1\",\"labels\":{\"latest\":\"v2\","
+                + "\"stable\":\"v1\"},\"onlineCnt\":2}");
+        AiResourceVersion existing = new AiResourceVersion();
+        existing.setVersion("v1");
+        existing.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(existing);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(1L), any()))
+            .thenReturn(false);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(latestMeta);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            eq(2L), any()))
+            .thenReturn(true);
+        
+        manager.moveToReviewing(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", meta, info);
+        
+        ArgumentCaptor<AiResource> retryCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(2L), retryCaptor.capture());
+        ResourceVersionInfo savedInfo =
+            JacksonUtils.toObj(retryCaptor.getValue().getVersionInfo(), ResourceVersionInfo.class);
+        assertNull(savedInfo.getEditingVersion());
+        assertEquals("v1", savedInfo.getReviewingVersion());
+        assertEquals("v2", savedInfo.getLabels().get(AiResourceConstants.LABEL_LATEST));
+        assertEquals("v1", savedInfo.getLabels().get("stable"));
     }
     
     @Test
@@ -2197,7 +2368,8 @@ class AiResourceManagerTest {
         AiResource latestMeta = buildMeta("res");
         latestMeta.setDesc("new-desc");
         latestMeta.setMetaVersion(2L);
-        latestMeta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        latestMeta.setVersionInfo(
+            "{\"labels\":{\"latest\":\"v1\",\"stable\":\"v1\"},\"onlineCnt\":1}");
         when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
             eq(1L), any()))
             .thenReturn(false);
@@ -2214,6 +2386,11 @@ class AiResourceManagerTest {
         verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
             eq(RESOURCE_TYPE), eq(2L), captor.capture());
         assertEquals("new-desc", captor.getValue().getDesc());
+        ResourceVersionInfo savedInfo =
+            JacksonUtils.toObj(captor.getValue().getVersionInfo(), ResourceVersionInfo.class);
+        assertEquals("v2", savedInfo.getEditingVersion());
+        assertEquals("v1", savedInfo.getLabels().get(AiResourceConstants.LABEL_LATEST));
+        assertEquals("v1", savedInfo.getLabels().get("stable"));
     }
     
     // ---- deleteResourceWithVersions ----

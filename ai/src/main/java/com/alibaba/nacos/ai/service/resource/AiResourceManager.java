@@ -185,6 +185,12 @@ public class AiResourceManager {
     
     private void updateVersionInfoCas(String namespaceId, AiResource meta,
         ResourceVersionInfo initialInfo, VersionInfoMutator mutator) throws NacosException {
+        updateVersionInfoCas(namespaceId, meta, initialInfo, mutator, null);
+    }
+    
+    private void updateVersionInfoCas(String namespaceId, AiResource meta,
+        ResourceVersionInfo initialInfo, VersionInfoMutator mutator,
+        BiConsumer<AiResource, AiResource> valueCustomizer) throws NacosException {
         if (meta == null || meta.getMetaVersion() == null) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
                 "Meta version missing");
@@ -196,6 +202,9 @@ public class AiResourceManager {
                 i == 0 && initialInfo != null ? initialInfo : requireVersionInfo(latestMeta);
             ResourceVersionInfo nextInfo = mutator.mutate(latestInfo);
             AiResource newValue = buildVersionInfoUpdateValue(latestMeta, nextInfo);
+            if (valueCustomizer != null) {
+                valueCustomizer.accept(newValue, latestMeta);
+            }
             if (aiResourcePersistService.updateMetaCas(namespaceId, meta.getName(), meta.getType(),
                 expected, newValue)) {
                 return;
@@ -683,6 +692,21 @@ public class AiResourceManager {
     }
     
     /**
+     * Set the editingVersion pointer for a newly created draft using mutator CAS.
+     *
+     * <p>CAS retries re-read the latest versionInfo and re-check that no working version appeared,
+     * so concurrent lifecycle or label updates cannot be overwritten by a stale versionInfo.</p>
+     */
+    public void markEditingVersionCas(String namespaceId, AiResource meta,
+        ResourceVersionInfo initialInfo, String version, String action) throws NacosException {
+        updateVersionInfoCas(namespaceId, meta, initialInfo, latestInfo -> {
+            ensureNoWorkingVersion(latestInfo, action);
+            latestInfo.setEditingVersion(version);
+            return latestInfo;
+        });
+    }
+    
+    /**
      * Publish a version directly (bypass pipeline). Sets version online, clears editing/reviewing pointers,
      * increments onlineCnt, and updates the server-managed latest label.
      *
@@ -773,9 +797,14 @@ public class AiResourceManager {
         requireDraftVersion(namespaceId, name, type, version);
         aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
             AiResourceConstants.VERSION_STATUS_REVIEWING);
-        info.setEditingVersion(null);
-        info.setReviewingVersion(version);
-        updateVersionInfoCas(namespaceId, meta, info);
+        updateVersionInfoCas(namespaceId, meta, info, latestInfo -> {
+            ensureNoOtherWorkingVersion(latestInfo, version, "submit review");
+            if (StringUtils.equals(latestInfo.getEditingVersion(), version)) {
+                latestInfo.setEditingVersion(null);
+            }
+            latestInfo.setReviewingVersion(version);
+            return latestInfo;
+        });
         AiResourceTraceService.logSuccess(type, name, version,
             AiResourceTraceService.OP_SUBMIT_REVIEW,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
@@ -1158,25 +1187,16 @@ public class AiResourceManager {
                     "Meta version missing");
             }
             ResourceVersionInfo info = requireVersionInfo(existedMeta);
-            info.setEditingVersion(version);
             boolean syncDescription = StringUtils.isNotBlank(description);
-            AiResource newValue = new AiResource();
-            newValue.setStatus(existedMeta.getStatus());
-            newValue.setDesc(syncDescription ? description : existedMeta.getDesc());
-            newValue.setBizTags(existedMeta.getBizTags());
-            newValue.setExt(existedMeta.getExt());
-            newValue.setVersionInfo(JacksonUtils.toJson(info));
-            CasResult result = doCasLoop(namespaceId, existedMeta.getName(), existedMeta.getType(),
-                existedMeta.getMetaVersion(), newValue,
-                (nv, latest) -> {
-                    nv.setStatus(latest.getStatus());
-                    if (!syncDescription) {
-                        nv.setDesc(latest.getDesc());
-                    }
-                    nv.setBizTags(latest.getBizTags());
-                    nv.setExt(latest.getExt());
-                });
-            handleStrictCasResult(result);
+            updateVersionInfoCas(namespaceId, existedMeta, info, latestInfo -> {
+                ensureNoEditingVersion(latestInfo, "create draft");
+                latestInfo.setEditingVersion(version);
+                return latestInfo;
+            }, (newValue, latestMeta) -> {
+                if (syncDescription) {
+                    newValue.setDesc(description);
+                }
+            });
         }
     }
     
@@ -1222,6 +1242,38 @@ public class AiResourceManager {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                 "There is already a working version (editing/reviewing), cannot " + action);
         }
+    }
+    
+    private static void ensureNoEditingVersion(ResourceVersionInfo info, String action)
+        throws NacosException {
+        if (StringUtils.isNotBlank(info.getEditingVersion())) {
+            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                "There is already an editing version, cannot " + action);
+        }
+    }
+    
+    private static void ensureNoOtherWorkingVersion(ResourceVersionInfo info, String version,
+        String action)
+        throws NacosException {
+        if ((StringUtils.isNotBlank(info.getEditingVersion())
+            && !StringUtils.equals(info.getEditingVersion(), version))
+            || (StringUtils.isNotBlank(info.getReviewingVersion())
+                && !StringUtils.equals(info.getReviewingVersion(), version))) {
+            throwWorkingVersionConflict(action, version);
+        }
+    }
+    
+    private static void ensureWorkingVersionMatches(String actual, String expected, String action)
+        throws NacosException {
+        if (!StringUtils.equals(actual, expected)) {
+            throwWorkingVersionConflict(action, expected);
+        }
+    }
+    
+    private static void throwWorkingVersionConflict(String action, String version)
+        throws NacosException {
+        throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+            "Working version changed, cannot " + action + ": " + version);
     }
     
     /**
@@ -1346,9 +1398,17 @@ public class AiResourceManager {
         }
         
         if (StringUtils.equals(info.getReviewingVersion(), version)) {
-            info.setReviewingVersion(null);
-            info.setEditingVersion(version);
-            updateVersionInfoCas(namespaceId, meta, info);
+            updateVersionInfoCas(namespaceId, meta, info, latestInfo -> {
+                ensureWorkingVersionMatches(latestInfo.getReviewingVersion(), version,
+                    "redraft");
+                if (StringUtils.isNotBlank(latestInfo.getEditingVersion())
+                    && !StringUtils.equals(latestInfo.getEditingVersion(), version)) {
+                    throwWorkingVersionConflict("redraft", version);
+                }
+                latestInfo.setReviewingVersion(null);
+                latestInfo.setEditingVersion(version);
+                return latestInfo;
+            });
         }
         
         AiResourceTraceService.logSuccess(type, name, version,
@@ -1389,8 +1449,15 @@ public class AiResourceManager {
                     .equalsIgnoreCase(rv.getStatus()))) {
                 return;
             }
-            info.setReviewingVersion(null);
-            updateVersionInfoCas(namespaceId, meta, info);
+            updateVersionInfoCas(namespaceId, meta, info, latestInfo -> {
+                if (StringUtils.isNotBlank(latestInfo.getEditingVersion())) {
+                    throwWorkingVersionConflict("delete draft", reviewing);
+                }
+                ensureWorkingVersionMatches(latestInfo.getReviewingVersion(), reviewing,
+                    "delete draft");
+                latestInfo.setReviewingVersion(null);
+                return latestInfo;
+            });
             storageDeleter.deleteStorage(rv);
             deleteVersion(namespaceId, name, type, reviewing);
             AiResourceTraceService.logSuccess(type, name, reviewing,
@@ -1404,8 +1471,12 @@ public class AiResourceManager {
             aiResourceVersionPersistService.find(namespaceId, name, type, editing);
         
         // Clear meta pointer first
-        info.setEditingVersion(null);
-        updateVersionInfoCas(namespaceId, meta, info);
+        updateVersionInfoCas(namespaceId, meta, info, latestInfo -> {
+            ensureWorkingVersionMatches(latestInfo.getEditingVersion(), editing,
+                "delete draft");
+            latestInfo.setEditingVersion(null);
+            return latestInfo;
+        });
         
         // Delete version row and storage only if status is draft
         if (v != null && AiResourceConstants.VERSION_STATUS_DRAFT

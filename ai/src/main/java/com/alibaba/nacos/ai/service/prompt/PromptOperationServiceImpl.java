@@ -19,7 +19,6 @@ package com.alibaba.nacos.ai.service.prompt;
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.LABEL_LATEST;
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.VERSION_STATUS_DRAFT;
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.VERSION_STATUS_ONLINE;
-import static com.alibaba.nacos.ai.constant.AiResourceConstants.VERSION_STATUS_REVIEWING;
 import static com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT;
 
 import com.alibaba.nacos.ai.config.PromptDataMigrationTask;
@@ -159,11 +158,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         // Existing prompt
         VisibilityHelper.checkWritableResource(meta);
         PromptVersionInfoPojo info = requireVersionInfo(meta);
-        if (StringUtils.isNotBlank(info.getEditingVersion())
-            || StringUtils.isNotBlank(info.getReviewingVersion())) {
-            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
-                "There is already a working version (editing/reviewing), cannot create draft");
-        }
+        ResourceVersionInfo resourceInfo = toResourceVersionInfo(info);
+        AiResourceManager.ensureNoWorkingVersion(resourceInfo, "create draft");
         
         if (StringUtils.isNotBlank(basedOnVersion)) {
             // Fork from existing version
@@ -189,8 +185,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 VERSION_STATUS_DRAFT, newVersion, commitMsg,
                 buildStorageJson(namespaceId, promptKey, newVersion));
             
-            info.setEditingVersion(newVersion);
-            updateMetaVersionInfoCas(namespaceId, meta, info);
+            resourceManager.markEditingVersionCas(namespaceId, meta, resourceInfo, newVersion,
+                "create draft");
             AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, newVersion,
                 AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
                 VisibilityHelper.resolveClientIp(), "basedOn=" + basedOnVersion);
@@ -215,8 +211,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             VERSION_STATUS_DRAFT, newVersion, commitMsg,
             buildStorageJson(namespaceId, promptKey, newVersion));
         
-        info.setEditingVersion(newVersion);
-        updateMetaVersionInfoCas(namespaceId, meta, info);
+        resourceManager.markEditingVersionCas(namespaceId, meta, resourceInfo, newVersion,
+            "create draft");
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, newVersion,
             AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
@@ -271,28 +267,16 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResource meta = requireMeta(namespaceId, promptKey);
         VisibilityHelper.checkWritableResource(meta);
         PromptVersionInfoPojo info = requireVersionInfo(meta);
+        ResourceVersionInfo resourceInfo = toResourceVersionInfo(info);
         
-        String target = version;
-        if (StringUtils.isBlank(target)) {
-            target = info.getEditingVersion();
-        }
-        if (StringUtils.isBlank(target)) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "No draft version to submit for prompt: " + promptKey);
-        }
-        
-        // Guard: only draft version can be submitted for review (throws on missing / non-draft).
-        resourceManager.requireDraftVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, target);
-        
+        String target =
+            resourceManager.resolveSubmitTarget(resourceInfo, version, RESOURCE_TYPE_PROMPT,
+                promptKey);
         final String finalTarget = target;
         
         // Move to reviewing before pipeline execution
-        resourceManager.updateVersionStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
-            finalTarget,
-            VERSION_STATUS_REVIEWING);
-        info.setEditingVersion(null);
-        info.setReviewingVersion(finalTarget);
-        updateMetaVersionInfoCas(namespaceId, meta, info);
+        resourceManager.moveToReviewing(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, finalTarget,
+            meta, resourceInfo);
         
         // Build pipeline context
         ResourceFilesPipelineContext ctx = new ResourceFilesPipelineContext();
@@ -853,12 +837,6 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         } catch (Exception e) {
             return null;
         }
-    }
-    
-    private void updateMetaVersionInfoCas(String namespaceId, AiResource meta,
-        PromptVersionInfoPojo info)
-        throws NacosException {
-        resourceManager.updateVersionInfoCas(namespaceId, meta, toResourceVersionInfo(info));
     }
     
     private void updateMetaBizTagsCas(String namespaceId, AiResource meta, String bizTags)
