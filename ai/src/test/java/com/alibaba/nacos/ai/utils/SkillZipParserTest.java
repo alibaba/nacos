@@ -289,6 +289,26 @@ class SkillZipParserTest {
     }
     
     @Test
+    void testParseSkillFromZipStripsWrapperDirectoryFromResources() throws Exception {
+        // Given
+        byte[] zipBytes = createSkillZipWithWrapperDirectoryResources();
+        
+        // When
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+        
+        // Then
+        String readmeKey = SkillUtils.generateResourceId("references", "readme.md");
+        assertNotNull(skill);
+        assertNotNull(skill.getResource());
+        assertTrue(skill.getResource().containsKey(readmeKey));
+        SkillResource readme = skill.getResource().get(readmeKey);
+        assertEquals("references", readme.getType());
+        assertEquals("readme.md", readme.getName());
+        assertFalse(skill.getResource().keySet().stream()
+            .anyMatch(k -> k.contains("upload-wrapper")));
+    }
+    
+    @Test
     void testParseSkillFromZipTreatsNestedSkillDirectoryAsResources() throws Exception {
         // Given: zip with a nested directory that also contains SKILL.md
         byte[] zipBytes = createSkillZipWithNestedSkillDirectory();
@@ -848,6 +868,25 @@ class SkillZipParserTest {
             entry = new ZipEntry("test-skill/LICENSE.txt");
             zos.putNextEntry(entry);
             zos.write("MIT License\nCopyright (c) 2025".getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+    
+    private byte[] createSkillZipWithWrapperDirectoryResources() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("upload-wrapper/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd =
+                "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("upload-wrapper/references/readme.md");
+            zos.putNextEntry(entry);
+            zos.write("# Readme".getBytes());
             zos.closeEntry();
         }
         return baos.toByteArray();

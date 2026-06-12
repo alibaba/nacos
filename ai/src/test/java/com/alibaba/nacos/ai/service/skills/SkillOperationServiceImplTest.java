@@ -300,6 +300,22 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
+    void testUploadSkillFromZipStripsWrapperDirectoryFromStorage()
+        throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithWrapperDirectoryResources();
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString()))
+            .thenReturn(null);
+        
+        String result = uploadSkill(namespaceId, zipBytes);
+        
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+            && inserted.getStorage().contains("\"references/readme.md\"")
+            && !inserted.getStorage().contains("upload-wrapper")));
+    }
+    
+    @Test
     void testUploadSkillFromZipWithCommitMsgCreatesDraftDesc()
         throws NacosException, IOException {
         String namespaceId = "test-namespace";
@@ -779,6 +795,28 @@ class SkillOperationServiceImplTest {
                 zos.write(metaJson.getBytes());
                 zos.closeEntry();
             }
+        }
+        return baos.toByteArray();
+    }
+    
+    private byte[] createZipBytesWithWrapperDirectoryResources() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("upload-wrapper/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                + "name: test-skill\n"
+                + "description: Test skill description\n"
+                + "version: 3.0.6\n"
+                + "---\n\n"
+                + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+            
+            entry = new ZipEntry("upload-wrapper/references/readme.md");
+            zos.putNextEntry(entry);
+            zos.write("# Readme".getBytes());
+            zos.closeEntry();
         }
         return baos.toByteArray();
     }

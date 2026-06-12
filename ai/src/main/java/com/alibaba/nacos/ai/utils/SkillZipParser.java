@@ -235,8 +235,10 @@ public class SkillZipParser {
             }
             
             Skill skill = parseSkillMarkdown(skillMdContent, namespaceId);
+            List<ZipEntryData> resourceEntries =
+                filterEntriesByPrefix(entries, getSkillPrefix(skillMdEntry.name));
             Map<String, SkillResource> resources =
-                parseResources(entries, skill.getName(), skillMdEntry.name);
+                parseResources(resourceEntries, skill.getName(), SKILL_MD_FILE);
             skill.setResource(resources);
             
             return skill;
