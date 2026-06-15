@@ -20,6 +20,9 @@ This document defines how the Java SDK implements the shared
 [SDK Spec](./sdk-spec.md). It covers both the Java Client SDK and the Java
 Maintainer SDK.
 
+JSON serialization compatibility for the Java SDK is defined by the
+[Java SDK JSON Adapter Spec](./sdk-java-json-adapter-spec.md).
+
 ## 1. Scope
 
 The Java SDK has two public families:
@@ -284,6 +287,10 @@ resource management belongs to `AiMaintainerService`.
 
 - `api`, `client`, and `plugin` modules remain Java 8 compatible unless the
   module policy changes.
+- Java SDK JSON serialization and deserialization must go through the neutral
+  JSON adapter model defined by the
+  [Java SDK JSON Adapter Spec](./sdk-java-json-adapter-spec.md). New public
+  SDK APIs must not expose concrete Jackson core/databind types.
 - Server-side and maintainer modules follow the repository Java version policy.
 - Newly added API methods on Client SDK and Maintainer SDK service interfaces
   (`XxxService`) must declare `@Since` with the first Nacos version that
