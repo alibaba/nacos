@@ -16,51 +16,142 @@
 
 package com.alibaba.nacos.client.monitor;
 
-import io.prometheus.client.Counter;
-import io.prometheus.client.Gauge;
-import io.prometheus.client.Histogram;
-
 /**
  * Metrics Monitor.
+ *
+ * <p>Prometheus dependency is optional. If prometheus client is not on the
+ * classpath, all monitoring operations become no-ops.
  *
  * @author Nacos
  */
 public class MetricsMonitor {
     
-    private static final Gauge NACOS_MONITOR_GAUGE =
-        Gauge.build().name("nacos_monitor").labelNames("module", "name")
-            .help("nacos_monitor").register();
+    private static final boolean PROMETHEUS_AVAILABLE;
     
-    private static final Histogram NACOS_CLIENT_REQUEST_HISTOGRAM = Histogram.build()
-        .labelNames("module", "method", "url", "code").name("nacos_client_request")
-        .help("nacos_client_request")
-        .register();
-    
-    private static final Counter NACOS_CLIENT_NAMING_REQUEST_FAILED_TOTAL = Counter.build()
-        .name("nacos_client_naming_request_failed_total")
-        .help("nacos_client_naming_request_failed_total")
-        .labelNames("module", "req_class", "res_status", "res_code", "err_class").register();
-    
-    public static Gauge.Child getServiceInfoMapSizeMonitor() {
-        return NACOS_MONITOR_GAUGE.labels("naming", "serviceInfoMapSize");
+    static {
+        boolean available;
+        try {
+            Class.forName("io.prometheus.client.Counter");
+            available = true;
+        } catch (ClassNotFoundException e) {
+            available = false;
+        }
+        PROMETHEUS_AVAILABLE = available;
     }
     
-    public static Gauge.Child getListenConfigCountMonitor() {
-        return NACOS_MONITOR_GAUGE.labels("config", "listenConfigCount");
+    private static volatile Object gauge;
+    private static volatile Object histogram;
+    private static volatile Object counter;
+    
+    private static Object getOrInitGauge() {
+        if (gauge == null) {
+            synchronized (MetricsMonitor.class) {
+                if (gauge == null) {
+                    gauge = PrometheusMetricsHelper.createGauge("nacos_monitor",
+                        "nacos_monitor", "module", "name");
+                }
+            }
+        }
+        return gauge;
     }
     
-    public static Histogram.Child getConfigRequestMonitor(String method, String url, String code) {
-        return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("config", method, url, code);
+    private static Object getOrInitHistogram() {
+        if (histogram == null) {
+            synchronized (MetricsMonitor.class) {
+                if (histogram == null) {
+                    histogram = PrometheusMetricsHelper.createHistogram(
+                        "nacos_client_request", "nacos_client_request",
+                        "module", "method", "url", "code");
+                }
+            }
+        }
+        return histogram;
     }
     
-    public static Histogram.Child getNamingRequestMonitor(String method, String url, String code) {
-        return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("naming", method, url, code);
+    private static Object getOrInitCounter() {
+        if (counter == null) {
+            synchronized (MetricsMonitor.class) {
+                if (counter == null) {
+                    counter = PrometheusMetricsHelper.createCounter(
+                        "nacos_client_naming_request_failed_total",
+                        "nacos_client_naming_request_failed_total",
+                        "module", "req_class", "res_status", "res_code",
+                        "err_class");
+                }
+            }
+        }
+        return counter;
     }
     
-    public static Counter.Child getNamingRequestFailedMonitor(String reqClass, String resStatus,
-        String resCode,
-        String errClass) {
-        return NACOS_CLIENT_NAMING_REQUEST_FAILED_TOTAL.labels("naming", reqClass, resStatus,
-            resCode, errClass);
+    public static MetricsTimer getConfigRequestMonitor(String method, String url,
+        String code) {
+        if (!PROMETHEUS_AVAILABLE) {
+            return MetricsTimer.NOOP;
+        }
+        return PrometheusMetricsHelper.getHistogramChild(getOrInitHistogram(),
+            "config", method, url, code);
+    }
+    
+    public static MetricsTimer getNamingRequestMonitor(String method, String url,
+        String code) {
+        if (!PROMETHEUS_AVAILABLE) {
+            return MetricsTimer.NOOP;
+        }
+        return PrometheusMetricsHelper.getHistogramChild(getOrInitHistogram(),
+            "naming", method, url, code);
+    }
+    
+    /**
+     * Record the size of service info map.
+     *
+     * @param size the size of service info map
+     */
+    public static void recordServiceInfoMapSize(double size) {
+        if (!PROMETHEUS_AVAILABLE) {
+            return;
+        }
+        PrometheusMetricsHelper.setGaugeChild(getOrInitGauge(), size,
+            "naming", "serviceInfoMapSize");
+    }
+    
+    /**
+     * Record the count of listened configs.
+     *
+     * @param count the count of listened configs
+     */
+    public static void recordListenConfigCount(double count) {
+        if (!PROMETHEUS_AVAILABLE) {
+            return;
+        }
+        PrometheusMetricsHelper.setGaugeChild(getOrInitGauge(), count,
+            "config", "listenConfigCount");
+    }
+    
+    /**
+     * Record a failed naming request.
+     *
+     * @param reqClass  the request class name
+     * @param resStatus the response status
+     * @param resCode   the response code
+     * @param errClass  the error class name
+     */
+    public static void recordNamingRequestFailed(String reqClass, String resStatus,
+        String resCode, String errClass) {
+        if (!PROMETHEUS_AVAILABLE) {
+            return;
+        }
+        PrometheusMetricsHelper.incCounterChild(getOrInitCounter(),
+            "naming", reqClass, resStatus, resCode, errClass);
+    }
+    
+    /**
+     * Timer abstraction that wraps prometheus Histogram.Child observation.
+     */
+    public interface MetricsTimer {
+        
+        MetricsTimer NOOP = duration -> {
+        };
+        
+        void observe(double durationMs);
     }
 }

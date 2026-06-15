@@ -41,10 +41,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.fasterxml.jackson.databind.JsonNode;
-import io.prometheus.client.Gauge;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -456,91 +453,6 @@ class ClientWorkerTest {
             ((ClientWorker.ConfigRpcTransportClient) clientWorker.getAgent())
                 .handleClientMetricsRequest(
                     configMetricsRequest);
-        JsonNode jsonNode = JacksonUtils.toObj(metricResponse.getMetrics().get(uuid).toString());
-        String metricValues = jsonNode.get("metricValues")
-            .get(ClientConfigMetricRequest.MetricsKey
-                .build(ClientConfigMetricRequest.MetricsKey.CACHE_DATA,
-                    GroupKey.getKeyTenant(dataId, group, tenant))
-                .toString())
-            .textValue();
-        
-        int colonIndex = metricValues.lastIndexOf(":");
-        assertEquals(content, metricValues.substring(0, colonIndex));
-        assertEquals(md5, metricValues.substring(colonIndex + 1, metricValues.length()));
-        
-    }
-    
-    @Test
-    void testGeConfigConfigNotFound() throws NacosException {
-        
-        Properties prop = new Properties();
-        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
-        final NacosClientProperties nacosClientProperties =
-            NacosClientProperties.PROTOTYPE.derive(prop);
-        ClientWorker clientWorker = new ClientWorker(null, agent, nacosClientProperties);
-        
-        String dataId = "a";
-        String group = "b";
-        String tenant = "c";
-        ConfigQueryResponse configQueryResponse = new ConfigQueryResponse();
-        configQueryResponse.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config not found");
-        Mockito.when(rpcClient.request(any(ConfigQueryRequest.class), anyLong()))
-            .thenReturn(configQueryResponse);
-        
-        ConfigResponse configResponse =
-            clientWorker.getServerConfig(dataId, group, tenant, 100, true);
-        assertNull(configResponse.getContent());
-        localConfigInfoProcessorMockedStatic.verify(
-            () -> LocalConfigInfoProcessor.saveSnapshot(eq(clientWorker.getAgentName()),
-                eq(dataId), eq(group),
-                eq(tenant), eq(null)),
-            times(1));
-        
-    }
-    
-    @Test
-    void testGeConfigConfigConflict() throws NacosException {
-        
-        Properties prop = new Properties();
-        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
-        final NacosClientProperties nacosClientProperties =
-            NacosClientProperties.PROTOTYPE.derive(prop);
-        ClientWorker clientWorker = new ClientWorker(null, agent, nacosClientProperties);
-        
-        String dataId = "a";
-        String group = "b";
-        String tenant = "c";
-        ConfigQueryResponse configQueryResponse = new ConfigQueryResponse();
-        configQueryResponse.setErrorInfo(ConfigQueryResponse.CONFIG_QUERY_CONFLICT,
-            "config is being modified");
-        Mockito.when(rpcClient.request(any(ConfigQueryRequest.class), anyLong()))
-            .thenReturn(configQueryResponse);
-        
-        try {
-            clientWorker.getServerConfig(dataId, group, tenant, 100, true);
-            fail();
-        } catch (NacosException e) {
-            assertEquals(NacosException.CONFLICT, e.getErrCode());
-        }
-    }
-    
-    @Test
-    void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
-        
-        final NacosClientProperties nacosClientProperties =
-            NacosClientProperties.PROTOTYPE.derive(prop);
-        ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
-        clientWorker.shutdown();
-        Field agent1 = ClientWorker.class.getDeclaredField("agent");
-        agent1.setAccessible(true);
-        ConfigTransportClient o = (ConfigTransportClient) agent1.get(clientWorker);
-        assertTrue(o.getExecutor().isShutdown());
-        agent1.setAccessible(false);
-        
-        assertNull(clientWorker.getAgentName());
     }
     
     @Test

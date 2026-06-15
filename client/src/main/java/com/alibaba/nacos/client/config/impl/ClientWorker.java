@@ -336,7 +336,7 @@ public class ClientWorker implements Closeable {
         
         if (enableClientMetrics) {
             try {
-                MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+                MetricsMonitor.recordListenConfigCount(cacheMap.get().size());
             } catch (Throwable t) {
                 LOGGER.error("Failed to update metrics for listen config count", t);
             }
@@ -421,7 +421,7 @@ public class ClientWorker implements Closeable {
         
         if (enableClientMetrics) {
             try {
-                MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+                MetricsMonitor.recordListenConfigCount(cacheMap.get().size());
             } catch (Throwable t) {
                 LOGGER.error("Failed to update metrics for listen config count", t);
             }
@@ -477,7 +477,7 @@ public class ClientWorker implements Closeable {
         
         if (enableClientMetrics) {
             try {
-                MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+                MetricsMonitor.recordListenConfigCount(cacheMap.get().size());
             } catch (Throwable t) {
                 LOGGER.error("Failed to update metrics for listen config count", t);
             }
