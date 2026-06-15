@@ -8,6 +8,7 @@ import { serviceApi } from '@/api/service';
 import { useServiceStore } from '@/stores/service-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import type { Instance, InstanceListResponse, ClusterInfo, ServiceDetailInfo } from '@/types/service';
+import { patchInstance, removeInstance, type InstancesByCluster } from './instance-state';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,7 +114,7 @@ export default function ServiceDetailPage() {
   const [clusterPages, setClusterPages] = useState<Record<string, { pageNo: number; pageSize: number }>>({});
 
   // Per-cluster instance data (fetched separately via API)
-  const [instancesByCluster, setInstancesByCluster] = useState<Record<string, { list: Instance[]; total: number; loading: boolean }>>({});
+  const [instancesByCluster, setInstancesByCluster] = useState<InstancesByCluster>({});
 
   // Instance toggling state
   const [togglingInstances, setTogglingInstances] = useState<Set<string>>(new Set());
@@ -202,10 +203,6 @@ export default function ServiceDetailPage() {
   const refreshDetail = () => {
     fetchServiceDetail(activeNamespace, serviceName, groupName);
     // Instances will re-fetch via the useEffect on currentService change
-  };
-
-  const refreshClusterInstances = (clusterName: string) => {
-    fetchClusterInstances(clusterName);
   };
 
   // ===== Edit Service =====
@@ -320,8 +317,9 @@ export default function ServiceDetailPage() {
   };
 
   const handleEditInstanceSubmit = async () => {
+    let parsedMetadata: Record<string, string> = {};
     if (editInstanceForm.metadata.trim()) {
-      try { JSON.parse(editInstanceForm.metadata); } catch {
+      try { parsedMetadata = JSON.parse(editInstanceForm.metadata); } catch {
         toast.error(t('service.metadataInvalid'));
         return;
       }
@@ -342,7 +340,16 @@ export default function ServiceDetailPage() {
       });
       toast.success(t('service.instanceUpdateSuccess'));
       setEditInstanceOpen(false);
-      refreshDetail();
+      // Same stale-cache reason as toggleInstance (#15296): patch the confirmed
+      // values locally instead of refetching. An instance edit touches no
+      // service-level field, so the service detail refetch is dropped too.
+      setInstancesByCluster((prev) =>
+        patchInstance(prev, editInstanceCluster, editInstanceForm.ip, editInstanceForm.port, {
+          weight: editInstanceForm.weight,
+          enabled: editInstanceForm.enabled,
+          metadata: parsedMetadata,
+        }),
+      );
     } catch { /* interceptor */ } finally {
       setEditInstanceSubmitting(false);
     }
@@ -351,6 +358,7 @@ export default function ServiceDetailPage() {
   // ===== Toggle Instance Online/Offline =====
   const toggleInstance = async (clusterName: string, inst: Instance) => {
     const key = `${inst.ip}:${inst.port}`;
+    const nextEnabled = !inst.enabled;
     setTogglingInstances((prev) => new Set(prev).add(key));
     try {
       const metadata = inst.metadata && Object.keys(inst.metadata).length > 0
@@ -364,12 +372,19 @@ export default function ServiceDetailPage() {
         ip: inst.ip,
         port: inst.port,
         weight: inst.weight,
-        enabled: !inst.enabled,
+        enabled: nextEnabled,
         ephemeral: inst.ephemeral,
         metadata,
       });
       toast.success(t('service.instanceUpdateSuccess'));
-      refreshClusterInstances(clusterName);
+      // The instance list endpoint serves a cached view that lags an accepted
+      // write: the metadata change is applied asynchronously after the Raft
+      // commit (#15296). Refetching now would re-read the old enabled value and
+      // make the toggle look like it needs two clicks, so patch the confirmed
+      // value into local state instead, as the legacy console's InstanceTable does.
+      setInstancesByCluster((prev) =>
+        patchInstance(prev, clusterName, inst.ip, inst.port, { enabled: nextEnabled }),
+      );
     } catch { /* interceptor */ } finally {
       setTogglingInstances((prev) => {
         const next = new Set(prev);
@@ -398,16 +413,27 @@ export default function ServiceDetailPage() {
       const currentPage = getClusterPage(clusterName);
       const currentInstances = instancesByCluster[clusterName]?.list || [];
       if (currentInstances.length === 1 && currentPage.pageNo > 1) {
+        // Deleting the last row of a page > 1: the previous page is not held
+        // locally, so this branch must fetch. That page may still be served
+        // from the pre-delete cache (#15296); the removeInstance call below
+        // scrubs the deleted row if so. If the stale page lacks it, total can
+        // stay one too high (an extra empty page) until the next fetch — a
+        // milder glitch than re-rendering the deleted row.
         const previousPage = { ...currentPage, pageNo: currentPage.pageNo - 1 };
         setClusterPages((prev) => ({
           ...prev,
           [clusterName]: previousPage,
         }));
-        fetchClusterInstances(clusterName, previousPage);
-      } else {
-        refreshClusterInstances(clusterName);
+        await fetchClusterInstances(clusterName, previousPage);
       }
-      refreshDetail();
+      // Same stale-cache reason as toggleInstance (#15296): an immediate refetch
+      // can resurrect the just-deleted row, so drop it from local state instead.
+      // The service detail refetch is dropped too — the only service-level field
+      // a delete can change is the cluster set (a cluster losing its last
+      // instance), which the detail endpoint reads from the same lagging cache.
+      setInstancesByCluster((prev) =>
+        removeInstance(prev, clusterName, instance.ip, instance.port),
+      );
     } catch { /* interceptor */ } finally {
       setDeleteInstanceSubmitting(false);
     }
