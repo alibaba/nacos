@@ -16,7 +16,12 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -26,11 +31,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * GlobalExecutor tests: pass Runnables with a "tag" (e.g. AtomicBoolean) and verify the tag
- * is modified to confirm the runnable was executed. No EnvUtil mock.
- * Note: GlobalExecutor static init uses EnvUtil; these tests pass when run in the full core
- * test suite where the environment is already initialized.
+ * is modified to confirm the runnable was executed.
  */
 class GlobalExecutorTest {
+    
+    private static ConfigurableEnvironment cachedEnvironment;
+    
+    @BeforeAll
+    static void setUp() {
+        cachedEnvironment = EnvUtil.getEnvironment();
+        EnvUtil
+            .setEnvironment(null == cachedEnvironment ? new MockEnvironment() : cachedEnvironment);
+    }
+    
+    @AfterAll
+    static void tearDown() {
+        EnvUtil.setEnvironment(cachedEnvironment);
+    }
     
     @Test
     void runWithoutThreadRunsInCallerThreadAndTagIsSet() {
