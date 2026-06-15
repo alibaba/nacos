@@ -35,13 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class StringUtilsTest {
     
     @Test
-    void testNewStringForUtf8() {
-        String abc = "abc";
-        byte[] abcByte = abc.getBytes();
-        assertEquals(abc, StringUtils.newStringForUtf8(abcByte));
-    }
-    
-    @Test
     void isBlank() {
         assertTrue(StringUtils.isBlank(null));
         assertTrue(StringUtils.isBlank(""));

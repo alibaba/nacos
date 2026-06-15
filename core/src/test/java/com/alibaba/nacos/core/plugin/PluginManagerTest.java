@@ -463,7 +463,7 @@ class PluginManagerTest {
         PluginInfo info = new PluginInfo();
         info.setPluginId(pluginId);
         info.setPluginName(name);
-        info.setPluginType(PluginType.fromType(type));
+        info.setPluginType(pluginTypeOf(type));
         info.setClassName(plugin.getClass().getName());
         info.setCritical(false);
         info.setLoadTimestamp(System.currentTimeMillis());
@@ -489,7 +489,7 @@ class PluginManagerTest {
         PluginInfo info = new PluginInfo();
         info.setPluginId(pluginId);
         info.setPluginName(name);
-        info.setPluginType(PluginType.fromType(type));
+        info.setPluginType(pluginTypeOf(type));
         info.setClassName(instance.getClass().getName());
         info.setCritical(critical);
         info.setLoadTimestamp(System.currentTimeMillis());
@@ -504,6 +504,15 @@ class PluginManagerTest {
         
         Map<String, Boolean> states = getPluginStates();
         states.put(pluginId, enabled);
+    }
+    
+    private PluginType pluginTypeOf(String type) {
+        for (PluginType pluginType : PluginType.values()) {
+            if (pluginType.getType().equals(type)) {
+                return pluginType;
+            }
+        }
+        return null;
     }
     
     @SuppressWarnings("unchecked")

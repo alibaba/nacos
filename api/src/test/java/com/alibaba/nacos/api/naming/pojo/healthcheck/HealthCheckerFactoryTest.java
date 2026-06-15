@@ -91,12 +91,6 @@ class HealthCheckerFactoryTest {
         });
     }
     
-    @Test
-    void testCreateNoneHealthChecker() {
-        assertEquals(AbstractHealthChecker.None.class,
-            HealthCheckerFactory.createNoneHealthChecker().getClass());
-    }
-    
     private static class NoRegisterHealthChecker extends AbstractHealthChecker {
         
         private static final long serialVersionUID = 9020783491111797559L;

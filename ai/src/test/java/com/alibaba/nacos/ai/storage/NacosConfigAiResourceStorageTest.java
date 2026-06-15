@@ -204,9 +204,7 @@ class NacosConfigAiResourceStorageTest {
             NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL, skillName, "v2", "skill.json");
         NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
         assertEquals(SkillUtils.buildSkillVersionGroup(skillName, "v2"), parts.group());
-        String[] decoded = SkillUtils.decodeSkillGroupToNameAndVersion(parts.group());
-        assertEquals(skillName, decoded[0]);
-        assertEquals("v2", decoded[1]);
+        assertTrue(parts.group().startsWith(SkillUtils.SKILL_GROUP_PREFIX));
     }
     
     @Test

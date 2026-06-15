@@ -36,8 +36,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class PromptClientOperationServiceImpl implements PromptClientOperationService {
     
-    private static final String ENCODE_UTF8 = "UTF-8";
-    
     private final PromptOperationService promptOperationService;
     
     public PromptClientOperationServiceImpl(@Lazy PromptOperationService promptOperationService) {

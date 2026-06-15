@@ -76,22 +76,6 @@ public enum HealthCheckType {
         }
     }
     
-    /**
-     * Get health checker class from type.
-     *
-     * @param type type name of extend health checker
-     * @return registered class if have, otherwise default class
-     */
-    public static Class<? extends AbstractHealthChecker> ofHealthCheckerClass(String type) {
-        HealthCheckType enumType;
-        try {
-            enumType = valueOf(type);
-        } catch (Exception e) {
-            return EXTEND.get(type);
-        }
-        return enumType.healthCheckerClass;
-    }
-    
     public static List<Class<? extends AbstractHealthChecker>> getLoadedHealthCheckerClasses() {
         List<Class<? extends AbstractHealthChecker>> all = new ArrayList<>();
         for (HealthCheckType type : values()) {

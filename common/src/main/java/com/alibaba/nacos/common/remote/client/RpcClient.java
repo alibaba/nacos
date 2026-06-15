@@ -928,11 +928,6 @@ public abstract class RpcClient implements Closeable {
         return resolveServerInfo(serverAddress);
     }
     
-    protected ServerInfo currentRpcServer() {
-        String serverAddress = getServerListFactory().getCurrentServer();
-        return resolveServerInfo(serverAddress);
-    }
-    
     /**
      * resolve server info.
      *

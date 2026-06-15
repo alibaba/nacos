@@ -41,9 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiskUtilsTest {
     
-    private static final String TMP_PATH =
-        EnvUtils.getNacosHome() + File.separator + "data" + File.separator + "tmp" + File.separator;
-    
     private static File testFile;
     
     @BeforeAll

@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,47 +71,6 @@ class AbilityKeyTest {
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_MCP_REGISTRY.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_AGENT_REGISTRY.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_AGENT_CARD_V1.getName()));
-    }
-    
-    @Test
-    void testMapEnumForEmpty() {
-        Map<AbilityKey, Boolean> actual =
-            AbilityKey.mapEnum(AbilityMode.SERVER, Collections.emptyMap());
-        assertTrue(actual.isEmpty());
-    }
-    
-    @Test
-    void testMapEnum() {
-        Map<String, Boolean> mapStr = new HashMap<>();
-        mapStr.put("test-no-existed", true);
-        Map<AbilityKey, Boolean> enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        assertEquals(0, enumMap.size());
-        
-        mapStr.put(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), false);
-        mapStr.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
-        mapStr.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
-        mapStr.put(AbilityKey.SERVER_MCP_REGISTRY.getName(), true);
-        mapStr.put(AbilityKey.SERVER_AGENT_CARD_V1.getName(), true);
-        enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        assertFalse(enumMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK));
-        assertTrue(enumMap.get(AbilityKey.SERVER_FUZZY_WATCH));
-        assertTrue(enumMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
-        assertTrue(enumMap.get(AbilityKey.SERVER_MCP_REGISTRY));
-        assertTrue(enumMap.get(AbilityKey.SERVER_AGENT_CARD_V1));
-        
-        mapStr.clear();
-        mapStr.put(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), true);
-        mapStr.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
-        mapStr.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
-        mapStr.put(AbilityKey.SERVER_MCP_REGISTRY.getName(), true);
-        mapStr.put(AbilityKey.SERVER_AGENT_CARD_V1.getName(), true);
-        enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        assertTrue(enumMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK));
-        assertTrue(enumMap.get(AbilityKey.SERVER_FUZZY_WATCH));
-        assertTrue(enumMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
-        assertTrue(enumMap.get(AbilityKey.SERVER_MCP_REGISTRY));
-        assertTrue(enumMap.get(AbilityKey.SERVER_AGENT_CARD_V1));
-        
     }
     
     @Test

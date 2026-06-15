@@ -166,22 +166,6 @@ public enum AbilityKey {
         return ALL_ABILITIES.get(mode).containsKey(name);
     }
     
-    /**
-     * Map the string key to enum.
-     *
-     * @param abilities map
-     * @return enum map
-     */
-    public static Map<AbilityKey, Boolean> mapEnum(AbilityMode mode,
-        Map<String, Boolean> abilities) {
-        if (abilities == null || abilities.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        return abilities.entrySet().stream().filter(entry -> isLegalKey(mode, entry.getKey()))
-            .collect(
-                Collectors.toMap((entry) -> getEnum(mode, entry.getKey()), Map.Entry::getValue));
-    }
-    
     /**.
      * Map the string key to enum
      *

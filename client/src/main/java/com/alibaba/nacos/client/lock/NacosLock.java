@@ -50,15 +50,12 @@ public class NacosLock implements Lock {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosLock.class);
     
-    private static final long DEFAULT_LEASE_TIME_MS = 30000L;
-    
     /**
      * Timeout for each waitForNotification poll in the lock acquisition loop.
      *
      * <p>When waiting for a lock, the client polls waitForNotification with this timeout.
      * If no notification arrives within this window, the client re-sends the ACQUIRE request.
-     * This is independent of the lease time ({@link #DEFAULT_LEASE_TIME_MS}) and the server
-     * wait queue timeout ({@link #DEFAULT_SERVER_WAIT_TIME_MS}).
+     * This is independent of the server wait queue timeout ({@link #DEFAULT_SERVER_WAIT_TIME_MS}).
      */
     private static final long NOTIFICATION_POLL_TIMEOUT_MS = 60000L;
     
@@ -71,8 +68,7 @@ public class NacosLock implements Lock {
      * overhead and reduces the race window where a lock release notification could be
      * missed between eviction and re-registration.
      *
-     * <p>This is NOT the lease time. Lease time is controlled by {@link #DEFAULT_LEASE_TIME_MS}
-     * and the watchdog renewal mechanism.
+     * <p>This is NOT the lease time. Lease time is controlled by the watchdog renewal mechanism.
      */
     private static final long DEFAULT_SERVER_WAIT_TIME_MS = 300000L;
     

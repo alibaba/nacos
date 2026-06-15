@@ -66,6 +66,7 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  *
  * @author nkorange
  */
+@Deprecated
 public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private final NacosRestTemplate nacosRestTemplate =
@@ -93,12 +94,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private static final String PROTECT_THRESHOLD_PARAM = "protectThreshold";
     
-    private static final String CLUSTERS_PARAM = "clusters";
-    
-    private static final String CLIENT_IP_PARAM = "clientIP";
-    
-    private static final String HEALTHY_ONLY_PARAM = "healthyOnly";
-    
     private static final String REGISTER_ENABLE_PARAM = "enable";
     
     private final String namespaceId;
@@ -111,6 +106,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private boolean enableClientMetrics = true;
     
+    // TODO: Remove this deprecated HTTP naming proxy after naming client fully relies on gRPC.
     public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy,
         NamingServerListManager serverListManager,
         NacosClientProperties properties) {

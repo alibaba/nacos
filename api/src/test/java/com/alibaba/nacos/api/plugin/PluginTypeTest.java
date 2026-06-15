@@ -20,8 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginTypeTest {
     
@@ -100,26 +98,6 @@ class PluginTypeTest {
     void testAiResourceImportEnumValues() {
         assertEquals("ai-resource-import", PluginType.AI_RESOURCE_IMPORT.getType());
         assertEquals("AI resource import plugin", PluginType.AI_RESOURCE_IMPORT.getDescription());
-    }
-    
-    @Test
-    @DisplayName("test fromType with valid type")
-    void testFromTypeWithValidType() {
-        assertEquals(PluginType.AUTH, PluginType.fromType("auth"));
-        assertEquals(PluginType.ENCRYPTION, PluginType.fromType("encryption"));
-        assertEquals(PluginType.AI_PIPELINE, PluginType.fromType("ai-pipeline"));
-        assertEquals(PluginType.AI_STORAGE, PluginType.fromType("ai-storage"));
-        assertEquals(PluginType.AI_RESOURCE_IMPORT, PluginType.fromType("ai-resource-import"));
-    }
-    
-    @Test
-    @DisplayName("test fromType with invalid type throws exception")
-    void testFromTypeWithInvalidTypeThrowsException() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            PluginType.fromType("invalid-type");
-        });
-        assertTrue(exception.getMessage().contains("Unknown plugin type"));
-        assertTrue(exception.getMessage().contains("invalid-type"));
     }
     
     @Test

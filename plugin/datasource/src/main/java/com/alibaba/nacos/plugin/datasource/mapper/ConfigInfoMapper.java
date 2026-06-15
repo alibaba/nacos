@@ -54,7 +54,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param context sql paramMap
      * @return The sql of finding all dataId and group.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     default MapperResult findAllDataIdAndGroup(MapperContext context) {
         return new MapperResult("SELECT DISTINCT data_id, group_id FROM config_info",
             Collections.emptyList());
@@ -66,7 +68,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param context sql paramMap
      * @return The sql of querying the count of config_info.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     default MapperResult findConfigInfoByAppCountRows(MapperContext context) {
         Object tenantId = context.getWhereParameter(FieldConstant.TENANT_ID);
         Object appName = context.getWhereParameter(FieldConstant.APP_NAME);
@@ -80,7 +84,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param context The context of startRow, pageSize
      * @return The sql of querying configuration information based on group.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     MapperResult findConfigInfoByAppFetchRows(MapperContext context);
     
     /**
@@ -121,7 +127,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param context The context of startRow, pageSize
      * @return The sql of querying all configuration information.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     MapperResult findAllConfigKey(MapperContext context);
     
     /**
@@ -130,7 +138,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param context The context of startRow, pageSize
      * @return The sql of querying all configuration information by page.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     MapperResult findAllConfigInfoBaseFetchRows(MapperContext context);
     
     /**
@@ -166,7 +176,9 @@ public interface ConfigInfoMapper extends Mapper {
      * @param context The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime,
      *                endTime, content), the value is the key's value.
      * @return The sql of getting the count of config information.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     default MapperResult findChangeConfigCountRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
@@ -216,7 +228,9 @@ public interface ConfigInfoMapper extends Mapper {
      * @param context The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime,
      *                endTime, content, startTime, endTime), the value is the key's value.
      * @return The sql of getting config information according to the time period.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     MapperResult findChangeConfigFetchRows(MapperContext context);
     
     /**
@@ -226,7 +240,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param context The context of startRow, pageSize
      * @return The sql of listing group key md5 by page.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     MapperResult listGroupKeyMd5ByPageFetchRows(MapperContext context);
     
     /**
@@ -287,7 +303,9 @@ public interface ConfigInfoMapper extends Mapper {
      * @param context The map of params, the key is the parameter name(dataId, groupId, tenant_id, content), the value
      *                is the arbitrary object.
      * @return The sql of getting the count of config information.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     default MapperResult findConfigInfoBaseLikeCountRows(MapperContext context) {
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
@@ -319,7 +337,9 @@ public interface ConfigInfoMapper extends Mapper {
      * @param context The map of params, the key is the parameter name(dataId, groupId, tenant_id, content), the value
      *                is the key's value.
      * @return The sql of getting the config information.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     MapperResult findConfigInfoBaseLikeFetchRows(MapperContext context);
     
     /**
@@ -374,7 +394,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param context The context of startRow, pageSize
      * @return Query configuration information based on group.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     MapperResult findConfigInfoBaseByGroupFetchRows(MapperContext context);
     
     /**
@@ -428,7 +450,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param context The context of startRow, pageSize
      * @return Query all configuration information by page.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     MapperResult findAllConfigInfoFetchRows(MapperContext context);
     
     /**

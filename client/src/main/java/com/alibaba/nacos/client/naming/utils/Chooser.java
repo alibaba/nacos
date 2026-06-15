@@ -44,22 +44,6 @@ public class Chooser<K, T> {
     }
     
     /**
-     * Random get one item.
-     *
-     * @return item
-     */
-    public T random() {
-        List<T> items = ref.items;
-        if (items.size() == 0) {
-            return null;
-        }
-        if (items.size() == 1) {
-            return items.get(0);
-        }
-        return items.get(ThreadLocalRandom.current().nextInt(items.size()));
-    }
-    
-    /**
      * Random get one item with weight.
      *
      * @return item
