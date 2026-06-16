@@ -58,6 +58,15 @@ Last updated: 2026-06-16.
   - `mvn -pl common -am -Dtest=Jackson2JsonAdapterTest,Jackson3JsonAdapterTest -Dsurefire.failIfNoSpecifiedTests=false clean test`
   - `common/target/site/jacoco/jacoco.csv`: Jackson 2 and Jackson 3 adapter
     source files have `LINE_MISSED=0`.
+- 2026-06-16, stage 4 API cleanup:
+  - `mvn -pl api spotless:apply`
+  - `mvn -pl api spotless:check`
+  - `mvn -pl api -DskipTests compile`
+  - `mvn -pl api -Dtest=HealthCheckerFactoryTest,ConfigInfoTest test`
+  - `api/target/site/jacoco/jacoco.csv`: `HealthCheckerFactory` and
+    `ConfigBasicInfo` have `LINE_MISSED=0`.
+  - `mvn -pl api apache-rat:check`
+  - `mvn -pl api dependency:tree -Dincludes=com.fasterxml.jackson.core`
 
 ## Implementation Principles
 
@@ -198,7 +207,7 @@ Last updated: 2026-06-16.
 
 ### 3. Clean `nacos-api` Main Dependencies
 
-- `[ ]` Replace databind serializer annotations in public API models.
+- `[x]` Replace databind serializer annotations in public API models.
   - Files:
     - `api/src/main/java/com/alibaba/nacos/api/config/model/ConfigBasicInfo.java`
   - Plan:
@@ -208,7 +217,7 @@ Last updated: 2026-06-16.
   - Validation:
     - Model serialization unit test for `id` remains string-valued.
 
-- `[ ]` Migrate `HealthCheckerFactory` to neutral JSON.
+- `[x]` Migrate `HealthCheckerFactory` to neutral JSON.
   - Files:
     - `api/src/main/java/com/alibaba/nacos/api/naming/pojo/healthcheck/HealthCheckerFactory.java`
     - `api/src/main/java/com/alibaba/nacos/api/naming/pojo/healthcheck/HealthCheckType.java`
@@ -220,7 +229,7 @@ Last updated: 2026-06-16.
     - Health checker serialize / deserialize tests with built-in and registered
       custom subtype.
 
-- `[ ]` Remove Jackson core/databind from `api` main dependencies.
+- `[x]` Remove Jackson core/databind from `api` main dependencies.
   - Files:
     - `api/pom.xml`
   - Plan:
