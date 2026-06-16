@@ -23,6 +23,7 @@ import com.alibaba.nacos.test.consoleapi.ai.AiConsoleApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -69,9 +70,9 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 buildSkillZip(skillName, "1.0.0", "Duplicate body.", "duplicate guide")),
                 409, ErrorCode.RESOURCE_CONFLICT, "working version");
         JsonNode precheck = assertUploadResult(postJsonRaw(CONSOLE_SKILL_PATH
-                        + "/upload/precheck", Query.EMPTY,
-                precheckRequestJson(skillName, "1.0.0", "duplicate guide", "9.9.9")))
-                .get("data");
+                        + "/upload/batch/precheck", Query.EMPTY,
+                precheckRequestsJson(skillName, "1.0.0", "duplicate guide", "9.9.9")))
+                .get("data").get(0);
         assertEquals("WARNING", precheck.get("status").asText(), precheck.toString());
         assertEquals(skillName, precheck.get("skillName").asText(), precheck.toString());
         assertEquals("duplicate guide", precheck.get("description").asText(), precheck.toString());
@@ -160,7 +161,7 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         return query;
     }
     
-    private String precheckRequestJson(String skillName, String parsedVersion, String description,
+    private String precheckRequestsJson(String skillName, String parsedVersion, String description,
             String targetVersion) {
         Map<String, Object> request = new LinkedHashMap<>();
         request.put("namespaceId", DEFAULT_NAMESPACE);
@@ -169,7 +170,7 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         request.put("parsedVersion", parsedVersion);
         request.put("versionSource", "SKILL.md frontmatter");
         request.put("targetVersion", targetVersion);
-        return JacksonUtils.toJson(request);
+        return JacksonUtils.toJson(Collections.singletonList(request));
     }
 
     private void assertUploadSuccess(HttpResponse response, String skillName) {
