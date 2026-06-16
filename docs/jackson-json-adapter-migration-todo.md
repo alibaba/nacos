@@ -67,6 +67,13 @@ Last updated: 2026-06-16.
     `ConfigBasicInfo` have `LINE_MISSED=0`.
   - `mvn -pl api apache-rat:check`
   - `mvn -pl api dependency:tree -Dincludes=com.fasterxml.jackson.core`
+- 2026-06-16, stage 5 common gRPC JSON cleanup:
+  - `mvn -pl common spotless:apply`
+  - `mvn -pl common spotless:check`
+  - `mvn -pl common -am -Dtest=GrpcUtilsTest,ByteBufferInputStreamTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `common/target/site/jacoco/jacoco.csv`: `GrpcUtils` and
+    `ByteBufferInputStream` have `LINE_MISSED=0`.
+  - `mvn -pl common apache-rat:check`
 
 ## Implementation Principles
 
@@ -243,17 +250,18 @@ Last updated: 2026-06-16.
 
 ### 4. Migrate Common and Client Runtime Usage
 
-- `[ ]` Replace Jackson `ByteBufferBackedInputStream`.
+- `[x]` Replace Jackson `ByteBufferBackedInputStream`.
   - Files:
     - `common/src/main/java/com/alibaba/nacos/common/remote/client/grpc/GrpcUtils.java`
     - New helper such as
       `common/src/main/java/com/alibaba/nacos/common/utils/ByteBufferInputStream.java`
   - Plan:
-    - Add a small Nacos-owned `InputStream` over `ByteBuffer` or switch to a
-      byte-array path if the copy is acceptable.
-    - Use neutral `JsonUtils.toObj(...)` in the parse path.
+    - Add a small Nacos-owned `InputStream` over `ByteBuffer`.
+    - Use neutral `JsonUtils` in the gRPC payload serialization and parse
+      paths.
   - Validation:
     - Existing gRPC payload conversion tests.
+    - Unit tests for the Nacos-owned `ByteBufferInputStream`.
 
 - `[ ]` Remove `JavaType` from `AbstractNacosRestTemplate`.
   - Files:
