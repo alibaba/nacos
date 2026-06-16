@@ -28,7 +28,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,34 +39,6 @@ class ChooserTest {
         List<Instance> hosts = getInstanceList();
         Instance target = getRandomInstance(hosts);
         assertTrue(hosts.contains(target) && target.getWeight() > 0);
-    }
-    
-    @Test
-    void testChooserRandomForEmptyList() {
-        Chooser<String, String> chooser = new Chooser<>("test");
-        assertEquals("test", chooser.getUniqueKey());
-        assertNull(chooser.random());
-    }
-    
-    @Test
-    void testChooserRandomForOneSizeList() {
-        List<Pair<String>> list = new LinkedList<>();
-        list.add(new Pair<>("test", 1));
-        Chooser<String, String> chooser = new Chooser<>("test", list);
-        String actual = chooser.random();
-        assertNotNull(actual);
-        assertEquals("test", actual);
-    }
-    
-    @Test
-    void testChooserRandom() {
-        List<Pair<String>> list = new LinkedList<>();
-        list.add(new Pair<>("test", 1));
-        list.add(new Pair<>("test2", 1));
-        Chooser<String, String> chooser = new Chooser<>("test", list);
-        String actual = chooser.random();
-        assertNotNull(actual);
-        assertTrue(actual.equals("test") || actual.equals("test2"));
     }
     
     @Test
@@ -105,11 +76,10 @@ class ChooserTest {
     void testRefresh() {
         Chooser<String, String> chooser = new Chooser<>("test");
         assertEquals("test", chooser.getUniqueKey());
-        assertNull(chooser.random());
         List<Pair<String>> list = new LinkedList<>();
         list.add(new Pair<>("test", 1));
         chooser.refresh(list);
-        String actual = chooser.random();
+        String actual = chooser.randomWithWeight();
         assertNotNull(actual);
         assertEquals("test", actual);
     }

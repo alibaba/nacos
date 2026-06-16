@@ -96,19 +96,4 @@ public enum PluginType {
         return description;
     }
     
-    /**
-     * Get PluginType from type string.
-     *
-     * @param type type string
-     * @return PluginType
-     * @throws IllegalArgumentException if type is unknown
-     */
-    public static PluginType fromType(String type) {
-        for (PluginType pt : values()) {
-            if (pt.type.equals(type)) {
-                return pt;
-            }
-        }
-        throw new IllegalArgumentException("Unknown plugin type: " + type);
-    }
 }

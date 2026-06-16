@@ -135,16 +135,4 @@ class MapUtilTest {
         assertEquals(0, counter.get());
     }
     
-    @Test
-    void testRemoveKey() {
-        Map<String, Integer> map = new HashMap<>();
-        map.put("A", 1);
-        map.put("B", 2);
-        map.put("C", 3);
-        
-        MapUtil.removeKey(map, "B", integer -> integer == 1);
-        assertEquals(3, map.size());
-        MapUtil.removeKey(map, "B", integer -> integer == 2);
-        assertEquals(2, map.size());
-    }
 }

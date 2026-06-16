@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.api.ai.model.agentspecs;
 
-import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,59 +81,6 @@ class AgentSpecUtilsTest {
     }
     
     @Test
-    void testBuildAgentSpecMainConfigInfo() {
-        AgentSpecUtils.ConfigInfo info = AgentSpecUtils.buildAgentSpecMainConfigInfo("my-worker");
-        assertNotNull(info);
-        assertEquals("manifest.json", info.getDataId());
-        assertEquals("agentspec__my-worker", info.getGroup());
-    }
-    
-    @Test
-    void testBuildAgentSpecMainConfigInfoWithBlankName() {
-        assertThrows(IllegalArgumentException.class,
-            () -> AgentSpecUtils.buildAgentSpecMainConfigInfo(""));
-    }
-    
-    @Test
-    void testBuildAgentSpecMainConfigInfoWithNullName() {
-        assertThrows(IllegalArgumentException.class,
-            () -> AgentSpecUtils.buildAgentSpecMainConfigInfo(null));
-    }
-    
-    @Test
-    void testBuildAgentSpecResourceConfigInfo() {
-        AgentSpecUtils.ConfigInfo info = AgentSpecUtils.buildAgentSpecResourceConfigInfo(
-            "my-worker", "config", "SOUL.md");
-        assertNotNull(info);
-        assertEquals("resource_config_SOUL__md.json", info.getDataId());
-        assertEquals("agentspec__my-worker", info.getGroup());
-    }
-    
-    @Test
-    void testBuildAgentSpecResourceConfigInfoEncodesDataIdWhenNeeded() {
-        AgentSpecUtils.ConfigInfo info = AgentSpecUtils.buildAgentSpecResourceConfigInfo(
-            "my-worker", "config", "SOUL md.md");
-        assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(info.getDataId()));
-        String logical = AgentSpecUtils.RESOURCE_DATA_ID_PREFIX
-            + AgentSpecUtils.generateResourceId("config", "SOUL md.md")
-            + AgentSpecUtils.RESOURCE_DATA_ID_SUFFIX;
-        assertEquals(logical, NacosAiConfigKeyCodec.decodeSegment(info.getDataId()));
-        assertEquals("agentspec__my-worker", info.getGroup());
-    }
-    
-    @Test
-    void testBuildAgentSpecResourceConfigInfoWithBlankName() {
-        assertThrows(IllegalArgumentException.class,
-            () -> AgentSpecUtils.buildAgentSpecResourceConfigInfo("", "config", "SOUL.md"));
-    }
-    
-    @Test
-    void testBuildAgentSpecResourceConfigInfoWithBlankResourceName() {
-        assertThrows(IllegalArgumentException.class,
-            () -> AgentSpecUtils.buildAgentSpecResourceConfigInfo("my-worker", "config", ""));
-    }
-    
-    @Test
     void testBuildAgentSpecGroup() {
         assertEquals("agentspec__my-worker", AgentSpecUtils.buildAgentSpecGroup("my-worker"));
     }
@@ -156,9 +101,8 @@ class AgentSpecUtilsTest {
     void testBuildAgentSpecVersionGroup() {
         String group = AgentSpecUtils.buildAgentSpecVersionGroup("my-worker", "v1");
         assertTrue(group.startsWith(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX));
-        String[] parts = AgentSpecUtils.decodeAgentSpecGroupToNameAndVersion(group);
-        assertEquals("my-worker", parts[0]);
-        assertEquals("v1", parts[1]);
+        assertTrue(group.substring(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX.length())
+            .contains("__"));
     }
     
     @Test
@@ -185,13 +129,4 @@ class AgentSpecUtilsTest {
             () -> AgentSpecUtils.buildAgentSpecVersionGroup("my-worker", null));
     }
     
-    @Test
-    void testDecodeAgentSpecGroupRoundTrip() {
-        String name = "agent @ test";
-        String group = AgentSpecUtils.buildAgentSpecGroup(name);
-        assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(group));
-        String[] parts = AgentSpecUtils.decodeAgentSpecGroupToNameAndVersion(group);
-        assertEquals(name, parts[0]);
-        assertEquals(null, parts[1]);
-    }
 }

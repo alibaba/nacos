@@ -287,20 +287,6 @@ class VersionUtilsTest {
     }
     
     @Test
-    @DisplayName("nextVNumberVersion should increment highest vN")
-    void testNextVNumberVersionShouldIncrement() {
-        List<String> versions = Arrays.asList("v1", "v3", "v2");
-        assertEquals("v4", VersionUtils.nextVNumberVersion(versions));
-    }
-    
-    @Test
-    @DisplayName("nextVNumberVersion with empty list should return v1")
-    void testNextVNumberVersionWithEmptyListShouldReturnV1() {
-        assertEquals("v1", VersionUtils.nextVNumberVersion(Collections.emptyList()));
-        assertEquals("v1", VersionUtils.nextVNumberVersion(null));
-    }
-    
-    @Test
     @DisplayName("isGreaterVersion with vN format should compare correctly")
     void testIsGreaterVersionWithVNumberFormat() {
         assertTrue(VersionUtils.isGreaterVersion("v3", "v2"));

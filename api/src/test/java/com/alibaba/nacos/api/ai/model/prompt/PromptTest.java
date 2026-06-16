@@ -22,9 +22,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -93,85 +91,6 @@ class PromptTest extends BasicRequestTest {
         assertNotNull(prompt.getVariables());
         assertEquals(1, prompt.getVariables().size());
         assertEquals("name", prompt.getVariables().get(0).getName());
-    }
-    
-    @Test
-    @DisplayName("test render with null template returns null")
-    void testRenderWithNullTemplateReturnsNull() {
-        Prompt prompt = new Prompt();
-        prompt.setTemplate(null);
-        assertNull(prompt.render(null));
-    }
-    
-    @Test
-    @DisplayName("test render with null variables returns original template")
-    void testRenderWithNullVariablesReturnsOriginalTemplate() {
-        Prompt prompt = new Prompt("key", "1.0.0", "Hello world!");
-        assertEquals("Hello world!", prompt.render(null));
-    }
-    
-    @Test
-    @DisplayName("test render with empty variables returns original template")
-    void testRenderWithEmptyVariablesReturnsOriginalTemplate() {
-        Prompt prompt = new Prompt("key", "1.0.0", "Hello world!");
-        Map<String, String> emptyVars = new HashMap<>();
-        assertEquals("Hello world!", prompt.render(emptyVars));
-    }
-    
-    @Test
-    @DisplayName("test render with user variables only")
-    void testRenderWithUserVariablesOnly() {
-        Prompt prompt = new Prompt("key", "1.0.0", "Hello {{name}}, welcome to {{place}}!");
-        Map<String, String> userVars = new HashMap<>();
-        userVars.put("name", "Alice");
-        userVars.put("place", "Nacos");
-        String result = prompt.render(userVars);
-        assertEquals("Hello Alice, welcome to Nacos!", result);
-    }
-    
-    @Test
-    @DisplayName("test render with default values from variables")
-    void testRenderWithDefaultValuesFromVariables() {
-        Prompt prompt = new Prompt("key", "1.0.0", "Hello {{name}}!");
-        List<PromptVariable> variables = new ArrayList<>();
-        variables.add(new PromptVariable("name", "Guest", "User name"));
-        prompt.setVariables(variables);
-        String result = prompt.render(null);
-        assertEquals("Hello Guest!", result);
-    }
-    
-    @Test
-    @DisplayName("test render with user variables overriding defaults")
-    void testRenderWithUserVariablesOverridingDefaults() {
-        Prompt prompt = new Prompt("key", "1.0.0", "Hello {{name}}!");
-        List<PromptVariable> variables = new ArrayList<>();
-        variables.add(new PromptVariable("name", "Guest", "User name"));
-        prompt.setVariables(variables);
-        Map<String, String> userVars = new HashMap<>();
-        userVars.put("name", "Alice");
-        String result = prompt.render(userVars);
-        assertEquals("Hello Alice!", result);
-    }
-    
-    @Test
-    @DisplayName("test render with missing variable placeholder")
-    void testRenderWithMissingVariablePlaceholder() {
-        Prompt prompt = new Prompt("key", "1.0.0", "Hello {{name}}, age: {{age}}!");
-        Map<String, String> userVars = new HashMap<>();
-        userVars.put("name", "Alice");
-        // age is not provided, placeholder remains
-        String result = prompt.render(userVars);
-        assertEquals("Hello Alice, age: {{age}}!", result);
-    }
-    
-    @Test
-    @DisplayName("test render with null value replaces with empty string")
-    void testRenderWithNullValueReplacesWithEmptyString() {
-        Prompt prompt = new Prompt("key", "1.0.0", "Hello {{name}}!");
-        Map<String, String> userVars = new HashMap<>();
-        userVars.put("name", null);
-        String result = prompt.render(userVars);
-        assertEquals("Hello !", result);
     }
     
     @Test

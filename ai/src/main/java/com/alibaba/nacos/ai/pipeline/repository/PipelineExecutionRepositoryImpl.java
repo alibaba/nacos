@@ -118,21 +118,6 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
         return DynamicDataSource.getInstance().getDataSource().getDataSourceType();
     }
     
-    String buildSingleLatestSql() {
-        return appendFirstRowClause("SELECT * FROM pipeline_execution "
-            + "WHERE resource_type=? AND resource_name=? AND namespace_id=? AND version=? "
-            + "ORDER BY create_time DESC");
-    }
-    
-    String appendPageClause(String baseSql, int offset, int limit) {
-        String dataSourceType = getDataSourceType();
-        if (DataSourceConstant.DERBY.equalsIgnoreCase(dataSourceType)
-            || DataSourceConstant.ORACLE.equalsIgnoreCase(dataSourceType)) {
-            return baseSql + " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
-        }
-        return baseSql + " LIMIT " + limit + " OFFSET " + offset;
-    }
-    
     private String appendFirstRowClause(String baseSql) {
         String dataSourceType = getDataSourceType();
         if (DataSourceConstant.DERBY.equalsIgnoreCase(dataSourceType)

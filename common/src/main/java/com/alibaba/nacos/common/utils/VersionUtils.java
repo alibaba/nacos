@@ -333,16 +333,6 @@ public class VersionUtils {
     }
     
     /**
-     * Generate the next vN version string by incrementing the highest existing vN number.
-     *
-     * @param versions list of existing version strings
-     * @return next version string, e.g. "v4" if max is "v3"; returns "v1" if no vN versions exist
-     */
-    public static String nextVNumberVersion(List<String> versions) {
-        return "v" + (maxVNumber(versions) + 1);
-    }
-    
-    /**
      * Check if the given version string is a supported format (either semver x.y.z or legacy vN).
      *
      * @param version version string

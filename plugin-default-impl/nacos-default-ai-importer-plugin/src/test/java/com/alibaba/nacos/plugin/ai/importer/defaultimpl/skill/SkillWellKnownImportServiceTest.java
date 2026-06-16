@@ -87,8 +87,11 @@ class SkillWellKnownImportServiceTest {
     
     private SkillWellKnownImportService importService;
     
+    private byte[] version020ArchiveBytes;
+    
     @BeforeEach
     void setUp() throws Exception {
+        version020ArchiveBytes = tarGzSkillArchive();
         lenient().when(httpClient.send(any(HttpRequest.class),
             any(HttpResponse.BodyHandler.class)))
             .thenAnswer(invocation -> responseFor(invocation.getArgument(0)));
@@ -470,7 +473,6 @@ class SkillWellKnownImportServiceTest {
     
     private String version020IndexJson() throws Exception {
         byte[] markdown = skillMarkdown("md-skill").getBytes(StandardCharsets.UTF_8);
-        byte[] archive = tarGzSkillArchive();
         return "{\"$schema\":\"" + SCHEMA_0_2 + "\",\"skills\":["
             + "{\"name\":\"md-skill\",\"type\":\"skill-md\","
             + "\"description\":\"Markdown skill\","
@@ -479,7 +481,7 @@ class SkillWellKnownImportServiceTest {
             + "{\"name\":\"archive-skill\",\"type\":\"archive\","
             + "\"description\":\"Archive skill\","
             + "\"url\":\"archive-skill.tar.gz\",\"version\":\"1.0.0\","
-            + "\"digest\":\"sha256:" + sha256Hex(archive) + "\"}"
+            + "\"digest\":\"sha256:" + sha256Hex(version020ArchiveBytes) + "\"}"
             + "]}";
     }
     
@@ -538,7 +540,7 @@ class SkillWellKnownImportServiceTest {
             return response(200, skillMarkdown("md-skill"));
         }
         if ("/v2/.well-known/agent-skills/archive-skill.tar.gz".equals(path)) {
-            return response(200, tarGzSkillArchive(), "application/gzip");
+            return response(200, version020ArchiveBytes, "application/gzip");
         }
         if ("/bad-v2/.well-known/agent-skills/index.json".equals(path)) {
             return response(200, badVersion020IndexJson());

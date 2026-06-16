@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -60,12 +59,13 @@ class FailoverReactorTest {
     FailoverReactor failoverReactor;
     
     @BeforeEach
-    void setUp() throws NoSuchFieldException, IllegalAccessException {
+    void setUp() throws NoSuchFieldException, IllegalAccessException, NacosException {
         failoverReactor = new FailoverReactor(holder, UUID.randomUUID().toString());
         Field failoverDataSourceField =
             FailoverReactor.class.getDeclaredField("failoverDataSource");
         failoverDataSourceField.setAccessible(true);
         failoverDataSourceField.set(failoverReactor, failoverDataSource);
+        stopRefreshTask();
     }
     
     @AfterEach
@@ -77,6 +77,14 @@ class FailoverReactorTest {
         if (gauge != null) {
             Metrics.globalRegistry.remove(gauge);
         }
+    }
+    
+    private void stopRefreshTask() throws NacosException {
+        failoverReactor.shutdown();
+    }
+    
+    private void refreshFailoverSwitch() {
+        failoverReactor.new FailoverSwitchRefresher().run();
     }
     
     @Test
@@ -132,9 +140,7 @@ class FailoverReactorTest {
     }
     
     @Test
-    void testRefreshFromDisabledToEnabled() throws InterruptedException {
-        // make sure the first no delay refresh thread finished.
-        TimeUnit.MILLISECONDS.sleep(500);
+    void testRefreshFromDisabledToEnabled() {
         FailoverSwitch mockFailoverSwitch = new FailoverSwitch(true);
         when(failoverDataSource.getSwitch()).thenReturn(mockFailoverSwitch);
         Map<String, FailoverData> map = new HashMap<>();
@@ -142,21 +148,17 @@ class FailoverReactorTest {
         serviceInfo.addHost(new Instance());
         map.put("a@@b", NamingFailoverData.newNamingFailoverData(serviceInfo));
         when(failoverDataSource.getFailoverData()).thenReturn(map);
-        // waiting refresh thread work
-        TimeUnit.MILLISECONDS.sleep(5500);
+        refreshFailoverSwitch();
         ServiceInfo actual = failoverReactor.getService("a@@b");
         assertEquals(serviceInfo, actual);
     }
     
     @Test
-    void testRefreshFromDisabledToEnabledWithException() throws InterruptedException {
-        // make sure the first no delay refresh thread finished.
-        TimeUnit.MILLISECONDS.sleep(500);
+    void testRefreshFromDisabledToEnabledWithException() {
         FailoverSwitch mockFailoverSwitch = new FailoverSwitch(true);
         when(failoverDataSource.getSwitch()).thenReturn(mockFailoverSwitch);
         when(failoverDataSource.getFailoverData()).thenReturn(null);
-        // waiting refresh thread work
-        TimeUnit.MILLISECONDS.sleep(5500);
+        refreshFailoverSwitch();
         assertTrue(
             ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>()))
                 .isEmpty());
@@ -164,9 +166,7 @@ class FailoverReactorTest {
     
     @Test
     void testRefreshFromEnabledToDisabled()
-        throws InterruptedException, NoSuchFieldException, IllegalAccessException {
-        // make sure the first no delay refresh thread finished.
-        TimeUnit.MILLISECONDS.sleep(500);
+        throws NoSuchFieldException, IllegalAccessException {
         FailoverSwitch mockFailoverSwitch = new FailoverSwitch(false);
         when(failoverDataSource.getSwitch()).thenReturn(mockFailoverSwitch);
         Field failoverSwitchEnableField =
@@ -181,8 +181,7 @@ class FailoverReactorTest {
         Field serviceMapField = FailoverReactor.class.getDeclaredField("serviceMap");
         serviceMapField.setAccessible(true);
         serviceMapField.set(failoverReactor, map);
-        // waiting refresh thread work
-        TimeUnit.MILLISECONDS.sleep(5500);
+        refreshFailoverSwitch();
         ServiceInfo actual = failoverReactor.getService("a@@b");
         assertNotEquals(serviceInfo, actual);
     }

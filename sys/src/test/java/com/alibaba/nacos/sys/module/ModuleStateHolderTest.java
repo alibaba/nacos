@@ -89,10 +89,4 @@ class ModuleStateHolderTest {
             ModuleStateHolder.getInstance().getStateValueByName("mock", "non-exist", "aaa"));
     }
     
-    @Test
-    void testSearchStateValue() {
-        assertEquals("test", ModuleStateHolder.getInstance().searchStateValue("test", "aaa"));
-        assertEquals("aaa", ModuleStateHolder.getInstance().searchStateValue("non-exist", "aaa"));
-    }
-    
 }

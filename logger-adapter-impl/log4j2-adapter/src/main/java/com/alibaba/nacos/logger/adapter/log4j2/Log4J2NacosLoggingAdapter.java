@@ -39,8 +39,6 @@ public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
     
     private static final String NACOS_LOG4J2_LOCATION = "classpath:nacos-log4j2.xml";
     
-    private static final String NACOS_LOGGER_PREFIX = "com.alibaba.nacos";
-    
     private static final String APPENDER_MARK = "ASYNC_NAMING";
     
     private static final String LOG4J2_CLASSES = "org.apache.logging.slf4j.Log4jLogger";

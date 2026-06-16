@@ -59,7 +59,7 @@ class AgentSpecLabelUpdateTest {
     
     private static final String VERSION_STATUS_ONLINE = "online";
     
-    private static final String VERSION_STATUS_OFFLINE = "offline";
+    // TODO: Align local status constants with AiResourceConstants.
     
     private static String[] sampleAgentSpecNames() {
         return new String[] {"agentone", "myspec"};

@@ -66,7 +66,6 @@ public class SkillZipParser {
     private static final String DOUBLE_BACKSLASH = "\\\\";
     private static final String ESCAPED_DOUBLE_QUOTE = "\\\"";
     private static final String SLASH = "/";
-    private static final String DOT = ".";
     /**
      * Metadata key for binary resources: value "base64" means content is Base64-encoded.
      * Kept as constants on this class for backward compatibility with existing callers

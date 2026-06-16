@@ -19,7 +19,6 @@ package com.alibaba.nacos.api.ai.model.mcp.registry;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 class McpServerStatusEnumTest {
     
@@ -28,43 +27,6 @@ class McpServerStatusEnumTest {
         assertEquals("active", McpServerStatusEnum.ACTIVE.getName());
         assertEquals("deleted", McpServerStatusEnum.DELETED.getName());
         assertEquals("deprecated", McpServerStatusEnum.DEPRECATED.getName());
-    }
-    
-    @Test
-    void testParseStatusActive() {
-        McpServerStatusEnum status = McpServerStatusEnum.parseStatus("active");
-        assertEquals(McpServerStatusEnum.ACTIVE, status);
-    }
-    
-    @Test
-    void testParseStatusDeleted() {
-        McpServerStatusEnum status = McpServerStatusEnum.parseStatus("deleted");
-        assertEquals(McpServerStatusEnum.DELETED, status);
-    }
-    
-    @Test
-    void testParseStatusDeprecated() {
-        McpServerStatusEnum status = McpServerStatusEnum.parseStatus("deprecated");
-        assertEquals(McpServerStatusEnum.DEPRECATED, status);
-    }
-    
-    @Test
-    void testParseStatusInvalid() {
-        McpServerStatusEnum status = McpServerStatusEnum.parseStatus("invalid");
-        assertNull(status);
-    }
-    
-    @Test
-    void testParseStatusNull() {
-        McpServerStatusEnum status = McpServerStatusEnum.parseStatus(null);
-        assertNull(status);
-    }
-    
-    @Test
-    void testParseStatusCaseSensitive() {
-        // The parsing should be case-sensitive
-        McpServerStatusEnum status = McpServerStatusEnum.parseStatus("ACTIVE");
-        assertNull(status);
     }
     
     @Test

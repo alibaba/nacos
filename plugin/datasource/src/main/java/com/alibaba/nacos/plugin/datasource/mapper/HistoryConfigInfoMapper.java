@@ -79,7 +79,9 @@ public interface HistoryConfigInfoMapper extends Mapper {
      *
      * @param context sql paramMap
      * @return The sql of listing configuration history change record.
+     * @deprecated Unused by current datasource flows; kept temporarily for plugin compatibility.
      */
+    @Deprecated
     default MapperResult findConfigHistoryFetchRows(MapperContext context) {
         return new MapperResult(
             "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,publish_type,gray_name,op_type,"
