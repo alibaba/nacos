@@ -74,12 +74,14 @@ runtime intent.
 
 Naming service-info cache stores `ServiceInfo` objects keyed by grouped service
 name and clusters. Server push or query responses update the in-memory map and
-write a disk cache when the instance view changes.
+schedule a disk-cache refresh when the instance view changes.
 
 The cache is a recovery aid:
 
 - it may be loaded at startup when the load-cache option is enabled;
 - it may serve a temporary discovery view during network disruption;
+- disk cache refresh may be asynchronous and eventually consistent with the
+  in-memory view;
 - it must not create, update, or delete Naming server-side resources.
 
 Push-empty protection may ignore empty or invalid pushes to avoid replacing a

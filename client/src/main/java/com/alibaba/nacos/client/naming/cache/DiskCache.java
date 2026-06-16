@@ -52,6 +52,10 @@ public class DiskCache {
      * @param dir directory
      */
     public static void write(ServiceInfo dom, String dir) {
+        writeWithResult(dom, dir);
+    }
+    
+    static boolean writeWithResult(ServiceInfo dom, String dir) {
         
         try {
             makeSureCacheDirExists(dir);
@@ -72,9 +76,10 @@ public class DiskCache {
             //Use the concurrent API to ensure the consistency.
             ConcurrentDiskUtil.writeFileContent(file, keyContentBuffer.toString(),
                 Charset.defaultCharset().toString());
-            
+            return true;
         } catch (Throwable e) {
             NAMING_LOGGER.error("[NA] failed to write cache for dom:" + dom.getName(), e);
+            return false;
         }
     }
     

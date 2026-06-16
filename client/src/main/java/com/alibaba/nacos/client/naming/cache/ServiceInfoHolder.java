@@ -53,6 +53,8 @@ public class ServiceInfoHolder implements Closeable {
     
     private final InstancesDiffer instancesDiffer;
     
+    private final ServiceInfoDiskCacheRefresher serviceInfoDiskCacheRefresher;
+    
     private String cacheDir;
     
     private String notifierEventScope;
@@ -69,6 +71,7 @@ public class ServiceInfoHolder implements Closeable {
             this.serviceInfoMap = new ConcurrentHashMap<>(16);
         }
         this.failoverReactor = new FailoverReactor(this, notifierEventScope);
+        this.serviceInfoDiskCacheRefresher = new ServiceInfoDiskCacheRefresher();
         this.pushEmptyProtection = isPushEmptyProtect(properties);
         this.notifierEventScope = notifierEventScope;
         this.enableClientMetrics = Boolean.parseBoolean(
@@ -164,9 +167,20 @@ public class ServiceInfoHolder implements Closeable {
                         serviceInfo.getGroupName(),
                         serviceInfo.getClusters(), serviceInfo.getHosts(), diff));
             }
-            DiskCache.write(serviceInfo, cacheDir);
+            publishDiskCacheRefreshEvent(serviceKey, serviceInfo);
         }
         return serviceInfo;
+    }
+    
+    /**
+     * Publish a disk cache refresh event for async persistence.
+     *
+     * @param serviceKey service key without clusters
+     * @param serviceInfo latest service info snapshot
+     */
+    private void publishDiskCacheRefreshEvent(String serviceKey, ServiceInfo serviceInfo) {
+        serviceInfoDiskCacheRefresher.publishEvent(
+            new ServiceInfoDiskCacheRefreshEvent(serviceKey, serviceInfo, cacheDir));
     }
     
     private boolean isEmptyOrErrorPush(ServiceInfo serviceInfo) {
@@ -195,6 +209,7 @@ public class ServiceInfoHolder implements Closeable {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         failoverReactor.shutdown();
+        serviceInfoDiskCacheRefresher.shutdown();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }
