@@ -20,16 +20,27 @@ import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.ServiceConfigurationError;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonAdapterSelectorTest {
+    
+    private static final String SERVICE_RESOURCE_NAME =
+        "META-INF/services/" + NacosJsonAdapter.class.getName();
     
     @AfterEach
     void tearDown() {
@@ -108,6 +119,92 @@ class JsonAdapterSelectorTest {
             Arrays.<NacosJsonAdapter>asList(brokenAdapter, jackson2)).select();
         
         assertSame(jackson2, selected);
+    }
+    
+    @Test
+    void testServiceConfigurationErrorAdapterIsIgnoredAndDiagnosed() {
+        ServiceConfigurationErrorAdapter brokenAdapter = new ServiceConfigurationErrorAdapter();
+        
+        NacosLoadException exception = assertThrows(NacosLoadException.class,
+            () -> new JsonAdapterSelector(
+                Collections.<NacosJsonAdapter>singletonList(brokenAdapter))
+                .select());
+        
+        assertTrue(exception.getMessage().contains("Adapter diagnostics"));
+        assertTrue(exception.getMessage().contains("broken-service"));
+        assertTrue(exception.getMessage().contains(ServiceConfigurationError.class.getName()));
+    }
+    
+    @Test
+    void testRuntimeExceptionAdapterIsIgnoredAndDiagnosed() {
+        RuntimeExceptionAdapter brokenAdapter = new RuntimeExceptionAdapter();
+        
+        NacosLoadException exception = assertThrows(NacosLoadException.class,
+            () -> new JsonAdapterSelector(
+                Collections.<NacosJsonAdapter>singletonList(brokenAdapter))
+                .select());
+        
+        assertTrue(exception.getMessage().contains("Adapter diagnostics"));
+        assertTrue(exception.getMessage().contains("broken-runtime"));
+        assertTrue(exception.getMessage().contains(IllegalStateException.class.getName()));
+    }
+    
+    @Test
+    void testFailWhenMultipleNonPreferredAdaptersAvailable() {
+        FakeAdapter custom1 = new FakeAdapter("custom1", true);
+        FakeAdapter custom2 = new FakeAdapter("custom2", true);
+        
+        NacosLoadException exception = assertThrows(NacosLoadException.class,
+            () -> new JsonAdapterSelector(Arrays.<NacosJsonAdapter>asList(custom1, custom2))
+                .select());
+        
+        assertTrue(exception.getMessage().contains("Multiple JSON adapters are available"));
+    }
+    
+    @Test
+    void testDefaultConstructorLoadsServiceProviderAndRecordsProviderFailure() throws Exception {
+        File serviceRoot = new File("target/json-adapter-service-loader");
+        File serviceDirectory = new File(serviceRoot, "META-INF/services");
+        Files.createDirectories(serviceDirectory.toPath());
+        File serviceFile = new File(serviceDirectory, NacosJsonAdapter.class.getName());
+        String providers = ServiceLoadedAdapter.class.getName() + System.lineSeparator()
+            + "com.alibaba.nacos.api.utils.json.MissingJsonAdapter" + System.lineSeparator();
+        Files.write(serviceFile.toPath(), providers.getBytes(StandardCharsets.UTF_8));
+        
+        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+        URLClassLoader serviceClassLoader =
+            new URLClassLoader(new URL[] {serviceRoot.toURI().toURL()}, originalClassLoader);
+        try {
+            Thread.currentThread().setContextClassLoader(serviceClassLoader);
+            System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, NacosJsonAdapterNames.JACKSON2);
+            
+            NacosLoadException exception =
+                assertThrows(NacosLoadException.class, () -> new JsonAdapterSelector().select());
+            
+            assertTrue(exception.getMessage().contains("Adapter diagnostics"));
+            assertTrue(exception.getMessage().contains("provider:"));
+            assertTrue(exception.getMessage().contains("MissingJsonAdapter"));
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
+            serviceClassLoader.close();
+        }
+    }
+    
+    @Test
+    void testDefaultConstructorRecordsServiceLoaderLinkageFailure() {
+        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread()
+            .setContextClassLoader(new ServiceResourceLinkageErrorClassLoader(originalClassLoader));
+        try {
+            NacosLoadException exception =
+                assertThrows(NacosLoadException.class, () -> new JsonAdapterSelector().select());
+            
+            assertTrue(exception.getMessage().contains("Adapter diagnostics"));
+            assertTrue(exception.getMessage().contains("provider:"));
+            assertTrue(exception.getMessage().contains("service-resource"));
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
+        }
     }
     
     @Test
@@ -210,6 +307,45 @@ class JsonAdapterSelectorTest {
         @Override
         public boolean isAvailable() {
             throw new NoClassDefFoundError("missing");
+        }
+    }
+    
+    private static class ServiceConfigurationErrorAdapter extends FakeAdapter {
+        
+        ServiceConfigurationErrorAdapter() {
+            super("broken-service", true);
+        }
+        
+        @Override
+        public boolean isAvailable() {
+            throw new ServiceConfigurationError("broken service");
+        }
+    }
+    
+    private static class RuntimeExceptionAdapter extends FakeAdapter {
+        
+        RuntimeExceptionAdapter() {
+            super("broken-runtime", true);
+        }
+        
+        @Override
+        public boolean isAvailable() {
+            throw new IllegalStateException("broken runtime");
+        }
+    }
+    
+    private static class ServiceResourceLinkageErrorClassLoader extends ClassLoader {
+        
+        ServiceResourceLinkageErrorClassLoader(ClassLoader parent) {
+            super(parent);
+        }
+        
+        @Override
+        public Enumeration<URL> getResources(String name) throws IOException {
+            if (SERVICE_RESOURCE_NAME.equals(name)) {
+                throw new NoClassDefFoundError("service-resource");
+            }
+            return super.getResources(name);
         }
     }
 }
