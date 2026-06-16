@@ -39,7 +39,7 @@ Last updated: 2026-06-16.
   `common`, `client`, `maintainer-client`, and `plugin`.
 - `[x]` Neutral JSON API, adapter SPI, adapter selector, type reference, and
   subtype registration model have been added in `nacos-api`.
-- `[ ]` Confirm final Jackson 3 Maven coordinates and version management in the
+- `[x]` Confirm final Jackson 3 Maven coordinates and version management in the
   root dependency management before implementation.
 
 ## Validation Log
@@ -54,6 +54,10 @@ Last updated: 2026-06-16.
   - `mvn -pl api,common spotless:check`
   - `mvn -pl common -am -Dtest=Jackson2JsonAdapterTest -Dsurefire.failIfNoSpecifiedTests=false test`
   - `mvn -pl common apache-rat:check`
+- 2026-06-16, stage 3 Jackson 3 adapter:
+  - `mvn -pl common -am -Dtest=Jackson2JsonAdapterTest,Jackson3JsonAdapterTest -Dsurefire.failIfNoSpecifiedTests=false clean test`
+  - `common/target/site/jacoco/jacoco.csv`: Jackson 2 and Jackson 3 adapter
+    source files have `LINE_MISSED=0`.
 
 ## Implementation Principles
 
@@ -144,7 +148,7 @@ Last updated: 2026-06-16.
       `NacosTypeReference<T>`, subtype registration, and exception mapping.
     - `mvn -pl common -am -Dtest=Jackson2JsonAdapterTest -Dsurefire.failIfNoSpecifiedTests=false test`
 
-- `[ ]` Add Jackson 3 adapter.
+- `[x]` Add Jackson 3 adapter.
   - Files:
     - `common/src/main/java/com/alibaba/nacos/common/json/Jackson3JsonAdapter.java`
     - Optional lazy delegate:
@@ -164,6 +168,8 @@ Last updated: 2026-06-16.
       selected.
     - Java 8 compatibility check must not fail just because the provider class
       is loadable.
+    - Jackson 3 facade and delegate source files have full line coverage in
+      the focused `common` module test run.
 
 - `[ ]` Add canonical JSON support.
   - Files:
