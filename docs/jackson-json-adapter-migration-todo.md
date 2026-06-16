@@ -21,7 +21,7 @@ adapter work discussed in issue #14466 and defined by
 `specs/en/sdk/sdk-java-json-adapter-spec.md` /
 `specs/zh-cn/sdk/sdk-java-json-adapter-spec.md`.
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-16.
 
 ## Status Legend
 
@@ -48,6 +48,12 @@ Last updated: 2026-06-15.
   - `mvn -pl api -Dtest=NacosTypeReferenceTest,JsonAdapterSelectorTest,JsonUtilsTest test`
   - `mvn spotless:apply -pl api`
   - `mvn spotless:check -pl api`
+- 2026-06-16, stage 1 coverage supplement:
+  - `mvn -pl api -Dtest=NacosTypeReferenceTest,NacosJsonSubtypeTest,JsonAdapterSelectorTest,JsonUtilsTest test`
+- 2026-06-16, stage 2 Jackson 2 adapter:
+  - `mvn -pl api,common spotless:check`
+  - `mvn -pl common -am -Dtest=Jackson2JsonAdapterTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `mvn -pl common apache-rat:check`
 
 ## Implementation Principles
 
@@ -123,7 +129,7 @@ Last updated: 2026-06-15.
 
 ### 2. Default Adapters in `nacos-common`
 
-- `[ ]` Add Jackson 2 adapter.
+- `[x]` Add Jackson 2 adapter.
   - Files:
     - `common/src/main/java/com/alibaba/nacos/common/json/Jackson2JsonAdapter.java`
     - `common/src/main/resources/META-INF/services/...NacosJsonAdapter`
@@ -136,6 +142,7 @@ Last updated: 2026-06-15.
   - Validation:
     - Unit tests for serialization, `Class<T>`, `Type`,
       `NacosTypeReference<T>`, subtype registration, and exception mapping.
+    - `mvn -pl common -am -Dtest=Jackson2JsonAdapterTest -Dsurefire.failIfNoSpecifiedTests=false test`
 
 - `[ ]` Add Jackson 3 adapter.
   - Files:
