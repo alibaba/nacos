@@ -208,7 +208,6 @@ class ServiceInfoDiskCacheRefresherTest {
             }
         });
         assertTrue(taskStarted.await(1, TimeUnit.SECONDS));
-        
         try {
             refresher.shutdown();
             assertTrue(refresher.isShutdown());
@@ -221,6 +220,18 @@ class ServiceInfoDiskCacheRefresherTest {
     @Test
     void testShutdownWhenInterruptedThrowException() throws Exception {
         ServiceInfoDiskCacheRefresher refresher = createRefresher((serviceInfo, cacheDir) -> true);
+        CountDownLatch taskStarted = new CountDownLatch(1);
+        CountDownLatch releaseTask = new CountDownLatch(1);
+        ScheduledThreadPoolExecutor refreshExecutor = getRefreshExecutor(refresher);
+        refreshExecutor.execute(() -> {
+            taskStarted.countDown();
+            try {
+                releaseTask.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        assertTrue(taskStarted.await(1, TimeUnit.SECONDS));
         try {
             Thread.currentThread().interrupt();
             assertThrows(com.alibaba.nacos.api.exception.NacosException.class, refresher::shutdown);
@@ -228,9 +239,8 @@ class ServiceInfoDiskCacheRefresherTest {
             assertTrue(refresher.isShutdown());
         } finally {
             Thread.interrupted();
-            if (!refresher.isShutdown()) {
-                refresher.shutdown();
-            }
+            releaseTask.countDown();
+            refreshExecutor.awaitTermination(1, TimeUnit.SECONDS);
         }
     }
     
