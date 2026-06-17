@@ -81,6 +81,17 @@ Last updated: 2026-06-16.
   - `common/target/site/jacoco/jacoco.csv`: `AbstractNacosRestTemplate` has
     `LINE_MISSED=0`.
   - `mvn -pl common apache-rat:check`
+- 2026-06-17, stage 7 client HTTP response JSON cleanup:
+  - `mvn -pl client spotless:apply`
+  - `mvn -pl client spotless:check`
+  - `mvn -pl client -am -Dtest=NamingHttpClientProxyTest,AiHttpClientProxyTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `client/target/site/jacoco/jacoco.xml`: changed response parsing lines in
+    `NamingHttpClientProxy` and `AiHttpClientProxy` have covered instructions;
+    the classes still have pre-existing uncovered legacy branches.
+  - `rg "com\\.fasterxml\\.jackson\\.core\\.type\\.TypeReference|com\\.fasterxml\\.jackson\\.databind\\.JsonNode|new TypeReference|JsonNode" client/src/main/java/com/alibaba/nacos/client/naming/remote/http/NamingHttpClientProxy.java client/src/main/java/com/alibaba/nacos/client/ai/remote/AiHttpClientProxy.java`
+    returns no matches.
+  - `mvn -pl client apache-rat:check`
+  - `mvn apache-rat:check -DskipTests`
 
 ## Implementation Principles
 
@@ -280,14 +291,15 @@ Last updated: 2026-06-16.
   - Validation:
     - HTTP response handler selection unit tests.
 
-- `[ ]` Migrate client HTTP response parsing from Jackson `TypeReference`.
+- `[x]` Migrate client HTTP response parsing from Jackson `TypeReference`.
   - Files:
     - `client/src/main/java/com/alibaba/nacos/client/naming/remote/http/NamingHttpClientProxy.java`
     - `client/src/main/java/com/alibaba/nacos/client/ai/remote/AiHttpClientProxy.java`
   - Plan:
     - Replace `TypeReference<T>` with `NacosTypeReference<T>`.
-    - Replace `JacksonUtils.toObj(...)` with `JsonUtils.toObj(...)`.
-    - Replace simple `JsonNode` reads with DTOs or `Map<String, Object>`.
+    - Replace HTTP response `JacksonUtils.toObj(...)` calls with
+      `JsonUtils.toObj(...)`.
+    - Replace simple `JsonNode` reads with `Map<String, Object>`.
   - Validation:
     - Naming HTTP proxy tests.
     - AI HTTP proxy tests.

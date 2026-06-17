@@ -28,6 +28,8 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -47,8 +49,6 @@ import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.hc.core5.http.HttpStatus;
 
 import java.util.Collections;
@@ -232,7 +232,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.GROUP_NAME, groupName);
         
         String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.GET);
-        return JacksonUtils.toObj(result, Service.class);
+        return JsonUtils.toObj(result, Service.class);
     }
     
     @Override
@@ -287,9 +287,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         try {
             String result = reqApi(UtilAndComs.webContext + "/v3/admin/core/state/liveness",
                 new HashMap<>(8), HttpMethod.GET);
-            JsonNode json = JacksonUtils.toObj(result);
-            int statusCode = json.get("code").asInt();
-            return 0 == statusCode;
+            Map<String, Object> json =
+                JsonUtils.toObj(result, new NacosTypeReference<Map<String, Object>>() {
+                });
+            Object statusCode = json.get("code");
+            return statusCode instanceof Number && 0 == ((Number) statusCode).intValue();
         } catch (Exception e) {
             return false;
         }
@@ -321,11 +323,14 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         
         String result = reqApi(UtilAndComs.nacosUrlBase + "/service/list", params, HttpMethod.GET);
         
-        JsonNode json = JacksonUtils.toObj(result);
+        Map<String, Object> json =
+            JsonUtils.toObj(result, new NacosTypeReference<Map<String, Object>>() {
+            });
         ListView<String> listView = new ListView<>();
-        listView.setCount(json.get("count").asInt());
-        listView.setData(
-            JacksonUtils.toObj(json.get("doms").toString(), new TypeReference<List<String>>() {
+        Object count = json.get("count");
+        listView.setCount(count instanceof Number ? ((Number) count).intValue() : 0);
+        listView.setData(JsonUtils.toObj(JsonUtils.toJson(json.get("doms")),
+            new NacosTypeReference<List<String>>() {
             }));
         
         return listView;

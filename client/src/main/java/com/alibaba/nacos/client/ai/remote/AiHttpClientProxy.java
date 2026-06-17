@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
@@ -32,11 +34,9 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,7 +134,7 @@ public class AiHttpClientProxy implements AiClientProxy {
         
         String responseBody = reqApi(PROMPT_CLIENT_PATH, params, resource);
         Result<Prompt> result =
-            JacksonUtils.toObj(responseBody, new TypeReference<Result<Prompt>>() {
+            JsonUtils.toObj(responseBody, new NacosTypeReference<Result<Prompt>>() {
             });
         return result.getData();
     }
@@ -237,7 +237,7 @@ public class AiHttpClientProxy implements AiClientProxy {
             AGENTSPEC_CLIENT_PATH, params, resource);
         String responseBody = restResult.getData();
         Result<AgentSpec> result =
-            JacksonUtils.toObj(responseBody, new TypeReference<Result<AgentSpec>>() {
+            JsonUtils.toObj(responseBody, new NacosTypeReference<Result<AgentSpec>>() {
             });
         String publishedMd5 = restResult.getHeader().getValue("X-Nacos-AgentSpec-Md5");
         String resolvedVersion = restResult.getHeader()
