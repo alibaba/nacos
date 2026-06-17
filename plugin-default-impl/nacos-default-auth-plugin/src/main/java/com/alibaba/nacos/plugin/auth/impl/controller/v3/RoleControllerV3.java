@@ -18,6 +18,7 @@
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -64,7 +65,7 @@ public class RoleControllerV3 {
     @Since("3.0.0")
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
-        action = ActionTypes.WRITE)
+        action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> createRole(@RequestParam String role, @RequestParam String username) {
         roleService.addRole(role, username);
         return Result.success("add role ok!");
@@ -80,7 +81,7 @@ public class RoleControllerV3 {
     @Since("3.0.0")
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
-        action = ActionTypes.WRITE)
+        action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> deleteRole(@RequestParam String role,
         @RequestParam(name = "username", defaultValue = StringUtils.EMPTY) String username) {
         if (StringUtils.isBlank(username)) {
@@ -104,7 +105,7 @@ public class RoleControllerV3 {
     @Since("3.0.0")
     @GetMapping("/list")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
-        action = ActionTypes.READ)
+        action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<Page<RoleInfo>> getRoleList(@RequestParam int pageNo, @RequestParam int pageSize,
         @RequestParam(name = "username", defaultValue = "") String username,
         @RequestParam(name = "role", defaultValue = "") String role,
@@ -127,7 +128,7 @@ public class RoleControllerV3 {
     @Since("3.0.0")
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
-        action = ActionTypes.READ)
+        action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<String>> getRoleListByRoleName(@RequestParam String role) {
         List<String> roles = roleService.findRoleNames(role);
         return Result.success(roles);
