@@ -122,6 +122,21 @@ class NacosConfigMaintainerServiceImplTest {
     }
     
     @Test
+    void testUpdateConfigMetadata() throws Exception {
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(true)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockHttpRestResult);
+        
+        boolean result =
+            nacosConfigMaintainerServiceImpl.updateConfigMetadata("testDataId",
+                Constants.DEFAULT_GROUP, Constants.DEFAULT_NAMESPACE_ID, "description", "tag");
+        
+        assertTrue(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+    }
+    
+    @Test
     void testPublishBetaConfig() throws Exception {
         String dataId = "testDataId";
         String content = "testContent";

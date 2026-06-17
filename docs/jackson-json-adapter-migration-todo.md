@@ -21,7 +21,7 @@ adapter work discussed in issue #14466 and defined by
 `specs/en/sdk/sdk-java-json-adapter-spec.md` /
 `specs/zh-cn/sdk/sdk-java-json-adapter-spec.md`.
 
-Last updated: 2026-06-16.
+Last updated: 2026-06-17.
 
 ## Status Legend
 
@@ -92,6 +92,18 @@ Last updated: 2026-06-16.
     returns no matches.
   - `mvn -pl client apache-rat:check`
   - `mvn apache-rat:check -DskipTests`
+- 2026-06-17, stage 8 maintainer-client HTTP response JSON cleanup:
+  - `mvn -pl maintainer-client spotless:apply`
+  - `mvn -pl maintainer-client spotless:check`
+  - `mvn -pl maintainer-client -am -DskipTests compile`
+  - `mvn -pl maintainer-client -am -Dtest=NacosMaintainerFactoryTest,DefaultServerListManagerTest,A2aMaintainerServiceDefaultMethodsTest,A2aMaintainerServiceImplTest,AgentSpecMaintainerServiceDefaultMethodsTest,AgentSpecMaintainerServiceImplTest,AiMaintainerFactoryTest,AiMaintainerServiceDefaultMethodsTest,NacosAiMaintainerServiceImplTest,PipelineMaintainerServiceImplTest,PromptMaintainerServiceDefaultMethodsTest,PromptMaintainerServiceImplTest,SkillMaintainerServiceDefaultMethodsTest,SkillMaintainerServiceImplTest,ConfigMaintainerFactoryTest,NacosConfigMaintainerServiceImplTest,AbstractCoreMaintainerServiceTest,HttpRequestTest,NacosNamingMaintainerServiceImplTest,NamingMaintainerFactoryTest,ClientHttpProxyTest,HttpClientManagerTest,ParamUtilTest -Dsurefire.failIfNoSpecifiedTests=false clean test`
+  - `maintainer-client/target/site/jacoco/jacoco.xml`: changed response
+    parsing lines in non-Pipeline maintainer-client implementations have
+    covered instructions.
+  - `rg "com\\.fasterxml\\.jackson\\.core\\.type\\.TypeReference|new TypeReference|JacksonUtils\\.toObj" maintainer-client/src/main/java -g '*.java'`
+    returns only the legacy `PipelineMaintainerServiceImpl` `JsonNode`
+    compatibility path.
+  - `mvn -pl maintainer-client apache-rat:check`
 
 ## Implementation Principles
 
@@ -304,7 +316,7 @@ Last updated: 2026-06-16.
     - Naming HTTP proxy tests.
     - AI HTTP proxy tests.
 
-- `[ ]` Migrate maintainer-client HTTP response parsing.
+- `[x]` Migrate maintainer-client HTTP response parsing.
   - Files:
     - `maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/remote/ClientHttpProxy.java`
     - `maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/naming/NacosNamingMaintainerServiceImpl.java`
@@ -317,6 +329,8 @@ Last updated: 2026-06-16.
     - Leave legacy `Pipeline JsonNode` methods until typed DTO APIs are added.
   - Validation:
     - Maintainer-client unit tests.
+    - Changed response parsing lines have no missed JaCoCo instructions in the
+      focused stage 8 test run.
 
 - `[ ]` Migrate subtype preload paths.
   - Files:

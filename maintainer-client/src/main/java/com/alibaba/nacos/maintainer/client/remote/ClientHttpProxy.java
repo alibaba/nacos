@@ -25,7 +25,6 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -36,7 +35,8 @@ import com.alibaba.nacos.maintainer.client.address.DefaultServerListManager;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
@@ -177,7 +177,7 @@ public class ClientHttpProxy implements Closeable {
         if (StringUtils.isNotBlank(responseBody)) {
             try {
                 Result<Object> response =
-                    JacksonUtils.toObj(responseBody, new TypeReference<Result<Object>>() {
+                    JsonUtils.toObj(responseBody, new NacosTypeReference<Result<Object>>() {
                     });
                 if (response != null) {
                     String message = response.getMessage();

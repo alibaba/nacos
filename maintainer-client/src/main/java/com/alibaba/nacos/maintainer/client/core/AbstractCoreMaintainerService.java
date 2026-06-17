@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -30,7 +32,6 @@ import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -57,8 +58,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
             .setPath(Constants.AdminApiPath.CORE_STATE_ADMIN_PATH).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Map<String, String>> result = JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Result<Map<String, String>>>() {
+        Result<Map<String, String>> result = JsonUtils.toObj(httpRestResult.getData(),
+            new NacosTypeReference<Result<Map<String, String>>>() {
             });
         return result.getData();
     }
@@ -91,7 +92,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -101,8 +102,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
             .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/ids").build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<List<IdGeneratorInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Result<List<IdGeneratorInfo>>>() {
+        Result<List<IdGeneratorInfo>> result = JsonUtils.toObj(httpRestResult.getData(),
+            new NacosTypeReference<Result<List<IdGeneratorInfo>>>() {
             });
         return result.getData();
     }
@@ -130,8 +131,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/list")
             .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Collection<NacosMember>> result = JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Result<Collection<NacosMember>>>() {
+        Result<Collection<NacosMember>> result = JsonUtils.toObj(httpRestResult.getData(),
+            new NacosTypeReference<Result<Collection<NacosMember>>>() {
             });
         return result.getData();
     }
@@ -146,7 +147,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return result.getData();
     }
@@ -156,8 +157,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
             .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/current").build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Map<String, ConnectionInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Result<Map<String, ConnectionInfo>>>() {
+        Result<Map<String, ConnectionInfo>> result = JsonUtils.toObj(httpRestResult.getData(),
+            new NacosTypeReference<Result<Map<String, ConnectionInfo>>>() {
             });
         return result.getData();
     }
@@ -175,7 +176,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -191,7 +192,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -208,7 +209,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -218,8 +219,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
             .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/cluster").build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<ServerLoaderMetrics> result = JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Result<ServerLoaderMetrics>>() {
+        Result<ServerLoaderMetrics> result = JsonUtils.toObj(httpRestResult.getData(),
+            new NacosTypeReference<Result<ServerLoaderMetrics>>() {
             });
         return result.getData();
     }
@@ -229,8 +230,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
             .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH + "/list").build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<List<Namespace>> result = JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Result<List<Namespace>>>() {
+        Result<List<Namespace>> result = JsonUtils.toObj(httpRestResult.getData(),
+            new NacosTypeReference<Result<List<Namespace>>>() {
             });
         return result.getData();
     }
@@ -245,7 +246,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<Namespace> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Namespace>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Namespace>>() {
             });
         return result.getData();
     }
@@ -263,7 +264,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return result.getData();
     }
@@ -281,7 +282,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return result.getData();
     }
@@ -296,7 +297,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return result.getData();
     }
@@ -311,7 +312,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<Integer> result =
-            JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Integer>>() {
+            JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Integer>>() {
             });
         return result.getData() > 0;
     }
@@ -327,8 +328,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/list").setParamValue(params)
             .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<List<Map<String, Object>>> result = JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Result<List<Map<String, Object>>>>() {
+        Result<List<Map<String, Object>>> result = JsonUtils.toObj(httpRestResult.getData(),
+            new NacosTypeReference<Result<List<Map<String, Object>>>>() {
             });
         return result.getData();
     }
@@ -344,8 +345,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/detail")
             .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Result<Map<String, Object>>>() {
+        Result<Map<String, Object>> result = JsonUtils.toObj(httpRestResult.getData(),
+            new NacosTypeReference<Result<Map<String, Object>>>() {
             });
         return result.getData();
     }
@@ -400,8 +401,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
             .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/availability")
             .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Map<String, Boolean>> result = JacksonUtils.toObj(httpRestResult.getData(),
-            new TypeReference<Result<Map<String, Boolean>>>() {
+        Result<Map<String, Boolean>> result = JsonUtils.toObj(httpRestResult.getData(),
+            new NacosTypeReference<Result<Map<String, Boolean>>>() {
             });
         return result.getData();
     }

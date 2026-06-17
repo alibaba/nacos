@@ -17,6 +17,7 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -137,6 +138,27 @@ class SkillMaintainerServiceImplTest {
     }
     
     @Test
+    @DisplayName("batchUploadSkillsFromZip should return batch result")
+    void testBatchUploadSkillsFromZip() throws NacosException {
+        BatchUploadResult batchUploadResult = new BatchUploadResult();
+        batchUploadResult.addSucceeded("test-skill");
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(batchUploadResult)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        BatchUploadResult actual =
+            skillService.batchUploadSkillsFromZip("public", "zip".getBytes(), false);
+        
+        assertEquals(java.util.Collections.singletonList("test-skill"), actual.getSucceeded());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy).executeSyncHttpRequest(requestCaptor.capture());
+        HttpRequest request = requestCaptor.getValue();
+        assertEquals(Constants.AdminApiPath.AI_SKILL_BATCH_UPLOAD_ADMIN_PATH, request.getPath());
+        assertTrue(request.isFileUpload());
+    }
+    
+    @Test
     @DisplayName("batchPrecheckUploadSkill should call batch upload precheck path")
     void testBatchPrecheckUploadSkill() throws NacosException {
         SkillUploadPrecheckResult item = new SkillUploadPrecheckResult();
@@ -229,6 +251,19 @@ class SkillMaintainerServiceImplTest {
             .thenReturn(mockRestResult);
         
         boolean actual = skillService.redraft("public", "testSkill", "v1");
+        assertTrue(actual);
+    }
+    
+    @Test
+    @DisplayName("updateLabels should return true")
+    void testUpdateLabelsReturnsTrue() throws NacosException {
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult
+            .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        boolean actual = skillService.updateLabels("public", "testSkill", "{\"latest\":\"v1\"}");
         assertTrue(actual);
     }
     

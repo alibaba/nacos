@@ -24,13 +24,13 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,8 +79,8 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<AgentSpecMeta> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<AgentSpecMeta>>() {
+        Result<AgentSpecMeta> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<AgentSpecMeta>>() {
             });
         return result.getData();
     }
@@ -100,8 +100,8 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_VERSION_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<AgentSpec> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<AgentSpec>>() {
+        Result<AgentSpec> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<AgentSpec>>() {
             });
         return result.getData();
     }
@@ -121,8 +121,8 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_VERSION_META_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<AgentSpec> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<AgentSpec>>() {
+        Result<AgentSpec> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<AgentSpec>>() {
             });
         return result.getData();
     }
@@ -139,8 +139,8 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_ADMIN_PATH).setParamValue(params)
                 .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<String>>() {
+        Result<String> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -162,8 +162,8 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_LIST_ADMIN_PATH).setParamValue(params)
                 .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<Page<AgentSpecBasicInfo>> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<Page<AgentSpecBasicInfo>>>() {
+        Result<Page<AgentSpecBasicInfo>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Page<AgentSpecBasicInfo>>>() {
             });
         return result.getData();
     }
@@ -201,8 +201,8 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_LIST_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<Page<AgentSpecSummary>> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<Page<AgentSpecSummary>>>() {
+        Result<Page<AgentSpecSummary>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Page<AgentSpecSummary>>>() {
             });
         return result.getData();
     }
@@ -219,8 +219,8 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
             .setPath(Constants.AdminApiPath.AI_AGENTSPEC_UPLOAD_ADMIN_PATH).setParamValue(params)
             .setFileUpload(zipBytes, "agentspec.zip", "file").build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<String>>() {
+        Result<String> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -242,7 +242,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -263,7 +263,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
             .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -281,7 +281,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -301,7 +301,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -325,7 +325,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -349,7 +349,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -369,7 +369,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -389,7 +389,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -409,7 +409,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -432,7 +432,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -452,7 +452,7 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
                 .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
