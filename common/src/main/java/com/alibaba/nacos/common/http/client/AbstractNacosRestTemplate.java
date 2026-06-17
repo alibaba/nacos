@@ -22,10 +22,9 @@ import com.alibaba.nacos.common.http.client.handler.ByteArrayResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.RestResultResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.StringResponseHandler;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.fasterxml.jackson.databind.JavaType;
 import org.slf4j.Logger;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,9 +78,10 @@ public abstract class AbstractNacosRestTemplate {
             responseHandler = responseHandlerMap.get(ResponseHandlerType.STRING_TYPE);
         }
         if (responseHandler == null) {
-            JavaType javaType = JacksonUtils.constructJavaType(responseType);
-            String name = javaType.getRawClass().getName();
-            responseHandler = responseHandlerMap.get(name);
+            Class<?> rawClass = resolveRawClass(responseType);
+            if (rawClass != null) {
+                responseHandler = responseHandlerMap.get(rawClass.getName());
+            }
         }
         // When the corresponding type of response handler cannot be obtained,
         // the default bean response handler is used
@@ -90,5 +90,18 @@ public abstract class AbstractNacosRestTemplate {
         }
         responseHandler.setResponseType(responseType);
         return responseHandler;
+    }
+    
+    private Class<?> resolveRawClass(Type responseType) {
+        if (responseType instanceof Class) {
+            return (Class<?>) responseType;
+        }
+        if (responseType instanceof ParameterizedType) {
+            Type rawType = ((ParameterizedType) responseType).getRawType();
+            if (rawType instanceof Class) {
+                return (Class<?>) rawType;
+            }
+        }
+        return null;
     }
 }

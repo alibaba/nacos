@@ -74,6 +74,13 @@ Last updated: 2026-06-16.
   - `common/target/site/jacoco/jacoco.csv`: `GrpcUtils` and
     `ByteBufferInputStream` have `LINE_MISSED=0`.
   - `mvn -pl common apache-rat:check`
+- 2026-06-17, stage 6 common response type cleanup:
+  - `mvn -pl common spotless:apply`
+  - `mvn -pl common spotless:check`
+  - `mvn -pl common -am -Dtest=AbstractNacosRestTemplateTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `common/target/site/jacoco/jacoco.csv`: `AbstractNacosRestTemplate` has
+    `LINE_MISSED=0`.
+  - `mvn -pl common apache-rat:check`
 
 ## Implementation Principles
 
@@ -263,13 +270,13 @@ Last updated: 2026-06-16.
     - Existing gRPC payload conversion tests.
     - Unit tests for the Nacos-owned `ByteBufferInputStream`.
 
-- `[ ]` Remove `JavaType` from `AbstractNacosRestTemplate`.
+- `[x]` Remove `JavaType` from `AbstractNacosRestTemplate`.
   - Files:
     - `common/src/main/java/com/alibaba/nacos/common/http/client/AbstractNacosRestTemplate.java`
   - Plan:
-    - Replace `JacksonUtils.constructJavaType(responseType).getRawClass()` with
-      neutral raw-class resolution for `Class`, `ParameterizedType`, and common
-      response types.
+    - Replace `JacksonUtils.constructJavaType(responseType).getRawClass()`
+      with neutral raw-class resolution for `Class`, `ParameterizedType`, and
+      unsupported `Type` fallback.
   - Validation:
     - HTTP response handler selection unit tests.
 
