@@ -7,7 +7,7 @@ import { useHistoryStore } from '@/stores/history-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { configApi } from '@/api/config';
 import { DiffEditor } from '@/components/config/DiffEditor';
-import type { ConfigHistory, ConfigType } from '@/types/config';
+import type { ConfigHistory, ConfigHistoryDetail, ConfigType } from '@/types/config';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -132,18 +132,28 @@ export default function HistoryRollbackPage() {
   const handleCompare = async (record: ConfigHistory) => {
     setDiffLoading(true);
     setDiffOpen(true);
-    setSelectedContent(record.content || '');
     setDiffLanguage(record.type || 'text');
 
     try {
-      const response = await configApi.get({
-        dataId: record.dataId,
-        groupName: record.groupName,
-        namespaceId: activeNamespace,
-      });
-      const result = response as unknown as { data: { content: string } };
-      setCurrentContent(result.data?.content || '');
+      const [historyResponse, currentResponse] = await Promise.all([
+        configApi.historyDetail({
+          nid: record.id,
+          dataId: record.dataId,
+          groupName: record.groupName,
+          namespaceId: activeNamespace,
+        }),
+        configApi.get({
+          dataId: record.dataId,
+          groupName: record.groupName,
+          namespaceId: activeNamespace,
+        }),
+      ]);
+      const historyResult = historyResponse as unknown as { data: ConfigHistoryDetail };
+      const currentResult = currentResponse as unknown as { data: { content: string } };
+      setSelectedContent(historyResult.data?.content || '');
+      setCurrentContent(currentResult.data?.content || '');
     } catch {
+      setSelectedContent('');
       setCurrentContent('');
     } finally {
       setDiffLoading(false);

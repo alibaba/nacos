@@ -47,12 +47,10 @@ export interface ConfigCreateData {
 
 export interface ConfigHistory {
   id: string;
-  nid: string;
   dataId: string;
   groupName: string;
-  content: string;
-  md5: string;
-  type: ConfigType;
+  md5?: string;
+  type?: ConfigType;
   appName: string;
   srcUser: string;
   srcIp: string;
@@ -61,6 +59,12 @@ export interface ConfigHistory {
   extInfo: string;
   createdTime: string;
   modifyTime: string;
+}
+
+export interface ConfigHistoryDetail extends ConfigHistory {
+  content: string;
+  md5: string;
+  type: ConfigType;
 }
 
 export interface ConfigHistoryListResponse {
