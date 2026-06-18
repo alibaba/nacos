@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -118,6 +120,89 @@ class NacosConfigMaintainerServiceImplTest {
         
         // Assert
         assertTrue(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+    }
+    
+    @Test
+    void testPublishConfigWithFalseResult() throws Exception {
+        String dataId = "testDataId";
+        String content = "testContent";
+        
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(false)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockHttpRestResult);
+        
+        boolean result = nacosConfigMaintainerServiceImpl.publishConfig(dataId, content);
+        
+        assertFalse(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+    }
+    
+    @Test
+    void testPublishConfigWithFailureResult() throws Exception {
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(JacksonUtils.toJson(Result.failure(ErrorCode.SERVER_ERROR)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockHttpRestResult);
+        
+        NacosException exception = assertThrows(NacosException.class,
+            () -> nacosConfigMaintainerServiceImpl.publishConfig("testDataId", "testContent"));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertEquals(ErrorCode.SERVER_ERROR.getMsg(), exception.getErrMsg());
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+    }
+    
+    @Test
+    void testPublishConfigWithFailureResultWithoutMessage() throws Exception {
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(JacksonUtils.toJson(
+            new Result<Boolean>(ErrorCode.SERVER_ERROR.getCode(), "")));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockHttpRestResult);
+        
+        NacosException exception = assertThrows(NacosException.class,
+            () -> nacosConfigMaintainerServiceImpl.publishConfig("testDataId", "testContent"));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertEquals("request failed", exception.getErrMsg());
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+    }
+    
+    @Test
+    void testPublishConfigWithEmptyResult() throws Exception {
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData("null");
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockHttpRestResult);
+        
+        NacosException exception = assertThrows(NacosException.class,
+            () -> nacosConfigMaintainerServiceImpl.publishConfig("testDataId", "testContent"));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertEquals("empty Result", exception.getErrMsg());
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+    }
+    
+    @Test
+    void testPublishConfigWithEmptyBooleanData() throws Exception {
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(JacksonUtils.toJson(
+            new Result<Boolean>(ErrorCode.SUCCESS.getCode(), ErrorCode.SUCCESS.getMsg())));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockHttpRestResult);
+        
+        NacosException exception = assertThrows(NacosException.class,
+            () -> nacosConfigMaintainerServiceImpl.publishConfig("testDataId", "testContent"));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertEquals("empty boolean result data", exception.getErrMsg());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
     }
     

@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
@@ -102,7 +103,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<Boolean> result =
             JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
-        return result.getData();
+        return unwrapBooleanResult(result);
     }
     
     @Override
@@ -147,7 +148,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<Boolean> result =
             JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
-        return result.getData();
+        return unwrapBooleanResult(result);
     }
     
     @Override
@@ -166,7 +167,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<Boolean> result =
             JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
-        return result.getData();
+        return unwrapBooleanResult(result);
     }
     
     @Override
@@ -188,7 +189,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<Boolean> result =
             JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
-        return result.getData();
+        return unwrapBooleanResult(result);
     }
     
     @Override
@@ -258,7 +259,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<Boolean> result =
             JsonUtils.toObj(httpRestResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
-        return result.getData();
+        return unwrapBooleanResult(result);
     }
     
     @Override
@@ -277,6 +278,22 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<ConfigGrayInfo> result = JsonUtils.toObj(httpRestResult.getData(),
             new NacosTypeReference<Result<ConfigGrayInfo>>() {
             });
+        return result.getData();
+    }
+    
+    private static boolean unwrapBooleanResult(Result<Boolean> result) throws NacosException {
+        if (result == null) {
+            throw new NacosException(NacosException.SERVER_ERROR, "empty Result");
+        }
+        if (!ErrorCode.SUCCESS.getCode().equals(result.getCode())) {
+            String message =
+                StringUtils.isNotBlank(result.getMessage()) ? result.getMessage()
+                    : "request failed";
+            throw new NacosException(NacosException.SERVER_ERROR, message);
+        }
+        if (result.getData() == null) {
+            throw new NacosException(NacosException.SERVER_ERROR, "empty boolean result data");
+        }
         return result.getData();
     }
     

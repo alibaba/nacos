@@ -104,6 +104,18 @@ Last updated: 2026-06-17.
     returns only the legacy `PipelineMaintainerServiceImpl` `JsonNode`
     compatibility path.
   - `mvn -pl maintainer-client apache-rat:check`
+- 2026-06-18, stage 8 maintainer-client CI IT follow-up:
+  - Fixed config maintainer boolean `Result` unwrapping so business failure
+    responses keep the original message instead of becoming a null
+    `Boolean` unboxing failure.
+  - `mvn -pl maintainer-client spotless:apply`
+  - `mvn -pl maintainer-client spotless:check`
+  - `mvn -pl maintainer-client -am -Dtest=NacosConfigMaintainerServiceImplTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `mvn -pl maintainer-client -am test` passed when local test HTTP server
+    binding was allowed; the sandboxed attempt failed only on local bind
+    permission in OIDC dependency tests.
+  - `maintainer-client/target/site/jacoco/jacoco.xml`: new config maintainer
+    boolean unwrap lines have no missed instructions.
 
 ## Implementation Principles
 
