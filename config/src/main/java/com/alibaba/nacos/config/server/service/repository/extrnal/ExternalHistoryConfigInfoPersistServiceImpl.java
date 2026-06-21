@@ -181,15 +181,15 @@ public class ExternalHistoryConfigInfoPersistServiceImpl
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
             dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         
-        String sqlCountRows =
-            historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
+        MapperResult sqlCountRows = new MapperResult(
+            historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id")),
+            Arrays.asList(dataId, group, tenantTmp));
         MapperResult sqlFetchRows = historyConfigInfoMapper.pageFindConfigHistoryFetchRows(context);
         
         Page<ConfigHistoryInfo> page;
         try {
-            page = helper.fetchPage(sqlCountRows, sqlFetchRows.getSql(),
-                sqlFetchRows.getParamList().toArray(), pageNo,
-                pageSize, HISTORY_LIST_ROW_MAPPER);
+            page = helper.fetchPageLimit(sqlCountRows, sqlFetchRows, pageNo, pageSize,
+                HISTORY_LIST_ROW_MAPPER);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[list-config-history] error, dataId:{}, group:{}",
                 new Object[] {dataId, group},
