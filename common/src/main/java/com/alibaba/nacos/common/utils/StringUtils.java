@@ -203,12 +203,14 @@ public class StringUtils {
         StringBuilder stringBuilder = new StringBuilder();
         Object[] objects = collection.toArray();
         
+        boolean first = true;
         for (int i = 0; i < collection.size(); i++) {
             if (objects[i] != null) {
-                stringBuilder.append(objects[i]);
-                if (i != collection.size() - 1 && separator != null) {
+                if (!first && separator != null) {
                     stringBuilder.append(separator);
                 }
+                stringBuilder.append(objects[i]);
+                first = false;
             }
         }
         
