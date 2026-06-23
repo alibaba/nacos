@@ -39,8 +39,6 @@ import { useAuthStore } from '@/stores/auth-store';
 import { skillApi } from '@/api/skill';
 import type { SkillListItem } from '@/types/skill';
 
-const SUBSCRIBED_SCOPE_FILTER = '_subscribed';
-
 export default function SkillManagementPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -392,9 +390,6 @@ export default function SkillManagementPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            {t('skill.dragDropHint')}
-          </span>
           <Button
             size="sm"
             variant="outline"
@@ -409,24 +404,6 @@ export default function SkillManagementPage() {
           <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
             <Download className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.importFromRegistry')}
-          </Button>
-          <Button
-            size="sm"
-            variant={filterSubscribed ? 'default' : 'outline'}
-            aria-pressed={filterSubscribed}
-            onClick={() => handleSubscriptionFilterChange(!filterSubscribed)}
-          >
-            <Bell className="mr-1.5 h-3.5 w-3.5" />
-            {t('skill.mySubscriptions')}
-            {subscriptions.length > 0 && (
-              <span
-                className={filterSubscribed
-                  ? 'ml-1 text-xs text-primary-foreground/80'
-                  : 'ml-1 text-xs text-muted-foreground'}
-              >
-                ({subscriptions.length})
-              </span>
-            )}
           </Button>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -485,6 +462,26 @@ export default function SkillManagementPage() {
         <Button size="sm" variant="secondary" className="h-8 shrink-0" onClick={handleSearch}>
           {t('common.search')}
         </Button>
+        <Button
+          size="sm"
+          variant={filterSubscribed ? 'default' : 'outline'}
+          className="h-8 shrink-0 whitespace-nowrap"
+          aria-pressed={filterSubscribed}
+          disabled={subscriptionLoading}
+          onClick={() => handleSubscriptionFilterChange(!filterSubscribed)}
+        >
+          <Bell className="mr-1 h-3 w-3" />
+          {t('skill.mySubscriptions')}
+          {subscriptions.length > 0 && (
+            <span
+              className={filterSubscribed
+                ? 'ml-1 text-xs text-primary-foreground/80'
+                : 'ml-1 text-xs text-muted-foreground'}
+            >
+              ({subscriptions.length})
+            </span>
+          )}
+        </Button>
         {(searchInput || filterOwner || filterScope || filterBizTag || filterSubscribed) && (
           <Button size="sm" variant="ghost" className="h-8 shrink-0" onClick={handleReset}>
             <X className="mr-1 h-3 w-3" />
@@ -492,12 +489,8 @@ export default function SkillManagementPage() {
           </Button>
         )}
         <Select
-          value={filterSubscribed ? SUBSCRIBED_SCOPE_FILTER : (filterScope || '_all')}
+          value={filterScope || '_all'}
           onValueChange={(v) => {
-            if (v === SUBSCRIBED_SCOPE_FILTER) {
-              handleSubscriptionFilterChange(true);
-              return;
-            }
             clearSelection();
             setFilterSubscribed(false);
             setSearchParams({ filterScope: v === '_all' ? '' : v });
@@ -511,9 +504,6 @@ export default function SkillManagementPage() {
             <SelectItem value="_all">{t('skill.filterScopeAll')}</SelectItem>
             <SelectItem value="PUBLIC">{t('skill.filterScopePublic')}</SelectItem>
             <SelectItem value="PRIVATE">{t('skill.filterScopePrivate')}</SelectItem>
-            <SelectItem value={SUBSCRIBED_SCOPE_FILTER}>
-              {t('skill.filterScopeSubscribed')}
-            </SelectItem>
           </SelectContent>
         </Select>
         <Select

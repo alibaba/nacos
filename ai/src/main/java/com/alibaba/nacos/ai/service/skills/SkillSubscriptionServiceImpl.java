@@ -90,17 +90,25 @@ public class SkillSubscriptionServiceImpl implements SkillSubscriptionService {
         throws NacosException {
         String resolvedNamespaceId = resolveNamespaceId(namespaceId);
         String subscriber = resolveSubscriber();
+        List<String> normalizedNames = new ArrayList<>();
+        if (names != null) {
+            for (String name : names) {
+                if (StringUtils.isNotBlank(name)) {
+                    normalizedNames.add(name.trim());
+                }
+            }
+        }
+        if (normalizedNames.isEmpty()) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING, "Skill subscription name is required");
+        }
         SkillSubscriptionDocument document = storage.get(resolvedNamespaceId, subscriber);
         SkillSubscriptionDocument normalizedDocument = normalizeDocument(resolvedNamespaceId,
             subscriber, document);
         Map<String, SkillSubscription> remaining = toSubscriptionMap(
             normalizedDocument.getSubscriptions());
-        if (names != null) {
-            for (String name : names) {
-                if (StringUtils.isNotBlank(name)) {
-                    remaining.remove(name.trim());
-                }
-            }
+        for (String name : normalizedNames) {
+            remaining.remove(name);
         }
         SkillSubscriptionDocument updated = buildDocument(resolvedNamespaceId, subscriber,
             normalizedDocument, remaining);

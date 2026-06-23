@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.service.skills;
 import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
 import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,9 +34,11 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -101,6 +104,35 @@ class SkillSubscriptionServiceImplTest {
         assertEquals("anonymous", actual.getSubscriber());
         assertEquals(1, actual.getSubscriptions().size());
         assertEquals("b-skill", actual.getSubscriptions().get(0).getName());
+    }
+    
+    @Test
+    void testUnsubscribeUsesRequestUsernameParameter() throws NacosException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter(com.alibaba.nacos.api.common.Constants.USERNAME, "nacos");
+        org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(
+            new ServletRequestAttributes(request));
+        SkillSubscriptionDocument existedDocument = document(subscription("doc-format"));
+        when(storage.get(eq("public"), eq("nacos"))).thenReturn(existedDocument);
+        
+        SkillSubscriptionDocument actual = service.unsubscribe("public",
+            Collections.singletonList("doc-format"));
+        
+        assertEquals("nacos", actual.getSubscriber());
+        assertEquals(0, actual.getSubscriptions().size());
+        ArgumentCaptor<SkillSubscriptionDocument> captor =
+            ArgumentCaptor.forClass(SkillSubscriptionDocument.class);
+        verify(storage).save(eq("public"), eq("nacos"), captor.capture());
+        assertEquals(0, captor.getValue().getSubscriptions().size());
+    }
+    
+    @Test
+    void testUnsubscribeRejectsEmptyNames() {
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.unsubscribe("public", Collections.singletonList(" ")));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        verifyNoInteractions(storage);
     }
     
     @Test
