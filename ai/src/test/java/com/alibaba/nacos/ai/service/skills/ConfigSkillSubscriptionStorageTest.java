@@ -24,6 +24,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.dump.DumpRequest;
+import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +55,9 @@ class ConfigSkillSubscriptionStorageTest {
     private ConfigOperationService configOperationService;
     
     @Mock
+    private DumpService dumpService;
+    
+    @Mock
     private SyncEffectService syncEffectService;
     
     private ConfigSkillSubscriptionStorage storage;
@@ -60,7 +65,7 @@ class ConfigSkillSubscriptionStorageTest {
     @BeforeEach
     void setUp() {
         storage = new ConfigSkillSubscriptionStorage(configInfoPersistService,
-            configOperationService, syncEffectService);
+            configOperationService, dumpService, syncEffectService);
     }
     
     @Test
@@ -115,6 +120,13 @@ class ConfigSkillSubscriptionStorageTest {
         assertEquals(Constants.Skills.SKILL_SUBSCRIPTION_GROUP, form.getGroup());
         assertEquals(ConfigSkillSubscriptionStorage.buildDataId("alice"), form.getDataId());
         assertEquals("alice", form.getSrcUser());
+        ArgumentCaptor<DumpRequest> dumpRequestCaptor =
+            ArgumentCaptor.forClass(DumpRequest.class);
+        verify(dumpService).dump(dumpRequestCaptor.capture());
+        DumpRequest dumpRequest = dumpRequestCaptor.getValue();
+        assertEquals(form.getDataId(), dumpRequest.getDataId());
+        assertEquals(form.getGroup(), dumpRequest.getGroup());
+        assertEquals(form.getNamespaceId(), dumpRequest.getTenant());
         verify(syncEffectService).toSync(any(ConfigForm.class), anyLong());
     }
 }
