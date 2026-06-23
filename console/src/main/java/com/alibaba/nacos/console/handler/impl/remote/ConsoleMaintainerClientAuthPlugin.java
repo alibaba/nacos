@@ -16,13 +16,20 @@
 
 package com.alibaba.nacos.console.handler.impl.remote;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.config.NacosConsoleAuthConfig;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.plugin.auth.constant.Constants.Identity;
 import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 import java.util.Properties;
@@ -58,11 +65,48 @@ public class ConsoleMaintainerClientAuthPlugin extends AbstractClientAuthService
     
     @Override
     public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
-        return identityContext;
+        LoginIdentityContext result = new LoginIdentityContext();
+        for (String key : identityContext.getAllKey()) {
+            result.setParameter(key, identityContext.getParameter(key));
+        }
+        String username = resolveCurrentUsername();
+        if (StringUtils.isNotBlank(username)) {
+            result.setParameter(Constants.USERNAME, username);
+        }
+        return result;
     }
     
     @Override
     public void shutdown() throws NacosException {
         
+    }
+    
+    private String resolveCurrentUsername() {
+        String username = resolveIdentityUsername();
+        return StringUtils.isBlank(username) ? resolveRequestUsername() : username;
+    }
+    
+    private String resolveIdentityUsername() {
+        try {
+            Object identity = RequestContextHolder.getContext().getAuthContext()
+                .getIdentityContext().getParameter(Identity.IDENTITY_ID);
+            return identity == null ? StringUtils.EMPTY : identity.toString();
+        } catch (Exception ignored) {
+            return StringUtils.EMPTY;
+        }
+    }
+    
+    private String resolveRequestUsername() {
+        try {
+            RequestAttributes attributes =
+                org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (!(attributes instanceof ServletRequestAttributes)) {
+                return StringUtils.EMPTY;
+            }
+            HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
+            return request.getParameter(Constants.USERNAME);
+        } catch (Exception ignored) {
+            return StringUtils.EMPTY;
+        }
     }
 }

@@ -24,7 +24,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -164,6 +167,27 @@ public class SkillSubscriptionServiceImpl implements SkillSubscriptionService {
     
     private String resolveSubscriber() {
         String currentIdentity = VisibilityHelper.resolveCurrentIdentity();
-        return StringUtils.isBlank(currentIdentity) ? ANONYMOUS_SUBSCRIBER : currentIdentity;
+        if (StringUtils.isNotBlank(currentIdentity)) {
+            return currentIdentity;
+        }
+        String requestUsername = resolveRequestUsername();
+        return StringUtils.isBlank(requestUsername) ? ANONYMOUS_SUBSCRIBER : requestUsername;
+    }
+    
+    private String resolveRequestUsername() {
+        try {
+            RequestAttributes attributes =
+                org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (!(attributes instanceof ServletRequestAttributes)) {
+                return StringUtils.EMPTY;
+            }
+            HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
+            String username = request.getParameter(
+                com.alibaba.nacos.api.common.Constants.USERNAME);
+            return StringUtils.isBlank(username) ? request.getHeader(
+                com.alibaba.nacos.api.common.Constants.USERNAME) : username;
+        } catch (Exception ignored) {
+            return StringUtils.EMPTY;
+        }
     }
 }

@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.console.config.NacosConsoleAuthConfig;
+import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -82,6 +84,7 @@ class ConsoleMaintainerClientAuthPluginTest {
             cachedConsoleAuthConfig);
         authPlugin.shutdown();
         EnvUtil.setEnvironment(cachedEnvironment);
+        RequestContextHolder.removeContext();
     }
     
     @Test
@@ -96,5 +99,18 @@ class ConsoleMaintainerClientAuthPluginTest {
         identityContext = authPlugin.getLoginIdentityContext(null);
         assertTrue(identityContext.getAllKey().contains(MOCK_IDENTITY_KEY));
         assertEquals(MOCK_IDENTITY_VALUE, identityContext.getParameter(MOCK_IDENTITY_KEY));
+    }
+    
+    @Test
+    void getLoginIdentityContextShouldIncludeCurrentUsername() {
+        IdentityContext requestIdentityContext = new IdentityContext();
+        requestIdentityContext.setParameter(Constants.Identity.IDENTITY_ID, "nacos");
+        RequestContextHolder.getContext().getAuthContext()
+            .setIdentityContext(requestIdentityContext);
+        
+        LoginIdentityContext identityContext = authPlugin.getLoginIdentityContext(null);
+        
+        assertEquals("nacos", identityContext.getParameter(
+            com.alibaba.nacos.api.common.Constants.USERNAME));
     }
 }
