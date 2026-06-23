@@ -13,6 +13,7 @@ import {
   Plus,
   Tag,
   Download,
+  Bell,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { SkillCard } from './components/SkillCard';
 import { UploadSkillDialog } from './components/UploadSkillDialog';
 import { CreateSkillDialog } from './components/CreateSkillDialog';
@@ -54,8 +63,15 @@ export default function SkillManagementPage() {
     filterScope,
     filterBizTag,
     selectedNames,
+    subscriptions,
+    subscriptionMap,
+    subscriptionLoading,
+    subscriptionSaving,
     error,
     fetchList,
+    fetchSubscriptions,
+    subscribeSkills,
+    unsubscribeSkills,
     setSearchParams,
     setPage,
     resetSearch,
@@ -73,6 +89,7 @@ export default function SkillManagementPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const [uploadInitialFile, setUploadInitialFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounter = useRef(0);
@@ -81,7 +98,8 @@ export default function SkillManagementPage() {
 
   const loadData = useCallback(() => {
     fetchList(namespaceId);
-  }, [fetchList, namespaceId]);
+    fetchSubscriptions(namespaceId);
+  }, [fetchList, fetchSubscriptions, namespaceId]);
 
   useEffect(() => {
     loadData();
@@ -140,6 +158,40 @@ export default function SkillManagementPage() {
       setDeleteLoading(false);
       loadData();
     }
+  };
+
+  const handleSubscribeSkill = async (name: string) => {
+    try {
+      await subscribeSkills(namespaceId, [name]);
+      toast.success(t('skill.subscribeSuccess'));
+    } catch {
+      // error handled by axios interceptor
+    }
+  };
+
+  const handleUnsubscribeSkill = async (name: string) => {
+    try {
+      await unsubscribeSkills(namespaceId, [name]);
+      toast.success(t('skill.unsubscribeSuccess'));
+    } catch {
+      // error handled by axios interceptor
+    }
+  };
+
+  const handleBatchSubscribe = async () => {
+    const names = Array.from(selectedNames);
+    if (names.length === 0) return;
+    try {
+      await subscribeSkills(namespaceId, names);
+      toast.success(t('skill.subscribeSuccess'));
+    } catch {
+      // error handled by axios interceptor
+    }
+  };
+
+  const handleOpenSubscriptions = () => {
+    setSubscriptionDialogOpen(true);
+    fetchSubscriptions(namespaceId);
   };
 
   const handlePageDragOver = useCallback((e: React.DragEvent) => {
@@ -230,6 +282,15 @@ export default function SkillManagementPage() {
           <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
             <Download className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.importFromRegistry')}
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleOpenSubscriptions}>
+            <Bell className="mr-1.5 h-3.5 w-3.5" />
+            {t('skill.mySubscriptions')}
+            {subscriptions.length > 0 && (
+              <span className="ml-1 text-xs text-muted-foreground">
+                ({subscriptions.length})
+              </span>
+            )}
           </Button>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -329,6 +390,16 @@ export default function SkillManagementPage() {
               {t('config.selectedCount', { count: selectedNames.size })}
             </span>
             <Button
+              variant="outline"
+              size="sm"
+              className="h-8 shrink-0"
+              disabled={subscriptionSaving}
+              onClick={handleBatchSubscribe}
+            >
+              <Bell className="mr-1 h-3 w-3" />
+              {t('skill.subscribe')}
+            </Button>
+            <Button
               variant="destructive"
               size="sm"
               className="h-8 shrink-0"
@@ -408,9 +479,13 @@ export default function SkillManagementPage() {
                 key={item.name}
                 item={item}
                 selected={selectedNames.has(item.name)}
+                subscribed={!!subscriptionMap[item.name]}
+                subscriptionSaving={subscriptionSaving}
                 onSelect={toggleSelect}
                 onDetail={handleDetail}
                 onDelete={setDeleteTarget}
+                onSubscribe={handleSubscribeSkill}
+                onUnsubscribe={handleUnsubscribeSkill}
               />
             ))}
           </div>
@@ -535,6 +610,56 @@ export default function SkillManagementPage() {
               {deleteLoading ? t('common.loading') : t('common.delete')}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Subscription list dialog */}
+      <Dialog open={subscriptionDialogOpen} onOpenChange={setSubscriptionDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('skill.mySubscriptions')}</DialogTitle>
+            <DialogDescription>
+              {t('skill.mySubscriptionsDesc', { count: subscriptions.length })}
+            </DialogDescription>
+          </DialogHeader>
+          {subscriptionLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={index} className="h-10 w-full" />
+              ))}
+            </div>
+          ) : subscriptions.length === 0 ? (
+            <div className="flex h-28 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
+              {t('skill.noSkillSubscriptions')}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('skill.skillName')}</TableHead>
+                  <TableHead className="w-24 text-right">{t('common.operation')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {subscriptions.map((subscription) => (
+                  <TableRow key={subscription.name}>
+                    <TableCell className="font-medium">{subscription.name}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-destructive hover:text-destructive"
+                        disabled={subscriptionSaving}
+                        onClick={() => handleUnsubscribeSkill(subscription.name)}
+                      >
+                        {t('skill.unsubscribe')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </DialogContent>
       </Dialog>
     </div>

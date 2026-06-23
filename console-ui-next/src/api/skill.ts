@@ -5,6 +5,8 @@ import type {
   SkillListResponse,
   SkillAdminDetail,
   SkillDocument,
+  SkillSubscription,
+  SkillSubscriptionDocument,
   SkillUploadPrecheckRequest,
   SkillUploadPrecheckResult,
 } from '@/types/skill';
@@ -21,6 +23,31 @@ export const skillApi = {
   /** List skills with pagination and search */
   list: (params: SkillListParams): ApiResult<SkillListResponse> =>
     client.get(`${BASE}/list`, { params }) as ApiResult<SkillListResponse>,
+
+  /** List current user's skill subscriptions */
+  listSubscriptions: (namespaceId?: string): ApiResult<SkillSubscriptionDocument> =>
+    client.get(`${BASE}/subscriptions`, {
+      params: { namespaceId },
+    }) as ApiResult<SkillSubscriptionDocument>,
+
+  /** Add current user's skill subscriptions */
+  subscribe: (
+    namespaceId: string,
+    subscriptions: SkillSubscription[],
+  ): ApiResult<SkillSubscriptionDocument> =>
+    client.post(`${BASE}/subscriptions`, subscriptions, {
+      params: { namespaceId },
+      headers: { 'Content-Type': 'application/json' },
+    }) as ApiResult<SkillSubscriptionDocument>,
+
+  /** Remove current user's skill subscriptions */
+  unsubscribe: (
+    namespaceId: string,
+    names: string[],
+  ): ApiResult<SkillSubscriptionDocument> =>
+    client.delete(`${BASE}/subscriptions`, {
+      params: { namespaceId, names: names.join(',') },
+    }) as ApiResult<SkillSubscriptionDocument>,
 
   /** Get skill detail (governance info + version summaries) */
   getDetail: (params: {

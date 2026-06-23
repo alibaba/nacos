@@ -3,6 +3,7 @@ import { skillApi } from '@/api/skill';
 import type {
   SkillListItem,
   SkillAdminDetail,
+  SkillSubscription,
 } from '@/types/skill';
 import type { AxiosError } from 'axios';
 
@@ -23,6 +24,12 @@ interface SkillState {
   filterBizTag: string;
   selectedNames: Set<string>;
 
+  // Subscriptions
+  subscriptions: SkillSubscription[];
+  subscriptionMap: Record<string, SkillSubscription>;
+  subscriptionLoading: boolean;
+  subscriptionSaving: boolean;
+
   // Detail
   currentDetail: (SkillAdminDetail & { name: string }) | null;
   detailLoading: boolean;
@@ -33,6 +40,9 @@ interface SkillState {
 
 interface SkillActions {
   fetchList: (namespaceId: string) => Promise<void>;
+  fetchSubscriptions: (namespaceId: string) => Promise<void>;
+  subscribeSkills: (namespaceId: string, names: string[]) => Promise<void>;
+  unsubscribeSkills: (namespaceId: string, names: string[]) => Promise<void>;
   fetchDetail: (namespaceId: string, name: string) => Promise<void>;
   setSearchParams: (params: { searchName?: string; orderBy?: string; filterOwner?: string; filterScope?: string; filterBizTag?: string }) => void;
   setPage: (pageNo: number, pageSize?: number) => void;
@@ -59,6 +69,12 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
   filterScope: '',
   filterBizTag: '',
   selectedNames: new Set(),
+
+  // Subscriptions
+  subscriptions: [],
+  subscriptionMap: {},
+  subscriptionLoading: false,
+  subscriptionSaving: false,
 
   // Detail
   currentDetail: null,
@@ -99,6 +115,101 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
         items: [],
         total: 0,
       });
+    }
+  },
+
+  fetchSubscriptions: async (namespaceId: string) => {
+    set({
+      subscriptionLoading: true,
+      subscriptions: [],
+      subscriptionMap: {},
+      error: null,
+    });
+    try {
+      const response = await skillApi.listSubscriptions(namespaceId);
+      const subscriptions = response.data?.subscriptions || [];
+      const subscriptionMap = subscriptions.reduce<Record<string, SkillSubscription>>(
+        (result, item) => {
+          if (item.name) {
+            result[item.name] = item;
+          }
+          return result;
+        },
+        {},
+      );
+      set({
+        subscriptions,
+        subscriptionMap,
+        subscriptionLoading: false,
+      });
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      set({
+        subscriptionLoading: false,
+        error: axiosError.response?.data?.message || 'Failed to fetch skill subscriptions',
+      });
+    }
+  },
+
+  subscribeSkills: async (namespaceId: string, names: string[]) => {
+    const subscriptions = names.filter(Boolean).map((name) => ({ name }));
+    if (subscriptions.length === 0) return;
+    set({ subscriptionSaving: true, error: null });
+    try {
+      const response = await skillApi.subscribe(namespaceId, subscriptions);
+      const nextSubscriptions = response.data?.subscriptions || [];
+      const subscriptionMap = nextSubscriptions.reduce<Record<string, SkillSubscription>>(
+        (result, item) => {
+          if (item.name) {
+            result[item.name] = item;
+          }
+          return result;
+        },
+        {},
+      );
+      set({
+        subscriptions: nextSubscriptions,
+        subscriptionMap,
+        subscriptionSaving: false,
+      });
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      set({
+        subscriptionSaving: false,
+        error: axiosError.response?.data?.message || 'Failed to subscribe skills',
+      });
+      throw error;
+    }
+  },
+
+  unsubscribeSkills: async (namespaceId: string, names: string[]) => {
+    const skillNames = names.filter(Boolean);
+    if (skillNames.length === 0) return;
+    set({ subscriptionSaving: true, error: null });
+    try {
+      const response = await skillApi.unsubscribe(namespaceId, skillNames);
+      const subscriptions = response.data?.subscriptions || [];
+      const subscriptionMap = subscriptions.reduce<Record<string, SkillSubscription>>(
+        (result, item) => {
+          if (item.name) {
+            result[item.name] = item;
+          }
+          return result;
+        },
+        {},
+      );
+      set({
+        subscriptions,
+        subscriptionMap,
+        subscriptionSaving: false,
+      });
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      set({
+        subscriptionSaving: false,
+        error: axiosError.response?.data?.message || 'Failed to unsubscribe skills',
+      });
+      throw error;
     }
   },
 

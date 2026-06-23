@@ -72,6 +72,21 @@ export interface SkillListResponse {
   pageItems: SkillListItem[];
 }
 
+/** Skill subscription item */
+export interface SkillSubscription {
+  name: string;
+}
+
+/** Skill subscriptions for current user in one namespace */
+export interface SkillSubscriptionDocument {
+  schemaVersion: number;
+  namespaceId?: string;
+  subscriber?: string;
+  groupId?: string;
+  dataId?: string;
+  subscriptions: SkillSubscription[];
+}
+
 /** List params */
 export interface SkillListParams {
   namespaceId?: string;

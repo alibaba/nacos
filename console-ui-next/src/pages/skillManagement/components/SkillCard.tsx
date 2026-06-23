@@ -8,6 +8,8 @@ import {
   Download,
   Globe,
   Lock,
+  Bell,
+  BellOff,
 } from 'lucide-react';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,17 +23,25 @@ import { parseBizTags, type SkillListItem } from '@/types/skill';
 interface SkillCardProps {
   item: SkillListItem;
   selected: boolean;
+  subscribed: boolean;
+  subscriptionSaving: boolean;
   onSelect: (name: string) => void;
   onDetail: (name: string) => void;
   onDelete: (name: string) => void;
+  onSubscribe: (name: string) => void;
+  onUnsubscribe: (name: string) => void;
 }
 
 export function SkillCard({
   item,
   selected,
+  subscribed,
+  subscriptionSaving,
   onSelect,
   onDetail,
   onDelete,
+  onSubscribe,
+  onUnsubscribe,
 }: SkillCardProps) {
   const { t } = useTranslation();
 
@@ -156,6 +166,31 @@ export function SkillCard({
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t('common.detail')}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-6 w-6',
+                  subscribed ? 'text-muted-foreground' : 'text-primary hover:text-primary',
+                )}
+                disabled={subscriptionSaving}
+                onClick={() => {
+                  if (subscribed) {
+                    onUnsubscribe(item.name);
+                  } else {
+                    onSubscribe(item.name);
+                  }
+                }}
+              >
+                {subscribed ? <BellOff className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {subscribed ? t('skill.unsubscribe') : t('skill.subscribe')}
+            </TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
