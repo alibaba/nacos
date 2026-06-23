@@ -35,7 +35,7 @@ export const skillApi = {
     namespaceId: string,
     subscriptions: SkillSubscription[],
   ): ApiResult<SkillSubscriptionDocument> =>
-    client.post(`${BASE}/subscriptions`, subscriptions, {
+    client.post(`${BASE}/subscriptions`, JSON.stringify(subscriptions), {
       params: { namespaceId },
       headers: { 'Content-Type': 'application/json' },
     }) as ApiResult<SkillSubscriptionDocument>,

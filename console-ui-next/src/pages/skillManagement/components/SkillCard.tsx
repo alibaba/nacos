@@ -9,7 +9,6 @@ import {
   Globe,
   Lock,
   Bell,
-  BellOff,
 } from 'lucide-react';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -174,7 +173,9 @@ export function SkillCard({
                 size="icon"
                 className={cn(
                   'h-6 w-6',
-                  subscribed ? 'text-muted-foreground' : 'text-primary hover:text-primary',
+                  subscribed
+                    ? 'text-primary hover:text-primary'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
                 disabled={subscriptionSaving}
                 onClick={() => {
@@ -185,7 +186,7 @@ export function SkillCard({
                   }
                 }}
               >
-                {subscribed ? <BellOff className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
+                <Bell className={cn('h-3 w-3', subscribed && 'fill-current')} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>

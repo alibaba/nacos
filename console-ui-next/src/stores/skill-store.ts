@@ -56,6 +56,35 @@ interface SkillActions {
 
 type SkillStore = SkillState & SkillActions;
 
+const getSubscriptionsFromResponse = (response: unknown): {
+  found: boolean;
+  subscriptions: SkillSubscription[];
+} => {
+  const body = response as {
+    data?: { subscriptions?: SkillSubscription[] };
+    subscriptions?: SkillSubscription[];
+  };
+  if (Array.isArray(body.data?.subscriptions)) {
+    return { found: true, subscriptions: body.data.subscriptions };
+  }
+  if (Array.isArray(body.subscriptions)) {
+    return { found: true, subscriptions: body.subscriptions };
+  }
+  return { found: false, subscriptions: [] };
+};
+
+const toSubscriptionMap = (
+  subscriptions: SkillSubscription[],
+): Record<string, SkillSubscription> => subscriptions.reduce<Record<string, SkillSubscription>>(
+  (result, item) => {
+    if (item.name) {
+      result[item.name] = item;
+    }
+    return result;
+  },
+  {},
+);
+
 export const useSkillStore = create<SkillStore>((set, get) => ({
   // List
   items: [],
@@ -127,19 +156,10 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
     });
     try {
       const response = await skillApi.listSubscriptions(namespaceId);
-      const subscriptions = response.data?.subscriptions || [];
-      const subscriptionMap = subscriptions.reduce<Record<string, SkillSubscription>>(
-        (result, item) => {
-          if (item.name) {
-            result[item.name] = item;
-          }
-          return result;
-        },
-        {},
-      );
+      const { subscriptions } = getSubscriptionsFromResponse(response);
       set({
         subscriptions,
-        subscriptionMap,
+        subscriptionMap: toSubscriptionMap(subscriptions),
         subscriptionLoading: false,
       });
     } catch (error) {
@@ -157,19 +177,17 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
     set({ subscriptionSaving: true, error: null });
     try {
       const response = await skillApi.subscribe(namespaceId, subscriptions);
-      const nextSubscriptions = response.data?.subscriptions || [];
-      const subscriptionMap = nextSubscriptions.reduce<Record<string, SkillSubscription>>(
-        (result, item) => {
-          if (item.name) {
-            result[item.name] = item;
-          }
-          return result;
-        },
-        {},
-      );
+      const parsed = getSubscriptionsFromResponse(response);
+      const nextSubscriptions = parsed.found
+        ? parsed.subscriptions
+        : Array.from(
+          new Map(
+            [...get().subscriptions, ...subscriptions].map((item) => [item.name, item]),
+          ).values(),
+        );
       set({
         subscriptions: nextSubscriptions,
-        subscriptionMap,
+        subscriptionMap: toSubscriptionMap(nextSubscriptions),
         subscriptionSaving: false,
       });
     } catch (error) {
@@ -188,19 +206,13 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
     set({ subscriptionSaving: true, error: null });
     try {
       const response = await skillApi.unsubscribe(namespaceId, skillNames);
-      const subscriptions = response.data?.subscriptions || [];
-      const subscriptionMap = subscriptions.reduce<Record<string, SkillSubscription>>(
-        (result, item) => {
-          if (item.name) {
-            result[item.name] = item;
-          }
-          return result;
-        },
-        {},
-      );
+      const parsed = getSubscriptionsFromResponse(response);
+      const subscriptions = parsed.found
+        ? parsed.subscriptions
+        : get().subscriptions.filter((item) => !skillNames.includes(item.name));
       set({
         subscriptions,
-        subscriptionMap,
+        subscriptionMap: toSubscriptionMap(subscriptions),
         subscriptionSaving: false,
       });
     } catch (error) {
