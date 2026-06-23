@@ -207,9 +207,13 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
     try {
       const response = await skillApi.unsubscribe(namespaceId, skillNames);
       const parsed = getSubscriptionsFromResponse(response);
-      const subscriptions = parsed.found
+      let subscriptions = parsed.found
         ? parsed.subscriptions
         : get().subscriptions.filter((item) => !skillNames.includes(item.name));
+      const latest = getSubscriptionsFromResponse(await skillApi.listSubscriptions(namespaceId));
+      if (latest.found) {
+        subscriptions = latest.subscriptions;
+      }
       set({
         subscriptions,
         subscriptionMap: toSubscriptionMap(subscriptions),

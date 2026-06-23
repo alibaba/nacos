@@ -14,6 +14,7 @@ import {
   Tag,
   Download,
   Bell,
+  BellOff,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -282,14 +283,21 @@ export default function SkillManagementPage() {
     }
   };
 
-  const handleBatchSubscribe = async () => {
+  const handleBatchSubscription = async () => {
     const names = Array.from(selectedNames);
     if (names.length === 0) return;
     try {
-      await subscribeSkills(namespaceId, names);
-      toast.success(t('skill.subscribeSuccess'));
+      if (names.every((name) => subscriptionMap[name])) {
+        await unsubscribeSkills(namespaceId, names);
+        toast.success(t('skill.unsubscribeSuccess'));
+      } else {
+        await subscribeSkills(namespaceId, names);
+        toast.success(t('skill.subscribeSuccess'));
+      }
     } catch {
       // error handled by axios interceptor
+    } finally {
+      clearSelection();
     }
   };
 
@@ -352,6 +360,9 @@ export default function SkillManagementPage() {
   const totalPages = Math.ceil(visibleTotal / pageSize);
   const allSelected = visibleItems.length > 0
     && visibleItems.every((a) => selectedNames.has(a.name));
+  const selectedList = Array.from(selectedNames);
+  const selectedAllSubscribed = selectedList.length > 0
+    && selectedList.every((name) => subscriptionMap[name]);
   const contentLoading = filterSubscribed ? subscriptionLoading || subscribedListLoading : loading;
   const contentError = filterSubscribed ? subscribedListError || error : error;
 
@@ -522,20 +533,27 @@ export default function SkillManagementPage() {
             <SelectItem value="download_count">{t('skill.sortByDownloads')}</SelectItem>
           </SelectContent>
         </Select>
-        {selectedNames.size > 0 && (
-          <div className="flex items-center gap-2 shrink-0 ml-auto pl-2 border-l border-border/60">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {t('config.selectedCount', { count: selectedNames.size })}
-            </span>
+      </div>
+
+      {selectedNames.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {t('config.selectedCount', { count: selectedNames.size })}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               className="h-8 shrink-0"
               disabled={subscriptionSaving}
-              onClick={handleBatchSubscribe}
+              onClick={handleBatchSubscription}
             >
-              <Bell className="mr-1 h-3 w-3" />
-              {t('skill.subscribe')}
+              {selectedAllSubscribed ? (
+                <BellOff className="mr-1 h-3 w-3" />
+              ) : (
+                <Bell className="mr-1 h-3 w-3" />
+              )}
+              {selectedAllSubscribed ? t('skill.unsubscribe') : t('skill.subscribe')}
             </Button>
             <Button
               variant="destructive"
@@ -550,8 +568,8 @@ export default function SkillManagementPage() {
               {t('common.cancel')}
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Content area */}
       {contentLoading && visibleItems.length === 0 ? (
