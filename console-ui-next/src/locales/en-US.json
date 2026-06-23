@@ -1327,6 +1327,7 @@
     "filterScopeAll": "All scopes",
     "filterScopePublic": "Public only",
     "filterScopePrivate": "Private only",
+    "filterScopeSubscribed": "My subscriptions",
     "filterByBizTag": "Filter by business tag",
     "filterBizTagPlaceholder": "Enter business tag",
     "labelKeyRequired": "Label key is required",
