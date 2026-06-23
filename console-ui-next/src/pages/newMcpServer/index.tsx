@@ -53,7 +53,11 @@ import type {
 } from '@/types/mcp';
 import { cn } from '@/lib/utils';
 import ToolManager from './tool-manager';
-import { resolveMcpEndpointUrl, shouldUseExistingService } from './endpoint-utils';
+import {
+  buildUrlExportPath,
+  resolveMcpEndpointUrl,
+  shouldUseExistingService,
+} from './endpoint-utils';
 import { loadServiceOptions } from './service-options';
 
 const PROTOCOL_CARD_CONFIG: Record<string, { icon: typeof Terminal; label: string; color: string; bg: string; dot: string; ring: string }> = {
@@ -428,11 +432,11 @@ export default function NewMcpServerPage() {
         try {
           const url = new URL(mcpEndpointUrl.trim());
           const urlTransportProtocol = url.protocol.replace(':', '');
-          const urlPath = url.pathname !== '/' ? url.pathname : undefined;
+          const urlPath = buildUrlExportPath(url);
 
           // Update serverSpec with remoteServerConfig including exportPath
           serverSpec.remoteServerConfig = {
-            exportPath: urlPath || '/',
+            exportPath: urlPath,
           };
 
           endpointSpec = JSON.stringify({
