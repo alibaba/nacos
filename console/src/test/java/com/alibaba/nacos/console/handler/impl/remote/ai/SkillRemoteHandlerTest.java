@@ -30,6 +30,8 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -47,6 +49,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -195,6 +198,42 @@ class SkillRemoteHandlerTest {
         
         assertEquals(0, result.getTotalCount());
         assertEquals(0, result.getPageItems().size());
+    }
+    
+    @Test
+    void testListSubscriptions() throws NacosException {
+        SkillSubscriptionDocument document = subscriptionDocument();
+        when(skillMaintainerService.listSubscriptions(NAMESPACE_ID)).thenReturn(document);
+        
+        SkillSubscriptionDocument result = skillRemoteHandler.listSubscriptions(NAMESPACE_ID);
+        
+        assertEquals(SKILL_NAME, result.getSubscriptions().get(0).getName());
+        verify(skillMaintainerService).listSubscriptions(NAMESPACE_ID);
+    }
+    
+    @Test
+    void testSubscribe() throws NacosException {
+        SkillSubscriptionDocument document = subscriptionDocument();
+        List<SkillSubscription> subscriptions = document.getSubscriptions();
+        when(skillMaintainerService.subscribe(NAMESPACE_ID, subscriptions)).thenReturn(document);
+        
+        SkillSubscriptionDocument result = skillRemoteHandler.subscribe(NAMESPACE_ID,
+            subscriptions);
+        
+        assertEquals(SKILL_NAME, result.getSubscriptions().get(0).getName());
+        verify(skillMaintainerService).subscribe(NAMESPACE_ID, subscriptions);
+    }
+    
+    @Test
+    void testUnsubscribe() throws NacosException {
+        SkillSubscriptionDocument document = subscriptionDocument();
+        List<String> names = Collections.singletonList(SKILL_NAME);
+        when(skillMaintainerService.unsubscribe(NAMESPACE_ID, names)).thenReturn(document);
+        
+        SkillSubscriptionDocument result = skillRemoteHandler.unsubscribe(NAMESPACE_ID, names);
+        
+        assertEquals(SKILL_NAME, result.getSubscriptions().get(0).getName());
+        verify(skillMaintainerService).unsubscribe(NAMESPACE_ID, names);
     }
     
     @Test
@@ -412,5 +451,13 @@ class SkillRemoteHandlerTest {
         skillRemoteHandler.redraft(form);
         
         verify(skillMaintainerService).redraft(NAMESPACE_ID, SKILL_NAME, "v1");
+    }
+    
+    private SkillSubscriptionDocument subscriptionDocument() {
+        SkillSubscription subscription = new SkillSubscription();
+        subscription.setName(SKILL_NAME);
+        SkillSubscriptionDocument document = new SkillSubscriptionDocument();
+        document.setSubscriptions(Collections.singletonList(subscription));
+        return document;
     }
 }

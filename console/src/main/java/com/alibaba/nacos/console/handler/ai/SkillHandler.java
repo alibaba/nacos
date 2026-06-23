@@ -31,6 +31,8 @@ import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -94,6 +96,37 @@ public interface SkillHandler {
     Page<SkillSummary> listSkills(SkillListForm skillListForm,
         AiResourceFilterableForm filterableForm,
         PageForm pageForm) throws NacosException;
+    
+    /**
+     * List current user's skill subscriptions.
+     *
+     * @param namespaceId namespace ID
+     * @return skill subscription document
+     * @throws NacosException if operation failed
+     */
+    SkillSubscriptionDocument listSubscriptions(String namespaceId) throws NacosException;
+    
+    /**
+     * Add or update current user's skill subscriptions.
+     *
+     * @param namespaceId    namespace ID
+     * @param subscriptions  skill subscriptions
+     * @return updated skill subscription document
+     * @throws NacosException if operation failed
+     */
+    SkillSubscriptionDocument subscribe(String namespaceId, List<SkillSubscription> subscriptions)
+        throws NacosException;
+    
+    /**
+     * Remove current user's skill subscriptions.
+     *
+     * @param namespaceId namespace ID
+     * @param names       skill names
+     * @return updated skill subscription document
+     * @throws NacosException if operation failed
+     */
+    SkillSubscriptionDocument unsubscribe(String namespaceId, List<String> names)
+        throws NacosException;
     
     /**
      * Upload skill from zip file.

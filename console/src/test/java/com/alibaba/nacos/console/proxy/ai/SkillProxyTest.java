@@ -30,6 +30,8 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -44,6 +46,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -143,6 +146,41 @@ class SkillProxyTest {
     }
     
     @Test
+    void testListSubscriptions() throws NacosException {
+        SkillSubscriptionDocument document = subscriptionDocument();
+        when(skillHandler.listSubscriptions(NS)).thenReturn(document);
+        
+        SkillSubscriptionDocument result = skillProxy.listSubscriptions(NS);
+        
+        assertEquals(SKILL_NAME, result.getSubscriptions().get(0).getName());
+        verify(skillHandler).listSubscriptions(NS);
+    }
+    
+    @Test
+    void testSubscribe() throws NacosException {
+        SkillSubscriptionDocument document = subscriptionDocument();
+        List<SkillSubscription> subscriptions = document.getSubscriptions();
+        when(skillHandler.subscribe(NS, subscriptions)).thenReturn(document);
+        
+        SkillSubscriptionDocument result = skillProxy.subscribe(NS, subscriptions);
+        
+        assertEquals(SKILL_NAME, result.getSubscriptions().get(0).getName());
+        verify(skillHandler).subscribe(NS, subscriptions);
+    }
+    
+    @Test
+    void testUnsubscribe() throws NacosException {
+        SkillSubscriptionDocument document = subscriptionDocument();
+        List<String> names = Collections.singletonList(SKILL_NAME);
+        when(skillHandler.unsubscribe(NS, names)).thenReturn(document);
+        
+        SkillSubscriptionDocument result = skillProxy.unsubscribe(NS, names);
+        
+        assertEquals(SKILL_NAME, result.getSubscriptions().get(0).getName());
+        verify(skillHandler).unsubscribe(NS, names);
+    }
+    
+    @Test
     void testUploadSkillFromZip() throws NacosException {
         byte[] zipBytes = new byte[] {1, 2, 3};
         SkillUploadRequest request = SkillUploadRequest.builder()
@@ -179,6 +217,14 @@ class SkillProxyTest {
         assertEquals(1, actual.size());
         assertEquals(SKILL_NAME, actual.get(0).getSkillName());
         verify(skillHandler).batchPrecheckUploadSkill(requests);
+    }
+    
+    private SkillSubscriptionDocument subscriptionDocument() {
+        SkillSubscription subscription = new SkillSubscription();
+        subscription.setName(SKILL_NAME);
+        SkillSubscriptionDocument document = new SkillSubscriptionDocument();
+        document.setSubscriptions(Collections.singletonList(subscription));
+        return document;
     }
     
     @Test
