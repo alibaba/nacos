@@ -77,7 +77,7 @@ guide, not as a final OpenAPI export.
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader, cluster, ops, namespace, state, plugin. |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | Config CRUD, history, listener, capacity, metrics, ops. |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | Service, instance, client, cluster, health, ops. |
-| `/v3/admin/ai/*` | 71 | GET, POST, PUT, DELETE | MCP, A2A, Prompt, Skill, AgentSpec, Pipeline. |
+| `/v3/admin/ai/*` | 74 | GET, POST, PUT, DELETE | MCP, A2A, Prompt, Skill, Skill subscriptions, AgentSpec, Pipeline. |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | Cluster and namespace console operations. |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | Config and history console operations. |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | Naming console service and instance operations. |
@@ -122,7 +122,8 @@ Current modules:
 - `cs`: config CRUD, metadata, batch operations, history, listener, capacity,
   metrics, and ops.
 - `ns`: service, instance, cluster, health, client, and naming ops.
-- `ai`: MCP, A2A, Prompt, Skill, AgentSpec, and Pipeline management.
+- `ai`: MCP, A2A, Prompt, Skill, Skill subscription, AgentSpec, and Pipeline
+  management.
 
 Implemented behavior to document more explicitly:
 
@@ -134,6 +135,8 @@ Implemented behavior to document more explicitly:
   configured encryption handler applies.
 - AI Prompt contains deprecated compatibility endpoints and newer lifecycle
   endpoints in the same controller.
+- AI Skill subscriptions are managed by namespace and current subscriber through
+  `GET`, `POST`, and `DELETE /v3/admin/ai/skills/subscriptions`.
 
 ## 6. Console API Implemented Behavior
 

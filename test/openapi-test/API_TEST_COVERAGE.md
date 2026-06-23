@@ -68,6 +68,10 @@ migration paths, including empty-tenant storage migration and legacy
 `config_info_beta` / `config_info_tag` old-table migration, are not counted as
 missing OpenAPI IT coverage.
 
+AI Skill subscription APIs are counted in the existing
+`SkillAdminApiOpenApiITCase` Admin API row because they are part of the Skill
+admin resource surface.
+
 ## Coverage Documents
 
 | API surface | Scenario document | Test package |

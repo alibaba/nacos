@@ -20,9 +20,13 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.param.SkillListHttpParamExtractor;
+import com.alibaba.nacos.ai.param.SkillSubscriptionHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillSubscriptionService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -52,6 +56,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -88,11 +93,15 @@ class SkillAdminControllerTest {
     @MockitoBean
     private SkillOperationService skillOperationService;
     
+    @MockitoBean
+    private SkillSubscriptionService skillSubscriptionService;
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new StandardEnvironment());
-        skillAdminController = new SkillAdminController(skillOperationService);
+        skillAdminController = new SkillAdminController(skillOperationService,
+            skillSubscriptionService);
         mockMvc = MockMvcBuilders.standaloneSetup(skillAdminController).build();
     }
     
@@ -258,6 +267,84 @@ class SkillAdminControllerTest {
                 .param("pageNo", "-1").param("pageSize", "10");
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
             "pageNo");
+    }
+    
+    @Test
+    void testListSubscriptionsSuccess() throws Exception {
+        SkillSubscriptionDocument document = subscriptionDocument("public", "anonymous",
+            "test-skill");
+        when(skillSubscriptionService.listSubscriptions(eq("public"))).thenReturn(document);
+        
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(SKILL_ADMIN_PATH + "/subscriptions")
+                .param("namespaceId", "public");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<SkillSubscriptionDocument> result =
+            JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("test-skill", result.getData().getSubscriptions().get(0).getName());
+        verify(skillSubscriptionService).listSubscriptions("public");
+    }
+    
+    @Test
+    void testSubscribeSuccess() throws Exception {
+        SkillSubscriptionDocument document = subscriptionDocument("public", "anonymous",
+            "test-skill");
+        when(skillSubscriptionService.subscribe(eq("public"), any())).thenReturn(document);
+        
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/subscriptions")
+                .param("namespaceId", "public").contentType("application/json")
+                .content("[{\"name\":\"test-skill\"}]");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<SkillSubscriptionDocument> result =
+            JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals("test-skill", result.getData().getSubscriptions().get(0).getName());
+        verify(skillSubscriptionService).subscribe(eq("public"), any());
+    }
+    
+    @Test
+    void testUnsubscribeSuccess() throws Exception {
+        SkillSubscriptionDocument document = subscriptionDocument("public", "anonymous",
+            "another-skill");
+        when(skillSubscriptionService.unsubscribe(eq("public"),
+            eq(Arrays.asList("test-skill", "another-skill")))).thenReturn(document);
+        
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.delete(SKILL_ADMIN_PATH + "/subscriptions")
+                .param("namespaceId", "public").param("names", "test-skill, another-skill");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(skillSubscriptionService).unsubscribe("public",
+            Arrays.asList("test-skill", "another-skill"));
+    }
+    
+    @Test
+    void testSubscriptionUsesNamespaceParamExtractor() throws Exception {
+        ExtractorManager.Extractor extractor = SkillAdminController.class
+            .getMethod("listSubscriptions", String.class)
+            .getAnnotation(ExtractorManager.Extractor.class);
+        
+        assertNotNull(extractor);
+        assertEquals(SkillSubscriptionHttpParamExtractor.class, extractor.httpExtractor());
+    }
+    
+    private SkillSubscriptionDocument subscriptionDocument(String namespaceId, String subscriber,
+        String skillName) {
+        SkillSubscription subscription = new SkillSubscription();
+        subscription.setName(skillName);
+        SkillSubscriptionDocument document = new SkillSubscriptionDocument();
+        document.setNamespaceId(namespaceId);
+        document.setSubscriber(subscriber);
+        document.setSubscriptions(Collections.singletonList(subscription));
+        return document;
     }
     
     @Test

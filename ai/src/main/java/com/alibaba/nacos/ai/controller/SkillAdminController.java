@@ -30,12 +30,16 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.param.SkillListHttpParamExtractor;
+import com.alibaba.nacos.ai.param.SkillSubscriptionHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillSubscriptionService;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -65,8 +69,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills.ADMIN_PATH;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
@@ -84,8 +90,12 @@ public class SkillAdminController {
     
     private final SkillOperationService skillOperationService;
     
-    public SkillAdminController(SkillOperationService skillOperationService) {
+    private final SkillSubscriptionService skillSubscriptionService;
+    
+    public SkillAdminController(SkillOperationService skillOperationService,
+        SkillSubscriptionService skillSubscriptionService) {
         this.skillOperationService = skillOperationService;
+        this.skillSubscriptionService = skillSubscriptionService;
     }
     
     /**
@@ -179,6 +189,63 @@ public class SkillAdminController {
                 skillListForm.getSearch(), skillListForm.getOrderBy(),
                 filterableForm.getOwner(), filterableForm.getScope(), filterableForm.getBizTag(),
                 pageForm.getPageNo(), pageForm.getPageSize()));
+    }
+    
+    /**
+     * List current user's skill subscriptions in a namespace.
+     *
+     * @param namespaceId namespace ID
+     * @return skill subscription document
+     * @throws NacosException if the query fails
+     */
+    @Since("3.2.4")
+    @GetMapping("/subscriptions")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @ExtractorManager.Extractor(httpExtractor = SkillSubscriptionHttpParamExtractor.class)
+    public Result<SkillSubscriptionDocument> listSubscriptions(
+        @RequestParam(value = "namespaceId", required = false) String namespaceId)
+        throws NacosException {
+        return Result.success(skillSubscriptionService.listSubscriptions(namespaceId));
+    }
+    
+    /**
+     * Add or update current user's skill subscriptions in a namespace.
+     *
+     * @param namespaceId   namespace ID
+     * @param subscriptions skill subscription items
+     * @return updated skill subscription document
+     * @throws NacosException if the update fails
+     */
+    @Since("3.2.4")
+    @PostMapping("/subscriptions")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @ExtractorManager.Extractor(httpExtractor = SkillSubscriptionHttpParamExtractor.class)
+    public Result<SkillSubscriptionDocument> subscribe(
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestBody(required = false) List<SkillSubscription> subscriptions)
+        throws NacosException {
+        return Result.success(skillSubscriptionService.subscribe(namespaceId, subscriptions));
+    }
+    
+    /**
+     * Remove current user's skill subscriptions in a namespace.
+     *
+     * @param namespaceId namespace ID
+     * @param names       comma-separated skill names
+     * @return updated skill subscription document
+     * @throws NacosException if the update fails
+     */
+    @Since("3.2.4")
+    @DeleteMapping("/subscriptions")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @ExtractorManager.Extractor(httpExtractor = SkillSubscriptionHttpParamExtractor.class)
+    public Result<SkillSubscriptionDocument> unsubscribe(
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "names", required = false) String names) throws NacosException {
+        List<String> nameList = names == null ? Collections.emptyList()
+            : Arrays.stream(names.split(",")).map(String::trim).filter(each -> !each.isEmpty())
+                .collect(Collectors.toList());
+        return Result.success(skillSubscriptionService.unsubscribe(namespaceId, nameList));
     }
     
     /**

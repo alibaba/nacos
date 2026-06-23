@@ -89,6 +89,32 @@ Skill 还维护一个轻量 manifest 以支持客户端发现。Manifest 是从 
 
 存储扩展规则由 [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)定义。
 
+### 4.1 订阅存储
+
+Skill 订阅按命名空间内的订阅者隔离，身份为：
+
+```text
+namespaceId -> subscriber -> skill subscriptions
+```
+
+一个命名空间不能只有一份所有用户共享的订阅列表。同一命名空间下的不同订阅者、
+同一订阅者在不同命名空间下，都必须对应不同的订阅文档。
+
+订阅持久化必须通过存储接口抽象。当前默认实现把每个订阅者文档作为目标命名空间下
+的一条 Config 保存：
+
+- `groupId`：`skill_subscriptions`；
+- `dataId`：`subscriber_<sha256(subscriber)>.json`；
+- 内容类型：JSON；
+- 内容字段：`schemaVersion`、`namespaceId`、`subscriber`、`groupId`、
+  `dataId` 和 `subscriptions`。
+
+`subscriptions` 中的每一项只包含 Skill `name`。订阅文档只记录期望订阅的 Skill
+列表，不应保存 label、解析后的版本、md5 或客户端本地缓存状态。
+
+Registry mode 的 CLI 实现应读取当前命名空间和订阅者对应的 Nacos 订阅文档，并在执行
+Skill sync 前与本地订阅列表合并。最终同步集合为本地订阅与 Nacos 订阅的并集。
+
 ## 5. 生命周期
 
 Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.md)：
