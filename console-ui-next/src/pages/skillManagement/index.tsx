@@ -28,14 +28,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { SkillCard } from './components/SkillCard';
 import { UploadSkillDialog } from './components/UploadSkillDialog';
 import { CreateSkillDialog } from './components/CreateSkillDialog';
@@ -92,7 +84,6 @@ export default function SkillManagementPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const [filterSubscribed, setFilterSubscribed] = useState(false);
   const [subscribedItems, setSubscribedItems] = useState<SkillListItem[]>([]);
   const [subscribedListLoading, setSubscribedListLoading] = useState(false);
@@ -109,8 +100,16 @@ export default function SkillManagementPage() {
   }, [fetchList, fetchSubscriptions, namespaceId]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData, pageNo, pageSize, location.key]);
+    if (!filterSubscribed) {
+      loadData();
+    }
+  }, [filterSubscribed, loadData, pageNo, pageSize, location.key]);
+
+  useEffect(() => {
+    if (filterSubscribed) {
+      fetchSubscriptions(namespaceId);
+    }
+  }, [fetchSubscriptions, filterSubscribed, location.key, namespaceId]);
 
   useEffect(() => {
     if (!filterSubscribed) {
@@ -188,6 +187,23 @@ export default function SkillManagementPage() {
     filterOwner,
     filterBizTag,
     orderBy,
+  ]);
+
+  useEffect(() => {
+    if (!filterSubscribed || subscribedListLoading) {
+      return;
+    }
+    const maxPage = Math.max(1, Math.ceil(subscribedItems.length / pageSize));
+    if (pageNo > maxPage) {
+      setPage(maxPage);
+    }
+  }, [
+    filterSubscribed,
+    subscribedItems.length,
+    subscribedListLoading,
+    pageNo,
+    pageSize,
+    setPage,
   ]);
 
   const handleSearch = () => {
@@ -277,9 +293,13 @@ export default function SkillManagementPage() {
     }
   };
 
-  const handleOpenSubscriptions = () => {
-    setSubscriptionDialogOpen(true);
-    fetchSubscriptions(namespaceId);
+  const handleSubscriptionFilterChange = (nextActive: boolean) => {
+    clearSelection();
+    setFilterSubscribed(nextActive);
+    setSearchParams({ filterScope: '' });
+    if (!nextActive) {
+      fetchList(namespaceId);
+    }
   };
 
   const handlePageDragOver = useCallback((e: React.DragEvent) => {
@@ -324,9 +344,12 @@ export default function SkillManagementPage() {
     setUploadOpen(true);
   }, [t]);
 
-  const visibleItems = filterSubscribed ? subscribedItems : items;
-  const visibleTotal = filterSubscribed ? visibleItems.length : total;
-  const totalPages = filterSubscribed ? 1 : Math.ceil(total / pageSize);
+  const subscribedPageItems = filterSubscribed
+    ? subscribedItems.slice((pageNo - 1) * pageSize, pageNo * pageSize)
+    : [];
+  const visibleItems = filterSubscribed ? subscribedPageItems : items;
+  const visibleTotal = filterSubscribed ? subscribedItems.length : total;
+  const totalPages = Math.ceil(visibleTotal / pageSize);
   const allSelected = visibleItems.length > 0
     && visibleItems.every((a) => selectedNames.has(a.name));
   const contentLoading = filterSubscribed ? subscriptionLoading || subscribedListLoading : loading;
@@ -376,11 +399,20 @@ export default function SkillManagementPage() {
             <Download className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.importFromRegistry')}
           </Button>
-          <Button size="sm" variant="outline" onClick={handleOpenSubscriptions}>
+          <Button
+            size="sm"
+            variant={filterSubscribed ? 'default' : 'outline'}
+            aria-pressed={filterSubscribed}
+            onClick={() => handleSubscriptionFilterChange(!filterSubscribed)}
+          >
             <Bell className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.mySubscriptions')}
             {subscriptions.length > 0 && (
-              <span className="ml-1 text-xs text-muted-foreground">
+              <span
+                className={filterSubscribed
+                  ? 'ml-1 text-xs text-primary-foreground/80'
+                  : 'ml-1 text-xs text-muted-foreground'}
+              >
                 ({subscriptions.length})
               </span>
             )}
@@ -452,11 +484,10 @@ export default function SkillManagementPage() {
           value={filterSubscribed ? SUBSCRIBED_SCOPE_FILTER : (filterScope || '_all')}
           onValueChange={(v) => {
             if (v === SUBSCRIBED_SCOPE_FILTER) {
-              setFilterSubscribed(true);
-              setSearchParams({ filterScope: '' });
-              fetchSubscriptions(namespaceId);
+              handleSubscriptionFilterChange(true);
               return;
             }
+            clearSelection();
             setFilterSubscribed(false);
             setSearchParams({ filterScope: v === '_all' ? '' : v });
             fetchList(namespaceId);
@@ -600,7 +631,7 @@ export default function SkillManagementPage() {
       )}
 
       {/* Pagination */}
-      {!filterSubscribed && total > 0 && totalPages > 1 && (
+      {visibleTotal > 0 && totalPages > 1 && (
         <div className="flex items-center justify-end gap-2 pt-1">
           <Select
             value={String(pageSize)}
@@ -624,7 +655,9 @@ export default function SkillManagementPage() {
             disabled={pageNo <= 1}
             onClick={() => {
               setPage(pageNo - 1);
-              fetchList(namespaceId);
+              if (!filterSubscribed) {
+                fetchList(namespaceId);
+              }
             }}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -639,7 +672,9 @@ export default function SkillManagementPage() {
             disabled={pageNo >= totalPages}
             onClick={() => {
               setPage(pageNo + 1);
-              fetchList(namespaceId);
+              if (!filterSubscribed) {
+                fetchList(namespaceId);
+              }
             }}
           >
             <ChevronRight className="h-4 w-4" />
@@ -720,66 +755,6 @@ export default function SkillManagementPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Subscription list dialog */}
-      <Dialog open={subscriptionDialogOpen} onOpenChange={setSubscriptionDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t('skill.mySubscriptions')}</DialogTitle>
-            <DialogDescription>
-              {t('skill.mySubscriptionsDesc', { count: subscriptions.length })}
-            </DialogDescription>
-          </DialogHeader>
-          {subscriptionLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton key={index} className="h-10 w-full" />
-              ))}
-            </div>
-          ) : subscriptions.length === 0 ? (
-            <div className="flex h-28 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
-              {t('skill.noSkillSubscriptions')}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('skill.skillName')}</TableHead>
-                  <TableHead className="w-24 text-right">{t('common.operation')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {subscriptions.map((subscription) => (
-                  <TableRow key={subscription.name}>
-                    <TableCell>
-                      <button
-                        type="button"
-                        className="text-left font-medium hover:text-primary hover:underline"
-                        onClick={() => {
-                          setSubscriptionDialogOpen(false);
-                          handleDetail(subscription.name);
-                        }}
-                      >
-                        {subscription.name}
-                      </button>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs text-destructive hover:text-destructive"
-                        disabled={subscriptionSaving}
-                        onClick={() => handleUnsubscribeSkill(subscription.name)}
-                      >
-                        {t('skill.unsubscribe')}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
