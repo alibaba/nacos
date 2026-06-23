@@ -127,7 +127,10 @@ client.interceptors.response.use(
       // Some auth failures are returned with HTTP 200 but contain access denied info in the body,
       // e.g. when the filter writes the response body before setting the HTTP status code.
       const data = response.data as Record<string, unknown>;
-      if (data.code && data.code !== 0) {
+      const code = data.code;
+      const failedResult = (typeof code === 'number' && code !== 0)
+        || (typeof code === 'string' && code !== '0');
+      if (failedResult) {
         const message = typeof data.message === 'string' ? data.message.toLowerCase() : '';
         const dataStr = typeof data.data === 'string' ? data.data.toLowerCase() : '';
         const combined = message + ' ' + dataStr;
@@ -138,6 +141,17 @@ client.interceptors.response.use(
           toast.error(i18n.t('common.sessionExpired'));
           return Promise.reject(new Error('session expired'));
         }
+        const requestUrl = response.config?.url || '';
+        const isSilent = SILENT_ENDPOINTS.some(ep => requestUrl.includes(ep))
+          || (response.config as unknown as Record<string, unknown>)?.silentError === true;
+        const detail = typeof data.data === 'string' ? data.data : '';
+        const errorMessage = detail || (typeof data.message === 'string'
+          ? data.message
+          : i18n.t('common.requestFailed'));
+        if (!isSilent) {
+          toast.error(errorMessage);
+        }
+        return Promise.reject(new Error(errorMessage));
       }
     }
     return response.data;

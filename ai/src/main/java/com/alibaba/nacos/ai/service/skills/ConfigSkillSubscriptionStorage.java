@@ -24,12 +24,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -46,15 +45,15 @@ public class ConfigSkillSubscriptionStorage implements SkillSubscriptionStorage 
     
     private static final String DIGEST_ALGORITHM = "SHA-256";
     
-    private final ConfigQueryChainService configQueryChainService;
+    private final ConfigInfoPersistService configInfoPersistService;
     
     private final ConfigOperationService configOperationService;
     
     private final SyncEffectService syncEffectService;
     
-    public ConfigSkillSubscriptionStorage(ConfigQueryChainService configQueryChainService,
+    public ConfigSkillSubscriptionStorage(ConfigInfoPersistService configInfoPersistService,
         ConfigOperationService configOperationService, SyncEffectService syncEffectService) {
-        this.configQueryChainService = configQueryChainService;
+        this.configInfoPersistService = configInfoPersistService;
         this.configOperationService = configOperationService;
         this.syncEffectService = syncEffectService;
     }
@@ -63,23 +62,20 @@ public class ConfigSkillSubscriptionStorage implements SkillSubscriptionStorage 
     public SkillSubscriptionDocument get(String namespaceId, String subscriber)
         throws NacosException {
         String dataId = buildDataId(subscriber);
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-            dataId, Constants.Skills.SKILL_SUBSCRIPTION_GROUP, namespaceId);
-        ConfigQueryChainResponse response = configQueryChainService.handle(request);
-        if (response == null
-            || response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND
-            || response.getContent() == null) {
+        ConfigAllInfo config = configInfoPersistService.findConfigAllInfo(dataId,
+            Constants.Skills.SKILL_SUBSCRIPTION_GROUP, namespaceId);
+        if (config == null || config.getContent() == null) {
             return emptyDocument(namespaceId, subscriber);
         }
         SkillSubscriptionDocument document =
-            JacksonUtils.toObj(response.getContent(), SkillSubscriptionDocument.class);
+            JacksonUtils.toObj(config.getContent(), SkillSubscriptionDocument.class);
         return document == null ? emptyDocument(namespaceId, subscriber) : document;
     }
     
     @Override
     public void save(String namespaceId, String subscriber, SkillSubscriptionDocument document)
         throws NacosException {
-        long startTimeStamp = System.currentTimeMillis();
+        final long startTimeStamp = System.currentTimeMillis();
         String dataId = buildDataId(subscriber);
         document.setNamespaceId(namespaceId);
         document.setSubscriber(subscriber);

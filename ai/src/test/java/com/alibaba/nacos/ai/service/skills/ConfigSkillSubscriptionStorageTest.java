@@ -18,13 +18,13 @@ package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
 import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
-import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
 class ConfigSkillSubscriptionStorageTest {
     
     @Mock
-    private ConfigQueryChainService configQueryChainService;
+    private ConfigInfoPersistService configInfoPersistService;
     
     @Mock
     private ConfigOperationService configOperationService;
@@ -59,7 +59,7 @@ class ConfigSkillSubscriptionStorageTest {
     
     @BeforeEach
     void setUp() {
-        storage = new ConfigSkillSubscriptionStorage(configQueryChainService,
+        storage = new ConfigSkillSubscriptionStorage(configInfoPersistService,
             configOperationService, syncEffectService);
     }
     
@@ -71,10 +71,9 @@ class ConfigSkillSubscriptionStorageTest {
     
     @Test
     void testGetReturnsEmptyDocumentWhenConfigMissing() throws Exception {
-        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
-        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
+        when(configInfoPersistService.findConfigAllInfo(
+            ConfigSkillSubscriptionStorage.buildDataId("alice"),
+            Constants.Skills.SKILL_SUBSCRIPTION_GROUP, "public")).thenReturn(null);
         
         SkillSubscriptionDocument actual = storage.get("public", "alice");
         
@@ -86,14 +85,31 @@ class ConfigSkillSubscriptionStorageTest {
     }
     
     @Test
+    void testGetReadsPersistedConfigContent() throws Exception {
+        SkillSubscriptionDocument document = new SkillSubscriptionDocument();
+        SkillSubscription subscription = new SkillSubscription();
+        subscription.setName("doc-format");
+        document.getSubscriptions().add(subscription);
+        ConfigAllInfo config = new ConfigAllInfo();
+        config.setContent(JacksonUtils.toJson(document));
+        when(configInfoPersistService.findConfigAllInfo(
+            ConfigSkillSubscriptionStorage.buildDataId("alice"),
+            Constants.Skills.SKILL_SUBSCRIPTION_GROUP, "public")).thenReturn(config);
+        
+        SkillSubscriptionDocument actual = storage.get("public", "alice");
+        
+        assertEquals(1, actual.getSubscriptions().size());
+        assertEquals("doc-format", actual.getSubscriptions().get(0).getName());
+    }
+    
+    @Test
     void testSaveWritesExpectedConfigKey() throws Exception {
         SkillSubscriptionDocument document = new SkillSubscriptionDocument();
         
         storage.save("public", "alice", document);
         
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
-        verify(configOperationService).publishConfig(formCaptor.capture(),
-            any(ConfigRequestInfo.class), any());
+        verify(configOperationService).publishConfig(formCaptor.capture(), any(), any());
         ConfigForm form = formCaptor.getValue();
         assertEquals("public", form.getNamespaceId());
         assertEquals(Constants.Skills.SKILL_SUBSCRIPTION_GROUP, form.getGroup());
