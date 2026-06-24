@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.pipeline.model;
-
-import com.alibaba.nacos.plugin.ai.pipeline.model.Checkpoint;
+package com.alibaba.nacos.api.ai.model.pipeline;
 
 import java.util.List;
 import java.util.Objects;

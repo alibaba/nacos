@@ -26,9 +26,8 @@ import com.fasterxml.jackson.databind.JsonNode;
  * <p>Extends {@link PipelineAdminClient} for {@link com.alibaba.nacos.api.model.v2.Result} responses.
  * Legacy {@link JsonNode}-only accessors are retained for existing callers.</p>
  *
- * <p>Returns {@link JsonNode} on deprecated methods because {@code PipelineExecution} resides in the ai module,
- * which is not a compile-time dependency of maintainer-client. Callers should deserialize the JsonNode
- * to the concrete type.</p>
+ * <p>Deprecated {@link JsonNode} methods are kept as compatibility accessors. Typed pipeline
+ * execution methods will be added on top of the public API DTOs in a follow-up change.</p>
  *
  * @author kiro
  * @since 3.2.0

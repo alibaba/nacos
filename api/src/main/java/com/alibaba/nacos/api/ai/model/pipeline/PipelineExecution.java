@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.pipeline.model;
+package com.alibaba.nacos.api.ai.model.pipeline;
 
 import java.util.List;
 

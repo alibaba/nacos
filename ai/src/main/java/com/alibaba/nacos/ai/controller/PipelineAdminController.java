@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.pipeline.PipelineDetailForm;
 import com.alibaba.nacos.ai.form.pipeline.PipelineListForm;
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.ai.service.pipeline.PipelineQueryService;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;

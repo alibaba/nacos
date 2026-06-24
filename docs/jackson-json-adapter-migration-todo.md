@@ -152,6 +152,21 @@ Last updated: 2026-06-24.
     `LINE_MISSED=0`.
   - `mvn -pl client,maintainer-client spotless:apply`
   - `mvn -pl client,maintainer-client spotless:check`
+- 2026-06-24, stage 10 pipeline API DTO migration:
+  - Moved Pipeline execution DTOs to
+    `com.alibaba.nacos.api.ai.model.pipeline`.
+  - Added API-owned `Checkpoint` DTO and converted plugin checkpoints to API
+    checkpoints when persisting/querying execution results.
+  - Updated AI server Pipeline controller, repository, service, and tests to
+    use the API DTOs.
+  - `mvn -pl api,ai -am -DskipTests compile`
+  - `mvn -pl api,ai -am -Dtest=PipelineModelTest,PipelineNodeResultTest,PipelineNodeResultRoundTripTest,PipelineExecutionStatusTest,PipelineExecutionStatusConsistencyTest,PipelineExecutionRepositoryTest,PipelineExecutionRepositoryImplTest,PipelineQueryServiceTest,PipelineAdminControllerTest,PublishPipelineExecutorTest,PublishPipelineIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `mvn -pl api,ai,maintainer-client spotless:apply`
+  - `mvn -pl api,ai,maintainer-client spotless:check`
+  - `mvn -pl maintainer-client -am -DskipTests compile`
+  - `mvn -pl api,ai,maintainer-client apache-rat:check`
+  - `api/target/site/jacoco/jacoco.csv`: Pipeline API DTO classes have
+    `LINE_MISSED=0`.
 
 ## Implementation Principles
 
@@ -414,19 +429,19 @@ Last updated: 2026-06-24.
 
 ### 5. Pipeline Maintainer API Typing
 
-- `[ ]` Move or duplicate pipeline public DTOs into `nacos-api`.
-  - Current files:
-    - `ai/src/main/java/com/alibaba/nacos/ai/pipeline/model/PipelineExecution.java`
-    - `ai/src/main/java/com/alibaba/nacos/ai/pipeline/model/PipelineExecutionResult.java`
-    - `ai/src/main/java/com/alibaba/nacos/ai/pipeline/model/PipelineNodeResult.java`
-    - `ai/src/main/java/com/alibaba/nacos/ai/pipeline/model/PipelineExecutionStatus.java`
-    - `plugin/ai/src/main/java/com/alibaba/nacos/plugin/ai/pipeline/model/Checkpoint.java`
+- `[x]` Move or duplicate pipeline public DTOs into `nacos-api`.
+  - Files:
+    - `api/src/main/java/com/alibaba/nacos/api/ai/model/pipeline/PipelineExecution.java`
+    - `api/src/main/java/com/alibaba/nacos/api/ai/model/pipeline/PipelineExecutionResult.java`
+    - `api/src/main/java/com/alibaba/nacos/api/ai/model/pipeline/PipelineNodeResult.java`
+    - `api/src/main/java/com/alibaba/nacos/api/ai/model/pipeline/PipelineExecutionStatus.java`
+    - `api/src/main/java/com/alibaba/nacos/api/ai/model/pipeline/Checkpoint.java`
   - Plan:
-    - Move shared execution DTOs to an API package such as
+    - Moved shared execution DTOs to
       `com.alibaba.nacos.api.ai.model.pipeline`.
-    - Resolve `PipelineNodeResult -> Checkpoint` first by moving `Checkpoint`
-      to `api` or introducing an API-owned checkpoint DTO.
-    - Update `ai` server code and tests to import the API DTOs.
+    - Introduced an API-owned `Checkpoint` DTO while keeping the plugin
+      `Checkpoint` compatibility type unchanged.
+    - Updated `ai` server code and tests to import the API DTOs.
   - Validation:
     - `ai` unit tests and pipeline repository tests continue to pass.
 
