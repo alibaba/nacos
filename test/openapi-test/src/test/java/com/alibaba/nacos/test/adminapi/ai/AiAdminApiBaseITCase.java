@@ -436,9 +436,14 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     }
 
     protected byte[] buildMultiSkillZip(Map<String, String> skillNameToBody) throws Exception {
+        return buildMultiSkillZip(skillNameToBody, "1.0.0");
+    }
+
+    protected byte[] buildMultiSkillZip(Map<String, String> skillNameToBody, String version)
+            throws Exception {
         Map<String, String> entries = new LinkedHashMap<>();
         skillNameToBody.forEach((skillName, body) -> {
-            entries.put(skillName + "/SKILL.md", skillMarkdown(skillName, "1.0.0", body));
+            entries.put(skillName + "/SKILL.md", skillMarkdown(skillName, version, body));
             entries.put(skillName + "/references/guide.md", "guide for " + skillName);
         });
         return zipEntries(entries);

@@ -40,9 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     reports existing-draft overwrite target, overwrite updates an editing draft, and batch upload reports successful skill
  *     folders with persisted content.</li>
  *     <li>Boundary/validation: namespace defaults to public; upload version resolves from SKILL.md before
- *     targetVersion; duplicate working drafts require overwrite; batch upload keeps valid folders while reporting
- *     invalid folders in {@code failed}.</li>
- *     <li>Exception/error handling: empty and malformed ZIP files, invalid targetVersion, and archives without
+ *     targetVersion; invalid uploaded versions fall back to server-generated drafts; duplicate working drafts require
+ *     overwrite; batch upload keeps valid folders while reporting invalid folders in {@code failed}.</li>
+ *     <li>Exception/error handling: empty and malformed ZIP files and archives without
  *     {@code SKILL.md} return controlled HTTP 400 Result bodies instead of HTTP 500.</li>
  * </ul>
  *
@@ -89,10 +89,22 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 .get("data"), skillName, "1.0.0", "Overwritten body.", "overwritten guide");
 
         postFormOk(CONSOLE_SKILL_PATH + "/force-publish", skillPublishForm(skillName, "1.0.0"));
+        JsonNode invalidVersionPrecheck = assertUploadResult(postJsonRaw(CONSOLE_SKILL_PATH
+                        + "/upload/batch/precheck", Query.EMPTY,
+                precheckRequestsJson(skillName, "1.0", "invalid version guide", null)))
+                .get("data").get(0);
+        assertEquals("WARNING", invalidVersionPrecheck.get("status").asText(),
+                invalidVersionPrecheck.toString());
+        assertEquals("1.0", invalidVersionPrecheck.get("parsedVersion").asText(),
+                invalidVersionPrecheck.toString());
+        assertEquals("1.0.1", invalidVersionPrecheck.get("resolvedVersion").asText(),
+                invalidVersionPrecheck.toString());
+        assertTrue(invalidVersionPrecheck.get("warnings").toString().contains("Invalid version"),
+                invalidVersionPrecheck.toString());
         HttpResponse nextUpload = postMultipartRaw(CONSOLE_SKILL_PATH + "/upload",
-                uploadQuery(false, "1.0.0", "openapi next draft"), "file", skillName + ".zip",
+                uploadQuery(false, null, "openapi next draft"), "file", skillName + ".zip",
                 "application/zip",
-                buildSkillZip(skillName, null, "Uploaded body v2.", "uploaded guide v2"));
+                buildSkillZip(skillName, "1.0", "Uploaded body v2.", "uploaded guide v2"));
         assertUploadSuccess(nextUpload, skillName);
         JsonNode meta = getJsonOk(CONSOLE_SKILL_PATH, skillQuery(skillName)).get("data");
         assertEquals("1.0.1", meta.get("editingVersion").asText(), meta.toString());
@@ -120,6 +132,17 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 .get("data"), firstSkill, "1.0.0", "Batch body A.", "guide for " + firstSkill);
         assertSkillContent(getJsonOk(CONSOLE_SKILL_VERSION_PATH, skillVersionQuery(secondSkill, "1.0.0"))
                 .get("data"), secondSkill, "1.0.0", "Batch body B.", "guide for " + secondSkill);
+        postFormOk(CONSOLE_SKILL_PATH + "/force-publish", skillPublishForm(firstSkill, "1.0.0"));
+        Map<String, String> invalidVersionSkills = new LinkedHashMap<>();
+        invalidVersionSkills.put(firstSkill, "Batch body A v2.");
+        HttpResponse invalidVersionBatch = postMultipartRaw(CONSOLE_SKILL_PATH + "/upload/batch",
+                uploadQuery(false, null, null), "file", "invalid-version-skills.zip",
+                "application/zip", buildMultiSkillZip(invalidVersionSkills, "1.0"));
+        JsonNode invalidVersionData = assertUploadResult(invalidVersionBatch).get("data");
+        assertArrayContains(invalidVersionData.get("succeeded"), firstSkill);
+        assertEquals(0, invalidVersionData.get("failed").size(), invalidVersionData.toString());
+        assertSkillContent(getJsonOk(CONSOLE_SKILL_VERSION_PATH, skillVersionQuery(firstSkill, "1.0.1"))
+                .get("data"), firstSkill, "1.0.1", "Batch body A v2.", "guide for " + firstSkill);
 
         String validSkill = randomAiName("batch-valid");
         HttpResponse partial = postMultipartRaw(CONSOLE_SKILL_PATH + "/upload/batch",
@@ -144,10 +167,12 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertError(postMultipartRaw(CONSOLE_SKILL_PATH + "/upload", uploadQuery(false, null, null),
                 "file", "plain.zip", "application/zip", "not a zip".getBytes()), 400,
                 ErrorCode.PARSING_DATA_FAILED, "Failed to parse zip file");
-        assertError(postMultipartRaw(CONSOLE_SKILL_PATH + "/upload",
+        assertUploadSuccess(postMultipartRaw(CONSOLE_SKILL_PATH + "/upload",
                 uploadQuery(false, "bad-version", null), "file", "skill.zip", "application/zip",
-                buildSkillZip(skillName, null, "Body.", "Guide.")), 400,
-                ErrorCode.PARAMETER_VALIDATE_ERROR, "Invalid version from targetVersion parameter");
+                buildSkillZip(skillName, null, "Body.", "Guide.")), skillName);
+        addCleanup(() -> deleteSkillQuietly(skillName));
+        assertSkillContent(getJsonOk(CONSOLE_SKILL_VERSION_PATH, skillVersionQuery(skillName, "0.0.1"))
+                .get("data"), skillName, "0.0.1", "Body.", "Guide.");
         assertError(postMultipartRaw(CONSOLE_SKILL_PATH + "/upload/batch", uploadQuery(false, null, null),
                 "file", "plain.zip", "application/zip", "not a zip".getBytes()), 400,
                 ErrorCode.PARSING_DATA_FAILED, "Failed to parse zip file");
@@ -160,7 +185,7 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         addIfNotBlank(query, "commitMsg", commitMsg);
         return query;
     }
-    
+
     private String precheckRequestsJson(String skillName, String parsedVersion, String description,
             String targetVersion) {
         Map<String, Object> request = new LinkedHashMap<>();
@@ -193,7 +218,7 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         }
         throw new AssertionError("Expected " + expected + " in " + array);
     }
-    
+
     private void assertActionContains(JsonNode array, String expectedType) {
         for (JsonNode item : array) {
             if (expectedType.equals(item.get("type").asText())) {
