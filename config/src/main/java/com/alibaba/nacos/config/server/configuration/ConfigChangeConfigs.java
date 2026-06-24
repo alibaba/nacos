@@ -58,6 +58,9 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
             if (properties != null) {
                 for (String each : properties.stringPropertyNames()) {
                     int typeIndex = each.indexOf('.');
+                    if (typeIndex < 0) {
+                        continue;
+                    }
                     String type = each.substring(0, typeIndex);
                     String subKey = each.substring(typeIndex + 1);
                     newProperties.computeIfAbsent(type, key -> new Properties())
