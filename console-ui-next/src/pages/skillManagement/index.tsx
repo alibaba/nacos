@@ -363,6 +363,10 @@ export default function SkillManagementPage() {
     && selectedList.every((name) => subscriptionMap[name]);
   const contentLoading = filterSubscribed ? subscriptionLoading || subscribedListLoading : loading;
   const contentError = filterSubscribed ? subscribedListError || error : error;
+  const hasSearchFilters = Boolean(
+    searchInput || ownerInput || bizTagInput || filterOwner || filterScope || filterBizTag
+      || orderBy.trim(),
+  );
 
   return (
     <div
@@ -405,7 +409,7 @@ export default function SkillManagementPage() {
             <Download className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.importFromRegistry')}
           </Button>
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button size="sm" className="w-[8.75rem] justify-center" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.createSkill')}
           </Button>
@@ -414,7 +418,7 @@ export default function SkillManagementPage() {
 
       {/* Search & filters (single row; py gives room so focus rings are not clipped by overflow-x-auto) */}
       <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto px-0.5 py-2">
-        <div className="relative min-w-[12rem] flex-1 max-w-md">
+        <div className="relative min-w-[16rem] shrink-0 w-full md:w-[calc((100%_-_1rem)_/_2)] lg:w-[calc((100%_-_2rem)_/_3)] xl:w-[calc((100%_-_3rem)_/_4)]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           <Input
             placeholder={t('skill.searchPlaceholder')}
@@ -462,32 +466,6 @@ export default function SkillManagementPage() {
         <Button size="sm" variant="secondary" className="h-8 shrink-0" onClick={handleSearch}>
           {t('common.search')}
         </Button>
-        <Button
-          size="sm"
-          variant={filterSubscribed ? 'default' : 'outline'}
-          className="h-8 shrink-0 whitespace-nowrap"
-          aria-pressed={filterSubscribed}
-          disabled={subscriptionLoading}
-          onClick={() => handleSubscriptionFilterChange(!filterSubscribed)}
-        >
-          <Bell className="mr-1 h-3 w-3" />
-          {t('skill.mySubscriptions')}
-          {subscriptions.length > 0 && (
-            <span
-              className={filterSubscribed
-                ? 'ml-1 text-xs text-primary-foreground/80'
-                : 'ml-1 text-xs text-muted-foreground'}
-            >
-              ({subscriptions.length})
-            </span>
-          )}
-        </Button>
-        {(searchInput || filterOwner || filterScope || filterBizTag || filterSubscribed) && (
-          <Button size="sm" variant="ghost" className="h-8 shrink-0" onClick={handleReset}>
-            <X className="mr-1 h-3 w-3" />
-            {t('common.reset')}
-          </Button>
-        )}
         <Select
           value={filterScope || '_all'}
           onValueChange={(v) => {
@@ -523,6 +501,40 @@ export default function SkillManagementPage() {
             <SelectItem value="download_count">{t('skill.sortByDownloads')}</SelectItem>
           </SelectContent>
         </Select>
+        {!filterSubscribed && hasSearchFilters && (
+          <Button size="sm" variant="ghost" className="h-8 shrink-0" onClick={handleReset}>
+            <X className="mr-1 h-3 w-3" />
+            {t('common.reset')}
+          </Button>
+        )}
+        <div className="ml-auto flex shrink-0 items-center gap-2 pl-2">
+          {filterSubscribed && (
+            <Button size="sm" variant="ghost" className="h-8 shrink-0" onClick={handleReset}>
+              <X className="mr-1 h-3 w-3" />
+              {t('common.reset')}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant={filterSubscribed ? 'default' : 'outline'}
+            className="h-8 w-[8.75rem] shrink-0 justify-center whitespace-nowrap"
+            aria-pressed={filterSubscribed}
+            disabled={subscriptionLoading}
+            onClick={() => handleSubscriptionFilterChange(!filterSubscribed)}
+          >
+            <Bell className="mr-1 h-3 w-3" />
+            {t('skill.mySubscriptions')}
+            {subscriptions.length > 0 && (
+              <span
+                className={filterSubscribed
+                  ? 'ml-1 text-xs text-primary-foreground/80'
+                  : 'ml-1 text-xs text-muted-foreground'}
+              >
+                ({subscriptions.length})
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
       {selectedNames.size > 0 && (
