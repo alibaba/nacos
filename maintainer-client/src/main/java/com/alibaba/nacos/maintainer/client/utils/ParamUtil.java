@@ -17,11 +17,8 @@
 package com.alibaba.nacos.maintainer.client.utils;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.selector.ExpressionSelector;
-import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.api.selector.SelectorFactory;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -176,9 +173,6 @@ public class ParamUtil {
      */
     public static void initSerialization() {
         // TODO register in implementation class or remove subType
-        JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
-        JacksonUtils.registerSubtype(NoneSelector.class, "NoneSelector");
-        JacksonUtils.registerSubtype(ExpressionSelector.class, SelectorType.label.name());
-        JacksonUtils.registerSubtype(ExpressionSelector.class, "LabelSelector");
+        SelectorFactory.preload();
     }
 }

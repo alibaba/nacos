@@ -18,6 +18,9 @@ package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -146,6 +149,18 @@ class InitUtilsTest {
         assertEquals("/nacos", UtilAndComs.webContext);
         assertEquals("/nacos/v1/ns", UtilAndComs.nacosUrlBase);
         assertEquals("/nacos/v1/ns/instance", UtilAndComs.nacosUrlInstance);
+    }
+    
+    @Test
+    void testInitSerializationRegistersSelectorSubtypes() {
+        InitUtils.initSerialization();
+        
+        AbstractSelector selector =
+            JsonUtils.toObj("{\"type\":\"LabelSelector\",\"expression\":\"k=v\"}",
+                AbstractSelector.class);
+        
+        assertEquals(ExpressionSelector.class, selector.getClass());
+        assertEquals("k=v", ((ExpressionSelector) selector).getExpression());
     }
     
     @Test

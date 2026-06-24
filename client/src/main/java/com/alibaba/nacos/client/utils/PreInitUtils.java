@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 
 /**
  * Async do pre init to load some cost component.
  *
  * <ul>
- *     <li>JacksonUtil</li>
+ *     <li>JsonUtils</li>
  *     <li>SpasAdapter</li>
  * </ul>
  *
@@ -35,12 +35,14 @@ public class PreInitUtils {
      * Async pre load cost component.
      */
     public static void asyncPreLoadCostComponent() {
-        Thread preLoadThread = new Thread(() -> {
-            // Jackson util will init static {@code ObjectMapper}, which will cost hundreds milliseconds.
-            JacksonUtils.createEmptyJsonNode();
-            // Ram auth plugin will try to get credential from env and system when leak input identity by properties.
-            SpasAdapter.getAk();
-        });
+        Thread preLoadThread = new Thread(PreInitUtils::preLoadCostComponent);
         preLoadThread.start();
+    }
+    
+    static void preLoadCostComponent() {
+        // JSON adapter initialization may cost hundreds milliseconds on first use.
+        JsonUtils.preload();
+        // Ram auth plugin will try to get credential from env and system when leak input identity by properties.
+        SpasAdapter.getAk();
     }
 }

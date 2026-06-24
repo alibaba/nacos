@@ -136,6 +136,18 @@ Last updated: 2026-06-24.
   - `mvn -pl console -am -Dtest=ConsoleCopilotConfigControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`
   - `mvn -pl console spotless:apply`
   - `mvn -pl console spotless:check`
+- 2026-06-24, stage 9 preload cleanup:
+  - Replaced client and maintainer-client selector subtype preload paths with
+    `SelectorFactory.preload()`.
+  - Replaced client JSON pre-warm from `JacksonUtils.createEmptyJsonNode()` to
+    neutral `JsonUtils.preload()`.
+  - `mvn -pl client,maintainer-client -am -Dtest=InitUtilsTest,PreInitUtilsTest,ParamUtilTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `client/target/site/jacoco/jacoco.csv`: `InitUtils` and `PreInitUtils`
+    have `LINE_MISSED=0`.
+  - `maintainer-client/target/site/jacoco/jacoco.csv`: `ParamUtil` has
+    `LINE_MISSED=0`.
+  - `mvn -pl client,maintainer-client spotless:apply`
+  - `mvn -pl client,maintainer-client spotless:check`
 
 ## Implementation Principles
 
@@ -364,7 +376,7 @@ Last updated: 2026-06-24.
     - Changed response parsing lines have no missed JaCoCo instructions in the
       focused stage 8 test run.
 
-- `[ ]` Migrate subtype preload paths.
+- `[x]` Migrate subtype preload paths.
   - Files:
     - `client/src/main/java/com/alibaba/nacos/client/naming/utils/InitUtils.java`
     - `maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/utils/ParamUtil.java`
@@ -376,7 +388,7 @@ Last updated: 2026-06-24.
   - Validation:
     - Selector serialization / deserialization tests.
 
-- `[ ]` Replace JSON pre-warm path.
+- `[x]` Replace JSON pre-warm path.
   - Files:
     - `client/src/main/java/com/alibaba/nacos/client/utils/PreInitUtils.java`
   - Plan:
