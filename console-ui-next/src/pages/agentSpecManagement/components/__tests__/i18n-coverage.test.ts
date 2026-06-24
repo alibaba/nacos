@@ -38,6 +38,12 @@ describe('AgentSpec i18n coverage', () => {
     'agentSpec.deleteNode',
     'agentSpec.createFileIn',
     'agentSpec.createFolderIn',
+    'agentSpec.resourceRenameFile',
+    'agentSpec.resourceCopyFile',
+    'agentSpec.resourceDownloadFile',
+    'agentSpec.resourceDeleteFile',
+    'agentSpec.resourceCopySuccess',
+    'agentSpec.resourceCopyFailed',
     'agentSpec.descriptionPlaceholder',
     'agentSpec.editing',
     'agentSpec.reviewing',
@@ -74,7 +80,7 @@ describe('AgentSpec i18n coverage', () => {
   it('uses dedicated version status keys for timeline badges', () => {
     const source = readSource('../VersionTimeline.tsx');
 
-    expect(source).toContain('agentSpec.versionStatus.${v.status}');
+    expect(source).toContain('agentSpec.versionStatus.${displayStatus}');
     expect(source).not.toContain('agentSpec.status.${v.status}');
   });
 
