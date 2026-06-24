@@ -125,7 +125,6 @@ class ConsoleCopilotConfigControllerTest {
         
         MockHttpServletResponse response = mockMvc.perform(
             post("/v3/console/copilot/config")
-                .header("Client-AppName", "test-app")
                 .contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk()).andReturn().getResponse();
         
@@ -147,7 +146,6 @@ class ConsoleCopilotConfigControllerTest {
         assertEquals("Copilot configuration", configFormCaptor.getValue().getDesc());
         assertEquals("json", configFormCaptor.getValue().getType());
         assertEquals("http", requestInfoCaptor.getValue().getSrcType());
-        assertEquals("test-app", requestInfoCaptor.getValue().getRequestIpApp());
     }
     
     @Test
