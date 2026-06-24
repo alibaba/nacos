@@ -54,6 +54,7 @@ import type {
 import { cn } from '@/lib/utils';
 import ToolManager from './tool-manager';
 import { resolveMcpEndpointUrl, shouldUseExistingService } from './endpoint-utils';
+import { loadServiceOptions } from './service-options';
 
 const PROTOCOL_CARD_CONFIG: Record<string, { icon: typeof Terminal; label: string; color: string; bg: string; dot: string; ring: string }> = {
   stdio: {
@@ -130,6 +131,7 @@ export default function NewMcpServerPage() {
   const [exportPath, setExportPath] = useState('');
   const [selectedService, setSelectedService] = useState(''); // format: groupName@@serviceName
   const [serviceList, setServiceList] = useState<{ label: string; value: string }[]>([]);
+  const [serviceSearch, setServiceSearch] = useState('');
 
   // Stdio config
   const [localServerConfig, setLocalServerConfig] = useState('');
@@ -226,23 +228,22 @@ export default function NewMcpServerPage() {
 
   // Fetch service list for "use existing service" mode
   useEffect(() => {
-    serviceApi
-      .listServices({ namespaceId, pageNo: 1, pageSize: 100 })
-      .then((response) => {
-        const result = (response as unknown as { data: { pageItems: Array<{ name: string; groupName: string }> } }).data;
-        if (result?.pageItems) {
-          setServiceList(
-            result.pageItems.map((item) => ({
-              label: `${item.groupName} / ${item.name}`,
-              value: `${item.groupName}@@${item.name}`,
-            }))
-          );
+    let cancelled = false;
+    loadServiceOptions(namespaceId, serviceApi.listServices, serviceSearch)
+      .then((options) => {
+        if (!cancelled) {
+          setServiceList(options);
         }
       })
       .catch(() => {
-        // silently ignore - user can still type manually
+        if (!cancelled) {
+          setServiceList([]);
+        }
       });
-  }, [namespaceId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [namespaceId, serviceSearch]);
 
   const populateForm = (data: McpServerDetailInfo) => {
     setServerName(data.name);
@@ -870,6 +871,11 @@ export default function NewMcpServerPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <div className="space-y-2.5">
                         <Label>{t('mcp.selectService')}</Label>
+                        <Input
+                          value={serviceSearch}
+                          onChange={(e) => setServiceSearch(e.target.value)}
+                          placeholder={t('service.serviceName')}
+                        />
                         {serviceList.length > 0 ? (
                           <Select value={selectedService} onValueChange={setSelectedService}>
                             <SelectTrigger>
