@@ -274,7 +274,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
         String content = "maintainer.config.beta=true";
         String betaIps = "127.0.0.1";
-        addCleanup(() -> maintainerService.stopBeta(dataId, group, namespaceId));
+        addCleanup(() -> stopBetaIfPresent(maintainerService, dataId, group, namespaceId));
         addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
         
         NacosException missingBetaIps = assertThrows(NacosException.class,
@@ -368,6 +368,17 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         result.setTargetDataId(targetDataId);
         result.setTargetGroupName(targetGroup);
         return result;
+    }
+    
+    private void stopBetaIfPresent(ConfigMaintainerService maintainerService, String dataId,
+            String group, String namespaceId) throws NacosException {
+        try {
+            maintainerService.stopBeta(dataId, group, namespaceId);
+        } catch (NacosException exception) {
+            if (!String.valueOf(exception.getMessage()).contains("remove beta data error")) {
+                throw exception;
+            }
+        }
     }
     
     private int intValue(Map<String, Object> result, String key) {
