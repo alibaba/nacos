@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.ai.cache;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -70,7 +72,7 @@ class NacosMcpServerCacheHolderTest {
         NotifyCenter.deregisterPublisher(McpServerChangedEvent.class);
     }
     
-    @Test()
+    @Test
     void processMcpServerDetailInfo() throws InterruptedException {
         assertNull(cacheHolder.getMcpServer("test", "1.0.0"));
         MockEventSubscriber subscriber = new MockEventSubscriber();
@@ -94,7 +96,7 @@ class NacosMcpServerCacheHolderTest {
         fail("Subscriber for McpServerChangedEvent don't be invoked.");
     }
     
-    @Test()
+    @Test
     void processMcpServerDetailInfoLatest() throws InterruptedException {
         assertNull(cacheHolder.getMcpServer("test", "1.0.0"));
         MockEventSubscriber subscriber = new MockEventSubscriber();
@@ -162,6 +164,50 @@ class NacosMcpServerCacheHolderTest {
         NotifyCenter.registerSubscriber(subscriber);
         cacheHolder.processMcpServerDetailInfo(mcpServerDetailInfo);
         assertEquals(mcpServerDetailInfo, cacheHolder.getMcpServer("test", "1.0.0"));
+        int retry = 0;
+        while (retry < 3) {
+            TimeUnit.MILLISECONDS.sleep(500);
+            if (subscriber.invokedMark.get()) {
+                fail("Subscriber for McpServerChangedEvent should not be invoked, but invoked.");
+            }
+            retry++;
+        }
+    }
+    
+    @Test()
+    void processMcpServerDetailInfoNoDiffWithDifferentMapOrder() throws InterruptedException {
+        Map<String, Object> originalConfig = new LinkedHashMap<>();
+        originalConfig.put("z", "last");
+        originalConfig.put("a", "first");
+        cacheHolder.processMcpServerDetailInfo(buildMcpServerDetailInfo(originalConfig));
+        
+        MockEventSubscriber subscriber = new MockEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        Map<String, Object> reorderedConfig = new LinkedHashMap<>();
+        reorderedConfig.put("a", "first");
+        reorderedConfig.put("z", "last");
+        McpServerDetailInfo reorderedDetailInfo = buildMcpServerDetailInfo(reorderedConfig);
+        cacheHolder.processMcpServerDetailInfo(reorderedDetailInfo);
+        assertEquals(reorderedDetailInfo, cacheHolder.getMcpServer("test", "1.0.0"));
+        int retry = 0;
+        while (retry < 3) {
+            TimeUnit.MILLISECONDS.sleep(500);
+            if (subscriber.invokedMark.get()) {
+                fail("Subscriber for McpServerChangedEvent should not be invoked, but invoked.");
+            }
+            retry++;
+        }
+    }
+    
+    @Test()
+    void processMcpServerDetailInfoWithSerializationException() throws InterruptedException {
+        Map<String, Object> cyclicConfig = new LinkedHashMap<>();
+        cyclicConfig.put("self", cyclicConfig);
+        MockEventSubscriber subscriber = new MockEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        
+        cacheHolder.processMcpServerDetailInfo(buildMcpServerDetailInfo(cyclicConfig));
+        
         int retry = 0;
         while (retry < 3) {
             TimeUnit.MILLISECONDS.sleep(500);
@@ -252,6 +298,16 @@ class NacosMcpServerCacheHolderTest {
         cacheHolder.removeMcpServerUpdateTask("test", "1.0.0");
         TimeUnit.MILLISECONDS.sleep(110);
         verify(aiGrpcClient, never()).queryMcpServer("test", null);
+    }
+    
+    private McpServerDetailInfo buildMcpServerDetailInfo(Map<String, Object> localServerConfig) {
+        McpServerDetailInfo result = new McpServerDetailInfo();
+        result.setName("test");
+        result.setVersionDetail(new ServerVersionDetail());
+        result.getVersionDetail().setVersion("1.0.0");
+        result.getVersionDetail().setIs_latest(true);
+        result.setLocalServerConfig(localServerConfig);
+        return result;
     }
     
     private static class MockEventSubscriber extends Subscriber<McpServerChangedEvent> {

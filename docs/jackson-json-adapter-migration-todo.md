@@ -136,14 +136,18 @@ Last updated: 2026-06-24.
   - `mvn -pl console -am -Dtest=ConsoleCopilotConfigControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`
   - `mvn -pl console spotless:apply`
   - `mvn -pl console spotless:check`
-- 2026-06-24, stage 9 preload cleanup:
+- 2026-06-24, stage 9 client runtime cleanup:
   - Replaced client and maintainer-client selector subtype preload paths with
     `SelectorFactory.preload()`.
   - Replaced client JSON pre-warm from `JacksonUtils.createEmptyJsonNode()` to
     neutral `JsonUtils.preload()`.
-  - `mvn -pl client,maintainer-client -am -Dtest=InitUtilsTest,PreInitUtilsTest,ParamUtilTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - Replaced `NacosMcpServerCacheHolder` local Jackson 2 canonical mapper with
+    neutral `JsonUtils.toCanonicalJson(...)`.
+  - `mvn -pl client,maintainer-client -am -Dtest=InitUtilsTest,PreInitUtilsTest,ParamUtilTest,NacosMcpServerCacheHolderTest -Dsurefire.failIfNoSpecifiedTests=false test`
   - `client/target/site/jacoco/jacoco.csv`: `InitUtils` and `PreInitUtils`
     have `LINE_MISSED=0`.
+  - `client/target/site/jacoco/jacoco.csv`: `NacosMcpServerCacheHolder` has
+    `LINE_MISSED=0`.
   - `maintainer-client/target/site/jacoco/jacoco.csv`: `ParamUtil` has
     `LINE_MISSED=0`.
   - `mvn -pl client,maintainer-client spotless:apply`
@@ -261,7 +265,7 @@ Last updated: 2026-06-24.
     - Jackson 3 facade and delegate source files have full line coverage in
       the focused `common` module test run.
 
-- `[ ]` Add canonical JSON support.
+- `[x]` Add canonical JSON support.
   - Files:
     - `api/.../JsonUtils.java`
     - `common/.../Jackson2JsonAdapter.java`
@@ -398,7 +402,7 @@ Last updated: 2026-06-24.
     - Ensure async preload still initializes the selected adapter without
       forcing Jackson 2.
 
-- `[ ]` Migrate MCP cache canonical comparison.
+- `[x]` Migrate MCP cache canonical comparison.
   - Files:
     - `client/src/main/java/com/alibaba/nacos/client/ai/cache/NacosMcpServerCacheHolder.java`
   - Plan:
