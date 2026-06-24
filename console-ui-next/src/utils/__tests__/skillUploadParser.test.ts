@@ -49,4 +49,14 @@ describe('skillUploadParser', () => {
     expect(entries[0].request).toBeUndefined();
     expect(entries[0].error).toContain('YAML front matter');
   });
+
+  it('keeps raw uploaded version for precheck display', async () => {
+    const zip = new JSZip();
+    addSkill(zip, 'fp-engineering-solver', 'fp-engineering-solver', '0.1');
+
+    const entries = await parseSkillUploadEntries('public', await createZipFile(zip));
+
+    expect(entries[0].request?.parsedVersion).toBe('0.1');
+    expect(entries[0].request?.versionSource).toBe('SKILL.md frontmatter');
+  });
 });
