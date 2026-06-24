@@ -21,7 +21,7 @@ adapter work discussed in issue #14466 and defined by
 `specs/en/sdk/sdk-java-json-adapter-spec.md` /
 `specs/zh-cn/sdk/sdk-java-json-adapter-spec.md`.
 
-Last updated: 2026-06-17.
+Last updated: 2026-06-24.
 
 ## Status Legend
 
@@ -116,6 +116,14 @@ Last updated: 2026-06-17.
     permission in OIDC dependency tests.
   - `maintainer-client/target/site/jacoco/jacoco.xml`: new config maintainer
     boolean unwrap lines have no missed instructions.
+- 2026-06-24, stage 8 Copilot OpenAPI IT follow-up:
+  - Treated idempotent Copilot config publish as successful when publish
+    returns `false` but the stored config content already matches the target
+    content.
+  - `mvn -pl copilot -Dtest=CopilotConfigStorageTest test`
+  - `mvn -pl copilot spotless:apply`
+  - `mvn -pl copilot spotless:check`
+  - `mvn -pl copilot test`
 
 ## Implementation Principles
 

@@ -133,15 +133,28 @@ public class CopilotConfigStorage {
                 "Copilot configuration",
                 "json");
             
-            if (result) {
+            if (result || isTargetConfigSaved(content)) {
                 LOGGER.info("Copilot config saved successfully to Nacos Config");
+                return true;
             } else {
                 LOGGER.warn("Failed to save Copilot config to Nacos Config");
             }
             
-            return result;
+            return false;
         } catch (NacosException e) {
             LOGGER.error("Failed to save Copilot config to Nacos Config", e);
+            return false;
+        }
+    }
+    
+    private boolean isTargetConfigSaved(String expectedContent) {
+        try {
+            ConfigDetailInfo configInfo = configMaintainerService.getConfig(
+                CONFIG_DATA_ID, CONFIG_GROUP, configNamespace);
+            return configInfo != null
+                && StringUtils.equals(expectedContent, configInfo.getContent());
+        } catch (NacosException e) {
+            LOGGER.warn("Failed to verify Copilot config after publish returned false", e);
             return false;
         }
     }
