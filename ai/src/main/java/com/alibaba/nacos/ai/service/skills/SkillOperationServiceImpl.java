@@ -170,7 +170,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         UploadVersionCandidate uploadVersion = resolveUploadVersionCandidate(skill.getSkillMd(),
             request.getZipBytes(),
             request.getTargetVersion());
-        return doUploadSingleSkill(request.getNamespaceId(), skill, uploadVersion.getVersion(),
+        return doUploadSingleSkill(request.getNamespaceId(), skill, uploadVersion,
             request.isOverwrite(), request.getUploadAction(), request.getCommitMsg());
     }
     
@@ -206,26 +206,25 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Skill name is required");
         }
+        validateSkillNameByParamChecker(name);
         UploadVersionCandidate uploadVersion = resolvePrecheckVersionCandidate(
             request.getParsedVersion(), request.getVersionSource(), request.getTargetVersion());
-        validateSkillNameByParamChecker(name);
         
         SkillUploadPrecheckResult result = new SkillUploadPrecheckResult();
         result.setNamespaceId(request.getNamespaceId());
         result.setSkillName(name);
         result.setDescription(StringUtils.trim(request.getDescription()));
-        result.setParsedVersion(uploadVersion.getVersion());
-        result.setResolvedVersion(uploadVersion.getVersion());
-        result.setVersionSource(uploadVersion.getSource());
         
         AiResource meta = resourceManager.findMeta(request.getNamespaceId(), name,
             RESOURCE_TYPE_SKILL);
         if (meta == null) {
+            String targetVersion = resolveNewUploadVersion(uploadVersion);
+            fillPrecheckVersion(result, uploadVersion, targetVersion);
             result.setExists(false);
             result.setWritable(true);
             result.setStatus(SkillUploadPrecheckResult.STATUS_VALID);
             result.addAction(SkillUploadPrecheckResult.ACTION_CREATE_DRAFT,
-                uploadVersion.getVersion(), "Create a new skill draft");
+                targetVersion, "Create a new skill draft");
             return result;
         }
         
@@ -249,7 +248,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String reviewing = info.getReviewingVersion();
         List<String> existingVersions = resourceManager.listExistingVersions(
             request.getNamespaceId(), name, RESOURCE_TYPE_SKILL);
-        boolean versionExists = existingVersions.contains(uploadVersion.getVersion());
+        String targetVersion = resolvePrecheckTargetVersion(uploadVersion, existingVersions,
+            editing);
+        fillPrecheckVersion(result, uploadVersion, targetVersion);
+        boolean versionExists = uploadVersion.hasValidVersion()
+            && existingVersions.contains(uploadVersion.getVersion());
         result.setVersionExists(versionExists);
         result.setDraftExists(StringUtils.isNotBlank(editing));
         result.setReviewingExists(StringUtils.isNotBlank(reviewing));
@@ -270,23 +273,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         if (StringUtils.isNotBlank(editing)) {
             result.setStatus(SkillUploadPrecheckResult.STATUS_WARNING);
-            String overwriteVersion = resolveOverwriteDraftVersion(existingVersions,
-                uploadVersion.getVersion(), editing);
-            result.setResolvedVersion(overwriteVersion);
             result.addConflictType(SkillUploadPrecheckResult.CONFLICT_DRAFT_EXISTS);
             result.addWarning("There is already an editing draft: " + editing);
-            result.addAction(SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT, overwriteVersion,
+            result.addAction(SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT, targetVersion,
                 "Overwrite the current editing draft");
             return result;
         }
         
-        String newVersion = resolveFinalUploadVersion(request.getNamespaceId(), name,
-            uploadVersion.getVersion());
-        result.setResolvedVersion(newVersion);
         result.setStatus(SkillUploadPrecheckResult.STATUS_WARNING);
         result.addConflictType(SkillUploadPrecheckResult.CONFLICT_EXISTING_SKILL);
         result.addWarning("Skill already exists: " + name);
-        result.addAction(SkillUploadPrecheckResult.ACTION_CREATE_DRAFT, newVersion,
+        result.addAction(SkillUploadPrecheckResult.ACTION_CREATE_DRAFT, targetVersion,
             "Create a new draft for the existing skill");
         return result;
     }
@@ -314,7 +311,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     result.addFailed("unknown", "Skill name is required in YAML front matter");
                     continue;
                 }
-                String uploadVersion = resolveUploadVersion(skill.getSkillMd(), null, null);
+                UploadVersionCandidate uploadVersion =
+                    resolveUploadVersionCandidate(skill.getSkillMd(), null, null);
                 doUploadSingleSkill(namespaceId, skill, uploadVersion, overwrite, null, null);
                 result.addSucceeded(skillName);
             } catch (Exception e) {
@@ -328,28 +326,33 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     /**
      * Core logic for uploading a single skill: validate, check meta, create/overwrite draft, log.
      */
-    private String doUploadSingleSkill(String namespaceId, Skill skill, String uploadVersion,
+    private String doUploadSingleSkill(String namespaceId, Skill skill,
+        UploadVersionCandidate uploadVersion,
         boolean overwrite, String uploadAction, String commitMsg) throws NacosException {
         String name = skill.getName();
         validateSkillNameByParamChecker(name);
         
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
+        if (meta != null) {
+            VisibilityHelper.checkWritableResource(meta);
+        }
+        String targetVersion = resolveUploadTargetVersion(namespaceId, name, meta, uploadVersion);
         if (StringUtils.isBlank(uploadAction)) {
             if (overwrite) {
-                return overwriteUploadedSkill(namespaceId, skill, uploadVersion, meta, false,
+                return overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, false,
                     commitMsg);
             }
-            return createUploadedSkillDraft(namespaceId, skill, uploadVersion, meta, commitMsg);
+            return createUploadedSkillDraft(namespaceId, skill, targetVersion, meta, commitMsg);
         }
         if (SkillUploadPrecheckResult.ACTION_CREATE_DRAFT.equals(uploadAction)) {
-            return createUploadedSkillDraft(namespaceId, skill, uploadVersion, meta, commitMsg);
+            return createUploadedSkillDraft(namespaceId, skill, targetVersion, meta, commitMsg);
         }
         if (SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT.equals(uploadAction)) {
-            return overwriteUploadedSkill(namespaceId, skill, uploadVersion, meta, true,
+            return overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
                 commitMsg);
         }
         if (SkillUploadPrecheckResult.ACTION_DELETE_DRAFT_AND_CREATE.equals(uploadAction)) {
-            return overwriteUploadedSkill(namespaceId, skill, uploadVersion, meta, true,
+            return overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
                 commitMsg);
         }
         throw new NacosApiException(NacosException.INVALID_PARAM,
@@ -515,16 +518,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     /**
-     * Resolve the upload version.
+     * Resolve the upload version for strict call sites.
      * Priority: SKILL.md YAML front-matter (version / metadata.version) -> meta.json in ZIP -> user-specified targetVersion -> default "0.0.1".
-     * Rejects non-{@code x.y.z}/{@code vN} versions from any source so invalid values cannot reach storage.
+     * Strict callers still reject non-{@code x.y.z}/{@code vN} versions before storage.
      */
     private String resolveUploadVersion(String skillMd, byte[] zipBytes, String targetVersion)
         throws NacosApiException {
-        return resolveUploadVersionCandidate(skillMd, zipBytes, targetVersion).getVersion();
+        return resolveStrictUploadVersionCandidate(skillMd, zipBytes, targetVersion).getVersion();
     }
     
-    private UploadVersionCandidate resolveUploadVersionCandidate(String skillMd, byte[] zipBytes,
+    private UploadVersionCandidate resolveStrictUploadVersionCandidate(String skillMd,
+        byte[] zipBytes,
         String targetVersion) throws NacosApiException {
         String versionFromSkillMd = resolveVersionFromSkillMd(skillMd);
         if (StringUtils.isNotBlank(versionFromSkillMd)) {
@@ -546,20 +550,36 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return new UploadVersionCandidate(DEFAULT_INITIAL_UPLOAD_VERSION, "default");
     }
     
+    private UploadVersionCandidate resolveUploadVersionCandidate(String skillMd, byte[] zipBytes,
+        String targetVersion) {
+        String versionFromSkillMd = resolveVersionFromSkillMd(skillMd);
+        if (StringUtils.isNotBlank(versionFromSkillMd)) {
+            return buildLenientUploadVersionCandidate(versionFromSkillMd,
+                "SKILL.md frontmatter");
+        }
+        String versionFromMetaJson = SkillZipParser.resolveVersionFromZip(zipBytes);
+        if (StringUtils.isNotBlank(versionFromMetaJson)) {
+            return buildLenientUploadVersionCandidate(versionFromMetaJson, "_meta.json");
+        }
+        if (StringUtils.isNotBlank(targetVersion)) {
+            return buildLenientUploadVersionCandidate(targetVersion.trim(),
+                "targetVersion parameter");
+        }
+        return UploadVersionCandidate.empty();
+    }
+    
     private UploadVersionCandidate resolvePrecheckVersionCandidate(String parsedVersion,
-        String versionSource, String targetVersion) throws NacosApiException {
+        String versionSource, String targetVersion) {
         if (StringUtils.isNotBlank(parsedVersion)) {
             String source = StringUtils.isNotBlank(versionSource) ? versionSource
                 : "client parsed metadata";
-            return new UploadVersionCandidate(
-                validateUploadVersionFormat(parsedVersion.trim(), source), source);
+            return buildLenientUploadVersionCandidate(parsedVersion.trim(), source);
         }
         if (StringUtils.isNotBlank(targetVersion)) {
-            return new UploadVersionCandidate(
-                validateUploadVersionFormat(targetVersion.trim(), "targetVersion parameter"),
+            return buildLenientUploadVersionCandidate(targetVersion.trim(),
                 "targetVersion parameter");
         }
-        return new UploadVersionCandidate(DEFAULT_INITIAL_UPLOAD_VERSION, "default");
+        return UploadVersionCandidate.empty();
     }
     
     private static String validateUploadVersionFormat(String version, String source)
@@ -571,6 +591,15 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     + "', expected x.y.z or vN");
         }
         return version;
+    }
+    
+    private static UploadVersionCandidate buildLenientUploadVersionCandidate(String version,
+        String source) {
+        String candidate = StringUtils.trim(version);
+        if (VersionUtils.isSupportedVersionFormat(candidate)) {
+            return new UploadVersionCandidate(candidate, source);
+        }
+        return UploadVersionCandidate.invalid(candidate, source);
     }
     
     /**
@@ -621,6 +650,52 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return candidateVersion;
     }
     
+    private String resolveUploadTargetVersion(String namespaceId, String skillName, AiResource meta,
+        UploadVersionCandidate uploadVersion) throws NacosException {
+        if (meta == null) {
+            return resolveNewUploadVersion(uploadVersion);
+        }
+        if (uploadVersion.hasValidVersion()) {
+            return uploadVersion.getVersion();
+        }
+        ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
+        String editing = info.getEditingVersion();
+        if (StringUtils.isNotBlank(editing)) {
+            return editing;
+        }
+        return resolveNextDraftVersion(namespaceId, skillName);
+    }
+    
+    private String resolveNewUploadVersion(UploadVersionCandidate uploadVersion) {
+        return uploadVersion.hasValidVersion() ? uploadVersion.getVersion()
+            : DEFAULT_INITIAL_UPLOAD_VERSION;
+    }
+    
+    private String resolvePrecheckTargetVersion(UploadVersionCandidate uploadVersion,
+        List<String> existingVersions, String editingVersion) {
+        if (StringUtils.isNotBlank(editingVersion)) {
+            return uploadVersion.hasValidVersion()
+                ? resolveOverwriteDraftVersion(existingVersions, uploadVersion.getVersion(),
+                    editingVersion)
+                : editingVersion;
+        }
+        return uploadVersion.hasValidVersion()
+            ? resolveFinalUploadVersion(existingVersions, uploadVersion.getVersion())
+            : resolveNextDraftVersion(existingVersions);
+    }
+    
+    private void fillPrecheckVersion(SkillUploadPrecheckResult result,
+        UploadVersionCandidate uploadVersion, String targetVersion) {
+        result.setParsedVersion(uploadVersion.resolveDisplayVersion(targetVersion));
+        result.setResolvedVersion(targetVersion);
+        result.setVersionSource(uploadVersion.getSource());
+        if (uploadVersion.hasInvalidVersion()) {
+            result.addWarning("Invalid version from " + uploadVersion.getSource() + ": '"
+                + uploadVersion.getRawVersion() + "', generated upload version "
+                + targetVersion + " instead");
+        }
+    }
+    
     private String resolveUploadVersionAfterDeletingDraft(List<String> existingVersions,
         String candidateVersion, String editingVersion) {
         List<String> versionsAfterDeletingDraft = new ArrayList<>(existingVersions.size());
@@ -655,6 +730,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         throws NacosException {
         List<String> existingVersions =
             resourceManager.listExistingVersions(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        return resolveNextDraftVersion(existingVersions);
+    }
+    
+    private String resolveNextDraftVersion(List<String> existingVersions) {
         String maxSemver = VersionUtils.maxSemver(existingVersions);
         if (StringUtils.isNotBlank(maxSemver)) {
             return VersionUtils.nextSemverPatch(maxSemver);
@@ -1764,9 +1843,31 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         private final String source;
         
+        private final String rawVersion;
+        
+        private final boolean invalidVersion;
+        
         UploadVersionCandidate(String version, String source) {
             this.version = version;
             this.source = source;
+            this.rawVersion = version;
+            this.invalidVersion = false;
+        }
+        
+        private UploadVersionCandidate(String version, String source, String rawVersion,
+            boolean invalidVersion) {
+            this.version = version;
+            this.source = source;
+            this.rawVersion = rawVersion;
+            this.invalidVersion = invalidVersion;
+        }
+        
+        static UploadVersionCandidate invalid(String rawVersion, String source) {
+            return new UploadVersionCandidate(null, source, rawVersion, true);
+        }
+        
+        static UploadVersionCandidate empty() {
+            return new UploadVersionCandidate(null, "default", null, false);
         }
         
         String getVersion() {
@@ -1775,6 +1876,28 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         String getSource() {
             return source;
+        }
+        
+        String getRawVersion() {
+            return rawVersion;
+        }
+        
+        boolean hasValidVersion() {
+            return StringUtils.isNotBlank(version);
+        }
+        
+        boolean hasInvalidVersion() {
+            return invalidVersion;
+        }
+        
+        String resolveDisplayVersion(String targetVersion) {
+            if (StringUtils.isNotBlank(rawVersion)) {
+                return rawVersion;
+            }
+            if (StringUtils.isNotBlank(version)) {
+                return version;
+            }
+            return targetVersion;
         }
     }
     
