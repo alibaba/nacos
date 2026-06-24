@@ -120,6 +120,11 @@ Last updated: 2026-06-24.
   - Treated idempotent Copilot config publish as successful when publish
     returns `false` but the stored config content already matches the target
     content.
+  - Fixed Copilot config maintainer-client initialization to pass the current
+    Nacos context path so internal config admin requests target the same
+    `/nacos` context path used by OpenAPI IT.
+  - Treated publish exceptions as idempotent success when the stored config
+    content already matches the target content.
   - `mvn -pl copilot -Dtest=CopilotConfigStorageTest test`
   - `mvn -pl copilot spotless:apply`
   - `mvn -pl copilot spotless:check`
