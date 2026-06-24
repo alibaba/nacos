@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -161,6 +162,40 @@ public class NacosNamingMaintainerServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(serviceName, result.getServiceName());
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testGetServiceDetailWithNoneSelector() throws Exception {
+        String serviceName = "testService";
+        String response = "{\"code\":0,\"message\":\"success\",\"data\":{\"serviceName\":\""
+            + serviceName + "\",\"selector\":{\"type\":\"NoneSelector\"}}}";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(response);
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        ServiceDetailInfo result = nacosNamingMaintainerService.getServiceDetail(serviceName);
+        
+        assertNotNull(result);
+        assertTrue(result.getSelector() instanceof NoneSelector);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testGetServiceDetailWithLabelSelector() throws Exception {
+        String serviceName = "testService";
+        String response = "{\"code\":0,\"message\":\"success\",\"data\":{\"serviceName\":\""
+            + serviceName
+            + "\",\"selector\":{\"type\":\"LabelSelector\",\"expression\":\"env=prod\"}}}";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(response);
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        ServiceDetailInfo result = nacosNamingMaintainerService.getServiceDetail(serviceName);
+        
+        assertNotNull(result);
+        assertTrue(result.getSelector() instanceof ExpressionSelector);
+        assertEquals("env=prod", ((ExpressionSelector) result.getSelector()).getExpression());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     
