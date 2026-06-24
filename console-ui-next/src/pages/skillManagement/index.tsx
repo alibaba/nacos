@@ -87,6 +87,7 @@ export default function SkillManagementPage() {
   const [subscribedItems, setSubscribedItems] = useState<SkillListItem[]>([]);
   const [subscribedListLoading, setSubscribedListLoading] = useState(false);
   const [subscribedListError, setSubscribedListError] = useState<string | null>(null);
+  const [savingSubscriptionNames, setSavingSubscriptionNames] = useState<Set<string>>(new Set());
   const [uploadInitialFile, setUploadInitialFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounter = useRef(0);
@@ -230,6 +231,20 @@ export default function SkillManagementPage() {
     navigate(`/skill/${encodeURIComponent(name)}?${params}`);
   };
 
+  const setSubscriptionNamesSaving = (names: string[], saving: boolean) => {
+    setSavingSubscriptionNames((current) => {
+      const next = new Set(current);
+      names.forEach((name) => {
+        if (saving) {
+          next.add(name);
+        } else {
+          next.delete(name);
+        }
+      });
+      return next;
+    });
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
@@ -264,26 +279,33 @@ export default function SkillManagementPage() {
   };
 
   const handleSubscribeSkill = async (name: string) => {
+    setSubscriptionNamesSaving([name], true);
     try {
       await subscribeSkills(namespaceId, [name]);
       toast.success(t('skill.subscribeSuccess'));
     } catch {
       // error handled by axios interceptor
+    } finally {
+      setSubscriptionNamesSaving([name], false);
     }
   };
 
   const handleUnsubscribeSkill = async (name: string) => {
+    setSubscriptionNamesSaving([name], true);
     try {
       await unsubscribeSkills(namespaceId, [name]);
       toast.success(t('skill.unsubscribeSuccess'));
     } catch {
       // error handled by axios interceptor
+    } finally {
+      setSubscriptionNamesSaving([name], false);
     }
   };
 
   const handleBatchSubscription = async () => {
     const names = Array.from(selectedNames);
     if (names.length === 0) return;
+    setSubscriptionNamesSaving(names, true);
     try {
       if (names.every((name) => subscriptionMap[name])) {
         await unsubscribeSkills(namespaceId, names);
@@ -295,6 +317,7 @@ export default function SkillManagementPage() {
     } catch {
       // error handled by axios interceptor
     } finally {
+      setSubscriptionNamesSaving(names, false);
       clearSelection();
     }
   };
@@ -638,7 +661,7 @@ export default function SkillManagementPage() {
                 item={item}
                 selected={selectedNames.has(item.name)}
                 subscribed={!!subscriptionMap[item.name]}
-                subscriptionSaving={subscriptionSaving}
+                subscriptionSaving={savingSubscriptionNames.has(item.name)}
                 onSelect={toggleSelect}
                 onDetail={handleDetail}
                 onDelete={setDeleteTarget}
