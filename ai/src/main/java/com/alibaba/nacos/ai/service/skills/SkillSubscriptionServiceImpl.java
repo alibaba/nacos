@@ -16,18 +16,13 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
-import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
 import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,8 +38,6 @@ import java.util.Map;
 @Service
 public class SkillSubscriptionServiceImpl implements SkillSubscriptionService {
     
-    private static final String ANONYMOUS_SUBSCRIBER = "anonymous";
-    
     private final SkillSubscriptionStorage storage;
     
     private final SkillOperationService skillOperationService;
@@ -57,8 +50,8 @@ public class SkillSubscriptionServiceImpl implements SkillSubscriptionService {
     
     @Override
     public SkillSubscriptionDocument listSubscriptions(String namespaceId) throws NacosException {
-        String resolvedNamespaceId = resolveNamespaceId(namespaceId);
-        String subscriber = resolveSubscriber();
+        String resolvedNamespaceId = SkillSubscriptionRequestUtil.resolveNamespaceId(namespaceId);
+        String subscriber = SkillSubscriptionRequestUtil.resolveSubscriber();
         SkillSubscriptionDocument document = storage.get(resolvedNamespaceId, subscriber);
         return normalizeDocument(resolvedNamespaceId, subscriber, document);
     }
@@ -66,8 +59,8 @@ public class SkillSubscriptionServiceImpl implements SkillSubscriptionService {
     @Override
     public SkillSubscriptionDocument subscribe(String namespaceId,
         List<SkillSubscription> subscriptions) throws NacosException {
-        String resolvedNamespaceId = resolveNamespaceId(namespaceId);
-        String subscriber = resolveSubscriber();
+        String resolvedNamespaceId = SkillSubscriptionRequestUtil.resolveNamespaceId(namespaceId);
+        String subscriber = SkillSubscriptionRequestUtil.resolveSubscriber();
         SkillSubscriptionDocument document = storage.get(resolvedNamespaceId, subscriber);
         SkillSubscriptionDocument normalizedDocument = normalizeDocument(resolvedNamespaceId,
             subscriber, document);
@@ -88,8 +81,8 @@ public class SkillSubscriptionServiceImpl implements SkillSubscriptionService {
     @Override
     public SkillSubscriptionDocument unsubscribe(String namespaceId, List<String> names)
         throws NacosException {
-        String resolvedNamespaceId = resolveNamespaceId(namespaceId);
-        String subscriber = resolveSubscriber();
+        String resolvedNamespaceId = SkillSubscriptionRequestUtil.resolveNamespaceId(namespaceId);
+        String subscriber = SkillSubscriptionRequestUtil.resolveSubscriber();
         List<String> normalizedNames = new ArrayList<>();
         if (names != null) {
             for (String name : names) {
@@ -168,34 +161,4 @@ public class SkillSubscriptionServiceImpl implements SkillSubscriptionService {
         return result;
     }
     
-    private String resolveNamespaceId(String namespaceId) {
-        return StringUtils.isBlank(namespaceId) ? Constants.Skills.SKILL_DEFAULT_NAMESPACE
-            : namespaceId;
-    }
-    
-    private String resolveSubscriber() {
-        String currentIdentity = VisibilityHelper.resolveCurrentIdentity();
-        if (StringUtils.isNotBlank(currentIdentity)) {
-            return currentIdentity;
-        }
-        String requestUsername = resolveRequestUsername();
-        return StringUtils.isBlank(requestUsername) ? ANONYMOUS_SUBSCRIBER : requestUsername;
-    }
-    
-    private String resolveRequestUsername() {
-        try {
-            RequestAttributes attributes =
-                org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
-            if (!(attributes instanceof ServletRequestAttributes)) {
-                return StringUtils.EMPTY;
-            }
-            HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
-            String username = request.getParameter(
-                com.alibaba.nacos.api.common.Constants.USERNAME);
-            return StringUtils.isBlank(username) ? request.getHeader(
-                com.alibaba.nacos.api.common.Constants.USERNAME) : username;
-        } catch (Exception ignored) {
-            return StringUtils.EMPTY;
-        }
-    }
 }

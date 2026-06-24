@@ -20,12 +20,16 @@ import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.client.SkillQueryForm;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
+import com.alibaba.nacos.ai.param.SkillSubscriptionHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillClientSubscriptionService;
 import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -33,6 +37,7 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
@@ -50,8 +55,12 @@ public class SkillClientController {
     
     private final SkillClientOperationService skillClientOperationService;
     
-    public SkillClientController(SkillClientOperationService skillClientOperationService) {
+    private final SkillClientSubscriptionService skillClientSubscriptionService;
+    
+    public SkillClientController(SkillClientOperationService skillClientOperationService,
+        SkillClientSubscriptionService skillClientSubscriptionService) {
         this.skillClientOperationService = skillClientOperationService;
+        this.skillClientSubscriptionService = skillClientSubscriptionService;
     }
     
     /**
@@ -63,8 +72,7 @@ public class SkillClientController {
      */
     @Since("3.2.0")
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
-        tags = {ALLOW_ANONYMOUS})
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
     public ResponseEntity<byte[]> get(SkillQueryForm form) throws NacosException {
         form.validate();
         SkillQueryResult result = skillClientOperationService.querySkill(form.getNamespaceId(),
@@ -77,5 +85,23 @@ public class SkillClientController {
         }
         return SkillRequestUtil.buildSkillZipResponseWithMd5(result.getSkill(),
             result.getMd5(), result.getResolvedVersion());
+    }
+    
+    /**
+     * List skill subscriptions from the runtime config dump/cache view for CLI clients.
+     *
+     * @param namespaceId namespace ID
+     * @return skill subscription document
+     * @throws NacosException if the query fails
+     */
+    @Since("3.2.4")
+    @GetMapping("/subscriptions")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
+    @ExtractorManager.Extractor(httpExtractor = SkillSubscriptionHttpParamExtractor.class)
+    public Result<SkillSubscriptionDocument> listSubscriptions(
+        @RequestParam(value = "namespaceId", required = false) String namespaceId)
+        throws NacosException {
+        return Result.success(skillClientSubscriptionService.listSubscriptions(namespaceId));
     }
 }

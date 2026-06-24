@@ -21,7 +21,6 @@ import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
@@ -29,8 +28,6 @@ import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.dump.DumpRequest;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import org.springframework.stereotype.Service;
 
@@ -52,16 +49,12 @@ public class ConfigSkillSubscriptionStorage implements SkillSubscriptionStorage 
     
     private final ConfigOperationService configOperationService;
     
-    private final DumpService dumpService;
-    
     private final SyncEffectService syncEffectService;
     
     public ConfigSkillSubscriptionStorage(ConfigInfoPersistService configInfoPersistService,
-        ConfigOperationService configOperationService, DumpService dumpService,
-        SyncEffectService syncEffectService) {
+        ConfigOperationService configOperationService, SyncEffectService syncEffectService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configOperationService = configOperationService;
-        this.dumpService = dumpService;
         this.syncEffectService = syncEffectService;
     }
     
@@ -103,8 +96,6 @@ public class ConfigSkillSubscriptionStorage implements SkillSubscriptionStorage 
             requestInfo.setUpdateForExist(Boolean.TRUE);
             configOperationService.publishConfig(form, requestInfo, null);
         }
-        dumpService.dump(DumpRequest.create(dataId, Constants.Skills.SKILL_SUBSCRIPTION_GROUP,
-            namespaceId, startTimeStamp, NetUtils.localIp()));
         if (syncEffectService != null) {
             syncEffectService.toSync(form, startTimeStamp);
         }

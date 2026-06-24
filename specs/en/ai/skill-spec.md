@@ -136,10 +136,14 @@ Each `subscriptions` item contains only a Skill `name`. The subscription
 document records the desired Skill list only; it must not store labels,
 resolved versions, md5 values, or client local cache state.
 
-Registry-mode CLI implementations should read this namespace/subscriber
-subscription document and merge it with local subscriptions before running
-Skill sync. The effective sync set is the union of local subscriptions and
-Nacos subscriptions for the current namespace and subscriber.
+Registry-mode CLI implementations should read the current request user's
+subscription document through the Skill client subscription API and merge it
+with local subscriptions before running Skill sync. The client API must not
+allow callers to select another subscriber. It reads the subscription Config
+through the runtime Config query chain, so it observes the local dump/cache view
+and may briefly lag persistence until dump completes. The effective sync set is
+the union of local subscriptions and Nacos subscriptions for the current
+namespace and current subscriber.
 
 ## 5. Lifecycle
 

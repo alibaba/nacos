@@ -71,6 +71,9 @@ missing OpenAPI IT coverage.
 AI Skill subscription APIs are counted in the existing
 `SkillAdminApiOpenApiITCase` Admin API row because they are part of the Skill
 admin resource surface.
+The client subscription read API is counted in the existing
+`SkillClientOpenApiITCase` Client OpenAPI row because it is part of the Skill
+runtime client surface.
 
 ## Coverage Documents
 

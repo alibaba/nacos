@@ -112,8 +112,11 @@ namespaceId -> subscriber -> skill subscriptions
 `subscriptions` 中的每一项只包含 Skill `name`。订阅文档只记录期望订阅的 Skill
 列表，不应保存 label、解析后的版本、md5 或客户端本地缓存状态。
 
-Registry mode 的 CLI 实现应读取当前命名空间和订阅者对应的 Nacos 订阅文档，并在执行
-Skill sync 前与本地订阅列表合并。最终同步集合为本地订阅与 Nacos 订阅的并集。
+Registry mode 的 CLI 实现应通过 Skill client 订阅接口读取当前请求用户对应的 Nacos
+订阅文档，并在执行 Skill sync 前与本地订阅列表合并。该 client 接口不得允许调用方指定
+其他订阅者。接口通过 Config 运行时查询链读取订阅 Config，因此观察的是本地 dump/cache
+视图，可能在 dump 完成前短暂落后于持久层。最终同步集合为本地订阅与当前命名空间、当前订阅者
+对应的 Nacos 订阅并集。
 
 ## 5. 生命周期
 
