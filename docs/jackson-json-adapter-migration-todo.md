@@ -125,10 +125,17 @@ Last updated: 2026-06-24.
     `/nacos` context path used by OpenAPI IT.
   - Treated publish exceptions as idempotent success when the stored config
     content already matches the target content.
+  - Switched the Copilot console configuration API to reuse the existing
+    console `ConfigProxy` read/write path so standalone OpenAPI IT uses the
+    inner config handler and remote mode keeps the normal maintainer-client
+    holder configuration.
   - `mvn -pl copilot -Dtest=CopilotConfigStorageTest test`
   - `mvn -pl copilot spotless:apply`
   - `mvn -pl copilot spotless:check`
   - `mvn -pl copilot test`
+  - `mvn -pl console -am -Dtest=ConsoleCopilotConfigControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `mvn -pl console spotless:apply`
+  - `mvn -pl console spotless:check`
 
 ## Implementation Principles
 
