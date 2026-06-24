@@ -120,6 +120,9 @@ public class Constants {
         
         public static final String AI_SKILL_BIZ_TAGS_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/biz-tags";
         
+        public static final String AI_SKILL_SUBSCRIPTION_ADMIN_PATH =
+            AI_SKILL_ADMIN_PATH + "/subscriptions";
+        
         public static final String AI_SKILL_UPLOAD_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/upload";
         
         public static final String AI_SKILL_BATCH_UPLOAD_ADMIN_PATH =

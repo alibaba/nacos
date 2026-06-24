@@ -147,6 +147,12 @@ public class Constants {
         
         public static final String SKILL_VERSION_GROUP = "skill-version";
         
+        public static final String SKILL_SUBSCRIPTION_GROUP = "skill_subscriptions";
+        
+        public static final String SKILL_SUBSCRIPTION_DATA_ID_PREFIX = "subscriber_";
+        
+        public static final String SKILL_SUBSCRIPTION_DATA_ID_SUFFIX = ".json";
+        
         public static final String SEARCH_BLUR = "blur";
         
         public static final String SEARCH_ACCURATE = "accurate";

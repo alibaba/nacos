@@ -88,6 +88,9 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     protected static final String ADMIN_SKILL_VERSION_DOWNLOAD_PATH =
             ADMIN_SKILL_PATH + "/version/download";
 
+    protected static final String ADMIN_SKILL_SUBSCRIPTION_PATH =
+            ADMIN_SKILL_PATH + "/subscriptions";
+
     protected static final String ADMIN_AGENT_SPEC_PATH = nacosPath(Constants.AgentSpecs.ADMIN_PATH);
 
     protected static final String ADMIN_AGENT_SPEC_LIST_PATH = ADMIN_AGENT_SPEC_PATH + "/list";

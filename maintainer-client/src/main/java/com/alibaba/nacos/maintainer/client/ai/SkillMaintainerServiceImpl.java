@@ -19,6 +19,8 @@ package com.alibaba.nacos.maintainer.client.ai;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -39,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Skill maintainer service implementation via HTTP.
@@ -147,6 +150,60 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Page<SkillSummary>> result = JacksonUtils.toObj(restResult.getData(),
             new TypeReference<Result<Page<SkillSummary>>>() {
+            });
+        return result.getData();
+    }
+    
+    @Override
+    public SkillSubscriptionDocument listSubscriptions(String namespaceId) throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, null))
+            .setHttpMethod(HttpMethod.GET)
+            .setPath(Constants.AdminApiPath.AI_SKILL_SUBSCRIPTION_ADMIN_PATH)
+            .setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<SkillSubscriptionDocument> result = JacksonUtils.toObj(restResult.getData(),
+            new TypeReference<Result<SkillSubscriptionDocument>>() {
+            });
+        return result.getData();
+    }
+    
+    @Override
+    public SkillSubscriptionDocument subscribe(String namespaceId,
+        List<SkillSubscription> subscriptions) throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, null))
+            .setHttpMethod(HttpMethod.POST)
+            .setPath(Constants.AdminApiPath.AI_SKILL_SUBSCRIPTION_ADMIN_PATH)
+            .setParamValue(params).setBody(JacksonUtils.toJson(subscriptions)).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<SkillSubscriptionDocument> result = JacksonUtils.toObj(restResult.getData(),
+            new TypeReference<Result<SkillSubscriptionDocument>>() {
+            });
+        return result.getData();
+    }
+    
+    @Override
+    public SkillSubscriptionDocument unsubscribe(String namespaceId, List<String> names)
+        throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        if (names != null && !names.isEmpty()) {
+            params.put("names", names.stream().filter(StringUtils::isNotBlank)
+                .collect(Collectors.joining(",")));
+        }
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, null))
+            .setHttpMethod(HttpMethod.DELETE)
+            .setPath(Constants.AdminApiPath.AI_SKILL_SUBSCRIPTION_ADMIN_PATH)
+            .setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<SkillSubscriptionDocument> result = JacksonUtils.toObj(restResult.getData(),
+            new TypeReference<Result<SkillSubscriptionDocument>>() {
             });
         return result.getData();
     }

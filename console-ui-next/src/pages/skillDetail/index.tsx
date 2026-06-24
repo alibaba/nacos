@@ -31,6 +31,7 @@ import {
   Loader2,
   ShieldAlert,
   MessageSquare,
+  Bell,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -108,8 +109,13 @@ export default function SkillDetailPage() {
   const {
     currentDetail,
     detailLoading,
+    subscriptionMap,
+    subscriptionSaving,
     error,
     fetchDetail,
+    fetchSubscriptions,
+    subscribeSkills,
+    unsubscribeSkills,
     clearDetail,
     clearError,
   } = useSkillStore();
@@ -190,6 +196,7 @@ export default function SkillDetailPage() {
     setIsEditingDraft(false);
     setIsCreatingNewDraft(false);
     loadDetail();
+    fetchSubscriptions(namespaceId);
     return () => {
       clearDetail();
       clearError();
@@ -615,6 +622,24 @@ export default function SkillDetailPage() {
     setSelectedVersion(version);
   };
 
+  const handleSubscribeSkill = async () => {
+    try {
+      await subscribeSkills(namespaceId, [skillName]);
+      toast.success(t('skill.subscribeSuccess'));
+    } catch {
+      // handled by interceptor
+    }
+  };
+
+  const handleUnsubscribeSkill = async () => {
+    try {
+      await unsubscribeSkills(namespaceId, [skillName]);
+      toast.success(t('skill.unsubscribeSuccess'));
+    } catch {
+      // handled by interceptor
+    }
+  };
+
   // Build CLI commands for current skill (must be before early returns to keep hooks order stable)
   const cliCommands = useMemo(() => {
     const versionFlag = selectedVersion ? ` --version ${selectedVersion}` : '';
@@ -665,6 +690,7 @@ export default function SkillDetailPage() {
   if (!currentDetail) return null;
 
   const detail = currentDetail;
+  const subscribed = !!subscriptionMap[skillName];
   const versions = sortVersionsDescending(detail.versions || []);
   const latestVersion = detail.labels?.latest;
   const versionOptions = (() => {
@@ -769,6 +795,22 @@ export default function SkillDetailPage() {
                   </SelectContent>
                 </Select>
               )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-7 gap-1.5 text-xs',
+                  subscribed
+                    ? 'text-primary hover:text-primary'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+                disabled={subscriptionSaving}
+                onClick={subscribed ? handleUnsubscribeSkill : handleSubscribeSkill}
+              >
+                <Bell className={cn('h-3 w-3', subscribed && 'fill-current')} />
+                {subscribed ? t('skill.unsubscribe') : t('skill.subscribe')}
+              </Button>
 
               <Button
                 variant="outline"

@@ -67,6 +67,11 @@ class SkillManagement extends React.Component {
       orderBy: '',
       isDragOver: false,
       uploading: false,
+      subscriptions: [],
+      subscriptionMap: {},
+      subscriptionLoading: false,
+      subscriptionSaving: false,
+      subscriptionDialogVisible: false,
     };
   }
 
@@ -86,11 +91,13 @@ class SkillManagement extends React.Component {
     });
 
     this.getData();
+    this.getSubscriptions();
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.location?.search !== this.props.location?.search) {
       this.getData();
+      this.getSubscriptions();
     }
   }
 
@@ -120,7 +127,10 @@ class SkillManagement extends React.Component {
       });
     }
     this.getData();
+    this.getSubscriptions();
   };
+
+  getCurrentNamespaceId = () => getParams('namespace') || 'public';
 
   getData = (pageNo = this.state.currentPage) => {
     const { pageSize, searchName, searchBizTag, orderBy } = this.state;
@@ -167,6 +177,108 @@ class SkillManagement extends React.Component {
     });
   };
 
+  getSubscriptions = () => {
+    const { locale = {} } = this.props;
+    const namespaceId = this.getCurrentNamespaceId();
+    this.setState({ subscriptionLoading: true, subscriptions: [], subscriptionMap: {} });
+
+    request({
+      url: 'v3/console/ai/skills/subscriptions',
+      method: 'get',
+      data: { namespaceId },
+      success: result => {
+        if (result && result.code === 0) {
+          this.updateSubscriptions(result.data);
+        } else {
+          Message.error(
+            result?.message ||
+              locale.getSkillSubscriptionsFailed ||
+              'Failed to get Skill subscriptions'
+          );
+        }
+        this.setState({ subscriptionLoading: false });
+      },
+      error: () => {
+        this.setState({ subscriptionLoading: false });
+        Message.error(locale.getSkillSubscriptionsFailed || 'Failed to get Skill subscriptions');
+      },
+    });
+  };
+
+  updateSubscriptions = document => {
+    const subscriptions = Array.isArray(document?.subscriptions) ? document.subscriptions : [];
+    const subscriptionMap = {};
+    subscriptions.forEach(item => {
+      if (item && item.name) {
+        subscriptionMap[item.name] = item;
+      }
+    });
+    this.setState({ subscriptions, subscriptionMap });
+  };
+
+  subscribeSkills = names => {
+    const { locale = {} } = this.props;
+    const skillNames = (names || []).filter(Boolean);
+    if (skillNames.length === 0) {
+      return;
+    }
+    const namespaceId = this.getCurrentNamespaceId();
+    const body = skillNames.map(name => ({ name }));
+    this.setState({ subscriptionSaving: true });
+
+    request({
+      url: 'v3/console/ai/skills/subscriptions?namespaceId=' + encodeURIComponent(namespaceId),
+      method: 'POST',
+      data: JSON.stringify(body),
+      contentType: 'application/json',
+      success: result => {
+        if (result && result.code === 0) {
+          this.updateSubscriptions(result.data);
+          Message.success(locale.subscribeSuccess || 'Subscribe successful');
+        } else {
+          Message.error(result?.message || locale.subscribeFailed || 'Subscribe failed');
+        }
+        this.setState({ subscriptionSaving: false });
+      },
+      error: () => {
+        this.setState({ subscriptionSaving: false });
+        Message.error(locale.subscribeFailed || 'Subscribe failed');
+      },
+    });
+  };
+
+  unsubscribeSkills = names => {
+    const { locale = {} } = this.props;
+    const skillNames = (names || []).filter(Boolean);
+    if (skillNames.length === 0) {
+      return;
+    }
+    const namespaceId = this.getCurrentNamespaceId();
+    this.setState({ subscriptionSaving: true });
+
+    request({
+      url:
+        'v3/console/ai/skills/subscriptions?namespaceId=' +
+        encodeURIComponent(namespaceId) +
+        '&names=' +
+        encodeURIComponent(skillNames.join(',')),
+      method: 'DELETE',
+      success: result => {
+        if (result && result.code === 0) {
+          this.updateSubscriptions(result.data);
+          Message.success(locale.unsubscribeSuccess || 'Unsubscribe successful');
+        } else {
+          Message.error(result?.message || locale.unsubscribeFailed || 'Unsubscribe failed');
+        }
+        this.setState({ subscriptionSaving: false });
+      },
+      error: () => {
+        this.setState({ subscriptionSaving: false });
+        Message.error(locale.unsubscribeFailed || 'Unsubscribe failed');
+      },
+    });
+  };
+
   handleSearch = () => {
     const searchName = this.field.getValue('searchName') || '';
     const searchBizTag = this.field.getValue('searchBizTag') || '';
@@ -195,6 +307,38 @@ class SkillManagement extends React.Component {
 
   handleRowSelectionChange = (selectedRowKeys, selectedRows) => {
     this.setState({ selectedRowKeys, selectedRows });
+  };
+
+  handleSubscribeSkill = record => {
+    this.subscribeSkills([record.name]);
+  };
+
+  handleUnsubscribeSkill = record => {
+    this.unsubscribeSkills([record.name]);
+  };
+
+  handleBatchSubscribe = () => {
+    const { selectedRows } = this.state;
+    const { locale = {} } = this.props;
+
+    if (selectedRows.length === 0) {
+      Dialog.alert({
+        title: locale.tip || 'Tip',
+        content: locale.selectSkillToSubscribe || 'Please select Skills to subscribe first',
+      });
+      return;
+    }
+
+    this.subscribeSkills(selectedRows.map(row => row.name));
+  };
+
+  handleOpenSubscriptions = () => {
+    this.setState({ subscriptionDialogVisible: true });
+    this.getSubscriptions();
+  };
+
+  handleCloseSubscriptions = () => {
+    this.setState({ subscriptionDialogVisible: false });
   };
 
   handleCreateSkill = () => {
@@ -593,7 +737,19 @@ class SkillManagement extends React.Component {
 
   renderOperationColumn = (value, index, record) => {
     const { locale = {} } = this.props;
+    const { subscriptionMap, subscriptionSaving } = this.state;
     const isEnabled = record.enable !== false;
+    const subscribed = !!subscriptionMap[record.name];
+    const handleSubscriptionAction = () => {
+      if (subscriptionSaving) {
+        return;
+      }
+      if (subscribed) {
+        this.handleUnsubscribeSkill(record);
+      } else {
+        this.handleSubscribeSkill(record);
+      }
+    };
     return (
       <div>
         <a
@@ -605,10 +761,72 @@ class SkillManagement extends React.Component {
         <a onClick={() => this.handleViewDetail(record)} style={{ marginRight: 8 }}>
           {locale.details || 'Details'}
         </a>
+        <a
+          onClick={handleSubscriptionAction}
+          style={{
+            marginRight: 8,
+            color: subscribed ? '#666' : '#1677ff',
+            cursor: subscriptionSaving ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {subscribed ? locale.unsubscribe || 'Unsubscribe' : locale.subscribe || 'Subscribe'}
+        </a>
         <a onClick={() => this.handleDeleteSkill(record)} style={{ color: '#ff4d4f' }}>
           {locale.delete || 'Delete'}
         </a>
       </div>
+    );
+  };
+
+  renderSubscriptionDialog = () => {
+    const { locale = {} } = this.props;
+    const {
+      subscriptions,
+      subscriptionLoading,
+      subscriptionSaving,
+      subscriptionDialogVisible,
+    } = this.state;
+    return (
+      <Dialog
+        title={locale.mySubscriptions || 'My Subscriptions'}
+        visible={subscriptionDialogVisible}
+        style={{ width: 640 }}
+        footerActions={['cancel']}
+        onCancel={this.handleCloseSubscriptions}
+        onClose={this.handleCloseSubscriptions}
+      >
+        <Table
+          dataSource={subscriptions}
+          loading={subscriptionLoading}
+          primaryKey="name"
+          emptyContent={
+            <div style={{ padding: '30px 0', textAlign: 'center', color: '#999' }}>
+              {locale.noSkillSubscriptions || 'No Skill subscriptions'}
+            </div>
+          }
+        >
+          <Table.Column
+            title={locale.skillName || 'Skill Name'}
+            dataIndex="name"
+            cell={value => <strong>{value || '--'}</strong>}
+          />
+          <Table.Column
+            title={locale.operation || 'Operation'}
+            width={120}
+            cell={(value, index, record) => (
+              <a
+                onClick={() => (subscriptionSaving ? null : this.handleUnsubscribeSkill(record))}
+                style={{
+                  color: '#ff4d4f',
+                  cursor: subscriptionSaving ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {locale.unsubscribe || 'Unsubscribe'}
+              </a>
+            )}
+          />
+        </Table>
+      </Dialog>
     );
   };
 
@@ -638,6 +856,8 @@ class SkillManagement extends React.Component {
       selectedRowKeys,
       isDragOver,
       uploading,
+      subscriptions,
+      subscriptionSaving,
     } = this.state;
 
     return (
@@ -720,6 +940,10 @@ class SkillManagement extends React.Component {
                 <span style={{ color: '#999', fontSize: 12 }}>
                   {locale.dragDropHint || 'Supports drag-and-drop .zip file to this page'}
                 </span>
+                <Button type="normal" onClick={this.handleOpenSubscriptions}>
+                  {(locale.mySubscriptions || 'My Subscriptions') +
+                    (subscriptions.length > 0 ? ' (' + subscriptions.length + ')' : '')}
+                </Button>
               </div>
             </div>
 
@@ -854,13 +1078,22 @@ class SkillManagement extends React.Component {
               <Table.Column
                 title={locale.operation || 'Operation'}
                 cell={this.renderOperationColumn}
-                width={200}
+                width={260}
               />
             </Table>
 
             {total > 0 && (
               <>
                 <div style={{ float: 'left' }}>
+                  <Button
+                    disabled={selectedRowKeys.length === 0 || subscriptionSaving}
+                    type="primary"
+                    style={{ marginRight: 10 }}
+                    onClick={this.handleBatchSubscribe}
+                  >
+                    {locale.subscribe || 'Subscribe'}
+                    {selectedRowKeys.length > 0 && ' (' + selectedRowKeys.length + ')'}
+                  </Button>
                   <Button
                     warning
                     disabled={selectedRowKeys.length === 0}
@@ -891,6 +1124,7 @@ class SkillManagement extends React.Component {
             )}
           </div>
         </div>
+        {this.renderSubscriptionDialog()}
       </>
     );
   }

@@ -110,6 +110,41 @@ of truth for lifecycle state.
 Storage extension rules are defined by the
 [AI Storage Plugin Spec](../plugin/ai-storage-plugin-spec.md).
 
+### 4.1 Subscription Storage
+
+Skill subscriptions are per subscriber in each namespace. The identity is:
+
+```text
+namespaceId -> subscriber -> skill subscriptions
+```
+
+A namespace must not have one shared subscription list for all users. Different
+subscribers in the same namespace, and the same subscriber in different
+namespaces, must resolve to different subscription documents.
+
+Subscription persistence must be abstracted behind a storage interface. The
+current default implementation stores each subscriber document as a Config item
+in the target namespace:
+
+- `groupId`: `skill_subscriptions`;
+- `dataId`: `subscriber_<sha256(subscriber)>.json`;
+- content type: JSON;
+- content fields: `schemaVersion`, `namespaceId`, `subscriber`, `groupId`,
+  `dataId`, and `subscriptions`.
+
+Each `subscriptions` item contains only a Skill `name`. The subscription
+document records the desired Skill list only; it must not store labels,
+resolved versions, md5 values, or client local cache state.
+
+Registry-mode CLI implementations should read the current request user's
+subscription document through the Skill client subscription API and merge it
+with local subscriptions before running Skill sync. The client API must not
+allow callers to select another subscriber. It reads the subscription Config
+through the runtime Config query chain, so it observes the local dump/cache view
+and may briefly lag persistence until dump completes. The effective sync set is
+the union of local subscriptions and Nacos subscriptions for the current
+namespace and current subscriber.
+
 ## 5. Lifecycle
 
 Skill follows the shared [AI Resource Lifecycle Spec](ai-resource-lifecycle-spec.md):

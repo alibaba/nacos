@@ -21,8 +21,11 @@ import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.param.SkillListHttpParamExtractor;
+import com.alibaba.nacos.ai.param.SkillSubscriptionHttpParamExtractor;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -201,6 +204,62 @@ class ConsoleSkillControllerTest {
         
         assertNotNull(extractor);
         assertEquals(SkillListHttpParamExtractor.class, extractor.httpExtractor());
+    }
+    
+    @Test
+    void testListSubscriptions() throws Exception {
+        SkillSubscriptionDocument document = subscriptionDocument(SKILL_NAME);
+        when(skillProxy.listSubscriptions(NS)).thenReturn(document);
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get(BASE_PATH + "/subscriptions").param("namespaceId", NS))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<SkillSubscriptionDocument> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals(SKILL_NAME, result.getData().getSubscriptions().get(0).getName());
+        verify(skillProxy).listSubscriptions(NS);
+    }
+    
+    @Test
+    void testSubscribe() throws Exception {
+        SkillSubscriptionDocument document = subscriptionDocument(SKILL_NAME);
+        when(skillProxy.subscribe(any(), any())).thenReturn(document);
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(BASE_PATH + "/subscriptions")
+                .param("namespaceId", NS).contentType(MediaType.APPLICATION_JSON)
+                .content("[{\"name\":\"test-skill\"}]"))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(skillProxy).subscribe(any(), any());
+    }
+    
+    @Test
+    void testUnsubscribe() throws Exception {
+        SkillSubscriptionDocument document = subscriptionDocument("another-skill");
+        when(skillProxy.unsubscribe(any(), any())).thenReturn(document);
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.delete(BASE_PATH + "/subscriptions")
+                .param("namespaceId", NS).param("names", "test-skill,another-skill"))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(skillProxy).unsubscribe(any(), any());
+    }
+    
+    @Test
+    void testSubscriptionUsesParamExtractor() throws Exception {
+        ExtractorManager.Extractor extractor = ConsoleSkillController.class
+            .getMethod("listSubscriptions", String.class)
+            .getAnnotation(ExtractorManager.Extractor.class);
+        
+        assertNotNull(extractor);
+        assertEquals(SkillSubscriptionHttpParamExtractor.class, extractor.httpExtractor());
     }
     
     @Test
@@ -466,5 +525,15 @@ class ConsoleSkillControllerTest {
         
         assertEquals(200, response.getStatus());
         verify(skillProxy).updateScope(any());
+    }
+    
+    private SkillSubscriptionDocument subscriptionDocument(String skillName) {
+        SkillSubscription subscription = new SkillSubscription();
+        subscription.setName(skillName);
+        SkillSubscriptionDocument document = new SkillSubscriptionDocument();
+        document.setNamespaceId(NS);
+        document.setSubscriber("anonymous");
+        document.setSubscriptions(Collections.singletonList(subscription));
+        return document;
     }
 }

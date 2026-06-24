@@ -13,6 +13,8 @@ import {
   Plus,
   Tag,
   Download,
+  Bell,
+  BellOff,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +37,7 @@ import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { skillApi } from '@/api/skill';
+import type { SkillListItem } from '@/types/skill';
 
 export default function SkillManagementPage() {
   const { t } = useTranslation();
@@ -54,8 +57,15 @@ export default function SkillManagementPage() {
     filterScope,
     filterBizTag,
     selectedNames,
+    subscriptions,
+    subscriptionMap,
+    subscriptionLoading,
+    subscriptionSaving,
     error,
     fetchList,
+    fetchSubscriptions,
+    subscribeSkills,
+    unsubscribeSkills,
     setSearchParams,
     setPage,
     resetSearch,
@@ -73,6 +83,11 @@ export default function SkillManagementPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [filterSubscribed, setFilterSubscribed] = useState(false);
+  const [subscribedItems, setSubscribedItems] = useState<SkillListItem[]>([]);
+  const [subscribedListLoading, setSubscribedListLoading] = useState(false);
+  const [subscribedListError, setSubscribedListError] = useState<string | null>(null);
+  const [savingSubscriptionNames, setSavingSubscriptionNames] = useState<Set<string>>(new Set());
   const [uploadInitialFile, setUploadInitialFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounter = useRef(0);
@@ -81,11 +96,115 @@ export default function SkillManagementPage() {
 
   const loadData = useCallback(() => {
     fetchList(namespaceId);
-  }, [fetchList, namespaceId]);
+    fetchSubscriptions(namespaceId);
+  }, [fetchList, fetchSubscriptions, namespaceId]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData, pageNo, pageSize, location.key]);
+    if (!filterSubscribed) {
+      loadData();
+    }
+  }, [filterSubscribed, loadData, pageNo, pageSize, location.key]);
+
+  useEffect(() => {
+    if (filterSubscribed) {
+      fetchSubscriptions(namespaceId);
+    }
+  }, [fetchSubscriptions, filterSubscribed, location.key, namespaceId]);
+
+  useEffect(() => {
+    if (!filterSubscribed) {
+      setSubscribedItems([]);
+      setSubscribedListError(null);
+      setSubscribedListLoading(false);
+      return;
+    }
+    if (subscriptionLoading) {
+      return;
+    }
+    if (subscriptions.length === 0) {
+      setSubscribedItems([]);
+      setSubscribedListError(null);
+      setSubscribedListLoading(false);
+      return;
+    }
+
+    let canceled = false;
+    setSubscribedListLoading(true);
+    setSubscribedListError(null);
+
+    const loadSubscribedItems = async () => {
+      try {
+        const loadedItems = await Promise.all(
+          subscriptions.map(async (subscription) => {
+            const response = await skillApi.list({
+              namespaceId,
+              skillName: subscription.name,
+              search: 'accurate',
+              owner: filterOwner || undefined,
+              bizTag: filterBizTag || undefined,
+              pageNo: 1,
+              pageSize: 1,
+            });
+            return response.data.pageItems?.find((item) => item.name === subscription.name) || null;
+          }),
+        );
+        if (canceled) {
+          return;
+        }
+        let nextItems = loadedItems.filter((item): item is SkillListItem => Boolean(item));
+        if (searchName) {
+          const lowerSearchName = searchName.toLowerCase();
+          nextItems = nextItems.filter((item) => item.name.toLowerCase().includes(lowerSearchName));
+        }
+        if (orderBy === 'download_count') {
+          nextItems = [...nextItems].sort((a, b) => b.downloadCount - a.downloadCount);
+        }
+        setSubscribedItems(nextItems);
+        setSubscribedListLoading(false);
+      } catch (loadError) {
+        if (canceled) {
+          return;
+        }
+        setSubscribedItems([]);
+        const axiosError = loadError as { response?: { data?: { message?: string } } };
+        setSubscribedListError(
+          axiosError.response?.data?.message || 'Failed to fetch subscribed skills',
+        );
+        setSubscribedListLoading(false);
+      }
+    };
+
+    loadSubscribedItems();
+    return () => {
+      canceled = true;
+    };
+  }, [
+    filterSubscribed,
+    subscriptionLoading,
+    subscriptions,
+    namespaceId,
+    searchName,
+    filterOwner,
+    filterBizTag,
+    orderBy,
+  ]);
+
+  useEffect(() => {
+    if (!filterSubscribed || subscribedListLoading) {
+      return;
+    }
+    const maxPage = Math.max(1, Math.ceil(subscribedItems.length / pageSize));
+    if (pageNo > maxPage) {
+      setPage(maxPage);
+    }
+  }, [
+    filterSubscribed,
+    subscribedItems.length,
+    subscribedListLoading,
+    pageNo,
+    pageSize,
+    setPage,
+  ]);
 
   const handleSearch = () => {
     setSearchParams({
@@ -93,13 +212,16 @@ export default function SkillManagementPage() {
       filterOwner: globalAdmin ? ownerInput : (ownerInput ? username || '' : ''),
       filterBizTag: bizTagInput,
     });
-    fetchList(namespaceId);
+    if (!filterSubscribed) {
+      fetchList(namespaceId);
+    }
   };
 
   const handleReset = () => {
     setSearchInput('');
     setOwnerInput('');
     setBizTagInput('');
+    setFilterSubscribed(false);
     resetSearch();
     fetchList(namespaceId);
   };
@@ -107,6 +229,20 @@ export default function SkillManagementPage() {
   const handleDetail = (name: string) => {
     const params = new URLSearchParams({ namespaceId });
     navigate(`/skill/${encodeURIComponent(name)}?${params}`);
+  };
+
+  const setSubscriptionNamesSaving = (names: string[], saving: boolean) => {
+    setSavingSubscriptionNames((current) => {
+      const next = new Set(current);
+      names.forEach((name) => {
+        if (saving) {
+          next.add(name);
+        } else {
+          next.delete(name);
+        }
+      });
+      return next;
+    });
   };
 
   const handleDelete = async () => {
@@ -139,6 +275,59 @@ export default function SkillManagementPage() {
       setBatchDeleteOpen(false);
       setDeleteLoading(false);
       loadData();
+    }
+  };
+
+  const handleSubscribeSkill = async (name: string) => {
+    setSubscriptionNamesSaving([name], true);
+    try {
+      await subscribeSkills(namespaceId, [name]);
+      toast.success(t('skill.subscribeSuccess'));
+    } catch {
+      // error handled by axios interceptor
+    } finally {
+      setSubscriptionNamesSaving([name], false);
+    }
+  };
+
+  const handleUnsubscribeSkill = async (name: string) => {
+    setSubscriptionNamesSaving([name], true);
+    try {
+      await unsubscribeSkills(namespaceId, [name]);
+      toast.success(t('skill.unsubscribeSuccess'));
+    } catch {
+      // error handled by axios interceptor
+    } finally {
+      setSubscriptionNamesSaving([name], false);
+    }
+  };
+
+  const handleBatchSubscription = async () => {
+    const names = Array.from(selectedNames);
+    if (names.length === 0) return;
+    setSubscriptionNamesSaving(names, true);
+    try {
+      if (names.every((name) => subscriptionMap[name])) {
+        await unsubscribeSkills(namespaceId, names);
+        toast.success(t('skill.unsubscribeSuccess'));
+      } else {
+        await subscribeSkills(namespaceId, names);
+        toast.success(t('skill.subscribeSuccess'));
+      }
+    } catch {
+      // error handled by axios interceptor
+    } finally {
+      setSubscriptionNamesSaving(names, false);
+      clearSelection();
+    }
+  };
+
+  const handleSubscriptionFilterChange = (nextActive: boolean) => {
+    clearSelection();
+    setFilterSubscribed(nextActive);
+    setSearchParams({ filterScope: '' });
+    if (!nextActive) {
+      fetchList(namespaceId);
     }
   };
 
@@ -184,8 +373,23 @@ export default function SkillManagementPage() {
     setUploadOpen(true);
   }, [t]);
 
-  const totalPages = Math.ceil(total / pageSize);
-  const allSelected = items.length > 0 && items.every((a) => selectedNames.has(a.name));
+  const subscribedPageItems = filterSubscribed
+    ? subscribedItems.slice((pageNo - 1) * pageSize, pageNo * pageSize)
+    : [];
+  const visibleItems = filterSubscribed ? subscribedPageItems : items;
+  const visibleTotal = filterSubscribed ? subscribedItems.length : total;
+  const totalPages = Math.ceil(visibleTotal / pageSize);
+  const allSelected = visibleItems.length > 0
+    && visibleItems.every((a) => selectedNames.has(a.name));
+  const selectedList = Array.from(selectedNames);
+  const selectedAllSubscribed = selectedList.length > 0
+    && selectedList.every((name) => subscriptionMap[name]);
+  const contentLoading = filterSubscribed ? subscriptionLoading || subscribedListLoading : loading;
+  const contentError = filterSubscribed ? subscribedListError || error : error;
+  const hasSearchFilters = Boolean(
+    searchInput || ownerInput || bizTagInput || filterOwner || filterScope || filterBizTag
+      || orderBy.trim(),
+  );
 
   return (
     <div
@@ -209,13 +413,10 @@ export default function SkillManagementPage() {
         <div>
           <h1 className="text-xl font-bold tracking-tight">{t('skill.title')}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {t('skill.totalSkills', { total })}
+            {t('skill.totalSkills', { total: visibleTotal })}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            {t('skill.dragDropHint')}
-          </span>
           <Button
             size="sm"
             variant="outline"
@@ -231,7 +432,7 @@ export default function SkillManagementPage() {
             <Download className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.importFromRegistry')}
           </Button>
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button size="sm" className="w-[8.75rem] justify-center" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.createSkill')}
           </Button>
@@ -240,7 +441,7 @@ export default function SkillManagementPage() {
 
       {/* Search & filters (single row; py gives room so focus rings are not clipped by overflow-x-auto) */}
       <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto px-0.5 py-2">
-        <div className="relative min-w-[12rem] flex-1 max-w-md">
+        <div className="relative min-w-[16rem] shrink-0 w-full md:w-[calc((100%_-_1rem)_/_2)] lg:w-[calc((100%_-_2rem)_/_3)] xl:w-[calc((100%_-_3rem)_/_4)]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           <Input
             placeholder={t('skill.searchPlaceholder')}
@@ -277,7 +478,9 @@ export default function SkillManagementPage() {
             onClick={() => {
               const next = filterOwner ? '' : (username || '');
               setSearchParams({ filterOwner: next });
-              fetchList(namespaceId);
+              if (!filterSubscribed) {
+                fetchList(namespaceId);
+              }
             }}
           >
             {t('skill.filterOnlyMine')}
@@ -286,20 +489,16 @@ export default function SkillManagementPage() {
         <Button size="sm" variant="secondary" className="h-8 shrink-0" onClick={handleSearch}>
           {t('common.search')}
         </Button>
-        {(searchInput || filterOwner || filterScope || filterBizTag) && (
-          <Button size="sm" variant="ghost" className="h-8 shrink-0" onClick={handleReset}>
-            <X className="mr-1 h-3 w-3" />
-            {t('common.reset')}
-          </Button>
-        )}
         <Select
-          value={filterScope || ''}
+          value={filterScope || '_all'}
           onValueChange={(v) => {
+            clearSelection();
+            setFilterSubscribed(false);
             setSearchParams({ filterScope: v === '_all' ? '' : v });
             fetchList(namespaceId);
           }}
         >
-          <SelectTrigger className="w-[7.5rem] h-8 text-xs shrink-0">
+          <SelectTrigger className="w-[9rem] h-8 text-xs shrink-0">
             <SelectValue placeholder={t('skill.filterScopeAll')} />
           </SelectTrigger>
           <SelectContent>
@@ -312,7 +511,9 @@ export default function SkillManagementPage() {
           value={orderBy}
           onValueChange={(v) => {
             setSearchParams({ orderBy: v });
-            fetchList(namespaceId);
+            if (!filterSubscribed) {
+              fetchList(namespaceId);
+            }
           }}
         >
           <SelectTrigger className="w-[8.5rem] h-8 text-xs shrink-0">
@@ -323,11 +524,62 @@ export default function SkillManagementPage() {
             <SelectItem value="download_count">{t('skill.sortByDownloads')}</SelectItem>
           </SelectContent>
         </Select>
-        {selectedNames.size > 0 && (
-          <div className="flex items-center gap-2 shrink-0 ml-auto pl-2 border-l border-border/60">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {t('config.selectedCount', { count: selectedNames.size })}
-            </span>
+        {!filterSubscribed && hasSearchFilters && (
+          <Button size="sm" variant="ghost" className="h-8 shrink-0" onClick={handleReset}>
+            <X className="mr-1 h-3 w-3" />
+            {t('common.reset')}
+          </Button>
+        )}
+        <div className="ml-auto flex shrink-0 items-center gap-2 pl-2">
+          {filterSubscribed && (
+            <Button size="sm" variant="ghost" className="h-8 shrink-0" onClick={handleReset}>
+              <X className="mr-1 h-3 w-3" />
+              {t('common.reset')}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant={filterSubscribed ? 'default' : 'outline'}
+            className="h-8 w-[8.75rem] shrink-0 justify-center whitespace-nowrap"
+            aria-pressed={filterSubscribed}
+            disabled={subscriptionLoading}
+            onClick={() => handleSubscriptionFilterChange(!filterSubscribed)}
+          >
+            <Bell className="mr-1 h-3 w-3" />
+            {t('skill.mySubscriptions')}
+            {subscriptions.length > 0 && (
+              <span
+                className={filterSubscribed
+                  ? 'ml-1 text-xs text-primary-foreground/80'
+                  : 'ml-1 text-xs text-muted-foreground'}
+              >
+                ({subscriptions.length})
+              </span>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {selectedNames.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {t('config.selectedCount', { count: selectedNames.size })}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 shrink-0"
+              disabled={subscriptionSaving}
+              onClick={handleBatchSubscription}
+            >
+              {selectedAllSubscribed ? (
+                <BellOff className="mr-1 h-3 w-3" />
+              ) : (
+                <Bell className="mr-1 h-3 w-3" />
+              )}
+              {selectedAllSubscribed ? t('skill.unsubscribe') : t('skill.subscribe')}
+            </Button>
             <Button
               variant="destructive"
               size="sm"
@@ -341,11 +593,11 @@ export default function SkillManagementPage() {
               {t('common.cancel')}
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Content area */}
-      {loading && items.length === 0 ? (
+      {contentLoading && visibleItems.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Card key={i} className="py-0 gap-0 overflow-hidden">
@@ -365,17 +617,17 @@ export default function SkillManagementPage() {
             </Card>
           ))}
         </div>
-      ) : error && items.length === 0 ? (
+      ) : contentError && visibleItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 mb-4">
             <Wand2 className="h-8 w-8 text-destructive/50" />
           </div>
-          <p className="text-sm font-medium text-destructive">{error}</p>
+          <p className="text-sm font-medium text-destructive">{contentError}</p>
           <Button variant="outline" size="sm" className="mt-4" onClick={loadData}>
             {t('common.retry') || t('common.search')}
           </Button>
         </div>
-      ) : items.length === 0 ? (
+      ) : visibleItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 mb-4">
             <Wand2 className="h-8 w-8 text-muted-foreground/50" />
@@ -394,23 +646,27 @@ export default function SkillManagementPage() {
             <button
               onClick={() => {
                 if (allSelected) clearSelection();
-                else selectAll(items.map((a) => a.name));
+                else selectAll(visibleItems.map((a) => a.name));
               }}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              {allSelected ? t('common.cancel') : t('skill.totalSkills', { total: items.length })}
+              {allSelected ? t('common.cancel') : t('skill.totalSkills', { total: visibleItems.length })}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <SkillCard
                 key={item.name}
                 item={item}
                 selected={selectedNames.has(item.name)}
+                subscribed={!!subscriptionMap[item.name]}
+                subscriptionSaving={savingSubscriptionNames.has(item.name)}
                 onSelect={toggleSelect}
                 onDetail={handleDetail}
                 onDelete={setDeleteTarget}
+                onSubscribe={handleSubscribeSkill}
+                onUnsubscribe={handleUnsubscribeSkill}
               />
             ))}
           </div>
@@ -418,7 +674,7 @@ export default function SkillManagementPage() {
       )}
 
       {/* Pagination */}
-      {total > 0 && totalPages > 1 && (
+      {visibleTotal > 0 && totalPages > 1 && (
         <div className="flex items-center justify-end gap-2 pt-1">
           <Select
             value={String(pageSize)}
@@ -442,7 +698,9 @@ export default function SkillManagementPage() {
             disabled={pageNo <= 1}
             onClick={() => {
               setPage(pageNo - 1);
-              fetchList(namespaceId);
+              if (!filterSubscribed) {
+                fetchList(namespaceId);
+              }
             }}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -457,7 +715,9 @@ export default function SkillManagementPage() {
             disabled={pageNo >= totalPages}
             onClick={() => {
               setPage(pageNo + 1);
-              fetchList(namespaceId);
+              if (!filterSubscribed) {
+                fetchList(namespaceId);
+              }
             }}
           >
             <ChevronRight className="h-4 w-4" />
@@ -537,6 +797,7 @@ export default function SkillManagementPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

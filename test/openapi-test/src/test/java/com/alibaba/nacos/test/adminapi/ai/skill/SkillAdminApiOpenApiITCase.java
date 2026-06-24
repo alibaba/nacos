@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: draft creation and update persist editable skill content; force-publish makes a
  *     version online and latest; admin detail, version detail, list, ZIP download, labels, bizTags, scope,
- *     online/offline, and delete expose the expected skill state.</li>
+ *     online/offline, namespace/user scoped subscriptions, and delete expose the expected skill state.</li>
  *     <li>Boundary/validation: namespace defaults to public; list supports accurate/blur, scope, and bizTag
  *     filters; skillName, skillCard, targetVersion, version, labels, latest label preservation, scope,
  *     and positive pagination validation follows the controller forms;
@@ -192,6 +192,35 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
     }
 
     @Test
+    public void testSkillSubscriptionListSubscribeAndUnsubscribe() throws Exception {
+        String skillName = randomAiName("skill-subscribe");
+        postFormOk(ADMIN_SKILL_PATH + "/draft",
+                skillDraftForm(skillName, "1.0.0", "Subscription body.", "guide subscription"));
+        addCleanup(() -> deleteQuietly(ADMIN_SKILL_SUBSCRIPTION_PATH,
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                        .addParam("names", skillName)));
+        addCleanup(() -> deleteSkillQuietly(skillName));
+        postFormOk(ADMIN_SKILL_PATH + "/force-publish", skillPublishForm(skillName, "1.0.0"));
+
+        Query namespaceQuery = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE);
+        JsonNode subscribed = postJsonOk(ADMIN_SKILL_SUBSCRIPTION_PATH, namespaceQuery,
+                "[{\"name\":\"" + skillName + "\"}]").get("data");
+        assertEquals(DEFAULT_NAMESPACE, subscribed.get("namespaceId").asText(), subscribed.toString());
+        assertEquals("skill_subscriptions", subscribed.get("groupId").asText(), subscribed.toString());
+        assertTrue(subscribed.get("dataId").asText().startsWith("subscriber_"), subscribed.toString());
+        assertTrue(subscribed.get("dataId").asText().endsWith(".json"), subscribed.toString());
+        assertTrue(containsSubscription(subscribed.get("subscriptions"), skillName), subscribed.toString());
+
+        JsonNode listed = getJsonOk(ADMIN_SKILL_SUBSCRIPTION_PATH, namespaceQuery).get("data");
+        assertTrue(containsSubscription(listed.get("subscriptions"), skillName), listed.toString());
+
+        JsonNode removed = deleteJsonOk(ADMIN_SKILL_SUBSCRIPTION_PATH,
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                        .addParam("names", skillName)).get("data");
+        assertFalse(containsSubscription(removed.get("subscriptions"), skillName), removed.toString());
+    }
+
+    @Test
     public void testSkillValidationAndNotFoundErrors() throws Exception {
         assertError(getRaw(ADMIN_SKILL_PATH,
                 Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)), 400,
@@ -255,5 +284,14 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode versionSummary = findSkillVersionSummary(meta, version);
         assertFalse(versionSummary.isMissingNode(), meta.toString());
         return versionSummary.get("status").asText();
+    }
+
+    private boolean containsSubscription(JsonNode subscriptions, String skillName) {
+        for (JsonNode subscription : subscriptions) {
+            if (skillName.equals(subscription.get("name").asText())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

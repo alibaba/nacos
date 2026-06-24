@@ -32,6 +32,8 @@ import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -76,6 +78,20 @@ public class SkillProxy {
         AiResourceFilterableForm filterableForm,
         PageForm pageForm) throws NacosException {
         return skillHandler.listSkills(skillListForm, filterableForm, pageForm);
+    }
+    
+    public SkillSubscriptionDocument listSubscriptions(String namespaceId) throws NacosException {
+        return skillHandler.listSubscriptions(namespaceId);
+    }
+    
+    public SkillSubscriptionDocument subscribe(String namespaceId,
+        List<SkillSubscription> subscriptions) throws NacosException {
+        return skillHandler.subscribe(namespaceId, subscriptions);
+    }
+    
+    public SkillSubscriptionDocument unsubscribe(String namespaceId, List<String> names)
+        throws NacosException {
+        return skillHandler.unsubscribe(namespaceId, names);
     }
     
     public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {

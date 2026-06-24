@@ -20,12 +20,16 @@ import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+
+import java.util.List;
 
 /**
  * Nacos AI module Skill relative maintainer service.
@@ -187,6 +191,76 @@ public interface SkillMaintainerService {
         String owner, String scope, String bizTag, int pageNo, int pageSize) throws NacosException {
         return listSkills(namespaceId, skillName, search, pageNo, pageSize);
     }
+    
+    /**
+     * List current user's skill subscriptions with default namespace.
+     *
+     * @return skill subscription document
+     * @throws NacosException if fail to list subscriptions
+     */
+    @Since("3.2.4")
+    default SkillSubscriptionDocument listSubscriptions() throws NacosException {
+        return listSubscriptions(Constants.DEFAULT_NAMESPACE_ID);
+    }
+    
+    /**
+     * List current user's skill subscriptions.
+     *
+     * @param namespaceId namespace ID
+     * @return skill subscription document
+     * @throws NacosException if fail to list subscriptions
+     */
+    @Since("3.2.4")
+    SkillSubscriptionDocument listSubscriptions(String namespaceId) throws NacosException;
+    
+    /**
+     * Add or update current user's skill subscriptions with default namespace.
+     *
+     * @param subscriptions skill subscriptions
+     * @return updated skill subscription document
+     * @throws NacosException if fail to update subscriptions
+     */
+    @Since("3.2.4")
+    default SkillSubscriptionDocument subscribe(List<SkillSubscription> subscriptions)
+        throws NacosException {
+        return subscribe(Constants.DEFAULT_NAMESPACE_ID, subscriptions);
+    }
+    
+    /**
+     * Add or update current user's skill subscriptions.
+     *
+     * @param namespaceId    namespace ID
+     * @param subscriptions  skill subscriptions
+     * @return updated skill subscription document
+     * @throws NacosException if fail to update subscriptions
+     */
+    @Since("3.2.4")
+    SkillSubscriptionDocument subscribe(String namespaceId, List<SkillSubscription> subscriptions)
+        throws NacosException;
+    
+    /**
+     * Remove current user's skill subscriptions with default namespace.
+     *
+     * @param names skill names
+     * @return updated skill subscription document
+     * @throws NacosException if fail to update subscriptions
+     */
+    @Since("3.2.4")
+    default SkillSubscriptionDocument unsubscribe(List<String> names) throws NacosException {
+        return unsubscribe(Constants.DEFAULT_NAMESPACE_ID, names);
+    }
+    
+    /**
+     * Remove current user's skill subscriptions.
+     *
+     * @param namespaceId namespace ID
+     * @param names       skill names
+     * @return updated skill subscription document
+     * @throws NacosException if fail to update subscriptions
+     */
+    @Since("3.2.4")
+    SkillSubscriptionDocument unsubscribe(String namespaceId, List<String> names)
+        throws NacosException;
     
     /**
      * Upload skill from zip file with default namespace.

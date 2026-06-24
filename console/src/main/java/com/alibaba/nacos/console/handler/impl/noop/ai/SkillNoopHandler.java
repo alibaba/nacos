@@ -31,6 +31,8 @@ import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -90,6 +92,29 @@ public class SkillNoopHandler implements SkillHandler {
     public Page<SkillSummary> listSkills(SkillListForm skillListForm,
         AiResourceFilterableForm filterableForm,
         PageForm pageForm) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            SKILL_NOT_ENABLED_MESSAGE);
+    }
+    
+    @Override
+    public SkillSubscriptionDocument listSubscriptions(String namespaceId) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            SKILL_NOT_ENABLED_MESSAGE);
+    }
+    
+    @Override
+    public SkillSubscriptionDocument subscribe(String namespaceId,
+        List<SkillSubscription> subscriptions) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED,
+            SKILL_NOT_ENABLED_MESSAGE);
+    }
+    
+    @Override
+    public SkillSubscriptionDocument unsubscribe(String namespaceId, List<String> names)
+        throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
             ErrorCode.API_FUNCTION_DISABLED,
             SKILL_NOT_ENABLED_MESSAGE);

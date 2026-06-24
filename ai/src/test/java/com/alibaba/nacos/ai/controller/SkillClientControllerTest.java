@@ -18,7 +18,10 @@ package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillClientSubscriptionService;
 import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -40,6 +43,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -70,11 +75,15 @@ class SkillClientControllerTest {
     @MockitoBean
     private SkillClientOperationService skillClientOperationService;
     
+    @MockitoBean
+    private SkillClientSubscriptionService skillClientSubscriptionService;
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new StandardEnvironment());
-        skillClientController = new SkillClientController(skillClientOperationService);
+        skillClientController = new SkillClientController(skillClientOperationService,
+            skillClientSubscriptionService);
         mockMvc = MockMvcBuilders.standaloneSetup(skillClientController).build();
     }
     
@@ -145,6 +154,22 @@ class SkillClientControllerTest {
             .param("name", "test-skill").param("md5", "md5-cached");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(304, response.getStatus());
+    }
+    
+    @Test
+    void testListSubscriptionsSuccess() throws Exception {
+        SkillSubscriptionDocument document = new SkillSubscriptionDocument();
+        SkillSubscription subscription = new SkillSubscription();
+        subscription.setName("doc-format");
+        document.setSubscriptions(Collections.singletonList(subscription));
+        when(skillClientSubscriptionService.listSubscriptions(eq("public"))).thenReturn(document);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
+            SKILL_CLIENT_PATH + "/subscriptions").param("namespaceId", "public");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        assertTrue(response.getContentAsString().contains("doc-format"));
     }
     
     private static Skill newSkill() {

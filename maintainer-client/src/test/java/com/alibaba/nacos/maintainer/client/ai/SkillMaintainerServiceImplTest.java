@@ -17,6 +17,8 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -36,6 +38,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -84,6 +88,91 @@ class SkillMaintainerServiceImplTest {
             AiMaintainerHttpContext.class.getDeclaredField("clientHttpProxy");
         clientHttpProxyField.setAccessible(true);
         clientHttpProxyField.set(context, clientHttpProxy);
+    }
+    
+    // ========== Subscription API Tests ==========
+    
+    @Test
+    @DisplayName("listSubscriptions should call subscription admin path")
+    void testListSubscriptions() throws NacosException {
+        SkillSubscriptionDocument document = subscriptionDocument("public", "alice", "test-skill");
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(document)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        SkillSubscriptionDocument actual = skillService.listSubscriptions("public");
+        
+        assertEquals("test-skill", actual.getSubscriptions().get(0).getName());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy).executeSyncHttpRequest(requestCaptor.capture());
+        HttpRequest request = requestCaptor.getValue();
+        assertEquals("GET", request.getHttpMethod());
+        assertEquals(Constants.AdminApiPath.AI_SKILL_SUBSCRIPTION_ADMIN_PATH,
+            request.getPath());
+        assertEquals("public", request.getParamValues().get("namespaceId"));
+    }
+    
+    @Test
+    @DisplayName("subscribe should post subscription body")
+    void testSubscribe() throws NacosException {
+        SkillSubscriptionDocument document = subscriptionDocument("public", "alice", "test-skill");
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(document)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        SkillSubscription subscription = subscription("test-skill");
+        SkillSubscriptionDocument actual = skillService.subscribe("public",
+            Collections.singletonList(subscription));
+        
+        assertEquals("test-skill", actual.getSubscriptions().get(0).getName());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy).executeSyncHttpRequest(requestCaptor.capture());
+        HttpRequest request = requestCaptor.getValue();
+        assertEquals("POST", request.getHttpMethod());
+        assertEquals(Constants.AdminApiPath.AI_SKILL_SUBSCRIPTION_ADMIN_PATH,
+            request.getPath());
+        assertEquals("public", request.getParamValues().get("namespaceId"));
+        assertTrue(request.getBody().contains("\"name\":\"test-skill\""));
+    }
+    
+    @Test
+    @DisplayName("unsubscribe should delete subscriptions by names")
+    void testUnsubscribe() throws NacosException {
+        SkillSubscriptionDocument document = subscriptionDocument("public", "alice", "another");
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(document)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        SkillSubscriptionDocument actual = skillService.unsubscribe("public",
+            Arrays.asList("test-skill", "another"));
+        
+        assertEquals("another", actual.getSubscriptions().get(0).getName());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy).executeSyncHttpRequest(requestCaptor.capture());
+        HttpRequest request = requestCaptor.getValue();
+        assertEquals("DELETE", request.getHttpMethod());
+        assertEquals(Constants.AdminApiPath.AI_SKILL_SUBSCRIPTION_ADMIN_PATH,
+            request.getPath());
+        assertEquals("public", request.getParamValues().get("namespaceId"));
+        assertEquals("test-skill,another", request.getParamValues().get("names"));
+    }
+    
+    private SkillSubscriptionDocument subscriptionDocument(String namespaceId, String subscriber,
+        String skillName) {
+        SkillSubscriptionDocument document = new SkillSubscriptionDocument();
+        document.setNamespaceId(namespaceId);
+        document.setSubscriber(subscriber);
+        document.setSubscriptions(Collections.singletonList(subscription(skillName)));
+        return document;
+    }
+    
+    private SkillSubscription subscription(String name) {
+        SkillSubscription subscription = new SkillSubscription();
+        subscription.setName(name);
+        return subscription;
     }
     
     // ========== Lifecycle API Tests ==========

@@ -29,11 +29,14 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillSubscriptionService;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscription;
+import com.alibaba.nacos.api.ai.model.skills.SkillSubscriptionDocument;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -60,8 +63,12 @@ public class SkillInnerHandler implements SkillHandler {
     
     private final SkillOperationService skillOperationService;
     
-    public SkillInnerHandler(SkillOperationService skillOperationService) {
+    private final SkillSubscriptionService skillSubscriptionService;
+    
+    public SkillInnerHandler(SkillOperationService skillOperationService,
+        SkillSubscriptionService skillSubscriptionService) {
         this.skillOperationService = skillOperationService;
+        this.skillSubscriptionService = skillSubscriptionService;
     }
     
     @Override
@@ -95,6 +102,23 @@ public class SkillInnerHandler implements SkillHandler {
             skillListForm.getSearch(), skillListForm.getOrderBy(),
             filterableForm.getOwner(), filterableForm.getScope(), filterableForm.getBizTag(),
             pageForm.getPageNo(), pageForm.getPageSize());
+    }
+    
+    @Override
+    public SkillSubscriptionDocument listSubscriptions(String namespaceId) throws NacosException {
+        return skillSubscriptionService.listSubscriptions(namespaceId);
+    }
+    
+    @Override
+    public SkillSubscriptionDocument subscribe(String namespaceId,
+        List<SkillSubscription> subscriptions) throws NacosException {
+        return skillSubscriptionService.subscribe(namespaceId, subscriptions);
+    }
+    
+    @Override
+    public SkillSubscriptionDocument unsubscribe(String namespaceId, List<String> names)
+        throws NacosException {
+        return skillSubscriptionService.unsubscribe(namespaceId, names);
     }
     
     @Override

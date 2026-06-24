@@ -75,7 +75,7 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader、集群、ops、命名空间、状态、插件。 |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | 配置 CRUD、历史、监听者、容量、指标、ops。 |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | 服务、实例、客户端、集群、健康状态、ops。 |
-| `/v3/admin/ai/*` | 71 | GET, POST, PUT, DELETE | MCP、A2A、Prompt、Skill、AgentSpec、Pipeline。 |
+| `/v3/admin/ai/*` | 74 | GET, POST, PUT, DELETE | MCP、A2A、Prompt、Skill、Skill 订阅、AgentSpec、Pipeline。 |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | 控制台集群和命名空间操作。 |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | 控制台配置和历史操作。 |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | 控制台服务和实例操作。 |
@@ -117,7 +117,7 @@ Admin API 兼容开关。
   服务端状态。
 - `cs`：配置 CRUD、元数据、批量操作、历史、监听者、容量、指标和 ops。
 - `ns`：服务、实例、集群、健康状态、客户端和注册中心 ops。
-- `ai`：MCP、A2A、Prompt、Skill、AgentSpec 和 Pipeline 管理。
+- `ai`：MCP、A2A、Prompt、Skill、Skill 订阅、AgentSpec 和 Pipeline 管理。
 
 需要更明确文档化的已实现行为：
 
@@ -127,6 +127,8 @@ Admin API 兼容开关。
 - Config 查询在返回 Admin API 详情前会解密加密内容。
 - Config 发布在未提供 encrypted data key 且适用加密处理器时会加密内容。
 - AI Prompt 在同一个 Controller 中同时包含已废弃兼容端点和新的生命周期端点。
+- AI Skill 订阅按命名空间和当前订阅者管理，通过
+  `GET`、`POST` 和 `DELETE /v3/admin/ai/skills/subscriptions` 暴露。
 
 ## 6. Console API 已实现行为
 
