@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 import com.alibaba.nacos.ai.service.pipeline.PipelineQueryService;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import org.junit.jupiter.api.BeforeEach;

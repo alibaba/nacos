@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.console.handler.ai;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 

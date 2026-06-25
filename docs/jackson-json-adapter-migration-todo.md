@@ -21,7 +21,7 @@ adapter work discussed in issue #14466 and defined by
 `specs/en/sdk/sdk-java-json-adapter-spec.md` /
 `specs/zh-cn/sdk/sdk-java-json-adapter-spec.md`.
 
-Last updated: 2026-06-24.
+Last updated: 2026-06-25.
 
 ## Status Legend
 
@@ -167,6 +167,14 @@ Last updated: 2026-06-24.
   - `mvn -pl api,ai,maintainer-client apache-rat:check`
   - `api/target/site/jacoco/jacoco.csv`: Pipeline API DTO classes have
     `LINE_MISSED=0`.
+- 2026-06-25, stage 10 pipeline API DTO migration CI follow-up:
+  - Updated console Pipeline handler/proxy/controller paths and tests to use
+    the API-owned `PipelineExecution` DTO after CI full compile found stale AI
+    module imports.
+  - `mvn -pl console -am -DskipTests compile`
+  - `mvn -pl console spotless:apply`
+  - `mvn -pl console spotless:check`
+  - `mvn -pl console -am -Dtest=ConsolePipelineControllerTest,PipelineProxyTest,PipelineRemoteHandlerTest,PipelineInnerHandlerTest -Dsurefire.failIfNoSpecifiedTests=false test`
 
 ## Implementation Principles
 
