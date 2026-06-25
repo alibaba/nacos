@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { McpServerDetailInfo } from '@/types/mcp';
 import {
+  buildUrlExportPath,
   buildEndpointUrl,
   isManagedDirectEndpointRef,
   resolveMcpEndpointUrl,
@@ -54,9 +55,24 @@ describe('newMcpServer endpoint utils', () => {
   it('normalizes endpoint URLs for editable inputs', () => {
     expect(
       buildEndpointUrl({ protocol: 'https:', address: 'example.com', port: 443, path: 'mcp' })
-    ).toBe('https://example.com:443/mcp');
+    ).toBe('https://example.com/mcp');
     expect(buildEndpointUrl({ protocol: 'mcp-sse', address: 'example.com', port: '8080' }, 'http')).toBe(
       'http://example.com:8080'
     );
+  });
+
+  it('preserves query credentials in MCP endpoint URLs', () => {
+    const url = new URL('https://mcp.amap.com/mcp?key=test-key');
+    const exportPath = buildUrlExportPath(url);
+
+    expect(exportPath).toBe('/mcp?key=test-key');
+    expect(
+      buildEndpointUrl({
+        protocol: 'https',
+        address: 'mcp.amap.com',
+        port: '443',
+        path: exportPath,
+      })
+    ).toBe('https://mcp.amap.com/mcp?key=test-key');
   });
 });

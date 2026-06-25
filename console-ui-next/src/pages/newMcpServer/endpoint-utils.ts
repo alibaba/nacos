@@ -20,6 +20,22 @@ function normalizeEndpointPath(path?: string) {
   return path.startsWith('/') ? path : `/${path}`;
 }
 
+function normalizeEndpointPort(protocol: string, port?: string | number) {
+  const rawPort = port === undefined || port === null ? '' : String(port).trim();
+  if (
+    !rawPort ||
+    (protocol === 'https' && rawPort === '443') ||
+    (protocol === 'http' && rawPort === '80')
+  ) {
+    return '';
+  }
+  return `:${rawPort}`;
+}
+
+export function buildUrlExportPath(url: URL) {
+  return `${url.pathname || '/'}${url.search || ''}`;
+}
+
 export function isManagedDirectEndpointRef(serviceRef?: McpServiceRef) {
   return serviceRef?.groupName === MCP_DIRECT_ENDPOINT_GROUP;
 }
@@ -42,9 +58,7 @@ export function buildEndpointUrl(
     return '';
   }
   const protocol = normalizeProtocol(endpoint.protocol, fallbackProtocol);
-  const rawPort =
-    endpoint.port === undefined || endpoint.port === null ? '' : String(endpoint.port).trim();
-  const port = rawPort ? `:${rawPort}` : '';
+  const port = normalizeEndpointPort(protocol, endpoint.port);
   const path = normalizeEndpointPath(endpoint.path || fallbackPath);
   return `${protocol}://${address}${port}${path}`;
 }
