@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.utils.ConcurrentDiskUtil;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.BufferedReader;
@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,14 +68,14 @@ public class DiskCache {
             String json = dom.getJsonFromServer();
             
             if (StringUtils.isEmpty(json)) {
-                json = JacksonUtils.toJson(dom);
+                json = JsonUtils.toJson(dom);
             }
             
             keyContentBuffer.append(json);
             
             //Use the concurrent API to ensure the consistency.
             ConcurrentDiskUtil.writeFileContent(file, keyContentBuffer.toString(),
-                Charset.defaultCharset().toString());
+                StandardCharsets.UTF_8.name());
             return true;
         } catch (Throwable e) {
             NAMING_LOGGER.error("[NA] failed to write cache for dom:" + dom.getName(), e);
@@ -133,7 +133,7 @@ public class DiskCache {
             ServiceInfo newFormat = null;
             try (BufferedReader reader = new BufferedReader(
                 new StringReader(ConcurrentDiskUtil.getFileContent(file,
-                    Charset.defaultCharset().toString())))) {
+                    StandardCharsets.UTF_8.name())))) {
                 
                 String json;
                 while ((json = reader.readLine()) != null) {
@@ -142,10 +142,10 @@ public class DiskCache {
                             continue;
                         }
                         
-                        newFormat = JacksonUtils.toObj(json, ServiceInfo.class);
+                        newFormat = JsonUtils.toObj(json, ServiceInfo.class);
                         
                         if (StringUtils.isEmpty(newFormat.getName())) {
-                            ips.add(JacksonUtils.toObj(json, Instance.class));
+                            ips.add(JsonUtils.toObj(json, Instance.class));
                         }
                     } catch (Throwable e) {
                         NAMING_LOGGER.error("[NA] error while parsing cache file: " + json, e);

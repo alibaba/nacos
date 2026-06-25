@@ -19,7 +19,7 @@ package com.alibaba.nacos.client.naming.cache;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.event.InstancesDiff;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public final class InstancesDiffer {
         if (null == oldService) {
             NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(),
                 newService.getKey(),
-                JacksonUtils.toJson(newService.getHosts()));
+                JsonUtils.toJson(newService.getHosts()));
             instancesDiff.setAddedInstances(newService.getHosts());
             return instancesDiff;
         }
@@ -103,21 +103,21 @@ public final class InstancesDiffer {
         if (newHosts.size() > 0) {
             NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(),
                 newService.getKey(),
-                JacksonUtils.toJson(newHosts));
+                JsonUtils.toJson(newHosts));
             instancesDiff.setAddedInstances(newHosts);
         }
         
         if (remvHosts.size() > 0) {
             NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(),
                 newService.getKey(),
-                JacksonUtils.toJson(remvHosts));
+                JsonUtils.toJson(remvHosts));
             instancesDiff.setRemovedInstances(remvHosts);
         }
         
         if (modHosts.size() > 0) {
             NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(),
                 newService.getKey(),
-                JacksonUtils.toJson(modHosts));
+                JsonUtils.toJson(modHosts));
             instancesDiff.setModifiedInstances(modHosts);
         }
         return instancesDiff;

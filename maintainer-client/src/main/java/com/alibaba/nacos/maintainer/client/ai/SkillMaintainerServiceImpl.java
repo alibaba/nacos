@@ -30,7 +30,6 @@ import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
@@ -204,7 +203,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
             buildRequestResource(firstNs, null))
             .setHttpMethod(HttpMethod.POST)
             .setPath(Constants.AdminApiPath.AI_SKILL_BATCH_UPLOAD_PRECHECK_ADMIN_PATH)
-            .setBody(JacksonUtils.toJson(requests)).build();
+            .setBody(JsonUtils.toJson(requests)).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<List<SkillUploadPrecheckResult>> result = JsonUtils.toObj(restResult.getData(),
             new NacosTypeReference<Result<List<SkillUploadPrecheckResult>>>() {

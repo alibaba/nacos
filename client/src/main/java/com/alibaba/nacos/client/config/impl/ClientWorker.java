@@ -69,7 +69,7 @@ import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConnLabelsUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -616,7 +616,7 @@ public class ClientWorker implements Closeable {
             getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);
         Map<String, Object> metrics = new HashMap<>(1);
-        metrics.put(uuid, JacksonUtils.toJson(metric));
+        metrics.put(uuid, JsonUtils.toJson(metric));
         return metrics;
     }
     

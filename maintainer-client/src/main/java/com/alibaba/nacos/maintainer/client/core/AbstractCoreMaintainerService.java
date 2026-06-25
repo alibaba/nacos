@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
@@ -377,7 +376,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         Map<String, String> params = new HashMap<>(8);
         params.put("pluginType", pluginType);
         params.put("pluginName", pluginName);
-        params.put("config", JacksonUtils.toJson(config));
+        params.put("config", JsonUtils.toJson(config));
         params.put("localOnly", String.valueOf(localOnly));
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)

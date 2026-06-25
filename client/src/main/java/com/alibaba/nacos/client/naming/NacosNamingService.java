@@ -52,7 +52,7 @@ import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -379,7 +379,7 @@ public class NacosNamingService implements NamingService {
             if (serviceInfo != null && !serviceInfo.getHosts().isEmpty()) {
                 NAMING_LOGGER.debug("getServiceInfo from failover,serviceName: {}  data:{}",
                     serviceName,
-                    JacksonUtils.toJson(serviceInfo.getHosts()));
+                    JsonUtils.toJson(serviceInfo.getHosts()));
                 return serviceInfo;
             }
         }

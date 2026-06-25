@@ -29,7 +29,7 @@ import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Map;
@@ -115,7 +115,7 @@ public class ServiceInfoHolder implements Closeable {
      * @return service info
      */
     public ServiceInfo processServiceInfo(String json) {
-        ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
+        ServiceInfo serviceInfo = JsonUtils.toObj(json, ServiceInfo.class);
         serviceInfo.setJsonFromServer(json);
         return processServiceInfo(serviceInfo);
     }
@@ -130,7 +130,7 @@ public class ServiceInfoHolder implements Closeable {
         String serviceKey = serviceInfo.getKeyWithoutClusters();
         if (serviceKey == null) {
             NAMING_LOGGER.warn("process service info but serviceKey is null, service host: {}",
-                JacksonUtils.toJson(serviceInfo.getHosts()));
+                JsonUtils.toJson(serviceInfo.getHosts()));
             return null;
         }
         ServiceInfo oldService = serviceInfoMap.get(serviceKey);
@@ -145,7 +145,7 @@ public class ServiceInfoHolder implements Closeable {
         serviceInfoMap.put(serviceKey, serviceInfo);
         InstancesDiff diff = getServiceInfoDiff(oldService, serviceInfo);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
-            serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
+            serviceInfo.setJsonFromServer(JsonUtils.toJson(serviceInfo));
         }
         
         if (enableClientMetrics) {
@@ -159,7 +159,7 @@ public class ServiceInfoHolder implements Closeable {
         if (diff.hasDifferent()) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(),
                 serviceKey,
-                JacksonUtils.toJson(serviceInfo.getHosts()));
+                JsonUtils.toJson(serviceInfo.getHosts()));
             
             if (!failoverReactor.isFailoverSwitch(serviceKey)) {
                 NotifyCenter.publishEvent(

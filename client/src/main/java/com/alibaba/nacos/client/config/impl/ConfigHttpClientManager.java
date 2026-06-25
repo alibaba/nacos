@@ -31,7 +31,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import org.slf4j.Logger;
 
@@ -136,7 +136,7 @@ public class ConfigHttpClientManager implements Closeable {
         public boolean isIntercept(URI uri, String httpMethod,
             RequestHttpEntity requestHttpEntity) {
             final String body = requestHttpEntity.isEmptyBody() ? ""
-                : JacksonUtils.toJson(requestHttpEntity.getBody());
+                : JsonUtils.toJson(requestHttpEntity.getBody());
             return Limiter.isLimit(MD5Utils.md5Hex(uri + body, Constants.ENCODE));
         }
         

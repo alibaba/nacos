@@ -32,7 +32,6 @@ import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
@@ -309,7 +308,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
             buildRequestResource(namespaceId, StringUtils.EMPTY, StringUtils.EMPTY);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
             .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/clone").setParamValue(params)
-            .setBody(JacksonUtils.toJson(cloneInfos)).build();
+            .setBody(JsonUtils.toJson(cloneInfos)).build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Map<String, Object>> result = JsonUtils.toObj(httpRestResult.getData(),

@@ -29,7 +29,6 @@ import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 
@@ -167,12 +166,12 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         McpEndpointSpec endpointSpec) {
         Map<String, String> params = new HashMap<>(4);
         params.put("mcpName", serverSpec.getName());
-        params.put("serverSpecification", JacksonUtils.toJson(serverSpec));
+        params.put("serverSpecification", JsonUtils.toJson(serverSpec));
         if (null != toolSpec) {
-            params.put("toolSpecification", JacksonUtils.toJson(toolSpec));
+            params.put("toolSpecification", JsonUtils.toJson(toolSpec));
         }
         if (null != endpointSpec) {
-            params.put("endpointSpecification", JacksonUtils.toJson(endpointSpec));
+            params.put("endpointSpecification", JsonUtils.toJson(endpointSpec));
         }
         return params;
     }

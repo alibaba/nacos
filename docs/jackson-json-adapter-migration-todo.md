@@ -194,6 +194,30 @@ Last updated: 2026-06-25.
     `LINE_MISSED=0`.
   - `rg "com\\.fasterxml\\.jackson\\.core\\.type\\.TypeReference|new TypeReference|JavaType" maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/ai/PipelineAdminClient.java maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/ai/PipelineMaintainerService.java maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/ai/PipelineMaintainerServiceImpl.java console/src/main/java/com/alibaba/nacos/console/handler/impl/remote/ai/PipelineRemoteHandler.java`
     returns no matches.
+- 2026-06-25, stage 12 dependency matrix and runtime JSON cleanup:
+  - Migrated remaining neutral-compatible main-code `JacksonUtils` usages in
+    `common`, `client`, and `maintainer-client` to `JsonUtils`; remaining
+    `JacksonUtils` usage is limited to the legacy compatibility facade and the
+    deprecated Pipeline `JsonNode` compatibility path.
+  - Added `JacksonAdapterCompatibilityTest` to verify both default adapters are
+    registered by `ServiceLoader`, both are available on the common test
+    classpath, auto mode selects Jackson 3, and explicit Jackson 2 / Jackson 3
+    selection works.
+  - Fixed naming disk cache read/write charset to UTF-8 so Jackson 3 literal
+    non-ASCII JSON and existing UTF-8 cache files are handled consistently.
+  - `mvn -pl common -am -Dtest=JacksonAdapterCompatibilityTest,Jackson2JsonAdapterTest,Jackson3JsonAdapterTest,BeanResponseHandlerTest,RestResultResponseHandlerTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `mvn -pl client -am -Dtest=NacosPromptCacheHolderTest,NacosAgentCardCacheHolderTest,AiGrpcClientTest,NamingHttpClientProxyTest,NacosNamingServiceTest,DiskCacheTest,ServiceInfoHolderTest,NamingGrpcClientProxyTest,FailoverReactorTest,ClientWorkerTest,ConfigHttpClientManagerTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `mvn -pl maintainer-client -am -Dtest=A2aMaintainerServiceImplTest,SkillMaintainerServiceImplTest,NacosAiMaintainerServiceImplTest,AiMaintainerServiceDefaultMethodsTest,AbstractCoreMaintainerServiceTest,NacosConfigMaintainerServiceImplTest,NacosNamingMaintainerServiceImplTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `mvn -pl api dependency:tree -Dincludes=com.fasterxml.jackson.core,tools.jackson.core`
+  - `mvn -pl common dependency:tree -Dincludes=com.fasterxml.jackson.core,tools.jackson.core`
+  - `mvn -pl client dependency:tree -Dincludes=com.fasterxml.jackson.core,tools.jackson.core`
+  - `mvn -pl maintainer-client dependency:tree -Dincludes=com.fasterxml.jackson.core,tools.jackson.core`
+  - `rg "com\\.fasterxml\\.jackson\\.core\\.type\\.TypeReference|com\\.fasterxml\\.jackson\\.databind\\.(JsonNode|ObjectNode|ArrayNode|JavaType|ObjectMapper)|tools\\.jackson\\.databind\\.(JsonNode|ObjectNode|ArrayNode|JavaType|JsonMapper)|new TypeReference|JsonNode|JavaType|ObjectMapper|JsonMapper" api/src/main/java common/src/main/java client/src/main/java maintainer-client/src/main/java -g '*.java'`
+    returns only adapter internals, legacy `JacksonUtils`, and deprecated
+    Pipeline `JsonNode` compatibility methods.
+  - `mvn -pl common,client,maintainer-client spotless:apply`
+  - `mvn -pl common,client,maintainer-client spotless:check`
+  - `mvn -pl common,client,maintainer-client apache-rat:check`
 
 ## Implementation Principles
 
@@ -320,7 +344,7 @@ Last updated: 2026-06-25.
   - Validation:
     - Unit tests that property order is stable for simple DTOs and maps.
 
-- `[ ]` Keep and narrow `JacksonUtils`.
+- `[x]` Keep and narrow `JacksonUtils`.
   - Files:
     - `common/src/main/java/com/alibaba/nacos/common/utils/JacksonUtils.java`
   - Plan:
@@ -491,7 +515,7 @@ Last updated: 2026-06-25.
 
 ### 6. Dependency and Compatibility Matrix
 
-- `[ ]` Adjust dependency management.
+- `[x]` Adjust dependency management.
   - Files:
     - Root `pom.xml`
     - `api/pom.xml`
@@ -508,7 +532,7 @@ Last updated: 2026-06-25.
     - Dependency tree checks for `nacos-api`, `nacos-client`, and
       `nacos-maintainer-client`.
 
-- `[ ]` Add dependency conflict guard tests / samples.
+- `[x]` Add dependency conflict guard tests / samples.
   - Plan:
     - Jackson 2 only: default behavior unchanged.
     - Jackson 3 only: Java 17 / Spring Boot 4 style classpath works.
@@ -521,7 +545,7 @@ Last updated: 2026-06-25.
 
 ### 7. Final Cleanup
 
-- `[ ]` Run a final scan for forbidden public Jackson core/databind exposure.
+- `[x]` Run a final scan for forbidden public Jackson core/databind exposure.
   - Command shape:
     - `rg "com\\.fasterxml\\.jackson\\.(core|databind)|tools\\.jackson|JsonNode|TypeReference|JavaType" api client common maintainer-client plugin -g '*.java'`
   - Expected result:
@@ -529,7 +553,7 @@ Last updated: 2026-06-25.
     - Remaining Jackson 2 exposure is limited to legacy `JacksonUtils` and
       deprecated compatibility methods.
 
-- `[ ]` Update specs if implementation discovers a mismatch.
+- `[x]` Update specs if implementation discovers a mismatch.
   - Files:
     - `specs/en/sdk/sdk-java-json-adapter-spec.md`
     - `specs/zh-cn/sdk/sdk-java-json-adapter-spec.md`

@@ -29,7 +29,6 @@ import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
@@ -74,7 +73,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         String registrationType)
         throws NacosException {
         Map<String, String> params = new HashMap<>(4);
-        params.put("agentCard", JacksonUtils.toJson(agentCard));
+        params.put("agentCard", JsonUtils.toJson(agentCard));
         params.put("namespaceId", namespaceId);
         params.put("agentName", agentCard.getName());
         params.put("registrationType", registrationType);
@@ -130,7 +129,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     private boolean doUpdateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest,
         String registrationType) throws NacosException {
         Map<String, String> params = new HashMap<>(5);
-        params.put("agentCard", JacksonUtils.toJson(agentCard));
+        params.put("agentCard", JsonUtils.toJson(agentCard));
         params.put("namespaceId", namespaceId);
         params.put("agentName", agentCard.getName());
         params.put("setAsLatest", String.valueOf(setAsLatest));
@@ -227,7 +226,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     }
     
     private AgentCard buildLegacyCompatibleAgentCard(AgentCard source) {
-        AgentCard result = JsonUtils.toObj(JacksonUtils.toJson(source), AgentCard.class);
+        AgentCard result = JsonUtils.toObj(JsonUtils.toJson(source), AgentCard.class);
         List<AgentInterface> supportedInterfaces = result.getSupportedInterfaces();
         if (null != supportedInterfaces && !supportedInterfaces.isEmpty()) {
             AgentInterface preferred = supportedInterfaces.get(0);
