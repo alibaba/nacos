@@ -26,6 +26,7 @@ import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.common.json.JsonAdapterLogUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
@@ -115,5 +116,6 @@ public class InitUtils {
     public static void initSerialization() {
         // TODO register in implementation class or remove subType
         SelectorFactory.preload();
+        JsonAdapterLogUtils.logSelectedAdapter();
     }
 }

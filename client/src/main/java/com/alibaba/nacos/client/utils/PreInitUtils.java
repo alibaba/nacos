@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
+import com.alibaba.nacos.common.json.JsonAdapterLogUtils;
 
 /**
  * Async do pre init to load some cost component.
@@ -42,6 +43,7 @@ public class PreInitUtils {
     static void preLoadCostComponent() {
         // JSON adapter initialization may cost hundreds milliseconds on first use.
         JsonUtils.preload();
+        JsonAdapterLogUtils.logSelectedAdapter();
         // Ram auth plugin will try to get credential from env and system when leak input identity by properties.
         SpasAdapter.getAk();
     }

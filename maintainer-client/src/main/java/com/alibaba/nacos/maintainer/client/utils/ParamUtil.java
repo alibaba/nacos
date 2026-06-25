@@ -19,6 +19,7 @@ package com.alibaba.nacos.maintainer.client.utils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.selector.SelectorFactory;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.json.JsonAdapterLogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,5 +175,6 @@ public class ParamUtil {
     public static void initSerialization() {
         // TODO register in implementation class or remove subType
         SelectorFactory.preload();
+        JsonAdapterLogUtils.logSelectedAdapter();
     }
 }
