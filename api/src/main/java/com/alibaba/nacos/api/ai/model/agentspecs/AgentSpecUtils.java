@@ -91,21 +91,6 @@ public class AgentSpecUtils {
     }
     
     /**
-     * Build the Nacos Config group for an AgentSpec (no version suffix).
-     *
-     * @param agentSpecName name of AgentSpec
-     * @return config group string, e.g. "agentspec__myworker"
-     * @throws IllegalArgumentException if agentSpecName is blank
-     */
-    public static String buildAgentSpecGroup(String agentSpecName) {
-        if (StringUtils.isBlank(agentSpecName)) {
-            throw new IllegalArgumentException("AgentSpec name cannot be blank");
-        }
-        return AGENTSPEC_GROUP_PREFIX
-            + NacosAiConfigKeyCodec.encodeManifestGroupNameSegment(agentSpecName);
-    }
-    
-    /**
      * Build the Nacos Config group for a specific AgentSpec version.
      *
      * @param agentSpecName name of AgentSpec

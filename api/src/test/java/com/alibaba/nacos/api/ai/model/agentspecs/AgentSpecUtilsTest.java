@@ -81,23 +81,6 @@ class AgentSpecUtilsTest {
     }
     
     @Test
-    void testBuildAgentSpecGroup() {
-        assertEquals("agentspec__my-worker", AgentSpecUtils.buildAgentSpecGroup("my-worker"));
-    }
-    
-    @Test
-    void testBuildAgentSpecGroupWithBlankName() {
-        assertThrows(IllegalArgumentException.class,
-            () -> AgentSpecUtils.buildAgentSpecGroup(""));
-    }
-    
-    @Test
-    void testBuildAgentSpecGroupWithNullName() {
-        assertThrows(IllegalArgumentException.class,
-            () -> AgentSpecUtils.buildAgentSpecGroup(null));
-    }
-    
-    @Test
     void testBuildAgentSpecVersionGroup() {
         String group = AgentSpecUtils.buildAgentSpecVersionGroup("my-worker", "v1");
         assertTrue(group.startsWith(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX));
