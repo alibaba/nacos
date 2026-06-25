@@ -175,6 +175,25 @@ Last updated: 2026-06-25.
   - `mvn -pl console spotless:apply`
   - `mvn -pl console spotless:check`
   - `mvn -pl console -am -Dtest=ConsolePipelineControllerTest,PipelineProxyTest,PipelineRemoteHandlerTest,PipelineInnerHandlerTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- 2026-06-25, stage 11 typed Pipeline maintainer API:
+  - Changed `PipelineAdminClient` to expose typed
+    `Result<PipelineExecution>` and `Result<Page<PipelineExecution>>`
+    methods while keeping deprecated `JsonNode` compatibility methods in
+    `PipelineMaintainerService`.
+  - Updated console remote Pipeline handler to consume typed maintainer-client
+    methods directly.
+  - `mvn -pl maintainer-client,console,test/maintainer-sdk-test -am -DskipTests compile`
+  - `mvn -pl maintainer-client,console -am -Dtest=PipelineMaintainerServiceImplTest,PipelineRemoteHandlerTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `mvn -pl test/maintainer-sdk-test -am -DskipTests test-compile`
+  - `mvn -pl maintainer-client,console,test/maintainer-sdk-test spotless:apply`
+  - `mvn -pl maintainer-client,console,test/maintainer-sdk-test spotless:check`
+  - `mvn -pl maintainer-client,console,test/maintainer-sdk-test apache-rat:check`
+  - `maintainer-client/target/site/jacoco/jacoco.csv`:
+    `PipelineMaintainerServiceImpl` has `LINE_MISSED=0`.
+  - `console/target/site/jacoco/jacoco.csv`: `PipelineRemoteHandler` has
+    `LINE_MISSED=0`.
+  - `rg "com\\.fasterxml\\.jackson\\.core\\.type\\.TypeReference|new TypeReference|JavaType" maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/ai/PipelineAdminClient.java maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/ai/PipelineMaintainerService.java maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/ai/PipelineMaintainerServiceImpl.java console/src/main/java/com/alibaba/nacos/console/handler/impl/remote/ai/PipelineRemoteHandler.java`
+    returns no matches.
 
 ## Implementation Principles
 
@@ -453,20 +472,22 @@ Last updated: 2026-06-25.
   - Validation:
     - `ai` unit tests and pipeline repository tests continue to pass.
 
-- `[ ]` Add typed maintainer-client methods.
+- `[x]` Add typed maintainer-client methods.
   - Files:
     - `maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/ai/PipelineAdminClient.java`
     - `maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/ai/PipelineMaintainerService.java`
     - `maintainer-client/src/main/java/com/alibaba/nacos/maintainer/client/ai/PipelineMaintainerServiceImpl.java`
   - Plan:
     - Add:
-      - `Result<PipelineExecution> getPipelineExecution(String pipelineId)`
+      - `Result<PipelineExecution> getPipelineDetail(String pipelineId)`
       - `Result<Page<PipelineExecution>> listPipelineExecutions(...)`
     - Keep existing `JsonNode` methods as deprecated compatibility methods.
     - Use `NacosTypeReference<Result<PipelineExecution>>` and
       `NacosTypeReference<Result<Page<PipelineExecution>>>` for parsing.
   - Validation:
     - Maintainer-client pipeline tests for typed and deprecated methods.
+    - Console remote handler tests for typed success, HTTP 200 success, and
+      non-success Result handling.
 
 ### 6. Dependency and Compatibility Matrix
 

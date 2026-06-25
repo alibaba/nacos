@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
@@ -45,7 +46,6 @@ import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.McpMaintainerService;
 import com.alibaba.nacos.test.maintainer.MaintainerSdkBaseITCase;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -603,9 +603,10 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         return page.getPageItems().stream().anyMatch(predicate);
     }
     
-    private void assertSuccessResult(Result<JsonNode> result) {
+    private void assertSuccessResult(Result<Page<PipelineExecution>> result) {
         assertNotNull(result);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode(), result.toString());
         assertNotNull(result.getData());
+        assertPage(result.getData());
     }
 }

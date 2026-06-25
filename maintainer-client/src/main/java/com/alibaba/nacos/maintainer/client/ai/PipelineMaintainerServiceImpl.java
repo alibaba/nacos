@@ -16,16 +16,19 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.HashMap;
@@ -39,7 +42,14 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
     }
     
     @Override
-    public Result<JsonNode> getPipelineDetail(String pipelineId) throws NacosException {
+    public Result<PipelineExecution> getPipelineDetail(String pipelineId) throws NacosException {
+        return getPipelineDetail(pipelineId,
+            new NacosTypeReference<Result<PipelineExecution>>() {
+            });
+    }
+    
+    private <T> Result<T> getPipelineDetail(String pipelineId,
+        NacosTypeReference<Result<T>> typeReference) throws NacosException {
         Map<String, String> params = new HashMap<>(2);
         params.put("pipelineId", pipelineId);
         HttpRequest httpRequest =
@@ -48,10 +58,10 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
                 .setPath(Constants.AdminApiPath.AI_PIPELINE_DETAIL_ADMIN_PATH)
                 .setParamValue(params).build();
         try {
-            return parseResultFromHttp(executeSyncHttpRequest(httpRequest));
+            return parseResultFromHttp(executeSyncHttpRequest(httpRequest), typeReference);
         } catch (NacosException e) {
             if (e.getErrCode() == NacosException.NOT_FOUND) {
-                return getPipelineDetailLegacy(pipelineId);
+                return getPipelineDetailLegacy(pipelineId, typeReference);
             }
             throw e;
         }
@@ -60,19 +70,28 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
     /**
      * Pre-3.2.1 style: GET {@code /v3/admin/ai/pipelines/{pipelineId}} when {@code /detail} is not mapped.
      */
-    private Result<JsonNode> getPipelineDetailLegacy(String pipelineId) throws NacosException {
+    private <T> Result<T> getPipelineDetailLegacy(String pipelineId,
+        NacosTypeReference<Result<T>> typeReference) throws NacosException {
         HttpRequest httpRequest =
             buildHttpRequestBuilder(buildRequestResource(StringUtils.EMPTY, pipelineId))
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH + "/" + pipelineId)
                 .setParamValue(new HashMap<>(2)).build();
-        return parseResultFromHttp(executeSyncHttpRequest(httpRequest));
+        return parseResultFromHttp(executeSyncHttpRequest(httpRequest), typeReference);
     }
     
     @Override
-    public Result<JsonNode> listPipelineExecutions(String resourceType, String resourceName,
-        String namespaceId,
-        String version, int pageNo, int pageSize) throws NacosException {
+    public Result<Page<PipelineExecution>> listPipelineExecutions(String resourceType,
+        String resourceName, String namespaceId, String version, int pageNo, int pageSize)
+        throws NacosException {
+        return listPipelineExecutions(resourceType, resourceName, namespaceId, version, pageNo,
+            pageSize, new NacosTypeReference<Result<Page<PipelineExecution>>>() {
+            });
+    }
+    
+    private <T> Result<T> listPipelineExecutions(String resourceType, String resourceName,
+        String namespaceId, String version, int pageNo, int pageSize,
+        NacosTypeReference<Result<T>> typeReference) throws NacosException {
         Map<String, String> params =
             buildListQueryParams(resourceType, resourceName, namespaceId, version, pageNo,
                 pageSize);
@@ -84,10 +103,11 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
                 .setPath(Constants.AdminApiPath.AI_PIPELINE_LIST_ADMIN_PATH)
                 .setParamValue(params).build();
         try {
-            return parseResultFromHttp(executeSyncHttpRequest(httpRequest));
+            return parseResultFromHttp(executeSyncHttpRequest(httpRequest), typeReference);
         } catch (NacosException e) {
             if (e.getErrCode() == NacosException.NOT_FOUND) {
-                return listPipelineExecutionsLegacy(resolvedNamespace, resourceName, params);
+                return listPipelineExecutionsLegacy(resolvedNamespace, resourceName, params,
+                    typeReference);
             }
             throw e;
         }
@@ -96,21 +116,24 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
     /**
      * Pre-3.2.1 style: GET {@code /v3/admin/ai/pipelines} when {@code /list} is not mapped.
      */
-    private Result<JsonNode> listPipelineExecutionsLegacy(String resolvedNamespace,
-        String resourceName,
-        Map<String, String> params) throws NacosException {
+    private <T> Result<T> listPipelineExecutionsLegacy(String resolvedNamespace,
+        String resourceName, Map<String, String> params,
+        NacosTypeReference<Result<T>> typeReference) throws NacosException {
         HttpRequest httpRequest =
             buildHttpRequestBuilder(buildRequestResource(resolvedNamespace, resourceName))
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH)
                 .setParamValue(params).build();
-        return parseResultFromHttp(executeSyncHttpRequest(httpRequest));
+        return parseResultFromHttp(executeSyncHttpRequest(httpRequest), typeReference);
     }
     
     @Override
     @Deprecated
     public JsonNode getPipeline(String pipelineId) throws NacosException {
-        return unwrapSuccessData(getPipelineDetail(pipelineId));
+        Result<Object> result = getPipelineDetail(pipelineId,
+            new NacosTypeReference<Result<Object>>() {
+            });
+        return toJsonNode(unwrapSuccessData(result));
     }
     
     @Override
@@ -118,9 +141,10 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
     public JsonNode listPipelines(String resourceType, String resourceName, String namespaceId,
         String version,
         int pageNo, int pageSize) throws NacosException {
-        return unwrapSuccessData(
-            listPipelineExecutions(resourceType, resourceName, namespaceId, version, pageNo,
-                pageSize));
+        Result<Object> result = listPipelineExecutions(resourceType, resourceName, namespaceId,
+            version, pageNo, pageSize, new NacosTypeReference<Result<Object>>() {
+            });
+        return toJsonNode(unwrapSuccessData(result));
     }
     
     private Map<String, String> buildListQueryParams(String resourceType, String resourceName,
@@ -136,16 +160,15 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
         return params;
     }
     
-    private static Result<JsonNode> parseResultFromHttp(HttpRestResult<String> restResult)
+    private static <T> Result<T> parseResultFromHttp(HttpRestResult<String> restResult,
+        NacosTypeReference<Result<T>> typeReference)
         throws NacosException {
         String body = restResult.getData();
         if (StringUtils.isBlank(body)) {
             throw new NacosException(NacosException.SERVER_ERROR, "empty response body");
         }
         try {
-            Result<JsonNode> result =
-                JacksonUtils.toObj(body, new TypeReference<Result<JsonNode>>() {
-                });
+            Result<T> result = JsonUtils.toObj(body, typeReference);
             if (result == null) {
                 throw new NacosException(NacosException.SERVER_ERROR,
                     "failed to parse Result wrapper");
@@ -157,7 +180,7 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
         }
     }
     
-    private static JsonNode unwrapSuccessData(Result<JsonNode> result) throws NacosException {
+    private static <T> T unwrapSuccessData(Result<T> result) throws NacosException {
         if (result == null) {
             throw new NacosException(NacosException.SERVER_ERROR, "empty Result");
         }
@@ -175,5 +198,9 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
             return false;
         }
         return ErrorCode.SUCCESS.getCode().equals(code) || Integer.valueOf(200).equals(code);
+    }
+    
+    private static JsonNode toJsonNode(Object data) {
+        return JacksonUtils.toObj(JsonUtils.toJson(data), JsonNode.class);
     }
 }

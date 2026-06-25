@@ -19,11 +19,11 @@ package com.alibaba.nacos.console.handler.impl.remote.ai;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.PipelineMaintainerService;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +36,7 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -65,15 +66,14 @@ class PipelineRemoteHandlerTest {
     void testGetPipeline() throws NacosException {
         PipelineExecution execution = new PipelineExecution();
         execution.setExecutionId("pipe-123");
-        JsonNode jsonNode = JacksonUtils.toObj(JacksonUtils.toJson(execution),
-            JsonNode.class);
-        when(pipelineMaintainerService.getPipeline("pipe-123")).thenReturn(jsonNode);
+        when(pipelineMaintainerService.getPipelineDetail("pipe-123"))
+            .thenReturn(Result.success(execution));
         
         PipelineExecution result = handler.getPipeline("pipe-123");
         
         assertNotNull(result);
         assertEquals("pipe-123", result.getExecutionId());
-        verify(pipelineMaintainerService).getPipeline("pipe-123");
+        verify(pipelineMaintainerService).getPipelineDetail("pipe-123");
     }
     
     @Test
@@ -81,16 +81,51 @@ class PipelineRemoteHandlerTest {
         Page<PipelineExecution> page = new Page<>();
         page.setTotalCount(0);
         page.setPageItems(Collections.emptyList());
-        JsonNode jsonNode = JacksonUtils.toObj(JacksonUtils.toJson(page), JsonNode.class);
-        when(pipelineMaintainerService.listPipelines("prompt", "my-prompt",
-            "public", "0.0.1", 1, 10)).thenReturn(jsonNode);
+        when(pipelineMaintainerService.listPipelineExecutions("prompt", "my-prompt",
+            "public", "0.0.1", 1, 10)).thenReturn(Result.success(page));
         
         Page<PipelineExecution> result = handler.listPipelines("prompt", "my-prompt",
             "public", "0.0.1", 1, 10);
         
         assertNotNull(result);
         assertEquals(0, result.getTotalCount());
-        verify(pipelineMaintainerService).listPipelines("prompt", "my-prompt",
+        verify(pipelineMaintainerService).listPipelineExecutions("prompt", "my-prompt",
             "public", "0.0.1", 1, 10);
+    }
+    
+    @Test
+    void testGetPipelineWithHttp200ResultCode() throws NacosException {
+        PipelineExecution execution = new PipelineExecution();
+        execution.setExecutionId("pipe-200");
+        when(pipelineMaintainerService.getPipelineDetail("pipe-200"))
+            .thenReturn(new Result<>(200, "success", execution));
+        
+        PipelineExecution result = handler.getPipeline("pipe-200");
+        
+        assertNotNull(result);
+        assertEquals("pipe-200", result.getExecutionId());
+    }
+    
+    @Test
+    void testGetPipelineThrowsOnNullResult() throws NacosException {
+        when(pipelineMaintainerService.getPipelineDetail("pipe-null")).thenReturn(null);
+        
+        NacosException ex =
+            assertThrows(NacosException.class, () -> handler.getPipeline("pipe-null"));
+        
+        assertEquals(NacosException.SERVER_ERROR, ex.getErrCode());
+        assertEquals("empty Result", ex.getErrMsg());
+    }
+    
+    @Test
+    void testGetPipelineThrowsOnFailedResult() throws NacosException {
+        when(pipelineMaintainerService.getPipelineDetail("pipe-failed"))
+            .thenReturn(Result.failure(ErrorCode.DATA_ACCESS_ERROR));
+        
+        NacosException ex =
+            assertThrows(NacosException.class, () -> handler.getPipeline("pipe-failed"));
+        
+        assertEquals(NacosException.SERVER_ERROR, ex.getErrCode());
+        assertEquals(ErrorCode.DATA_ACCESS_ERROR.getMsg(), ex.getErrMsg());
     }
 }
