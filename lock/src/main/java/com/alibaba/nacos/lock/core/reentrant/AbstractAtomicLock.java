@@ -204,26 +204,6 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
     }
     
     /**
-     * Remove and return the first waiter from the queue.
-     *
-     * @return first waiter, or null if queue is empty
-     */
-    public WaitEntry pollFirstWaiter() {
-        lock.lock();
-        try {
-            while (!waitQueue.isEmpty()) {
-                WaitEntry entry = waitQueue.poll();
-                if (!entry.isExpired()) {
-                    return entry;
-                }
-            }
-            return null;
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    /**
      * Atomically acquire the lock only if the requester is still the queue head.
      *
      * <p>This keeps queue-head verification, lock acquisition, and waiter removal in
@@ -331,22 +311,6 @@ public abstract class AbstractAtomicLock implements AtomicLockService, Serializa
         lock.lock();
         try {
             waitQueue.clear();
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    /**
-     * Remove and return all waiters from the queue.
-     *
-     * @return list of all waiters (may be empty)
-     */
-    public List<WaitEntry> drainAllWaiters() {
-        lock.lock();
-        try {
-            List<WaitEntry> result = new ArrayList<>(waitQueue);
-            waitQueue.clear();
-            return result;
         } finally {
             lock.unlock();
         }

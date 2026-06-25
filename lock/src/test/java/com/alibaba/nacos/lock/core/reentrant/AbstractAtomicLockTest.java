@@ -78,25 +78,6 @@ class AbstractAtomicLockTest {
     }
     
     @Test
-    void testPollFirstWaiter() {
-        LockInfo waiter1 = createLockInfo("owner-1", "conn-1", 5000);
-        LockInfo waiter2 = createLockInfo("owner-2", "conn-2", 5000);
-        
-        lock.addWaiter(waiter1);
-        lock.addWaiter(waiter2);
-        
-        var entry = lock.pollFirstWaiter();
-        assertEquals("owner-1", entry.getOwner());
-        assertEquals(1, lock.getWaitQueue().size());
-    }
-    
-    @Test
-    void testPollFirstWaiterEmpty() {
-        var entry = lock.pollFirstWaiter();
-        assertEquals(null, entry);
-    }
-    
-    @Test
     void testTryLockAsQueueHeadAcquiresAndRemovesHead() {
         LockInfo waiter1 = createLockInfo("owner-1", "conn-1", 5000);
         LockInfo waiter2 = createLockInfo("owner-2", "conn-2", 5000);
@@ -343,25 +324,6 @@ class AbstractAtomicLockTest {
         assertEquals(1, lock.getWaitQueue().size());
     }
     
-    // ==================== drainAllWaiters ====================
-    
-    @Test
-    void testDrainAllWaiters() {
-        lock.addWaiter(createLockInfo("owner-1", "conn-1", 5000));
-        lock.addWaiter(createLockInfo("owner-2", "conn-2", 5000));
-        lock.addWaiter(createLockInfo("owner-3", "conn-3", 5000));
-        
-        var drained = lock.drainAllWaiters();
-        assertEquals(3, drained.size());
-        assertEquals(0, lock.getWaitQueue().size());
-    }
-    
-    @Test
-    void testDrainAllWaitersEmpty() {
-        var drained = lock.drainAllWaiters();
-        assertEquals(0, drained.size());
-    }
-    
     // ==================== initTransientFields ====================
     
     @Test
@@ -382,7 +344,7 @@ class AbstractAtomicLockTest {
         Thread.sleep(100);
         lock.addWaiter(validWaiter);
         
-        var entry = lock.pollFirstWaiter();
+        WaitEntry entry = lock.peekFirstWaiter();
         assertEquals("owner-2", entry.getOwner());
     }
     
@@ -514,27 +476,6 @@ class AbstractAtomicLockTest {
         
         assertEquals(1, lock.getWaitQueue().size(),
             "过期等待者被静默移除");
-    }
-    
-    @Test
-    @DisplayName("pollFirstWaiter 跳过中间的过期条目")
-    void testPollFirstWaiterDiscardsExpiredMiddleEntries() {
-        LockInfo holder = createLockInfo("owner-0", "conn-0", 30000);
-        lock.tryLock(holder);
-        
-        lock.addWaiter(createLockInfo("owner-1", "conn-1", 10000));
-        lock.addWaiter(createLockInfo("owner-2", "conn-2", 10000));
-        lock.addWaiter(createLockInfo("owner-3", "conn-3", 10000));
-        assertEquals(3, lock.getWaitQueue().size());
-        
-        lock.getWaitQueue().get(0).setWaitDeadline(System.currentTimeMillis() - 2000);
-        lock.getWaitQueue().get(1).setWaitDeadline(System.currentTimeMillis() - 1000);
-        
-        WaitEntry entry = lock.pollFirstWaiter();
-        assertNotNull(entry);
-        assertEquals("owner-3", entry.getOwner());
-        
-        assertEquals(0, lock.getWaitQueue().size());
     }
     
     // ==================== removeWaiter(owner, connectionId) ====================
