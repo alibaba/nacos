@@ -159,7 +159,7 @@ class Jackson3JsonAdapterDelegate implements NacosJsonAdapter {
     }
     
     private static ObjectMapper createObjectMapper(Collection<NacosJsonSubtype> subtypes) {
-        JsonMapper.Builder builder = JsonMapper.builder();
+        JsonMapper.Builder builder = JsonMapper.builderWithJackson2Defaults();
         builder.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         builder.changeDefaultPropertyInclusion(new NonNullPropertyInclusion());
         registerSubtypes(builder, subtypes);
@@ -167,7 +167,7 @@ class Jackson3JsonAdapterDelegate implements NacosJsonAdapter {
     }
     
     private static ObjectMapper createCanonicalObjectMapper(Collection<NacosJsonSubtype> subtypes) {
-        JsonMapper.Builder builder = JsonMapper.builder();
+        JsonMapper.Builder builder = JsonMapper.builderWithJackson2Defaults();
         builder.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         builder.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
         builder.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);

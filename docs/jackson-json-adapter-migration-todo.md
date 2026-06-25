@@ -235,6 +235,15 @@ Last updated: 2026-06-25.
   - `mvn -pl test/maintainer-sdk-test -Pjackson3-sdk-test dependency:tree -Dincludes=com.fasterxml.jackson.core,tools.jackson.core`
     shows Jackson 2 core/databind from `nacos-common` and Jackson 3
     core/databind from the profile.
+- 2026-06-25, stage 13 Jackson 3 SDK IT CI follow-up:
+  - Switched the Jackson 3 adapter mapper to Jackson 2 compatible defaults so
+    Nacos final-field DTOs such as `Result<T>` keep their previous
+    deserialization behavior.
+  - Added Jackson 3 regression coverage for `Result<Boolean>` through
+    `NacosTypeReference` and for final-field DTOs without setters.
+  - `mvn -pl common -Dtest=Jackson3JsonAdapterTest test`
+  - `mvn -pl test/java-sdk-test -Pjava-sdk-integration-test,jackson3-sdk-test -DskipTests test-compile`
+  - `mvn -pl test/maintainer-sdk-test -Pmaintainer-sdk-integration-test,jackson3-sdk-test -DskipTests test-compile`
 
 ## Implementation Principles
 

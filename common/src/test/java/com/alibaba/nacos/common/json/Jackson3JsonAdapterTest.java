@@ -19,6 +19,7 @@ package com.alibaba.nacos.common.json;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosJsonAdapter;
 import com.alibaba.nacos.api.utils.json.NacosJsonAdapterNames;
@@ -189,6 +190,26 @@ class Jackson3JsonAdapterTest {
     }
     
     @Test
+    void testToObjWithNacosTypeReferenceForFinalFieldResult() {
+        NacosTypeReference<Result<Boolean>> typeReference =
+            new NacosTypeReference<Result<Boolean>>() {
+            };
+        Result<Boolean> result = adapter.toObj(
+            "{\"code\":0,\"message\":\"success\",\"data\":true}", typeReference);
+        assertEquals(Integer.valueOf(0), result.getCode());
+        assertEquals("success", result.getMessage());
+        assertTrue(result.getData());
+    }
+    
+    @Test
+    void testToObjWithFinalFieldsAndNoSetter() {
+        FinalFieldModel result =
+            adapter.toObj("{\"name\":\"nacos\",\"enabled\":true}", FinalFieldModel.class);
+        assertEquals("nacos", result.getName());
+        assertTrue(result.isEnabled());
+    }
+    
+    @Test
     void testDeserializeFailureWithClass() {
         assertThrows(NacosDeserializationException.class,
             () -> adapter.toObj("{broken}".getBytes(StandardCharsets.UTF_8), SampleModel.class));
@@ -273,6 +294,28 @@ class Jackson3JsonAdapterTest {
         
         public String getName() {
             throw new IllegalStateException("broken");
+        }
+    }
+    
+    public static class FinalFieldModel {
+        
+        private final String name;
+        private final boolean enabled;
+        public FinalFieldModel() {
+            this(null, false);
+        }
+        
+        FinalFieldModel(String name, boolean enabled) {
+            this.name = name;
+            this.enabled = enabled;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        public boolean isEnabled() {
+            return enabled;
         }
     }
     
