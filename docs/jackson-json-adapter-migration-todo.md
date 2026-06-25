@@ -543,6 +543,33 @@ Last updated: 2026-06-25.
     - Prefer focused module tests first; add an integration sample if the module
       test classpath cannot represent the matrix.
 
+- `[ ]` Add Jackson 3 SDK IT workflow and module.
+  - Files:
+    - `.github/workflows/*`
+    - `test/pom.xml`
+    - `test/java-sdk-test`
+    - `test/maintainer-sdk-test`
+    - New Jackson 3 IT module under `test/`
+  - Plan:
+    - Keep the existing `nacos-client` and `nacos-maintainer-client` IT modules
+      unchanged as the Jackson 2 compatibility baseline.
+    - Add a new IT module that reuses the same Java SDK and maintainer SDK IT
+      cases, but runs with Jackson 2 core/databind excluded and Jackson 3
+      provided on the test runtime classpath.
+    - Add a dedicated GitHub Actions workflow/job for the Jackson 3 IT module so
+      the CI matrix continuously verifies the Spring Boot 4 / Jackson 3 style
+      runtime.
+    - Ensure the new module validates both client and maintainer-client behavior
+      without duplicating test source logic where Maven test-source reuse or
+      another maintainable mechanism is available.
+  - Validation:
+    - Existing `test/java-sdk-test` IT still passes with the current Jackson 2
+      baseline.
+    - Existing `test/maintainer-sdk-test` IT still passes with the current
+      Jackson 2 baseline.
+    - New Jackson 3 IT module passes with Jackson 2 excluded and Jackson 3
+      active.
+
 ### 7. Final Cleanup
 
 - `[x]` Run a final scan for forbidden public Jackson core/databind exposure.
@@ -576,6 +603,8 @@ Last updated: 2026-06-25.
 6. Client and maintainer-client `TypeReference` migration.
 7. Pipeline DTO exposure and typed maintainer-client APIs.
 8. Dependency matrix tests and final forbidden-exposure scan.
+9. Jackson 3 SDK IT module and workflow based on the existing Java SDK and
+   maintainer SDK IT cases.
 
 ## Issue Comment Draft
 
