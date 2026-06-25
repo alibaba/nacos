@@ -34,6 +34,7 @@ import {
   Tag,
   GitBranch,
   Download,
+  GitCompareArrows,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,8 @@ import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { PromptVersionDiffPanel } from './PromptVersionDiffPanel';
 
 function extractVariables(template: string): string[] {
   if (!template) return [];
@@ -134,6 +137,7 @@ export default function PromptDetailPage() {
   const [template, setTemplate] = useState('');
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   const [isEditingDraft, setIsEditingDraft] = useState(false);
+  const [activeTab, setActiveTab] = useState('template');
   const [savingDraft, setSavingDraft] = useState(false);
   const [editCommitMsg, setEditCommitMsg] = useState('');
   const [editVariables, setEditVariables] = useState<Array<{ name: string; defaultValue: string; description: string }>>([]);
@@ -198,6 +202,7 @@ export default function PromptDetailPage() {
   const currentVersionLabels = Object.entries(labelsMap).filter(
     ([, val]) => val === selectedVersion,
   );
+  const showVersionDiff = !isEditingDraft && (meta?.versionDetails?.length ?? 0) >= 2;
 
   // Load governance detail
   const loadGovernance = useCallback(async () => {
@@ -254,6 +259,12 @@ export default function PromptDetailPage() {
       setVariableValues(initialVals);
     }
   }, [versionInfo]);
+
+  useEffect(() => {
+    if (!showVersionDiff && activeTab === 'diff') {
+      setActiveTab('template');
+    }
+  }, [showVersionDiff, activeTab]);
 
   const handleSelectVersion = (version: string) => {
     setSelectedVersion(version);
@@ -418,7 +429,10 @@ export default function PromptDetailPage() {
     }
   };
 
-  const handleStartEdit = () => setIsEditingDraft(true);
+  const handleStartEdit = () => {
+    setActiveTab('template');
+    setIsEditingDraft(true);
+  };
 
   const handleCancelEdit = () => {
     if (versionInfo) {
@@ -957,6 +971,21 @@ export default function PromptDetailPage() {
         </div>
       </div>
 
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="w-fit">
+          <TabsTrigger value="template" className="gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" />
+            {t('prompt.template')}
+          </TabsTrigger>
+          {showVersionDiff && (
+            <TabsTrigger value="diff" className="gap-1.5">
+              <GitCompareArrows className="h-3.5 w-3.5" />
+              {t('prompt.versionDiff')}
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="template">
       {/* ===== Content Grid ===== */}
       <div className={cn('grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]', loading && 'opacity-50 pointer-events-none')}>
         {/* Left: Template + Debug */}
@@ -1283,6 +1312,19 @@ export default function PromptDetailPage() {
           </Card>
         </div>
       </div>
+        </TabsContent>
+
+        {showVersionDiff && (
+          <TabsContent value="diff">
+            <PromptVersionDiffPanel
+              namespaceId={namespaceId}
+              promptKey={promptKey}
+              versions={meta.versionDetails || []}
+              selectedVersion={selectedVersion || ''}
+            />
+          </TabsContent>
+        )}
+      </Tabs>
 
       {/* ===== Version History Sheet ===== */}
       <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>

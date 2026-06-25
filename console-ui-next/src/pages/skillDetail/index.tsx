@@ -77,6 +77,7 @@ import { cn } from '@/lib/utils';
 import {
   hasNonFrontmatterMarkdownBody,
   parseFrontmatter,
+  prepareSkillMarkdownPreview,
   updateFrontmatterField,
 } from '@/lib/markdown-utils';
 import dayjs from 'dayjs';
@@ -92,6 +93,17 @@ import { sortVersionsDescending } from '../skillManagement/components/version-ut
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SkillResourcePanel } from './SkillResourcePanel';
 import { SkillVersionDiffPanel } from './SkillVersionDiffPanel';
+
+function renderSkillMarkdownPreview(source: string) {
+  return (
+    <MDEditor.Markdown
+      source={prepareSkillMarkdownPreview(source)}
+      remarkPlugins={[remarkGfm, remarkFrontmatter]}
+    />
+  );
+}
+
+const skillMarkdownEditorComponents = { preview: renderSkillMarkdownPreview };
 
 export default function SkillDetailPage() {
   const { t } = useTranslation();
@@ -1275,6 +1287,7 @@ export default function SkillDetailPage() {
                         onChange={handleInstructionChange}
                         height={500}
                         preview="live"
+                        components={skillMarkdownEditorComponents}
                         previewOptions={{ remarkPlugins: [remarkGfm, remarkFrontmatter] }}
                       />
                     </div>
@@ -1284,6 +1297,7 @@ export default function SkillDetailPage() {
                         onChange={handleInstructionChange}
                         height={500}
                         preview="live"
+                        components={skillMarkdownEditorComponents}
                         previewOptions={{ remarkPlugins: [remarkGfm, remarkFrontmatter] }}
                       />
                     </div>
@@ -1291,7 +1305,7 @@ export default function SkillDetailPage() {
                 ) : versionDoc?.skillMd ? (
                   <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
                     <Markdown remarkPlugins={[remarkGfm, remarkFrontmatter]}>
-                      {versionDoc.skillMd}
+                      {prepareSkillMarkdownPreview(versionDoc.skillMd)}
                     </Markdown>
                   </div>
                 ) : (
@@ -1441,7 +1455,7 @@ export default function SkillDetailPage() {
         </TabsContent>
 
         {showVersionDiff && (
-          <TabsContent value="diff" forceMount>
+          <TabsContent value="diff">
             <SkillVersionDiffPanel
               namespaceId={namespaceId}
               skillName={skillName}
