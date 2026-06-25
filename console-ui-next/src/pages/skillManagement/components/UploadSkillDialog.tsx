@@ -56,8 +56,21 @@ function getResultTargetVersion(result: SkillUploadPrecheckResult): string {
   return result.actions[0]?.resultVersion ?? result.resolvedVersion;
 }
 
+function normalizeShortSemverVersion(version: string | undefined): string | undefined {
+  if (!version) {
+    return undefined;
+  }
+  if (/^\d+$/.test(version)) {
+    return `${version}.0.0`;
+  }
+  if (/^\d+\.\d+$/.test(version)) {
+    return `${version}.0`;
+  }
+  return undefined;
+}
+
 function isShortSemverVersion(version: string | undefined): boolean {
-  return !!version && /^\d+(?:\.\d+)?$/.test(version);
+  return normalizeShortSemverVersion(version) !== undefined;
 }
 
 function isUploadedVersionConverted(
@@ -213,10 +226,19 @@ export function UploadSkillDialog({
       }
 
       if (isUploadedVersionConverted(result, targetVersion)) {
-        messages.push(t('skill.precheckVersionConverted', {
-          parsedVersion: result.parsedVersion,
-          version: targetVersion,
-        }));
+        const normalizedVersion = normalizeShortSemverVersion(result.parsedVersion);
+        if (result.versionExists && normalizedVersion && normalizedVersion !== targetVersion) {
+          messages.push(t('skill.precheckVersionNormalizedAndAdjusted', {
+            parsedVersion: result.parsedVersion,
+            normalizedVersion,
+            version: targetVersion,
+          }));
+        } else {
+          messages.push(t('skill.precheckVersionConverted', {
+            parsedVersion: result.parsedVersion,
+            version: targetVersion,
+          }));
+        }
       }
 
       if (!result.exists) {
@@ -269,6 +291,14 @@ export function UploadSkillDialog({
       if (item.result) {
         const targetVersion = getResultTargetVersion(item.result);
         if (isUploadedVersionConverted(item.result, targetVersion)) {
+          const normalizedVersion = normalizeShortSemverVersion(item.result.parsedVersion);
+          if (item.result.versionExists && normalizedVersion && normalizedVersion !== targetVersion) {
+            return t('skill.batchItemVersionNormalizedAndAdjusted', {
+              parsedVersion: item.result.parsedVersion,
+              normalizedVersion,
+              version: targetVersion,
+            });
+          }
           return t('skill.batchItemVersionConverted', {
             parsedVersion: item.result.parsedVersion,
             version: targetVersion,
