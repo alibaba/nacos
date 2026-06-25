@@ -118,15 +118,6 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
         return DynamicDataSource.getInstance().getDataSource().getDataSourceType();
     }
     
-    private String appendFirstRowClause(String baseSql) {
-        String dataSourceType = getDataSourceType();
-        if (DataSourceConstant.DERBY.equalsIgnoreCase(dataSourceType)
-            || DataSourceConstant.ORACLE.equalsIgnoreCase(dataSourceType)) {
-            return baseSql + " FETCH FIRST 1 ROW ONLY";
-        }
-        return baseSql + " LIMIT 1";
-    }
-    
     @Override
     public void save(PipelineExecution execution) {
         String pipelineJson = JacksonUtils.toJson(execution.getPipeline());
