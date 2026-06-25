@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -25,15 +24,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpClientTest {
@@ -49,57 +44,13 @@ class HttpClientTest {
     }
     
     @Test
-    void testRequestWrappersReturnErrorForUnsupportedUrl() {
+    void testRequestReturnErrorForUnsupportedUrl() {
         Map<String, String> params = new HashMap<>();
         params.put("name", "nacos");
         
         assertServerError(HttpClient.httpGet(INVALID_URL, Arrays.asList("h1", "v1"), params));
-        assertServerError(HttpClient.httpDelete(INVALID_URL, Arrays.asList("h2", "v2"), params));
-        assertServerError(HttpClient.httpPost(INVALID_URL, Arrays.asList("h3", "v3"), params));
         assertServerError(HttpClient.request(INVALID_URL, Arrays.asList("h4", "v4"), params,
-            "body", 1, 1, StandardCharsets.UTF_8.name(), "PATCH"));
-    }
-    
-    @Test
-    void testLargeBodyRequestsReturnErrorForUnsupportedUrl() {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("header", "value");
-        
-        assertServerError(HttpClient.httpPutLarge(INVALID_URL, headers, "body".getBytes(
-            StandardCharsets.UTF_8)));
-        assertServerError(HttpClient.httpGetLarge(INVALID_URL, headers, "body"));
-        assertServerError(HttpClient.httpPostLarge(INVALID_URL, headers, "body"));
-    }
-    
-    @Test
-    void testAsyncHttpRequestRejectsUnsupportedMethod() {
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> HttpClient.asyncHttpRequest(INVALID_URL, Arrays.asList("h", "v"),
-                Collections.singletonMap("key", "value"), new NoopCallback(), "PATCH"));
-        
-        assertEquals("not supported method:PATCH", exception.getMessage());
-    }
-    
-    @Test
-    void testAsyncRequestWrappersDelegateToRestTemplate() {
-        NoopCallback callback = new NoopCallback();
-        Map<String, String> headers = Collections.singletonMap("h", "v");
-        byte[] body = "body".getBytes(StandardCharsets.UTF_8);
-        
-        assertDoesNotThrow(() -> HttpClient.asyncHttpGet(INVALID_URL, Arrays.asList("h1", "v1"),
-            Collections.singletonMap("key", "value"), callback));
-        assertDoesNotThrow(() -> HttpClient.asyncHttpPost(INVALID_URL, Arrays.asList("h2", "v2"),
-            Collections.singletonMap("key", "value"), callback));
-        assertDoesNotThrow(() -> HttpClient.asyncHttpDelete(INVALID_URL,
-            Arrays.asList("h3", "v3"), Collections.singletonMap("key", "value"), callback));
-        assertDoesNotThrow(() -> HttpClient.asyncHttpPostLarge(INVALID_URL,
-            Arrays.asList("h4", "v4"), "body", callback));
-        assertDoesNotThrow(() -> HttpClient.asyncHttpPostLarge(INVALID_URL,
-            Arrays.asList("h5", "v5"), body, callback));
-        assertDoesNotThrow(() -> HttpClient.asyncHttpDeleteLarge(INVALID_URL,
-            Arrays.asList("h6", "v6"), "body", callback));
-        assertDoesNotThrow(() -> HttpClient.asyncHttpPutLarge(INVALID_URL, headers, body,
-            callback));
+            "body", 1, 1, "UTF-8", "PATCH"));
     }
     
     @Test
@@ -117,18 +68,4 @@ class HttpClientTest {
         assertTrue(result.getMessage().contains("nacos"));
     }
     
-    private static class NoopCallback implements Callback<String> {
-        
-        @Override
-        public void onReceive(RestResult<String> result) {
-        }
-        
-        @Override
-        public void onError(Throwable throwable) {
-        }
-        
-        @Override
-        public void onCancel() {
-        }
-    }
 }

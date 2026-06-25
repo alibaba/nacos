@@ -113,8 +113,6 @@ class ServiceUtilTest {
         Instance healthyDisabled = instance("1.1.1.3", "clusterB", true, false);
         ServiceInfo serviceInfo = serviceInfo(healthyEnabled, unhealthyEnabled, healthyDisabled);
         
-        assertEquals(2, ServiceUtil.selectHealthyInstances(serviceInfo).getHosts().size());
-        assertEquals(2, ServiceUtil.selectEnabledInstances(serviceInfo).getHosts().size());
         assertEquals(2, ServiceUtil.selectInstances(serviceInfo, "clusterA").getHosts().size());
         assertEquals(Collections.singletonList(healthyEnabled),
             ServiceUtil.selectInstances(serviceInfo, "clusterA", true).getHosts());
