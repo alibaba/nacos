@@ -76,7 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -118,19 +117,6 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     private static final String RESOURCE_ROLE_ID = "role-id";
     
     private static final String RESOURCE_PERMISSIONS_ID = "permissions_id";
-    
-    private static final String DATA_ID = "dataId";
-    
-    private static final String GROUP = "group";
-    
-    private static final String APP_NAME = "appName";
-    
-    private static final String CONTENT = "content";
-    
-    private static final String TENANT = "tenant_id";
-    
-    private static final Set<String> SYSTEM_GROUP =
-        Set.of("mcp-server", "mcp-server-versions", "mcp-tools");
     
     private final DatabaseOperate databaseOperate;
     

@@ -90,20 +90,16 @@ class DefaultConstructorCoverageTest {
             BASE + "utils.AppNameUtils",
             BASE + "utils.ConfigExecutor",
             BASE + "utils.ConfigTagUtil",
-            BASE + "utils.ContentUtils",
             BASE + "utils.GroupKey",
             BASE + "utils.GroupKey2",
             BASE + "utils.LogUtil",
             BASE + "utils.MD5Util",
             BASE + "utils.ParamUtils",
             BASE + "utils.Protocol",
-            BASE + "utils.RegexParser",
             BASE + "utils.RequestUtil",
             BASE + "utils.ResponseUtil",
             BASE + "utils.SystemConfig",
-            BASE + "utils.TimeUtils",
-            BASE + "utils.TraceLogUtil",
-            BASE + "utils.UrlAnalysisUtils"
+            BASE + "utils.TimeUtils"
         };
     }
 }

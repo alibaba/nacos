@@ -58,9 +58,6 @@ class RequestLogAspectTest {
     private ConfigBatchListenRequest request;
     
     @MockitoBean
-    private Response response;
-    
-    @MockitoBean
     private RequestMeta meta;
     
     private RequestLogAspect requestLogAspect;
