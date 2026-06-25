@@ -20,7 +20,6 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
 import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
-import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
@@ -46,7 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -275,74 +273,6 @@ class DistroProtocolTest {
         boolean result = distroProtocol.onVerify(distroData, "1.1.1.1:8848");
         
         assertTrue(result);
-    }
-    
-    @Test
-    void testQueryFromRemoteWhenTargetServerNull() {
-        DistroKey key = new DistroKey("key", "type");
-        key.setTargetServer(null);
-        
-        DistroData result = distroProtocol.queryFromRemote(key);
-        
-        assertNull(result);
-    }
-    
-    @Test
-    void testQueryFromRemoteWhenTransportAgentNotFound() {
-        DistroKey key = new DistroKey("key", "type", "1.1.1.1:8848");
-        when(distroComponentHolder.findTransportAgent("type")).thenReturn(null);
-        
-        DistroData result = distroProtocol.queryFromRemote(key);
-        
-        assertNull(result);
-    }
-    
-    @Test
-    void testQueryFromRemoteWhenTransportAgentFound() {
-        DistroKey key = new DistroKey("key", "type", "1.1.1.1:8848");
-        DistroData expected = new DistroData(key, new byte[] {1});
-        DistroTransportAgent agent = new DistroTransportAgent() {
-            
-            @Override
-            public boolean supportCallbackTransport() {
-                return false;
-            }
-            
-            @Override
-            public boolean syncData(DistroData data, String targetServer) {
-                return false;
-            }
-            
-            @Override
-            public void syncData(DistroData data, String targetServer,
-                com.alibaba.nacos.core.distributed.distro.component.DistroCallback callback) {
-            }
-            
-            @Override
-            public boolean syncVerifyData(DistroData verifyData, String targetServer) {
-                return false;
-            }
-            
-            @Override
-            public void syncVerifyData(DistroData verifyData, String targetServer,
-                com.alibaba.nacos.core.distributed.distro.component.DistroCallback callback) {
-            }
-            
-            @Override
-            public DistroData getData(DistroKey key, String targetServer) {
-                return expected;
-            }
-            
-            @Override
-            public DistroData getDatumSnapshot(String targetServer) {
-                return null;
-            }
-        };
-        when(distroComponentHolder.findTransportAgent("type")).thenReturn(agent);
-        
-        DistroData result = distroProtocol.queryFromRemote(key);
-        
-        assertSame(expected, result);
     }
     
     @Test

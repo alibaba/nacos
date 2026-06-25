@@ -124,21 +124,6 @@ public class MemberUtil {
     }
     
     /**
-     * Resolves to Member list.
-     *
-     * @param addresses ip list, example [127.0.0.1:8847,127.0.0.1:8848,127.0.0.1:8849]
-     * @return member list
-     */
-    public static Collection<Member> multiParse(Collection<String> addresses) {
-        List<Member> members = new ArrayList<>(addresses.size());
-        for (String address : addresses) {
-            Member member = singleParse(address);
-            members.add(member);
-        }
-        return members;
-    }
-    
-    /**
      * Successful processing of the operation on the node.
      *
      * @param member {@link Member}

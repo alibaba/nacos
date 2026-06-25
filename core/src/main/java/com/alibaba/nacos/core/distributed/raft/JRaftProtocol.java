@@ -23,8 +23,6 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
-import com.alibaba.nacos.consistency.SerializeFactory;
-import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
@@ -96,8 +94,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
     private final AtomicBoolean shutdowned = new AtomicBoolean(false);
-    
-    private final Serializer serializer = SerializeFactory.getDefault();
     
     private RaftConfig raftConfig;
     

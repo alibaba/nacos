@@ -60,7 +60,6 @@ import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
 import com.alipay.sofa.jraft.rpc.InvokeCallback;
-import com.alipay.sofa.jraft.rpc.RpcProcessor;
 import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 import com.alipay.sofa.jraft.util.BytesUtil;
@@ -121,8 +120,6 @@ public class JRaftServer {
     private volatile boolean isShutdown = false;
     
     private Configuration conf;
-    
-    private RpcProcessor userProcessor;
     
     private NodeOptions nodeOptions;
     

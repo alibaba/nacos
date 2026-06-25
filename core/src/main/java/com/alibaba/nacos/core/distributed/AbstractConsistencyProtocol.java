@@ -44,10 +44,6 @@ public abstract class AbstractConsistencyProtocol<T extends Config, L extends Re
             .forEach(logDispatcher -> processorMap.put(logDispatcher.group(), logDispatcher));
     }
     
-    protected Map<String, L> allProcessor() {
-        return processorMap;
-    }
-    
     @Override
     public ProtocolMetaData protocolMetaData() {
         return this.metaData;

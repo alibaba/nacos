@@ -35,26 +35,6 @@ public class PageUtil {
      * @param page      page number
      * @param pageSize  size of each page
      * @param <T>       The Type of List element.
-     * @return Empty list if input list is empty or expected page is larger than source list size, otherwise paged list.
-     */
-    public static <T> List<T> subPageList(List<T> source, int page, int pageSize) {
-        if (source.isEmpty()) {
-            return source;
-        }
-        PageMetadata metadata = calculatePageMetadata(page, pageSize, source.size());
-        if (source.size() > metadata.start) {
-            return source.subList(metadata.start, metadata.end);
-        }
-        return Collections.emptyList();
-    }
-    
-    /**
-     * Do page operation for input list.
-     *
-     * @param source    need paged source list
-     * @param page      page number
-     * @param pageSize  size of each page
-     * @param <T>       The Type of List element.
      * @return Empty Page if input list is empty or expected page is larger than source list size, otherwise page obj.
      */
     public static <T> Page<T> subPage(List<T> source, int page, int pageSize) {
