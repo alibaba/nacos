@@ -28,8 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 final class PreconditionsTest {
     
-    private static final String FORMAT = "I ate %s pies.";
-    
     private static final String ARG = "one";
     
     private static final String ERRORMSG = "A message";
