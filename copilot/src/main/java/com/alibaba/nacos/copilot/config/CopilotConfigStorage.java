@@ -42,7 +42,6 @@ public class CopilotConfigStorage {
     
     private static final String CONFIG_DATA_ID = "copilot-config.json";
     private static final String CONFIG_GROUP = "nacos-copilot";
-    private static final String DEFAULT_NAMESPACE = "public";
     
     @Value("${nacos.copilot.config.namespace:public}")
     private String configNamespace;
