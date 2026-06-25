@@ -529,7 +529,22 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
-    void testUploadSkillFromZipGeneratesNextVersionWhenUploadedVersionInvalid()
+    void testUploadSkillFromZipNormalizesShortTargetVersion()
+        throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithoutVersion();
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString()))
+            .thenReturn(null);
+        
+        String result = uploadSkill(namespaceId, zipBytes, false, "3");
+        
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+            && "3.0.0".equals(inserted.getVersion())));
+    }
+    
+    @Test
+    void testUploadSkillFromZipNormalizesShortVersionAndGeneratesNextWhenOccupied()
         throws NacosException, IOException {
         String namespaceId = "test-namespace";
         byte[] zipBytes = createZipBytes("1.0");
@@ -562,7 +577,7 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
-    void testUploadSkillFromZipWithInvalidVersionRequiresOverwriteForExistingDraft()
+    void testUploadSkillFromZipWithShortVersionRequiresOverwriteForExistingDraft()
         throws IOException {
         String namespaceId = "test-namespace";
         byte[] zipBytes = createZipBytes("1.0");
@@ -584,13 +599,13 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
-    void testPrecheckUploadSkillReturnsRawInvalidVersionForNewSkill() throws NacosException {
+    void testPrecheckUploadSkillReturnsRawShortVersionForNewSkill() throws NacosException {
         String namespaceId = "test-namespace";
         SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
         request.setNamespaceId(namespaceId);
         request.setSkillName("test-skill");
         request.setDescription("Test skill description");
-        request.setParsedVersion("0.1");
+        request.setParsedVersion("2.3");
         request.setVersionSource("SKILL.md frontmatter");
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
             .thenReturn(null);
@@ -600,7 +615,31 @@ class SkillOperationServiceImplTest {
         
         assertEquals(1, results.size());
         SkillUploadPrecheckResult result = results.get(0);
-        assertEquals("0.1", result.getParsedVersion());
+        assertEquals("2.3", result.getParsedVersion());
+        assertEquals("2.3.0", result.getResolvedVersion());
+        assertEquals("VALID", result.getStatus());
+        assertTrue(result.getWarnings().isEmpty());
+        assertEquals("2.3.0", result.getActions().get(0).getResultVersion());
+    }
+    
+    @Test
+    void testPrecheckUploadSkillReturnsRawInvalidVersionForNewSkill() throws NacosException {
+        String namespaceId = "test-namespace";
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(namespaceId);
+        request.setSkillName("test-skill");
+        request.setDescription("Test skill description");
+        request.setParsedVersion("latest");
+        request.setVersionSource("SKILL.md frontmatter");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(null);
+        
+        List<SkillUploadPrecheckResult> results =
+            skillOperationService.batchPrecheckUploadSkill(List.of(request));
+        
+        assertEquals(1, results.size());
+        SkillUploadPrecheckResult result = results.get(0);
+        assertEquals("latest", result.getParsedVersion());
         assertEquals("0.0.1", result.getResolvedVersion());
         assertEquals("VALID", result.getStatus());
         assertTrue(result.getWarnings().get(0).contains("Invalid version"));
@@ -608,7 +647,7 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
-    void testUploadSkillFromZipWithInvalidVersionOverwritesExistingDraft()
+    void testUploadSkillFromZipWithShortVersionOverwritesExistingDraft()
         throws NacosException, IOException {
         String namespaceId = "test-namespace";
         byte[] zipBytes = createZipBytes("1.0");

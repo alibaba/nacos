@@ -78,6 +78,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
+import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills;
 
@@ -126,6 +127,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private static final String DEFAULT_INITIAL_UPLOAD_VERSION = "0.0.1";
     
     private static final String SCOPE_SKILL = "skill";
+    
+    private static final Pattern SHORT_SEMVER_VERSION_PATTERN =
+        Pattern.compile("\\d+(\\.\\d+){0,2}");
     
     private final AiResourceStorageRouter storageRouter;
     
@@ -599,7 +603,26 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (VersionUtils.isSupportedVersionFormat(candidate)) {
             return new UploadVersionCandidate(candidate, source);
         }
+        String normalizedVersion = normalizeShortSemverVersion(candidate);
+        if (normalizedVersion != null) {
+            return UploadVersionCandidate.normalized(normalizedVersion, source, candidate);
+        }
         return UploadVersionCandidate.invalid(candidate, source);
+    }
+    
+    private static String normalizeShortSemverVersion(String version) {
+        if (StringUtils.isBlank(version) || !SHORT_SEMVER_VERSION_PATTERN.matcher(version)
+            .matches()) {
+            return null;
+        }
+        String[] parts = version.split("\\.");
+        if (parts.length == 1) {
+            return parts[0] + ".0.0";
+        }
+        if (parts.length == 2) {
+            return parts[0] + "." + parts[1] + ".0";
+        }
+        return version;
     }
     
     /**
@@ -1864,6 +1887,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         static UploadVersionCandidate invalid(String rawVersion, String source) {
             return new UploadVersionCandidate(null, source, rawVersion, true);
+        }
+        
+        static UploadVersionCandidate normalized(String version, String source,
+            String rawVersion) {
+            return new UploadVersionCandidate(version, source, rawVersion, false);
         }
         
         static UploadVersionCandidate empty() {

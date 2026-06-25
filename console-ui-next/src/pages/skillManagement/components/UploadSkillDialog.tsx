@@ -56,6 +56,10 @@ function getResultTargetVersion(result: SkillUploadPrecheckResult): string {
   return result.actions[0]?.resultVersion ?? result.resolvedVersion;
 }
 
+function isShortSemverVersion(version: string | undefined): boolean {
+  return !!version && /^\d+(?:\.\d+)?$/.test(version);
+}
+
 function isUploadedVersionConverted(
   result: SkillUploadPrecheckResult,
   targetVersion = getResultTargetVersion(result),
@@ -63,7 +67,7 @@ function isUploadedVersionConverted(
   return !!result.parsedVersion
     && !!targetVersion
     && result.parsedVersion !== targetVersion
-    && !result.versionExists;
+    && (!result.versionExists || isShortSemverVersion(result.parsedVersion));
 }
 
 function mergeLocalParsedVersion(
@@ -222,7 +226,7 @@ export function UploadSkillDialog({
         return messages;
       }
 
-      if (result.versionExists) {
+      if (result.versionExists && !isUploadedVersionConverted(result, targetVersion)) {
         messages.push(t('skill.precheckVersionExists', {
           version: result.parsedVersion,
         }));
