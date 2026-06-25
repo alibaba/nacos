@@ -218,6 +218,23 @@ Last updated: 2026-06-25.
   - `mvn -pl common,client,maintainer-client spotless:apply`
   - `mvn -pl common,client,maintainer-client spotless:check`
   - `mvn -pl common,client,maintainer-client apache-rat:check`
+- 2026-06-25, stage 13 Jackson 3 SDK IT workflow:
+  - Added a `jackson3-sdk-test` profile to `test/java-sdk-test` and
+    `test/maintainer-sdk-test`.
+  - The profile keeps the current `nacos-client` and `nacos-maintainer-client`
+    dependencies, adds Jackson 3 core/databind, and explicitly runs the SDK ITs
+    with `nacos.client.json.adapter=jackson3`.
+  - Added GitHub Actions IT steps that rerun the existing Java SDK and
+    maintainer SDK IT cases with Jackson 2 and Jackson 3 coexisting on the
+    classpath.
+  - `mvn -pl test/java-sdk-test -Pjava-sdk-integration-test,jackson3-sdk-test -DskipTests test-compile`
+  - `mvn -pl test/maintainer-sdk-test -Pmaintainer-sdk-integration-test,jackson3-sdk-test -DskipTests test-compile`
+  - `mvn -pl test/java-sdk-test -Pjackson3-sdk-test dependency:tree -Dincludes=com.fasterxml.jackson.core,tools.jackson.core`
+    shows Jackson 2 core/databind from `nacos-client` and Jackson 3
+    core/databind from the profile.
+  - `mvn -pl test/maintainer-sdk-test -Pjackson3-sdk-test dependency:tree -Dincludes=com.fasterxml.jackson.core,tools.jackson.core`
+    shows Jackson 2 core/databind from `nacos-common` and Jackson 3
+    core/databind from the profile.
 
 ## Implementation Principles
 
@@ -543,32 +560,27 @@ Last updated: 2026-06-25.
     - Prefer focused module tests first; add an integration sample if the module
       test classpath cannot represent the matrix.
 
-- `[ ]` Add Jackson 3 SDK IT workflow and module.
+- `[x]` Add Jackson 3 SDK IT workflow and profile.
   - Files:
     - `.github/workflows/*`
-    - `test/pom.xml`
     - `test/java-sdk-test`
     - `test/maintainer-sdk-test`
-    - New Jackson 3 IT module under `test/`
   - Plan:
     - Keep the existing `nacos-client` and `nacos-maintainer-client` IT modules
       unchanged as the Jackson 2 compatibility baseline.
-    - Add a new IT module that reuses the same Java SDK and maintainer SDK IT
-      cases, but runs with Jackson 2 core/databind excluded and Jackson 3
-      provided on the test runtime classpath.
-    - Add a dedicated GitHub Actions workflow/job for the Jackson 3 IT module so
-      the CI matrix continuously verifies the Spring Boot 4 / Jackson 3 style
-      runtime.
-    - Ensure the new module validates both client and maintainer-client behavior
-      without duplicating test source logic where Maven test-source reuse or
-      another maintainable mechanism is available.
+    - Add a Jackson 3 profile to the existing Java SDK and maintainer SDK IT
+      modules so the same IT cases run with Jackson 2 and Jackson 3 coexisting.
+    - Explicitly select the Jackson 3 adapter in that profile to verify the
+      Jackson 3 runtime path under the same SDK scenarios.
+    - Add dedicated GitHub Actions steps that rerun both existing SDK IT modules
+      with the Jackson 3 profile.
   - Validation:
     - Existing `test/java-sdk-test` IT still passes with the current Jackson 2
       baseline.
     - Existing `test/maintainer-sdk-test` IT still passes with the current
       Jackson 2 baseline.
-    - New Jackson 3 IT module passes with Jackson 2 excluded and Jackson 3
-      active.
+    - Existing Java SDK and maintainer SDK IT modules also pass with Jackson 3
+      added and selected while Jackson 2 remains present.
 
 ### 7. Final Cleanup
 

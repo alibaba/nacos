@@ -32,6 +32,7 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <nacos.client.json.adapter>auto</nacos.client.json.adapter>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -63,11 +64,28 @@
                             <systemPropertyVariables>
                                 <nacos.host>127.0.0.1</nacos.host>
                                 <nacos.port>8848</nacos.port>
+                                <nacos.client.json.adapter>${nacos.client.json.adapter}</nacos.client.json.adapter>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>jackson3-sdk-test</id>
+            <properties>
+                <nacos.client.json.adapter>jackson3</nacos.client.json.adapter>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>tools.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>tools.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 

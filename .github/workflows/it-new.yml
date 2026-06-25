@@ -88,3 +88,9 @@ jobs:
 
       - name: Run Maintainer SDK IT Tests
         run: mvn -B -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test -DskipTests=false
+
+      - name: Run Java SDK IT Tests With Jackson 3
+        run: mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test,jackson3-sdk-test -DskipTests=false
+
+      - name: Run Maintainer SDK IT Tests With Jackson 3
+        run: mvn -B -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test,jackson3-sdk-test -DskipTests=false
