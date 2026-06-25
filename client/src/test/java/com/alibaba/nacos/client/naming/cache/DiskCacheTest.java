@@ -37,8 +37,8 @@ import static org.mockito.Mockito.mock;
 class DiskCacheTest {
     
     private static final String CACHE_DIR =
-        DiskCacheTest.class.getClassLoader().getResource("disk_cache_test").getPath()
-            + "cache/";
+        new File(DiskCacheTest.class.getClassLoader().getResource("disk_cache_test").getPath(),
+            "cache").getPath() + File.separator;
     
     private ServiceInfo serviceInfo;
     
@@ -53,7 +53,7 @@ class DiskCacheTest {
         instance.setIp("1.1.1.1");
         instance.setPort(1234);
         instance.setServiceName("testName");
-        instance.addMetadata("chinese", "中文");
+        instance.addMetadata("text", "zhongwen");
         serviceInfo.setHosts(Collections.singletonList(instance));
     }
     
