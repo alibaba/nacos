@@ -60,6 +60,7 @@ class NacosMcpServerCacheHolderTest {
     
     @BeforeEach
     void setUp() {
+        deregisterMcpServerPublisher();
         Properties properties = new Properties();
         properties.put(AiConstants.AI_MCP_SERVER_CACHE_UPDATE_INTERVAL, "100");
         cacheHolder = new NacosMcpServerCacheHolder(aiGrpcClient,
@@ -69,7 +70,7 @@ class NacosMcpServerCacheHolderTest {
     @AfterEach
     void tearDown() throws NacosException {
         cacheHolder.shutdown();
-        NotifyCenter.deregisterPublisher(McpServerChangedEvent.class);
+        deregisterMcpServerPublisher();
     }
     
     @Test
@@ -128,7 +129,7 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
         mcpServerDetailInfo.getVersionDetail().setIs_latest(true);
-        cacheHolder.processMcpServerDetailInfo(mcpServerDetailInfo);
+        processInitialMcpServerDetailInfo(mcpServerDetailInfo);
         mcpServerDetailInfo = new McpServerDetailInfo();
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
@@ -158,7 +159,7 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
         mcpServerDetailInfo.getVersionDetail().setIs_latest(true);
-        cacheHolder.processMcpServerDetailInfo(mcpServerDetailInfo);
+        processInitialMcpServerDetailInfo(mcpServerDetailInfo);
         
         MockEventSubscriber subscriber = new MockEventSubscriber();
         NotifyCenter.registerSubscriber(subscriber);
@@ -179,7 +180,7 @@ class NacosMcpServerCacheHolderTest {
         Map<String, Object> originalConfig = new LinkedHashMap<>();
         originalConfig.put("z", "last");
         originalConfig.put("a", "first");
-        cacheHolder.processMcpServerDetailInfo(buildMcpServerDetailInfo(originalConfig));
+        processInitialMcpServerDetailInfo(buildMcpServerDetailInfo(originalConfig));
         
         MockEventSubscriber subscriber = new MockEventSubscriber();
         NotifyCenter.registerSubscriber(subscriber);
@@ -308,6 +309,32 @@ class NacosMcpServerCacheHolderTest {
         result.getVersionDetail().setIs_latest(true);
         result.setLocalServerConfig(localServerConfig);
         return result;
+    }
+    
+    private void processInitialMcpServerDetailInfo(McpServerDetailInfo detailInfo)
+        throws InterruptedException {
+        MockEventSubscriber subscriber = new MockEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        try {
+            cacheHolder.processMcpServerDetailInfo(detailInfo);
+            int retry = 0;
+            while (retry < 3) {
+                TimeUnit.MILLISECONDS.sleep(500);
+                if (subscriber.invokedMark.get()) {
+                    return;
+                }
+                retry++;
+            }
+            fail("Subscriber for initial McpServerChangedEvent don't be invoked.");
+        } finally {
+            NotifyCenter.deregisterSubscriber(subscriber);
+        }
+    }
+    
+    private static void deregisterMcpServerPublisher() {
+        if (NotifyCenter.getPublisher(McpServerChangedEvent.class) != null) {
+            NotifyCenter.deregisterPublisher(McpServerChangedEvent.class);
+        }
     }
     
     private static class MockEventSubscriber extends Subscriber<McpServerChangedEvent> {
