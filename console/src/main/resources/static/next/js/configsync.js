@@ -1,0 +1,1 @@
+import{a as e}from"./vendor-markdown.js";var t=e();function n(){return(0,t.jsx)(`div`,{children:`ConfigSyncPage - TODO`})}export{n as default};
