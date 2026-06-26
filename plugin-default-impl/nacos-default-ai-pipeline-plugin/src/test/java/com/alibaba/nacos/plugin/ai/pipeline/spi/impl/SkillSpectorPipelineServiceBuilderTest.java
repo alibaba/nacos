@@ -95,7 +95,9 @@ class SkillSpectorPipelineServiceBuilderTest {
     void buildWithBuiltinRunnerTest() throws Exception {
         Path nacosHome = Files.createTempDirectory("nacos-home");
         Path runner = nacosHome.resolve("plugins").resolve("ai-pipeline")
-                .resolve("skillspector").resolve("bin").resolve("skillspector");
+                .resolve("skill-spector").resolve("bin").resolve("skill-spector");
+        createPlatformRuntime(nacosHome.resolve("plugins").resolve("ai-pipeline")
+                .resolve("skill-spector"));
         createExecutable(runner.getParent(), runner.getFileName().toString());
         String oldNacosHome = System.getProperty("nacos.home");
         System.setProperty("nacos.home", nacosHome.toString());
@@ -106,6 +108,29 @@ class SkillSpectorPipelineServiceBuilderTest {
             assertTrue(result.isPassed(), result.getMessage());
         } finally {
             restoreSystemProperty("nacos.home", oldNacosHome);
+        }
+    }
+    
+    @Test
+    void buildRejectsRunnerWithoutPlatformRuntimeTest() throws Exception {
+        Path nacosHome = Files.createTempDirectory("nacos-home");
+        Path runner = nacosHome.resolve("plugins").resolve("ai-pipeline")
+                .resolve("skill-spector").resolve("bin").resolve("skill-spector");
+        createExecutable(runner.getParent(), runner.getFileName().toString());
+        String oldNacosHome = System.getProperty("nacos.home");
+        String oldUserDir = System.getProperty("user.dir");
+        try {
+            System.setProperty("nacos.home", nacosHome.toString());
+            System.setProperty("user.dir", nacosHome.toString());
+            
+            PublishPipelineService service = builder.build(new Properties());
+            
+            PublishPipelineResult result = service.execute(new PublishPipelineContext());
+            assertFalse(result.isPassed());
+            assertTrue(result.getMessage().contains("SkillSpector 内置运行时不可用"));
+        } finally {
+            restoreSystemProperty("nacos.home", oldNacosHome);
+            restoreSystemProperty("user.dir", oldUserDir);
         }
     }
     
@@ -123,5 +148,11 @@ class SkillSpectorPipelineServiceBuilderTest {
         Files.write(runner, Arrays.asList("#!/bin/sh", "exit 0"));
         assertTrue(runner.toFile().setExecutable(true));
         return runner;
+    }
+    
+    private void createPlatformRuntime(Path runtimeRoot) throws Exception {
+        Path python = runtimeRoot.resolve("runtime").resolve(builder.platformKey())
+                .resolve("python").resolve("bin").resolve("python3");
+        createExecutable(python.getParent(), python.getFileName().toString());
     }
 }

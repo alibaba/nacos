@@ -61,7 +61,8 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     
     static final String INSTALLATION_HINT =
             "SkillSpector 内置运行时不可用。请检查 Nacos 发布包中的 "
-                    + "plugins/ai-pipeline/skillspector runner 是否存在且可执行。";
+                    + "plugins/ai-pipeline/skill-spector/bin/skill-spector "
+                    + "和匹配当前平台的 runtime 是否存在且可执行。";
     
     private final String scannerCommand;
     
