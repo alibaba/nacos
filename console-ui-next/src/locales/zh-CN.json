@@ -1156,6 +1156,8 @@
     "diffSelectVersions": "请选择基准版本和目标版本进行对比",
     "diffNoChanges": "两个版本没有文件差异",
     "diffSameVersion": "请选择两个不同版本进行对比",
+    "diffTextUnsupported": "该文件不支持文本 Diff",
+    "diffTextUnsupportedDesc": "图片、PPT、压缩包等文件无法以文本方式对比，当前仅展示版本间的变更状态。",
     "diffStatusAdded": "新增",
     "diffStatusRemoved": "删除",
     "diffStatusModified": "修改",

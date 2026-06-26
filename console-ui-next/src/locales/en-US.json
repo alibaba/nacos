@@ -1156,6 +1156,8 @@
     "diffSelectVersions": "Select a base version and target version to compare",
     "diffNoChanges": "No file changes between these versions",
     "diffSameVersion": "Select two different versions to compare",
+    "diffTextUnsupported": "Text diff is not available for this file",
+    "diffTextUnsupportedDesc": "Images, presentations, archives, and similar files cannot be compared as text. Only the version change status is shown.",
     "diffStatusAdded": "Added",
     "diffStatusRemoved": "Removed",
     "diffStatusModified": "Modified",

@@ -22,7 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { skillApi } from '@/api/skill';
 import type { SkillDocument, SkillVersionSummary } from '@/types/skill';
 import { cn } from '@/lib/utils';
-import { getLanguageFromFileName } from './skill-resource-utils';
+import { getFileCategory, getLanguageFromFileName } from './skill-resource-utils';
 import {
   compareSkillVersions,
   type SkillVersionFileDiff,
@@ -222,33 +222,37 @@ export function SkillVersionDiffPanel({
                   className="overflow-hidden"
                   style={{ height: DIFF_EDITOR_HEIGHT }}
                 >
-                  <DiffEditor
-                    height="100%"
-                    language={getLanguageFromFileName(selectedDiff.path)}
-                    original={selectedDiff.beforeContent ?? ''}
-                    modified={selectedDiff.afterContent ?? ''}
-                    theme="vs"
-                    options={{
-                      readOnly: true,
-                      minimap: { enabled: false },
-                      renderSideBySide: true,
-                      scrollBeyondLastLine: false,
-                      wordWrap: 'on',
-                      automaticLayout: true,
-                      fontSize: 13,
-                      renderOverviewRuler: true,
-                      overviewRulerLanes: 3,
-                      scrollbar: {
-                        verticalScrollbarSize: 10,
-                        horizontalScrollbarSize: 10,
-                      },
-                    }}
-                    loading={
-                      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                        {t('agentSpec.editorLoading')}
-                      </div>
-                    }
-                  />
+                  {supportsTextDiff(selectedDiff.path) ? (
+                    <DiffEditor
+                      height="100%"
+                      language={getLanguageFromFileName(selectedDiff.path)}
+                      original={selectedDiff.beforeContent ?? ''}
+                      modified={selectedDiff.afterContent ?? ''}
+                      theme="vs"
+                      options={{
+                        readOnly: true,
+                        minimap: { enabled: false },
+                        renderSideBySide: true,
+                        scrollBeyondLastLine: false,
+                        wordWrap: 'on',
+                        automaticLayout: true,
+                        fontSize: 13,
+                        renderOverviewRuler: true,
+                        overviewRulerLanes: 3,
+                        scrollbar: {
+                          verticalScrollbarSize: 10,
+                          horizontalScrollbarSize: 10,
+                        },
+                      }}
+                      loading={
+                        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                          {t('agentSpec.editorLoading')}
+                        </div>
+                      }
+                    />
+                  ) : (
+                    <NonTextDiffPlaceholder diff={selectedDiff} />
+                  )}
                 </div>
               )}
             </CardContent>
@@ -257,6 +261,11 @@ export function SkillVersionDiffPanel({
       )}
     </div>
   );
+}
+
+function supportsTextDiff(path: string): boolean {
+  const category = getFileCategory(path);
+  return category === 'text' || category === 'svg';
 }
 
 function VersionSelect({
@@ -332,6 +341,28 @@ function FileStatusBadge({ status }: { status: SkillVersionFileDiff['status'] })
     <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
       {t(labelKey)}
     </Badge>
+  );
+}
+
+function NonTextDiffPlaceholder({ diff }: { diff: SkillVersionFileDiff }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/10 p-6 text-center text-muted-foreground">
+      <FileText className="h-8 w-8 text-muted-foreground/60" />
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium text-foreground">
+          {t('skill.diffTextUnsupported')}
+        </h3>
+        <p className="max-w-md text-xs leading-relaxed">
+          {t('skill.diffTextUnsupportedDesc')}
+        </p>
+      </div>
+      <div className="flex max-w-full items-center gap-2 rounded-md border bg-background px-3 py-2 text-xs">
+        <span className="min-w-0 truncate font-mono text-foreground">{diff.path}</span>
+        <FileStatusBadge status={diff.status} />
+      </div>
+    </div>
   );
 }
 
