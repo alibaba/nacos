@@ -64,20 +64,6 @@ public interface DataSourceService {
     TransactionTemplate getTransactionTemplate();
     
     /**
-     * Get current db url.
-     *
-     * @return database url
-     */
-    String getCurrentDbUrl();
-    
-    /**
-     * Get heath information.
-     *
-     * @return heath info.
-     */
-    String getHealth();
-    
-    /**
      * Get current db type.
      *
      * @return

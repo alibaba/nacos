@@ -18,6 +18,7 @@ package com.alibaba.nacos.persistence.datasource;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
 
@@ -165,7 +167,10 @@ class LocalDataSourceServiceImplTest {
             LocalDataSourceServiceImpl service1 = new LocalDataSourceServiceImpl();
             assertDoesNotThrow(service1::init);
             Callable callback = mock(Callable.class);
-            assertDoesNotThrow(() -> service1.restoreDerby(service1.getCurrentDbUrl(), callback));
+            String sourceUrl = "jdbc:derby:"
+                + Paths.get(EnvUtil.getNacosHome(), "data", PersistenceConstant.DERBY_BASE_DIR)
+                + ";create=true";
+            assertDoesNotThrow(() -> service1.restoreDerby(sourceUrl, callback));
             verify(callback).call();
         } finally {
             EnvUtil.setEnvironment(null);
@@ -186,12 +191,4 @@ class LocalDataSourceServiceImplTest {
         assertTrue(service.checkMasterWritable());
     }
     
-    @Test
-    void testSetAndGetHealth() {
-        service.setHealthStatus("DOWN");
-        assertEquals("DOWN", service.getHealth());
-        
-        service.setHealthStatus("UP");
-        assertEquals("UP", service.getHealth());
-    }
 }

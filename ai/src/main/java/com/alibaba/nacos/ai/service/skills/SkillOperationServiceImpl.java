@@ -39,7 +39,6 @@ import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
@@ -1402,48 +1401,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void updateScope(String namespaceId, String name, String scope) throws NacosException {
         resourceManager.doUpdateScope(namespaceId, name, RESOURCE_TYPE_SKILL, scope);
-    }
-    
-    /**
-     * Search skills by keyword (fuzzy name match). Only returns enabled skills with at least one online version.
-     */
-    @Override
-    public Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo,
-        int pageSize)
-        throws NacosException {
-        // Build fuzzy query condition
-        String nameLike = StringUtils.isBlank(keyword) ? null
-            : resourceManager
-                .generateLikeArgument(Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
-        QueryCondition queryCondition =
-            resourceManager.buildQueryCondition(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null,
-                VisibilityConstants.ACTION_READ);
-        if (queryCondition.isAlwaysEmpty()) {
-            return AiResourceManager.buildEmptyPage(pageNo);
-        }
-        Page<AiResource> metaPage = resourceManager.listMeta(queryCondition, pageNo, pageSize);
-        List<AiResource> filtered =
-            metaPage == null || metaPage.getPageItems() == null ? new ArrayList<>()
-                : metaPage.getPageItems();
-        List<SkillBasicInfo> items = new ArrayList<>();
-        for (AiResource meta : filtered) {
-            if (meta == null) {
-                continue;
-            }
-            // Only return enabled skills with at least one online version (for client-side search)
-            if (!AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
-                continue;
-            }
-            ResourceVersionInfo info = AiResourceManager.parseVersionInfo(meta.getVersionInfo());
-            if (info == null || info.getOnlineCnt() == null || info.getOnlineCnt() <= 0) {
-                continue;
-            }
-            SkillBasicInfo basicInfo = new SkillBasicInfo();
-            basicInfo.setName(meta.getName());
-            basicInfo.setDescription(meta.getDesc());
-            items.add(basicInfo);
-        }
-        return AiResourceManager.buildPageResult(items, metaPage, pageNo);
     }
     
     /**

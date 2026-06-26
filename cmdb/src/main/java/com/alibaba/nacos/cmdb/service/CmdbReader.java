@@ -18,8 +18,6 @@ package com.alibaba.nacos.cmdb.service;
 
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
 
-import java.util.List;
-
 /**
  * CMDB Reader.
  *
@@ -47,12 +45,4 @@ public interface CmdbReader {
      */
     String queryLabel(String entityName, String entityType, String labelName);
     
-    /**
-     * Get entities of selected label.
-     *
-     * @param labelName  name of label
-     * @param labelValue value of label
-     * @return list of entity
-     */
-    List<Entity> queryEntitiesByLabel(String labelName, String labelValue);
 }

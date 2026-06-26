@@ -143,11 +143,6 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         return entity.getLabels().get(labelName);
     }
     
-    @Override
-    public List<Entity> queryEntitiesByLabel(String labelName, String labelValue) {
-        throw new UnsupportedOperationException("Not available now!");
-    }
-    
     /**
      * Remove CMDB entity.
      *

@@ -32,7 +32,6 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.impl.BatchReadResponse;
 import com.alibaba.nacos.naming.consistency.persistent.impl.BatchWriteRequest;
 import com.alibaba.nacos.naming.consistency.persistent.impl.OldDataOperation;
-import com.alibaba.nacos.naming.pojo.Record;
 import com.google.protobuf.ByteString;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -479,13 +478,4 @@ class SwitchManagerTest {
         assertTrue(Files.exists(backupDir.resolve(KeyBuilder.getSwitchDomainKey())));
     }
     
-    private static class MockRecord implements Record {
-        
-        private static final long serialVersionUID = 1L;
-        
-        @Override
-        public String getChecksum() {
-            return "mock";
-        }
-    }
 }

@@ -401,7 +401,9 @@ public interface ConfigInfoPersistService {
      * @param group  group
      * @param tenant tenant
      * @return advance info
+     * @deprecated Unused by current config flows; kept temporarily for repository compatibility.
      */
+    @Deprecated
     ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group,
         final String tenant);
     

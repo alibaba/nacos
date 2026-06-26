@@ -1109,6 +1109,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
+    @Deprecated
     public ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group,
         final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;

@@ -39,7 +39,6 @@ import java.nio.channels.ReadableByteChannel;
  * @see #getUri()
  * @see #getFile()
  * @see WritableResource
- * @see ContextResource
  * @see UrlResource
  * @see FileUrlResource
  * @see FileSystemResource

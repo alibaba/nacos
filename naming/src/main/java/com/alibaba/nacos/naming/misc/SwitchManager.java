@@ -39,7 +39,6 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.impl.BatchReadResponse;
 import com.alibaba.nacos.naming.consistency.persistent.impl.BatchWriteRequest;
 import com.alibaba.nacos.naming.consistency.persistent.impl.OldDataOperation;
-import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.google.protobuf.ByteString;
 import org.springframework.http.HttpStatus;
@@ -447,7 +446,7 @@ public class SwitchManager extends RequestProcessor4CP {
                 }
                 byte[] snapshotData = DiskUtils.readFileBytes(this.dataFile);
                 final Datum datum = serializer.deserialize(snapshotData, getDatumType());
-                final Record value = null != datum ? datum.value : null;
+                final Object value = null != datum ? datum.value : null;
                 if (!(value instanceof SwitchDomain)) {
                     return;
                 }
@@ -515,7 +514,7 @@ public class SwitchManager extends RequestProcessor4CP {
             }
             final Datum datum =
                 serializer.deserialize(bwRequest.getValues().get(0), getDatumType());
-            final Record value = null != datum ? datum.value : null;
+            final Object value = null != datum ? datum.value : null;
             if (!(value instanceof SwitchDomain)) {
                 return Response.newBuilder().setSuccess(false)
                     .setErrMsg("datum is not switch domain").build();

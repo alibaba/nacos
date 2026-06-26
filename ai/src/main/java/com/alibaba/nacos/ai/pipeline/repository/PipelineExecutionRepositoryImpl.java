@@ -149,25 +149,6 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
     }
     
     @Override
-    public PipelineExecution findByResource(String resourceType, String resourceName,
-        String namespaceId,
-        String version) {
-        try {
-            List<PipelineExecution> executions =
-                getJdbcTemplate().query(SQL_FIND_BY_RESOURCE, ROW_MAPPER,
-                    resourceType, resourceName, namespaceId, version);
-            if (executions.isEmpty()) {
-                return null;
-            }
-            return executions.get(0);
-        } catch (DataAccessException e) {
-            LOGGER.warn("Failed to query pipeline_execution table (table may not exist): {}",
-                e.getMessage());
-            return null;
-        }
-    }
-    
-    @Override
     public List<PipelineExecution> findByResourceWithPage(String resourceType, String resourceName,
         String namespaceId, String version, int offset, int limit) {
         try {

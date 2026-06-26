@@ -75,12 +75,6 @@ class JdkClientHttpResponseTest {
     }
     
     @Test
-    void testGetStatusText() throws IOException {
-        when(connection.getResponseMessage()).thenReturn("test");
-        assertEquals("test", clientHttpResponse.getStatusText());
-    }
-    
-    @Test
     void testGetHeaders() {
         assertEquals(3, clientHttpResponse.getHeaders().getHeader().size());
         assertEquals("testValue", clientHttpResponse.getHeaders().getValue("testName"));

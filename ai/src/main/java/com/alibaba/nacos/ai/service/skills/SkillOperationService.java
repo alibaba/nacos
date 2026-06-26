@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
@@ -323,18 +322,6 @@ public interface SkillOperationService {
     void updateScope(String namespaceId, String name, String scope) throws NacosException;
     
     // ========== Client APIs ==========
-    
-    /**
-     * Search skills for runtime client usage. Only returns enabled skills that have at least one online version.
-     * Returns only name and description for client consumption.
-     *
-     * @param namespaceId namespace ID
-     * @param keyword keyword (optional)
-     * @param pageNo page number
-     * @param pageSize page size
-     */
-    Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize)
-        throws NacosException;
     
     /**
      * Query skill for runtime client usage. Priority: label > version > latest(label).

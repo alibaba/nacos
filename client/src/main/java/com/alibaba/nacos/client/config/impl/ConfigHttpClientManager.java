@@ -168,11 +168,6 @@ public class ConfigHttpClientManager implements Closeable {
         }
         
         @Override
-        public String getStatusText() {
-            return null;
-        }
-        
-        @Override
         public void close() {
             
         }

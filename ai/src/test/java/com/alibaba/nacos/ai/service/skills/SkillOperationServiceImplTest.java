@@ -31,7 +31,6 @@ import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -2208,45 +2207,6 @@ class SkillOperationServiceImplTest {
         NacosApiException ex = assertThrows(NacosApiException.class,
             () -> skillOperationService.querySkill(namespaceId, skillName, null, null));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
-    }
-    
-    @Test
-    void testSearchSkillsSuccess() throws NacosException {
-        String namespaceId = "test-ns";
-        Page<AiResource> metaPage = new Page<>();
-        AiResource meta = new AiResource();
-        meta.setName("my-skill");
-        meta.setStatus("enable");
-        meta.setDesc("desc");
-        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
-        metaPage.setPageItems(List.of(meta));
-        metaPage.setTotalCount(1);
-        metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
-        Page<SkillBasicInfo> result = skillOperationService.searchSkills(namespaceId, "my", 1, 10);
-        assertNotNull(result);
-        assertEquals(1, result.getPageItems().size());
-        assertEquals("my-skill", result.getPageItems().get(0).getName());
-    }
-    
-    @Test
-    void testSearchSkillsExcludesDisabledAndNoOnline() throws NacosException {
-        String namespaceId = "test-ns";
-        Page<AiResource> metaPage = new Page<>();
-        AiResource disabled = new AiResource();
-        disabled.setName("disabled-skill");
-        disabled.setStatus("disable");
-        disabled.setVersionInfo("{\"onlineCnt\":1}");
-        AiResource noOnline = new AiResource();
-        noOnline.setName("no-online");
-        noOnline.setStatus("enable");
-        noOnline.setVersionInfo("{\"onlineCnt\":0}");
-        metaPage.setPageItems(List.of(disabled, noOnline));
-        metaPage.setTotalCount(2);
-        metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
-        Page<SkillBasicInfo> result = skillOperationService.searchSkills(namespaceId, null, 1, 10);
-        assertTrue(result.getPageItems().isEmpty());
     }
     
     @Test

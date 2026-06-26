@@ -27,7 +27,6 @@ import org.springframework.jdbc.core.RowMapper;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -47,34 +46,6 @@ class PipelineExecutionRepositoryImplTest {
     void setUp() {
         jdbcTemplate = mock(JdbcTemplate.class);
         repository = new PipelineExecutionRepositoryImpl(jdbcTemplate);
-    }
-    
-    @Test
-    void findByResourceShouldUseDialectAgnosticQuery() {
-        PipelineExecution newest = createExecution("latest");
-        PipelineExecution older = createExecution("older");
-        String expectedSql =
-            "SELECT * FROM pipeline_execution WHERE resource_type=? AND resource_name=? "
-                + "AND namespace_id=? AND version=? ORDER BY create_time DESC";
-        when(jdbcTemplate.query(any(String.class), anyPipelineRowMapper(), eq(QUERY_PARAMS)))
-            .thenReturn(
-                List.of(newest, older));
-        
-        PipelineExecution actual = repository.findByResource("SKILL", "demo", "public", "v1");
-        
-        assertEquals("latest", actual.getExecutionId());
-        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
-        verify(jdbcTemplate).query(sqlCaptor.capture(), anyPipelineRowMapper(), eq(QUERY_PARAMS));
-        assertEquals(expectedSql, sqlCaptor.getValue());
-        assertTrue(!sqlCaptor.getValue().contains("LIMIT"));
-    }
-    
-    @Test
-    void findByResourceShouldReturnNullWhenNoResult() {
-        when(jdbcTemplate.query(any(String.class), anyPipelineRowMapper(), eq(QUERY_PARAMS)))
-            .thenReturn(List.of());
-        
-        assertNull(repository.findByResource("SKILL", "demo", "public", "v1"));
     }
     
     @Test

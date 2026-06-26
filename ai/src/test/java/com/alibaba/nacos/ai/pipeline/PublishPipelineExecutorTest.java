@@ -114,12 +114,6 @@ class PublishPipelineExecutorTest {
             }
             
             @Override
-            public PipelineExecution findByResource(String resourceType, String resourceName,
-                String namespaceId, String version) {
-                return null;
-            }
-            
-            @Override
             public List<PipelineExecution> findByResourceWithPage(String resourceType,
                 String resourceName,
                 String namespaceId, String version, int offset, int limit) {
@@ -156,12 +150,6 @@ class PublishPipelineExecutorTest {
         }
         
         @Override
-        public PipelineExecution findByResource(String resourceType, String resourceName,
-            String namespaceId, String version) {
-            return null;
-        }
-        
-        @Override
         public List<PipelineExecution> findByResourceWithPage(String resourceType,
             String resourceName,
             String namespaceId, String version, int offset, int limit) {
@@ -190,12 +178,6 @@ class PublishPipelineExecutorTest {
             
             @Override
             public PipelineExecution findById(String executionId) {
-                return null;
-            }
-            
-            @Override
-            public PipelineExecution findByResource(String resourceType, String resourceName,
-                String namespaceId, String version) {
                 return null;
             }
             

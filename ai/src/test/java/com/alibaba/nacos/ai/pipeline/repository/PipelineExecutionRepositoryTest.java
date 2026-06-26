@@ -130,11 +130,6 @@ class PipelineExecutionRepositoryTest {
             assertNotNull(foundById, "findById should return a non-null record");
             assertExecutionEquals(original, foundById);
             
-            PipelineExecution foundByResource = repository.findByResource(
-                original.getResourceType(), original.getResourceName(),
-                original.getNamespaceId(), original.getVersion());
-            assertNotNull(foundByResource, "findByResource should return a non-null record");
-            assertExecutionEquals(original, foundByResource);
         }
     }
     
