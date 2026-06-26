@@ -264,8 +264,7 @@ export function SkillVersionDiffPanel({
 }
 
 function supportsTextDiff(path: string): boolean {
-  const category = getFileCategory(path);
-  return category === 'text' || category === 'svg';
+  return getFileCategory(path) === 'text';
 }
 
 function VersionSelect({

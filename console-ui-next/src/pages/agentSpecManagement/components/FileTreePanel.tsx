@@ -33,6 +33,7 @@ export interface FileTreePanelProps {
   onCreateFile?: (parentKey?: string) => void;
   onCreateFolder?: (parentKey?: string) => void;
   onDeleteNode?: (key: string, nodeType: 'file' | 'folder') => void;
+  onRenameFile?: (key: string, newName: string) => void;
   onRenameFolder?: (key: string, newName: string) => void;
 }
 
@@ -60,6 +61,7 @@ interface TreeNodeProps {
   onCreateFile?: (parentKey?: string) => void;
   onCreateFolder?: (parentKey?: string) => void;
   onDeleteNode?: (key: string, nodeType: 'file' | 'folder') => void;
+  onRenameFile?: (key: string, newName: string) => void;
   onRenameFolder?: (key: string, newName: string) => void;
   depth: number;
 }
@@ -140,9 +142,23 @@ function FileNode({
   node,
   selectedKey,
   onSelect,
+  editable,
+  onDeleteNode,
+  onRenameFile,
   depth,
 }: TreeNodeProps) {
+  const { t } = useTranslation();
+  const [renaming, setRenaming] = useState(false);
   const isSelected = selectedKey === node.key;
+  const canShowActions = editable && Boolean(onRenameFile || onDeleteNode);
+
+  const handleRename = useCallback(
+    (newName: string) => {
+      setRenaming(false);
+      onRenameFile?.(node.key, newName);
+    },
+    [node.key, onRenameFile],
+  );
 
   return (
     <div
@@ -151,20 +167,62 @@ function FileNode({
         isSelected && 'text-foreground',
       )}
       style={{ paddingLeft: `${depth * 12 + 8}px` }}
-      onClick={() => onSelect(node.key)}
+      onClick={() => !renaming && onSelect(node.key)}
       title={node.key}
       role="treeitem"
       aria-selected={isSelected}
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (!renaming && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           onSelect(node.key);
         }
       }}
     >
       <FileIcon node={node} />
-      <span className="truncate flex-1 min-w-0">{node.name}</span>
+      {renaming ? (
+        <RenameInput
+          initialName={node.name}
+          onConfirm={handleRename}
+          onCancel={() => setRenaming(false)}
+        />
+      ) : (
+        <>
+          <span className="min-w-0 flex-1 truncate">{node.name}</span>
+          {canShowActions && (
+            <div
+              className={cn(
+                'ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100',
+                isSelected && 'opacity-100',
+              )}
+            >
+              {onRenameFile && (
+                <TreeActionButton
+                  label={t('agentSpec.renameNode', { name: node.name })}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setRenaming(true);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </TreeActionButton>
+              )}
+              {onDeleteNode && (
+                <TreeActionButton
+                  label={t('agentSpec.deleteNode', { name: node.name })}
+                  destructive
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDeleteNode(node.key, 'file');
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </TreeActionButton>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -224,9 +282,9 @@ function FolderNode({
           />
         ) : (
           <>
-            <span className="min-w-0 truncate">{folderLabel}</span>
+            <span className="min-w-0 flex-1 truncate">{folderLabel}</span>
             {editable && (
-              <div className="flex shrink-0 items-center gap-0.5">
+              <div className="ml-auto flex shrink-0 items-center gap-0.5">
                 {canRename && (
                   <TreeActionButton
                     label={t('agentSpec.renameNode', { name: folderLabel })}
@@ -283,6 +341,7 @@ function FolderNode({
               onCreateFile={onCreateFile}
               onCreateFolder={onCreateFolder}
               onDeleteNode={onDeleteNode}
+              onRenameFile={onRenameFile}
               onRenameFolder={onRenameFolder}
               depth={depth + 1}
             />
@@ -310,6 +369,7 @@ export function FileTreePanel({
   onCreateFile,
   onCreateFolder,
   onDeleteNode,
+  onRenameFile,
   onRenameFolder,
 }: FileTreePanelProps) {
   const { t } = useTranslation();
@@ -343,6 +403,7 @@ export function FileTreePanel({
               onCreateFile={onCreateFile}
               onCreateFolder={onCreateFolder}
               onDeleteNode={onDeleteNode}
+              onRenameFile={onRenameFile}
               onRenameFolder={onRenameFolder}
               depth={0}
             />

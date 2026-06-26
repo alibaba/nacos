@@ -326,6 +326,7 @@ export function SkillResourcePanel({
             onCreateFile={editable ? handleCreateFile : undefined}
             onCreateFolder={editable ? handleCreateFolder : undefined}
             onDeleteNode={editable ? handleDeleteNode : undefined}
+            onRenameFile={editable ? handleRenameFile : undefined}
             onRenameFolder={editable ? handleRenameFolder : undefined}
           />
         </div>

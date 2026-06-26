@@ -1455,7 +1455,7 @@ export default function SkillDetailPage() {
         </TabsContent>
 
         {showVersionDiff && (
-          <TabsContent value="diff">
+          <TabsContent value="diff" forceMount className="data-[state=inactive]:hidden">
             <SkillVersionDiffPanel
               namespaceId={namespaceId}
               skillName={skillName}

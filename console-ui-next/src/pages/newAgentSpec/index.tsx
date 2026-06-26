@@ -906,6 +906,7 @@ export default function NewAgentSpecPage() {
                 onCreateFile={handleCreateFile}
                 onCreateFolder={handleCreateFolder}
                 onDeleteNode={handleDeleteNode}
+                onRenameFile={handleRenameFile}
                 onRenameFolder={handleRenameFolder}
               />
             </div>

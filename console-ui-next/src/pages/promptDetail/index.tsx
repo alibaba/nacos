@@ -1315,7 +1315,7 @@ export default function PromptDetailPage() {
         </TabsContent>
 
         {showVersionDiff && (
-          <TabsContent value="diff">
+          <TabsContent value="diff" forceMount className="data-[state=inactive]:hidden">
             <PromptVersionDiffPanel
               namespaceId={namespaceId}
               promptKey={promptKey}

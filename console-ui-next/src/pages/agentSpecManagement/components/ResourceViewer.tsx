@@ -197,6 +197,7 @@ export function ResourceViewer({
             onCreateFile={onCreateFile}
             onCreateFolder={onCreateFolder}
             onDeleteNode={onDeleteNode}
+            onRenameFile={onRenameFile}
             onRenameFolder={onRenameFolder}
           />
         </div>
