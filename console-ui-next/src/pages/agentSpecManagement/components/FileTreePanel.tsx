@@ -235,6 +235,7 @@ function FolderNode({
   onCreateFile,
   onCreateFolder,
   onDeleteNode,
+  onRenameFile,
   onRenameFolder,
   depth,
 }: TreeNodeProps) {
