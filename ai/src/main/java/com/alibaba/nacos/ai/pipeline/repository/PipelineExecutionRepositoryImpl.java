@@ -63,10 +63,6 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
     private static final String SQL_FIND_BY_ID =
         "SELECT * FROM pipeline_execution WHERE execution_id=?";
     
-    private static final String SQL_FIND_BY_RESOURCE = "SELECT * FROM pipeline_execution "
-        + "WHERE resource_type=? AND resource_name=? AND namespace_id=? AND version=? "
-        + "ORDER BY create_time DESC";
-    
     private static final PipelineExecutionRowMapper ROW_MAPPER = new PipelineExecutionRowMapper();
     
     private final JdbcTemplate injectedJdbcTemplate;
