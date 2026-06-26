@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -105,7 +104,8 @@ public class PublishPipelineManager {
      * Get pipeline services matching the given resource type and node configuration list.
      *
      * <p>Filters services that support the specified resource type and whose pipelineId is present
-     * in the nodes list. Results are sorted by {@link PublishPipelineService#getPreferOrder()} ascending.</p>
+     * in the nodes list. Results are sorted by configured node order first, then
+     * {@link PublishPipelineService#getPreferOrder()} ascending.</p>
      *
      * @param resourceType the resource type to filter by
      * @param nodes        the configured pipeline nodes to match against
@@ -114,14 +114,17 @@ public class PublishPipelineManager {
     public List<PublishPipelineService> getPipelineServices(
         PublishPipelineResourceType resourceType,
         List<PipelineNodeConfig> nodes) {
-        Set<String> pipelineIds = nodes.stream()
-            .map(PipelineNodeConfig::getPipelineId)
-            .collect(Collectors.toSet());
+        Map<String, PipelineNodeConfig> nodeConfigMap = new HashMap<>();
+        for (PipelineNodeConfig node : nodes) {
+            if (node.getPipelineId() != null) {
+                nodeConfigMap.put(node.getPipelineId(), node);
+            }
+        }
         
         return serviceMap.values().stream()
-            .filter(service -> pipelineIds.contains(service.pipelineId()))
+            .filter(service -> nodeConfigMap.containsKey(service.pipelineId()))
             .filter(service -> supportsResourceType(service, resourceType))
-            .sorted(Comparator.comparingInt(PublishPipelineService::getPreferOrder))
+            .sorted(Comparator.comparingInt(service -> getEffectiveOrder(service, nodeConfigMap)))
             .collect(Collectors.toList());
     }
     
@@ -141,5 +144,14 @@ public class PublishPipelineManager {
             return false;
         }
         return Arrays.asList(types).contains(resourceType);
+    }
+
+    private int getEffectiveOrder(PublishPipelineService service,
+        Map<String, PipelineNodeConfig> nodeConfigMap) {
+        PipelineNodeConfig nodeConfig = nodeConfigMap.get(service.pipelineId());
+        if (nodeConfig != null && nodeConfig.getOrder() != null) {
+            return nodeConfig.getOrder();
+        }
+        return service.getPreferOrder();
     }
 }
