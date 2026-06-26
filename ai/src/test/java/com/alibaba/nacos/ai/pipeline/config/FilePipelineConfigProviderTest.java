@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -163,11 +164,10 @@ class FilePipelineConfigProviderTest {
     }
     
     @Test
-    void subPropertyEnabledShouldNotBeTreatedAsNodeSwitch() {
+    void subPropertyCommandShouldBePreserved() {
         Properties envProperties = new Properties();
         envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", "true");
         envProperties.setProperty("nacos.plugin.ai-pipeline.type", "skill-scanner");
-        envProperties.setProperty("nacos.plugin.ai-pipeline.skill-scanner.enabled", "true");
         envProperties.setProperty("nacos.plugin.ai-pipeline.skill-scanner.command",
             "/tmp/skill-scanner");
         try (MockedStatic<EnvUtil> envMock = Mockito.mockStatic(EnvUtil.class);
@@ -183,10 +183,32 @@ class FilePipelineConfigProviderTest {
             PipelineNodeConfig node = config.getNodes().get(0);
             assertEquals("skill-scanner", node.getPipelineId(),
                 "Node id should match configured type");
-            assertEquals("true", node.getProperties().getProperty("enabled"),
-                "Type sub-property enabled should be preserved as node property");
             assertEquals("/tmp/skill-scanner", node.getProperties().getProperty("command"),
                 "Type sub-property command should be preserved");
+        }
+    }
+
+    @Test
+    void nodeOrderShouldBeParsedFromSubProperty() {
+        Properties envProperties = new Properties();
+        envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", "true");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.type",
+            "skill-spector,skill-scanner,broken");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.skill-spector.order", "20");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.skill-scanner.order", "-10");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.broken.order", "invalid");
+        try (MockedStatic<EnvUtil> envMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<NotifyCenter> notifyMock = Mockito.mockStatic(NotifyCenter.class)) {
+            envMock.when(EnvUtil::getProperties).thenReturn(envProperties);
+
+            FilePipelineConfigProvider provider = createFreshInstance();
+            PipelineConfig config = provider.getConfig();
+
+            assertEquals(20, findNode(config, "skill-spector").getOrder());
+            assertEquals(-10, findNode(config, "skill-scanner").getOrder());
+            assertNull(findNode(config, "broken").getOrder());
+            assertEquals("20", findNode(config, "skill-spector").getProperties()
+                .getProperty("order"));
         }
     }
     
@@ -200,6 +222,13 @@ class FilePipelineConfigProviderTest {
             throw new RuntimeException(
                 "Failed to create FilePipelineConfigProvider instance via reflection", e);
         }
+    }
+
+    private PipelineNodeConfig findNode(PipelineConfig config, String pipelineId) {
+        return config.getNodes().stream()
+            .filter(node -> pipelineId.equals(node.getPipelineId()))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Missing node: " + pipelineId));
     }
     
     static class ErrorScenario {

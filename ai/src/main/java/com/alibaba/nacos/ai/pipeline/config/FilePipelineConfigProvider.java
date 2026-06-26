@@ -40,10 +40,11 @@ import java.util.TreeMap;
  *   <li>{@code nacos.plugin.ai-pipeline.enabled} - optional global switch for ai-pipeline plugin</li>
  *   <li>{@code nacos.plugin.ai-pipeline.type} - enabled implementation type(s), for example
  *   {@code skill-scanner}</li>
+ *   <li>{@code nacos.plugin.ai-pipeline.{type}.order} - optional execution order override;
+ *   lower values execute first</li>
  *   <li>{@code nacos.plugin.ai-pipeline.{type}.{key}} - implementation properties passed to builder</li>
  * </ul>
- * <p>For example: {@code nacos.plugin.ai-pipeline.type=skill-scanner} and
- * {@code nacos.plugin.ai-pipeline.skill-scanner.enabled=true}.
+ * <p>For example: {@code nacos.plugin.ai-pipeline.type=skill-scanner}.
  *
  * <p>Follows the singleton pattern like PushConfig.
  *
@@ -60,6 +61,8 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig
     private static final String KEY_ENABLED = KEY_PLUGIN_PREFIX + ".enabled";
     
     private static final String KEY_TYPE = KEY_PLUGIN_PREFIX + ".type";
+
+    private static final String KEY_ORDER = "order";
     
     private static final FilePipelineConfigProvider INSTANCE = new FilePipelineConfigProvider();
     
@@ -127,6 +130,7 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig
                 PipelineNodeConfig nodeConfig = new PipelineNodeConfig();
                 nodeConfig.setPipelineId(entry.getKey());
                 nodeConfig.setProperties(entry.getValue());
+                nodeConfig.setOrder(parseOrder(entry.getValue().getProperty(KEY_ORDER)));
                 nodes.add(nodeConfig);
             });
         return nodes;
@@ -168,6 +172,17 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig
             }
         }
         return properties;
+    }
+
+    private Integer parseOrder(String value) {
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
     
     @Override

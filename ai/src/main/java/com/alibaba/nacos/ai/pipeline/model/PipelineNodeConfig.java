@@ -35,6 +35,11 @@ public class PipelineNodeConfig {
      * Custom configuration properties for this node (e.g. endpoint, timeout).
      */
     private Properties properties;
+
+    /**
+     * Optional configured execution order. Lower values execute first.
+     */
+    private Integer order;
     
     public PipelineNodeConfig() {
     }
@@ -53,5 +58,13 @@ public class PipelineNodeConfig {
     
     public void setProperties(Properties properties) {
         this.properties = properties;
+    }
+
+    public Integer getOrder() {
+        return order;
+    }
+
+    public void setOrder(Integer order) {
+        this.order = order;
     }
 }
