@@ -51,7 +51,7 @@ class JsonAdapterLogUtilsTest {
         JsonAdapterLogUtils.logSelectedAdapter();
         JsonAdapterLogUtils.logSelectedAdapter();
         
-        assertNotNull(JsonUtils.selectedAdapterName());
+        assertEquals(NacosJsonAdapterNames.JACKSON3, JsonUtils.selectedAdapterName());
     }
     
     @Test
@@ -70,6 +70,24 @@ class JsonAdapterLogUtilsTest {
         constructor.setAccessible(true);
         
         assertNotNull(constructor.newInstance());
+    }
+    
+    @Test
+    void testFormatLogMessage() throws Exception {
+        Method formatMethod = JsonAdapterLogUtils.class.getDeclaredMethod("formatLogMessage",
+            String.class, String.class);
+        formatMethod.setAccessible(true);
+        
+        assertEquals("effective Jackson adapter: Jackson 3 (adapter: jackson3), "
+            + "configured nacos.client.json.adapter: auto",
+            formatMethod.invoke(null, NacosJsonAdapterNames.JACKSON3, NacosJsonAdapterNames.AUTO));
+        assertEquals("effective Jackson adapter: Jackson 2 (adapter: jackson2), "
+            + "configured nacos.client.json.adapter: jackson2",
+            formatMethod.invoke(null, NacosJsonAdapterNames.JACKSON2,
+                NacosJsonAdapterNames.JACKSON2));
+        assertEquals(
+            "effective Jackson adapter: custom, configured nacos.client.json.adapter: custom",
+            formatMethod.invoke(null, "custom", "custom"));
     }
     
     private void resetJsonUtils() throws Exception {

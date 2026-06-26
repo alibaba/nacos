@@ -41,11 +41,26 @@ public final class JsonAdapterLogUtils {
      * Log selected JSON adapter once for current JVM.
      */
     public static void logSelectedAdapter() {
-        String selectedAdapter = JsonUtils.selectedAdapterName();
         if (LOGGED.compareAndSet(false, true)) {
-            LOGGER.info("[json-adapter] selected adapter: {}, configured adapter: {}",
-                selectedAdapter, configuredAdapterName());
+            LOGGER.info("[json-adapter] {}",
+                formatLogMessage(JsonUtils.selectedAdapterName(), configuredAdapterName()));
         }
+    }
+    
+    private static String formatLogMessage(String effectiveAdapter, String configuredAdapter) {
+        return "effective Jackson adapter: " + formatEffectiveAdapter(effectiveAdapter)
+            + ", configured "
+            + JsonUtils.ADAPTER_PROPERTY_NAME + ": " + configuredAdapter;
+    }
+    
+    private static String formatEffectiveAdapter(String effectiveAdapter) {
+        if (NacosJsonAdapterNames.JACKSON2.equals(effectiveAdapter)) {
+            return "Jackson 2 (adapter: " + effectiveAdapter + ")";
+        }
+        if (NacosJsonAdapterNames.JACKSON3.equals(effectiveAdapter)) {
+            return "Jackson 3 (adapter: " + effectiveAdapter + ")";
+        }
+        return effectiveAdapter;
     }
     
     private static String configuredAdapterName() {
