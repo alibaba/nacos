@@ -122,7 +122,16 @@ class PageUtilTest {
         Page<String> result = PageUtil.subPage(source, 1, 2);
         assertEquals(2, result.getPageItems().size());
         assertEquals(2, result.getTotalCount());
-        assertEquals(2, result.getPagesAvailable());
+        assertEquals(1, result.getPagesAvailable());
+    }
+
+    @Test
+    void subPageExactDivisiblePages() {
+        // 9 items / 3 per page = exactly 3 pages (no extra page)
+        List<String> source = Arrays.asList("a", "b", "c", "d", "e", "f", "g", "h", "i");
+        Page<String> result = PageUtil.subPage(source, 1, 3);
+        assertEquals(9, result.getTotalCount());
+        assertEquals(3, result.getPagesAvailable());
     }
     
     @Test

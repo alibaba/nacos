@@ -67,7 +67,7 @@ public class PageUtil {
         int totalCount = source.size();
         result.setTotalCount(totalCount);
         PageMetadata metadata = calculatePageMetadata(page, pageSize, totalCount);
-        int pagesAvailable = (totalCount / pageSize) + 1;
+        int pagesAvailable = (totalCount + pageSize - 1) / pageSize;
         result.setPagesAvailable(pagesAvailable);
         if (totalCount > metadata.start) {
             result.setPageItems(source.subList(metadata.start, metadata.end));
