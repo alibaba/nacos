@@ -73,6 +73,12 @@ class NamingUtilsTest {
     }
     
     @Test
+    void testGetServiceNameTrailingSpliter() {
+        // When input is "group@@", the serviceName after "@@" is empty; should return "" not crash
+        assertEquals(StringUtils.EMPTY, NamingUtils.getServiceName("group@@"));
+    }
+    
+    @Test
     void testGetGroupName() {
         String validServiceName = "group@@serviceName";
         assertEquals("group", NamingUtils.getGroupName(validServiceName));

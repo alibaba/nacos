@@ -95,7 +95,7 @@ public class NamingUtils {
         if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
             return serviceNameWithGroup;
         }
-        return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[1];
+        return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER, -1)[1];
     }
     
     public static String getGroupName(final String serviceNameWithGroup) {
