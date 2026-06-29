@@ -164,7 +164,8 @@ class MySqlMapperCoverageTest {
         assertEquals(TableConstant.CONFIG_INFO_GRAY, grayMapper.getTableName());
         assertResult(grayMapper.findAllConfigInfoGrayForDumpAllFetchRows(context),
             "SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,"
-                + "md5,gmt_modified FROM config_info_gray ORDER BY id LIMIT ?,?", 3, 7);
+                + "md5,gmt_modified FROM config_info_gray ORDER BY id LIMIT ?,?",
+            3, 7);
         
     }
     
