@@ -12,6 +12,59 @@ export function hasNonFrontmatterMarkdownBody(md: string): boolean {
   return stripFrontmatter(md || '').trim().length > 0;
 }
 
+/**
+ * Skill docs often use "=" blocks as prompt section titles:
+ *
+ * ========================
+ * 1. Section
+ * ========================
+ *
+ * Markdown interprets the closing line as a Setext H1 marker. Convert the
+ * block to an ATX heading for preview only, leaving the saved content intact.
+ */
+export function prepareSkillMarkdownPreview(md: string): string {
+  let fenceChar = '';
+  let fenceLength = 0;
+  const lines = (md || '').split(/\r?\n/);
+  const result: string[] = [];
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    const fenceMatch = trimmed.match(/^(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      const marker = fenceMatch[1];
+      const markerChar = marker[0];
+      if (!fenceChar) {
+        fenceChar = markerChar;
+        fenceLength = marker.length;
+      } else if (markerChar === fenceChar && marker.length >= fenceLength) {
+        fenceChar = '';
+        fenceLength = 0;
+      }
+      result.push(line);
+      continue;
+    }
+
+    if (!fenceChar && /^={3,}$/.test(trimmed)) {
+      const title = lines[i + 1]?.trim();
+      const closing = lines[i + 2]?.trim();
+      if (title && closing && /^={3,}$/.test(closing)) {
+        result.push(`## ${title}`);
+        i += 2;
+        continue;
+      }
+
+      result.push(line.replace(/=/g, '\\='));
+      continue;
+    }
+
+    result.push(line);
+  }
+
+  return result.join('\n');
+}
+
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
 
 /**
