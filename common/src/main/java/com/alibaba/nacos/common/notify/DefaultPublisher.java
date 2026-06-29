@@ -153,6 +153,8 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     public void shutdown() {
         this.shutdown = true;
         this.queue.clear();
+        // Interrupt the thread to stop processing events: queue.take().
+        this.interrupt();
     }
     
     public boolean isInitialized() {

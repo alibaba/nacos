@@ -656,6 +656,12 @@ public class ClientWorker implements Closeable {
                 
                 LOGGER.info("Shutdown executor {}", executor);
                 executor.shutdown();
+                multiTaskExecutor.values().forEach((taskExecutor) -> {
+                    if (taskExecutor != null && !taskExecutor.isShutdown()) {
+                        LOGGER.info("Shutdown multi task executor {}", taskExecutor);
+                        taskExecutor.shutdown();
+                    }
+                });
                 Map<String, CacheData> stringCacheDataMap = cacheMap.get();
                 for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
                     entry.getValue().setConsistentWithServer(false);
