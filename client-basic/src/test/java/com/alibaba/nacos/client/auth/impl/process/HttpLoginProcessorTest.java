@@ -119,7 +119,7 @@ class HttpLoginProcessorTest {
             }
         }
     }
-
+    
     @Test
     void testGetResponseSuccessFromV1() throws Exception {
         properties.setProperty(NacosAuthLoginConstant.SERVER, "localhost");

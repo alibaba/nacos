@@ -129,5 +129,5 @@ public class HttpLoginProcessor implements LoginProcessor {
     private static String getProtocolPrefix() {
         return Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE) ? HTTPS_PREFIX : HTTP_PREFIX;
     }
-
+    
 }
