@@ -175,6 +175,16 @@ class MetricsMonitorTest {
             "127.0.0.2:7848", 4L, selfMember);
         assertEquals(0D, serviceLeaderStatus.value(), 0.01);
         assertEquals(4D, serviceTerm.value(), 0.01);
+        
+        MetricsMonitor.refreshRaftGroupMetrics("naming_persistent_service",
+            selfMember, 5L, selfMember);
+        assertEquals(1D, serviceLeaderStatus.value(), 0.01);
+        assertEquals(5D, serviceTerm.value(), 0.01);
+        
+        MetricsMonitor.refreshRaftGroupMetrics("naming_persistent_service",
+            null, null, selfMember);
+        assertEquals(1D, serviceLeaderStatus.value(), 0.01);
+        assertEquals(5D, serviceTerm.value(), 0.01);
     }
     
     @Test

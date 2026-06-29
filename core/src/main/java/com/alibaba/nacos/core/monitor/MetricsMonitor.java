@@ -190,9 +190,11 @@ public final class MetricsMonitor {
         if (StringUtils.isBlank(groupId)) {
             return;
         }
-        AtomicInteger leaderStatus = raftGroupLeaderStatus.computeIfAbsent(groupId,
-            MetricsMonitor::registerRaftGroupLeaderStatus);
-        leaderStatus.set(StringUtils.equals(leader, selfMember) ? 1 : 0);
+        if (StringUtils.isNotBlank(leader)) {
+            AtomicInteger leaderStatus = raftGroupLeaderStatus.computeIfAbsent(groupId,
+                MetricsMonitor::registerRaftGroupLeaderStatus);
+            leaderStatus.set(StringUtils.equals(leader, selfMember) ? 1 : 0);
+        }
         if (term != null) {
             raftGroupTerm.computeIfAbsent(groupId, MetricsMonitor::registerRaftGroupTerm)
                 .set(term);
