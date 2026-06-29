@@ -1103,7 +1103,7 @@ class McpServerOperationServiceTest {
         verify(configOperationService).publishConfig(configCaptor.capture(),
             any(ConfigRequestInfo.class), isNull());
         assertEquals(serverVersionDataId, configCaptor.getValue().getDataId());
-
+        
         McpServerVersionInfo updatedVersionInfo =
             JacksonUtils.toObj(configCaptor.getValue().getContent(), McpServerVersionInfo.class);
         assertEquals("9.9.9", updatedVersionInfo.getLatestPublishedVersion());

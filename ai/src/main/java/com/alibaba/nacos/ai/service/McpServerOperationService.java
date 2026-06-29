@@ -624,7 +624,7 @@ public class McpServerOperationService {
                 namespaceId, null, null,
                 "nacos", null);
         }
-
+        
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(mcpServerId);
         if (deleteAllVersions) {
             configOperationService.deleteConfig(serverVersionDataId,
@@ -647,7 +647,7 @@ public class McpServerOperationService {
                 : AiResourceTraceService.OP_DELETE_RESOURCE,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
-
+    
     private void electLatestMcpServerVersion(McpServerVersionInfo mcpServerVersionInfo) {
         List<ServerVersionDetail> versionDetails = mcpServerVersionInfo.getVersionDetails();
         if (CollectionUtils.isEmpty(versionDetails)) {

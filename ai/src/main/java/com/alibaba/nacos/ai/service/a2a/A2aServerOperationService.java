@@ -201,7 +201,7 @@ public class A2aServerOperationService {
                 : AiResourceTraceService.OP_DELETE_RESOURCE,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
-
+    
     private void electLatestAgentVersion(AgentCardVersionInfo agentCardVersionInfo) {
         List<AgentVersionDetail> versionDetails = agentCardVersionInfo.getVersionDetails();
         if (versionDetails == null || versionDetails.isEmpty()) {
