@@ -33,6 +33,8 @@ public class Constants {
     
     public static final String AI_RESOURCE_IMPORT_CONSOLE_PATH = "/v3/console/ai/import";
     
+    public static final String ARD_CLIENT_PATH = "/v3/client/ai/ard";
+    
     public static final String MCP_LIST_SEARCH_ACCURATE = "accurate";
     
     public static final String MCP_LIST_SEARCH_BLUR = "blur";
