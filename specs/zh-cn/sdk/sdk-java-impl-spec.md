@@ -215,7 +215,7 @@ Maintainer service 在适用场景下继承 `CoreMaintainerService`。它们属�
 
 `ConfigMaintainerService` 包含：
 
-- 配置获取、发布、删除和批量删除；
+- 配置获取、发布、删除和按 namespace 限定的批量删除；
 - 按 namespace、dataId、group、type、tag、app 等条件进行配置列表和搜索；
 - clone、import/export 等管理模型；
 - 通过 `BetaConfigMaintainerService` 提供 beta 和灰度发布能力；
@@ -224,6 +224,8 @@ Maintainer service 在适用场景下继承 `CoreMaintainerService`。它们属�
 - 配置描述、标签等元数据更新。
 
 管理类写入和大范围查询应加入这里，而不是继续扩展 `ConfigService`。
+按存储 ID 批量删除必须显式传入或默认出 namespace；未传 namespace 的便捷方法只表示默认
+namespace，不表示跨 namespace 全局删除。
 
 ### 7.3 NamingMaintainerService
 

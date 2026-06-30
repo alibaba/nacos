@@ -186,12 +186,15 @@ public class ConsoleConfigControllerTest {
         when(RequestUtil.getRemoteIp(any(HttpServletRequest.class))).thenReturn(clientIp);
         when(RequestUtil.getSrcUserName(any(HttpServletRequest.class))).thenReturn(srcUser);
         List<Long> ids = Arrays.asList(1L, 2L, 3L);
+        String namespaceId = "namespace";
         
-        when(configProxy.batchDeleteConfigs(eq(ids), eq(clientIp), eq(srcUser))).thenReturn(true);
+        when(configProxy.batchDeleteConfigs(eq(ids), eq(namespaceId), eq(clientIp), eq(srcUser)))
+            .thenReturn(true);
         
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.delete("/v3/console/cs/config/batchDelete")
-                .param("ids", "1,2,3").header("X-Real-IP", clientIp)
+                .param("ids", "1,2,3").param("namespaceId", namespaceId)
+                .header("X-Real-IP", clientIp)
                 .header("X-Forwarded-For", clientIp);
         
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
@@ -207,7 +210,8 @@ public class ConsoleConfigControllerTest {
         assertTrue(actualResult.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), actualResult.getCode());
         
-        verify(configProxy).batchDeleteConfigs(eq(ids), eq(clientIp), eq(srcUser));
+        verify(configProxy).batchDeleteConfigs(eq(ids), eq(namespaceId), eq(clientIp),
+            eq(srcUser));
     }
     
     @Test

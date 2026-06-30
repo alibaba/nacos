@@ -183,13 +183,15 @@ public class ConfigProxyTest {
         List<Long> ids = Arrays.asList(1L, 2L, 3L);
         String clientIp = CLIENT_IP;
         String srcUser = SRC_USER;
+        String namespaceId = NAMESPACE_ID;
         
-        when(configHandler.batchDeleteConfigs(ids, clientIp, srcUser)).thenReturn(true);
+        when(configHandler.batchDeleteConfigs(ids, namespaceId, clientIp, srcUser))
+            .thenReturn(true);
         
-        Boolean result = configProxy.batchDeleteConfigs(ids, clientIp, srcUser);
+        Boolean result = configProxy.batchDeleteConfigs(ids, namespaceId, clientIp, srcUser);
         
         assertTrue(result);
-        verify(configHandler, times(1)).batchDeleteConfigs(ids, clientIp, srcUser);
+        verify(configHandler, times(1)).batchDeleteConfigs(ids, namespaceId, clientIp, srcUser);
     }
     
     @Test

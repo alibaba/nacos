@@ -118,9 +118,9 @@ public class ConfigRemoteHandler implements ConfigHandler {
     }
     
     @Override
-    public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser)
-        throws NacosException {
-        return clientHolder.getConfigMaintainerService().deleteConfigs(ids);
+    public Boolean batchDeleteConfigs(List<Long> ids, String namespaceId, String clientIp,
+        String srcUser) throws NacosException {
+        return clientHolder.getConfigMaintainerService().deleteConfigs(ids, namespaceId);
     }
     
     @Override

@@ -239,7 +239,7 @@ Client SDK.
 
 `ConfigMaintainerService` includes:
 
-- get, publish, delete, and batch delete config;
+- get, publish, delete, and namespace-scoped batch delete config;
 - list and search configs with namespace, dataId, group, type, tag, and app
   filters where supported;
 - clone and import/export style management models;
@@ -252,6 +252,9 @@ Client SDK.
 
 Management writes and broad queries should be added here instead of expanding
 `ConfigService`.
+Batch delete by storage ID must explicitly carry or default a namespace. A
+convenience method without namespace means default-namespace delete, not a
+cross-namespace global delete.
 
 ### 7.3 NamingMaintainerService
 

@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -277,6 +278,7 @@ class NacosConfigMaintainerServiceImplTest {
         List<Long> ids = new ArrayList<>();
         ids.add(1L);
         ids.add(2L);
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(true)));
         
@@ -286,7 +288,30 @@ class NacosConfigMaintainerServiceImplTest {
         boolean result = nacosConfigMaintainerServiceImpl.deleteConfigs(ids);
         
         assertTrue(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(requestCaptor.capture());
+        assertEquals("1,2", requestCaptor.getValue().getParamValues().get("ids"));
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID,
+            requestCaptor.getValue().getParamValues().get("namespaceId"));
+    }
+    
+    @Test
+    void testDeleteConfigsWithNamespaceId() throws Exception {
+        List<Long> ids = new ArrayList<>();
+        ids.add(1L);
+        ids.add(2L);
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(true)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockHttpRestResult);
+        
+        boolean result = nacosConfigMaintainerServiceImpl.deleteConfigs(ids, "namespaceId");
+        
+        assertTrue(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(requestCaptor.capture());
+        assertEquals("1,2", requestCaptor.getValue().getParamValues().get("ids"));
+        assertEquals("namespaceId", requestCaptor.getValue().getParamValues().get("namespaceId"));
     }
     
     @Test

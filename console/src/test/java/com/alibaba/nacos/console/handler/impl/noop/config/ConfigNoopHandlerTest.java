@@ -66,7 +66,7 @@ class ConfigNoopHandlerTest {
     @Test
     void batchDeleteConfigs() {
         assertThrows(NacosApiException.class,
-            () -> configNoopHandler.batchDeleteConfigs(null, "", ""),
+            () -> configNoopHandler.batchDeleteConfigs(null, "", "", ""),
             "Current functionMode is `naming`, config module is disabled.");
     }
     

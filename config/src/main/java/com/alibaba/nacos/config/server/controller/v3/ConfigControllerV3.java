@@ -287,14 +287,22 @@ public class ConfigControllerV3 {
     @DeleteMapping("/batch")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfigs(HttpServletRequest request,
-        @RequestParam(value = "ids") List<Long> ids) {
+        @RequestParam(value = "ids") List<Long> ids,
+        @RequestParam(value = "namespaceId", required = false) String namespaceId) {
         String clientIp = getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
+        String requestNamespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         try {
             for (Long id : ids) {
                 ConfigInfo configInfo = configInfoPersistService.findConfigInfo(id);
                 if (configInfo == null) {
                     LOGGER.warn("[deleteConfigs] configInfo is null, id: {}", id);
+                    continue;
+                }
+                if (!StringUtils.equals(requestNamespaceId, configInfo.getTenant())) {
+                    LOGGER.warn(
+                        "[deleteConfigs] skip configInfo with namespace mismatch, id: {}, request namespace: {}, actual namespace: {}",
+                        id, requestNamespaceId, configInfo.getTenant());
                     continue;
                 }
                 configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),
@@ -724,7 +732,9 @@ public class ConfigControllerV3 {
     public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
         @RequestParam(value = "ids", required = false) List<Long> ids) throws NacosApiException {
         configForm.blurSearchValidate();
-        ids.removeAll(Collections.singleton(null));
+        if (ids != null) {
+            ids.removeAll(Collections.singleton(null));
+        }
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         List<ConfigAllInfo> dataList =
             configInfoPersistService.findAllConfigInfo4Export(configForm.getDataId(),

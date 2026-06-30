@@ -170,11 +170,18 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) {
+    public Boolean batchDeleteConfigs(List<Long> ids, String namespaceId, String clientIp,
+        String srcUser) {
         for (Long id : ids) {
             ConfigInfo configInfo = configInfoPersistService.findConfigInfo(id);
             if (configInfo == null) {
                 LOGGER.warn("[deleteConfigs] configInfo is null, id: {}", id);
+                continue;
+            }
+            if (!StringUtils.equals(namespaceId, configInfo.getTenant())) {
+                LOGGER.warn(
+                    "[deleteConfigs] skip configInfo with namespace mismatch, id: {}, request namespace: {}, actual namespace: {}",
+                    id, namespaceId, configInfo.getTenant());
                 continue;
             }
             configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),

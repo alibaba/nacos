@@ -103,13 +103,15 @@ public interface ConfigHandler {
     /**
      * Deletes multiple configurations based on their IDs.
      *
-     * @param ids      A list of IDs of the configurations to delete.
-     * @param clientIp The IP address of the client requesting the deletion.
-     * @param srcUser  The source user requesting the deletion.
+     * @param ids         A list of IDs of the configurations to delete.
+     * @param namespaceId The namespace identifier.
+     * @param clientIp    The IP address of the client requesting the deletion.
+     * @param srcUser     The source user requesting the deletion.
      * @return A Boolean indicating whether the deletion was successful.
      * @throws NacosException If an error related to Nacos configuration occurs.
      */
-    Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser)
+    Boolean batchDeleteConfigs(List<Long> ids, String namespaceId, String clientIp,
+        String srcUser)
         throws NacosException;
     
     /**

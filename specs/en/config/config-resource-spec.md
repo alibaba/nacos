@@ -36,6 +36,12 @@ The identity is stable. Changing `namespaceId`, `groupName`, or `dataId` is a ne
 resource, clone, import, or delete-and-create operation, not an in-place metadata
 update.
 
+Storage IDs returned by persistence or management surfaces are implementation
+details. Even when a management API or SDK allows batch selection by storage ID,
+the operation must remain scoped by the normalized request `namespaceId`;
+storage IDs must not become global resource tokens that bypass namespace
+identity.
+
 ## 2. Content And Version Fields
 
 | Field | Meaning |

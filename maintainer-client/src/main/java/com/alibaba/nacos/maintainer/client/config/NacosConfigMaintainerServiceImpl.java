@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+
 /**
  * Configuration management.
  *
@@ -170,7 +172,9 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public boolean deleteConfigs(List<Long> ids) throws NacosException {
+    public boolean deleteConfigs(List<Long> ids, String namespaceId) throws NacosException {
+        String requestNamespaceId = StringUtils.isBlank(namespaceId)
+            ? DEFAULT_NAMESPACE_ID : namespaceId;
         Map<String, String> params = new HashMap<>(8);
         StringBuilder idStr = new StringBuilder();
         for (Long id : ids) {
@@ -180,9 +184,13 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
             idStr.append(id);
         }
         params.put("ids", idStr.toString());
-        HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.DELETE)
-            .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/batch").setParamValue(params)
-            .build();
+        params.put("namespaceId", requestNamespaceId);
+        RequestResource resource = buildRequestResource(requestNamespaceId, StringUtils.EMPTY,
+            StringUtils.EMPTY);
+        HttpRequest httpRequest =
+            buildRequestWithResource(resource).setHttpMethod(HttpMethod.DELETE)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/batch").setParamValue(params)
+                .build();
         HttpRestResult<String> httpRestResult =
             getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =

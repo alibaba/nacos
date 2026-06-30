@@ -245,7 +245,20 @@ public interface ConfigMaintainerService
      * @throws NacosException If deletion fails.
      */
     @Since("3.0.0")
-    boolean deleteConfigs(List<Long> ids) throws NacosException;
+    default boolean deleteConfigs(List<Long> ids) throws NacosException {
+        return deleteConfigs(ids, Constants.DEFAULT_NAMESPACE_ID);
+    }
+    
+    /**
+     * Delete multiple configurations by their IDs within the specified namespace.
+     *
+     * @param ids         List of configuration IDs to delete.
+     * @param namespaceId Namespace ID (optional, defaults to "public").
+     * @return Whether the configurations were deleted successfully.
+     * @throws NacosException If deletion fails.
+     */
+    @Since("3.0.0")
+    boolean deleteConfigs(List<Long> ids, String namespaceId) throws NacosException;
     
     /**
      * List first 100 configurations in namespaceId .

@@ -190,7 +190,7 @@ class ConfigControllerV3Test {
         
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH + "/batch")
-                .param("ids", "1,2");
+                .param("ids", "1,2").param("namespaceId", namespaceId);
         
         String actualValue =
             mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
@@ -199,7 +199,35 @@ class ConfigControllerV3Test {
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         assertEquals("0", code);
         assertEquals("true", data);
+        Mockito.verify(configOperationService, Mockito.times(2)).deleteConfig(dataId, groupName,
+            namespaceId, null, "127.0.0.1", null, Constants.HTTP);
         Thread.sleep(1200L);
+    }
+    
+    @Test
+    void testDeleteConfigsSkipsMismatchedNamespace() throws Exception {
+        ConfigInfo matchedConfigInfo = new ConfigInfo("dataId", "group", "tenant", null,
+            "content");
+        ConfigInfo mismatchedConfigInfo = new ConfigInfo("otherDataId", "otherGroup",
+            "otherTenant", null, "content");
+        Mockito.when(configInfoPersistService.findConfigInfo(eq(1L))).thenReturn(matchedConfigInfo);
+        Mockito.when(configInfoPersistService.findConfigInfo(eq(2L)))
+            .thenReturn(mismatchedConfigInfo);
+        
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.delete(Constants.CONFIG_ADMIN_V3_PATH + "/batch")
+                .param("ids", "1,2").param("namespaceId", "tenant");
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        String code = JacksonUtils.toObj(actualValue).get("code").toString();
+        String data = JacksonUtils.toObj(actualValue).get("data").toString();
+        assertEquals("0", code);
+        assertEquals("true", data);
+        Mockito.verify(configOperationService).deleteConfig("dataId", "group", "tenant", null,
+            "127.0.0.1", null, Constants.HTTP);
+        Mockito.verifyNoMoreInteractions(configOperationService);
     }
     
     @Test

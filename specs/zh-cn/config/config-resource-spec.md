@@ -35,6 +35,10 @@ namespaceId -> groupName -> dataId
 身份字段是稳定的。修改 `namespaceId`、`groupName` 或 `dataId` 表示新资源、克隆、导入或删除后重建，
 不是普通元数据更新。
 
+持久化层或管理面返回的存储 ID 是实现细节。即使管理 API 或 SDK 允许通过存储 ID 批量选择配置，
+该操作也必须继续受请求中归一化后的 `namespaceId` 约束；存储 ID 不能作为绕过 namespace 身份的
+全局资源令牌。
+
 ## 2. 内容与版本字段
 
 | 字段 | 含义 |

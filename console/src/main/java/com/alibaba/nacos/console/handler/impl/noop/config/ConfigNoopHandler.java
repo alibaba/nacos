@@ -86,8 +86,8 @@ public class ConfigNoopHandler implements ConfigHandler {
     }
     
     @Override
-    public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser)
-        throws NacosException {
+    public Boolean batchDeleteConfigs(List<Long> ids, String namespaceId, String clientIp,
+        String srcUser) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
             ErrorCode.API_FUNCTION_DISABLED,
             MCP_NOT_ENABLED_MESSAGE);

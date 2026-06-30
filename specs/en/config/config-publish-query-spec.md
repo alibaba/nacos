@@ -51,6 +51,10 @@ change event. Deleting a gray config removes only the named gray variant.
 Deleting a missing config is tolerated by compatibility surfaces, but new
 management workflows should avoid presenting a missing delete as evidence that a
 resource previously existed.
+Batch delete by storage ID is a management operation. The request must carry or
+default a normalized `namespaceId`, and implementations may delete only matching
+IDs inside that namespace. Missing IDs and IDs that belong to another namespace
+may be skipped, but configs in other namespaces must not be deleted.
 
 ## 3. Runtime Query Chain
 
@@ -115,6 +119,8 @@ Import, export, and clone are management operations:
   group or target dataId;
 - import and export must preserve config type, description, app name, group,
   dataId, content, and encryption semantics.
+- when export selects configs by storage ID, the exported result must be scoped
+  to the normalized request `namespaceId`.
 
 ## 7. Interface Rules
 

@@ -190,10 +190,27 @@ class ConfigInnerHandlerTest {
     @Test
     void batchDeleteConfigs() {
         when(configInfoPersistService.findConfigInfo(1L)).thenReturn(mockConfigInfo());
-        assertTrue(configInnerHandler.batchDeleteConfigs(List.of(1L, 2L), "clientIp", "srcUser"));
+        assertTrue(configInnerHandler.batchDeleteConfigs(List.of(1L, 2L), "tenant", "clientIp",
+            "srcUser"));
         verify(configOperationService).deleteConfig(anyString(), anyString(), anyString(), any(),
             anyString(),
             anyString(), anyString());
+    }
+    
+    @Test
+    void batchDeleteConfigsSkipsMismatchedNamespace() {
+        ConfigInfo matchedConfigInfo = mockConfigInfo();
+        ConfigInfo mismatchedConfigInfo = mockConfigInfo();
+        mismatchedConfigInfo.setTenant("otherTenant");
+        when(configInfoPersistService.findConfigInfo(1L)).thenReturn(matchedConfigInfo);
+        when(configInfoPersistService.findConfigInfo(2L)).thenReturn(mismatchedConfigInfo);
+        
+        assertTrue(configInnerHandler.batchDeleteConfigs(List.of(1L, 2L), "tenant", "clientIp",
+            "srcUser"));
+        
+        Mockito.verify(configOperationService).deleteConfig("dataId", "group", "tenant", null,
+            "clientIp", "srcUser", Constants.HTTP);
+        Mockito.verifyNoMoreInteractions(configOperationService);
     }
     
     @Test

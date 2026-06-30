@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.node.MissingNode;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -60,6 +61,8 @@ public abstract class ConfigConsoleApiBaseITCase extends ConsoleApiBaseITCase {
 
     protected static final String CONSOLE_CONFIG_BATCH_DELETE_PATH = CONSOLE_CONFIG_PATH + "/batchDelete";
 
+    protected static final String CONSOLE_NAMESPACE_PATH = CONSOLE_BASE_PATH + "/core/namespace";
+
     protected static final String CONSOLE_HISTORY_PATH = CONSOLE_BASE_PATH + "/cs/history";
 
     protected static final String CONSOLE_HISTORY_LIST_PATH = CONSOLE_HISTORY_PATH + "/list";
@@ -76,6 +79,21 @@ public abstract class ConfigConsoleApiBaseITCase extends ConsoleApiBaseITCase {
 
     protected String randomGroupName(String scenario) {
         return randomConsoleName("group_" + scenario);
+    }
+
+    protected String randomNamespaceId(String scenario) {
+        return "oit_cfg_" + scenario + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    protected JsonNode createNamespace(String namespaceId) throws Exception {
+        JsonNode root = postFormOk(CONSOLE_NAMESPACE_PATH,
+                namespaceCreateQuery(namespaceId, "console config namespace", "created by config it"));
+        assertTrue(root.get("data").asBoolean(), root.toString());
+        return root;
+    }
+
+    protected void deleteNamespaceQuietly(String namespaceId) throws Exception {
+        deleteQuietly(CONSOLE_NAMESPACE_PATH, Query.newInstance().addParam("namespaceId", namespaceId));
     }
 
     protected JsonNode publishConfig(String dataId, String groupName, String namespaceId, String content)
@@ -131,6 +149,14 @@ public abstract class ConfigConsoleApiBaseITCase extends ConsoleApiBaseITCase {
         query.addParam("search", "blur");
         query.addParam("pageNo", String.valueOf(pageNo));
         query.addParam("pageSize", String.valueOf(pageSize));
+        return query;
+    }
+
+    protected Query namespaceCreateQuery(String namespaceId, String namespaceName, String namespaceDesc) {
+        Query query = Query.newInstance();
+        addIfNotBlank(query, "customNamespaceId", namespaceId);
+        addIfNotBlank(query, "namespaceName", namespaceName);
+        addIfNotBlank(query, "namespaceDesc", namespaceDesc);
         return query;
     }
 

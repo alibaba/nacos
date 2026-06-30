@@ -159,9 +159,10 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
     
     @Test
     void batchDeleteConfigs() throws NacosException {
-        when(configMaintainerService.deleteConfigs(any())).thenReturn(true);
+        when(configMaintainerService.deleteConfigs(any(), eq("namespaceId"))).thenReturn(true);
         assertTrue(
-            configRemoteHandler.batchDeleteConfigs(Collections.singletonList(1L), null, null));
+            configRemoteHandler.batchDeleteConfigs(Collections.singletonList(1L), "namespaceId",
+                null, null));
     }
     
     @Test

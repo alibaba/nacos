@@ -183,12 +183,15 @@ public class ConsoleConfigController {
     @DeleteMapping("/batchDelete")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<Boolean> batchDeleteConfigs(HttpServletRequest request,
-        @RequestParam(value = "ids") List<Long> ids)
+        @RequestParam(value = "ids") List<Long> ids,
+        @RequestParam(value = "namespaceId", required = false) String namespaceId)
         throws NacosException {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
+        String requestNamespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         
-        return Result.success(configProxy.batchDeleteConfigs(ids, clientIp, srcUser));
+        return Result.success(configProxy.batchDeleteConfigs(ids, requestNamespaceId, clientIp,
+            srcUser));
     }
     
     /**

@@ -93,9 +93,9 @@ public class ConfigProxy {
     /**
      * Batch delete configurations.
      */
-    public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser)
-        throws NacosException {
-        return configHandler.batchDeleteConfigs(ids, clientIp, srcUser);
+    public Boolean batchDeleteConfigs(List<Long> ids, String namespaceId, String clientIp,
+        String srcUser) throws NacosException {
+        return configHandler.batchDeleteConfigs(ids, namespaceId, clientIp, srcUser);
     }
     
     /**
