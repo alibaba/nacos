@@ -124,7 +124,7 @@ class PageUtilTest {
         assertEquals(2, result.getTotalCount());
         assertEquals(1, result.getPagesAvailable());
     }
-
+    
     @Test
     void subPageExactDivisiblePages() {
         // 9 items / 3 per page = exactly 3 pages (no extra page)
