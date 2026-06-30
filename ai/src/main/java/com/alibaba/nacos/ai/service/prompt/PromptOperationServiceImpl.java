@@ -29,6 +29,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.ard.ArdIndexBuildService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
@@ -61,6 +62,7 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -98,6 +100,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private final PromptDataMigrationTask promptDataMigrationTask;
     
+    private ArdIndexBuildService ardIndexBuildService = ArdIndexBuildService.NOOP;
+    
     public PromptOperationServiceImpl(PublishPipelineExecutor publishPipelineExecutor,
         ConfigOperationService configOperationService,
         AiResourceManager resourceManager,
@@ -107,6 +111,13 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         this.configOperationService = configOperationService;
         this.resourceManager = resourceManager;
         this.promptDataMigrationTask = promptDataMigrationTask;
+    }
+    
+    @Autowired(required = false)
+    public void setArdIndexBuildService(ArdIndexBuildService ardIndexBuildService) {
+        if (ardIndexBuildService != null) {
+            this.ardIndexBuildService = ardIndexBuildService;
+        }
     }
     
     // ========== Admin APIs ==========
@@ -329,6 +340,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         } catch (Exception e) {
             LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
         }
+        rebuildArdPromptIndex(namespaceId, promptKey, version);
     }
     
     @Override
@@ -342,6 +354,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         } catch (Exception e) {
             LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
         }
+        rebuildArdPromptIndex(namespaceId, promptKey, version);
     }
     
     @Override
@@ -369,6 +382,11 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         String newLatest =
             resourceInfo.getLabels() == null ? null : resourceInfo.getLabels().get(LABEL_LATEST);
         syncLatestMirrorIfChanged(namespaceId, promptKey, oldLatest, newLatest);
+        if (online) {
+            rebuildArdPromptIndex(namespaceId, promptKey, version);
+        } else {
+            deleteArdPromptVersionIndex(namespaceId, promptKey, version);
+        }
     }
     
     @Override
@@ -376,6 +394,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         throws NacosException {
         resourceManager.validateAndUpdateLabels(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
             labels);
+        rebuildLatestArdPromptIndex(namespaceId, promptKey);
     }
     
     @Override
@@ -387,6 +406,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
             AiResourceTraceService.OP_UPDATE_BIZ_TAGS, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
+        rebuildLatestArdPromptIndex(namespaceId, promptKey);
     }
     
     @Override
@@ -398,6 +418,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
             AiResourceTraceService.OP_UPDATE_DESCRIPTION, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
+        rebuildLatestArdPromptIndex(namespaceId, promptKey);
     }
     
     @Override
@@ -440,6 +461,43 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         // Delete DB rows
         resourceManager.deleteVersionsByNameAndType(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         resourceManager.deleteMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+        deleteArdPromptIndex(namespaceId, promptKey);
+    }
+    
+    private void rebuildArdPromptIndex(String namespaceId, String promptKey, String version) {
+        try {
+            ardIndexBuildService.rebuildAiResource(namespaceId, RESOURCE_TYPE_PROMPT, promptKey,
+                version);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to rebuild ARD index for prompt: {}@{}", promptKey, version, e);
+        }
+    }
+    
+    private void rebuildLatestArdPromptIndex(String namespaceId, String promptKey) {
+        try {
+            ardIndexBuildService.rebuildLatestAiResource(namespaceId, RESOURCE_TYPE_PROMPT,
+                promptKey);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to rebuild latest ARD index for prompt: {}", promptKey, e);
+        }
+    }
+    
+    private void deleteArdPromptIndex(String namespaceId, String promptKey) {
+        try {
+            ardIndexBuildService.deleteResource(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to delete ARD index for prompt: {}", promptKey, e);
+        }
+    }
+    
+    private void deleteArdPromptVersionIndex(String namespaceId, String promptKey,
+        String version) {
+        try {
+            ardIndexBuildService.deleteResourceVersion(namespaceId, RESOURCE_TYPE_PROMPT,
+                promptKey, version);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to delete ARD index for prompt: {}@{}", promptKey, version, e);
+        }
     }
     
     private void deleteLegacyLatestMirror(String namespaceId, String promptKey) {

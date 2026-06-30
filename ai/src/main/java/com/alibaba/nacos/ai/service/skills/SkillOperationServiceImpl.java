@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.ard.ArdIndexBuildService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
@@ -63,6 +64,7 @@ import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,6 +142,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private final AiResourceManager resourceManager;
     
+    private ArdIndexBuildService ardIndexBuildService = ArdIndexBuildService.NOOP;
+    
     public SkillOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
         AiResourceVersionPersistService aiResourceVersionPersistService,
         PublishPipelineExecutor publishPipelineExecutor,
@@ -151,6 +155,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         this.publishPipelineExecutor = publishPipelineExecutor;
         this.manifestService = manifestService;
         this.resourceManager = resourceManager;
+    }
+    
+    @Autowired(required = false)
+    public void setArdIndexBuildService(ArdIndexBuildService ardIndexBuildService) {
+        if (ardIndexBuildService != null) {
+            this.ardIndexBuildService = ardIndexBuildService;
+        }
     }
     
     /**
@@ -434,6 +445,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         versions.put(version, files);
         manifest.setVersions(versions);
         manifestService.write(namespaceId, skillName, manifest);
+        rebuildArdSkillIndex(namespaceId, skillName, version);
     }
     
     private String createUploadedSkillDraft(String namespaceId, Skill skill, String uploadVersion,
@@ -965,6 +977,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         resourceManager.deleteResourceWithVersions(namespaceId, skillName, RESOURCE_TYPE_SKILL,
             v -> deleteSkillStorageForVersion(namespaceId, skillName, v.getVersion(),
                 v.getStorage()));
+        deleteArdSkillIndex(namespaceId, skillName);
     }
     
     @Override
@@ -1292,6 +1305,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
+        rebuildArdSkillIndex(namespaceId, name, version);
     }
     
     /**
@@ -1309,6 +1323,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
+        rebuildArdSkillIndex(namespaceId, name, version);
     }
     
     /**
@@ -1324,6 +1339,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
+        rebuildArdSkillIndex(namespaceId, name, version);
     }
     
     @Override
@@ -1345,6 +1361,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             manifest.setLabels(new LinkedHashMap<>(effectiveLabels));
             manifestService.write(namespaceId, name, manifest);
         }
+        rebuildLatestArdSkillIndex(namespaceId, name);
     }
     
     /**
@@ -1359,6 +1376,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, null,
             AiResourceTraceService.OP_UPDATE_BIZ_TAGS,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        rebuildLatestArdSkillIndex(namespaceId, name);
     }
     
     /**
@@ -1385,9 +1403,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             if (online) {
                 // On re-enable: rebuild index manifest from all online versions in DB
                 refreshSkillIndexManifest(namespaceId, name);
+                rebuildLatestArdSkillIndex(namespaceId, name);
             } else {
                 // On disable: delete index manifest so clients can no longer discover it
                 manifestService.delete(namespaceId, name);
+                deleteArdSkillIndex(namespaceId, name);
             }
             return;
         }
@@ -1407,6 +1427,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 manifest.getVersions().put(version, files);
                 manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
                 manifestService.write(namespaceId, name, manifest);
+                rebuildArdSkillIndex(namespaceId, name, version);
             }
         } else {
             // Going offline: remove this version from manifest
@@ -1416,6 +1437,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
                 manifestService.write(namespaceId, name, manifest);
             }
+            deleteArdSkillVersionIndex(namespaceId, name, version);
         }
     }
     
@@ -1425,6 +1447,40 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void updateScope(String namespaceId, String name, String scope) throws NacosException {
         resourceManager.doUpdateScope(namespaceId, name, RESOURCE_TYPE_SKILL, scope);
+        rebuildLatestArdSkillIndex(namespaceId, name);
+    }
+    
+    private void rebuildArdSkillIndex(String namespaceId, String name, String version) {
+        try {
+            ardIndexBuildService.rebuildAiResource(namespaceId, RESOURCE_TYPE_SKILL, name, version);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to rebuild ARD index for skill: {}@{}", name, version, e);
+        }
+    }
+    
+    private void rebuildLatestArdSkillIndex(String namespaceId, String name) {
+        try {
+            ardIndexBuildService.rebuildLatestAiResource(namespaceId, RESOURCE_TYPE_SKILL, name);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to rebuild latest ARD index for skill: {}", name, e);
+        }
+    }
+    
+    private void deleteArdSkillIndex(String namespaceId, String name) {
+        try {
+            ardIndexBuildService.deleteResource(namespaceId, RESOURCE_TYPE_SKILL, name);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to delete ARD index for skill: {}", name, e);
+        }
+    }
+    
+    private void deleteArdSkillVersionIndex(String namespaceId, String name, String version) {
+        try {
+            ardIndexBuildService.deleteResourceVersion(namespaceId, RESOURCE_TYPE_SKILL, name,
+                version);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to delete ARD index for skill: {}@{}", name, version, e);
+        }
     }
     
     /**

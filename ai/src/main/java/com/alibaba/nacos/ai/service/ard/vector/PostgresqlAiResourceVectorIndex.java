@@ -1,0 +1,195 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.ai.service.ard.vector;
+
+import com.alibaba.nacos.ai.model.ard.ArdChunk;
+import com.alibaba.nacos.ai.model.ard.ArdSearchHit;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * PostgreSQL pgvector implementation for ARD embeddings.
+ *
+ * @author nacos
+ */
+@Repository
+public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
+    
+    private static final String POSTGRESQL = "postgresql";
+    
+    private static final String POSTGRES = "postgres";
+    
+    private static final String SQL_INSERT = "INSERT INTO ai_resource_ard_embedding_pg "
+        + "(namespace_id, entry_id, chunk_id, identifier, resource_type, resource_name, "
+        + "resource_version, embedding_model, embedding_dimension, embedding, gmt_create, gmt_modified) "
+        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::vector, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+    
+    private final JdbcTemplate injectedJdbcTemplate;
+    
+    public PostgresqlAiResourceVectorIndex() {
+        this.injectedJdbcTemplate = null;
+    }
+    
+    public PostgresqlAiResourceVectorIndex(JdbcTemplate jdbcTemplate) {
+        this.injectedJdbcTemplate = jdbcTemplate;
+    }
+    
+    @Override
+    public boolean available() {
+        if (!isPostgresql()) {
+            return false;
+        }
+        try {
+            getJdbcTemplate().queryForObject(
+                "SELECT COUNT(1) FROM ai_resource_ard_embedding_pg WHERE 1=0",
+                Integer.class);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+    
+    @Override
+    public void replaceResourceVersion(String namespaceId, String resourceType,
+        String resourceName, String resourceVersion,
+        Collection<AiResourceVectorDocument> documents) {
+        deleteByResourceVersion(namespaceId, resourceType, resourceName, resourceVersion);
+        if (documents == null || documents.isEmpty()) {
+            return;
+        }
+        for (AiResourceVectorDocument document : documents) {
+            insert(document);
+        }
+    }
+    
+    @Override
+    public void deleteByResource(String namespaceId, String resourceType, String resourceName) {
+        getJdbcTemplate().update("DELETE FROM ai_resource_ard_embedding_pg WHERE namespace_id=? "
+            + "AND resource_type=? AND resource_name=?",
+            namespaceId, resourceType, resourceName);
+    }
+    
+    @Override
+    public void deleteByResourceVersion(String namespaceId, String resourceType,
+        String resourceName, String resourceVersion) {
+        getJdbcTemplate().update("DELETE FROM ai_resource_ard_embedding_pg WHERE namespace_id=? "
+            + "AND resource_type=? AND resource_name=? AND resource_version=?",
+            namespaceId, resourceType, resourceName, resourceVersion);
+    }
+    
+    @Override
+    public List<ArdSearchHit> search(String namespaceId, double[] queryVector,
+        List<String> resourceTypes, int limit) {
+        if (queryVector == null || queryVector.length == 0) {
+            return Collections.emptyList();
+        }
+        List<Object> args = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT entry_id, chunk_id, identifier, resource_type, resource_name, "
+                + "resource_version, (1 - (embedding <=> ?::vector)) AS score "
+                + "FROM ai_resource_ard_embedding_pg WHERE namespace_id=?");
+        args.add(toVectorLiteral(queryVector));
+        args.add(namespaceId);
+        appendResourceTypeFilter(sql, args, resourceTypes);
+        sql.append(" ORDER BY embedding <=> ?::vector");
+        args.add(toVectorLiteral(queryVector));
+        List<ArdSearchHit> hits = getJdbcTemplate().query(sql.toString(), (rs, rowNum) -> {
+            ArdSearchHit hit = new ArdSearchHit();
+            hit.setEntryId(rs.getLong("entry_id"));
+            hit.setChunkId(rs.getLong("chunk_id"));
+            hit.setIdentifier(rs.getString("identifier"));
+            hit.setResourceType(rs.getString("resource_type"));
+            hit.setResourceName(rs.getString("resource_name"));
+            hit.setResourceVersion(rs.getString("resource_version"));
+            hit.setScore(rs.getDouble("score"));
+            return hit;
+        }, args.toArray());
+        if (hits.size() <= limit) {
+            return hits;
+        }
+        return new ArrayList<>(hits.subList(0, limit));
+    }
+    
+    private void insert(AiResourceVectorDocument document) {
+        ArdChunk chunk = document.getChunk();
+        getJdbcTemplate().update(SQL_INSERT, chunk.getNamespaceId(), chunk.getEntryId(),
+            chunk.getId(), chunk.getIdentifier(), chunk.getResourceType(), chunk.getResourceName(),
+            chunk.getResourceVersion(), document.getEmbeddingModel(),
+            document.getEmbedding().length, toVectorLiteral(document.getEmbedding()));
+    }
+    
+    private void appendResourceTypeFilter(StringBuilder sql, List<Object> args,
+        List<String> resourceTypes) {
+        if (resourceTypes == null || resourceTypes.isEmpty()) {
+            return;
+        }
+        sql.append(" AND resource_type IN (").append(placeholders(resourceTypes.size()))
+            .append(")");
+        args.addAll(resourceTypes);
+    }
+    
+    private String placeholders(int size) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < size; i++) {
+            if (i > 0) {
+                result.append(", ");
+            }
+            result.append("?");
+        }
+        return result.toString();
+    }
+    
+    private String toVectorLiteral(double[] vector) {
+        StringBuilder result = new StringBuilder("[");
+        for (int i = 0; i < vector.length; i++) {
+            if (i > 0) {
+                result.append(',');
+            }
+            result.append(String.format(Locale.ROOT, "%.8f", vector[i]));
+        }
+        result.append(']');
+        return result.toString();
+    }
+    
+    private JdbcTemplate getJdbcTemplate() {
+        if (injectedJdbcTemplate != null) {
+            return injectedJdbcTemplate;
+        }
+        return DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
+    }
+    
+    private boolean isPostgresql() {
+        if (injectedJdbcTemplate != null) {
+            return true;
+        }
+        try {
+            String dataSourceType =
+                DynamicDataSource.getInstance().getDataSource().getDataSourceType();
+            return POSTGRESQL.equalsIgnoreCase(dataSourceType)
+                || POSTGRES.equalsIgnoreCase(dataSourceType);
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+}

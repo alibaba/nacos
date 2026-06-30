@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
+import com.alibaba.nacos.ai.service.ard.ArdIndexBuildService;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
@@ -57,6 +58,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.BeanUtils;
 
 import java.time.ZoneOffset;
@@ -101,6 +103,8 @@ public class McpServerOperationService {
     
     private final SyncEffectService syncEffectService;
     
+    private ArdIndexBuildService ardIndexBuildService = ArdIndexBuildService.NOOP;
+    
     public McpServerOperationService(ConfigQueryChainService configQueryChainService,
         ConfigOperationService configOperationService, McpToolOperationService toolOperationService,
         McpResourceOperationService resourceOperationService,
@@ -113,6 +117,13 @@ public class McpServerOperationService {
         this.endpointOperationService = endpointOperationService;
         this.mcpServerIndex = mcpServerIndex;
         this.syncEffectService = syncEffectService;
+    }
+    
+    @Autowired(required = false)
+    public void setArdIndexBuildService(ArdIndexBuildService ardIndexBuildService) {
+        if (ardIndexBuildService != null) {
+            this.ardIndexBuildService = ardIndexBuildService;
+        }
     }
     
     /**
@@ -443,6 +454,7 @@ public class McpServerOperationService {
         AiResourceTraceService.logSuccess("mcp", serverSpecification.getName(),
             versionDetail.getVersion(), AiResourceTraceService.OP_CREATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        rebuildArdMcpIndex(namespaceId, newSpecification);
         
         return id;
     }
@@ -586,6 +598,9 @@ public class McpServerOperationService {
             updateVersion,
             isPublish ? AiResourceTraceService.OP_PUBLISH : AiResourceTraceService.OP_UPDATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        if (isPublish) {
+            rebuildArdMcpIndex(namespaceId, newSpecification);
+        }
     }
     
     /**
@@ -646,6 +661,38 @@ public class McpServerOperationService {
             StringUtils.isNotEmpty(version) ? AiResourceTraceService.OP_DELETE_VERSION
                 : AiResourceTraceService.OP_DELETE_RESOURCE,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        if (StringUtils.isNotEmpty(version)) {
+            deleteArdMcpVersionIndex(namespaceId, mcpServerId, version);
+        } else {
+            deleteArdMcpIndex(namespaceId, mcpServerId);
+        }
+    }
+    
+    private void rebuildArdMcpIndex(String namespaceId, McpServerBasicInfo serverSpecification) {
+        try {
+            ardIndexBuildService.rebuildMcpServer(namespaceId, serverSpecification);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to rebuild ARD index for mcp server: {}",
+                serverSpecification == null ? null : serverSpecification.getName(), e);
+        }
+    }
+    
+    private void deleteArdMcpIndex(String namespaceId, String mcpServerId) {
+        try {
+            ardIndexBuildService.deleteResource(namespaceId, "mcp", mcpServerId);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to delete ARD index for mcp server: {}", mcpServerId, e);
+        }
+    }
+    
+    private void deleteArdMcpVersionIndex(String namespaceId, String mcpServerId,
+        String version) {
+        try {
+            ardIndexBuildService.deleteResourceVersion(namespaceId, "mcp", mcpServerId, version);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to delete ARD index for mcp server: {}@{}", mcpServerId, version,
+                e);
+        }
     }
     
     private void electLatestMcpServerVersion(McpServerVersionInfo mcpServerVersionInfo) {
