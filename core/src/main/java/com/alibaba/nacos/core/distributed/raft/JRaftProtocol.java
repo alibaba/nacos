@@ -35,6 +35,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Node;
 
@@ -143,6 +144,8 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
                     MapUtil.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER,
                         raftClusterInfo);
                     MapUtil.putIfValNoEmpty(properties, MetadataKey.ERR_MSG, errMsg);
+                    MetricsMonitor.refreshRaftGroupMetrics(groupId, leader, term,
+                        raftConfig.getSelfMember());
                     
                     value.put(groupId, properties);
                     metaData.load(value);

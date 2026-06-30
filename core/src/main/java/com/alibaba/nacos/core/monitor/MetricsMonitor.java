@@ -58,6 +58,10 @@ public final class MetricsMonitor {
     
     private static Map<String, AtomicInteger> moduleConnectionCnt = new ConcurrentHashMap<>();
     
+    private static Map<String, AtomicInteger> raftGroupLeaderStatus = new ConcurrentHashMap<>();
+    
+    private static Map<String, AtomicLong> raftGroupTerm = new ConcurrentHashMap<>();
+    
     static {
         ImmutableTag immutableTag = new ImmutableTag("module", "core");
         List<Tag> tags = new ArrayList<>();
@@ -171,6 +175,52 @@ public final class MetricsMonitor {
     
     public static DistributionSummary getRaftFromLeader() {
         return RAFT_FROM_LEADER;
+    }
+    
+    /**
+     * Refresh raft group metrics for actuator and prometheus.
+     *
+     * @param groupId raft group id
+     * @param leader current leader endpoint
+     * @param term current raft term
+     * @param selfMember local raft endpoint
+     */
+    public static void refreshRaftGroupMetrics(String groupId, String leader, Long term,
+        String selfMember) {
+        if (StringUtils.isBlank(groupId)) {
+            return;
+        }
+        if (StringUtils.isNotBlank(leader)) {
+            AtomicInteger leaderStatus = raftGroupLeaderStatus.computeIfAbsent(groupId,
+                MetricsMonitor::registerRaftGroupLeaderStatus);
+            leaderStatus.set(StringUtils.equals(leader, selfMember) ? 1 : 0);
+        }
+        if (term != null) {
+            raftGroupTerm.computeIfAbsent(groupId, MetricsMonitor::registerRaftGroupTerm)
+                .set(term);
+        }
+    }
+    
+    private static AtomicInteger registerRaftGroupLeaderStatus(String groupId) {
+        AtomicInteger result = new AtomicInteger();
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor",
+            Arrays.asList(
+                new ImmutableTag("module", "core"),
+                new ImmutableTag("name", "raftLeaderStatus"),
+                new ImmutableTag("group", groupId)),
+            result);
+        return result;
+    }
+    
+    private static AtomicLong registerRaftGroupTerm(String groupId) {
+        AtomicLong result = new AtomicLong();
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor",
+            Arrays.asList(
+                new ImmutableTag("module", "core"),
+                new ImmutableTag("name", "raftTerm"),
+                new ImmutableTag("group", groupId)),
+            result);
+        return result;
     }
     
     public static GrpcServerExecutorMetric getSdkServerExecutorMetric() {
