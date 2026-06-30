@@ -256,6 +256,45 @@ public class A2aServerOperationServiceTest {
     }
     
     @Test
+    void testDeleteAgentLatestVersionElectsRemainingVersion() throws NacosException {
+        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
+        AgentVersionDetail currentVersion = versionInfo.getVersionDetails().get(0);
+        currentVersion.setLatest(false);
+        
+        AgentVersionDetail latestVersion = new AgentVersionDetail();
+        latestVersion.setVersion("2.0.0");
+        latestVersion.setLatest(true);
+        versionInfo.setVersion("2.0.0");
+        versionInfo.setLatestPublishedVersion("2.0.0");
+        versionInfo.setVersionDetails(new LinkedList<>(List.of(currentVersion, latestVersion)));
+        
+        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
+        when(response.getStatus())
+            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
+        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME, "2.0.0");
+        
+        verify(configOperationService).deleteConfig(eq(ENCODED_AGENT_NAME + "-2.0.0"),
+            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), eq(null), eq(null),
+            eq("nacos"), eq(null));
+        ArgumentCaptor<ConfigForm> configCaptor = forClass(ConfigForm.class);
+        verify(configOperationService).publishConfig(configCaptor.capture(),
+            any(ConfigRequestInfo.class), eq(null));
+        
+        AgentCardVersionInfo updatedVersionInfo =
+            JacksonUtils.toObj(configCaptor.getValue().getContent(), AgentCardVersionInfo.class);
+        assertEquals(TEST_AGENT_VERSION, updatedVersionInfo.getLatestPublishedVersion());
+        assertEquals(TEST_AGENT_VERSION, updatedVersionInfo.getVersion());
+        assertEquals(1, updatedVersionInfo.getVersionDetails().size());
+        assertEquals(TEST_AGENT_VERSION,
+            updatedVersionInfo.getVersionDetails().get(0).getVersion());
+        assertEquals(true, updatedVersionInfo.getVersionDetails().get(0).isLatest());
+    }
+    
+    @Test
     void testDeleteAgentWhenAgentNotFound() throws NacosException {
         ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
         when(response.getStatus())
