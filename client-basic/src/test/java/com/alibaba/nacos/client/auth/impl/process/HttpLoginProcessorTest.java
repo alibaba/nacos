@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -94,6 +97,27 @@ class HttpLoginProcessorTest {
             any(Query.class), anyMap(), eq(String.class)))
             .thenThrow(new RuntimeException("test"));
         assertNull(loginProcessor.getResponse(properties));
+    }
+    
+    @Test
+    void testGetResponseUsesHttpsWhenTlsEnabled() throws Exception {
+        String previousTlsEnable = System.getProperty(TlsSystemConfig.TLS_ENABLE);
+        System.setProperty(TlsSystemConfig.TLS_ENABLE, "true");
+        try {
+            properties.setProperty(NacosAuthLoginConstant.SERVER, "localhost");
+            when(restTemplate.postForm(anyString(),
+                eq(Header.EMPTY),
+                any(Query.class), anyMap(), eq(String.class))).thenReturn(result);
+            assertNull(loginProcessor.getResponse(properties));
+            verify(restTemplate).postForm(eq("https://localhost:8848/nacos/v3/auth/user/login"),
+                eq(Header.EMPTY), any(Query.class), anyMap(), eq(String.class));
+        } finally {
+            if (previousTlsEnable == null) {
+                System.clearProperty(TlsSystemConfig.TLS_ENABLE);
+            } else {
+                System.setProperty(TlsSystemConfig.TLS_ENABLE, previousTlsEnable);
+            }
+        }
     }
     
     @Test
