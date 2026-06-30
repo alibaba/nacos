@@ -750,7 +750,7 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockList.get(1).setLastModified(System.currentTimeMillis());
         mockList.get(2).setLastModified(System.currentTimeMillis());
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {}),
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {0, 101}),
             eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(
                 mockList);
         
