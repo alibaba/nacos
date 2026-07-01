@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.remote.rpc.handler;
 
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
@@ -80,12 +81,17 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     private InstanceResponse registerInstance(Service service, InstanceRequest request,
         RequestMeta meta)
         throws NacosException {
-        clientOperationService.registerInstance(service, request.getInstance(),
-            meta.getConnectionId());
+        Instance instance = request.getInstance();
+        if (null == instance) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "Required parameter 'instance' is missing.");
+        }
+        instance.validate();
+        clientOperationService.registerInstance(service, instance, meta.getConnectionId());
         NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
             NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(),
             service.getGroup(),
-            service.getName(), request.getInstance().getIp(), request.getInstance().getPort()));
+            service.getName(), instance.getIp(), instance.getPort()));
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
     

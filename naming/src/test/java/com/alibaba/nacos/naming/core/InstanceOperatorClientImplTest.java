@@ -127,7 +127,10 @@ class InstanceOperatorClientImplTest {
     
     @Test
     void testRegisterInstance() throws NacosException {
-        instanceOperatorClient.registerInstance("A", "B", new Instance());
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8848);
+        instanceOperatorClient.registerInstance("A", "B", instance);
         
         Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(),
             Mockito.anyString());
@@ -138,6 +141,8 @@ class InstanceOperatorClientImplTest {
         Throwable exception = assertThrows(NacosException.class, () -> {
             
             Instance instance = new Instance();
+            instance.setIp("1.1.1.1");
+            instance.setPort(8848);
             instance.setEphemeral(true);
             instance.setClusterName("cluster1,cluster2");
             new InstanceOperatorClientImpl(null, null, null, null, null, null).registerInstance(
@@ -171,6 +176,8 @@ class InstanceOperatorClientImplTest {
     @Test
     void testUpdateInstance() throws NacosException {
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8848);
         instance.setServiceName("C");
         instanceOperatorClient.updateInstance("A", Constants.DEFAULT_GROUP, "C", instance);
         
@@ -181,6 +188,8 @@ class InstanceOperatorClientImplTest {
     @Test
     void testUpdateInstanceWithNullValue() throws NacosException {
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8848);
         instance.setServiceName("C");
         instance.getMetadata().put("nullValue", null);
         instanceOperatorClient.updateInstance("A", Constants.DEFAULT_GROUP, "C", instance);
@@ -192,6 +201,8 @@ class InstanceOperatorClientImplTest {
     @Test
     void testUpdateInstanceMissingServiceThrows() {
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8848);
         instance.setServiceName("missing");
         
         assertThrows(NacosApiException.class,
@@ -337,6 +348,9 @@ class InstanceOperatorClientImplTest {
         when(ipPortBasedClient.getAllPublishedService()).thenReturn(Collections.emptyList());
         
         RsInfo rsInfo = new RsInfo();
+        rsInfo.setIp("1.1.1.1");
+        rsInfo.setPort(8848);
+        rsInfo.setCluster("D");
         rsInfo.setMetadata(new HashMap<>(1));
         int res = instanceOperatorClient.handleBeat("A", "C", "1.1.1.1", 8848, "D", rsInfo,
             BeatInfoInstanceBuilder.newBuilder());

@@ -175,6 +175,7 @@ public class NamingUtils {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
                 "Instance can not be null.");
         }
+        instance.validate();
         if (instance.getInstanceHeartBeatTimeOut() < instance.getInstanceHeartBeatInterval()
             || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
