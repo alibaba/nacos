@@ -554,3 +554,114 @@ CREATE UNIQUE INDEX "uk_ai_resource_ver_ns_name_type_ver" ON "ai_resource_versio
 CREATE INDEX "idx_ai_resource_ver_name" ON "ai_resource_version" USING btree ("name");
 CREATE INDEX "idx_ai_resource_ver_status" ON "ai_resource_version" USING btree ("status");
 CREATE INDEX "idx_ai_resource_ver_gmt_modified" ON "ai_resource_version" USING btree ("gmt_modified");
+
+-- ----------------------------
+-- Table structure for ai_resource_ard_entry
+-- ----------------------------
+DROP TABLE IF EXISTS "ai_resource_ard_entry";
+CREATE TABLE "ai_resource_ard_entry" (
+  "id" bigserial NOT NULL,
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "namespace_id" varchar(128) NOT NULL DEFAULT '',
+  "resource_type" varchar(32) NOT NULL,
+  "resource_name" varchar(256) NOT NULL,
+  "resource_version" varchar(64) NOT NULL,
+  "identifier" varchar(512) NOT NULL,
+  "display_name" varchar(256) NOT NULL,
+  "entry_type" varchar(128) NOT NULL,
+  "entry_url" varchar(1024),
+  "entry_data" text,
+  "c_desc" varchar(2048),
+  "tags" text,
+  "capabilities" text,
+  "representative_queries" text,
+  "metadata" text,
+  "trust_manifest" text,
+  "source_digest" varchar(64) NOT NULL,
+  "status" varchar(32) NOT NULL,
+  "generate_mode" varchar(32) NOT NULL,
+  "source" varchar(64) NOT NULL
+);
+
+ALTER TABLE "ai_resource_ard_entry" ADD CONSTRAINT "ai_resource_ard_entry_pkey" PRIMARY KEY ("id");
+CREATE UNIQUE INDEX "uk_ard_entry_resource_version" ON "ai_resource_ard_entry" USING btree (
+  "namespace_id",
+  "resource_type",
+  "resource_name",
+  "resource_version"
+);
+CREATE INDEX "idx_ard_entry_identifier" ON "ai_resource_ard_entry" USING btree ("identifier");
+CREATE INDEX "idx_ard_entry_type_status" ON "ai_resource_ard_entry" USING btree (
+  "namespace_id",
+  "resource_type",
+  "status"
+);
+
+-- ----------------------------
+-- Table structure for ai_resource_ard_chunk
+-- ----------------------------
+DROP TABLE IF EXISTS "ai_resource_ard_chunk";
+CREATE TABLE "ai_resource_ard_chunk" (
+  "id" bigserial NOT NULL,
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "entry_id" bigint NOT NULL,
+  "namespace_id" varchar(128) NOT NULL DEFAULT '',
+  "identifier" varchar(512) NOT NULL,
+  "resource_type" varchar(32) NOT NULL,
+  "resource_name" varchar(256) NOT NULL,
+  "resource_version" varchar(64) NOT NULL,
+  "chunk_type" varchar(64) NOT NULL,
+  "chunk_text" text NOT NULL,
+  "canonical_text" text NOT NULL,
+  "language" varchar(16),
+  "chunk_hash" varchar(64) NOT NULL,
+  "metadata" text,
+  "status" varchar(32) NOT NULL
+);
+
+ALTER TABLE "ai_resource_ard_chunk" ADD CONSTRAINT "ai_resource_ard_chunk_pkey" PRIMARY KEY ("id");
+CREATE INDEX "idx_ard_chunk_entry" ON "ai_resource_ard_chunk" USING btree ("entry_id");
+CREATE INDEX "idx_ard_chunk_hash" ON "ai_resource_ard_chunk" USING btree ("chunk_hash");
+CREATE INDEX "idx_ard_chunk_resource" ON "ai_resource_ard_chunk" USING btree (
+  "namespace_id",
+  "resource_type",
+  "resource_name",
+  "resource_version"
+);
+CREATE INDEX "idx_ard_chunk_type_status" ON "ai_resource_ard_chunk" USING btree (
+  "namespace_id",
+  "resource_type",
+  "status"
+);
+
+-- ----------------------------
+-- Table structure for ai_resource_ard_embedding_pg
+-- ----------------------------
+CREATE EXTENSION IF NOT EXISTS vector;
+DROP TABLE IF EXISTS "ai_resource_ard_embedding_pg";
+CREATE TABLE "ai_resource_ard_embedding_pg" (
+  "id" bigserial NOT NULL,
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "namespace_id" varchar(128) NOT NULL DEFAULT '',
+  "entry_id" bigint NOT NULL,
+  "chunk_id" bigint NOT NULL,
+  "identifier" varchar(512) NOT NULL,
+  "resource_type" varchar(32) NOT NULL,
+  "resource_name" varchar(256) NOT NULL,
+  "resource_version" varchar(64) NOT NULL,
+  "embedding_model" varchar(128) NOT NULL,
+  "embedding_dimension" integer NOT NULL,
+  "embedding" vector(384) NOT NULL
+);
+
+ALTER TABLE "ai_resource_ard_embedding_pg" ADD CONSTRAINT "ai_resource_ard_embedding_pg_pkey" PRIMARY KEY ("id");
+CREATE INDEX "idx_ard_embedding_pg_chunk" ON "ai_resource_ard_embedding_pg" USING btree ("chunk_id");
+CREATE INDEX "idx_ard_embedding_pg_resource" ON "ai_resource_ard_embedding_pg" USING btree (
+  "namespace_id",
+  "resource_type",
+  "resource_name",
+  "resource_version"
+);

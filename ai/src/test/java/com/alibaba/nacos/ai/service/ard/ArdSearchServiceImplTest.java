@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -145,6 +147,57 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
+    void searchShouldPageResultsWithNextPageToken() throws Exception {
+        ArdSearchServiceImpl service = service();
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
+            .thenReturn(List.of(hit(101L, 1.0D, "api-one"), hit(102L, 0.9D, "api-two"),
+                hit(103L, 0.8D, "api-three")));
+        when(repository.findEntriesByIds(anyCollection()))
+            .thenReturn(List.of(entry(101L, "api-one"), entry(102L, "api-two"),
+                entry(103L, "api-three")));
+        when(resourceManager.findMeta("public", "api-one", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("api-one", "1.0.0"));
+        when(resourceManager.findMeta("public", "api-two", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("api-two", "1.0.0"));
+        when(resourceManager.findMeta("public", "api-three", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("api-three", "1.0.0"));
+        when(resourceManager.findVersion(eq("public"), any(),
+            eq(Constants.Skills.RESOURCE_TYPE_SKILL),
+            eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
+        
+        ArdSearchRequest firstRequest = request("api",
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL)));
+        firstRequest.setPageSize(2);
+        ArdSearchResponse firstPage = service.search(firstRequest);
+        
+        assertEquals(2, firstPage.getResults().size());
+        assertEquals("api-one", firstPage.getResults().get(0).getDisplayName());
+        assertEquals("api-two", firstPage.getResults().get(1).getDisplayName());
+        assertNotNull(firstPage.getNextPageToken());
+        
+        ArdSearchRequest secondRequest = request("api",
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL)));
+        secondRequest.setPageSize(2);
+        secondRequest.setPageToken(firstPage.getNextPageToken());
+        ArdSearchResponse secondPage = service.search(secondRequest);
+        
+        assertEquals(1, secondPage.getResults().size());
+        assertEquals("api-three", secondPage.getResults().get(0).getDisplayName());
+        assertNull(secondPage.getNextPageToken());
+    }
+    
+    @Test
+    void searchShouldRejectInvalidPageToken() {
+        ArdSearchServiceImpl service = service();
+        ArdSearchRequest request = request("api",
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL)));
+        request.setPageToken("broken-token");
+        
+        assertThrows(NacosException.class, () -> service.search(request));
+    }
+    
+    @Test
     void searchShouldSkipEntryWhenVersionIsNotLatest() throws Exception {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
@@ -197,34 +250,42 @@ class ArdSearchServiceImplTest {
     }
     
     private ArdSearchHit hit(Long entryId, double score) {
+        return hit(entryId, score, "api-helper");
+    }
+    
+    private ArdSearchHit hit(Long entryId, double score, String resourceName) {
         ArdSearchHit hit = new ArdSearchHit();
         hit.setEntryId(entryId);
         hit.setChunkId(200L);
-        hit.setIdentifier("urn:air:nacos.local:public:skill:api-helper");
+        hit.setIdentifier("urn:air:nacos.local:public:skill:" + resourceName);
         hit.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
-        hit.setResourceName("api-helper");
+        hit.setResourceName(resourceName);
         hit.setResourceVersion("1.0.0");
         hit.setScore(score);
         return hit;
     }
     
     private ArdEntry entry() {
+        return entry(100L, "api-helper");
+    }
+    
+    private ArdEntry entry(long id, String resourceName) {
         ArdEntry entry = new ArdEntry();
-        entry.setId(100L);
+        entry.setId(id);
         entry.setNamespaceId("public");
         entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
-        entry.setResourceName("api-helper");
+        entry.setResourceName(resourceName);
         entry.setResourceVersion("1.0.0");
-        entry.setIdentifier("urn:air:nacos.local:public:skill:api-helper");
-        entry.setDisplayName("api-helper");
+        entry.setIdentifier("urn:air:nacos.local:public:skill:" + resourceName);
+        entry.setDisplayName(resourceName);
         entry.setType(ArdIndexConstants.MEDIA_TYPE_SKILL);
-        entry.setUrl("nacos://public/skill/api-helper/1.0.0");
+        entry.setUrl("nacos://public/skill/" + resourceName + "/1.0.0");
         entry.setDescription("Generate API parameter tables");
         entry.setTags(JacksonUtils.toJson(List.of("documentation", "api")));
         entry.setCapabilities(JacksonUtils.toJson(List.of("skill", "documentation")));
         entry.setRepresentativeQueries(JacksonUtils.toJson(List.of("api helper")));
         entry.setMetadata(JacksonUtils.toJson(Map.of("namespaceId", "public",
-            "resourceType", "skill", "resourceName", "api-helper", "resourceVersion", "1.0.0",
+            "resourceType", "skill", "resourceName", resourceName, "resourceVersion", "1.0.0",
             "inputTypes", List.of("json"), "outputTypes", List.of("markdown"),
             "riskLevel", "low")));
         entry.setStatus(ArdIndexConstants.STATUS_ENABLED);
@@ -234,9 +295,13 @@ class ArdSearchServiceImplTest {
     }
     
     private AiResource meta(String latestVersion) {
+        return meta("api-helper", latestVersion);
+    }
+    
+    private AiResource meta(String name, String latestVersion) {
         AiResource meta = new AiResource();
         meta.setNamespaceId("public");
-        meta.setName("api-helper");
+        meta.setName(name);
         meta.setType(Constants.Skills.RESOURCE_TYPE_SKILL);
         meta.setStatus(AiResourceConstants.META_STATUS_ENABLE);
         meta.setScope(VisibilityConstants.SCOPE_PUBLIC);

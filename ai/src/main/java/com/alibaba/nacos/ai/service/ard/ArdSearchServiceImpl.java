@@ -41,9 +41,11 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -77,6 +79,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private static final TypeReference<Map<String, Object>> MAP_TYPE =
         new TypeReference<Map<String, Object>>() {
         };
+    
+    private static final String PAGE_TOKEN_OFFSET = "offset";
     
     private static final Set<String> SUPPORTED_FILTER_KEYS =
         new LinkedHashSet<>(Arrays.asList("type", "tags", "capabilities",
@@ -119,10 +123,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         }
         candidates.sort(Comparator.comparing(ArdSearchResult::getScore,
             Comparator.nullsLast(Comparator.reverseOrder())));
-        ArdSearchResponse response = new ArdSearchResponse();
-        response.setResults(limit(candidates, context.pageSize));
-        response.setReferrals(Collections.emptyList());
-        return response;
+        return page(candidates, context);
     }
     
     private Map<Long, Double> recall(SearchContext context) {
@@ -173,6 +174,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         context.text = query.getText().trim();
         context.filter = filter;
         context.pageSize = normalizePageSize(request.getPageSize());
+        context.pageOffset = decodePageOffset(request.getPageToken());
         context.kinds = resolveKinds(filter);
         context.resourceTypes = resourceTypes(context.kinds);
         return context;
@@ -223,6 +225,36 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             return DEFAULT_PAGE_SIZE;
         }
         return Math.min(pageSize, MAX_PAGE_SIZE);
+    }
+    
+    private int decodePageOffset(String pageToken) throws NacosApiException {
+        if (StringUtils.isBlank(pageToken)) {
+            return 0;
+        }
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(pageToken);
+            Map<String, Object> token =
+                JacksonUtils.toObj(new String(decoded, StandardCharsets.UTF_8), MAP_TYPE);
+            Object offsetValue = token == null ? null : token.get(PAGE_TOKEN_OFFSET);
+            int offset = parseOffset(offsetValue);
+            if (offset >= 0) {
+                return offset;
+            }
+        } catch (Exception ignored) {
+            // Fall through to a typed API error below.
+        }
+        throw new NacosApiException(NacosException.INVALID_PARAM,
+            ErrorCode.PARAMETER_VALIDATE_ERROR, "Invalid ARD pageToken");
+    }
+    
+    private int parseOffset(Object offsetValue) {
+        if (offsetValue instanceof Number) {
+            return ((Number) offsetValue).intValue();
+        }
+        if (offsetValue instanceof String && StringUtils.isNotBlank((String) offsetValue)) {
+            return Integer.parseInt((String) offsetValue);
+        }
+        return -1;
     }
     
     private List<ResourceKind> resolveKinds(Map<String, List<String>> filter) {
@@ -412,11 +444,23 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return value == null ? "" : value.toLowerCase(Locale.ROOT);
     }
     
-    private List<ArdSearchResult> limit(List<ArdSearchResult> candidates, int pageSize) {
-        if (candidates.size() <= pageSize) {
-            return candidates;
+    private ArdSearchResponse page(List<ArdSearchResult> candidates, SearchContext context) {
+        ArdSearchResponse response = new ArdSearchResponse();
+        response.setReferrals(Collections.emptyList());
+        int fromIndex = Math.min(context.pageOffset, candidates.size());
+        int toIndex = Math.min(fromIndex + context.pageSize, candidates.size());
+        response.setResults(new ArrayList<>(candidates.subList(fromIndex, toIndex)));
+        if (toIndex < candidates.size()) {
+            response.setNextPageToken(encodePageToken(toIndex));
         }
-        return new ArrayList<>(candidates.subList(0, pageSize));
+        return response;
+    }
+    
+    private String encodePageToken(int offset) {
+        Map<String, Object> token = new LinkedHashMap<>();
+        token.put(PAGE_TOKEN_OFFSET, offset);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(
+            JacksonUtils.toJson(token).getBytes(StandardCharsets.UTF_8));
     }
     
     private String stringValue(Object value) {
@@ -463,5 +507,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         private List<String> resourceTypes;
         
         private int pageSize;
+        
+        private int pageOffset;
     }
 }
