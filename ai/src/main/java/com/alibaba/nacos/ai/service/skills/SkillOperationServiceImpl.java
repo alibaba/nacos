@@ -1437,7 +1437,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
                 manifestService.write(namespaceId, name, manifest);
             }
-            deleteArdSkillVersionIndex(namespaceId, name, version);
+            rebuildLatestArdSkillIndex(namespaceId, name);
         }
     }
     
@@ -1452,7 +1452,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private void rebuildArdSkillIndex(String namespaceId, String name, String version) {
         try {
-            ardIndexBuildService.rebuildAiResource(namespaceId, RESOURCE_TYPE_SKILL, name, version);
+            ardIndexBuildService.rebuildLatestAiResource(namespaceId, RESOURCE_TYPE_SKILL, name);
         } catch (Exception e) {
             LOGGER.warn("Failed to rebuild ARD index for skill: {}@{}", name, version, e);
         }
@@ -1471,15 +1471,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             ardIndexBuildService.deleteResource(namespaceId, RESOURCE_TYPE_SKILL, name);
         } catch (Exception e) {
             LOGGER.warn("Failed to delete ARD index for skill: {}", name, e);
-        }
-    }
-    
-    private void deleteArdSkillVersionIndex(String namespaceId, String name, String version) {
-        try {
-            ardIndexBuildService.deleteResourceVersion(namespaceId, RESOURCE_TYPE_SKILL, name,
-                version);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to delete ARD index for skill: {}@{}", name, version, e);
         }
     }
     
