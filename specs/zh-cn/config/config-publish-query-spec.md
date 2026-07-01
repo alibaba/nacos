@@ -99,6 +99,8 @@ Executor 和队列边界由[任务执行规范](../design/foundation-task-execut
 - 导出打包配置内容和元数据；
 - 导入要求元数据和内容互相匹配，应用请求指定的同名配置策略，并为成功写入发布变更事件；
 - 克隆将选中的配置复制到目标 namespace，并可选择目标 group 或目标 dataId；
+- 克隆中的源配置 ID 只能在归一化后的源 namespace 内解析，克隆结果写入归一化后的目标
+  namespace；缺省源 namespace 时默认等于目标 namespace，以保持同 namespace 克隆兼容；
 - 导入和导出必须保留配置类型、描述、应用名、group、dataId、内容和加密语义。
 - 当导出通过存储 ID 选择配置时，导出结果必须限制在请求中归一化后的 `namespaceId` 内。
 - 当前导出 API 中的 `ids` 选择器属于已废弃并待移除的兼容路径；后续导出选择应基于
@@ -109,6 +111,7 @@ Executor 和队列边界由[任务执行规范](../design/foundation-task-execut
 | 接口面 | 规则 |
 | --- | --- |
 | HTTP Open API | 通过 `/v3/client/cs/config` 查询单个已知配置，不提供 HTTP 监听或大范围管理行为。 |
-| HTTP Admin API | CRUD、元数据、列表/搜索、导入、导出、克隆、beta 查询/删除、监听、容量、指标和运维使用 `/v3/admin/cs/*`。 |
+| HTTP Admin API | CRUD、元数据、列表/搜索、导入、导出、克隆、beta 查询/删除、监听、容量、指标和运维使用 `/v3/admin/cs/*`；Admin 克隆中 `namespaceId` 表示目标 namespace，可选 `sourceNamespaceId` 表示源 namespace。 |
+| HTTP Console API | Console 克隆中 `namespaceId` 表示源 namespace，`targetNamespaceId` 表示目标 namespace；缺省 `namespaceId` 时源 namespace 默认等于目标 namespace。 |
 | gRPC API | 查询、兼容发布、兼容删除、监听、模糊订阅和推送消息必须保持同一套 Config 身份和 md5 语义。 |
 | Client SDK | 应用应优先使用运行时查询和监听 API；大范围管理 API 属于 Maintainer SDK。 |

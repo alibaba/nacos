@@ -164,9 +164,9 @@ public class ConfigRemoteHandler implements ConfigHandler {
     }
     
     @Override
-    public Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
-        List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
-        String requestIpApp) throws NacosException {
+    public Result<Map<String, Object>> cloneConfig(String srcUser, String sourceNamespaceId,
+        String targetNamespaceId, List<SameNamespaceCloneConfigBean> configBeansList,
+        SameConfigPolicy policy, String srcIp, String requestIpApp) throws NacosException {
         List<ConfigCloneInfo> configInfos = new ArrayList<>(configBeansList.size());
         configBeansList.forEach(sameNamespaceCloneConfigBean -> {
             ConfigCloneInfo configCloneInfo = new ConfigCloneInfo();
@@ -176,8 +176,8 @@ public class ConfigRemoteHandler implements ConfigHandler {
             configInfos.add(configCloneInfo);
         });
         return Result.success(
-            clientHolder.getConfigMaintainerService().cloneConfig(namespaceId, configInfos, srcUser,
-                policy));
+            clientHolder.getConfigMaintainerService().cloneConfig(sourceNamespaceId,
+                targetNamespaceId, configInfos, srcUser, policy));
     }
     
     @Override

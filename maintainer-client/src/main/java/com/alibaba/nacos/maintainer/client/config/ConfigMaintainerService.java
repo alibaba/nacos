@@ -504,6 +504,32 @@ public interface ConfigMaintainerService
         SameConfigPolicy policy) throws NacosException;
     
     /**
+     * Clone configurations from a source namespace to a target namespace.
+     *
+     * @param sourceNamespaceId Source namespace ID (optional, defaults to "public").
+     * @param targetNamespaceId Target namespace ID (optional, defaults to "public").
+     * @param cloneInfos        List of configurations to clone (required).
+     * @param srcUser           Source user (optional).
+     * @param policy            Conflict resolution policy (required).
+     * @return A map containing the clone result (e.g., success count, unrecognized data).
+     * @throws NacosException If the clone operation fails.
+     */
+    @Since("3.3.0")
+    default Map<String, Object> cloneConfig(String sourceNamespaceId, String targetNamespaceId,
+        List<ConfigCloneInfo> cloneInfos, String srcUser, SameConfigPolicy policy)
+        throws NacosException {
+        String sourceNamespace = StringUtils.isBlank(sourceNamespaceId)
+            ? Constants.DEFAULT_NAMESPACE_ID : sourceNamespaceId;
+        String targetNamespace = StringUtils.isBlank(targetNamespaceId)
+            ? Constants.DEFAULT_NAMESPACE_ID : targetNamespaceId;
+        if (!StringUtils.equals(sourceNamespace, targetNamespace)) {
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM,
+                "Cross-namespace clone is not supported by this implementation.");
+        }
+        return cloneConfig(targetNamespace, cloneInfos, srcUser, policy);
+    }
+    
+    /**
      * Query configurations list by namespace.
      *
      * @param namespaceId Namespace ID (required).

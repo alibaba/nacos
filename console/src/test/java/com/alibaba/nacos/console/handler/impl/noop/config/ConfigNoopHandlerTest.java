@@ -108,7 +108,7 @@ class ConfigNoopHandlerTest {
     @Test
     void cloneConfig() {
         assertThrows(NacosApiException.class,
-            () -> configNoopHandler.cloneConfig(null, "", null, null, "", ""),
+            () -> configNoopHandler.cloneConfig(null, "", "", null, null, "", ""),
             "Current functionMode is `naming`, config module is disabled.");
     }
     

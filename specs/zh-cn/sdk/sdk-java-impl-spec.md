@@ -226,6 +226,8 @@ Maintainer service 在适用场景下继承 `CoreMaintainerService`。它们属�
 管理类写入和大范围查询应加入这里，而不是继续扩展 `ConfigService`。
 按存储 ID 批量删除必须显式传入或默认出 namespace；未传 namespace 的便捷方法只表示默认
 namespace，不表示跨 namespace 全局删除。
+按存储 ID 克隆必须显式传入或默认出源 namespace 和目标 namespace。旧的单 namespace 克隆方法只表示
+同 namespace 克隆，不表示按 ID 跨 namespace 读取源配置。
 Maintainer SDK 中暴露存储 ID 选择器的方法，例如批量删除中的 `ids`，属于兼容方法并待移除。
 新的 maintainer 契约应按 `namespaceId`、`groupName`、`dataId`，或这些身份元组的显式列表选择配置。
 

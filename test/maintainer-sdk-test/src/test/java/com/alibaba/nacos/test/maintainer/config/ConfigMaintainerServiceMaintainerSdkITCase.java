@@ -189,6 +189,80 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
     }
 
     @Test
+    void shouldCloneConfigAcrossNamespaces() throws Exception {
+        ConfigMaintainerService maintainerService = createConfigMaintainerService();
+        String sourceNamespaceId = randomMaintainerName("clone-source-ns");
+        String targetNamespaceId = randomMaintainerName("clone-target-ns");
+        assertTrue(maintainerService.createNamespace(sourceNamespaceId, "clone source namespace",
+                "created by maintainer sdk it"));
+        assertTrue(maintainerService.createNamespace(targetNamespaceId, "clone target namespace",
+                "created by maintainer sdk it"));
+        String sourceDataId = randomDataId("clone-source-cross");
+        String sourceGroup = randomGroup("config");
+        String targetDataId = randomDataId("clone-target-cross");
+        String targetGroup = randomGroup("config");
+        String content = "maintainer.config.clone.cross.namespace=true";
+        addCleanup(() -> maintainerService.deleteNamespace(sourceNamespaceId));
+        addCleanup(() -> maintainerService.deleteNamespace(targetNamespaceId));
+        addCleanup(() -> maintainerService.deleteConfig(sourceDataId, sourceGroup,
+                sourceNamespaceId));
+        addCleanup(() -> maintainerService.deleteConfig(targetDataId, targetGroup,
+                targetNamespaceId));
+
+        assertTrue(maintainerService.publishConfig(sourceDataId, sourceGroup, sourceNamespaceId,
+                content));
+        ConfigDetailInfo source = maintainerService.getConfig(sourceDataId, sourceGroup,
+                sourceNamespaceId);
+
+        Map<String, Object> cloneResult = maintainerService.cloneConfig(sourceNamespaceId,
+                targetNamespaceId,
+                Collections.singletonList(cloneInfo(source.getId(), targetDataId, targetGroup)),
+                "maintainer-sdk-it", SameConfigPolicy.ABORT);
+
+        assertEquals(1, intValue(cloneResult, "succCount"));
+        ConfigDetailInfo target = maintainerService.getConfig(targetDataId, targetGroup,
+                targetNamespaceId);
+        assertConfigDetail(target, targetDataId, targetGroup, targetNamespaceId, content);
+    }
+
+    @Test
+    void shouldSkipCloneIdsOutsideSourceNamespace() throws Exception {
+        ConfigMaintainerService maintainerService = createConfigMaintainerService();
+        String sourceNamespaceId = randomMaintainerName("clone-source-mismatch");
+        String targetNamespaceId = randomMaintainerName("clone-target-mismatch");
+        String otherNamespaceId = randomMaintainerName("clone-other-mismatch");
+        assertTrue(maintainerService.createNamespace(sourceNamespaceId, "clone source namespace",
+                "created by maintainer sdk it"));
+        assertTrue(maintainerService.createNamespace(targetNamespaceId, "clone target namespace",
+                "created by maintainer sdk it"));
+        assertTrue(maintainerService.createNamespace(otherNamespaceId, "clone other namespace",
+                "created by maintainer sdk it"));
+        String otherDataId = randomDataId("clone-other");
+        String otherGroup = randomGroup("config");
+        String targetDataId = randomDataId("clone-target-mismatch");
+        String targetGroup = randomGroup("config");
+        addCleanup(() -> maintainerService.deleteNamespace(sourceNamespaceId));
+        addCleanup(() -> maintainerService.deleteNamespace(targetNamespaceId));
+        addCleanup(() -> maintainerService.deleteNamespace(otherNamespaceId));
+        addCleanup(() -> maintainerService.deleteConfig(otherDataId, otherGroup,
+                otherNamespaceId));
+
+        assertTrue(maintainerService.publishConfig(otherDataId, otherGroup, otherNamespaceId,
+                "maintainer.config.clone.other.namespace=true"));
+        ConfigDetailInfo other = maintainerService.getConfig(otherDataId, otherGroup,
+                otherNamespaceId);
+
+        Map<String, Object> cloneResult = maintainerService.cloneConfig(sourceNamespaceId,
+                targetNamespaceId,
+                Collections.singletonList(cloneInfo(other.getId(), targetDataId, targetGroup)),
+                "maintainer-sdk-it", SameConfigPolicy.ABORT);
+
+        assertEquals(0, intValue(cloneResult, "succCount"));
+        assertThrows(NacosException.class,
+                () -> maintainerService.getConfig(targetDataId, targetGroup, targetNamespaceId));
+    }
+
+    @Test
     void shouldApplyCloneConflictPolicies() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
         String namespaceId = Constants.DEFAULT_NAMESPACE_ID;

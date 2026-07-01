@@ -54,7 +54,7 @@ boundary/validation behavior, and controlled exception/error handling.
 | `ConfigBatchDeleteConsoleApiOpenApiITCase` | `DELETE /v3/console/cs/config/batchDelete` | Covered | Creates multiple configs, deletes them through the batch API, verifies absence, skips ids outside the requested namespace, and validates missing/empty IDs and malformed batch input. |
 | `ConfigExportConsoleApiOpenApiITCase` | `GET /v3/console/cs/config/export2` | Covered | Exports existing config data, verifies file response and exported content, skips ids outside the requested namespace, and validates empty export, missing namespace/group filters, and controlled bad request cases. |
 | `ConfigImportConsoleApiOpenApiITCase` | `POST /v3/console/cs/config/import` | Covered | Imports zipped config payloads, verifies persisted imported data, overwrite behavior, malformed archive handling, and import result structure for success and failure cases. |
-| `ConfigCloneConsoleApiOpenApiITCase` | `POST /v3/console/cs/config/clone` | Covered | Clones config to target dataId/group/namespace, verifies target content and metadata, and validates missing clone source/target fields and absent source config behavior. |
+| `ConfigCloneConsoleApiOpenApiITCase` | `POST /v3/console/cs/config/clone` | Covered | Clones config from source `namespaceId` to `targetNamespaceId`, verifies target content and metadata, covers source-scoped ID resolution, IDs outside the source namespace returning controlled `DATA_EMPTY`, and validates missing target namespace, empty selection, malformed clone payload, and absent source config behavior. |
 
 ## Naming
 

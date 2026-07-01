@@ -233,10 +233,11 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
         SameNamespaceCloneConfigBean sameNamespaceCloneConfigBean =
             new SameNamespaceCloneConfigBean();
         sameNamespaceCloneConfigBean.setCfgId(1L);
-        when(configMaintainerService.cloneConfig(eq("namespaceId"), any(), eq("srcUser"),
-            eq(SameConfigPolicy.OVERWRITE))).thenReturn(Collections.singletonMap("1", 1));
+        when(configMaintainerService.cloneConfig(eq("sourceNamespaceId"), eq("targetNamespaceId"),
+            any(), eq("srcUser"), eq(SameConfigPolicy.OVERWRITE))).thenReturn(
+                Collections.singletonMap("1", 1));
         Result<Map<String, Object>> actual =
-            configRemoteHandler.cloneConfig("srcUser", "namespaceId",
+            configRemoteHandler.cloneConfig("srcUser", "sourceNamespaceId", "targetNamespaceId",
                 Collections.singletonList(sameNamespaceCloneConfigBean), SameConfigPolicy.OVERWRITE,
                 "srcIp",
                 "requestIpApp");

@@ -439,16 +439,18 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
-        List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
-        String requestIpApp) throws NacosException {
+    public Result<Map<String, Object>> cloneConfig(String srcUser, String sourceNamespaceId,
+        String targetNamespaceId, List<SameNamespaceCloneConfigBean> configBeansList,
+        SameConfigPolicy policy, String srcIp, String requestIpApp) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
         if (CollectionUtils.isEmpty(configBeansList)) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NO_SELECTED_CONFIG, failedData);
         }
-        if (StringUtils.isNotBlank(namespaceId) && !NamespaceUtil.isDefaultNamespaceId(namespaceId)
-            && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
+        targetNamespaceId = NamespaceUtil.processNamespaceParameter(targetNamespaceId);
+        sourceNamespaceId = StringUtils.isBlank(sourceNamespaceId)
+            ? targetNamespaceId : NamespaceUtil.processNamespaceParameter(sourceNamespaceId);
+        if (isNamespaceNotExist(sourceNamespaceId) || isNamespaceNotExist(targetNamespaceId)) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
         }
@@ -461,7 +463,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             }, (k1, k2) -> k1));
         
         List<ConfigAllInfo> queryedDataList =
-            configInfoPersistService.findAllConfigInfo4Export(null, null, null, null,
+            configInfoPersistService.findAllConfigInfo4Export(null, null, sourceNamespaceId, null,
                 idList);
         
         if (queryedDataList == null || queryedDataList.isEmpty()) {
@@ -474,7 +476,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         for (ConfigAllInfo ci : queryedDataList) {
             SameNamespaceCloneConfigBean paramBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
-            ci4save.setTenant(namespaceId);
+            ci4save.setTenant(targetNamespaceId);
             ci4save.setType(ci.getType());
             ci4save.setGroup((paramBean != null && StringUtils.isNotBlank(paramBean.getGroup()))
                 ? paramBean.getGroup()
@@ -508,6 +510,12 @@ public class ConfigInnerHandler implements ConfigHandler {
                 configInfo.getContent());
         }
         return Result.success(saveResult);
+    }
+    
+    private boolean isNamespaceNotExist(String namespaceId) {
+        return StringUtils.isNotBlank(namespaceId)
+            && !NamespaceUtil.isDefaultNamespaceId(namespaceId)
+            && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0;
     }
     
     @Override

@@ -279,7 +279,8 @@ public class ConfigProxyTest {
     @Test
     public void cloneConfig() throws NacosException {
         String srcUser = SRC_USER;
-        String namespaceId = "testNamespace";
+        String sourceNamespaceId = "sourceNamespace";
+        String targetNamespaceId = "targetNamespace";
         List<SameNamespaceCloneConfigBean> configBeansList = new ArrayList<>();
         SameConfigPolicy policy = SameConfigPolicy.OVERWRITE;
         String srcIp = CLIENT_IP;
@@ -289,17 +290,17 @@ public class ConfigProxyTest {
         expectedData.put("key", "value");
         Result<Map<String, Object>> expected = Result.success(expectedData);
         
-        when(configHandler.cloneConfig(srcUser, namespaceId, configBeansList, policy, srcIp,
-            requestIpApp)).thenReturn(
+        when(configHandler.cloneConfig(srcUser, sourceNamespaceId, targetNamespaceId,
+            configBeansList, policy, srcIp, requestIpApp)).thenReturn(
                 expected);
         
         Result<Map<String, Object>> actual =
-            configProxy.cloneConfig(srcUser, namespaceId, configBeansList, policy,
-                srcIp, requestIpApp);
+            configProxy.cloneConfig(srcUser, sourceNamespaceId, targetNamespaceId,
+                configBeansList, policy, srcIp, requestIpApp);
         
         assertEquals(expected, actual);
-        verify(configHandler, times(1)).cloneConfig(srcUser, namespaceId, configBeansList, policy,
-            srcIp, requestIpApp);
+        verify(configHandler, times(1)).cloneConfig(srcUser, sourceNamespaceId,
+            targetNamespaceId, configBeansList, policy, srcIp, requestIpApp);
     }
     
     @Test

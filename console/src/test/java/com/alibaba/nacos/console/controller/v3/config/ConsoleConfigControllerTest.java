@@ -440,7 +440,7 @@ public class ConsoleConfigControllerTest {
         expectedResponse.put("status", "success");
         Result<Map<String, Object>> expectedResult = Result.success(expectedResponse);
         
-        when(configProxy.cloneConfig(eq("testUser"), eq("testNamespace"),
+        when(configProxy.cloneConfig(eq("testUser"), eq("testNamespace"), eq("testNamespace"),
             argThat(new ArgumentMatcher<List<SameNamespaceCloneConfigBean>>() {
                 
                 @Override
@@ -466,7 +466,7 @@ public class ConsoleConfigControllerTest {
         
         assertEquals(200, actualStatus);
         
-        verify(configProxy).cloneConfig(any(), eq("testNamespace"),
+        verify(configProxy).cloneConfig(any(), eq("testNamespace"), eq("testNamespace"),
             argThat(new ArgumentMatcher<List<SameNamespaceCloneConfigBean>>() {
                 
                 @Override
@@ -477,6 +477,36 @@ public class ConsoleConfigControllerTest {
                         && 1L == argument.get(0).getCfgId();
                 }
             }), eq(SameConfigPolicy.ABORT), eq("127.0.0.1"), eq(null));
+    }
+    
+    @Test
+    void testCloneConfigWithSourceNamespace() throws Exception {
+        SameNamespaceCloneConfigBean sameNamespaceCloneConfigBean =
+            new SameNamespaceCloneConfigBean();
+        sameNamespaceCloneConfigBean.setCfgId(1L);
+        sameNamespaceCloneConfigBean.setDataId("testDataId");
+        sameNamespaceCloneConfigBean.setGroup("testGroup");
+        List<SameNamespaceCloneConfigBean> configBeansList = new ArrayList<>();
+        configBeansList.add(sameNamespaceCloneConfigBean);
+        
+        Result<Map<String, Object>> expectedResult = Result.success(new HashMap<>());
+        when(configProxy.cloneConfig(eq("testUser"), eq("sourceNamespace"),
+            eq("targetNamespace"), any(), eq(SameConfigPolicy.ABORT), eq("127.0.0.1"),
+            eq(null))).thenReturn(expectedResult);
+        
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.post("/v3/console/cs/config/clone")
+                .param("srcUser", "").param("namespaceId", "sourceNamespace")
+                .param("targetNamespaceId", "targetNamespace").param("policy", "ABORT")
+                .content(new ObjectMapper().writeValueAsString(configBeansList))
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Real-IP", "127.0.0.1").header("X-Forwarded-For", "127.0.0.1");
+        
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(configProxy).cloneConfig(any(), eq("sourceNamespace"), eq("targetNamespace"),
+            any(), eq(SameConfigPolicy.ABORT), eq("127.0.0.1"), eq(null));
     }
     
     @Test

@@ -553,7 +553,7 @@ class ConfigControllerV3Test {
         List<Long> idList = new ArrayList<>(configBeansList.size());
         idList.add(cloneInfo.getConfigId());
         
-        when(configInfoPersistService.findAllConfigInfo4Export(null, null, null, null, idList))
+        when(configInfoPersistService.findAllConfigInfo4Export(null, null, "public", null, idList))
             .thenReturn(
                 queryedDataList);
         
@@ -579,6 +579,77 @@ class ConfigControllerV3Test {
             JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(),
                 Map.class);
         assertEquals(map.get("test"), resultMap.get("test").toString());
+    }
+    
+    @Test
+    void testCloneConfigWithSourceNamespace() throws Exception {
+        ConfigCloneInfo cloneInfo = new ConfigCloneInfo();
+        cloneInfo.setConfigId(1L);
+        cloneInfo.setTargetDataId("targetDataId");
+        cloneInfo.setTargetGroupName("targetGroup");
+        List<ConfigCloneInfo> cloneInfos = Collections.singletonList(cloneInfo);
+        
+        when(namespacePersistService.tenantInfoCountByTenantId("sourceNamespace")).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId("targetNamespace")).thenReturn(1);
+        
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setId(1L);
+        configAllInfo.setDataId("sourceDataId");
+        configAllInfo.setGroup("sourceGroup");
+        configAllInfo.setContent("sourceContent");
+        configAllInfo.setEncryptedDataKey("sourceKey");
+        List<Long> idList = Collections.singletonList(1L);
+        when(configInfoPersistService.findAllConfigInfo4Export(null, null, "sourceNamespace",
+            null, idList)).thenReturn(Collections.singletonList(configAllInfo));
+        
+        Map<String, Object> map = new HashMap<>();
+        map.put("succCount", 1);
+        when(
+            configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
+                any()))
+            .thenReturn(map);
+        
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
+                .param("src_user", "test").param("namespaceId", "targetNamespace")
+                .param("sourceNamespaceId", "sourceNamespace").param("policy", "OVERWRITE")
+                .content(JacksonUtils.toJson(cloneInfos))
+                .contentType(MediaType.APPLICATION_JSON);
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        String code = JacksonUtils.toObj(actualValue).get("code").toString();
+        assertEquals("0", code);
+        ArgumentCaptor<List<ConfigAllInfo>> configsCaptor = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(configInfoPersistService).batchInsertOrUpdate(configsCaptor.capture(),
+            anyString(), anyString(), any(), any());
+        ConfigAllInfo clonedConfig = configsCaptor.getValue().get(0);
+        assertEquals("targetNamespace", clonedConfig.getTenant());
+        assertEquals("targetDataId", clonedConfig.getDataId());
+        assertEquals("targetGroup", clonedConfig.getGroup());
+    }
+    
+    @Test
+    void testCloneConfigWithSourceNamespaceNotExist() throws Exception {
+        ConfigCloneInfo cloneInfo = new ConfigCloneInfo();
+        cloneInfo.setConfigId(1L);
+        when(namespacePersistService.tenantInfoCountByTenantId("sourceNamespace")).thenReturn(0);
+        
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
+                .param("src_user", "test").param("namespaceId", "targetNamespace")
+                .param("sourceNamespaceId", "sourceNamespace").param("policy", "ABORT")
+                .content(JacksonUtils.toJson(Collections.singletonList(cloneInfo)))
+                .contentType(MediaType.APPLICATION_JSON);
+        
+        String actualValue =
+            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        String code = JacksonUtils.toObj(actualValue).get("code").toString();
+        assertEquals("22001", code);
+        Mockito.verify(configInfoPersistService, Mockito.never())
+            .findAllConfigInfo4Export(any(), any(), any(), any(), anyList());
     }
     
     @Test

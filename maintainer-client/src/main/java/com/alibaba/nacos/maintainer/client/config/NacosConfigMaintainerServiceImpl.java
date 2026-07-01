@@ -308,12 +308,24 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     public Map<String, Object> cloneConfig(String namespaceId, List<ConfigCloneInfo> cloneInfos,
         String srcUser,
         SameConfigPolicy policy) throws NacosException {
+        return cloneConfig(namespaceId, namespaceId, cloneInfos, srcUser, policy);
+    }
+    
+    @Override
+    public Map<String, Object> cloneConfig(String sourceNamespaceId, String targetNamespaceId,
+        List<ConfigCloneInfo> cloneInfos, String srcUser, SameConfigPolicy policy)
+        throws NacosException {
+        String requestSourceNamespaceId = StringUtils.isBlank(sourceNamespaceId)
+            ? DEFAULT_NAMESPACE_ID : sourceNamespaceId;
+        String requestTargetNamespaceId = StringUtils.isBlank(targetNamespaceId)
+            ? DEFAULT_NAMESPACE_ID : targetNamespaceId;
         Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
+        params.put("namespaceId", requestTargetNamespaceId);
+        params.put("sourceNamespaceId", requestSourceNamespaceId);
         params.put("srcUser", srcUser);
         params.put("policy", policy.toString());
         RequestResource resource =
-            buildRequestResource(namespaceId, StringUtils.EMPTY, StringUtils.EMPTY);
+            buildRequestResource(requestTargetNamespaceId, StringUtils.EMPTY, StringUtils.EMPTY);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
             .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/clone").setParamValue(params)
             .setBody(JsonUtils.toJson(cloneInfos)).build();

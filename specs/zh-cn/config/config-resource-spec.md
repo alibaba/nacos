@@ -39,6 +39,10 @@ namespaceId -> groupName -> dataId
 该操作也必须继续受请求中归一化后的 `namespaceId` 约束；存储 ID 不能作为绕过 namespace 身份的
 全局资源令牌。
 
+克隆操作同时涉及源身份和目标身份。当克隆请求通过存储 ID 选择源配置时，这些 ID 只能在归一化后的
+源 namespace 内解析。目标 namespace 只决定克隆配置写入的位置，不得授权或隐含跨 namespace
+读取源配置。
+
 Config 管理 API 或 SDK 请求中接受存储 ID 仅属于兼容行为，应标记为废弃并待移除。新的 Config
 管理 API 不得把存储 ID 作为选择器暴露；现有 `ids` 或 `configId` 等选择器应在兼容窗口后移除，
 并迁移到以 `namespaceId`、`groupName`、`dataId` 或这些身份元组列表为基础的选择模型。

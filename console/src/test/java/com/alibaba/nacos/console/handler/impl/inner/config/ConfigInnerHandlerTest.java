@@ -498,7 +498,8 @@ class ConfigInnerHandlerTest {
     @Test
     void cloneConfigWithNoSelectedConfig() throws NacosException {
         Result<Map<String, Object>> actual = configInnerHandler.cloneConfig("srcUser", "public",
-            Collections.emptyList(), SameConfigPolicy.OVERWRITE, "srcIp", "requestIpApp");
+            "public", Collections.emptyList(), SameConfigPolicy.OVERWRITE, "srcIp",
+            "requestIpApp");
         assertEquals(ErrorCode.NO_SELECTED_CONFIG.getCode(), actual.getCode());
     }
     
@@ -506,8 +507,8 @@ class ConfigInnerHandlerTest {
     void cloneConfigWithNamespaceNotExist() throws NacosException {
         SameNamespaceCloneConfigBean configBean = new SameNamespaceCloneConfigBean();
         Result<Map<String, Object>> actual = configInnerHandler.cloneConfig("srcUser", "tenant",
-            Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp",
-            "requestIpApp");
+            "tenant", Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE,
+            "srcIp", "requestIpApp");
         assertEquals(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), actual.getCode());
     }
     
@@ -517,8 +518,8 @@ class ConfigInnerHandlerTest {
         configBean.setCfgId(1L);
         when(namespacePersistService.tenantInfoCountByTenantId("tenant")).thenReturn(1);
         Result<Map<String, Object>> actual = configInnerHandler.cloneConfig("srcUser", "tenant",
-            Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp",
-            "requestIpApp");
+            "tenant", Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE,
+            "srcIp", "requestIpApp");
         assertEquals(ErrorCode.DATA_EMPTY.getCode(), actual.getCode());
     }
     
@@ -531,17 +532,47 @@ class ConfigInnerHandlerTest {
         configBean = new SameNamespaceCloneConfigBean();
         configBean.setCfgId(1L);
         configBeansList.add(configBean);
-        when(configInfoPersistService.findAllConfigInfo4Export(isNull(), isNull(), isNull(),
+        when(configInfoPersistService.findAllConfigInfo4Export(isNull(), isNull(), eq("public"),
             isNull(),
             anyList())).thenReturn(Collections.singletonList(mockConfigAllInfo()));
         when(configInfoPersistService.batchInsertOrUpdate(any(), any(), any(), any(), any()))
             .thenReturn(
                 Collections.singletonMap("dataId23456.json+group132", true));
         Result<Map<String, Object>> actual =
-            configInnerHandler.cloneConfig("srcUser", "public", configBeansList,
+            configInnerHandler.cloneConfig("srcUser", "public", "public", configBeansList,
                 SameConfigPolicy.OVERWRITE, "srcIp", "requestIpApp");
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(1, actual.getData().size());
+    }
+    
+    @Test
+    void cloneConfigWithSourceAndTargetNamespace() throws NacosException {
+        SameNamespaceCloneConfigBean configBean = new SameNamespaceCloneConfigBean();
+        configBean.setCfgId(1L);
+        configBean.setDataId("targetDataId");
+        configBean.setGroup("targetGroup");
+        when(namespacePersistService.tenantInfoCountByTenantId("sourceNamespace")).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId("targetNamespace")).thenReturn(1);
+        when(configInfoPersistService.findAllConfigInfo4Export(isNull(), isNull(),
+            eq("sourceNamespace"), isNull(), anyList())).thenReturn(
+                Collections.singletonList(mockConfigAllInfo()));
+        when(configInfoPersistService.batchInsertOrUpdate(any(), any(), any(), any(), any()))
+            .thenReturn(Collections.singletonMap("targetDataId+targetGroup", true));
+        
+        Result<Map<String, Object>> actual =
+            configInnerHandler.cloneConfig("srcUser", "sourceNamespace", "targetNamespace",
+                Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp",
+                "requestIpApp");
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
+        org.mockito.ArgumentCaptor<List<ConfigAllInfo>> captor =
+            org.mockito.ArgumentCaptor.forClass(List.class);
+        Mockito.verify(configInfoPersistService).batchInsertOrUpdate(captor.capture(), any(), any(),
+            any(), any());
+        ConfigAllInfo clonedConfig = captor.getValue().get(0);
+        assertEquals("targetNamespace", clonedConfig.getTenant());
+        assertEquals("targetDataId", clonedConfig.getDataId());
+        assertEquals("targetGroup", clonedConfig.getGroup());
     }
     
     @Test

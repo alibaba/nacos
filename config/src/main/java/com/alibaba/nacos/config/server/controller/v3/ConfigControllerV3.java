@@ -781,6 +781,7 @@ public class ConfigControllerV3 {
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
         @RequestParam(value = "src_user", required = false) String srcUser,
         @RequestParam(value = "namespaceId") String namespaceId,
+        @RequestParam(value = "sourceNamespaceId", required = false) String sourceNamespaceId,
         @RequestBody List<ConfigCloneInfo> cloneInfos,
         @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy)
         throws NacosException {
@@ -791,9 +792,11 @@ public class ConfigControllerV3 {
         }
         cloneInfos.removeAll(Collections.singleton(null));
         
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        if (StringUtils.isNotBlank(namespaceId) && !NamespaceUtil.isDefaultNamespaceId(namespaceId)
-            && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
+        String targetNamespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        String requestSourceNamespaceId = StringUtils.isBlank(sourceNamespaceId)
+            ? targetNamespaceId : NamespaceUtil.processNamespaceParameter(sourceNamespaceId);
+        if (isNamespaceNotExist(requestSourceNamespaceId) || isNamespaceNotExist(
+            targetNamespaceId)) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
         }
@@ -806,7 +809,8 @@ public class ConfigControllerV3 {
             }, (k1, k2) -> k1));
         
         List<ConfigAllInfo> queryedDataList =
-            configInfoPersistService.findAllConfigInfo4Export(null, null, null, null,
+            configInfoPersistService.findAllConfigInfo4Export(null, null, requestSourceNamespaceId,
+                null,
                 idList);
         
         if (queryedDataList == null || queryedDataList.isEmpty()) {
@@ -819,7 +823,7 @@ public class ConfigControllerV3 {
         for (ConfigAllInfo ci : queryedDataList) {
             ConfigCloneInfo paramBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
-            ci4save.setTenant(namespaceId);
+            ci4save.setTenant(targetNamespaceId);
             ci4save.setType(ci.getType());
             ci4save.setGroup(
                 (paramBean != null && StringUtils.isNotBlank(paramBean.getTargetGroupName()))
@@ -857,5 +861,11 @@ public class ConfigControllerV3 {
         }
         
         return Result.success(saveResult);
+    }
+    
+    private boolean isNamespaceNotExist(String namespaceId) {
+        return StringUtils.isNotBlank(namespaceId)
+            && !NamespaceUtil.isDefaultNamespaceId(namespaceId)
+            && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0;
     }
 }

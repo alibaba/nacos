@@ -122,6 +122,10 @@ Import, export, and clone are management operations:
   same-config policy, and publishes change events for successful writes;
 - clone copies selected configs into a target namespace and optionally target
   group or target dataId;
+- clone source config IDs must be resolved only in the normalized source
+  namespace, while cloned configs are written to the normalized target namespace;
+  omitted source namespace defaults to the target namespace for same-namespace
+  compatibility;
 - import and export must preserve config type, description, app name, group,
   dataId, content, and encryption semantics.
 - when export selects configs by storage ID, the exported result must be scoped
@@ -135,6 +139,7 @@ Import, export, and clone are management operations:
 | Surface | Rule |
 | --- | --- |
 | HTTP Open API | Query one known config through `/v3/client/cs/config`; no HTTP listen or broad management behavior. |
-| HTTP Admin API | CRUD, metadata, list/search, import, export, clone, beta query/delete, listener, capacity, metrics, and ops use `/v3/admin/cs/*`. |
+| HTTP Admin API | CRUD, metadata, list/search, import, export, clone, beta query/delete, listener, capacity, metrics, and ops use `/v3/admin/cs/*`; Admin clone uses `namespaceId` as target namespace and optional `sourceNamespaceId` as source namespace. |
+| HTTP Console API | Console clone uses `namespaceId` as source namespace and `targetNamespaceId` as target namespace; omitted `namespaceId` defaults source to target. |
 | gRPC API | Query, publish compatibility, remove compatibility, listen, fuzzy watch, and push messages must preserve the same Config identity and md5 semantics. |
 | Client SDK | Runtime query and listener APIs should be preferred for applications; broad management APIs belong to Maintainer SDK. |

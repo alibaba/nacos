@@ -149,11 +149,11 @@ public class ConfigProxy {
     /**
      * Clone configuration.
      */
-    public Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
-        List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
-        String requestIpApp) throws NacosException {
-        return configHandler.cloneConfig(srcUser, namespaceId, configBeansList, policy, srcIp,
-            requestIpApp);
+    public Result<Map<String, Object>> cloneConfig(String srcUser, String sourceNamespaceId,
+        String targetNamespaceId, List<SameNamespaceCloneConfigBean> configBeansList,
+        SameConfigPolicy policy, String srcIp, String requestIpApp) throws NacosException {
+        return configHandler.cloneConfig(srcUser, sourceNamespaceId, targetNamespaceId,
+            configBeansList, policy, srcIp, requestIpApp);
     }
     
     /**
