@@ -16,12 +16,11 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoGrayMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-
-import java.util.Collections;
 
 /**
  * The mysql implementation of ConfigInfoGrayMapper.
@@ -36,9 +35,9 @@ public class ConfigInfoGrayMapperByMySql extends AbstractMapperByMysql
     public MapperResult findAllConfigInfoGrayForDumpAllFetchRows(MapperContext context) {
         String sql =
             " SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,md5,gmt_modified "
-                + " FROM  config_info_gray  ORDER BY id LIMIT " + context.getStartRow() + ","
-                + context.getPageSize();
-        return new MapperResult(sql, Collections.emptyList());
+                + " FROM  config_info_gray  ORDER BY id LIMIT ?,?";
+        return new MapperResult(sql,
+            CollectionUtils.list(context.getStartRow(), context.getPageSize()));
     }
     
     @Override
