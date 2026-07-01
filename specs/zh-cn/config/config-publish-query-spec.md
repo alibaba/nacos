@@ -47,6 +47,9 @@ Config 变更事件。删除灰度配置只会移除指定灰度版本。
 namespace 内匹配的 ID。不存在的 ID 或属于其他 namespace 的 ID 可以被跳过，但不得删除其他
 namespace 的配置。
 
+当前批量删除 API 中的 `ids` 参数属于已废弃并待移除的兼容选择器。后续批量删除 API 应按
+`namespaceId`、`groupName`、`dataId`，或这些身份元组的显式列表选择配置，而不是透出持久化 ID。
+
 ## 3. 运行时查询链
 
 运行时查询使用 Config 查询链。默认链路为：
@@ -98,6 +101,8 @@ Executor 和队列边界由[任务执行规范](../design/foundation-task-execut
 - 克隆将选中的配置复制到目标 namespace，并可选择目标 group 或目标 dataId；
 - 导入和导出必须保留配置类型、描述、应用名、group、dataId、内容和加密语义。
 - 当导出通过存储 ID 选择配置时，导出结果必须限制在请求中归一化后的 `namespaceId` 内。
+- 当前导出 API 中的 `ids` 选择器属于已废弃并待移除的兼容路径；后续导出选择应基于
+  `namespaceId`、`groupName`、`dataId` 身份，而不是持久化 ID。
 
 ## 7. 接口规则
 

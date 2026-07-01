@@ -42,6 +42,13 @@ the operation must remain scoped by the normalized request `namespaceId`;
 storage IDs must not become global resource tokens that bypass namespace
 identity.
 
+Accepting storage IDs in Config management API or SDK requests is a
+compatibility behavior and is deprecated. New Config management APIs must not
+expose storage IDs as selectors. Existing `ids` or `configId` selectors are
+pending removal after the compatibility window and should be replaced by
+selection models based on `namespaceId`, `groupName`, and `dataId`, or explicit
+lists of that identity tuple.
+
 ## 2. Content And Version Fields
 
 | Field | Meaning |

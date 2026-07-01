@@ -56,6 +56,11 @@ default a normalized `namespaceId`, and implementations may delete only matching
 IDs inside that namespace. Missing IDs and IDs that belong to another namespace
 may be skipped, but configs in other namespaces must not be deleted.
 
+The `ids` parameter on current batch-delete APIs is a deprecated compatibility
+selector and is pending removal. Future batch-delete APIs should select configs
+by `namespaceId`, `groupName`, and `dataId`, or by an explicit list of those
+identity tuples, instead of exposing persistence IDs.
+
 ## 3. Runtime Query Chain
 
 Runtime query uses the Config query chain. The default chain is:
@@ -121,6 +126,9 @@ Import, export, and clone are management operations:
   dataId, content, and encryption semantics.
 - when export selects configs by storage ID, the exported result must be scoped
   to the normalized request `namespaceId`.
+- the `ids` selector on current export APIs is a deprecated compatibility path
+  and is pending removal; future export selection should be based on
+  `namespaceId`, `groupName`, and `dataId` identity rather than persistence IDs.
 
 ## 7. Interface Rules
 
