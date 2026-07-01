@@ -40,6 +40,15 @@ public interface ArdIndexRepository {
     List<ArdChunk> replaceEntry(ArdEntry entry, List<ArdChunk> chunks);
     
     /**
+     * Append derived chunks to an existing entry.
+     *
+     * @param entry existing ARD entry
+     * @param chunks derived chunks
+     * @return chunks with generated ids
+     */
+    List<ArdChunk> appendChunks(ArdEntry entry, List<ArdChunk> chunks);
+    
+    /**
      * Delete all ARD index rows for a resource.
      */
     void deleteByResource(String namespaceId, String resourceType, String resourceName);

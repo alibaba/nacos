@@ -40,6 +40,11 @@ public interface AiResourceVectorIndex {
         String resourceVersion, Collection<AiResourceVectorDocument> documents);
     
     /**
+     * Add embeddings for newly appended chunks.
+     */
+    void addDocuments(Collection<AiResourceVectorDocument> documents);
+    
+    /**
      * Delete embeddings for a resource.
      */
     void deleteByResource(String namespaceId, String resourceType, String resourceName);

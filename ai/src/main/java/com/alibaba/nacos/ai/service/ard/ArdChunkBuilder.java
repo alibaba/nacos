@@ -39,6 +39,8 @@ import java.util.Map;
  */
 public class ArdChunkBuilder {
     
+    private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
+    
     private static final TypeReference<List<String>> STRING_LIST_TYPE =
         new TypeReference<List<String>>() {
         };
@@ -46,6 +48,9 @@ public class ArdChunkBuilder {
     private static final TypeReference<Map<String, Object>> MAP_TYPE =
         new TypeReference<Map<String, Object>>() {
         };
+    
+    private final SkillMarkdownSearchTextExtractor skillMarkdownSearchTextExtractor =
+        new SkillMarkdownSearchTextExtractor();
     
     /**
      * Build chunks used by keyword and vector retrieval.
@@ -67,6 +72,46 @@ public class ArdChunkBuilder {
             "sideEffects", "riskLevel");
         addMetadataChunk(chunks, entry, metadata, ArdIndexConstants.CHUNK_TYPE_NOT_FOR, "notFor");
         return chunks;
+    }
+    
+    /**
+     * Build deterministic search chunks from Skill markdown content.
+     */
+    public List<ArdChunk> buildSkillContentChunks(ArdEntry entry,
+        List<ArdIndexEnhancementContent> contents) {
+        if (contents == null || contents.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ArdChunk> chunks = new ArrayList<>();
+        for (ArdIndexEnhancementContent content : contents) {
+            if (content == null || !SKILL_MD_RESOURCE_NAME.equals(content.getPath())) {
+                continue;
+            }
+            for (String text : skillMarkdownSearchTextExtractor.extract(content.getText())) {
+                addChunk(chunks, entry, ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT, text,
+                    skillContentMetadata(content.getPath()));
+            }
+        }
+        return dedupeByHash(chunks);
+    }
+    
+    /**
+     * Build chunks from optional AI-generated index enhancement text.
+     */
+    public List<ArdChunk> buildEnhancementChunks(ArdEntry entry,
+        List<ArdIndexEnhancementChunk> enhancements) {
+        if (enhancements == null || enhancements.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ArdChunk> chunks = new ArrayList<>();
+        for (ArdIndexEnhancementChunk enhancement : enhancements) {
+            if (enhancement == null || StringUtils.isBlank(enhancement.getChunkType())) {
+                continue;
+            }
+            addChunk(chunks, entry, enhancement.getChunkType(), enhancement.getText(),
+                enhancement.getMetadata());
+        }
+        return dedupeByHash(chunks);
     }
     
     private void addListChunks(List<ArdChunk> chunks, ArdEntry entry, String chunkType,
@@ -168,6 +213,36 @@ public class ArdChunkBuilder {
             return Collections.singletonList((String) value);
         }
         return Collections.singletonList(String.valueOf(value));
+    }
+    
+    private List<ArdChunk> dedupeByHash(List<ArdChunk> chunks) {
+        if (chunks.isEmpty()) {
+            return chunks;
+        }
+        List<ArdChunk> result = new ArrayList<>();
+        for (ArdChunk chunk : chunks) {
+            if (!containsHash(result, chunk.getChunkHash())) {
+                result.add(chunk);
+            }
+        }
+        return result;
+    }
+    
+    private String skillContentMetadata(String path) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("source", "skill_md");
+        metadata.put("path", path);
+        metadata.put("extractor", "rule");
+        return JacksonUtils.toJson(metadata);
+    }
+    
+    private boolean containsHash(List<ArdChunk> chunks, String chunkHash) {
+        for (ArdChunk chunk : chunks) {
+            if (chunkHash.equals(chunk.getChunkHash())) {
+                return true;
+            }
+        }
+        return false;
     }
     
     private String firstNotBlank(String first, String second) {

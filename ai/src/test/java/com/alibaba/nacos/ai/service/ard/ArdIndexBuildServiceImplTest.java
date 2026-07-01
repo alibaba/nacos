@@ -39,6 +39,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -66,6 +67,12 @@ class ArdIndexBuildServiceImplTest {
     @Mock
     private AiResourceVectorIndex vectorIndex;
     
+    @Mock
+    private ArdIndexEnhancementService enhancementService;
+    
+    @Mock
+    private ArdIndexContentLoader contentLoader;
+    
     @Test
     void rebuildAiResourceShouldPersistEntryChunksAndVectors() throws Exception {
         ArdIndexBuildServiceImpl service = service();
@@ -79,6 +86,8 @@ class ArdIndexBuildServiceImplTest {
         when(embeddingService.model()).thenReturn("test-model");
         when(embeddingService.embed(any())).thenReturn(new double[] {1.0D});
         when(repository.replaceEntry(any(ArdEntry.class), anyList())).thenAnswer(invocation -> {
+            ArdEntry entry = invocation.getArgument(0);
+            entry.setId(10L);
             List<ArdChunk> chunks = invocation.getArgument(1);
             long id = 1L;
             for (ArdChunk chunk : chunks) {
@@ -103,6 +112,135 @@ class ArdIndexBuildServiceImplTest {
             eq(Constants.Skills.RESOURCE_TYPE_SKILL), eq("api-helper"), eq("1.0.0"),
             vectorCaptor.capture());
         assertFalse(vectorCaptor.getValue().isEmpty());
+    }
+    
+    @Test
+    void rebuildAiResourceShouldPersistSkillContentChunksWithoutLlm() throws Exception {
+        ArdIndexBuildServiceImpl service = new ArdIndexBuildServiceImpl(resourceManager,
+            repository, embeddingService, vectorIndex, enhancementService, contentLoader,
+            Runnable::run);
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta());
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(AiResourceConstants.VERSION_STATUS_ONLINE));
+        when(contentLoader.load(any(ArdEntry.class), any(AiResourceVersion.class))).thenReturn(
+            List.of(new ArdIndexEnhancementContent("SKILL.md",
+                "---\ndescription: Create avatar videos.\n---\n## Triggers\n- talking head")));
+        when(repository.replaceEntry(any(ArdEntry.class), anyList())).thenAnswer(invocation -> {
+            ArdEntry entry = invocation.getArgument(0);
+            entry.setId(10L);
+            List<ArdChunk> chunks = invocation.getArgument(1);
+            long id = 1L;
+            for (ArdChunk chunk : chunks) {
+                chunk.setId(id++);
+            }
+            return chunks;
+        });
+        
+        service.rebuildAiResource("public", Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper",
+            "1.0.0");
+        
+        ArgumentCaptor<List<ArdChunk>> chunksCaptor = ArgumentCaptor.forClass(List.class);
+        verify(repository).replaceEntry(any(ArdEntry.class), chunksCaptor.capture());
+        assertTrue(chunksCaptor.getValue().stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT.equals(chunk.getChunkType())
+                && chunk.getChunkText().contains("talking head")));
+        verify(enhancementService).enabled();
+        verify(enhancementService, never()).enhance(any(ArdEntry.class), anyList(), anyList());
+    }
+    
+    @Test
+    void rebuildLatestAiResourceShouldDeleteExistingResourceIndexBeforePersistLatest()
+        throws Exception {
+        ArdIndexBuildServiceImpl service = service();
+        AiResource meta = meta();
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta);
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(AiResourceConstants.VERSION_STATUS_ONLINE));
+        when(vectorIndex.available()).thenReturn(true);
+        when(embeddingService.model()).thenReturn("test-model");
+        when(embeddingService.embed(any())).thenReturn(new double[] {1.0D});
+        when(repository.replaceEntry(any(ArdEntry.class), anyList())).thenAnswer(invocation -> {
+            ArdEntry entry = invocation.getArgument(0);
+            entry.setId(10L);
+            List<ArdChunk> chunks = invocation.getArgument(1);
+            long id = 1L;
+            for (ArdChunk chunk : chunks) {
+                chunk.setId(id++);
+            }
+            return chunks;
+        });
+        
+        service.rebuildLatestAiResource("public", Constants.Skills.RESOURCE_TYPE_SKILL,
+            "api-helper");
+        
+        verify(repository).deleteByResource("public", Constants.Skills.RESOURCE_TYPE_SKILL,
+            "api-helper");
+        verify(vectorIndex).deleteByResource("public", Constants.Skills.RESOURCE_TYPE_SKILL,
+            "api-helper");
+        verify(vectorIndex).replaceResourceVersion(eq("public"),
+            eq(Constants.Skills.RESOURCE_TYPE_SKILL), eq("api-helper"), eq("1.0.0"),
+            anyList());
+    }
+    
+    @Test
+    void rebuildAiResourceShouldAppendEnhancedChunksAsync() throws Exception {
+        ArdIndexBuildServiceImpl service = new ArdIndexBuildServiceImpl(resourceManager,
+            repository, embeddingService, vectorIndex, enhancementService, contentLoader,
+            Runnable::run);
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta());
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(AiResourceConstants.VERSION_STATUS_ONLINE));
+        when(repository.replaceEntry(any(ArdEntry.class), anyList())).thenAnswer(invocation -> {
+            ArdEntry entry = invocation.getArgument(0);
+            entry.setId(10L);
+            List<ArdChunk> chunks = invocation.getArgument(1);
+            long id = 1L;
+            for (ArdChunk chunk : chunks) {
+                chunk.setEntryId(10L);
+                chunk.setId(id++);
+            }
+            return chunks;
+        });
+        when(enhancementService.enabled()).thenReturn(true);
+        when(contentLoader.load(any(ArdEntry.class), any(AiResourceVersion.class))).thenReturn(
+            List.of(new ArdIndexEnhancementContent("SKILL.md", "Create talking avatar videos")));
+        when(enhancementService.enhance(any(ArdEntry.class), anyList(), anyList()))
+            .thenReturn(List.of(new ArdIndexEnhancementChunk(
+                ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS,
+                "参数表格 parameter table", "{\"source\":\"llm\"}")));
+        when(repository.appendChunks(any(ArdEntry.class), anyList()))
+            .thenAnswer(invocation -> {
+                List<ArdChunk> chunks = invocation.getArgument(1);
+                long id = 100L;
+                for (ArdChunk chunk : chunks) {
+                    chunk.setEntryId(10L);
+                    chunk.setId(id++);
+                }
+                return chunks;
+            });
+        when(vectorIndex.available()).thenReturn(true);
+        when(embeddingService.model()).thenReturn("test-model");
+        when(embeddingService.embed(any())).thenReturn(new double[] {1.0D});
+        
+        service.rebuildAiResource("public", Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper",
+            "1.0.0");
+        
+        ArgumentCaptor<List<ArdChunk>> chunksCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<ArdIndexEnhancementContent>> contentCaptor =
+            ArgumentCaptor.forClass(List.class);
+        verify(enhancementService).enhance(any(ArdEntry.class), anyList(),
+            contentCaptor.capture());
+        assertEquals("SKILL.md", contentCaptor.getValue().get(0).getPath());
+        verify(repository).appendChunks(any(ArdEntry.class), chunksCaptor.capture());
+        assertTrue(chunksCaptor.getValue().stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS.equals(chunk.getChunkType())));
+        verify(vectorIndex).addDocuments(anyList());
     }
     
     @Test

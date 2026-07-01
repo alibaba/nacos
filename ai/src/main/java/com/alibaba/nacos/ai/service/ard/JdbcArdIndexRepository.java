@@ -75,12 +75,18 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
             entry.getResourceName(), entry.getResourceVersion());
         long entryId = insertEntry(entry);
         entry.setId(entryId);
+        return appendChunks(entry, chunks);
+    }
+    
+    @Override
+    public List<ArdChunk> appendChunks(ArdEntry entry, List<ArdChunk> chunks) {
         List<ArdChunk> result = new ArrayList<>();
-        if (chunks == null || chunks.isEmpty()) {
+        if (entry == null || entry.getId() == null || chunks == null || chunks.isEmpty()
+            || !entryExists(entry)) {
             return result;
         }
         for (ArdChunk chunk : chunks) {
-            chunk.setEntryId(entryId);
+            chunk.setEntryId(entry.getId());
             chunk.setNamespaceId(entry.getNamespaceId());
             chunk.setIdentifier(entry.getIdentifier());
             chunk.setResourceType(entry.getResourceType());
@@ -231,6 +237,15 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
         }
         chunk.setId(key.longValue());
         return chunk;
+    }
+    
+    private boolean entryExists(ArdEntry entry) {
+        Integer count = getJdbcTemplate().queryForObject(
+            "SELECT COUNT(1) FROM ai_resource_ard_entry WHERE id=? AND namespace_id=? "
+                + "AND resource_type=? AND resource_name=? AND resource_version=?",
+            Integer.class, entry.getId(), entry.getNamespaceId(), entry.getResourceType(),
+            entry.getResourceName(), entry.getResourceVersion());
+        return count != null && count > 0;
     }
     
     private void deleteByWhere(String where, List<Object> args) {

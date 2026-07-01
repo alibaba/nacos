@@ -53,6 +53,16 @@ final class ArdIndexConstants {
     
     static final String CHUNK_TYPE_NOT_FOR = "not_for";
     
+    static final String CHUNK_TYPE_SKILL_CONTENT = "skill_content";
+    
+    static final String CHUNK_TYPE_AI_SUMMARY = "ai_summary";
+    
+    static final String CHUNK_TYPE_BILINGUAL_ALIAS = "bilingual_alias";
+    
+    static final String CHUNK_TYPE_CAPABILITY_SYNONYM = "capability_synonym";
+    
+    static final String CHUNK_TYPE_EXAMPLE_QUERY = "example_query";
+    
     private ArdIndexConstants() {
     }
 }

@@ -24,15 +24,20 @@ import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.service.ard.vector.AiResourceVectorDocument;
 import com.alibaba.nacos.ai.service.ard.vector.AiResourceVectorIndex;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Default ARD index builder.
@@ -41,6 +46,8 @@ import java.util.List;
  */
 @Service
 public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArdIndexBuildServiceImpl.class);
     
     private final AiResourceManager resourceManager;
     
@@ -54,13 +61,47 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
     
     private final ArdChunkBuilder chunkBuilder;
     
+    private final ArdIndexEnhancementService enhancementService;
+    
+    private final ArdIndexContentLoader contentLoader;
+    
+    private final Executor enhancementExecutor;
+    
+    @Autowired
+    public ArdIndexBuildServiceImpl(AiResourceManager resourceManager,
+        ArdIndexRepository repository, ArdEmbeddingService embeddingService,
+        AiResourceVectorIndex vectorIndex, ArdIndexEnhancementService enhancementService,
+        ArdIndexContentLoader contentLoader) {
+        this(resourceManager, repository, embeddingService, vectorIndex, enhancementService,
+            contentLoader, ExecutorUtils.getArdIndexEnhancementExecutor());
+    }
+    
     public ArdIndexBuildServiceImpl(AiResourceManager resourceManager,
         ArdIndexRepository repository, ArdEmbeddingService embeddingService,
         AiResourceVectorIndex vectorIndex) {
+        this(resourceManager, repository, embeddingService, vectorIndex,
+            ArdIndexEnhancementService.NOOP, ArdIndexContentLoader.NOOP, Runnable::run);
+    }
+    
+    ArdIndexBuildServiceImpl(AiResourceManager resourceManager, ArdIndexRepository repository,
+        ArdEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,
+        ArdIndexEnhancementService enhancementService, Executor enhancementExecutor) {
+        this(resourceManager, repository, embeddingService, vectorIndex, enhancementService,
+            ArdIndexContentLoader.NOOP, enhancementExecutor);
+    }
+    
+    ArdIndexBuildServiceImpl(AiResourceManager resourceManager, ArdIndexRepository repository,
+        ArdEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,
+        ArdIndexEnhancementService enhancementService, ArdIndexContentLoader contentLoader,
+        Executor enhancementExecutor) {
         this.resourceManager = resourceManager;
         this.repository = repository;
         this.embeddingService = embeddingService;
         this.vectorIndex = vectorIndex;
+        this.enhancementService =
+            enhancementService == null ? ArdIndexEnhancementService.NOOP : enhancementService;
+        this.contentLoader = contentLoader == null ? ArdIndexContentLoader.NOOP : contentLoader;
+        this.enhancementExecutor = enhancementExecutor;
         this.entryBuilder = new ArdEntryBuilder();
         this.chunkBuilder = new ArdChunkBuilder();
     }
@@ -79,7 +120,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
             deleteResourceVersion(namespaceId, resourceType, name, version);
             return;
         }
-        replace(entryBuilder.fromAiResource(meta, resourceVersion));
+        replace(entryBuilder.fromAiResource(meta, resourceVersion), resourceVersion);
     }
     
     @Override
@@ -96,7 +137,14 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
             deleteResource(namespaceId, resourceType, name);
             return;
         }
-        rebuildAiResource(namespaceId, resourceType, name, latestVersion);
+        AiResourceVersion resourceVersion =
+            resourceManager.findVersion(namespaceId, name, resourceType, latestVersion);
+        if (!isIndexable(meta, resourceVersion)) {
+            deleteResource(namespaceId, resourceType, name);
+            return;
+        }
+        deleteResource(namespaceId, resourceType, name);
+        replace(entryBuilder.fromAiResource(meta, resourceVersion), resourceVersion);
     }
     
     @Override
@@ -140,7 +188,13 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
     }
     
     private void replace(ArdEntry entry) {
-        List<ArdChunk> chunks = chunkBuilder.buildChunks(entry);
+        replace(entry, null);
+    }
+    
+    private void replace(ArdEntry entry, AiResourceVersion resourceVersion) {
+        List<ArdIndexEnhancementContent> contents = loadContents(entry, resourceVersion);
+        List<ArdChunk> chunks = new ArrayList<>(chunkBuilder.buildChunks(entry));
+        chunks.addAll(chunkBuilder.buildSkillContentChunks(entry, contents));
         if (vectorIndex.available()) {
             vectorIndex.deleteByResourceVersion(entry.getNamespaceId(), entry.getResourceType(),
                 entry.getResourceName(), entry.getResourceVersion());
@@ -150,6 +204,47 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
             vectorIndex.replaceResourceVersion(entry.getNamespaceId(), entry.getResourceType(),
                 entry.getResourceName(), entry.getResourceVersion(),
                 vectorDocuments(persistedChunks));
+        }
+        submitEnhancement(entry, persistedChunks, contents);
+    }
+    
+    private List<ArdIndexEnhancementContent> loadContents(ArdEntry entry,
+        AiResourceVersion resourceVersion) {
+        try {
+            return contentLoader.load(entry, resourceVersion);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to load ARD index source content for {}:{}@{}",
+                entry.getResourceType(), entry.getResourceName(), entry.getResourceVersion(), e);
+            return Collections.emptyList();
+        }
+    }
+    
+    private void submitEnhancement(ArdEntry entry, List<ArdChunk> persistedChunks,
+        List<ArdIndexEnhancementContent> contents) {
+        if (!enhancementService.enabled()) {
+            return;
+        }
+        enhancementExecutor.execute(() -> appendEnhancedChunks(entry, persistedChunks, contents));
+    }
+    
+    private void appendEnhancedChunks(ArdEntry entry, List<ArdChunk> persistedChunks,
+        List<ArdIndexEnhancementContent> contents) {
+        try {
+            List<ArdIndexEnhancementChunk> enhancements =
+                enhancementService.enhance(entry, persistedChunks, contents);
+            List<ArdChunk> enhancedChunks =
+                chunkBuilder.buildEnhancementChunks(entry, enhancements);
+            if (enhancedChunks.isEmpty()) {
+                return;
+            }
+            List<ArdChunk> persistedEnhancedChunks =
+                repository.appendChunks(entry, enhancedChunks);
+            if (vectorIndex.available()) {
+                vectorIndex.addDocuments(vectorDocuments(persistedEnhancedChunks));
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to enhance ARD index for {}:{}@{}", entry.getResourceType(),
+                entry.getResourceName(), entry.getResourceVersion(), e);
         }
     }
     

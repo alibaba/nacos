@@ -75,6 +75,11 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         String resourceName, String resourceVersion,
         Collection<AiResourceVectorDocument> documents) {
         deleteByResourceVersion(namespaceId, resourceType, resourceName, resourceVersion);
+        addDocuments(documents);
+    }
+    
+    @Override
+    public void addDocuments(Collection<AiResourceVectorDocument> documents) {
         if (documents == null || documents.isEmpty()) {
             return;
         }

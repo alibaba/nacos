@@ -60,4 +60,54 @@ class ArdChunkBuilderTest {
             chunk -> ArdIndexConstants.CHUNK_TYPE_METADATA_IO.equals(chunk.getChunkType())));
         assertTrue(chunks.stream().allMatch(chunk -> chunk.getChunkHash() != null));
     }
+    
+    @Test
+    void buildEnhancementChunksShouldIncludeAiGeneratedSearchText() {
+        ArdEntry entry = entry();
+        List<ArdIndexEnhancementChunk> enhancements =
+            List.of(new ArdIndexEnhancementChunk(ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS,
+                "支付对账 payment reconciliation", "{\"source\":\"llm\"}"),
+                new ArdIndexEnhancementChunk(ArdIndexConstants.CHUNK_TYPE_EXAMPLE_QUERY,
+                    "find a skill for payment reconciliation", "{\"source\":\"llm\"}"));
+        
+        List<ArdChunk> chunks = new ArdChunkBuilder().buildEnhancementChunks(entry,
+            enhancements);
+        
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS.equals(chunk.getChunkType())));
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_EXAMPLE_QUERY.equals(chunk.getChunkType())));
+        assertTrue(chunks.stream().allMatch(chunk -> chunk.getChunkHash() != null));
+    }
+    
+    @Test
+    void buildSkillContentChunksShouldIncludeExtractedSkillMarkdownText() {
+        ArdEntry entry = entry();
+        String markdown = "---\n"
+            + "description: Create AI avatar and talking head videos.\n"
+            + "---\n"
+            + "## Triggers\n"
+            + "- ai avatar\n"
+            + "- talking head\n";
+        
+        List<ArdChunk> chunks = new ArdChunkBuilder().buildSkillContentChunks(entry,
+            List.of(new ArdIndexEnhancementContent("SKILL.md", markdown)));
+        
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT.equals(chunk.getChunkType())));
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> chunk.getChunkText().contains("talking head")));
+    }
+    
+    private ArdEntry entry() {
+        ArdEntry entry = new ArdEntry();
+        entry.setNamespaceId("public");
+        entry.setIdentifier("urn:air:nacos.local:public:skill:api-helper");
+        entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
+        entry.setResourceName("api-helper");
+        entry.setResourceVersion("1.0.0");
+        entry.setDisplayName("api-helper");
+        entry.setDescription("Generate API parameter tables");
+        return entry;
+    }
 }

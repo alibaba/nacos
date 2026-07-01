@@ -44,6 +44,12 @@ public final class ExecutorUtils {
         "nacos.ai.agentspec.storage.io.concurrency";
     
     /**
+     * System config key for async ARD index enhancement concurrency.
+     */
+    public static final String ARD_INDEX_ENHANCEMENT_CONCURRENCY_CONFIG_KEY =
+        "nacos.ai.ard.index.enhancement.concurrency";
+    
+    /**
      * Default concurrency for async skill resource persistence.
      */
     private static final int DEFAULT_SKILL_STORAGE_IO_CONCURRENCY =
@@ -54,6 +60,11 @@ public final class ExecutorUtils {
      */
     private static final int DEFAULT_AGENTSPEC_STORAGE_IO_CONCURRENCY =
         PropertyUtils.getProcessorsCount();
+    
+    /**
+     * Default concurrency for async ARD index enhancement.
+     */
+    private static final int DEFAULT_ARD_INDEX_ENHANCEMENT_CONCURRENCY = 1;
     
     private static final ExecutorService SKILL_STORAGE_IO_EXECUTOR =
         ExecutorFactory.Managed.newFixedExecutorService(
@@ -67,6 +78,12 @@ public final class ExecutorUtils {
             resolveAgentSpecStorageIoConcurrency(),
             new NameThreadFactory("com.alibaba.nacos.ai.agentspec.storage-io"));
     
+    private static final ExecutorService ARD_INDEX_ENHANCEMENT_EXECUTOR =
+        ExecutorFactory.Managed.newFixedExecutorService(
+            ExecutorUtils.class.getCanonicalName(),
+            resolveArdIndexEnhancementConcurrency(),
+            new NameThreadFactory("com.alibaba.nacos.ai.ard-index-enhancement"));
+    
     /**
      * Executor for async storage IO of skill resources.
      */
@@ -79,6 +96,13 @@ public final class ExecutorUtils {
      */
     public static ExecutorService getAgentSpecStorageIoExecutor() {
         return AGENTSPEC_STORAGE_IO_EXECUTOR;
+    }
+    
+    /**
+     * Executor for async ARD index enhancement.
+     */
+    public static ExecutorService getArdIndexEnhancementExecutor() {
+        return ARD_INDEX_ENHANCEMENT_EXECUTOR;
     }
     
     private static int resolveSkillStorageIoConcurrency() {
@@ -98,6 +122,16 @@ public final class ExecutorUtils {
             return Integer.max(1, Integer.parseInt(val));
         } catch (Exception ignored) {
             return DEFAULT_AGENTSPEC_STORAGE_IO_CONCURRENCY;
+        }
+    }
+    
+    private static int resolveArdIndexEnhancementConcurrency() {
+        String val = EnvUtil.getProperty(ARD_INDEX_ENHANCEMENT_CONCURRENCY_CONFIG_KEY,
+            String.valueOf(DEFAULT_ARD_INDEX_ENHANCEMENT_CONCURRENCY));
+        try {
+            return Integer.max(1, Integer.parseInt(val));
+        } catch (Exception ignored) {
+            return DEFAULT_ARD_INDEX_ENHANCEMENT_CONCURRENCY;
         }
     }
 }
