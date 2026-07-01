@@ -21,16 +21,20 @@ import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.config.server.auth.ConfigCloneSourceReadPermissionChecker;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.service.ConfigCloneService.ConfigCloneItem;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,12 +43,14 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,12 +64,16 @@ class ConfigCloneServiceTest {
     @Mock
     private NamespacePersistService namespacePersistService;
     
+    @Mock
+    private ConfigCloneSourceReadPermissionChecker configCloneSourceReadPermissionChecker;
+    
     private ConfigCloneService configCloneService;
     
     @BeforeEach
     void setUp() {
-        configCloneService =
-            new ConfigCloneService(configInfoPersistService, namespacePersistService);
+        EnvUtil.setEnvironment(new MockEnvironment());
+        configCloneService = new ConfigCloneService(configInfoPersistService,
+            namespacePersistService, configCloneSourceReadPermissionChecker);
     }
     
     @Test
@@ -126,6 +136,25 @@ class ConfigCloneServiceTest {
             SameConfigPolicy.ABORT, "srcIp", "requestIpApp");
         
         assertEquals(ErrorCode.DATA_EMPTY.getCode(), actual.getCode());
+        verify(configInfoPersistService, never()).batchInsertOrUpdate(anyList(), anyString(),
+            anyString(), any(), any());
+    }
+    
+    @Test
+    void testCloneConfigDeniedBySourceNamespaceReadPermission() throws NacosException {
+        when(namespacePersistService.tenantInfoCountByTenantId("sourceNamespace")).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId("targetNamespace")).thenReturn(1);
+        doThrow(new AccessException("authorization failed"))
+            .when(configCloneSourceReadPermissionChecker)
+            .checkSourceReadPermission("sourceNamespace");
+        
+        assertThrows(AccessException.class,
+            () -> configCloneService.cloneConfig("sourceNamespace", "targetNamespace",
+                Collections.singletonList(cloneItem(1L, null, null)), "srcUser",
+                SameConfigPolicy.ABORT, "srcIp", "requestIpApp"));
+        
+        verify(configInfoPersistService, never()).findAllConfigInfo4Export(any(), any(), any(),
+            any(), anyList());
         verify(configInfoPersistService, never()).batchInsertOrUpdate(anyList(), anyString(),
             anyString(), any(), any());
     }

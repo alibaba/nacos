@@ -782,7 +782,7 @@ public class ConfigControllerV3 {
      */
     @Since("3.0.0")
     @PostMapping("/clone")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
         @RequestParam(value = "src_user", required = false) String srcUser,
         @RequestParam(value = "namespaceId") String namespaceId,

@@ -90,6 +90,8 @@ public abstract class AbstractWebAuthFilter implements Filter {
                 chain.doFilter(request, response);
                 return;
             }
+            IdentityContext identityContext = protocolAuthService.parseIdentity(req);
+            requestContext.getAuthContext().setIdentityContext(identityContext);
             if (!isAuthEnabled()) {
                 chain.doFilter(request, response);
                 return;
@@ -105,6 +107,7 @@ public abstract class AbstractWebAuthFilter implements Filter {
                         Result.failure(ErrorCode.ACCESS_DENIED, serverIdentityResult.getMessage()));
                     return;
                 case MATCHED:
+                    identityContext.setParameter(Constants.Identity.SERVER_IDENTITY, Boolean.TRUE);
                     chain.doFilter(request, response);
                     return;
                 default:
@@ -115,10 +118,8 @@ public abstract class AbstractWebAuthFilter implements Filter {
                 return;
             }
             Resource resource = protocolAuthService.parseResource(req, secured);
-            IdentityContext identityContext = protocolAuthService.parseIdentity(req);
-            AuthResult result = protocolAuthService.validateIdentity(identityContext, resource);
-            requestContext.getAuthContext().setIdentityContext(identityContext);
             requestContext.getAuthContext().setResource(resource);
+            AuthResult result = protocolAuthService.validateIdentity(identityContext, resource);
             requestContext.getAuthContext().setAuthResult(result);
             if (!result.isSuccess()) {
                 throw new AccessException(result.format());

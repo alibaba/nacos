@@ -25,6 +25,9 @@ import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.auth.ConfigCloneSourceReadPermissionChecker;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -49,9 +52,13 @@ public class ConfigProxy {
     
     private final ConfigHandler configHandler;
     
+    private final ConfigCloneSourceReadPermissionChecker configCloneSourceReadPermissionChecker;
+    
     @Autowired
-    public ConfigProxy(ConfigHandler configHandler) {
+    public ConfigProxy(ConfigHandler configHandler,
+        ConfigCloneSourceReadPermissionChecker configCloneSourceReadPermissionChecker) {
         this.configHandler = configHandler;
+        this.configCloneSourceReadPermissionChecker = configCloneSourceReadPermissionChecker;
     }
     
     /**
@@ -152,6 +159,10 @@ public class ConfigProxy {
     public Result<Map<String, Object>> cloneConfig(String srcUser, String sourceNamespaceId,
         String targetNamespaceId, List<SameNamespaceCloneConfigBean> configBeansList,
         SameConfigPolicy policy, String srcIp, String requestIpApp) throws NacosException {
+        String readNamespaceId =
+            StringUtils.isBlank(sourceNamespaceId) ? targetNamespaceId : sourceNamespaceId;
+        configCloneSourceReadPermissionChecker
+            .checkSourceReadPermission(NamespaceUtil.processNamespaceParameter(readNamespaceId));
         return configHandler.cloneConfig(srcUser, sourceNamespaceId, targetNamespaceId,
             configBeansList, policy, srcIp, requestIpApp);
     }

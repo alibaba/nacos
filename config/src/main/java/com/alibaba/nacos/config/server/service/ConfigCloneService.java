@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.auth.ConfigCloneSourceReadPermissionChecker;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
@@ -52,10 +53,14 @@ public class ConfigCloneService {
     
     private final NamespacePersistService namespacePersistService;
     
+    private final ConfigCloneSourceReadPermissionChecker configCloneSourceReadPermissionChecker;
+    
     public ConfigCloneService(ConfigInfoPersistService configInfoPersistService,
-        NamespacePersistService namespacePersistService) {
+        NamespacePersistService namespacePersistService,
+        ConfigCloneSourceReadPermissionChecker configCloneSourceReadPermissionChecker) {
         this.configInfoPersistService = configInfoPersistService;
         this.namespacePersistService = namespacePersistService;
+        this.configCloneSourceReadPermissionChecker = configCloneSourceReadPermissionChecker;
     }
     
     /**
@@ -100,6 +105,8 @@ public class ConfigCloneService {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
         }
+        configCloneSourceReadPermissionChecker
+            .checkSourceReadPermission(normalizedSourceNamespaceId);
         
         List<Long> idList = new ArrayList<>(validCloneItems.size());
         Map<Long, ConfigCloneItem> cloneItemsMap = validCloneItems.stream()
