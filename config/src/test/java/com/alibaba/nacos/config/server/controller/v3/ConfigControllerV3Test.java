@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.param.MediaType;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.ConfigCloneService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -111,6 +113,9 @@ class ConfigControllerV3Test {
     @MockitoBean
     private ConfigDetailService configDetailService;
     
+    @MockitoBean
+    private ConfigCloneService configCloneService;
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -120,7 +125,8 @@ class ConfigControllerV3Test {
                 configInfoPersistService, configDetailService,
                 configInfoGrayPersistService,
                 namespacePersistService,
-                configListenerStateDelegate);
+                configListenerStateDelegate,
+                configCloneService);
         mockmvc = MockMvcBuilders.standaloneSetup(configControllerV3).build();
     }
     
@@ -537,32 +543,15 @@ class ConfigControllerV3Test {
     void testCloneConfig() throws Exception {
         ConfigCloneInfo cloneInfo = new ConfigCloneInfo();
         cloneInfo.setConfigId(1L);
-        cloneInfo.setTargetDataId("test");
-        cloneInfo.setTargetGroupName("test");
+        cloneInfo.setTargetDataId("targetDataId");
+        cloneInfo.setTargetGroupName("targetGroup");
         List<ConfigCloneInfo> configBeansList = new ArrayList<>();
         configBeansList.add(cloneInfo);
         
-        when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
-        
-        ConfigAllInfo configAllInfo = new ConfigAllInfo();
-        configAllInfo.setDataId("test");
-        configAllInfo.setGroup("test");
-        List<ConfigAllInfo> queryedDataList = new ArrayList<>();
-        queryedDataList.add(configAllInfo);
-        
-        List<Long> idList = new ArrayList<>(configBeansList.size());
-        idList.add(cloneInfo.getConfigId());
-        
-        when(configInfoPersistService.findAllConfigInfo4Export(null, null, "public", null, idList))
-            .thenReturn(
-                queryedDataList);
-        
         Map<String, Object> map = new HashMap<>();
         map.put("test", "test");
-        when(
-            configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
-                any()))
-            .thenReturn(map);
+        when(configCloneService.cloneConfig(any(), any(), anyList(), anyString(), any(),
+            anyString(), any())).thenReturn(Result.success(map));
         
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
@@ -579,6 +568,14 @@ class ConfigControllerV3Test {
             JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(),
                 Map.class);
         assertEquals(map.get("test"), resultMap.get("test").toString());
+        ArgumentCaptor<List<ConfigCloneService.ConfigCloneItem>> captor =
+            ArgumentCaptor.forClass(List.class);
+        Mockito.verify(configCloneService).cloneConfig(any(), eq("public"), captor.capture(),
+            eq("test"), eq(SameConfigPolicy.ABORT), anyString(), any());
+        ConfigCloneService.ConfigCloneItem cloneItem = captor.getValue().get(0);
+        assertEquals(1L, cloneItem.getConfigId());
+        assertEquals("targetDataId", cloneItem.getTargetDataId());
+        assertEquals("targetGroup", cloneItem.getTargetGroupName());
     }
     
     @Test
@@ -589,25 +586,10 @@ class ConfigControllerV3Test {
         cloneInfo.setTargetGroupName("targetGroup");
         List<ConfigCloneInfo> cloneInfos = Collections.singletonList(cloneInfo);
         
-        when(namespacePersistService.tenantInfoCountByTenantId("sourceNamespace")).thenReturn(1);
-        when(namespacePersistService.tenantInfoCountByTenantId("targetNamespace")).thenReturn(1);
-        
-        ConfigAllInfo configAllInfo = new ConfigAllInfo();
-        configAllInfo.setId(1L);
-        configAllInfo.setDataId("sourceDataId");
-        configAllInfo.setGroup("sourceGroup");
-        configAllInfo.setContent("sourceContent");
-        configAllInfo.setEncryptedDataKey("sourceKey");
-        List<Long> idList = Collections.singletonList(1L);
-        when(configInfoPersistService.findAllConfigInfo4Export(null, null, "sourceNamespace",
-            null, idList)).thenReturn(Collections.singletonList(configAllInfo));
-        
         Map<String, Object> map = new HashMap<>();
         map.put("succCount", 1);
-        when(
-            configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
-                any()))
-            .thenReturn(map);
+        when(configCloneService.cloneConfig(any(), any(), anyList(), anyString(), any(),
+            anyString(), any())).thenReturn(Result.success(map));
         
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
@@ -621,35 +603,9 @@ class ConfigControllerV3Test {
         
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("0", code);
-        ArgumentCaptor<List<ConfigAllInfo>> configsCaptor = ArgumentCaptor.forClass(List.class);
-        Mockito.verify(configInfoPersistService).batchInsertOrUpdate(configsCaptor.capture(),
-            anyString(), anyString(), any(), any());
-        ConfigAllInfo clonedConfig = configsCaptor.getValue().get(0);
-        assertEquals("targetNamespace", clonedConfig.getTenant());
-        assertEquals("targetDataId", clonedConfig.getDataId());
-        assertEquals("targetGroup", clonedConfig.getGroup());
-    }
-    
-    @Test
-    void testCloneConfigWithSourceNamespaceNotExist() throws Exception {
-        ConfigCloneInfo cloneInfo = new ConfigCloneInfo();
-        cloneInfo.setConfigId(1L);
-        when(namespacePersistService.tenantInfoCountByTenantId("sourceNamespace")).thenReturn(0);
-        
-        MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
-                .param("src_user", "test").param("namespaceId", "targetNamespace")
-                .param("sourceNamespaceId", "sourceNamespace").param("policy", "ABORT")
-                .content(JacksonUtils.toJson(Collections.singletonList(cloneInfo)))
-                .contentType(MediaType.APPLICATION_JSON);
-        
-        String actualValue =
-            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        
-        String code = JacksonUtils.toObj(actualValue).get("code").toString();
-        assertEquals("22001", code);
-        Mockito.verify(configInfoPersistService, Mockito.never())
-            .findAllConfigInfo4Export(any(), any(), any(), any(), anyList());
+        Mockito.verify(configCloneService).cloneConfig(eq("sourceNamespace"),
+            eq("targetNamespace"), anyList(), eq("test"), eq(SameConfigPolicy.OVERWRITE),
+            anyString(), any());
     }
     
     @Test
@@ -815,6 +771,11 @@ class ConfigControllerV3Test {
     
     @Test
     void testCloneConfigEmpty() throws Exception {
+        Map<String, Object> failedData = new HashMap<>();
+        failedData.put("succCount", 0);
+        when(configCloneService.cloneConfig(any(), any(), anyList(), anyString(), any(),
+            anyString(), any())).thenReturn(
+                Result.failure(ErrorCode.NO_SELECTED_CONFIG, failedData));
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post(
                 Constants.CONFIG_ADMIN_V3_PATH + "/clone")
@@ -827,26 +788,11 @@ class ConfigControllerV3Test {
             mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("100006", code);
-    }
-    
-    @Test
-    void testCloneConfigNamespaceNotExist() throws Exception {
-        ConfigCloneInfo info = new ConfigCloneInfo();
-        info.setConfigId(1L);
-        when(namespacePersistService.tenantInfoCountByTenantId("ns1"))
-            .thenReturn(0);
-        MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.post(
-                Constants.CONFIG_ADMIN_V3_PATH + "/clone")
-                .param("src_user", "test")
-                .param("namespaceId", "ns1")
-                .param("policy", "ABORT")
-                .content(JacksonUtils.toJson(Collections.singletonList(info)))
-                .contentType(MediaType.APPLICATION_JSON);
-        String actualValue =
-            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        String code = JacksonUtils.toObj(actualValue).get("code").toString();
-        assertEquals("22001", code);
+        ArgumentCaptor<List<ConfigCloneService.ConfigCloneItem>> captor =
+            ArgumentCaptor.forClass(List.class);
+        Mockito.verify(configCloneService).cloneConfig(any(), eq("public"), captor.capture(),
+            eq("test"), eq(SameConfigPolicy.ABORT), anyString(), any());
+        assertEquals(0, captor.getValue().size());
     }
     
     @Test
@@ -965,59 +911,20 @@ class ConfigControllerV3Test {
     }
     
     @Test
-    void testCloneConfigEmptyQueryResult() throws Exception {
-        ConfigCloneInfo info = new ConfigCloneInfo();
-        info.setConfigId(1L);
-        when(namespacePersistService.tenantInfoCountByTenantId("public"))
-            .thenReturn(1);
-        when(configInfoPersistService.findAllConfigInfo4Export(
-            any(), any(), any(), any(), anyList()))
-            .thenReturn(new ArrayList<>());
-        MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.post(
-                Constants.CONFIG_ADMIN_V3_PATH + "/clone")
-                .param("src_user", "test")
-                .param("namespaceId", "public")
-                .param("policy", "ABORT")
-                .content(JacksonUtils.toJson(Collections.singletonList(info)))
-                .contentType(MediaType.APPLICATION_JSON);
-        String actualValue =
-            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        String code = JacksonUtils.toObj(actualValue).get("code").toString();
-        assertEquals("100005", code);
-    }
-    
-    @Test
-    void testCloneConfigWithAppNameAndBlankSrcUser() throws Exception {
+    void testCloneConfigWithBlankSrcUser() throws Exception {
         ConfigCloneInfo cloneInfo = new ConfigCloneInfo();
         cloneInfo.setConfigId(1L);
         cloneInfo.setTargetDataId("cloned");
         cloneInfo.setTargetGroupName("clonedGroup");
-        
-        when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
-        
-        ConfigAllInfo configAllInfo = new ConfigAllInfo();
-        configAllInfo.setDataId("orig");
-        configAllInfo.setGroup("origGroup");
-        configAllInfo.setAppName("myApp");
-        configAllInfo.setEncryptedDataKey("cipherKey");
-        configAllInfo.setId(1L);
-        List<ConfigAllInfo> queryedDataList = new ArrayList<>();
-        queryedDataList.add(configAllInfo);
-        
-        when(configInfoPersistService.findAllConfigInfo4Export(
-            any(), any(), any(), any(), anyList()))
-            .thenReturn(queryedDataList);
-        
         Map<String, Object> map = new HashMap<>();
         map.put("succCount", 1);
-        when(configInfoPersistService.batchInsertOrUpdate(
-            anyList(), anyString(), anyString(), any(), any()))
-            .thenReturn(map);
+        when(configCloneService.cloneConfig(any(), any(), anyList(), anyString(), any(),
+            anyString(), any())).thenReturn(Result.success(map));
         
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
                 .param("src_user", "").param("namespaceId", "public")
+                .param("username", "fallbackUser")
                 .param("policy", "ABORT")
                 .content(JacksonUtils.toJson(Collections.singletonList(cloneInfo)))
                 .contentType(MediaType.APPLICATION_JSON);
@@ -1026,45 +933,8 @@ class ConfigControllerV3Test {
             mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("0", code);
-    }
-    
-    @Test
-    void testCloneConfigDuplicateConfigId() throws Exception {
-        ConfigCloneInfo info1 = new ConfigCloneInfo();
-        info1.setConfigId(1L);
-        info1.setTargetDataId("data1");
-        ConfigCloneInfo info2 = new ConfigCloneInfo();
-        info2.setConfigId(1L);
-        info2.setTargetDataId("data2");
-        List<ConfigCloneInfo> cloneInfos = Arrays.asList(info1, info2);
-        
-        when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
-        
-        ConfigAllInfo configAllInfo = new ConfigAllInfo();
-        configAllInfo.setDataId("orig");
-        configAllInfo.setGroup("origGroup");
-        configAllInfo.setId(1L);
-        when(configInfoPersistService.findAllConfigInfo4Export(
-            any(), any(), any(), any(), anyList()))
-            .thenReturn(Collections.singletonList(configAllInfo));
-        
-        Map<String, Object> map = new HashMap<>();
-        map.put("succCount", 1);
-        when(configInfoPersistService.batchInsertOrUpdate(
-            anyList(), anyString(), anyString(), any(), any()))
-            .thenReturn(map);
-        
-        MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
-                .param("src_user", "test").param("namespaceId", "public")
-                .param("policy", "ABORT")
-                .content(JacksonUtils.toJson(cloneInfos))
-                .contentType(MediaType.APPLICATION_JSON);
-        
-        String actualValue =
-            mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        String code = JacksonUtils.toObj(actualValue).get("code").toString();
-        assertEquals("0", code);
+        Mockito.verify(configCloneService).cloneConfig(any(), eq("public"), anyList(),
+            eq("fallbackUser"), eq(SameConfigPolicy.ABORT), anyString(), any());
     }
     
     @Test

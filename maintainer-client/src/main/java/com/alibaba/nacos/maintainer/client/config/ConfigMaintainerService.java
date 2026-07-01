@@ -489,9 +489,11 @@ public interface ConfigMaintainerService
         throws NacosException;
     
     /**
-     * Clone configurations within the same namespace.
+     * Clone configurations to the target namespace, resolving source IDs in the
+     * same namespace.
      *
-     * @param namespaceId     Namespace ID (optional, defaults to "public").
+     * @param namespaceId     Target namespace ID (optional, defaults to "public").
+     *                        Source IDs are resolved in the same namespace.
      * @param cloneInfos      List of configurations to clone (required).
      * @param srcUser         Source user (optional).
      * @param policy          Conflict resolution policy (required).
@@ -514,7 +516,7 @@ public interface ConfigMaintainerService
      * @return A map containing the clone result (e.g., success count, unrecognized data).
      * @throws NacosException If the clone operation fails.
      */
-    @Since("3.3.0")
+    @Since("3.2.3")
     default Map<String, Object> cloneConfig(String sourceNamespaceId, String targetNamespaceId,
         List<ConfigCloneInfo> cloneInfos, String srcUser, SameConfigPolicy policy)
         throws NacosException {
