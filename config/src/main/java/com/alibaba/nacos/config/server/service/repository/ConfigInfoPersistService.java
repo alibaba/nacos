@@ -175,6 +175,18 @@ public interface ConfigInfoPersistService {
     List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
     
     /**
+     * Delete config info by ids and tenant.
+     *
+     * @param ids     id list
+     * @param tenant  tenant
+     * @param srcIp   remote ip
+     * @param srcUser user
+     * @return {@link ConfigAllInfo} list
+     */
+    List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String tenant, final String srcIp,
+            final String srcUser);
+
+    /**
      * Delete tag.
      *
      * @param id id
@@ -199,6 +211,15 @@ public interface ConfigInfoPersistService {
      * @param ids ids
      */
     void removeConfigInfoByIdsAtomic(final String ids);
+
+    /**
+     * Remove configuration by ids and tenant; database atomic operation, minimum SQL action, no business
+     * encapsulation.
+     *
+     * @param ids    ids
+     * @param tenant tenant
+     */
+    void removeConfigInfoByIdsAtomic(final String ids, final String tenant);
     
     //------------------------------------------update---------------------------------------------//
     
@@ -366,6 +387,15 @@ public interface ConfigInfoPersistService {
      */
     List<ConfigInfo> findConfigInfosByIds(final String ids);
     
+    /**
+     * find ConfigInfo by ids and tenant.
+     *
+     * @param ids    id list
+     * @param tenant tenant
+     * @return {@link com.alibaba.nacos.config.server.model.ConfigInfo} list
+     */
+    List<ConfigInfo> findConfigInfosByIds(final String ids, final String tenant);
+
     /**
      * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
      *

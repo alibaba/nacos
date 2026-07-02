@@ -224,7 +224,7 @@ class ConfigChangeAspectTest {
             latch.countDown();
             return null;
         }).when(configChangePluginService).execute(any(), any());
-        
+
         when(pjp.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn("dataId");
         when(configRequestInfo.getSrcType()).thenReturn("http");
@@ -239,12 +239,19 @@ class ConfigChangeAspectTest {
     
     @Test
     void testRpcSourceTypeHandling() throws Throwable {
+        CountDownLatch latch = new CountDownLatch(1);
+        Mockito.doAnswer(invocation -> {
+            latch.countDown();
+            return null;
+        }).when(configChangePluginService).execute(any(), any());
+
         when(pjp.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
         when(configRequestInfo.getSrcType()).thenReturn("rpc");
         when(configForm.getDataId()).thenReturn("dataId");
         when(pjp.proceed()).thenReturn("Success");
-        
+
         configChangeAspect.publishOrUpdateConfigAround(pjp);
+        assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
         ArgumentCaptor<ConfigChangeRequest> requestCaptor = ArgumentCaptor.forClass(ConfigChangeRequest.class);
         verify(configChangePluginService).execute(requestCaptor.capture(), any());
         assertEquals(ConfigChangePointCutTypes.PUBLISH_BY_RPC, requestCaptor.getValue().getRequestType());

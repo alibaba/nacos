@@ -527,25 +527,27 @@ class ExternalConfigInfoPersistServiceImplTest {
         final ConfigAllInfo configAllInfo2 = new ConfigAllInfo();
         configAllInfo1.setDataId("dataId1");
         configAllInfo1.setGroup("group1");
-        configAllInfo1.setTenant("tenant1");
+        configAllInfo1.setTenant(StringUtils.EMPTY);
         configAllInfo1.setAppName("app1");
         configAllInfo2.setDataId("dataId2");
         configAllInfo2.setGroup("group2");
-        configAllInfo2.setTenant("tenant2");
+        configAllInfo2.setTenant(StringUtils.EMPTY);
         configAllInfo2.setAppName("app2");
         configAllInfos.add(configAllInfo1);
         configAllInfos.add(configAllInfo2);
         List<Long> deleteIds = Arrays.asList(12344L, 3456789L);
         configAllInfos.get(0).setId(12344L);
         configAllInfos.get(1).setId(3456789L);
-        Mockito.when(jdbcTemplate.query(anyString(), eq(deleteIds.toArray()), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
-                .thenReturn(configAllInfos);
+        Mockito.when(jdbcTemplate.query(anyString(),
+                eq(new Object[] {deleteIds.get(0), deleteIds.get(1), StringUtils.EMPTY}),
+                eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(configAllInfos);
         String srcIp = "srcIp1234";
         String srcUser = "srcUser";
         externalConfigInfoPersistService.removeConfigInfoByIds(deleteIds, srcIp, srcUser);
         
         //expect delete to be invoked
-        Mockito.verify(jdbcTemplate, times(1)).update(anyString(), eq(deleteIds.get(0)), eq(deleteIds.get(1)));
+        Mockito.verify(jdbcTemplate, times(1)).update(anyString(), eq(deleteIds.get(0)), eq(deleteIds.get(1)),
+                eq(StringUtils.EMPTY));
         //expect delete tags to be invoked
         Mockito.verify(jdbcTemplate, times(1)).update(anyString(), eq(deleteIds.get(0)));
         Mockito.verify(jdbcTemplate, times(1)).update(anyString(), eq(deleteIds.get(1)));
@@ -1012,6 +1014,16 @@ class ExternalConfigInfoPersistServiceImplTest {
         assertEquals(result.size(), configInfosByIds.size());
         assertEquals(result.get(2).getDataId(), configInfosByIds.get(2).getDataId());
         
+        String tenant = "tenant13245";
+        result.forEach(configInfo -> configInfo.setTenant(tenant));
+        ConfigInfo otherTenantConfigInfo = createMockConfigInfo(3);
+        otherTenantConfigInfo.setTenant("otherTenant");
+        result.add(otherTenantConfigInfo);
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {123L, 1232345L, tenant}),
+                eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
+        configInfosByIds = externalConfigInfoPersistService.findConfigInfosByIds(ids, tenant);
+        assertEquals(3, configInfosByIds.size());
+
         //mock EmptyResultDataAccessException
         when(jdbcTemplate.query(anyString(), eq(new Object[] {123L, 1232345L}), eq(CONFIG_INFO_ROW_MAPPER))).thenThrow(
                 new EmptyResultDataAccessException(3));
@@ -1174,8 +1186,9 @@ class ExternalConfigInfoPersistServiceImplTest {
         String tenant = "tenant13245";
         String appName = "appName1243";
         List<Long> ids = Arrays.asList(132L, 1343L, 245L);
+        mockConfigs.forEach(configAllInfo -> configAllInfo.setTenant(tenant));
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {132L, 1343L, 245L}),
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {132L, 1343L, 245L, tenant}),
                 eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(mockConfigs);
         //execute return mock obj
         List<ConfigAllInfo> configAllInfosIds = externalConfigInfoPersistService.findAllConfigInfo4Export(dataId, group,
@@ -1192,7 +1205,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         assertEquals(mockConfigs, configAllInfosWithDataId);
         
         //mock CannotGetJdbcConnectionException
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {132L, 1343L, 245L}),
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {132L, 1343L, 245L, tenant}),
                 eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenThrow(new CannotGetJdbcConnectionException("mock exp11"));
         //expect throw exception.
         try {

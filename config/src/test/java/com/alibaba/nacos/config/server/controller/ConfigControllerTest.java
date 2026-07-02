@@ -32,6 +32,7 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigCloneSourceNamespaceAuthUtil;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
@@ -103,6 +104,9 @@ class ConfigControllerTest {
     @Mock
     private ConfigSubService configSubService;
     
+    @Mock
+    private ConfigCloneSourceNamespaceAuthUtil cloneSourceNamespaceAuthUtil;
+
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -112,6 +116,7 @@ class ConfigControllerTest {
         ReflectionTestUtils.setField(configController, "configInfoGrayPersistService", configInfoGrayPersistService);
         ReflectionTestUtils.setField(configController, "namespacePersistService", namespacePersistService);
         ReflectionTestUtils.setField(configController, "configOperationService", configOperationService);
+        ReflectionTestUtils.setField(configController, "cloneSourceNamespaceAuthUtil", cloneSourceNamespaceAuthUtil);
         ReflectionTestUtils.setField(configController, "inner", inner);
         mockmvc = MockMvcBuilders.standaloneSetup(configController).build();
     }
@@ -173,19 +178,21 @@ class ConfigControllerTest {
     @Test
     void testDeleteConfigs() throws Exception {
         final List<Long> ids = Arrays.asList(1L, 2L);
+        String tenant = "tenant45678";
         
         ConfigInfo configInfoMock = new ConfigInfo();
         configInfoMock.setDataId("dataId1123");
         configInfoMock.setGroup("group34567");
-        configInfoMock.setTenant("tenant45678");
+        configInfoMock.setTenant(tenant);
         
-        Mockito.when(configInfoPersistService.findConfigInfo(Mockito.anyLong())).thenReturn(configInfoMock);
-
+        Mockito.when(configInfoPersistService.findConfigInfosByIds("1,2", tenant))
+                .thenReturn(Arrays.asList(configInfoMock));
         Mockito.when(configOperationService.deleteConfig(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
                 Mockito.isNull(), Mockito.anyString(), Mockito.anyString(), Mockito.eq(Constants.HTTP))).thenReturn(true);
 
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.CONFIG_CONTROLLER_PATH)
                 .param("delType", "ids")
+                .param("tenant", tenant)
                 .param("ids", ids.stream().map(Object::toString).toArray(String[]::new));
         
         String actualValue = mockmvc.perform(builder)
@@ -196,6 +203,9 @@ class ConfigControllerTest {
         
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         assertEquals("true", data);
+        Mockito.verify(configInfoPersistService).findConfigInfosByIds("1,2", tenant);
+        Mockito.verify(configOperationService).deleteConfig("dataId1123", "group34567", tenant, null,
+                "127.0.0.1", null, Constants.HTTP);
     }
     
     @Test
@@ -485,9 +495,13 @@ class ConfigControllerTest {
         List<SameNamespaceCloneConfigBean> configBeansList = new ArrayList<>();
         configBeansList.add(sameNamespaceCloneConfigBean);
         
-        when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
+        String sourceTenant = "sourceTenant";
+        String targetTenant = "targetTenant";
+        when(namespacePersistService.tenantInfoCountByTenantId(sourceTenant)).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId(targetTenant)).thenReturn(1);
         
         ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setId(1L);
         configAllInfo.setDataId("test");
         configAllInfo.setGroup("test");
         configAllInfo.setContent("test");
@@ -497,14 +511,15 @@ class ConfigControllerTest {
         List<Long> idList = new ArrayList<>(configBeansList.size());
         idList.add(sameNamespaceCloneConfigBean.getCfgId());
         
-        when(configInfoPersistService.findAllConfigInfo4Export(null, null, null, null, idList)).thenReturn(
+        when(configInfoPersistService.findAllConfigInfo4Export(null, null, sourceTenant, null, idList)).thenReturn(
                 queryedDataList);
         
         when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_CONTROLLER_PATH)
-                .param("clone", "true").param("src_user", "test").param("tenant", "public").param("policy", "ABORT")
-                .content(JacksonUtils.toJson(configBeansList)).contentType(MediaType.APPLICATION_JSON);
+                .param("clone", "true").param("src_user", "test").param("tenant", targetTenant)
+                .param("sourceTenant", sourceTenant).param("policy", "ABORT").content(JacksonUtils.toJson(configBeansList))
+                .contentType(MediaType.APPLICATION_JSON);
         
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         
@@ -513,5 +528,7 @@ class ConfigControllerTest {
         Map<String, Object> resultMap = JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(),
                 Map.class);
         assertNotNull(resultMap);
+        Mockito.verify(cloneSourceNamespaceAuthUtil).checkReadPermission(sourceTenant);
+        Mockito.verify(configInfoPersistService).findAllConfigInfo4Export(null, null, sourceTenant, null, idList);
     }
 }
