@@ -108,7 +108,8 @@ class ArdSearchServiceImplTest {
         assertEquals("urn:air:nacos.local:public:skill:api-helper", result.getIdentifier());
         assertEquals(ArdIndexConstants.SOURCE_NACOS_LOCAL, result.getSource());
         assertEquals("skill", result.getMetadata().get("resourceType"));
-        assertTrue(result.getScore() > 1.0D);
+        assertEquals("skill", result.getTrustManifest().get("resourceType"));
+        assertEquals(100.0D, result.getScore(), 0.001D);
         assertTrue(response.getReferrals().isEmpty());
     }
     
@@ -134,7 +135,7 @@ class ArdSearchServiceImplTest {
             Map.of("metadata.resourceType", (Object) "skill")));
         
         assertEquals(1, response.getResults().size());
-        assertTrue(response.getResults().get(0).getScore() > 0.9D);
+        assertEquals(100.0D, response.getResults().get(0).getScore(), 0.001D);
     }
     
     @Test
@@ -180,7 +181,7 @@ class ArdSearchServiceImplTest {
             Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL))));
         
         assertEquals(1, response.getResults().size());
-        assertEquals(0.9D, response.getResults().get(0).getScore(), 0.001D);
+        assertEquals(100.0D, response.getResults().get(0).getScore(), 0.001D);
     }
     
     @Test
@@ -204,7 +205,7 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
-    void searchShouldPageResultsWithNextPageToken() throws Exception {
+    void searchShouldPageResultsWithPageToken() throws Exception {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
@@ -231,17 +232,17 @@ class ArdSearchServiceImplTest {
         assertEquals(2, firstPage.getResults().size());
         assertEquals("api-one", firstPage.getResults().get(0).getDisplayName());
         assertEquals("api-two", firstPage.getResults().get(1).getDisplayName());
-        assertNotNull(firstPage.getNextPageToken());
+        assertNotNull(firstPage.getPageToken());
         
         ArdSearchRequest secondRequest = request("api",
             Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL)));
         secondRequest.setPageSize(2);
-        secondRequest.setPageToken(firstPage.getNextPageToken());
+        secondRequest.setPageToken(firstPage.getPageToken());
         ArdSearchResponse secondPage = service.search(secondRequest);
         
         assertEquals(1, secondPage.getResults().size());
         assertEquals("api-three", secondPage.getResults().get(0).getDisplayName());
-        assertNull(secondPage.getNextPageToken());
+        assertNull(secondPage.getPageToken());
     }
     
     @Test
@@ -351,6 +352,9 @@ class ArdSearchServiceImplTest {
             "resourceType", "skill", "resourceName", resourceName, "resourceVersion", "1.0.0",
             "inputTypes", List.of("json"), "outputTypes", List.of("markdown"),
             "riskLevel", "low")));
+        entry.setTrustManifest(JacksonUtils.toJson(Map.of("source",
+            ArdIndexConstants.SOURCE_NACOS_LOCAL, "resourceType", "skill", "federation",
+            ArdSearchServiceImpl.FEDERATION_NONE)));
         entry.setStatus(ArdIndexConstants.STATUS_ENABLED);
         entry.setSource(ArdIndexConstants.SOURCE_NACOS_LOCAL);
         entry.setGmtModified(Timestamp.from(Instant.parse("2026-06-29T01:00:00Z")));

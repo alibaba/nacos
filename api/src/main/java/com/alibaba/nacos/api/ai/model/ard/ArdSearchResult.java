@@ -50,6 +50,8 @@ public class ArdSearchResult {
     
     private Map<String, Object> metadata = new LinkedHashMap<>();
     
+    private Map<String, Object> trustManifest = new LinkedHashMap<>();
+    
     private Double score;
     
     private String source;
@@ -140,6 +142,14 @@ public class ArdSearchResult {
     
     public void setMetadata(Map<String, Object> metadata) {
         this.metadata = metadata;
+    }
+    
+    public Map<String, Object> getTrustManifest() {
+        return trustManifest;
+    }
+    
+    public void setTrustManifest(Map<String, Object> trustManifest) {
+        this.trustManifest = trustManifest;
     }
     
     public Double getScore() {

@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -57,8 +56,8 @@ public class ArdSearchController {
     @Since("3.3.0")
     @PostMapping("/search")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public Result<ArdSearchResponse> search(@RequestBody ArdSearchRequest request)
+    public ArdSearchResponse search(@RequestBody ArdSearchRequest request)
         throws NacosException {
-        return Result.success(ardSearchService.search(request));
+        return ardSearchService.search(request);
     }
 }

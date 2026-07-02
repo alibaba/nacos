@@ -142,6 +142,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             candidates.add(new RankedResult(result, entry.getId(), entry.getGmtModified()));
         }
         candidates.sort(resultComparator());
+        normalizeScores(candidates);
         return page(toResults(candidates), context);
     }
     
@@ -285,6 +286,26 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             results.add(rankedResult.result);
         }
         return results;
+    }
+    
+    private void normalizeScores(List<RankedResult> candidates) {
+        double maxScore = 0D;
+        for (RankedResult candidate : candidates) {
+            Double score = candidate.result.getScore();
+            if (score != null) {
+                maxScore = Math.max(maxScore, score);
+            }
+        }
+        for (RankedResult candidate : candidates) {
+            candidate.result.setScore(normalizeScore(candidate.result.getScore(), maxScore));
+        }
+    }
+    
+    private double normalizeScore(Double score, double maxScore) {
+        if (score == null || score <= 0D || maxScore <= 0D) {
+            return 0D;
+        }
+        return Math.min(100D, score * 100D / maxScore);
     }
     
     private Comparator<RankedResult> resultComparator() {
@@ -544,6 +565,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         result.setVersion(entry.getResourceVersion());
         result.setUpdatedAt(formatTimestamp(entry.getGmtModified()));
         result.setMetadata(parseMap(entry.getMetadata()));
+        result.setTrustManifest(parseMap(entry.getTrustManifest()));
         result.setSource(entry.getSource());
         return result;
     }
@@ -626,7 +648,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         int toIndex = Math.min(fromIndex + context.pageSize, candidates.size());
         response.setResults(new ArrayList<>(candidates.subList(fromIndex, toIndex)));
         if (toIndex < candidates.size()) {
-            response.setNextPageToken(encodePageToken(toIndex));
+            response.setPageToken(encodePageToken(toIndex));
         }
         return response;
     }

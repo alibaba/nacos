@@ -30,7 +30,7 @@ public class ArdSearchResponse {
     
     private List<ArdSearchResult> referrals = new ArrayList<>();
     
-    private String nextPageToken;
+    private String pageToken;
     
     public List<ArdSearchResult> getResults() {
         return results;
@@ -48,11 +48,11 @@ public class ArdSearchResponse {
         this.referrals = referrals;
     }
     
-    public String getNextPageToken() {
-        return nextPageToken;
+    public String getPageToken() {
+        return pageToken;
     }
     
-    public void setNextPageToken(String nextPageToken) {
-        this.nextPageToken = nextPageToken;
+    public void setPageToken(String pageToken) {
+        this.pageToken = pageToken;
     }
 }
