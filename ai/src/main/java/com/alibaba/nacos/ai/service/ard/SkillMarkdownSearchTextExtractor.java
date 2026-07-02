@@ -39,13 +39,16 @@ class SkillMarkdownSearchTextExtractor {
     
     private static final String[] FRONT_MATTER_KEYS = {
         "name", "description", "trigger", "triggers", "tag", "tags", "capability",
-        "capabilities", "usecase", "usecases", "use_case", "use_cases"
+        "capabilities", "usecase", "usecases", "use_case", "use_cases", "template",
+        "variable", "variables", "tool", "tools", "resource", "resources"
     };
     
     private static final String[] HIGH_VALUE_KEYWORDS = {
         "trigger", "triggers", "use case", "use cases", "usecase", "usecases", "capability",
         "capabilities", "when to use", "example", "examples", "query", "queries", "user asks",
-        "触发词", "触发", "适用场景", "使用场景", "能力", "示例", "查询", "用户问题", "用户输入"
+        "template", "templates", "variable", "variables", "tool", "tools", "resource",
+        "resources", "schema", "endpoint", "触发词", "触发", "适用场景", "使用场景", "能力",
+        "示例", "查询", "用户问题", "用户输入", "模板", "变量", "工具", "资源"
     };
     
     List<String> extract(String markdown) {

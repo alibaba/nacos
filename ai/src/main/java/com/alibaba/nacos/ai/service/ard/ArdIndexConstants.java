@@ -55,6 +55,10 @@ final class ArdIndexConstants {
     
     static final String CHUNK_TYPE_SKILL_CONTENT = "skill_content";
     
+    static final String CHUNK_TYPE_PROMPT_CONTENT = "prompt_content";
+    
+    static final String CHUNK_TYPE_MCP_CONTENT = "mcp_content";
+    
     static final String CHUNK_TYPE_AI_SUMMARY = "ai_summary";
     
     static final String CHUNK_TYPE_BILINGUAL_ALIAS = "bilingual_alias";

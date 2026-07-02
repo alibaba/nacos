@@ -20,6 +20,9 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
@@ -36,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Loads stored Skill files as compact input for ARD LLM enhancement.
+ * Loads stored AI resource files as compact input for ARD indexing and enhancement.
  *
  * @author nacos
  */
@@ -67,8 +70,7 @@ public class SkillArdIndexContentLoader implements ArdIndexContentLoader {
     @Override
     public List<ArdIndexEnhancementContent> load(ArdEntry entry, AiResourceVersion version)
         throws Exception {
-        if (entry == null || version == null || !Constants.Skills.RESOURCE_TYPE_SKILL
-            .equals(entry.getResourceType()) || StringUtils.isBlank(version.getStorage())) {
+        if (entry == null || version == null || StringUtils.isBlank(version.getStorage())) {
             return Collections.emptyList();
         }
         Map<String, Object> storage = parseStorage(version.getStorage());
@@ -77,6 +79,17 @@ public class SkillArdIndexContentLoader implements ArdIndexContentLoader {
             return Collections.emptyList();
         }
         String provider = provider(storage.get("provider"));
+        if (Constants.Skills.RESOURCE_TYPE_SKILL.equals(entry.getResourceType())) {
+            return loadSkillContent(entry, provider, files);
+        }
+        if (NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT.equals(entry.getResourceType())) {
+            return loadPromptContent(entry, provider, files);
+        }
+        return Collections.emptyList();
+    }
+    
+    private List<ArdIndexEnhancementContent> loadSkillContent(ArdEntry entry, String provider,
+        List<String> files) throws Exception {
         if (!files.contains(SKILL_MD_RESOURCE_NAME)) {
             return Collections.emptyList();
         }
@@ -93,6 +106,26 @@ public class SkillArdIndexContentLoader implements ArdIndexContentLoader {
         }
         return Collections.singletonList(new ArdIndexEnhancementContent(SKILL_MD_RESOURCE_NAME,
             limit(text, maxContentChars())));
+    }
+    
+    private List<ArdIndexEnhancementContent> loadPromptContent(ArdEntry entry, String provider,
+        List<String> files) throws Exception {
+        if (!files.contains(PromptUtils.PROMPT_MAIN_DATA_ID)) {
+            return Collections.emptyList();
+        }
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider,
+            entry.getNamespaceId(), NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT,
+            entry.getResourceName(), entry.getResourceVersion(), PromptUtils.PROMPT_MAIN_DATA_ID);
+        byte[] bytes = storageRouter.route(key).get(key);
+        if (bytes == null || bytes.length == 0) {
+            return Collections.emptyList();
+        }
+        String text = promptSearchText(new String(bytes, StandardCharsets.UTF_8));
+        if (StringUtils.isBlank(text)) {
+            return Collections.emptyList();
+        }
+        return Collections.singletonList(new ArdIndexEnhancementContent(
+            PromptUtils.PROMPT_MAIN_DATA_ID, limit(text, maxContentChars())));
     }
     
     private Map<String, Object> parseStorage(String storageJson) {
@@ -124,6 +157,54 @@ public class SkillArdIndexContentLoader implements ArdIndexContentLoader {
     
     private String normalize(String text) {
         return text.replace('\u0000', ' ').trim();
+    }
+    
+    private String promptSearchText(String contentJson) {
+        try {
+            PromptVersionInfo prompt = JacksonUtils.toObj(contentJson, PromptVersionInfo.class);
+            if (prompt == null) {
+                return normalize(contentJson);
+            }
+            StringBuilder text = new StringBuilder();
+            if (StringUtils.isNotBlank(prompt.getTemplate())) {
+                appendLine(text, "# Prompt template");
+                appendLine(text, prompt.getTemplate());
+            }
+            if (prompt.getVariables() != null && !prompt.getVariables().isEmpty()) {
+                appendLine(text, "# Prompt variables");
+                for (PromptVariable variable : prompt.getVariables()) {
+                    appendLine(text, variableText(variable));
+                }
+            }
+            return normalize(text.toString());
+        } catch (Exception ignored) {
+            return normalize(contentJson);
+        }
+    }
+    
+    private String variableText(PromptVariable variable) {
+        if (variable == null || StringUtils.isBlank(variable.getName())) {
+            return null;
+        }
+        StringBuilder text = new StringBuilder();
+        text.append("- variable ").append(variable.getName());
+        if (StringUtils.isNotBlank(variable.getDescription())) {
+            text.append(": ").append(variable.getDescription());
+        }
+        if (StringUtils.isNotBlank(variable.getDefaultValue())) {
+            text.append(" default ").append(variable.getDefaultValue());
+        }
+        return text.toString();
+    }
+    
+    private void appendLine(StringBuilder text, String line) {
+        if (StringUtils.isBlank(line)) {
+            return;
+        }
+        if (text.length() > 0) {
+            text.append('\n');
+        }
+        text.append(line);
     }
     
     private String limit(String text, int maxLength) {

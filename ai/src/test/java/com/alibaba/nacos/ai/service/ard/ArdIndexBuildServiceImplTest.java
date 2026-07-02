@@ -25,6 +25,11 @@ import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.service.ard.vector.AiResourceVectorDocument;
 import com.alibaba.nacos.ai.service.ard.vector.AiResourceVectorIndex;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.junit.jupiter.api.Test;
@@ -244,6 +249,32 @@ class ArdIndexBuildServiceImplTest {
     }
     
     @Test
+    void rebuildMcpServerShouldPersistToolContentChunks() throws Exception {
+        ArdIndexBuildServiceImpl service = new ArdIndexBuildServiceImpl(resourceManager,
+            repository, embeddingService, vectorIndex, enhancementService, contentLoader,
+            Runnable::run);
+        McpServerDetailInfo mcpServer = mcpServer();
+        when(repository.replaceEntry(any(ArdEntry.class), anyList())).thenAnswer(invocation -> {
+            ArdEntry entry = invocation.getArgument(0);
+            entry.setId(10L);
+            List<ArdChunk> chunks = invocation.getArgument(1);
+            long id = 1L;
+            for (ArdChunk chunk : chunks) {
+                chunk.setId(id++);
+            }
+            return chunks;
+        });
+        
+        service.rebuildMcpServer("public", mcpServer);
+        
+        ArgumentCaptor<List<ArdChunk>> chunksCaptor = ArgumentCaptor.forClass(List.class);
+        verify(repository).replaceEntry(any(ArdEntry.class), chunksCaptor.capture());
+        assertTrue(chunksCaptor.getValue().stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_MCP_CONTENT.equals(chunk.getChunkType())
+                && chunk.getChunkText().contains("avatar video")));
+    }
+    
+    @Test
     void rebuildAiResourceShouldDeleteOfflineVersion() throws Exception {
         ArdIndexBuildServiceImpl service = service();
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -289,5 +320,24 @@ class ArdIndexBuildServiceImplTest {
         version.setDesc("Extract API parameters");
         version.setStatus(status);
         return version;
+    }
+    
+    private McpServerDetailInfo mcpServer() {
+        McpTool tool = new McpTool();
+        tool.setName("avatar_video");
+        tool.setDescription("Create avatar video from an image and voice.");
+        McpToolSpecification toolSpec = new McpToolSpecification();
+        toolSpec.setTools(List.of(tool));
+        ServerVersionDetail versionDetail = new ServerVersionDetail();
+        versionDetail.setVersion("1.0.0");
+        McpServerDetailInfo mcpServer = new McpServerDetailInfo();
+        mcpServer.setId("mcp-avatar");
+        mcpServer.setName("Avatar MCP");
+        mcpServer.setDescription("MCP server for avatar videos");
+        mcpServer.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
+        mcpServer.setStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
+        mcpServer.setVersionDetail(versionDetail);
+        mcpServer.setToolSpec(toolSpec);
+        return mcpServer;
     }
 }

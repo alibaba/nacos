@@ -20,6 +20,9 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
@@ -34,6 +37,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for {@link SkillArdIndexContentLoader}.
@@ -65,9 +69,36 @@ class SkillArdIndexContentLoaderTest {
             content.getPath())));
     }
     
+    @Test
+    void loadShouldReadPromptContentFromStorage() throws Exception {
+        TestStorage storage = new TestStorage("test");
+        AiResourceStorageRouter.join(storage);
+        PromptVersionInfo prompt = new PromptVersionInfo();
+        prompt.setTemplate("生成头像视频脚本，适合数字人介绍产品");
+        prompt.setVariables(List.of(new PromptVariable("avatar", null, "头像图片 URL")));
+        savePrompt(storage, JacksonUtils.toJson(prompt));
+        
+        SkillArdIndexContentLoader loader = new SkillArdIndexContentLoader(
+            AiResourceStorageRouter.getInstance());
+        List<ArdIndexEnhancementContent> contents = loader.load(promptEntry(), promptVersion());
+        
+        assertEquals(1, contents.size());
+        assertEquals(PromptUtils.PROMPT_MAIN_DATA_ID, contents.get(0).getPath());
+        assertFalse(contents.get(0).getText().contains("{\"template\""));
+        assertFalse(contents.get(0).getText().contains("\"variables\""));
+        assertTrue(contents.get(0).getText().contains("头像图片 URL"));
+    }
+    
     private void save(TestStorage storage, String filePath, String content) throws Exception {
         StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(storage.type(), "public",
             "ai-video-avatar", "1.0.0", filePath);
+        storage.save(key, content.getBytes(StandardCharsets.UTF_8));
+    }
+    
+    private void savePrompt(TestStorage storage, String content) throws Exception {
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(storage.type(), "public",
+            NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "avatar-prompt", "1.0.0",
+            PromptUtils.PROMPT_MAIN_DATA_ID);
         storage.save(key, content.getBytes(StandardCharsets.UTF_8));
     }
     
@@ -80,10 +111,26 @@ class SkillArdIndexContentLoaderTest {
         return entry;
     }
     
+    private ArdEntry promptEntry() {
+        ArdEntry entry = new ArdEntry();
+        entry.setNamespaceId("public");
+        entry.setResourceType(NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT);
+        entry.setResourceName("avatar-prompt");
+        entry.setResourceVersion("1.0.0");
+        return entry;
+    }
+    
     private AiResourceVersion version() {
         AiResourceVersion version = new AiResourceVersion();
         version.setStorage(JacksonUtils.toJson(Map.of("provider", "test", "files",
             List.of("SKILL.md", "templates/prompt.md", "assets/logo.png"))));
+        return version;
+    }
+    
+    private AiResourceVersion promptVersion() {
+        AiResourceVersion version = new AiResourceVersion();
+        version.setStorage(JacksonUtils.toJson(Map.of("provider", "test", "files",
+            List.of(PromptUtils.PROMPT_MAIN_DATA_ID))));
         return version;
     }
     

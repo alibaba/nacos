@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.ard.ArdChunk;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
+import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -40,6 +43,8 @@ import java.util.Map;
 public class ArdChunkBuilder {
     
     private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
+    
+    private static final String MCP_CONTENT_PATH_PREFIX = "mcp-";
     
     private static final TypeReference<List<String>> STRING_LIST_TYPE =
         new TypeReference<List<String>>() {
@@ -79,17 +84,26 @@ public class ArdChunkBuilder {
      */
     public List<ArdChunk> buildSkillContentChunks(ArdEntry entry,
         List<ArdIndexEnhancementContent> contents) {
+        return buildSourceContentChunks(entry, contents);
+    }
+    
+    /**
+     * Build deterministic search chunks from stored or supplied resource content.
+     */
+    public List<ArdChunk> buildSourceContentChunks(ArdEntry entry,
+        List<ArdIndexEnhancementContent> contents) {
         if (contents == null || contents.isEmpty()) {
             return Collections.emptyList();
         }
         List<ArdChunk> chunks = new ArrayList<>();
         for (ArdIndexEnhancementContent content : contents) {
-            if (content == null || !SKILL_MD_RESOURCE_NAME.equals(content.getPath())) {
+            String chunkType = sourceContentChunkType(entry, content);
+            if (content == null || StringUtils.isBlank(chunkType)) {
                 continue;
             }
             for (String text : skillMarkdownSearchTextExtractor.extract(content.getText())) {
-                addChunk(chunks, entry, ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT, text,
-                    skillContentMetadata(content.getPath()));
+                addChunk(chunks, entry, chunkType, text, sourceContentMetadata(content.getPath(),
+                    sourceContentType(chunkType)));
             }
         }
         return dedupeByHash(chunks);
@@ -228,9 +242,42 @@ public class ArdChunkBuilder {
         return result;
     }
     
-    private String skillContentMetadata(String path) {
+    private String sourceContentChunkType(ArdEntry entry, ArdIndexEnhancementContent content) {
+        if (entry == null || content == null) {
+            return null;
+        }
+        if (Constants.Skills.RESOURCE_TYPE_SKILL.equals(entry.getResourceType())
+            && SKILL_MD_RESOURCE_NAME.equals(content.getPath())) {
+            return ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT;
+        }
+        if (NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT.equals(entry.getResourceType())
+            && PromptUtils.PROMPT_MAIN_DATA_ID.equals(content.getPath())) {
+            return ArdIndexConstants.CHUNK_TYPE_PROMPT_CONTENT;
+        }
+        if (ArdIndexConstants.RESOURCE_TYPE_MCP.equals(entry.getResourceType())
+            && StringUtils.isNotBlank(content.getPath())
+            && content.getPath().startsWith(MCP_CONTENT_PATH_PREFIX)) {
+            return ArdIndexConstants.CHUNK_TYPE_MCP_CONTENT;
+        }
+        return null;
+    }
+    
+    private String sourceContentType(String chunkType) {
+        if (ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT.equals(chunkType)) {
+            return "skill_md";
+        }
+        if (ArdIndexConstants.CHUNK_TYPE_PROMPT_CONTENT.equals(chunkType)) {
+            return "prompt_content";
+        }
+        if (ArdIndexConstants.CHUNK_TYPE_MCP_CONTENT.equals(chunkType)) {
+            return "mcp_spec";
+        }
+        return "content";
+    }
+    
+    private String sourceContentMetadata(String path, String source) {
         Map<String, Object> metadata = new LinkedHashMap<>();
-        metadata.put("source", "skill_md");
+        metadata.put("source", source);
         metadata.put("path", path);
         metadata.put("extractor", "rule");
         return JacksonUtils.toJson(metadata);

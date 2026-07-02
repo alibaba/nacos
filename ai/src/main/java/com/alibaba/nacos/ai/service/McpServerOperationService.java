@@ -454,7 +454,7 @@ public class McpServerOperationService {
         AiResourceTraceService.logSuccess("mcp", serverSpecification.getName(),
             versionDetail.getVersion(), AiResourceTraceService.OP_CREATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
-        rebuildArdMcpIndex(namespaceId, newSpecification);
+        rebuildArdMcpIndex(namespaceId, newSpecification, toolSpecification, resourceSpecification);
         
         return id;
     }
@@ -599,7 +599,8 @@ public class McpServerOperationService {
             isPublish ? AiResourceTraceService.OP_PUBLISH : AiResourceTraceService.OP_UPDATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         if (isPublish) {
-            rebuildArdMcpIndex(namespaceId, newSpecification);
+            rebuildArdMcpIndex(namespaceId, newSpecification, toolSpecification,
+                resourceSpecification);
         }
     }
     
@@ -669,12 +670,30 @@ public class McpServerOperationService {
     }
     
     private void rebuildArdMcpIndex(String namespaceId, McpServerBasicInfo serverSpecification) {
+        rebuildArdMcpIndex(namespaceId, serverSpecification, null, null);
+    }
+    
+    private void rebuildArdMcpIndex(String namespaceId, McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification) {
         try {
-            ardIndexBuildService.rebuildMcpServer(namespaceId, serverSpecification);
+            ardIndexBuildService.rebuildMcpServer(namespaceId, mcpArdIndexSpec(
+                serverSpecification, toolSpecification, resourceSpecification));
         } catch (Exception e) {
             LOGGER.warn("Failed to rebuild ARD index for mcp server: {}",
                 serverSpecification == null ? null : serverSpecification.getName(), e);
         }
+    }
+    
+    private McpServerBasicInfo mcpArdIndexSpec(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification) {
+        if (toolSpecification == null && resourceSpecification == null) {
+            return serverSpecification;
+        }
+        McpServerDetailInfo detail = new McpServerDetailInfo();
+        BeanUtils.copyProperties(serverSpecification, detail);
+        detail.setToolSpec(toolSpecification);
+        detail.setResourceSpec(resourceSpecification);
+        return detail;
     }
     
     private void deleteArdMcpIndex(String namespaceId, String mcpServerId) {

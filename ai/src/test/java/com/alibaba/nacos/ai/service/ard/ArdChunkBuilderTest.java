@@ -19,6 +19,8 @@ package com.alibaba.nacos.ai.service.ard;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.ard.ArdChunk;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
+import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
 
@@ -97,6 +99,36 @@ class ArdChunkBuilderTest {
             chunk -> ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT.equals(chunk.getChunkType())));
         assertTrue(chunks.stream().anyMatch(
             chunk -> chunk.getChunkText().contains("talking head")));
+    }
+    
+    @Test
+    void buildSourceContentChunksShouldIncludePromptContentText() {
+        ArdEntry entry = entry();
+        entry.setResourceType(NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT);
+        
+        List<ArdChunk> chunks = new ArdChunkBuilder().buildSourceContentChunks(entry,
+            List.of(new ArdIndexEnhancementContent(PromptUtils.PROMPT_MAIN_DATA_ID,
+                "# Prompt template\n生成头像视频脚本，适合数字人介绍产品")));
+        
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_PROMPT_CONTENT.equals(chunk.getChunkType())));
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> chunk.getChunkText().contains("头像视频脚本")));
+    }
+    
+    @Test
+    void buildSourceContentChunksShouldIncludeMcpToolText() {
+        ArdEntry entry = entry();
+        entry.setResourceType(ArdIndexConstants.RESOURCE_TYPE_MCP);
+        
+        List<ArdChunk> chunks = new ArdChunkBuilder().buildSourceContentChunks(entry,
+            List.of(new ArdIndexEnhancementContent("mcp-tools.json",
+                "# MCP tools\n## Tool avatar_video\nCreate avatar video from an image")));
+        
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_MCP_CONTENT.equals(chunk.getChunkType())));
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> chunk.getChunkText().contains("avatar_video")));
     }
     
     private ArdEntry entry() {

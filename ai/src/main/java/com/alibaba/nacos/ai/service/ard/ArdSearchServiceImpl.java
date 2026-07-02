@@ -729,6 +729,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         weights.put(ArdIndexConstants.CHUNK_TYPE_TAG, 1.0D);
         weights.put(ArdIndexConstants.CHUNK_TYPE_AI_SUMMARY, 1.0D);
         weights.put(ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT, 0.7D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_PROMPT_CONTENT, 0.7D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_MCP_CONTENT, 0.7D);
         weights.put(ArdIndexConstants.CHUNK_TYPE_METADATA_IO, 0.6D);
         weights.put(ArdIndexConstants.CHUNK_TYPE_METADATA_RISK, 0.5D);
         weights.put(ArdIndexConstants.CHUNK_TYPE_NOT_FOR, 0.4D);
