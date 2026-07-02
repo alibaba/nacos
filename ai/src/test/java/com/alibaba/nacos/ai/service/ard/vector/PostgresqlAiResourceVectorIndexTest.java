@@ -22,8 +22,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -76,5 +81,30 @@ class PostgresqlAiResourceVectorIndexTest {
         jdbcTemplate.execute("CREATE TABLE ai_resource_ard_embedding_pg (id bigint)");
         
         assertTrue(vectorIndex.available());
+    }
+    
+    @Test
+    void searchShouldPushLimitToSql() {
+        CapturingJdbcTemplate jdbcTemplate = new CapturingJdbcTemplate();
+        PostgresqlAiResourceVectorIndex index = new PostgresqlAiResourceVectorIndex(jdbcTemplate);
+        
+        index.search("public", new double[] {1.0D}, List.of("skill"), 7);
+        
+        assertTrue(jdbcTemplate.sql.contains("LIMIT ?"));
+        assertEquals(7, jdbcTemplate.args[jdbcTemplate.args.length - 1]);
+    }
+    
+    private static class CapturingJdbcTemplate extends JdbcTemplate {
+        
+        private String sql;
+        
+        private Object[] args;
+        
+        @Override
+        public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+            this.sql = sql;
+            this.args = args;
+            return Collections.emptyList();
+        }
     }
 }

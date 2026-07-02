@@ -148,8 +148,9 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         args.add(toVectorLiteral(queryVector));
         args.add(namespaceId);
         appendResourceTypeFilter(sql, args, resourceTypes);
-        sql.append(" ORDER BY embedding <=> ?::vector");
+        sql.append(" ORDER BY embedding <=> ?::vector LIMIT ?");
         args.add(toVectorLiteral(queryVector));
+        args.add(limit);
         List<ArdSearchHit> hits = getJdbcTemplate().query(sql.toString(), (rs, rowNum) -> {
             ArdSearchHit hit = new ArdSearchHit();
             hit.setEntryId(rs.getLong("entry_id"));
