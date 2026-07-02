@@ -74,6 +74,17 @@ public class ArdSearchController {
     }
     
     /**
+     * Explore online/latest AI resources from the local Nacos registry.
+     */
+    @Since("3.3.0")
+    @PostMapping("/explore")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    public ArdSearchResponse explore(@RequestBody ArdSearchRequest request)
+        throws NacosException {
+        return ardSearchService.search(request);
+    }
+    
+    /**
      * List local A2A agents from the local Nacos registry.
      */
     @Since("3.3.0")

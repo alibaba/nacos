@@ -59,6 +59,16 @@ class ArdSearchControllerTest {
     }
     
     @Test
+    void exploreShouldReturnRawArdResponse() throws NacosException {
+        ArdSearchController controller = controller();
+        ArdSearchRequest request = new ArdSearchRequest();
+        ArdSearchResponse response = new ArdSearchResponse();
+        when(ardSearchService.search(request)).thenReturn(response);
+        
+        assertSame(response, controller.explore(request));
+    }
+    
+    @Test
     void agentsShouldReturnRawAgentPage() throws NacosException {
         ArdSearchController controller = controller();
         Page<AgentCardVersionInfo> page = new Page<>();
