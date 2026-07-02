@@ -68,7 +68,7 @@ class SkillSpectorPipelineServiceBuilderTest {
     }
     
     @Test
-    void buildIgnoresConfiguredCommandTest() throws Exception {
+    void buildIgnoresExternalCommandTest() throws Exception {
         Path runner = createExecutable(Files.createTempDirectory("nacos-skillspector"),
                 "skillspector");
         Path emptyHome = Files.createTempDirectory("nacos-home");
@@ -84,7 +84,7 @@ class SkillSpectorPipelineServiceBuilderTest {
             
             PublishPipelineResult result = service.execute(new PublishPipelineContext());
             assertFalse(result.isPassed());
-            assertTrue(result.getMessage().contains("SkillSpector 内置运行时不可用"));
+            assertTrue(result.getMessage().contains("SkillSpector runtime 未安装"));
         } finally {
             restoreSystemProperty("nacos.home", oldNacosHome);
             restoreSystemProperty("user.dir", oldUserDir);
@@ -92,7 +92,7 @@ class SkillSpectorPipelineServiceBuilderTest {
     }
     
     @Test
-    void buildWithBuiltinRunnerTest() throws Exception {
+    void buildWithInstalledRuntimeTest() throws Exception {
         Path nacosHome = Files.createTempDirectory("nacos-home");
         Path runner = nacosHome.resolve("plugins").resolve("ai-pipeline")
                 .resolve("skill-spector").resolve("bin").resolve("skill-spector");
@@ -127,7 +127,7 @@ class SkillSpectorPipelineServiceBuilderTest {
             
             PublishPipelineResult result = service.execute(new PublishPipelineContext());
             assertFalse(result.isPassed());
-            assertTrue(result.getMessage().contains("SkillSpector 内置运行时不可用"));
+            assertTrue(result.getMessage().contains("SkillSpector runtime 未安装"));
         } finally {
             restoreSystemProperty("nacos.home", oldNacosHome);
             restoreSystemProperty("user.dir", oldUserDir);
