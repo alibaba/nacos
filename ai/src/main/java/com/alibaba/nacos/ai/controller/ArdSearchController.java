@@ -17,33 +17,31 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
+import com.alibaba.nacos.ai.service.ard.ArdArtifact;
+import com.alibaba.nacos.ai.service.ard.ArdArtifactService;
 import com.alibaba.nacos.ai.service.ard.ArdSearchService;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
+import com.alibaba.nacos.api.ai.model.ard.ArdExploreRequest;
+import com.alibaba.nacos.api.ai.model.ard.ArdExploreResponse;
+import com.alibaba.nacos.api.ai.model.ard.ArdListResponse;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Nacos Local ARD Search client controller.
@@ -58,12 +56,12 @@ public class ArdSearchController {
     
     private final ArdSearchService ardSearchService;
     
-    private final A2aServerOperationService a2aServerOperationService;
+    private final ArdArtifactService ardArtifactService;
     
     public ArdSearchController(ArdSearchService ardSearchService,
-        A2aServerOperationService a2aServerOperationService) {
+        ArdArtifactService ardArtifactService) {
         this.ardSearchService = ardSearchService;
-        this.a2aServerOperationService = a2aServerOperationService;
+        this.ardArtifactService = ardArtifactService;
     }
     
     /**
@@ -83,9 +81,9 @@ public class ArdSearchController {
     @Since("3.3.0")
     @PostMapping("/explore")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public ArdSearchResponse explore(@RequestBody ArdSearchRequest request)
+    public ArdExploreResponse explore(@RequestBody ArdExploreRequest request)
         throws NacosException {
-        return ardSearchService.search(request);
+        return ardSearchService.explore(request);
     }
     
     /**
@@ -94,14 +92,9 @@ public class ArdSearchController {
     @Since("3.3.0")
     @GetMapping("/ai-catalog.json")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public Map<String, Object> catalog() {
-        Map<String, Object> catalog = new LinkedHashMap<>();
-        catalog.put("name", "Nacos AI Registry");
-        catalog.put("source", "nacos-local");
-        catalog.put("federation", "none");
-        catalog.put("endpoints", endpoints());
-        catalog.put("resourceTypes", List.of("skill", "prompt", "mcp", "agent"));
-        return catalog;
+    public ArdCatalog catalog(@RequestParam(required = false) String namespaceId)
+        throws NacosException {
+        return ardSearchService.catalog(namespaceId);
     }
     
     /**
@@ -110,54 +103,30 @@ public class ArdSearchController {
     @Since("3.3.0")
     @GetMapping("/agents")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public Page<AgentCardVersionInfo> agents(
+    public ArdListResponse agents(
         @RequestParam(required = false) String namespaceId,
-        @RequestParam(required = false) String agentName,
-        @RequestParam(required = false) String search,
-        @RequestParam(required = false) Integer pageNo,
-        @RequestParam(required = false) Integer pageSize) throws NacosException {
-        return a2aServerOperationService.listAgents(normalizeNamespaceId(namespaceId),
-            agentName, normalizeAgentSearch(search), normalizePageNo(pageNo),
-            normalizePageSize(pageSize));
+        @RequestParam(required = false) String filter,
+        @RequestParam(required = false) String orderBy,
+        @RequestParam(required = false) Integer pageSize,
+        @RequestParam(required = false) String pageToken) throws NacosException {
+        return ardSearchService.list(namespaceId, filter, orderBy, pageSize, pageToken);
     }
     
-    private String normalizeNamespaceId(String namespaceId) {
-        return StringUtils.isBlank(namespaceId)
-            ? com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID : namespaceId;
-    }
-    
-    private String normalizeAgentSearch(String search) throws NacosApiException {
-        if (StringUtils.isBlank(search)) {
-            return Constants.A2A.SEARCH_BLUR;
-        }
-        if (Constants.A2A.SEARCH_ACCURATE.equalsIgnoreCase(search)
-            || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
-            return search;
-        }
-        throw new NacosApiException(NacosException.INVALID_PARAM,
-            ErrorCode.PARAMETER_VALIDATE_ERROR,
-            "Request parameter `search` should be `accurate` or `blur`.");
-    }
-    
-    private int normalizePageNo(Integer pageNo) {
-        if (pageNo == null || pageNo <= 0) {
-            return 1;
-        }
-        return pageNo;
-    }
-    
-    private int normalizePageSize(Integer pageSize) {
-        if (pageSize == null || pageSize <= 0) {
-            return 10;
-        }
-        return Math.min(pageSize, Constants.MAX_LIST_SIZE);
-    }
-    
-    private Map<String, String> endpoints() {
-        Map<String, String> endpoints = new LinkedHashMap<>();
-        endpoints.put("search", Constants.ARD_CLIENT_PATH + "/search");
-        endpoints.put("explore", Constants.ARD_CLIENT_PATH + "/explore");
-        endpoints.put("agents", Constants.ARD_CLIENT_PATH + "/agents");
-        return endpoints;
+    /**
+     * Return the versioned artifact document behind an ARD catalog entry URL.
+     */
+    @Since("3.3.0")
+    @GetMapping("/artifacts")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    public ResponseEntity<Object> artifact(
+        @RequestParam String namespaceId,
+        @RequestParam String resourceType,
+        @RequestParam String resourceName,
+        @RequestParam String version,
+        @RequestParam(required = false) String mcpName) throws NacosException {
+        ArdArtifact artifact = ardArtifactService.get(namespaceId, resourceType, resourceName,
+            version, mcpName);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(artifact.getMediaType()))
+            .body(artifact.getBody());
     }
 }

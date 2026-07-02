@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
+import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
+import com.alibaba.nacos.api.ai.model.ard.ArdExploreRequest;
+import com.alibaba.nacos.api.ai.model.ard.ArdExploreResponse;
+import com.alibaba.nacos.api.ai.model.ard.ArdListResponse;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -35,4 +39,36 @@ public interface ArdSearchService {
      * @throws NacosException when request validation or search fails
      */
     ArdSearchResponse search(ArdSearchRequest request) throws NacosException;
+    
+    /**
+     * Explore local AI resources with ARD facets.
+     *
+     * @param request ARD explore request
+     * @return ARD explore response
+     * @throws NacosException when request validation or explore fails
+     */
+    ArdExploreResponse explore(ArdExploreRequest request) throws NacosException;
+    
+    /**
+     * List local AI resources with ARD deterministic browsing parameters.
+     *
+     * @param namespaceId namespace id
+     * @param filter ARD list filter expression
+     * @param orderBy order expression
+     * @param pageSize page size
+     * @param pageToken pagination token
+     * @return ARD list response
+     * @throws NacosException when request validation or list fails
+     */
+    ArdListResponse list(String namespaceId, String filter, String orderBy, Integer pageSize,
+        String pageToken) throws NacosException;
+    
+    /**
+     * Build local ARD catalog manifest.
+     *
+     * @param namespaceId namespace id
+     * @return ARD catalog manifest
+     * @throws NacosException when catalog build fails
+     */
+    ArdCatalog catalog(String namespaceId) throws NacosException;
 }

@@ -1,0 +1,213 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.ai.service.ard;
+
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
+import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
+import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
+/**
+ * Loads ARD artifact documents behind catalog entry URLs.
+ *
+ * @author nacos
+ */
+@Service
+public class ArdArtifactService {
+    
+    private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
+    
+    private static final TypeReference<Map<String, Object>> MAP_TYPE =
+        new TypeReference<Map<String, Object>>() {
+        };
+    
+    private final AiResourceManager resourceManager;
+    
+    private final McpServerOperationService mcpServerOperationService;
+    
+    private final AiResourceStorageRouter storageRouter;
+    
+    public ArdArtifactService(AiResourceManager resourceManager,
+        McpServerOperationService mcpServerOperationService) {
+        this(resourceManager, mcpServerOperationService, AiResourceStorageRouter.getInstance());
+    }
+    
+    ArdArtifactService(AiResourceManager resourceManager,
+        McpServerOperationService mcpServerOperationService,
+        AiResourceStorageRouter storageRouter) {
+        this.resourceManager = resourceManager;
+        this.mcpServerOperationService = mcpServerOperationService;
+        this.storageRouter = storageRouter;
+    }
+    
+    /**
+     * Load a versioned ARD artifact.
+     */
+    public ArdArtifact get(String namespaceId, String resourceType, String resourceName,
+        String version, String mcpName) throws NacosException {
+        if (StringUtils.isBlank(namespaceId) || StringUtils.isBlank(resourceType)
+            || StringUtils.isBlank(resourceName) || StringUtils.isBlank(version)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_MISSING,
+                "Required ARD artifact parameter not present");
+        }
+        if (Constants.Skills.RESOURCE_TYPE_SKILL.equals(resourceType)) {
+            return skillArtifact(namespaceId, resourceType, resourceName, version);
+        }
+        if (NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT.equals(resourceType)) {
+            return promptArtifact(namespaceId, resourceType, resourceName, version);
+        }
+        if (ArdIndexConstants.RESOURCE_TYPE_MCP.equals(resourceType)) {
+            McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(namespaceId,
+                resourceName, mcpName, version);
+            return new ArdArtifact(ArdIndexConstants.MEDIA_TYPE_MCP, detail);
+        }
+        throw new NacosApiException(NacosException.INVALID_PARAM,
+            ErrorCode.PARAMETER_VALIDATE_ERROR,
+            "Unsupported ARD artifact resourceType: " + resourceType);
+    }
+    
+    private ArdArtifact skillArtifact(String namespaceId, String resourceType,
+        String resourceName, String version) throws NacosException {
+        AiResourceVersion resourceVersion =
+            readableOnlineVersion(namespaceId, resourceType, resourceName, version);
+        byte[] bytes = readResourceFile(resourceVersion, namespaceId, resourceName, version,
+            SKILL_MD_RESOURCE_NAME);
+        return new ArdArtifact(ArdIndexConstants.MEDIA_TYPE_SKILL,
+            new String(bytes, StandardCharsets.UTF_8));
+    }
+    
+    private ArdArtifact promptArtifact(String namespaceId, String resourceType,
+        String resourceName, String version) throws NacosException {
+        AiResourceVersion resourceVersion =
+            readableOnlineVersion(namespaceId, resourceType, resourceName, version);
+        byte[] bytes = readTypedResourceFile(resourceVersion, namespaceId, resourceType,
+            resourceName, version, PromptUtils.PROMPT_MAIN_DATA_ID);
+        PromptVersionInfo prompt = JacksonUtils.toObj(new String(bytes, StandardCharsets.UTF_8),
+            PromptVersionInfo.class);
+        return new ArdArtifact(ArdIndexConstants.MEDIA_TYPE_PROMPT, prompt);
+    }
+    
+    private AiResourceVersion readableOnlineVersion(String namespaceId, String resourceType,
+        String resourceName, String version) throws NacosException {
+        AiResource meta = resourceManager.findMeta(namespaceId, resourceName, resourceType);
+        if (meta == null
+            || !AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
+            throw notFound(resourceType + " not found: " + resourceName);
+        }
+        resourceManager.ensureReadableOrNotFound(meta,
+            resourceType + " not found: " + resourceName);
+        AiResourceVersion resourceVersion =
+            resourceManager.findVersion(namespaceId, resourceName, resourceType, version);
+        if (resourceVersion == null || !AiResourceConstants.VERSION_STATUS_ONLINE
+            .equalsIgnoreCase(resourceVersion.getStatus())) {
+            throw notFound(resourceType + " version not found: " + resourceName + "@" + version);
+        }
+        return resourceVersion;
+    }
+    
+    private byte[] readResourceFile(AiResourceVersion version, String namespaceId,
+        String resourceName, String resourceVersion, String filePath) throws NacosException {
+        return readStorageFile(version, SKILL_MD_RESOURCE_NAME,
+            NacosConfigAiResourceStorage.buildStorageKey(
+                provider(parseStorage(version.getStorage()).get("provider")), namespaceId,
+                resourceName, resourceVersion, filePath));
+    }
+    
+    private byte[] readTypedResourceFile(AiResourceVersion version, String namespaceId,
+        String resourceType, String resourceName, String resourceVersion, String filePath)
+        throws NacosException {
+        return readStorageFile(version, PromptUtils.PROMPT_MAIN_DATA_ID,
+            NacosConfigAiResourceStorage.buildStorageKey(
+                provider(parseStorage(version.getStorage()).get("provider")), namespaceId,
+                resourceType, resourceName, resourceVersion, filePath));
+    }
+    
+    private byte[] readStorageFile(AiResourceVersion version, String filePath, StorageKey key)
+        throws NacosException {
+        Map<String, Object> storage = parseStorage(version.getStorage());
+        if (!containsFile(storage.get("files"), filePath)) {
+            throw notFound("ARD artifact file not found");
+        }
+        try {
+            byte[] bytes = storageRouter.route(key).get(key);
+            if (bytes == null || bytes.length == 0) {
+                throw notFound("ARD artifact file not found");
+            }
+            return bytes;
+        } catch (NacosException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new NacosApiException(NacosException.SERVER_ERROR,
+                ErrorCode.DATA_ACCESS_ERROR, e, "Failed to load ARD artifact");
+        }
+    }
+    
+    private Map<String, Object> parseStorage(String storageJson) {
+        if (StringUtils.isBlank(storageJson)) {
+            return Collections.emptyMap();
+        }
+        try {
+            Map<String, Object> parsed = JacksonUtils.toObj(storageJson, MAP_TYPE);
+            return parsed == null ? Collections.emptyMap() : parsed;
+        } catch (Exception ignored) {
+            return Collections.emptyMap();
+        }
+    }
+    
+    private String provider(Object provider) {
+        String value = provider == null ? null : String.valueOf(provider);
+        return StringUtils.isBlank(value) ? NacosConfigAiResourceStorage.TYPE : value;
+    }
+    
+    private boolean containsFile(Object files, String filePath) {
+        if (!(files instanceof Collection)) {
+            return false;
+        }
+        for (Object file : (Collection<?>) files) {
+            if (filePath.equals(String.valueOf(file))) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private NacosApiException notFound(String message) {
+        return new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+            message);
+    }
+}

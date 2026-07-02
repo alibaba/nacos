@@ -357,22 +357,24 @@ public class ArdEntryBuilder {
     
     private String buildArtifactUrl(String namespaceId, String resourceType, String resourceName,
         String version) {
-        if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
-            return Constants.Skills.CLIENT_PATH + "?namespaceId=" + encode(namespaceId)
-                + "&name=" + encode(resourceName) + "&version=" + encode(version);
+        if (!RESOURCE_TYPE_SKILL.equals(resourceType)
+            && !RESOURCE_TYPE_PROMPT.equals(resourceType)) {
+            throw new IllegalArgumentException("Unsupported ARD resource type: " + resourceType);
         }
-        if (RESOURCE_TYPE_PROMPT.equals(resourceType)) {
-            return Constants.Prompt.CLIENT_PATH + "?namespaceId=" + encode(namespaceId)
-                + "&promptKey=" + encode(resourceName) + "&version=" + encode(version);
-        }
-        throw new IllegalArgumentException("Unsupported ARD resource type: " + resourceType);
+        return Constants.ARD_CLIENT_PATH + "/artifacts?namespaceId=" + encode(namespaceId)
+            + "&resourceType=" + encode(resourceType) + "&resourceName=" + encode(resourceName)
+            + "&version=" + encode(version);
     }
     
     private String buildMcpArtifactUrl(String namespaceId, String resourceName, String version,
         McpServerBasicInfo mcpServer) {
-        String key = StringUtils.isNotBlank(mcpServer.getId()) ? "mcpId" : "mcpName";
-        return Constants.MCP_ADMIN_PATH + "?namespaceId=" + encode(namespaceId) + "&" + key + "="
-            + encode(resourceName) + "&version=" + encode(version);
+        String url = Constants.ARD_CLIENT_PATH + "/artifacts?namespaceId="
+            + encode(namespaceId) + "&resourceType=" + encode(ArdIndexConstants.RESOURCE_TYPE_MCP)
+            + "&resourceName=" + encode(resourceName) + "&version=" + encode(version);
+        if (StringUtils.isNotBlank(mcpServer.getName())) {
+            url += "&mcpName=" + encode(mcpServer.getName());
+        }
+        return url;
     }
     
     private String encode(String value) {
