@@ -16,45 +16,40 @@
 
 package com.alibaba.nacos.api.ai.model.ard;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * ARD search query.
+ * ARD field-path filter.
  *
  * @author nacos
  */
-public class ArdSearchQuery {
+public class ArdSearchFilter {
     
-    private String text;
+    private String fieldPath;
     
-    private Map<String, Object> filter = new LinkedHashMap<>();
+    private Object value;
     
-    private List<ArdSearchFilter> filters = new ArrayList<>();
+    private Object values;
     
-    public String getText() {
-        return text;
+    public String getFieldPath() {
+        return fieldPath;
     }
     
-    public void setText(String text) {
-        this.text = text;
+    public void setFieldPath(String fieldPath) {
+        this.fieldPath = fieldPath;
     }
     
-    public Map<String, Object> getFilter() {
-        return filter;
+    public Object getValue() {
+        return value;
     }
     
-    public void setFilter(Map<String, Object> filter) {
-        this.filter = filter;
+    public void setValue(Object value) {
+        this.value = value;
     }
     
-    public List<ArdSearchFilter> getFilters() {
-        return filters;
+    public Object getValues() {
+        return values;
     }
     
-    public void setFilters(List<ArdSearchFilter> filters) {
-        this.filters = filters;
+    public void setValues(Object values) {
+        this.values = values;
     }
 }

@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.service.ard.vector.AiResourceVectorIndex;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.ard.ArdSearchFilter;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchQuery;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
@@ -347,7 +348,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
                 "Only federation `none` is supported by Nacos Local ARD Search");
         }
         ArdSearchQuery query = request.getQuery();
-        Map<String, List<String>> filter = normalizeFilter(query.getFilter());
+        Map<String, List<String>> filter = normalizeFilter(query);
         validateFilterKeys(filter.keySet());
         SearchContext context = new SearchContext();
         context.namespaceId = StringUtils.isBlank(request.getNamespaceId())
@@ -362,16 +363,37 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return context;
     }
     
-    private Map<String, List<String>> normalizeFilter(Map<String, Object> rawFilter)
+    private Map<String, List<String>> normalizeFilter(ArdSearchQuery query)
         throws NacosApiException {
         Map<String, List<String>> result = new LinkedHashMap<>();
-        if (rawFilter == null || rawFilter.isEmpty()) {
+        if (query.getFilter() != null && !query.getFilter().isEmpty()) {
+            for (Map.Entry<String, Object> entry : query.getFilter().entrySet()) {
+                addFilter(result, entry.getKey(),
+                    normalizeFilterValues(entry.getKey(), entry.getValue()));
+            }
+        }
+        if (query.getFilters() == null || query.getFilters().isEmpty()) {
             return result;
         }
-        for (Map.Entry<String, Object> entry : rawFilter.entrySet()) {
-            result.put(entry.getKey(), normalizeFilterValues(entry.getKey(), entry.getValue()));
+        for (ArdSearchFilter filter : query.getFilters()) {
+            if (filter == null) {
+                continue;
+            }
+            String fieldPath = filter.getFieldPath();
+            if (StringUtils.isBlank(fieldPath)) {
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `query.filters.fieldPath` not present");
+            }
+            Object value = filter.getValues() == null ? filter.getValue() : filter.getValues();
+            addFilter(result, fieldPath, normalizeFilterValues(fieldPath, value));
         }
         return result;
+    }
+    
+    private void addFilter(Map<String, List<String>> result, String fieldPath,
+        List<String> values) {
+        result.computeIfAbsent(fieldPath, key -> new ArrayList<>()).addAll(values);
     }
     
     private List<String> normalizeFilterValues(String key, Object value) throws NacosApiException {

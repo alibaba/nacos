@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.model.ard.ArdSearchHit;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.ard.vector.AiResourceVectorIndex;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.model.ard.ArdSearchFilter;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchQuery;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
@@ -206,6 +207,25 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
+    void searchShouldApplyFieldPathFilters() throws Exception {
+        ArdSearchServiceImpl service = service();
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
+            .thenReturn(List.of(hit(100L, 1.0D)));
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("1.0.0"));
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0")).thenReturn(onlineVersion("1.0.0"));
+        
+        ArdSearchResponse response = service.search(requestWithFilters("api",
+            List.of(filter("metadata.resourceType", List.of("skill")),
+                filter("metadata.inputTypes", "json"))));
+        
+        assertEquals(1, response.getResults().size());
+    }
+    
+    @Test
     void searchShouldPageResultsWithPageToken() throws Exception {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
@@ -291,6 +311,15 @@ class ArdSearchServiceImplTest {
         assertThrows(NacosException.class, () -> service.search(request));
     }
     
+    @Test
+    void searchShouldRejectBlankFieldPathFilter() {
+        ArdSearchServiceImpl service = service();
+        ArdSearchRequest request = requestWithFilters("api",
+            List.of(filter(null, List.of("skill"))));
+        
+        assertThrows(NacosException.class, () -> service.search(request));
+    }
+    
     private ArdSearchServiceImpl service() {
         return new ArdSearchServiceImpl(resourceManager, mcpServerOperationService, repository,
             embeddingService, vectorIndex);
@@ -306,6 +335,25 @@ class ArdSearchServiceImplTest {
         request.setFederation("none");
         request.setPageSize(10);
         return request;
+    }
+    
+    private ArdSearchRequest requestWithFilters(String text, List<ArdSearchFilter> filters) {
+        ArdSearchQuery query = new ArdSearchQuery();
+        query.setText(text);
+        query.setFilters(filters);
+        ArdSearchRequest request = new ArdSearchRequest();
+        request.setNamespaceId("public");
+        request.setQuery(query);
+        request.setFederation("none");
+        request.setPageSize(10);
+        return request;
+    }
+    
+    private ArdSearchFilter filter(String fieldPath, Object values) {
+        ArdSearchFilter filter = new ArdSearchFilter();
+        filter.setFieldPath(fieldPath);
+        filter.setValues(values);
+        return filter;
     }
     
     private ArdSearchHit hit(Long entryId, double score) {
