@@ -38,6 +38,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.stereotype.Service;
 
@@ -72,6 +73,17 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private static final int MAX_CHUNK_CANDIDATES = 500;
     
+    private static final int RRF_K = 60;
+    
+    private static final double RRF_SCORE_SCALE = 100.0D;
+    
+    private static final double KEYWORD_RRF_WEIGHT = 1.0D;
+    
+    private static final double VECTOR_RRF_WEIGHT = 0.6D;
+    
+    private static final String KEY_RANKING_ENHANCED_ENABLED =
+        "nacos.ai.ard.search.ranking.enhanced.enabled";
+    
     private static final TypeReference<List<String>> STRING_LIST_TYPE =
         new TypeReference<List<String>>() {
         };
@@ -86,6 +98,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         new LinkedHashSet<>(Arrays.asList("type", "tags", "capabilities",
             "metadata.resourceType", "metadata.inputTypes", "metadata.outputTypes",
             "metadata.sideEffects", "metadata.riskLevel"));
+    
+    private static final Map<String, Double> CHUNK_TYPE_WEIGHTS = chunkTypeWeights();
     
     private final AiResourceManager resourceManager;
     
@@ -110,44 +124,190 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     @Override
     public ArdSearchResponse search(ArdSearchRequest request) throws NacosException {
         SearchContext context = validateAndBuildContext(request);
-        Map<Long, Double> scores = recall(context);
+        boolean enhancedRanking = enhancedRankingEnabled();
+        Map<Long, SearchScore> scores = recall(context, enhancedRanking);
         List<ArdEntry> entries = repository.findEntriesByIds(scores.keySet());
-        List<ArdSearchResult> candidates = new ArrayList<>();
+        List<RankedResult> candidates = new ArrayList<>();
         for (ArdEntry entry : entries) {
             if (!matchesFieldFilters(context.filter, entry) || !validateCurrentResource(entry)) {
                 continue;
             }
             ArdSearchResult result = toResult(entry);
-            result.setScore(scores.get(entry.getId()));
-            candidates.add(result);
+            SearchScore score = scores.get(entry.getId());
+            double finalScore = score == null ? 0D : score.getScore();
+            if (enhancedRanking) {
+                finalScore += exactMatchBoost(entry, context.text);
+            }
+            result.setScore(finalScore);
+            candidates.add(new RankedResult(result, entry.getId(), entry.getGmtModified()));
         }
-        candidates.sort(Comparator.comparing(ArdSearchResult::getScore,
-            Comparator.nullsLast(Comparator.reverseOrder())));
-        return page(candidates, context);
+        candidates.sort(resultComparator());
+        return page(toResults(candidates), context);
     }
     
-    private Map<Long, Double> recall(SearchContext context) {
-        Map<Long, Double> scores = new LinkedHashMap<>();
+    private Map<Long, SearchScore> recall(SearchContext context, boolean enhancedRanking) {
+        if (!enhancedRanking) {
+            return recallWithMaxScore(context);
+        }
+        Map<Long, SearchScore> scores = new LinkedHashMap<>();
+        int candidateLimit = Math.max(MAX_CHUNK_CANDIDATES, context.pageSize * 20);
+        if (vectorIndex.available()) {
+            double[] vector = embeddingService.embed(context.text);
+            recordRrfScores(scores, sortHitsByScore(vectorIndex.search(context.namespaceId, vector,
+                context.resourceTypes, candidateLimit), false), VECTOR_RRF_WEIGHT, false);
+        }
+        recordRrfScores(scores, sortHitsByScore(repository.searchChunks(context.namespaceId,
+            context.text, context.resourceTypes, candidateLimit), true), KEYWORD_RRF_WEIGHT,
+            true);
+        return scores;
+    }
+    
+    private Map<Long, SearchScore> recallWithMaxScore(SearchContext context) {
+        Map<Long, SearchScore> scores = new LinkedHashMap<>();
         int candidateLimit = Math.max(MAX_CHUNK_CANDIDATES, context.pageSize * 20);
         if (vectorIndex.available()) {
             double[] vector = embeddingService.embed(context.text);
             for (ArdSearchHit hit : vectorIndex.search(context.namespaceId, vector,
                 context.resourceTypes, candidateLimit)) {
-                recordScore(scores, hit);
+                recordMaxScore(scores, hit);
             }
         }
         for (ArdSearchHit hit : repository.searchChunks(context.namespaceId, context.text,
             context.resourceTypes, candidateLimit)) {
-            recordScore(scores, hit);
+            recordMaxScore(scores, hit);
         }
         return scores;
     }
     
-    private void recordScore(Map<Long, Double> scores, ArdSearchHit hit) {
+    private List<ArdSearchHit> sortHitsByScore(List<ArdSearchHit> hits, boolean useChunkWeight) {
+        if (hits == null || hits.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ArdSearchHit> result = new ArrayList<>(hits);
+        result.sort(Comparator.comparing((ArdSearchHit hit) -> hitScore(hit, useChunkWeight))
+            .reversed().thenComparing(ArdSearchHit::getEntryId,
+                Comparator.nullsLast(Long::compareTo))
+            .thenComparing(ArdSearchHit::getChunkId, Comparator.nullsLast(Long::compareTo)));
+        return result;
+    }
+    
+    private double hitScore(ArdSearchHit hit, boolean useChunkWeight) {
+        if (hit == null) {
+            return 0D;
+        }
+        if (!useChunkWeight) {
+            return hit.getScore();
+        }
+        return hit.getScore() * chunkTypeWeight(hit.getChunkType());
+    }
+    
+    private void recordRrfScores(Map<Long, SearchScore> scores, List<ArdSearchHit> hits,
+        double channelWeight, boolean useChunkWeight) {
+        Set<Long> seenEntries = new LinkedHashSet<>();
+        int rank = 0;
+        for (ArdSearchHit hit : hits) {
+            if (hit == null || hit.getEntryId() == null || !seenEntries.add(hit.getEntryId())) {
+                continue;
+            }
+            rank++;
+            double chunkWeight = useChunkWeight ? chunkTypeWeight(hit.getChunkType()) : 1.0D;
+            double score = RRF_SCORE_SCALE * channelWeight * chunkWeight / (RRF_K + rank);
+            scores.computeIfAbsent(hit.getEntryId(), key -> new SearchScore()).add(score);
+        }
+    }
+    
+    private void recordMaxScore(Map<Long, SearchScore> scores, ArdSearchHit hit) {
         if (hit == null || hit.getEntryId() == null) {
             return;
         }
-        scores.merge(hit.getEntryId(), hit.getScore(), Math::max);
+        scores.computeIfAbsent(hit.getEntryId(), key -> new SearchScore())
+            .max(hit.getScore());
+    }
+    
+    private double chunkTypeWeight(String chunkType) {
+        Double weight = CHUNK_TYPE_WEIGHTS.get(chunkType);
+        return weight == null ? 1.0D : weight;
+    }
+    
+    private double exactMatchBoost(ArdEntry entry, String query) {
+        String normalizedQuery = normalize(query);
+        String compactQuery = compact(query);
+        double identityBoost = Math.max(identityBoost(entry.getResourceName(), normalizedQuery,
+            compactQuery), identityBoost(entry.getDisplayName(), normalizedQuery, compactQuery));
+        if (containsNormalized(entry.getIdentifier(), normalizedQuery)) {
+            identityBoost = Math.max(identityBoost, 1.2D);
+        }
+        double listBoost = 0D;
+        if (containsIgnoreCase(parseStringList(entry.getTags()), query)
+            || containsIgnoreCase(parseStringList(entry.getCapabilities()), query)) {
+            listBoost = 1.0D;
+        }
+        double queryBoost = containsNormalized(parseStringList(entry.getRepresentativeQueries()),
+            normalizedQuery) ? 0.8D : 0D;
+        return identityBoost + listBoost + queryBoost;
+    }
+    
+    private double identityBoost(String value, String normalizedQuery, String compactQuery) {
+        String normalizedValue = normalize(value);
+        if (StringUtils.isBlank(normalizedValue) || StringUtils.isBlank(normalizedQuery)) {
+            return 0D;
+        }
+        if (normalizedValue.equals(normalizedQuery)) {
+            return 3.0D;
+        }
+        if (StringUtils.isNotBlank(compactQuery) && compact(value).equals(compactQuery)) {
+            return 2.5D;
+        }
+        return normalizedValue.contains(normalizedQuery) ? 1.5D : 0D;
+    }
+    
+    private boolean containsNormalized(String value, String normalizedQuery) {
+        return StringUtils.isNotBlank(value) && StringUtils.isNotBlank(normalizedQuery)
+            && normalize(value).contains(normalizedQuery);
+    }
+    
+    private boolean containsNormalized(List<String> values, String normalizedQuery) {
+        if (values == null || StringUtils.isBlank(normalizedQuery)) {
+            return false;
+        }
+        for (String value : values) {
+            if (containsNormalized(value, normalizedQuery)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private List<ArdSearchResult> toResults(List<RankedResult> rankedResults) {
+        List<ArdSearchResult> results = new ArrayList<>();
+        for (RankedResult rankedResult : rankedResults) {
+            results.add(rankedResult.result);
+        }
+        return results;
+    }
+    
+    private Comparator<RankedResult> resultComparator() {
+        return Comparator.comparing((RankedResult result) -> result.result.getScore(),
+            Comparator.nullsLast(Comparator.reverseOrder()))
+            .thenComparing((RankedResult result) -> result.gmtModified,
+                Comparator.nullsLast(Comparator.reverseOrder()))
+            .thenComparing(result -> result.entryId, Comparator.nullsLast(Long::compareTo));
+    }
+    
+    private boolean enhancedRankingEnabled() {
+        return Boolean.parseBoolean(property(KEY_RANKING_ENHANCED_ENABLED, "true"));
+    }
+    
+    private String property(String key, String defaultValue) {
+        String value = System.getProperty(key);
+        if (StringUtils.isNotBlank(value)) {
+            return value;
+        }
+        try {
+            return EnvUtil.getProperty(key, defaultValue);
+        } catch (Exception ignored) {
+            return defaultValue;
+        }
     }
     
     private SearchContext validateAndBuildContext(ArdSearchRequest request)
@@ -444,6 +604,20 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return value == null ? "" : value.toLowerCase(Locale.ROOT);
     }
     
+    private String compact(String value) {
+        if (value == null) {
+            return "";
+        }
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (Character.isLetterOrDigit(ch)) {
+                result.append(Character.toLowerCase(ch));
+            }
+        }
+        return result.toString();
+    }
+    
     private ArdSearchResponse page(List<ArdSearchResult> candidates, SearchContext context) {
         ArdSearchResponse response = new ArdSearchResponse();
         response.setReferrals(Collections.emptyList());
@@ -509,5 +683,54 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         private int pageSize;
         
         private int pageOffset;
+    }
+    
+    private static class SearchScore {
+        
+        private double score;
+        
+        private void add(double value) {
+            score += value;
+        }
+        
+        private void max(double value) {
+            score = Math.max(score, value);
+        }
+        
+        private double getScore() {
+            return score;
+        }
+    }
+    
+    private static class RankedResult {
+        
+        private final ArdSearchResult result;
+        
+        private final Long entryId;
+        
+        private final Timestamp gmtModified;
+        
+        private RankedResult(ArdSearchResult result, Long entryId, Timestamp gmtModified) {
+            this.result = result;
+            this.entryId = entryId;
+            this.gmtModified = gmtModified;
+        }
+    }
+    
+    private static Map<String, Double> chunkTypeWeights() {
+        Map<String, Double> weights = new LinkedHashMap<>();
+        weights.put(ArdIndexConstants.CHUNK_TYPE_EXAMPLE_QUERY, 1.8D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS, 1.7D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_CAPABILITY_SYNONYM, 1.5D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_REPRESENTATIVE_QUERY, 1.5D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_CAPABILITY, 1.3D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_DESCRIPTION, 1.1D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_TAG, 1.0D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_AI_SUMMARY, 1.0D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT, 0.7D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_METADATA_IO, 0.6D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_METADATA_RISK, 0.5D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_NOT_FOR, 0.4D);
+        return Collections.unmodifiableMap(weights);
     }
 }

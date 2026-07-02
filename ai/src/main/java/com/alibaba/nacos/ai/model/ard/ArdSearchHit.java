@@ -35,6 +35,8 @@ public class ArdSearchHit {
     
     private String resourceVersion;
     
+    private String chunkType;
+    
     private double score;
     
     public Long getEntryId() {
@@ -83,6 +85,14 @@ public class ArdSearchHit {
     
     public void setResourceVersion(String resourceVersion) {
         this.resourceVersion = resourceVersion;
+    }
+    
+    public String getChunkType() {
+        return chunkType;
+    }
+    
+    public void setChunkType(String chunkType) {
+        this.chunkType = chunkType;
     }
     
     public double getScore() {

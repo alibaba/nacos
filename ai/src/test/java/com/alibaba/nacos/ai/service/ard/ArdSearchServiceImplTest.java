@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.ai.model.ard.ArdSearchResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -61,6 +62,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ArdSearchServiceImplTest {
     
+    private static final String RANKING_ENABLED_KEY =
+        "nacos.ai.ard.search.ranking.enhanced.enabled";
+    
     @Mock
     private AiResourceManager resourceManager;
     
@@ -75,6 +79,11 @@ class ArdSearchServiceImplTest {
     
     @Mock
     private AiResourceVectorIndex vectorIndex;
+    
+    @AfterEach
+    void tearDown() {
+        System.clearProperty(RANKING_ENABLED_KEY);
+    }
     
     @Test
     void searchShouldReturnPersistedLatestSkillEntry() throws Exception {
@@ -99,7 +108,7 @@ class ArdSearchServiceImplTest {
         assertEquals("urn:air:nacos.local:public:skill:api-helper", result.getIdentifier());
         assertEquals(ArdIndexConstants.SOURCE_NACOS_LOCAL, result.getSource());
         assertEquals("skill", result.getMetadata().get("resourceType"));
-        assertEquals(1.0D, result.getScore());
+        assertTrue(result.getScore() > 1.0D);
         assertTrue(response.getReferrals().isEmpty());
     }
     
@@ -123,7 +132,53 @@ class ArdSearchServiceImplTest {
             Map.of("metadata.resourceType", (Object) "skill")));
         
         assertEquals(1, response.getResults().size());
-        assertEquals(0.9D, response.getResults().get(0).getScore());
+        assertTrue(response.getResults().get(0).getScore() > 0.9D);
+    }
+    
+    @Test
+    void searchShouldPreferHighValueChunkTypeOverContentChunk() throws Exception {
+        ArdSearchServiceImpl service = service();
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks(eq("public"), eq("avatar"), eq(List.of("skill")), eq(500)))
+            .thenReturn(List.of(
+                hit(101L, 1.0D, "generic-video", ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT),
+                hit(102L, 0.8D, "avatar-tool",
+                    ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS)));
+        when(repository.findEntriesByIds(anyCollection()))
+            .thenReturn(List.of(entry(101L, "generic-video"), entry(102L, "avatar-tool")));
+        when(resourceManager.findMeta("public", "generic-video",
+            Constants.Skills.RESOURCE_TYPE_SKILL)).thenReturn(meta("generic-video", "1.0.0"));
+        when(resourceManager.findMeta("public", "avatar-tool",
+            Constants.Skills.RESOURCE_TYPE_SKILL)).thenReturn(meta("avatar-tool", "1.0.0"));
+        when(resourceManager.findVersion(eq("public"), any(),
+            eq(Constants.Skills.RESOURCE_TYPE_SKILL),
+            eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
+        
+        ArdSearchResponse response = service.search(request("avatar",
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL))));
+        
+        assertEquals(2, response.getResults().size());
+        assertEquals("avatar-tool", response.getResults().get(0).getDisplayName());
+    }
+    
+    @Test
+    void searchShouldUseMaxScoreWhenEnhancedRankingDisabled() throws Exception {
+        System.setProperty(RANKING_ENABLED_KEY, "false");
+        ArdSearchServiceImpl service = service();
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
+            .thenReturn(List.of(hit(100L, 0.4D), hit(100L, 0.9D)));
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("1.0.0"));
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0")).thenReturn(onlineVersion("1.0.0"));
+        
+        ArdSearchResponse response = service.search(request("api",
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL))));
+        
+        assertEquals(1, response.getResults().size());
+        assertEquals(0.9D, response.getResults().get(0).getScore(), 0.001D);
     }
     
     @Test
@@ -254,6 +309,11 @@ class ArdSearchServiceImplTest {
     }
     
     private ArdSearchHit hit(Long entryId, double score, String resourceName) {
+        return hit(entryId, score, resourceName, null);
+    }
+    
+    private ArdSearchHit hit(Long entryId, double score, String resourceName,
+        String chunkType) {
         ArdSearchHit hit = new ArdSearchHit();
         hit.setEntryId(entryId);
         hit.setChunkId(200L);
@@ -261,6 +321,7 @@ class ArdSearchServiceImplTest {
         hit.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
         hit.setResourceName(resourceName);
         hit.setResourceVersion("1.0.0");
+        hit.setChunkType(chunkType);
         hit.setScore(score);
         return hit;
     }

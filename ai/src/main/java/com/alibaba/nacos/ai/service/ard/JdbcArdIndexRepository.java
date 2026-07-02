@@ -142,7 +142,7 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
             "SELECT entry_id, id AS chunk_id, identifier, resource_type, resource_name, "
-                + "resource_version, CASE WHEN LOWER(canonical_text) LIKE ? THEN 1.0 "
+                + "resource_version, chunk_type, CASE WHEN LOWER(canonical_text) LIKE ? THEN 1.0 "
                 + "WHEN LOWER(chunk_text) LIKE ? THEN 0.8 ELSE 0.4 END AS score "
                 + "FROM ai_resource_ard_chunk WHERE namespace_id=? AND status=? "
                 + "AND (LOWER(canonical_text) LIKE ? OR LOWER(chunk_text) LIKE ?)");
@@ -332,6 +332,7 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
             hit.setResourceType(rs.getString("resource_type"));
             hit.setResourceName(rs.getString("resource_name"));
             hit.setResourceVersion(rs.getString("resource_version"));
+            hit.setChunkType(rs.getString("chunk_type"));
             hit.setScore(rs.getDouble("score"));
             return hit;
         }
