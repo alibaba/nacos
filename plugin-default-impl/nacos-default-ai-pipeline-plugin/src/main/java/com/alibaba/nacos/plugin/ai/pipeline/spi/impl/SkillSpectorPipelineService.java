@@ -49,7 +49,7 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillSpectorPipelineService.class);
     
-    private static final String CHECKPOINT_AVAILABILITY = "SkillSpector 内置运行时可用性";
+    private static final String CHECKPOINT_AVAILABILITY = "SkillSpector runtime 安装状态";
     
     private static final String CHECKPOINT_APPLICABILITY = "SkillSpector 扫描适用性";
     
@@ -60,9 +60,9 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     private static final int MAX_FIELD_LENGTH = 240;
     
     static final String INSTALLATION_HINT =
-            "SkillSpector 内置运行时不可用。请检查 Nacos 发布包中的 "
-                    + "plugins/ai-pipeline/skill-spector/bin/skill-spector "
-                    + "和匹配当前平台的 runtime 是否存在且可执行。";
+            "SkillSpector runtime 未安装。请先通过 nacos-setup skill-spector install 安装，"
+                    + "或手动解压 runtime 到 "
+                    + "plugins/ai-pipeline/skill-spector/runtime/<os-arch>/。";
     
     private final String scannerCommand;
     
@@ -133,9 +133,9 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             LOGGER.error("[SkillSpectorPipeline] 扫描被中断", e);
             return rejectRuntimeFailure("SkillSpector 扫描被中断: " + e.getMessage());
         } catch (IOException | IllegalArgumentException e) {
-            LOGGER.warn("[SkillSpectorPipeline] 执行 SkillSpector 内置运行时失败, runtime={}: {}",
+            LOGGER.warn("[SkillSpectorPipeline] 执行 SkillSpector runtime 失败, runtime={}: {}",
                     scannerCommand, e.getMessage());
-            return rejectRuntimeFailure("执行 SkillSpector 内置运行时失败: " + e.getMessage());
+            return rejectRuntimeFailure("执行 SkillSpector runtime 失败: " + e.getMessage());
         } finally {
             if (tempDir != null) {
                 deleteRecursively(tempDir.toFile());

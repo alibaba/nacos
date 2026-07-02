@@ -55,5 +55,5 @@ do
 done
 
 echo "SkillSpector runtime unavailable: ${RUNTIME_DIR}" >&2
-echo "Expected an embedded Python runtime for ${PLATFORM_KEY}." >&2
+echo "Use nacos-setup skill-spector install to install the runtime for ${PLATFORM_KEY}." >&2
 exit 127

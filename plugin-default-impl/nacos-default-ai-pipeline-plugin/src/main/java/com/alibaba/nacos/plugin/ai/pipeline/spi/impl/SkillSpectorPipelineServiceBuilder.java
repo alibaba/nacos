@@ -55,10 +55,10 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
         SkillSpectorScanOptions scanOptions = SkillSpectorScanOptions.fromProperties(properties);
         String resolvedCommand = resolveSkillSpectorCommand();
         if (StringUtils.isBlank(resolvedCommand)) {
-            LOGGER.warn("[SkillSpectorPipeline] SkillSpector 内置运行时不可用，插件将拒绝发布。{}",
+            LOGGER.warn("[SkillSpectorPipeline] SkillSpector runtime 未安装，插件将拒绝发布。{}",
                     SkillSpectorPipelineService.INSTALLATION_HINT);
         } else {
-            LOGGER.info("[SkillSpectorPipeline] SkillSpector 内置运行时已就绪，runtime={}",
+            LOGGER.info("[SkillSpectorPipeline] SkillSpector runtime 已就绪，runtime={}",
                     resolvedCommand);
         }
         return new SkillSpectorPipelineService(resolvedCommand, scanOptions);
@@ -92,7 +92,7 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
     
     private void addRuntimeRootCandidates(Set<Path> candidates, Path root) {
         if (!hasPlatformRuntime(root)) {
-            LOGGER.debug("[SkillSpectorPipeline] SkillSpector 平台运行时不存在或不可执行: {}",
+            LOGGER.debug("[SkillSpectorPipeline] SkillSpector 平台 runtime 不存在或不可执行: {}",
                     root.resolve("runtime").resolve(platformKey()));
             return;
         }
