@@ -58,6 +58,6 @@ public interface AiResourceVectorIndex {
     /**
      * Vector search over ARD chunks.
      */
-    List<ArdSearchHit> search(String namespaceId, double[] queryVector, List<String> resourceTypes,
-        int limit);
+    List<ArdSearchHit> search(String namespaceId, String embeddingModel, double[] queryVector,
+        List<String> resourceTypes, int limit);
 }

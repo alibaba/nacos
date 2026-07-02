@@ -40,11 +40,17 @@ CREATE TABLE "ai_resource_ard_embedding_pg" (
   "resource_version" varchar(64) NOT NULL,
   "embedding_model" varchar(128) NOT NULL,
   "embedding_dimension" integer NOT NULL,
-  "embedding" vector(384) NOT NULL
+  "embedding" vector NOT NULL
 );
 
 ALTER TABLE "ai_resource_ard_embedding_pg" ADD CONSTRAINT "ai_resource_ard_embedding_pg_pkey" PRIMARY KEY ("id");
 CREATE INDEX "idx_ard_embedding_pg_chunk" ON "ai_resource_ard_embedding_pg" USING btree ("chunk_id");
+CREATE INDEX "idx_ard_embedding_pg_model" ON "ai_resource_ard_embedding_pg" USING btree (
+  "namespace_id",
+  "embedding_model",
+  "embedding_dimension",
+  "resource_type"
+);
 CREATE INDEX "idx_ard_embedding_pg_resource" ON "ai_resource_ard_embedding_pg" USING btree (
   "namespace_id",
   "resource_type",

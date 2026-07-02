@@ -135,18 +135,21 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
     }
     
     @Override
-    public List<ArdSearchHit> search(String namespaceId, double[] queryVector,
-        List<String> resourceTypes, int limit) {
-        if (queryVector == null || queryVector.length == 0) {
+    public List<ArdSearchHit> search(String namespaceId, String embeddingModel,
+        double[] queryVector, List<String> resourceTypes, int limit) {
+        if (StringUtils.isBlank(embeddingModel) || queryVector == null || queryVector.length == 0) {
             return Collections.emptyList();
         }
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
             "SELECT entry_id, chunk_id, identifier, resource_type, resource_name, "
                 + "resource_version, (1 - (embedding <=> ?::vector)) AS score "
-                + "FROM ai_resource_ard_embedding_pg WHERE namespace_id=?");
+                + "FROM ai_resource_ard_embedding_pg WHERE namespace_id=? "
+                + "AND embedding_model=? AND embedding_dimension=?");
         args.add(toVectorLiteral(queryVector));
         args.add(namespaceId);
+        args.add(embeddingModel);
+        args.add(queryVector.length);
         appendResourceTypeFilter(sql, args, resourceTypes);
         sql.append(" ORDER BY embedding <=> ?::vector LIMIT ?");
         args.add(toVectorLiteral(queryVector));

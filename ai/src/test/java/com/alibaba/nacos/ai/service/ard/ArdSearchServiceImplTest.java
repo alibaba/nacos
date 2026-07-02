@@ -117,8 +117,10 @@ class ArdSearchServiceImplTest {
         ArdSearchServiceImpl service = service();
         double[] vector = new double[] {1.0D};
         when(vectorIndex.available()).thenReturn(true);
+        when(embeddingService.model()).thenReturn("test-model");
         when(embeddingService.embed("api")).thenReturn(vector);
-        when(vectorIndex.search(eq("public"), eq(vector), eq(List.of("skill")), eq(500)))
+        when(vectorIndex.search(eq("public"), eq("test-model"), eq(vector), eq(List.of("skill")),
+            eq(500)))
             .thenReturn(List.of(hit(100L, 0.9D)));
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
             .thenReturn(List.of());

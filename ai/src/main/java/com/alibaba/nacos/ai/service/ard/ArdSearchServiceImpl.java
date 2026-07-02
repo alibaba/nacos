@@ -153,8 +153,9 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         int candidateLimit = Math.max(MAX_CHUNK_CANDIDATES, context.pageSize * 20);
         if (vectorIndex.available()) {
             double[] vector = embeddingService.embed(context.text);
-            recordRrfScores(scores, sortHitsByScore(vectorIndex.search(context.namespaceId, vector,
-                context.resourceTypes, candidateLimit), false), VECTOR_RRF_WEIGHT, false);
+            recordRrfScores(scores, sortHitsByScore(vectorIndex.search(context.namespaceId,
+                embeddingService.model(), vector, context.resourceTypes, candidateLimit), false),
+                VECTOR_RRF_WEIGHT, false);
         }
         recordRrfScores(scores, sortHitsByScore(repository.searchChunks(context.namespaceId,
             context.text, context.resourceTypes, candidateLimit), true), KEYWORD_RRF_WEIGHT,
@@ -167,8 +168,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         int candidateLimit = Math.max(MAX_CHUNK_CANDIDATES, context.pageSize * 20);
         if (vectorIndex.available()) {
             double[] vector = embeddingService.embed(context.text);
-            for (ArdSearchHit hit : vectorIndex.search(context.namespaceId, vector,
-                context.resourceTypes, candidateLimit)) {
+            for (ArdSearchHit hit : vectorIndex.search(context.namespaceId,
+                embeddingService.model(), vector, context.resourceTypes, candidateLimit)) {
                 recordMaxScore(scores, hit);
             }
         }

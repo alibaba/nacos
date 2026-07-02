@@ -88,9 +88,13 @@ class PostgresqlAiResourceVectorIndexTest {
         CapturingJdbcTemplate jdbcTemplate = new CapturingJdbcTemplate();
         PostgresqlAiResourceVectorIndex index = new PostgresqlAiResourceVectorIndex(jdbcTemplate);
         
-        index.search("public", new double[] {1.0D}, List.of("skill"), 7);
+        index.search("public", "test-model", new double[] {1.0D, 2.0D}, List.of("skill"), 7);
         
         assertTrue(jdbcTemplate.sql.contains("LIMIT ?"));
+        assertTrue(jdbcTemplate.sql.contains("embedding_model=?"));
+        assertTrue(jdbcTemplate.sql.contains("embedding_dimension=?"));
+        assertEquals("test-model", jdbcTemplate.args[2]);
+        assertEquals(2, jdbcTemplate.args[3]);
         assertEquals(7, jdbcTemplate.args[jdbcTemplate.args.length - 1]);
     }
     
