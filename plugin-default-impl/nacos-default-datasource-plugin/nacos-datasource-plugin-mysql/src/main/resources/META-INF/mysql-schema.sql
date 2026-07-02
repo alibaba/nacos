@@ -244,3 +244,62 @@ CREATE TABLE `ai_resource_version` (
     KEY `idx_ai_resource_ver_status` (`status`),
     KEY `idx_ai_resource_ver_gmt_modified` (`gmt_modified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='AI资源版本表';
+
+/******************************************/
+/*   表名称 = ai_resource_ard_entry       */
+/******************************************/
+CREATE TABLE `ai_resource_ard_entry` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+    `namespace_id` varchar(128) NOT NULL DEFAULT '' COMMENT '命名空间ID',
+    `resource_type` varchar(32) NOT NULL COMMENT '资源类型',
+    `resource_name` varchar(256) NOT NULL COMMENT '资源名称',
+    `resource_version` varchar(64) NOT NULL COMMENT '资源版本',
+    `identifier` varchar(512) NOT NULL COMMENT '资源标识',
+    `display_name` varchar(256) NOT NULL COMMENT '展示名称',
+    `entry_type` varchar(128) NOT NULL COMMENT '条目类型',
+    `entry_url` varchar(1024) DEFAULT NULL COMMENT '条目URL',
+    `entry_data` longtext DEFAULT NULL COMMENT '条目数据(JSON)',
+    `c_desc` varchar(2048) DEFAULT NULL COMMENT '描述',
+    `tags` longtext DEFAULT NULL COMMENT '标签(JSON)',
+    `capabilities` longtext DEFAULT NULL COMMENT '能力(JSON)',
+    `representative_queries` longtext DEFAULT NULL COMMENT '代表性查询(JSON)',
+    `metadata` longtext DEFAULT NULL COMMENT '元数据(JSON)',
+    `trust_manifest` longtext DEFAULT NULL COMMENT '可信声明(JSON)',
+    `source_digest` varchar(64) NOT NULL COMMENT '来源摘要',
+    `status` varchar(32) NOT NULL COMMENT '状态',
+    `generate_mode` varchar(32) NOT NULL COMMENT '生成模式',
+    `source` varchar(64) NOT NULL COMMENT '来源',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_ard_entry_resource_version` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
+    KEY `idx_ard_entry_identifier` (`identifier`(191)),
+    KEY `idx_ard_entry_type_status` (`namespace_id`,`resource_type`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源ARD索引条目表';
+
+/******************************************/
+/*   表名称 = ai_resource_ard_chunk       */
+/******************************************/
+CREATE TABLE `ai_resource_ard_chunk` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+    `entry_id` bigint(20) NOT NULL COMMENT 'ARD索引条目ID',
+    `namespace_id` varchar(128) NOT NULL DEFAULT '' COMMENT '命名空间ID',
+    `identifier` varchar(512) NOT NULL COMMENT '资源标识',
+    `resource_type` varchar(32) NOT NULL COMMENT '资源类型',
+    `resource_name` varchar(256) NOT NULL COMMENT '资源名称',
+    `resource_version` varchar(64) NOT NULL COMMENT '资源版本',
+    `chunk_type` varchar(64) NOT NULL COMMENT '分片类型',
+    `chunk_text` longtext NOT NULL COMMENT '分片文本',
+    `canonical_text` longtext NOT NULL COMMENT '规范化文本',
+    `language` varchar(16) DEFAULT NULL COMMENT '语言',
+    `chunk_hash` varchar(64) NOT NULL COMMENT '分片摘要',
+    `metadata` longtext DEFAULT NULL COMMENT '元数据(JSON)',
+    `status` varchar(32) NOT NULL COMMENT '状态',
+    PRIMARY KEY (`id`),
+    KEY `idx_ard_chunk_entry` (`entry_id`),
+    KEY `idx_ard_chunk_hash` (`chunk_hash`),
+    KEY `idx_ard_chunk_resource` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
+    KEY `idx_ard_chunk_type_status` (`namespace_id`,`resource_type`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源ARD索引分片表';

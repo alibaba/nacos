@@ -18,10 +18,15 @@ package com.alibaba.nacos.ai.service.ard.vector;
 
 import com.alibaba.nacos.ai.model.ard.ArdChunk;
 import com.alibaba.nacos.ai.model.ard.ArdSearchHit;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.persistence.datasource.DataSourcePoolProperties;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.annotation.PreDestroy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +45,17 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
     
     private static final String POSTGRES = "postgres";
     
+    static final String KEY_POSTGRESQL_URL = "nacos.ai.ard.vector.postgresql.url";
+    
+    static final String KEY_POSTGRESQL_USER = "nacos.ai.ard.vector.postgresql.user";
+    
+    static final String KEY_POSTGRESQL_PASSWORD = "nacos.ai.ard.vector.postgresql.password";
+    
+    static final String KEY_POSTGRESQL_DRIVER_CLASS_NAME =
+        "nacos.ai.ard.vector.postgresql.driver-class-name";
+    
+    private static final String DEFAULT_POSTGRESQL_DRIVER_CLASS_NAME = "org.postgresql.Driver";
+    
     private static final String SQL_INSERT = "INSERT INTO ai_resource_ard_embedding_pg "
         + "(namespace_id, entry_id, chunk_id, identifier, resource_type, resource_name, "
         + "resource_version, embedding_model, embedding_dimension, embedding, gmt_create, gmt_modified) "
@@ -47,12 +63,27 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
     
     private final JdbcTemplate injectedJdbcTemplate;
     
+    private volatile JdbcTemplate dedicatedJdbcTemplate;
+    
+    private volatile AutoCloseable dedicatedDataSource;
+    
     public PostgresqlAiResourceVectorIndex() {
         this.injectedJdbcTemplate = null;
     }
     
     public PostgresqlAiResourceVectorIndex(JdbcTemplate jdbcTemplate) {
         this.injectedJdbcTemplate = jdbcTemplate;
+    }
+    
+    /**
+     * Close ARD dedicated PostgreSQL datasource if it is created by this index.
+     */
+    @PreDestroy
+    public void shutdown() throws Exception {
+        AutoCloseable dataSource = dedicatedDataSource;
+        if (dataSource != null) {
+            dataSource.close();
+        }
     }
     
     @Override
@@ -181,11 +212,50 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         if (injectedJdbcTemplate != null) {
             return injectedJdbcTemplate;
         }
+        String jdbcUrl = envProperty(KEY_POSTGRESQL_URL);
+        if (StringUtils.isNotBlank(jdbcUrl)) {
+            return getDedicatedJdbcTemplate(jdbcUrl);
+        }
         return DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
+    }
+    
+    JdbcTemplate getDedicatedJdbcTemplate(String jdbcUrl) {
+        JdbcTemplate result = dedicatedJdbcTemplate;
+        if (result != null) {
+            return result;
+        }
+        synchronized (this) {
+            if (dedicatedJdbcTemplate == null) {
+                dedicatedJdbcTemplate = createDedicatedJdbcTemplate(jdbcUrl);
+            }
+            return dedicatedJdbcTemplate;
+        }
+    }
+    
+    private JdbcTemplate createDedicatedJdbcTemplate(String jdbcUrl) {
+        DataSourcePoolProperties poolProperties =
+            DataSourcePoolProperties.build(EnvUtil.getEnvironment());
+        poolProperties.setDriverClassName(envProperty(KEY_POSTGRESQL_DRIVER_CLASS_NAME,
+            DEFAULT_POSTGRESQL_DRIVER_CLASS_NAME));
+        poolProperties.setJdbcUrl(jdbcUrl.trim());
+        String username = envProperty(KEY_POSTGRESQL_USER);
+        if (StringUtils.isNotBlank(username)) {
+            poolProperties.setUsername(username);
+        }
+        String password = envProperty(KEY_POSTGRESQL_PASSWORD);
+        if (StringUtils.isNotBlank(password)) {
+            poolProperties.setPassword(password);
+        }
+        DataSource dataSource = poolProperties.getDataSource();
+        dedicatedDataSource = (AutoCloseable) dataSource;
+        return new JdbcTemplate(dataSource);
     }
     
     private boolean isPostgresql() {
         if (injectedJdbcTemplate != null) {
+            return true;
+        }
+        if (StringUtils.isNotBlank(envProperty(KEY_POSTGRESQL_URL))) {
             return true;
         }
         try {
@@ -195,6 +265,21 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
                 || POSTGRES.equalsIgnoreCase(dataSourceType);
         } catch (Exception ignored) {
             return false;
+        }
+    }
+    
+    private String envProperty(String key) {
+        return envProperty(key, StringUtils.EMPTY);
+    }
+    
+    private String envProperty(String key, String defaultValue) {
+        try {
+            if (EnvUtil.getEnvironment() == null) {
+                return defaultValue;
+            }
+            return EnvUtil.getProperty(key, defaultValue);
+        } catch (Exception ignored) {
+            return defaultValue;
         }
     }
 }

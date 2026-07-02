@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
+/*
+ * Full PostgreSQL schema for Nacos main datasource.
+ *
+ * If Nacos main datasource is MySQL/Derby/Oracle and PostgreSQL is used only
+ * for ARD pgvector embeddings, load pg-ard-vector-schema.sql instead.
+ */
+
 -- ----------------------------
 -- Table structure for config_info
 -- ----------------------------
