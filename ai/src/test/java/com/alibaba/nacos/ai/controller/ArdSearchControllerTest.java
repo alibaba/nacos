@@ -17,24 +17,24 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
+import com.alibaba.nacos.ai.service.ard.ArdArtifact;
+import com.alibaba.nacos.ai.service.ard.ArdArtifactService;
 import com.alibaba.nacos.ai.service.ard.ArdSearchService;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
+import com.alibaba.nacos.api.ai.model.ard.ArdExploreRequest;
+import com.alibaba.nacos.api.ai.model.ard.ArdExploreResponse;
+import com.alibaba.nacos.api.ai.model.ard.ArdListResponse;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.model.Page;
+import org.springframework.http.ResponseEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 /**
@@ -49,7 +49,7 @@ class ArdSearchControllerTest {
     private ArdSearchService ardSearchService;
     
     @Mock
-    private A2aServerOperationService a2aServerOperationService;
+    private ArdArtifactService ardArtifactService;
     
     @Test
     void searchShouldReturnRawArdResponse() throws NacosException {
@@ -62,59 +62,47 @@ class ArdSearchControllerTest {
     }
     
     @Test
-    void exploreShouldReturnRawArdResponse() throws NacosException {
+    void exploreShouldReturnRawExploreResponse() throws NacosException {
         ArdSearchController controller = controller();
-        ArdSearchRequest request = new ArdSearchRequest();
-        ArdSearchResponse response = new ArdSearchResponse();
-        when(ardSearchService.search(request)).thenReturn(response);
+        ArdExploreRequest request = new ArdExploreRequest();
+        ArdExploreResponse response = new ArdExploreResponse();
+        when(ardSearchService.explore(request)).thenReturn(response);
         
         assertSame(response, controller.explore(request));
     }
     
     @Test
-    void agentsShouldReturnRawAgentPage() throws NacosException {
+    void agentsShouldReturnArdListResponse() throws NacosException {
         ArdSearchController controller = controller();
-        Page<AgentCardVersionInfo> page = new Page<>();
-        when(a2aServerOperationService.listAgents("public", null, Constants.A2A.SEARCH_BLUR, 1,
-            10)).thenReturn(page);
+        ArdListResponse response = new ArdListResponse();
+        when(ardSearchService.list("public", "type=application/ai-skill+md", "name ASC", 10,
+            null)).thenReturn(response);
         
-        assertSame(page, controller.agents(null, null, null, null, null));
+        assertSame(response, controller.agents("public", "type=application/ai-skill+md",
+            "name ASC", 10, null));
     }
     
     @Test
-    void agentsShouldClampPageSize() throws NacosException {
+    void catalogShouldReturnManifest() throws NacosException {
         ArdSearchController controller = controller();
-        Page<AgentCardVersionInfo> page = new Page<>();
-        when(a2aServerOperationService.listAgents("custom", "demo", Constants.A2A.SEARCH_ACCURATE,
-            2, Constants.MAX_LIST_SIZE)).thenReturn(page);
+        ArdCatalog catalog = new ArdCatalog();
+        when(ardSearchService.catalog("public")).thenReturn(catalog);
         
-        assertSame(page, controller.agents("custom", "demo", Constants.A2A.SEARCH_ACCURATE, 2,
-            1000));
+        assertSame(catalog, controller.catalog("public"));
     }
     
     @Test
-    void agentsShouldRejectUnsupportedSearchType() {
+    void artifactShouldReturnTypedBody() throws NacosException {
         ArdSearchController controller = controller();
+        ArdArtifact artifact = new ArdArtifact("application/ai-skill+md", "# Demo");
+        when(ardArtifactService.get("public", "skill", "demo", "1.0.0", null))
+            .thenReturn(artifact);
         
-        assertThrows(NacosException.class,
-            () -> controller.agents(null, null, "prefix", null, null));
-    }
-    
-    @Test
-    void catalogShouldExposeLocalArdEndpoints() {
-        ArdSearchController controller = controller();
+        ResponseEntity<Object> response = controller.artifact("public", "skill", "demo",
+            "1.0.0", null);
         
-        Map<String, Object> catalog = controller.catalog();
-        
-        assertEquals("Nacos AI Registry", catalog.get("name"));
-        assertEquals("none", catalog.get("federation"));
-        assertEquals(List.of("skill", "prompt", "mcp", "agent"), catalog.get("resourceTypes"));
-        assertEquals(Constants.ARD_CLIENT_PATH + "/search",
-            ((Map<?, ?>) catalog.get("endpoints")).get("search"));
-        assertEquals(Constants.ARD_CLIENT_PATH + "/explore",
-            ((Map<?, ?>) catalog.get("endpoints")).get("explore"));
-        assertEquals(Constants.ARD_CLIENT_PATH + "/agents",
-            ((Map<?, ?>) catalog.get("endpoints")).get("agents"));
+        assertEquals("# Demo", response.getBody());
+        assertEquals("application/ai-skill+md", response.getHeaders().getContentType().toString());
     }
     
     @Test
@@ -123,6 +111,6 @@ class ArdSearchControllerTest {
     }
     
     private ArdSearchController controller() {
-        return new ArdSearchController(ardSearchService, a2aServerOperationService);
+        return new ArdSearchController(ardSearchService, ardArtifactService);
     }
 }

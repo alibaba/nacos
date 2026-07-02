@@ -25,6 +25,12 @@ import com.alibaba.nacos.ai.model.ard.ArdSearchHit;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.ard.vector.AiResourceVectorIndex;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
+import com.alibaba.nacos.api.ai.model.ard.ArdExploreRequest;
+import com.alibaba.nacos.api.ai.model.ard.ArdExploreResponse;
+import com.alibaba.nacos.api.ai.model.ard.ArdExploreResultType;
+import com.alibaba.nacos.api.ai.model.ard.ArdFacetRequest;
+import com.alibaba.nacos.api.ai.model.ard.ArdListResponse;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchFilter;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchQuery;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
@@ -105,8 +111,8 @@ class ArdSearchServiceImplTest {
         ArdSearchResult result = response.getResults().get(0);
         assertEquals("api-helper", result.getDisplayName());
         assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL, result.getType());
-        assertEquals("/v3/client/ai/skills?namespaceId=public&name=api-helper&version=1.0.0",
-            result.getUrl());
+        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"
+            + "&resourceName=api-helper&version=1.0.0", result.getUrl());
         assertEquals("urn:air:nacos.local:public:skill:api-helper", result.getIdentifier());
         assertEquals(ArdIndexConstants.SOURCE_NACOS_LOCAL, result.getSource());
         assertEquals("skill", result.getMetadata().get("resourceType"));
@@ -320,6 +326,68 @@ class ArdSearchServiceImplTest {
         assertThrows(NacosException.class, () -> service.search(request));
     }
     
+    @Test
+    void exploreShouldReturnFacetBuckets() throws Exception {
+        ArdSearchServiceImpl service = service();
+        when(repository.listEnabledEntries("public", List.of("skill"), 1000))
+            .thenReturn(List.of(entry(101L, "api-one"), entry(102L, "api-two")));
+        when(resourceManager.findMeta("public", "api-one", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("api-one", "1.0.0"));
+        when(resourceManager.findMeta("public", "api-two", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("api-two", "1.0.0"));
+        when(resourceManager.findVersion(eq("public"), any(),
+            eq(Constants.Skills.RESOURCE_TYPE_SKILL),
+            eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
+        
+        ArdExploreResponse response = service.explore(exploreRequest("public",
+            Map.of("type", (Object) ArdIndexConstants.MEDIA_TYPE_SKILL),
+            List.of(facet("tags", 10, 1))));
+        
+        assertEquals(1, response.getFacets().size());
+        assertEquals("api", response.getFacets().get("tags").getBuckets().get(0).getValue());
+        assertEquals(2, response.getFacets().get("tags").getBuckets().get(0).getCount());
+    }
+    
+    @Test
+    void listShouldFilterOrderAndPageEntries() throws Exception {
+        ArdSearchServiceImpl service = service();
+        when(repository.listEnabledEntries("public", List.of("skill"), 1000))
+            .thenReturn(List.of(entry(101L, "api-two"), entry(102L, "api-one")));
+        when(resourceManager.findMeta("public", "api-one", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("api-one", "1.0.0"));
+        when(resourceManager.findMeta("public", "api-two", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("api-two", "1.0.0"));
+        when(resourceManager.findVersion(eq("public"), any(),
+            eq(Constants.Skills.RESOURCE_TYPE_SKILL),
+            eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
+        
+        ArdListResponse response = service.list("public",
+            "type=application/ai-skill+md;displayName=api", "displayName ASC", 1, null);
+        
+        assertEquals(1, response.getResults().size());
+        assertEquals("api-one", response.getResults().get(0).getDisplayName());
+        assertNotNull(response.getPageToken());
+    }
+    
+    @Test
+    void catalogShouldExposeRegistryAndLocalEntries() throws Exception {
+        ArdSearchServiceImpl service = service();
+        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"), 100))
+            .thenReturn(List.of(entry()));
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("1.0.0"));
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0")).thenReturn(onlineVersion("1.0.0"));
+        
+        ArdCatalog catalog = service.catalog("public");
+        
+        assertEquals("1.0", catalog.getSpecVersion());
+        assertEquals("Nacos AI Registry", catalog.getHost().getDisplayName());
+        assertEquals("urn:air:nacos.local:registry:nacos",
+            catalog.getEntries().get(0).getIdentifier());
+        assertEquals("api-helper", catalog.getEntries().get(1).getDisplayName());
+    }
+    
     private ArdSearchServiceImpl service() {
         return new ArdSearchServiceImpl(resourceManager, mcpServerOperationService, repository,
             embeddingService, vectorIndex);
@@ -346,6 +414,27 @@ class ArdSearchServiceImplTest {
         request.setQuery(query);
         request.setFederation("none");
         request.setPageSize(10);
+        return request;
+    }
+    
+    private ArdExploreRequest exploreRequest(String namespaceId, Map<String, Object> filter,
+        List<ArdFacetRequest> facets) {
+        ArdSearchQuery query = new ArdSearchQuery();
+        query.setFilter(filter);
+        ArdExploreResultType resultType = new ArdExploreResultType();
+        resultType.setFacets(facets);
+        ArdExploreRequest request = new ArdExploreRequest();
+        request.setNamespaceId(namespaceId);
+        request.setQuery(query);
+        request.setResultType(resultType);
+        return request;
+    }
+    
+    private ArdFacetRequest facet(String field, int limit, int minCount) {
+        ArdFacetRequest request = new ArdFacetRequest();
+        request.setField(field);
+        request.setLimit(limit);
+        request.setMinCount(minCount);
         return request;
     }
     
@@ -392,8 +481,8 @@ class ArdSearchServiceImplTest {
         entry.setIdentifier("urn:air:nacos.local:public:skill:" + resourceName);
         entry.setDisplayName(resourceName);
         entry.setType(ArdIndexConstants.MEDIA_TYPE_SKILL);
-        entry.setUrl("/v3/client/ai/skills?namespaceId=public&name=" + resourceName
-            + "&version=1.0.0");
+        entry.setUrl("/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"
+            + "&resourceName=" + resourceName + "&version=1.0.0");
         entry.setDescription("Generate API parameter tables");
         entry.setTags(JacksonUtils.toJson(List.of("documentation", "api")));
         entry.setCapabilities(JacksonUtils.toJson(List.of("skill", "documentation")));
@@ -407,6 +496,7 @@ class ArdSearchServiceImplTest {
             ArdSearchServiceImpl.FEDERATION_NONE)));
         entry.setStatus(ArdIndexConstants.STATUS_ENABLED);
         entry.setSource(ArdIndexConstants.SOURCE_NACOS_LOCAL);
+        entry.setGmtCreate(Timestamp.from(Instant.parse("2026-06-28T01:00:00Z")));
         entry.setGmtModified(Timestamp.from(Instant.parse("2026-06-29T01:00:00Z")));
         return entry;
     }

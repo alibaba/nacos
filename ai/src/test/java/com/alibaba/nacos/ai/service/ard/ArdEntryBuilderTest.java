@@ -40,8 +40,8 @@ class ArdEntryBuilderTest {
         ArdEntry entry = builder.fromAiResource(resource(Constants.Skills.RESOURCE_TYPE_SKILL,
             "avatar skill"), version("1.0.0"));
         
-        assertEquals("/v3/client/ai/skills?namespaceId=public&name=avatar+skill&version=1.0.0",
-            entry.getUrl());
+        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"
+            + "&resourceName=avatar+skill&version=1.0.0", entry.getUrl());
     }
     
     @Test
@@ -50,9 +50,8 @@ class ArdEntryBuilderTest {
             resource(NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "avatar prompt"),
             version("2.0.0"));
         
-        assertEquals(
-            "/v3/client/ai/prompt?namespaceId=public&promptKey=avatar+prompt&version=2.0.0",
-            entry.getUrl());
+        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=prompt"
+            + "&resourceName=avatar+prompt&version=2.0.0", entry.getUrl());
     }
     
     @Test
@@ -64,8 +63,8 @@ class ArdEntryBuilderTest {
         
         ArdEntry entry = builder.fromMcpServer("public", server);
         
-        assertEquals(
-            "/v3/admin/ai/mcp?namespaceId=public&mcpId=mcp%2Favatar+server&version=3.0.0",
+        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=mcp"
+            + "&resourceName=mcp%2Favatar+server&version=3.0.0&mcpName=avatar-server",
             entry.getUrl());
     }
     
@@ -77,8 +76,8 @@ class ArdEntryBuilderTest {
         
         ArdEntry entry = builder.fromMcpServer("public", server);
         
-        assertEquals(
-            "/v3/admin/ai/mcp?namespaceId=public&mcpName=avatar+server&version=3.0.0",
+        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=mcp"
+            + "&resourceName=avatar+server&version=3.0.0&mcpName=avatar+server",
             entry.getUrl());
     }
     
