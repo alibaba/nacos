@@ -104,7 +104,8 @@ class ArdSearchServiceImplTest {
         ArdSearchResult result = response.getResults().get(0);
         assertEquals("api-helper", result.getDisplayName());
         assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL, result.getType());
-        assertEquals("nacos://public/skill/api-helper/1.0.0", result.getUrl());
+        assertEquals("/v3/client/ai/skills?namespaceId=public&name=api-helper&version=1.0.0",
+            result.getUrl());
         assertEquals("urn:air:nacos.local:public:skill:api-helper", result.getIdentifier());
         assertEquals(ArdIndexConstants.SOURCE_NACOS_LOCAL, result.getSource());
         assertEquals("skill", result.getMetadata().get("resourceType"));
@@ -343,7 +344,8 @@ class ArdSearchServiceImplTest {
         entry.setIdentifier("urn:air:nacos.local:public:skill:" + resourceName);
         entry.setDisplayName(resourceName);
         entry.setType(ArdIndexConstants.MEDIA_TYPE_SKILL);
-        entry.setUrl("nacos://public/skill/" + resourceName + "/1.0.0");
+        entry.setUrl("/v3/client/ai/skills?namespaceId=public&name=" + resourceName
+            + "&version=1.0.0");
         entry.setDescription("Generate API parameter tables");
         entry.setTags(JacksonUtils.toJson(List.of("documentation", "api")));
         entry.setCapabilities(JacksonUtils.toJson(List.of("skill", "documentation")));

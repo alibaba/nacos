@@ -30,6 +30,7 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ public class ArdEntryBuilder {
         List<String> capabilities = capabilities(meta.getType(), tags, ext);
         ArdEntry entry = baseEntry(meta.getNamespaceId(), meta.getType(), meta.getName(),
             version.getVersion(), meta.getName(), mediaType);
-        entry.setUrl(buildNacosUrl(meta.getNamespaceId(), meta.getType(), meta.getName(),
+        entry.setUrl(buildArtifactUrl(meta.getNamespaceId(), meta.getType(), meta.getName(),
             version.getVersion()));
         entry.setDescription(firstNotBlank(version.getDesc(), meta.getDesc()));
         entry.setTags(JacksonUtils.toJson(tags));
@@ -107,8 +108,8 @@ public class ArdEntryBuilder {
         List<String> capabilities = capabilities(mcpServer.getCapabilities());
         ArdEntry entry = baseEntry(namespaceId, ArdIndexConstants.RESOURCE_TYPE_MCP, resourceName,
             resourceVersion, mcpServer.getName(), ArdIndexConstants.MEDIA_TYPE_MCP);
-        entry.setUrl(buildNacosUrl(namespaceId, ArdIndexConstants.RESOURCE_TYPE_MCP, resourceName,
-            resourceVersion));
+        entry
+            .setUrl(buildMcpArtifactUrl(namespaceId, resourceName, resourceVersion, mcpServer));
         entry.setDescription(mcpServer.getDescription());
         entry.setTags(JacksonUtils.toJson(Collections.emptyList()));
         entry.setCapabilities(JacksonUtils.toJson(capabilities));
@@ -354,10 +355,28 @@ public class ArdEntryBuilder {
         return "urn:air:nacos.local:" + namespaceId + ":" + resourceType + ":" + resourceName;
     }
     
-    private String buildNacosUrl(String namespaceId, String resourceType, String resourceName,
+    private String buildArtifactUrl(String namespaceId, String resourceType, String resourceName,
         String version) {
-        return "nacos://" + namespaceId + "/" + resourceType + "/" + resourceName + "/"
-            + version;
+        if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
+            return Constants.Skills.CLIENT_PATH + "?namespaceId=" + encode(namespaceId)
+                + "&name=" + encode(resourceName) + "&version=" + encode(version);
+        }
+        if (RESOURCE_TYPE_PROMPT.equals(resourceType)) {
+            return Constants.Prompt.CLIENT_PATH + "?namespaceId=" + encode(namespaceId)
+                + "&promptKey=" + encode(resourceName) + "&version=" + encode(version);
+        }
+        throw new IllegalArgumentException("Unsupported ARD resource type: " + resourceType);
+    }
+    
+    private String buildMcpArtifactUrl(String namespaceId, String resourceName, String version,
+        McpServerBasicInfo mcpServer) {
+        String key = StringUtils.isNotBlank(mcpServer.getId()) ? "mcpId" : "mcpName";
+        return Constants.MCP_ADMIN_PATH + "?namespaceId=" + encode(namespaceId) + "&" + key + "="
+            + encode(resourceName) + "&version=" + encode(version);
+    }
+    
+    private String encode(String value) {
+        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
     }
     
     private String firstNotBlank(String first, String second) {
