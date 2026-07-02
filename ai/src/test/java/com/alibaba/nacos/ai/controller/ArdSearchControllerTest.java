@@ -29,6 +29,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -95,6 +98,23 @@ class ArdSearchControllerTest {
         
         assertThrows(NacosException.class,
             () -> controller.agents(null, null, "prefix", null, null));
+    }
+    
+    @Test
+    void catalogShouldExposeLocalArdEndpoints() {
+        ArdSearchController controller = controller();
+        
+        Map<String, Object> catalog = controller.catalog();
+        
+        assertEquals("Nacos AI Registry", catalog.get("name"));
+        assertEquals("none", catalog.get("federation"));
+        assertEquals(List.of("skill", "prompt", "mcp", "agent"), catalog.get("resourceTypes"));
+        assertEquals(Constants.ARD_CLIENT_PATH + "/search",
+            ((Map<?, ?>) catalog.get("endpoints")).get("search"));
+        assertEquals(Constants.ARD_CLIENT_PATH + "/explore",
+            ((Map<?, ?>) catalog.get("endpoints")).get("explore"));
+        assertEquals(Constants.ARD_CLIENT_PATH + "/agents",
+            ((Map<?, ?>) catalog.get("endpoints")).get("agents"));
     }
     
     @Test

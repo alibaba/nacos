@@ -41,6 +41,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Nacos Local ARD Search client controller.
  *
@@ -82,6 +86,22 @@ public class ArdSearchController {
     public ArdSearchResponse explore(@RequestBody ArdSearchRequest request)
         throws NacosException {
         return ardSearchService.search(request);
+    }
+    
+    /**
+     * Return the permission-controlled local ARD catalog document.
+     */
+    @Since("3.3.0")
+    @GetMapping("/ai-catalog.json")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    public Map<String, Object> catalog() {
+        Map<String, Object> catalog = new LinkedHashMap<>();
+        catalog.put("name", "Nacos AI Registry");
+        catalog.put("source", "nacos-local");
+        catalog.put("federation", "none");
+        catalog.put("endpoints", endpoints());
+        catalog.put("resourceTypes", List.of("skill", "prompt", "mcp", "agent"));
+        return catalog;
     }
     
     /**
@@ -131,5 +151,13 @@ public class ArdSearchController {
             return 10;
         }
         return Math.min(pageSize, Constants.MAX_LIST_SIZE);
+    }
+    
+    private Map<String, String> endpoints() {
+        Map<String, String> endpoints = new LinkedHashMap<>();
+        endpoints.put("search", Constants.ARD_CLIENT_PATH + "/search");
+        endpoints.put("explore", Constants.ARD_CLIENT_PATH + "/explore");
+        endpoints.put("agents", Constants.ARD_CLIENT_PATH + "/agents");
+        return endpoints;
     }
 }
