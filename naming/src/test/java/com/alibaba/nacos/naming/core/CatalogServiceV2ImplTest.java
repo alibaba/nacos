@@ -307,8 +307,8 @@ class CatalogServiceV2ImplTest {
         assertNotNull(result);
         assertEquals(3, result.getTotalCount(), "Total service count should be 3");
         assertEquals(2, result.getPageNumber(), "Current page number should be 2");
-        assertEquals(4, result.getPagesAvailable(),
-            "PagesAvailable should = (totalCount / pageSize) + 1");
+        assertEquals(3, result.getPagesAvailable(),
+            "PagesAvailable should = ceil(totalCount / pageSize)");
         assertEquals(1, result.getPageItems().size(),
             "Page size is 1, so only one item should be returned");
         
