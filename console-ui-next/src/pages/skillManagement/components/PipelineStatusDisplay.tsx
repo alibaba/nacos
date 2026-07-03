@@ -303,6 +303,12 @@ function PipelineDetailDialog({
                 </Badge>
               )}
               <div className="ml-auto flex items-center gap-2">
+                {selectedNode.executedAt && (
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {dayjs(selectedNode.executedAt).format('YYYY-MM-DD HH:mm:ss')}
+                  </span>
+                )}
                 {selectedNode.message && (
                   <Button
                     variant="ghost"
@@ -319,12 +325,6 @@ function PipelineDetailDialog({
                       ? t(`${translationPrefix}.pipelineCopied`)
                       : t(`${translationPrefix}.pipelineCopy`)}
                   </Button>
-                )}
-                {selectedNode.executedAt && (
-                  <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {dayjs(selectedNode.executedAt).format('YYYY-MM-DD HH:mm:ss')}
-                  </span>
                 )}
               </div>
             </div>
