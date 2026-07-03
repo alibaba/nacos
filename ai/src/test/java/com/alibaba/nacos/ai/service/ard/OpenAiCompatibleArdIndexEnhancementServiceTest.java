@@ -20,8 +20,8 @@ import com.alibaba.nacos.ai.model.ard.ArdEntry;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -33,6 +33,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author nacos
  */
 class OpenAiCompatibleArdIndexEnhancementServiceTest {
+    
+    @Test
+    void systemPromptShouldFollowRetrievalEnrichmentContract() {
+        String prompt = ArdIndexEnhancementPrompt.SYSTEM_PROMPT;
+        
+        assertTrue(prompt.contains("Generate compact bilingual retrieval-enrichment JSON"));
+        assertTrue(prompt.contains("Use only the provided source content"));
+        assertTrue(prompt.contains("Do not infer"));
+        assertTrue(prompt.contains("unsupported capabilities"));
+        assertTrue(prompt.contains("\"bilingualAliases\""));
+        assertTrue(prompt.contains("\"exampleQueries\""));
+        assertTrue(prompt.contains("Return strict JSON only"));
+    }
     
     @Test
     void parseEnhancementContentShouldConvertJsonToChunks() {

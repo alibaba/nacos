@@ -133,11 +133,7 @@ public class OpenAiCompatibleArdIndexEnhancementService implements ArdIndexEnhan
     private List<Map<String, String>> messages(ArdEntry entry, List<ArdChunk> existingChunks,
         List<ArdIndexEnhancementContent> contents) {
         List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(message("system",
-            "Generate compact bilingual search index text for a Nacos AI Registry resource. "
-                + "Use source content snippets when they are present. "
-                + "Return strict JSON only, with keys summary, bilingualAliases, "
-                + "capabilitySynonyms, exampleQueries. Values must be strings or string arrays."));
+        messages.add(message("system", ArdIndexEnhancementPrompt.SYSTEM_PROMPT));
         messages.add(message("user",
             JacksonUtils.toJson(resourcePayload(entry, existingChunks, contents))));
         return messages;
