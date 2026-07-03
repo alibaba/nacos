@@ -875,12 +875,13 @@ function EndpointItem({
   endpoint: { protocol: string; address: string; port: string; path?: string; headers?: { name: string; value?: string }[] };
   t: (key: string) => string;
 }) {
-  const url = `${endpoint.protocol}://${endpoint.address}${endpoint.port ? ':' + endpoint.port : ''}${endpoint.path || ''}`;
+  const protocol = endpoint.protocol || 'http';
+  const url = `${protocol}://${endpoint.address}${endpoint.port ? ':' + endpoint.port : ''}${endpoint.path || ''}`;
   return (
     <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
-          {endpoint.protocol}
+          {protocol}
         </span>
         <span className="text-xs font-mono text-muted-foreground truncate">{url}</span>
       </div>
