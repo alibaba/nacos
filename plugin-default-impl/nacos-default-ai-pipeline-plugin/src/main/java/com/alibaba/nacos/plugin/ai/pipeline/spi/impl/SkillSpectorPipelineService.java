@@ -62,7 +62,7 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     static final String INSTALLATION_HINT =
             "SkillSpector runtime 未安装。请先通过 nacos-setup skill-spector install 安装，"
                     + "或手动解压 runtime 到 "
-                    + "plugins/ai-pipeline/skill-spector/runtime/<os-arch>/。";
+                    + "runtimes/ai-pipeline/skill-spector/runtime/<os-arch>/。";
     
     private final String scannerCommand;
     

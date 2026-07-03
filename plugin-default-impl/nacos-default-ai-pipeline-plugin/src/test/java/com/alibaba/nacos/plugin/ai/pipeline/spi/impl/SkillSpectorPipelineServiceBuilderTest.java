@@ -94,9 +94,9 @@ class SkillSpectorPipelineServiceBuilderTest {
     @Test
     void buildWithInstalledRuntimeTest() throws Exception {
         Path nacosHome = Files.createTempDirectory("nacos-home");
-        Path runner = nacosHome.resolve("plugins").resolve("ai-pipeline")
+        Path runner = nacosHome.resolve("runtimes").resolve("ai-pipeline")
                 .resolve("skill-spector").resolve("bin").resolve("skill-spector");
-        createPlatformRuntime(nacosHome.resolve("plugins").resolve("ai-pipeline")
+        createPlatformRuntime(nacosHome.resolve("runtimes").resolve("ai-pipeline")
                 .resolve("skill-spector"));
         createExecutable(runner.getParent(), runner.getFileName().toString());
         String oldNacosHome = System.getProperty("nacos.home");
@@ -114,7 +114,7 @@ class SkillSpectorPipelineServiceBuilderTest {
     @Test
     void buildRejectsRunnerWithoutPlatformRuntimeTest() throws Exception {
         Path nacosHome = Files.createTempDirectory("nacos-home");
-        Path runner = nacosHome.resolve("plugins").resolve("ai-pipeline")
+        Path runner = nacosHome.resolve("runtimes").resolve("ai-pipeline")
                 .resolve("skill-spector").resolve("bin").resolve("skill-spector");
         createExecutable(runner.getParent(), runner.getFileName().toString());
         String oldNacosHome = System.getProperty("nacos.home");

@@ -43,7 +43,11 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
     
     private static final String NACOS_HOME_PROPERTY = "nacos.home";
     
-    private static final String PRIMARY_RUNTIME_DIR = "skill-spector";
+    private static final String RUNTIMES_DIR = "runtimes";
+
+    private static final String AI_PIPELINE_RUNTIME_DIR = "ai-pipeline";
+
+    private static final String SKILL_SPECTOR_RUNTIME_DIR = "skill-spector";
     
     @Override
     public String pipelineId() {
@@ -86,8 +90,8 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
             return;
         }
         Path base = Paths.get(baseDir).toAbsolutePath().normalize();
-        Path pluginRoot = base.resolve("plugins").resolve("ai-pipeline");
-        addRuntimeRootCandidates(candidates, pluginRoot.resolve(PRIMARY_RUNTIME_DIR));
+        Path runtimeRoot = base.resolve(RUNTIMES_DIR).resolve(AI_PIPELINE_RUNTIME_DIR);
+        addRuntimeRootCandidates(candidates, runtimeRoot.resolve(SKILL_SPECTOR_RUNTIME_DIR));
     }
     
     private void addRuntimeRootCandidates(Set<Path> candidates, Path root) {
