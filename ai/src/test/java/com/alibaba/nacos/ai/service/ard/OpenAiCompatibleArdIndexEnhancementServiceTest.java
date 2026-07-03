@@ -40,8 +40,15 @@ class OpenAiCompatibleArdIndexEnhancementServiceTest {
         
         assertTrue(prompt.contains("Generate compact bilingual retrieval-enrichment JSON"));
         assertTrue(prompt.contains("Use only the provided source content"));
-        assertTrue(prompt.contains("Do not infer"));
+        assertTrue(prompt.contains("must not infer"));
         assertTrue(prompt.contains("unsupported capabilities"));
+        assertTrue(prompt.contains("humans or agents"));
+        assertTrue(prompt.contains("formal and colloquial search"));
+        assertTrue(prompt.contains("specific search phrases"));
+        assertTrue(prompt.contains("balanced mix early"));
+        assertTrue(prompt.contains("Avoid awkward literal translations"));
+        assertTrue(prompt.contains("native-speaker search-box check"));
+        assertTrue(prompt.contains("overly formal terms"));
         assertTrue(prompt.contains("\"bilingualAliases\""));
         assertTrue(prompt.contains("\"exampleQueries\""));
         assertTrue(prompt.contains("Return strict JSON only"));
