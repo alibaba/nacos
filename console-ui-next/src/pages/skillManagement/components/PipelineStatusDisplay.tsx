@@ -302,12 +302,31 @@ function PipelineDetailDialog({
                   {formatDuration(selectedNode.durationMs)}
                 </Badge>
               )}
-              {selectedNode.executedAt && (
-                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground ml-auto">
-                  <Clock className="h-3 w-3" />
-                  {dayjs(selectedNode.executedAt).format('YYYY-MM-DD HH:mm:ss')}
-                </span>
-              )}
+              <div className="ml-auto flex items-center gap-2">
+                {selectedNode.message && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => handleCopyMessage(selectedNode)}
+                  >
+                    {copiedNodeId === selectedNode.nodeId ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                    {copiedNodeId === selectedNode.nodeId
+                      ? t(`${translationPrefix}.pipelineCopied`)
+                      : t(`${translationPrefix}.pipelineCopy`)}
+                  </Button>
+                )}
+                {selectedNode.executedAt && (
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {dayjs(selectedNode.executedAt).format('YYYY-MM-DD HH:mm:ss')}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Message area */}
@@ -341,29 +360,10 @@ function PipelineDetailDialog({
 
                 {/* Message content rendered by messageType */}
                 {selectedNode.message ? (
-                  <div className="space-y-2">
-                    <div className="flex justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 gap-1.5 text-xs"
-                        onClick={() => handleCopyMessage(selectedNode)}
-                      >
-                        {copiedNodeId === selectedNode.nodeId ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-500" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5" />
-                        )}
-                        {copiedNodeId === selectedNode.nodeId
-                          ? t(`${translationPrefix}.pipelineCopied`)
-                          : t(`${translationPrefix}.pipelineCopy`)}
-                      </Button>
-                    </div>
-                    <NodeMessageContent
-                      message={selectedNode.message}
-                      messageType={selectedNode.messageType}
-                    />
-                  </div>
+                  <NodeMessageContent
+                    message={selectedNode.message}
+                    messageType={selectedNode.messageType}
+                  />
                 ) : (
                   <p className="text-xs text-muted-foreground/60 italic">
                     {t(`${translationPrefix}.pipelineNoMessage`)}
