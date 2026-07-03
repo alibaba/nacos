@@ -41,7 +41,7 @@ class ArdChunkBuilderTest {
     void buildChunksShouldIncludeDescriptionTagsCapabilitiesAndMetadata() {
         ArdEntry entry = new ArdEntry();
         entry.setNamespaceId("public");
-        entry.setIdentifier("urn:air:nacos.local:public:skill:api-helper");
+        entry.setIdentifier("urn:air:nacos:public:skill:api-helper");
         entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
         entry.setResourceName("api-helper");
         entry.setResourceVersion("1.0.0");
@@ -134,7 +134,7 @@ class ArdChunkBuilderTest {
     private ArdEntry entry() {
         ArdEntry entry = new ArdEntry();
         entry.setNamespaceId("public");
-        entry.setIdentifier("urn:air:nacos.local:public:skill:api-helper");
+        entry.setIdentifier("urn:air:nacos:public:skill:api-helper");
         entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
         entry.setResourceName("api-helper");
         entry.setResourceVersion("1.0.0");

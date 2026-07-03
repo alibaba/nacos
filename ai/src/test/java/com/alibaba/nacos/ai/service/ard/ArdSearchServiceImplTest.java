@@ -72,6 +72,8 @@ class ArdSearchServiceImplTest {
     private static final String RANKING_ENABLED_KEY =
         "nacos.ai.ard.search.ranking.enhanced.enabled";
     
+    private static final String CATALOG_BASE_URL_KEY = "nacos.ai.ard.catalog.base-url";
+    
     @Mock
     private AiResourceManager resourceManager;
     
@@ -90,6 +92,8 @@ class ArdSearchServiceImplTest {
     @AfterEach
     void tearDown() {
         System.clearProperty(RANKING_ENABLED_KEY);
+        System.clearProperty(CATALOG_BASE_URL_KEY);
+        System.clearProperty(ArdIndexConstants.KEY_CATALOG_HOST_IDENTIFIER);
     }
     
     @Test
@@ -113,7 +117,7 @@ class ArdSearchServiceImplTest {
         assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL, result.getType());
         assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"
             + "&resourceName=api-helper&version=1.0.0", result.getUrl());
-        assertEquals("urn:air:nacos.local:public:skill:api-helper", result.getIdentifier());
+        assertEquals("urn:air:nacos:public:skill:api-helper", result.getIdentifier());
         assertEquals(ArdIndexConstants.SOURCE_NACOS_LOCAL, result.getSource());
         assertEquals("skill", result.getMetadata().get("resourceType"));
         assertEquals("skill", result.getTrustManifest().get("resourceType"));
@@ -383,9 +387,35 @@ class ArdSearchServiceImplTest {
         
         assertEquals("1.0", catalog.getSpecVersion());
         assertEquals("Nacos AI Registry", catalog.getHost().getDisplayName());
-        assertEquals("urn:air:nacos.local:registry:nacos",
+        assertEquals("urn:air:nacos:registry:nacos",
             catalog.getEntries().get(0).getIdentifier());
         assertEquals("api-helper", catalog.getEntries().get(1).getDisplayName());
+    }
+    
+    @Test
+    void catalogShouldUseConfiguredBaseUrlAndHostIdentifier() throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com/nacos");
+        System.setProperty(ArdIndexConstants.KEY_CATALOG_HOST_IDENTIFIER, "nacos.example.com");
+        ArdSearchServiceImpl service = service();
+        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"), 100))
+            .thenReturn(List.of(entry()));
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta("1.0.0"));
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0")).thenReturn(onlineVersion("1.0.0"));
+        
+        ArdCatalog catalog = service.catalog("public");
+        
+        assertEquals("nacos.example.com", catalog.getHost().getIdentifier());
+        assertEquals("urn:air:nacos.example.com:registry:nacos",
+            catalog.getEntries().get(0).getIdentifier());
+        assertEquals("https://nacos.example.com/nacos/v3/ai/ard",
+            catalog.getEntries().get(0).getUrl());
+        assertEquals("urn:air:nacos.example.com:public:skill:api-helper",
+            catalog.getEntries().get(1).getIdentifier());
+        assertEquals("https://nacos.example.com/nacos/v3/ai/ard/artifacts"
+            + "?namespaceId=public&resourceType=skill&resourceName=api-helper&version=1.0.0",
+            catalog.getEntries().get(1).getUrl());
     }
     
     private ArdSearchServiceImpl service() {
@@ -458,7 +488,7 @@ class ArdSearchServiceImplTest {
         ArdSearchHit hit = new ArdSearchHit();
         hit.setEntryId(entryId);
         hit.setChunkId(200L);
-        hit.setIdentifier("urn:air:nacos.local:public:skill:" + resourceName);
+        hit.setIdentifier("urn:air:nacos:public:skill:" + resourceName);
         hit.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
         hit.setResourceName(resourceName);
         hit.setResourceVersion("1.0.0");
@@ -478,7 +508,7 @@ class ArdSearchServiceImplTest {
         entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
         entry.setResourceName(resourceName);
         entry.setResourceVersion("1.0.0");
-        entry.setIdentifier("urn:air:nacos.local:public:skill:" + resourceName);
+        entry.setIdentifier("urn:air:nacos:public:skill:" + resourceName);
         entry.setDisplayName(resourceName);
         entry.setType(ArdIndexConstants.MEDIA_TYPE_SKILL);
         entry.setUrl("/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"

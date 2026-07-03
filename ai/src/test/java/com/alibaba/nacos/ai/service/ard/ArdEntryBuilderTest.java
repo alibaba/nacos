@@ -42,6 +42,7 @@ class ArdEntryBuilderTest {
         
         assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"
             + "&resourceName=avatar+skill&version=1.0.0", entry.getUrl());
+        assertEquals("urn:air:nacos:public:skill:avatar skill", entry.getIdentifier());
     }
     
     @Test
@@ -52,6 +53,7 @@ class ArdEntryBuilderTest {
         
         assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=prompt"
             + "&resourceName=avatar+prompt&version=2.0.0", entry.getUrl());
+        assertEquals("urn:air:nacos:public:prompt:avatar prompt", entry.getIdentifier());
     }
     
     @Test

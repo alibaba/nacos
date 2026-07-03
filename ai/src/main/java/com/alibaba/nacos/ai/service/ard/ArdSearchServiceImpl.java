@@ -111,9 +111,6 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private static final String KEY_CATALOG_HOST_DISPLAY_NAME =
         "nacos.ai.ard.catalog.host.display-name";
     
-    private static final String KEY_CATALOG_HOST_IDENTIFIER =
-        "nacos.ai.ard.catalog.host.identifier";
-    
     private static final String KEY_CATALOG_HOST_DOCUMENTATION_URL =
         "nacos.ai.ard.catalog.host.documentation-url";
     
@@ -881,10 +878,10 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private ArdSearchResult toResult(ArdEntry entry) {
         ArdSearchResult result = new ArdSearchResult();
-        result.setIdentifier(entry.getIdentifier());
+        result.setIdentifier(buildIdentifier(entry));
         result.setDisplayName(entry.getDisplayName());
         result.setType(entry.getType());
-        result.setUrl(entry.getUrl());
+        result.setUrl(withBaseUrl(entry.getUrl()));
         result.setDescription(entry.getDescription());
         result.setTags(parseStringList(entry.getTags()));
         result.setCapabilities(parseStringList(entry.getCapabilities()));
@@ -904,7 +901,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private ArdHostInfo hostInfo() {
         ArdHostInfo host = new ArdHostInfo();
         host.setDisplayName(property(KEY_CATALOG_HOST_DISPLAY_NAME, "Nacos AI Registry"));
-        String identifier = property(KEY_CATALOG_HOST_IDENTIFIER, "nacos.local");
+        String identifier = catalogHostIdentifier();
         if (StringUtils.isNotBlank(identifier)) {
             host.setIdentifier(identifier);
         }
@@ -921,7 +918,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private ArdSearchResult registryEntry() {
         ArdSearchResult result = new ArdSearchResult();
-        result.setIdentifier("urn:air:nacos.local:registry:nacos");
+        result.setIdentifier("urn:air:" + catalogHostIdentifier() + ":registry:nacos");
         result.setDisplayName(property(KEY_CATALOG_HOST_DISPLAY_NAME, "Nacos AI Registry"));
         result.setType(MEDIA_TYPE_REGISTRY);
         result.setUrl(withBaseUrl(Constants.ARD_CLIENT_PATH));
@@ -959,6 +956,21 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1)
             : baseUrl;
         return url.startsWith("/") ? base + url : base + "/" + url;
+    }
+    
+    private String buildIdentifier(ArdEntry entry) {
+        if (StringUtils.isBlank(entry.getNamespaceId())
+            || StringUtils.isBlank(entry.getResourceType())
+            || StringUtils.isBlank(entry.getResourceName())) {
+            return entry.getIdentifier();
+        }
+        return "urn:air:" + catalogHostIdentifier() + ":" + entry.getNamespaceId() + ":"
+            + entry.getResourceType() + ":" + entry.getResourceName();
+    }
+    
+    private String catalogHostIdentifier() {
+        return property(ArdIndexConstants.KEY_CATALOG_HOST_IDENTIFIER,
+            ArdIndexConstants.DEFAULT_CATALOG_HOST_IDENTIFIER);
     }
     
     private ArdExploreResponse.FacetResult facet(List<ArdSearchResult> results,

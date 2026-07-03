@@ -31,6 +31,11 @@ final class ArdIndexConstants {
     
     static final String SOURCE_NACOS_LOCAL = "nacos-local";
     
+    static final String KEY_CATALOG_HOST_IDENTIFIER =
+        "nacos.ai.ard.catalog.host.identifier";
+    
+    static final String DEFAULT_CATALOG_HOST_IDENTIFIER = "nacos";
+    
     static final String RESOURCE_TYPE_MCP = "mcp";
     
     static final String MEDIA_TYPE_SKILL = "application/ai-skill+md";

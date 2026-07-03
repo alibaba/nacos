@@ -108,7 +108,7 @@ class ArdIndexBuildServiceImplTest {
         ArgumentCaptor<List<ArdChunk>> chunksCaptor = ArgumentCaptor.forClass(List.class);
         verify(repository).replaceEntry(entryCaptor.capture(), chunksCaptor.capture());
         ArdEntry entry = entryCaptor.getValue();
-        assertEquals("urn:air:nacos.local:public:skill:api-helper", entry.getIdentifier());
+        assertEquals("urn:air:nacos:public:skill:api-helper", entry.getIdentifier());
         assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL, entry.getType());
         assertFalse(chunksCaptor.getValue().isEmpty());
         ArgumentCaptor<Collection<AiResourceVectorDocument>> vectorCaptor =

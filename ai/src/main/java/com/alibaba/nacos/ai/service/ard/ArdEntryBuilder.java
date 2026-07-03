@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.net.URLEncoder;
@@ -352,7 +353,8 @@ public class ArdEntryBuilder {
     }
     
     private String buildIdentifier(String namespaceId, String resourceType, String resourceName) {
-        return "urn:air:nacos.local:" + namespaceId + ":" + resourceType + ":" + resourceName;
+        return "urn:air:" + catalogHostIdentifier() + ":" + namespaceId + ":" + resourceType
+            + ":" + resourceName;
     }
     
     private String buildArtifactUrl(String namespaceId, String resourceType, String resourceName,
@@ -379,6 +381,23 @@ public class ArdEntryBuilder {
     
     private String encode(String value) {
         return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
+    }
+    
+    private String catalogHostIdentifier() {
+        return property(ArdIndexConstants.KEY_CATALOG_HOST_IDENTIFIER,
+            ArdIndexConstants.DEFAULT_CATALOG_HOST_IDENTIFIER);
+    }
+    
+    private String property(String key, String defaultValue) {
+        String value = System.getProperty(key);
+        if (StringUtils.isNotBlank(value)) {
+            return value;
+        }
+        try {
+            return EnvUtil.getProperty(key, defaultValue);
+        } catch (Exception ignored) {
+            return defaultValue;
+        }
     }
     
     private String firstNotBlank(String first, String second) {

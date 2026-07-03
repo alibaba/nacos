@@ -34,6 +34,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -61,6 +62,7 @@ public class ArdArtifactService {
     
     private final AiResourceStorageRouter storageRouter;
     
+    @Autowired
     public ArdArtifactService(AiResourceManager resourceManager,
         McpServerOperationService mcpServerOperationService) {
         this(resourceManager, mcpServerOperationService, AiResourceStorageRouter.getInstance());
