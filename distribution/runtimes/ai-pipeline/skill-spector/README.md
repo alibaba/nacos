@@ -30,8 +30,7 @@ Online installation:
 
 ```bash
 nacos-setup skill-spector install \
-  --nacos-home /path/to/nacos \
-  --base-url https://example.com/nacos/ai-pipeline/skill-spector
+  --nacos-home /path/to/nacos
 ```
 
 Offline installation:
@@ -46,7 +45,7 @@ nacos-setup skill-spector install \
 The runtime is unpacked here with the current platform key:
 
 ```text
-plugins/ai-pipeline/skill-spector/
+runtimes/ai-pipeline/skill-spector/
   bin/skill-spector
   runtime/
     linux-x86_64/
