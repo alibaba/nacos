@@ -23,12 +23,12 @@ package com.alibaba.nacos.api.plugin;
  * @since 3.2.0
  */
 public enum PluginType {
-    
+
     /**
      * Authentication plugin.
      */
     AUTH("auth", "Authentication plugin", PluginExecutionMode.EXCLUSIVE, true),
-    
+
     /**
      * Datasource dialect plugin.
      */
@@ -39,17 +39,17 @@ public enum PluginType {
      * Config change plugin.
      */
     CONFIG_CHANGE("config-change", "Config change plugin", PluginExecutionMode.CHAIN, false),
-    
+
     /**
      * Encryption plugin.
      */
     ENCRYPTION("encryption", "Encryption plugin", PluginExecutionMode.ROUTED, false),
-    
+
     /**
      * Trace plugin.
      */
     TRACE("trace", "Trace plugin", PluginExecutionMode.BROADCAST, false),
-    
+
     /**
      * Environment plugin.
      */
@@ -60,22 +60,27 @@ public enum PluginType {
      * Control plugin.
      */
     CONTROL("control", "Control plugin", PluginExecutionMode.EXCLUSIVE, false),
-    
+
     /**
      * Visibility plugin.
      */
     VISIBILITY("visibility", "Visibility plugin", PluginExecutionMode.ROUTED, false),
-    
+
     /**
      * AI publish pipeline plugin.
      */
     AI_PIPELINE("ai-pipeline", "AI publish pipeline plugin", PluginExecutionMode.CHAIN, false),
-    
+
     /**
      * AI resource storage plugin.
      */
     AI_STORAGE("ai-storage", "AI resource storage plugin", PluginExecutionMode.ROUTED, true),
-    
+
+    /**
+     * AI ARD vector index plugin.
+     */
+    AI_VECTOR("ai-vector", "AI ARD vector index plugin"),
+
     /**
      * AI resource import plugin.
      */
@@ -83,20 +88,20 @@ public enum PluginType {
         PluginExecutionMode.ROUTED, false);
     
     private final String type;
-    
+
     private final String description;
-    
+
     private final PluginExecutionMode executionMode;
-    
+
     private final boolean critical;
-    
+
     private final PluginInitializationPhase initializationPhase;
-    
+
     PluginType(String type, String description, PluginExecutionMode executionMode,
         boolean critical) {
         this(type, description, executionMode, critical, PluginInitializationPhase.STANDARD);
     }
-    
+
     PluginType(String type, String description, PluginExecutionMode executionMode,
         boolean critical, PluginInitializationPhase initializationPhase) {
         this.type = type;
@@ -105,15 +110,15 @@ public enum PluginType {
         this.critical = critical;
         this.initializationPhase = initializationPhase;
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     public String getDescription() {
         return description;
     }
-    
+
     /**
      * Get the execution mode shared by implementations of this plugin type.
      *
@@ -122,7 +127,7 @@ public enum PluginType {
     public PluginExecutionMode getExecutionMode() {
         return executionMode;
     }
-    
+
     /**
      * Whether implementations of this plugin type are mutually exclusive.
      *
@@ -131,7 +136,7 @@ public enum PluginType {
     public boolean isExclusive() {
         return PluginExecutionMode.EXCLUSIVE == executionMode;
     }
-    
+
     /**
      * Whether this plugin type must retain at least one usable implementation.
      *
@@ -140,7 +145,7 @@ public enum PluginType {
     public boolean isCritical() {
         return critical;
     }
-    
+
     /**
      * Get the initialization phase shared by implementations of this plugin type.
      *
@@ -149,5 +154,5 @@ public enum PluginType {
     public PluginInitializationPhase getInitializationPhase() {
         return initializationPhase;
     }
-    
+
 }

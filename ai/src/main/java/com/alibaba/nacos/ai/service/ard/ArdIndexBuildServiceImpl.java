@@ -21,8 +21,6 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdChunk;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
-import com.alibaba.nacos.ai.service.ard.vector.AiResourceVectorDocument;
-import com.alibaba.nacos.ai.service.ard.vector.AiResourceVectorIndex;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
@@ -34,6 +32,9 @@ import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorChunk;
+import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorDocument;
+import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,29 +55,29 @@ import java.util.concurrent.Executor;
  */
 @Service
 public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ArdIndexBuildServiceImpl.class);
-    
+
     private static final int DEFAULT_MAX_MCP_CONTENT_CHARS = 12000;
-    
+
     private final AiResourceManager resourceManager;
-    
+
     private final ArdIndexRepository repository;
-    
+
     private final ArdEmbeddingService embeddingService;
-    
+
     private final AiResourceVectorIndex vectorIndex;
-    
+
     private final ArdEntryBuilder entryBuilder;
-    
+
     private final ArdChunkBuilder chunkBuilder;
-    
+
     private final ArdIndexEnhancementService enhancementService;
-    
+
     private final ArdIndexContentLoader contentLoader;
-    
+
     private final Executor enhancementExecutor;
-    
+
     @Autowired
     public ArdIndexBuildServiceImpl(AiResourceManager resourceManager,
         ArdIndexRepository repository, ArdEmbeddingService embeddingService,
@@ -85,21 +86,21 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         this(resourceManager, repository, embeddingService, vectorIndex, enhancementService,
             contentLoader, ExecutorUtils.getArdIndexEnhancementExecutor());
     }
-    
+
     public ArdIndexBuildServiceImpl(AiResourceManager resourceManager,
         ArdIndexRepository repository, ArdEmbeddingService embeddingService,
         AiResourceVectorIndex vectorIndex) {
         this(resourceManager, repository, embeddingService, vectorIndex,
             ArdIndexEnhancementService.NOOP, ArdIndexContentLoader.NOOP, Runnable::run);
     }
-    
+
     ArdIndexBuildServiceImpl(AiResourceManager resourceManager, ArdIndexRepository repository,
         ArdEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,
         ArdIndexEnhancementService enhancementService, Executor enhancementExecutor) {
         this(resourceManager, repository, embeddingService, vectorIndex, enhancementService,
             ArdIndexContentLoader.NOOP, enhancementExecutor);
     }
-    
+
     ArdIndexBuildServiceImpl(AiResourceManager resourceManager, ArdIndexRepository repository,
         ArdEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,
         ArdIndexEnhancementService enhancementService, ArdIndexContentLoader contentLoader,
@@ -115,7 +116,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         this.entryBuilder = new ArdEntryBuilder();
         this.chunkBuilder = new ArdChunkBuilder();
     }
-    
+
     @Override
     public void rebuildAiResource(String namespaceId, String resourceType, String name,
         String version) throws NacosException {
@@ -132,7 +133,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         replace(entryBuilder.fromAiResource(meta, resourceVersion), resourceVersion);
     }
-    
+
     @Override
     public void rebuildLatestAiResource(String namespaceId, String resourceType, String name)
         throws NacosException {
@@ -156,7 +157,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         deleteResource(namespaceId, resourceType, name);
         replace(entryBuilder.fromAiResource(meta, resourceVersion), resourceVersion);
     }
-    
+
     @Override
     public void rebuildMcpServer(String namespaceId, McpServerBasicInfo mcpServer) {
         if (mcpServer == null) {
@@ -171,7 +172,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         replace(entryBuilder.fromMcpServer(namespaceId, mcpServer), null, mcpContents(mcpServer));
     }
-    
+
     @Override
     public void deleteResource(String namespaceId, String resourceType, String resourceName) {
         if (StringUtils.isBlank(resourceName)) {
@@ -182,7 +183,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         repository.deleteByResource(namespaceId, resourceType, resourceName);
     }
-    
+
     @Override
     public void deleteResourceVersion(String namespaceId, String resourceType,
         String resourceName, String resourceVersion) {
@@ -196,15 +197,15 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         repository.deleteByResourceVersion(namespaceId, resourceType, resourceName,
             resourceVersion);
     }
-    
+
     private void replace(ArdEntry entry) {
         replace(entry, null);
     }
-    
+
     private void replace(ArdEntry entry, AiResourceVersion resourceVersion) {
         replace(entry, resourceVersion, loadContents(entry, resourceVersion));
     }
-    
+
     private void replace(ArdEntry entry, AiResourceVersion resourceVersion,
         List<ArdIndexEnhancementContent> contents) {
         List<ArdChunk> chunks = new ArrayList<>(chunkBuilder.buildChunks(entry));
@@ -221,7 +222,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         submitEnhancement(entry, persistedChunks, contents);
     }
-    
+
     private List<ArdIndexEnhancementContent> loadContents(ArdEntry entry,
         AiResourceVersion resourceVersion) {
         try {
@@ -232,7 +233,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
             return Collections.emptyList();
         }
     }
-    
+
     private List<ArdIndexEnhancementContent> mcpContents(McpServerBasicInfo mcpServer) {
         List<ArdIndexEnhancementContent> contents = new ArrayList<>();
         addMcpContent(contents, "mcp-server.json", mcpServerText(mcpServer));
@@ -243,7 +244,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         return contents;
     }
-    
+
     private void addMcpContent(List<ArdIndexEnhancementContent> contents, String path,
         String text) {
         if (StringUtils.isBlank(text)) {
@@ -252,7 +253,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         contents
             .add(new ArdIndexEnhancementContent(path, limit(text, DEFAULT_MAX_MCP_CONTENT_CHARS)));
     }
-    
+
     private String mcpServerText(McpServerBasicInfo mcpServer) {
         StringBuilder text = new StringBuilder();
         appendLine(text, "# MCP server");
@@ -266,7 +267,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         return text.toString();
     }
-    
+
     private String mcpToolText(McpToolSpecification toolSpec) {
         if (toolSpec == null || toolSpec.getTools() == null || toolSpec.getTools().isEmpty()) {
             return null;
@@ -284,7 +285,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         return text.toString();
     }
-    
+
     private String mcpResourceText(McpResourceSpecification resourceSpec) {
         if (resourceSpec == null) {
             return null;
@@ -295,7 +296,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
             resourceSpec.getResourceTemplates());
         return text.toString();
     }
-    
+
     private void appendResourceMaps(StringBuilder text, String heading, String label,
         List<Map<String, Object>> resources) {
         if (resources == null || resources.isEmpty()) {
@@ -312,7 +313,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
             }
         }
     }
-    
+
     private String selectedResourceText(Map<String, Object> resource) {
         List<String> parts = new ArrayList<>();
         addMapValue(parts, resource, "name");
@@ -322,21 +323,21 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         addMapValue(parts, resource, "uriTemplate");
         return StringUtils.join(parts, " ");
     }
-    
+
     private void addMapValue(List<String> parts, Map<String, Object> map, String key) {
         Object value = map.get(key);
         if (value != null && StringUtils.isNotBlank(String.valueOf(value))) {
             parts.add(key + ": " + value);
         }
     }
-    
+
     private void appendMap(StringBuilder text, String label, Map<String, Object> map) {
         if (map == null || map.isEmpty()) {
             return;
         }
         appendLine(text, label + ": " + map);
     }
-    
+
     private String mcpCapabilities(Collection<McpCapability> capabilities) {
         List<String> values = new ArrayList<>();
         for (McpCapability capability : capabilities) {
@@ -346,13 +347,13 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         return StringUtils.join(values, " ");
     }
-    
+
     private void appendField(StringBuilder text, String key, String value) {
         if (StringUtils.isNotBlank(value)) {
             appendLine(text, key + ": " + value);
         }
     }
-    
+
     private void appendLine(StringBuilder text, String line) {
         if (StringUtils.isBlank(line)) {
             return;
@@ -362,14 +363,14 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         text.append(line);
     }
-    
+
     private String limit(String text, int maxLength) {
         if (text == null || text.length() <= maxLength) {
             return text;
         }
         return text.substring(0, maxLength);
     }
-    
+
     private void submitEnhancement(ArdEntry entry, List<ArdChunk> persistedChunks,
         List<ArdIndexEnhancementContent> contents) {
         if (!enhancementService.enabled()) {
@@ -377,7 +378,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         enhancementExecutor.execute(() -> appendEnhancedChunks(entry, persistedChunks, contents));
     }
-    
+
     private void appendEnhancedChunks(ArdEntry entry, List<ArdChunk> persistedChunks,
         List<ArdIndexEnhancementContent> contents) {
         try {
@@ -398,30 +399,43 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
                 entry.getResourceName(), entry.getResourceVersion(), e);
         }
     }
-    
+
     private List<AiResourceVectorDocument> vectorDocuments(List<ArdChunk> chunks) {
         if (chunks == null || chunks.isEmpty()) {
             return Collections.emptyList();
         }
         List<AiResourceVectorDocument> documents = new ArrayList<>();
         for (ArdChunk chunk : chunks) {
-            documents.add(new AiResourceVectorDocument(chunk, embeddingService.model(),
+            documents.add(new AiResourceVectorDocument(toVectorChunk(chunk), embeddingService.model(),
                 embeddingService.embed(chunk.getCanonicalText())));
         }
         return documents;
     }
-    
+
+    private AiResourceVectorChunk toVectorChunk(ArdChunk chunk) {
+        AiResourceVectorChunk result = new AiResourceVectorChunk();
+        result.setId(chunk.getId());
+        result.setEntryId(chunk.getEntryId());
+        result.setNamespaceId(chunk.getNamespaceId());
+        result.setIdentifier(chunk.getIdentifier());
+        result.setResourceType(chunk.getResourceType());
+        result.setResourceName(chunk.getResourceName());
+        result.setResourceVersion(chunk.getResourceVersion());
+        result.setChunkType(chunk.getChunkType());
+        return result;
+    }
+
     private boolean isIndexable(AiResource meta, AiResourceVersion version) {
         return meta != null && version != null
             && AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())
             && AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(version.getStatus());
     }
-    
+
     private boolean isIndexable(McpServerBasicInfo mcpServer) {
         return mcpServer.isEnabled()
             && AiConstants.Mcp.MCP_STATUS_ACTIVE.equalsIgnoreCase(mcpServer.getStatus());
     }
-    
+
     private String resolveMcpVersion(McpServerBasicInfo mcpServer) {
         if (mcpServer.getVersionDetail() != null
             && StringUtils.isNotBlank(mcpServer.getVersionDetail().getVersion())) {
@@ -429,7 +443,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         }
         return mcpServer.getVersion();
     }
-    
+
     private String firstNotBlank(String first, String second) {
         return StringUtils.isNotBlank(first) ? first : second;
     }
