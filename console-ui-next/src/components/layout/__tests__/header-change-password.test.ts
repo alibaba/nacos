@@ -52,3 +52,32 @@ describe('Header namespace switch wiring', () => {
     );
   });
 });
+
+describe('Header sidebar and user menu wiring', () => {
+  it('renders the sidebar toggle before the namespace selector', () => {
+    const leftBlock = HEADER_SOURCE.slice(
+      HEADER_SOURCE.indexOf('{/* Left - Sidebar toggle and namespace selector */}'),
+      HEADER_SOURCE.indexOf('{/* Center - Navigation links */}'),
+    );
+
+    expect(HEADER_SOURCE).toContain('sidebarCollapsed');
+    expect(HEADER_SOURCE).toContain('toggleSidebar');
+    expect(HEADER_SOURCE).toContain('PanelLeft');
+    expect(HEADER_SOURCE).toContain('PanelLeftClose');
+    expect(leftBlock.indexOf('onClick={toggleSidebar}')).toBeGreaterThan(-1);
+    expect(leftBlock.indexOf('onClick={toggleSidebar}')).toBeLessThan(
+      leftBlock.indexOf("t('common.selectNamespace')"),
+    );
+  });
+
+  it('shows a user icon in the dropdown username row', () => {
+    const userMenuBlock = HEADER_SOURCE.slice(
+      HEADER_SOURCE.indexOf('<DropdownMenuContent align="end"'),
+      HEADER_SOURCE.indexOf('<DropdownMenuSeparator />'),
+    );
+
+    expect(HEADER_SOURCE).toContain('UserRound');
+    expect(userMenuBlock).toContain('<UserRound size={14}');
+    expect(userMenuBlock).toContain('<span className="truncate">{username}</span>');
+  });
+});
