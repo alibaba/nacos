@@ -60,6 +60,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -235,7 +236,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             if (configInfoState == null) {
-                return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                return addConfigInfoWithUpdateOnDuplicateKey(srcIp, srcUser, configInfo,
+                    configAdvanceInfo);
             } else {
                 return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
             }
@@ -257,7 +259,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             if (configInfoState == null) {
-                return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                return addConfigInfoWithConflictOnDuplicateKey(srcIp, srcUser, configInfo,
+                    configAdvanceInfo);
             } else {
                 return updateConfigInfoCas(configInfo, srcIp, srcUser, configAdvanceInfo);
             }
@@ -268,6 +271,52 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 exception);
             throw exception;
         }
+    }
+    
+    private ConfigOperateResult addConfigInfoWithUpdateOnDuplicateKey(String srcIp, String srcUser,
+        ConfigInfo configInfo, Map<String, Object> configAdvanceInfo) {
+        try {
+            return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+        } catch (DataAccessException exception) {
+            if (isDuplicateKeyException(exception)) {
+                LogUtil.DEFAULT_LOG.warn(
+                    "[insert-or-update] config already exists when adding config, try to update. "
+                        + "dataId: {}, group: {}, tenant: {}, msg: {}",
+                    configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                    exception.getMessage());
+                return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
+            }
+            throw exception;
+        }
+    }
+    
+    private ConfigOperateResult addConfigInfoWithConflictOnDuplicateKey(String srcIp,
+        String srcUser,
+        ConfigInfo configInfo, Map<String, Object> configAdvanceInfo) {
+        try {
+            return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+        } catch (DataAccessException exception) {
+            if (isDuplicateKeyException(exception)) {
+                LogUtil.DEFAULT_LOG.warn(
+                    "[insert-or-update-cas] config already exists when adding config. "
+                        + "dataId: {}, group: {}, tenant: {}, msg: {}",
+                    configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                    exception.getMessage());
+                return new ConfigOperateResult(false);
+            }
+            throw exception;
+        }
+    }
+    
+    private boolean isDuplicateKeyException(Throwable exception) {
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof DuplicateKeyException) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
     
     @Override
