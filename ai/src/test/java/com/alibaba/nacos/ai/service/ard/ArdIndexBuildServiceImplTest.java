@@ -217,7 +217,7 @@ class ArdIndexBuildServiceImplTest {
             List.of(new ArdIndexEnhancementContent("SKILL.md", "Create talking avatar videos")));
         when(enhancementService.enhance(any(ArdEntry.class), anyList(), anyList()))
             .thenReturn(List.of(new ArdIndexEnhancementChunk(
-                ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS,
+                ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE,
                 "参数表格 parameter table", "{\"source\":\"llm\"}")));
         when(repository.appendChunks(any(ArdEntry.class), anyList()))
             .thenAnswer(invocation -> {
@@ -244,7 +244,7 @@ class ArdIndexBuildServiceImplTest {
         assertEquals("SKILL.md", contentCaptor.getValue().get(0).getPath());
         verify(repository).appendChunks(any(ArdEntry.class), chunksCaptor.capture());
         assertTrue(chunksCaptor.getValue().stream().anyMatch(
-            chunk -> ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS.equals(chunk.getChunkType())));
+            chunk -> ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE.equals(chunk.getChunkType())));
         verify(vectorIndex).addDocuments(anyList());
     }
     

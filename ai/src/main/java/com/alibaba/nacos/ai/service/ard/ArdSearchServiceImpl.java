@@ -1370,9 +1370,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
 
     private static Map<String, Double> chunkTypeWeights() {
         Map<String, Double> weights = new LinkedHashMap<>();
-        weights.put(ArdIndexConstants.CHUNK_TYPE_EXAMPLE_QUERY, 1.8D);
-        weights.put(ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS, 1.7D);
-        weights.put(ArdIndexConstants.CHUNK_TYPE_CAPABILITY_SYNONYM, 1.5D);
+        weights.put(ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE, 1.7D);
         weights.put(ArdIndexConstants.CHUNK_TYPE_REPRESENTATIVE_QUERY, 1.5D);
         weights.put(ArdIndexConstants.CHUNK_TYPE_CAPABILITY, 1.3D);
         weights.put(ArdIndexConstants.CHUNK_TYPE_DESCRIPTION, 1.1D);

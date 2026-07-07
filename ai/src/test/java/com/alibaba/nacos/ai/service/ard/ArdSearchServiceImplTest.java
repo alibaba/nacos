@@ -159,7 +159,7 @@ class ArdSearchServiceImplTest {
             .thenReturn(List.of(
                 hit(101L, 1.0D, "generic-video", ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT),
                 hit(102L, 0.8D, "avatar-tool",
-                    ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS)));
+                    ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE)));
         when(repository.findEntriesByIds(anyCollection()))
             .thenReturn(List.of(entry(101L, "generic-video"), entry(102L, "avatar-tool")));
         when(resourceManager.findMeta("public", "generic-video",

@@ -43,14 +43,14 @@ class OpenAiCompatibleArdIndexEnhancementServiceTest {
         assertTrue(prompt.contains("must not infer"));
         assertTrue(prompt.contains("unsupported capabilities"));
         assertTrue(prompt.contains("humans or agents"));
-        assertTrue(prompt.contains("formal and colloquial search"));
-        assertTrue(prompt.contains("specific search phrases"));
-        assertTrue(prompt.contains("balanced mix early"));
+        assertTrue(prompt.contains("Search simulation"));
+        assertTrue(prompt.contains("searchPhrases"));
         assertTrue(prompt.contains("Avoid awkward literal translations"));
-        assertTrue(prompt.contains("native-speaker search-box check"));
-        assertTrue(prompt.contains("overly formal terms"));
-        assertTrue(prompt.contains("\"bilingualAliases\""));
-        assertTrue(prompt.contains("\"exampleQueries\""));
+        assertTrue(prompt.contains("native-speaker"));
+        assertTrue(prompt.contains("search-box check"));
+        assertTrue(prompt.contains("\"searchPhrases\""));
+        assertFalse(prompt.contains("\"bilingualAliases\""));
+        assertFalse(prompt.contains("\"exampleQueries\""));
         assertTrue(prompt.contains("Return strict JSON only"));
     }
     
@@ -60,9 +60,8 @@ class OpenAiCompatibleArdIndexEnhancementServiceTest {
             new OpenAiCompatibleArdIndexEnhancementService();
         String content = "```json\n"
             + "{\"summary\":\"支付对账能力\","
-            + "\"bilingualAliases\":[\"支付对账\",\"payment reconciliation\"],"
-            + "\"capabilitySynonyms\":[\"账单核对\"],"
-            + "\"exampleQueries\":[\"find a payment reconcile skill\"]}"
+            + "\"searchPhrases\":[\"支付对账\",\"payment reconciliation\","
+            + "\"find a payment reconcile skill\"]}"
             + "\n```";
         
         List<ArdIndexEnhancementChunk> chunks =
@@ -71,12 +70,7 @@ class OpenAiCompatibleArdIndexEnhancementServiceTest {
         assertTrue(chunks.stream().anyMatch(
             chunk -> ArdIndexConstants.CHUNK_TYPE_AI_SUMMARY.equals(chunk.getChunkType())));
         assertTrue(chunks.stream().anyMatch(
-            chunk -> ArdIndexConstants.CHUNK_TYPE_BILINGUAL_ALIAS.equals(chunk.getChunkType())));
-        assertTrue(chunks.stream().anyMatch(
-            chunk -> ArdIndexConstants.CHUNK_TYPE_CAPABILITY_SYNONYM.equals(
-                chunk.getChunkType())));
-        assertTrue(chunks.stream().anyMatch(
-            chunk -> ArdIndexConstants.CHUNK_TYPE_EXAMPLE_QUERY.equals(chunk.getChunkType())));
+            chunk -> ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE.equals(chunk.getChunkType())));
     }
     
     @Test
