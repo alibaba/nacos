@@ -38,35 +38,37 @@ import java.util.Set;
  * @author nacos
  */
 public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServiceBuilder {
-
+    
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SkillSpectorPipelineServiceBuilder.class);
-
+        LoggerFactory.getLogger(SkillSpectorPipelineServiceBuilder.class);
+    
     private static final String PROPERTY_COMMAND = "command";
-
+    
     private static final String PROPERTY_EXECUTABLE = "executable";
-
+    
     private static final String PROPERTY_PATH = "path";
-
+    
+    private static final String USER_AI_PIPELINE_BIN = "ai-infra/ai-pipeline/bin";
+    
     @Override
     public String pipelineId() {
         return SkillSpectorPipelineService.PIPELINE_ID;
     }
-
+    
     @Override
     public PublishPipelineService build(Properties properties) {
         SkillSpectorScanOptions scanOptions = SkillSpectorScanOptions.fromProperties(properties);
         String resolvedCommand = resolveSkillSpectorCommand(properties);
         if (StringUtils.isBlank(resolvedCommand)) {
             LOGGER.warn("[SkillSpectorPipeline] SkillSpector runtime 未安装，插件将拒绝发布。{}",
-                    SkillSpectorPipelineService.INSTALLATION_HINT);
+                SkillSpectorPipelineService.INSTALLATION_HINT);
         } else {
             LOGGER.info("[SkillSpectorPipeline] SkillSpector runtime 已就绪，runtime={}",
-                    resolvedCommand);
+                resolvedCommand);
         }
         return new SkillSpectorPipelineService(resolvedCommand, scanOptions);
     }
-
+    
     private String resolveSkillSpectorCommand(Properties properties) {
         for (String configured : getConfiguredCandidates(properties)) {
             String resolved = resolveCandidate(configured);
@@ -74,9 +76,9 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
                 return resolved;
             }
         }
-        return null;
+        return resolveCandidate(SkillSpectorPipelineService.DEFAULT_SKILL_SPECTOR_CMD);
     }
-
+    
     private List<String> getConfiguredCandidates(Properties properties) {
         Set<String> result = new LinkedHashSet<>();
         addConfiguredCandidate(result, properties.getProperty(PROPERTY_COMMAND));
@@ -84,13 +86,13 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
         addConfiguredCandidate(result, properties.getProperty(PROPERTY_PATH));
         return new ArrayList<>(result);
     }
-
+    
     private void addConfiguredCandidate(Set<String> candidates, String value) {
         if (StringUtils.isNotBlank(value)) {
             candidates.add(value.trim());
         }
     }
-
+    
     private String resolveCandidate(String candidate) {
         if (StringUtils.isBlank(candidate)) {
             return null;
@@ -104,7 +106,7 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
             LOGGER.debug("[SkillSpectorPipeline] 在 PATH 中未找到命令: {}", expanded);
             return null;
         }
-
+        
         Path path = Paths.get(expanded).toAbsolutePath().normalize();
         if (Files.isRegularFile(path) && Files.isExecutable(path)) {
             return path.toString();
@@ -112,24 +114,23 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
         LOGGER.debug("[SkillSpectorPipeline] SkillSpector 路径不存在或不可执行: {}", path);
         return null;
     }
-
+    
     private String findExecutableInPath(String command) {
         String pathEnv = getPathEnv();
-        if (StringUtils.isBlank(pathEnv)) {
-            return null;
-        }
-
         String userHome = System.getProperty("user.home", "");
         Set<String> directories = new LinkedHashSet<>();
-        for (String each : pathEnv.split(File.pathSeparator)) {
-            if (StringUtils.isNotBlank(each)) {
-                directories.add(each.trim());
+        if (StringUtils.isNotBlank(pathEnv)) {
+            for (String each : pathEnv.split(File.pathSeparator)) {
+                if (StringUtils.isNotBlank(each)) {
+                    directories.add(each.trim());
+                }
             }
         }
         if (StringUtils.isNotBlank(userHome)) {
+            directories.add(Paths.get(userHome, USER_AI_PIPELINE_BIN).toString());
             directories.add(Paths.get(userHome, ".local", "bin").toString());
         }
-
+        
         for (String each : directories) {
             Path path = Paths.get(expandHome(each), command).toAbsolutePath().normalize();
             if (Files.isRegularFile(path) && Files.isExecutable(path)) {
@@ -138,12 +139,12 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
         }
         return null;
     }
-
+    
     private boolean containsPathSeparator(String candidate) {
         return candidate.contains(File.separator) || candidate.contains("/")
-                || candidate.contains("\\");
+            || candidate.contains("\\");
     }
-
+    
     private String expandHome(String candidate) {
         if (candidate.startsWith("~/")) {
             String userHome = System.getProperty("user.home", "");
@@ -153,7 +154,7 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
         }
         return candidate;
     }
-
+    
     String getPathEnv() {
         return System.getenv("PATH");
     }

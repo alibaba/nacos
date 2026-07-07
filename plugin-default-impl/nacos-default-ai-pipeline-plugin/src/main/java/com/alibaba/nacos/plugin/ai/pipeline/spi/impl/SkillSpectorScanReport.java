@@ -40,7 +40,7 @@ final class SkillSpectorScanReport {
     private final List<Finding> findings;
     
     private SkillSpectorScanReport(int riskScore, String riskSeverity,
-            String riskRecommendation, int issueCount, List<Finding> findings) {
+        String riskRecommendation, int issueCount, List<Finding> findings) {
         this.riskScore = riskScore;
         this.riskSeverity = riskSeverity;
         this.riskRecommendation = riskRecommendation;
@@ -52,18 +52,18 @@ final class SkillSpectorScanReport {
         JsonNode root = JacksonUtils.toObj(json);
         JsonNode risk = root.path("risk_assessment");
         int score = root.has("risk_score") ? root.path("risk_score").asInt()
-                : risk.path("score").asInt(-1);
+            : risk.path("score").asInt(-1);
         if (score < 0) {
             throw new IllegalArgumentException("Missing SkillSpector risk score");
         }
         String severity = firstText(root.path("risk_severity"), risk.path("severity"));
         String recommendation = firstText(root.path("risk_recommendation"),
-                risk.path("recommendation"));
+            risk.path("recommendation"));
         JsonNode issues = firstArray(root.path("issues"), root.path("filtered_findings"),
-                root.path("findings"));
+            root.path("findings"));
         List<Finding> findings = parseFindings(issues);
         return new SkillSpectorScanReport(score, severity, recommendation, issues.size(),
-                findings);
+            findings);
     }
     
     private static String firstText(JsonNode first, JsonNode second) {
@@ -137,8 +137,8 @@ final class SkillSpectorScanReport {
         private final String codeSnippet;
         
         private Finding(String id, String category, String severity, String file,
-                int startLine, int endLine, String explanation, String remediation,
-                String codeSnippet) {
+            int startLine, int endLine, String explanation, String remediation,
+            String codeSnippet) {
             this.id = id;
             this.category = category;
             this.severity = severity;
@@ -153,18 +153,18 @@ final class SkillSpectorScanReport {
         private static Finding from(JsonNode issue) {
             JsonNode location = issue.path("location");
             return new Finding(
-                    text(issue, "id", "rule_id"),
-                    text(issue, "category"),
-                    text(issue, "severity"),
-                    firstNonBlank(text(location, "file"), text(issue, "file")),
-                    firstPositive(location.path("start_line").asInt(0),
-                            issue.path("start_line").asInt(0)),
-                    firstPositive(location.path("end_line").asInt(0),
-                            issue.path("end_line").asInt(0)),
-                    firstNonBlank(text(issue, "explanation"), text(issue, "message"),
-                            text(issue, "finding")),
-                    text(issue, "remediation"),
-                    firstNonBlank(text(issue, "code_snippet"), text(issue, "context")));
+                text(issue, "id", "rule_id"),
+                text(issue, "category"),
+                text(issue, "severity"),
+                firstNonBlank(text(location, "file"), text(issue, "file")),
+                firstPositive(location.path("start_line").asInt(0),
+                    issue.path("start_line").asInt(0)),
+                firstPositive(location.path("end_line").asInt(0),
+                    issue.path("end_line").asInt(0)),
+                firstNonBlank(text(issue, "explanation"), text(issue, "message"),
+                    text(issue, "finding")),
+                text(issue, "remediation"),
+                firstNonBlank(text(issue, "code_snippet"), text(issue, "context")));
         }
         
         private static String text(JsonNode node, String... fieldNames) {

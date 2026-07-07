@@ -28,7 +28,6 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -51,7 +50,6 @@ class FilePipelineConfigProviderTest {
     
     private static List<List<NodeTestData>> sampleValidNodeConfigs() {
         List<List<NodeTestData>> lists = new ArrayList<>();
-        lists.add(Collections.emptyList());
         Properties p1 = new Properties();
         p1.setProperty("k1", "v1");
         lists.add(Collections.singletonList(new NodeTestData("scanner", "t", p1)));
@@ -62,6 +60,42 @@ class FilePipelineConfigProviderTest {
             new NodeTestData("alpha", "x", p2),
             new NodeTestData("beta", "y", new Properties())));
         return lists;
+    }
+
+    @Test
+    void defaultTypesShouldBeEnabledWhenTypeUnset() {
+        Properties envProperties = new Properties();
+        envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", "true");
+
+        try (MockedStatic<EnvUtil> envMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<NotifyCenter> notifyMock = Mockito.mockStatic(NotifyCenter.class)) {
+            envMock.when(EnvUtil::getProperties).thenReturn(envProperties);
+
+            FilePipelineConfigProvider provider = createFreshInstance();
+            PipelineConfig config = provider.getConfig();
+
+            assertTrue(config.isEnabled());
+            assertEquals(2, config.getNodes().size());
+            assertNotNull(findNode(config, "skill-spector"));
+            assertNotNull(findNode(config, "skill-scanner"));
+        }
+    }
+
+    @Test
+    void explicitDisableShouldTurnOffDefaultTypes() {
+        Properties envProperties = new Properties();
+        envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", "false");
+
+        try (MockedStatic<EnvUtil> envMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<NotifyCenter> notifyMock = Mockito.mockStatic(NotifyCenter.class)) {
+            envMock.when(EnvUtil::getProperties).thenReturn(envProperties);
+
+            FilePipelineConfigProvider provider = createFreshInstance();
+            PipelineConfig config = provider.getConfig();
+
+            assertFalse(config.isEnabled());
+            assertTrue(config.getNodes().isEmpty());
+        }
     }
     
     private static List<ErrorScenario> sampleErrorScenarios() {
@@ -102,8 +136,6 @@ class FilePipelineConfigProviderTest {
                     
                     FilePipelineConfigProvider provider = createFreshInstance();
                     PipelineConfig config = provider.getConfig();
-                    List<NodeTestData> expectedNodes = new ArrayList<>(nodeConfigs);
-                    expectedNodes.sort(Comparator.comparing(node -> node.pipelineId));
                     
                     assertNotNull(config, "Parsed config should not be null");
                     assertEquals(enabled && !nodeConfigs.isEmpty(), config.isEnabled(),
@@ -113,7 +145,7 @@ class FilePipelineConfigProviderTest {
                         "Number of parsed nodes should match input");
                     
                     for (int i = 0; i < config.getNodes().size(); i++) {
-                        NodeTestData expected = expectedNodes.get(i);
+                        NodeTestData expected = nodeConfigs.get(i);
                         PipelineNodeConfig actual = config.getNodes().get(i);
                         assertEquals(expected.pipelineId, actual.getPipelineId(),
                             "Node pipelineId at index " + i + " should match");

@@ -23,14 +23,12 @@ import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeMap;
 
 /**
  * File-based (application.properties) implementation of {@link PipelineConfigProvider}.
@@ -39,7 +37,7 @@ import java.util.TreeMap;
  * <ul>
  *   <li>{@code nacos.plugin.ai-pipeline.enabled} - optional global switch for ai-pipeline plugin</li>
  *   <li>{@code nacos.plugin.ai-pipeline.type} - enabled implementation type(s), for example
- *   {@code skill-scanner}</li>
+ *   {@code skill-scanner}; default is {@code skill-spector,skill-scanner}</li>
  *   <li>{@code nacos.plugin.ai-pipeline.{type}.order} - optional execution order override;
  *   lower values execute first</li>
  *   <li>{@code nacos.plugin.ai-pipeline.{type}.{key}} - implementation properties passed to builder</li>
@@ -63,6 +61,9 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig
     private static final String KEY_TYPE = KEY_PLUGIN_PREFIX + ".type";
 
     private static final String KEY_ORDER = "order";
+
+    private static final List<String> DEFAULT_TYPES = Collections.unmodifiableList(
+        Arrays.asList("skill-spector", "skill-scanner"));
     
     private static final FilePipelineConfigProvider INSTANCE = new FilePipelineConfigProvider();
     
@@ -119,20 +120,15 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig
             return Collections.emptyList();
         }
         
-        Map<String, Properties> pluginPropertyMap = new TreeMap<>();
+        List<PipelineNodeConfig> nodes = new ArrayList<>(configuredTypes.size());
         for (String typeName : configuredTypes) {
-            pluginPropertyMap.put(typeName, readNodeProperties(typeName, allProperties));
+            Properties nodeProperties = readNodeProperties(typeName, allProperties);
+            PipelineNodeConfig nodeConfig = new PipelineNodeConfig();
+            nodeConfig.setPipelineId(typeName);
+            nodeConfig.setProperties(nodeProperties);
+            nodeConfig.setOrder(parseOrder(nodeProperties.getProperty(KEY_ORDER)));
+            nodes.add(nodeConfig);
         }
-        List<PipelineNodeConfig> nodes = new ArrayList<>(pluginPropertyMap.size());
-        pluginPropertyMap.entrySet().stream()
-            .sorted(Map.Entry.comparingByKey(Comparator.naturalOrder()))
-            .forEach(entry -> {
-                PipelineNodeConfig nodeConfig = new PipelineNodeConfig();
-                nodeConfig.setPipelineId(entry.getKey());
-                nodeConfig.setProperties(entry.getValue());
-                nodeConfig.setOrder(parseOrder(entry.getValue().getProperty(KEY_ORDER)));
-                nodes.add(nodeConfig);
-            });
         return nodes;
     }
     
@@ -147,7 +143,7 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig
     private List<String> readConfiguredTypes(Properties allProperties) {
         String typeValue = allProperties.getProperty(KEY_TYPE);
         if (StringUtils.isBlank(typeValue)) {
-            return Collections.emptyList();
+            return DEFAULT_TYPES;
         }
         Set<String> types = new LinkedHashSet<>();
         for (String each : typeValue.split(",")) {
