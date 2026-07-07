@@ -22,12 +22,13 @@ import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineServiceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 
@@ -37,27 +38,25 @@ import java.util.Set;
  * @author nacos
  */
 public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServiceBuilder {
-    
+
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SkillSpectorPipelineServiceBuilder.class);
-    
-    private static final String NACOS_HOME_PROPERTY = "nacos.home";
-    
-    private static final String RUNTIMES_DIR = "runtimes";
 
-    private static final String AI_PIPELINE_RUNTIME_DIR = "ai-pipeline";
+    private static final String PROPERTY_COMMAND = "command";
 
-    private static final String SKILL_SPECTOR_RUNTIME_DIR = "skill-spector";
-    
+    private static final String PROPERTY_EXECUTABLE = "executable";
+
+    private static final String PROPERTY_PATH = "path";
+
     @Override
     public String pipelineId() {
         return SkillSpectorPipelineService.PIPELINE_ID;
     }
-    
+
     @Override
     public PublishPipelineService build(Properties properties) {
         SkillSpectorScanOptions scanOptions = SkillSpectorScanOptions.fromProperties(properties);
-        String resolvedCommand = resolveSkillSpectorCommand();
+        String resolvedCommand = resolveSkillSpectorCommand(properties);
         if (StringUtils.isBlank(resolvedCommand)) {
             LOGGER.warn("[SkillSpectorPipeline] SkillSpector runtime 未安装，插件将拒绝发布。{}",
                     SkillSpectorPipelineService.INSTALLATION_HINT);
@@ -67,101 +66,45 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
         }
         return new SkillSpectorPipelineService(resolvedCommand, scanOptions);
     }
-    
-    private String resolveSkillSpectorCommand() {
-        for (Path candidate : getBuiltinCandidates()) {
-            String resolved = resolveCandidate(candidate.toString());
+
+    private String resolveSkillSpectorCommand(Properties properties) {
+        for (String configured : getConfiguredCandidates(properties)) {
+            String resolved = resolveCandidate(configured);
             if (StringUtils.isNotBlank(resolved)) {
                 return resolved;
             }
         }
         return null;
     }
-    
-    List<Path> getBuiltinCandidates() {
-        Set<Path> candidates = new LinkedHashSet<>();
-        addBuiltinCandidates(candidates, System.getProperty(NACOS_HOME_PROPERTY));
-        addBuiltinCandidates(candidates, System.getProperty("user.dir"));
-        return List.copyOf(candidates);
+
+    private List<String> getConfiguredCandidates(Properties properties) {
+        Set<String> result = new LinkedHashSet<>();
+        addConfiguredCandidate(result, properties.getProperty(PROPERTY_COMMAND));
+        addConfiguredCandidate(result, properties.getProperty(PROPERTY_EXECUTABLE));
+        addConfiguredCandidate(result, properties.getProperty(PROPERTY_PATH));
+        return new ArrayList<>(result);
     }
-    
-    private void addBuiltinCandidates(Set<Path> candidates, String baseDir) {
-        if (StringUtils.isBlank(baseDir)) {
-            return;
+
+    private void addConfiguredCandidate(Set<String> candidates, String value) {
+        if (StringUtils.isNotBlank(value)) {
+            candidates.add(value.trim());
         }
-        Path base = Paths.get(baseDir).toAbsolutePath().normalize();
-        Path runtimeRoot = base.resolve(RUNTIMES_DIR).resolve(AI_PIPELINE_RUNTIME_DIR);
-        addRuntimeRootCandidates(candidates, runtimeRoot.resolve(SKILL_SPECTOR_RUNTIME_DIR));
     }
-    
-    private void addRuntimeRootCandidates(Set<Path> candidates, Path root) {
-        if (!hasPlatformRuntime(root)) {
-            LOGGER.debug("[SkillSpectorPipeline] SkillSpector 平台 runtime 不存在或不可执行: {}",
-                    root.resolve("runtime").resolve(platformKey()));
-            return;
-        }
-        candidates.add(root.resolve("bin").resolve(executableName("skill-spector")));
-    }
-    
-    boolean hasPlatformRuntime(Path root) {
-        Path runtimeRoot = root.resolve("runtime").resolve(platformKey());
-        for (Path candidate : runtimePythonCandidates(runtimeRoot)) {
-            if (Files.isRegularFile(candidate) && Files.isExecutable(candidate)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private List<Path> runtimePythonCandidates(Path runtimeRoot) {
-        if (isWindows()) {
-            return List.of(
-                    runtimeRoot.resolve("python").resolve("python.exe"),
-                    runtimeRoot.resolve("python").resolve("bin").resolve("python.exe"),
-                    runtimeRoot.resolve("venv").resolve("Scripts").resolve("python.exe"),
-                    runtimeRoot.resolve("bin").resolve("python.exe"));
-        }
-        return List.of(
-                runtimeRoot.resolve("python").resolve("bin").resolve("python3"),
-                runtimeRoot.resolve("python").resolve("bin").resolve("python"),
-                runtimeRoot.resolve("venv").resolve("bin").resolve("python3"),
-                runtimeRoot.resolve("bin").resolve("python3"));
-    }
-    
-    String platformKey() {
-        return osKey() + "-" + archKey();
-    }
-    
-    private String osKey() {
-        String osName = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
-        if (osName.contains("win")) {
-            return "windows";
-        }
-        if (osName.contains("mac") || osName.contains("darwin")) {
-            return "darwin";
-        }
-        if (osName.contains("linux")) {
-            return "linux";
-        }
-        return osName.replaceAll("[^a-z0-9]+", "-");
-    }
-    
-    private String archKey() {
-        String arch = System.getProperty("os.arch", "").toLowerCase(Locale.ROOT);
-        if ("amd64".equals(arch) || "x86_64".equals(arch)) {
-            return "x86_64";
-        }
-        if ("aarch64".equals(arch) || "arm64".equals(arch)) {
-            return "aarch64";
-        }
-        return arch.replaceAll("[^a-z0-9_]+", "-");
-    }
-    
+
     private String resolveCandidate(String candidate) {
         if (StringUtils.isBlank(candidate)) {
             return null;
         }
         String expanded = expandHome(candidate.trim());
+        if (!containsPathSeparator(expanded)) {
+            String pathResolved = findExecutableInPath(expanded);
+            if (StringUtils.isNotBlank(pathResolved)) {
+                return pathResolved;
+            }
+            LOGGER.debug("[SkillSpectorPipeline] 在 PATH 中未找到命令: {}", expanded);
+            return null;
+        }
+
         Path path = Paths.get(expanded).toAbsolutePath().normalize();
         if (Files.isRegularFile(path) && Files.isExecutable(path)) {
             return path.toString();
@@ -169,18 +112,38 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
         LOGGER.debug("[SkillSpectorPipeline] SkillSpector 路径不存在或不可执行: {}", path);
         return null;
     }
-    
-    private String executableName(String baseName) {
-        if (isWindows()) {
-            return baseName + ".exe";
+
+    private String findExecutableInPath(String command) {
+        String pathEnv = getPathEnv();
+        if (StringUtils.isBlank(pathEnv)) {
+            return null;
         }
-        return baseName;
+
+        String userHome = System.getProperty("user.home", "");
+        Set<String> directories = new LinkedHashSet<>();
+        for (String each : pathEnv.split(File.pathSeparator)) {
+            if (StringUtils.isNotBlank(each)) {
+                directories.add(each.trim());
+            }
+        }
+        if (StringUtils.isNotBlank(userHome)) {
+            directories.add(Paths.get(userHome, ".local", "bin").toString());
+        }
+
+        for (String each : directories) {
+            Path path = Paths.get(expandHome(each), command).toAbsolutePath().normalize();
+            if (Files.isRegularFile(path) && Files.isExecutable(path)) {
+                return path.toString();
+            }
+        }
+        return null;
     }
-    
-    private boolean isWindows() {
-        return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
+
+    private boolean containsPathSeparator(String candidate) {
+        return candidate.contains(File.separator) || candidate.contains("/")
+                || candidate.contains("\\");
     }
-    
+
     private String expandHome(String candidate) {
         if (candidate.startsWith("~/")) {
             String userHome = System.getProperty("user.home", "");
@@ -189,5 +152,9 @@ public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServic
             }
         }
         return candidate;
+    }
+
+    String getPathEnv() {
+        return System.getenv("PATH");
     }
 }
