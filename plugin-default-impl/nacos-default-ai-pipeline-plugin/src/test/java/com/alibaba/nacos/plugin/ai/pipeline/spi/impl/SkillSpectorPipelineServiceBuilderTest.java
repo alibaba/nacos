@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,23 +38,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author nacos
  */
 class SkillSpectorPipelineServiceBuilderTest {
-    
+
     private SkillSpectorPipelineServiceBuilder builder;
-    
+
     @BeforeEach
     void setUp() {
         builder = new SkillSpectorPipelineServiceBuilder();
     }
-    
+
     @Test
     void pipelineIdTest() {
         assertEquals("skill-spector", builder.pipelineId());
     }
-    
+
     @Test
     void buildTest() {
         PublishPipelineService service = builder.build(new Properties());
-        
+
         assertNotNull(service);
         assertEquals("skill-spector", service.pipelineId());
         assertTrue(Arrays.asList(service.pipelineResourceTypes())
@@ -66,9 +65,9 @@ class SkillSpectorPipelineServiceBuilderTest {
                 .contains(PublishPipelineResourceType.PROMPT));
         assertEquals(90, service.getPreferOrder());
     }
-    
+
     @Test
-    void buildIgnoresExternalCommandTest() throws Exception {
+    void buildWithConfiguredCommandTest() throws Exception {
         Path runner = createExecutable(Files.createTempDirectory("nacos-skillspector"),
                 "skillspector");
         Path emptyHome = Files.createTempDirectory("nacos-home");
@@ -79,61 +78,36 @@ class SkillSpectorPipelineServiceBuilderTest {
         try {
             System.setProperty("nacos.home", emptyHome.toString());
             System.setProperty("user.dir", emptyHome.toString());
-            
+
             PublishPipelineService service = builder.build(properties);
-            
-            PublishPipelineResult result = service.execute(new PublishPipelineContext());
-            assertFalse(result.isPassed());
-            assertTrue(result.getMessage().contains("SkillSpector runtime 未安装"));
-        } finally {
-            restoreSystemProperty("nacos.home", oldNacosHome);
-            restoreSystemProperty("user.dir", oldUserDir);
-        }
-    }
-    
-    @Test
-    void buildWithInstalledRuntimeTest() throws Exception {
-        Path nacosHome = Files.createTempDirectory("nacos-home");
-        Path runner = nacosHome.resolve("runtimes").resolve("ai-pipeline")
-                .resolve("skill-spector").resolve("bin").resolve("skill-spector");
-        createPlatformRuntime(nacosHome.resolve("runtimes").resolve("ai-pipeline")
-                .resolve("skill-spector"));
-        createExecutable(runner.getParent(), runner.getFileName().toString());
-        String oldNacosHome = System.getProperty("nacos.home");
-        System.setProperty("nacos.home", nacosHome.toString());
-        try {
-            PublishPipelineService service = builder.build(new Properties());
-            
+
             PublishPipelineResult result = service.execute(new PublishPipelineContext());
             assertTrue(result.isPassed(), result.getMessage());
         } finally {
             restoreSystemProperty("nacos.home", oldNacosHome);
-        }
-    }
-    
-    @Test
-    void buildRejectsRunnerWithoutPlatformRuntimeTest() throws Exception {
-        Path nacosHome = Files.createTempDirectory("nacos-home");
-        Path runner = nacosHome.resolve("runtimes").resolve("ai-pipeline")
-                .resolve("skill-spector").resolve("bin").resolve("skill-spector");
-        createExecutable(runner.getParent(), runner.getFileName().toString());
-        String oldNacosHome = System.getProperty("nacos.home");
-        String oldUserDir = System.getProperty("user.dir");
-        try {
-            System.setProperty("nacos.home", nacosHome.toString());
-            System.setProperty("user.dir", nacosHome.toString());
-            
-            PublishPipelineService service = builder.build(new Properties());
-            
-            PublishPipelineResult result = service.execute(new PublishPipelineContext());
-            assertFalse(result.isPassed());
-            assertTrue(result.getMessage().contains("SkillSpector runtime 未安装"));
-        } finally {
-            restoreSystemProperty("nacos.home", oldNacosHome);
             restoreSystemProperty("user.dir", oldUserDir);
         }
     }
-    
+
+    @Test
+    void buildWithHomeExpandedCommandTest() throws Exception {
+        Path home = Files.createTempDirectory("nacos-skillspector-home");
+        Path runner = createExecutable(home, "skill-spector");
+        String oldUserHome = System.getProperty("user.home");
+        try {
+            System.setProperty("user.home", home.toString());
+            Properties properties = new Properties();
+            properties.setProperty("command", "~/" + runner.getFileName());
+
+            PublishPipelineService service = builder.build(properties);
+
+            PublishPipelineResult result = service.execute(new PublishPipelineContext());
+            assertTrue(result.isPassed(), result.getMessage());
+        } finally {
+            restoreSystemProperty("user.home", oldUserHome);
+        }
+    }
+
     private void restoreSystemProperty(String key, String value) {
         if (value == null) {
             System.clearProperty(key);
@@ -141,18 +115,12 @@ class SkillSpectorPipelineServiceBuilderTest {
             System.setProperty(key, value);
         }
     }
-    
+
     private Path createExecutable(Path dir, String name) throws Exception {
         Files.createDirectories(dir);
         Path runner = dir.resolve(name);
         Files.write(runner, Arrays.asList("#!/bin/sh", "exit 0"));
         assertTrue(runner.toFile().setExecutable(true));
         return runner;
-    }
-    
-    private void createPlatformRuntime(Path runtimeRoot) throws Exception {
-        Path python = runtimeRoot.resolve("runtime").resolve(builder.platformKey())
-                .resolve("python").resolve("bin").resolve("python3");
-        createExecutable(python.getParent(), python.getFileName().toString());
     }
 }
