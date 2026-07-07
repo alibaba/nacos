@@ -32,22 +32,6 @@
 
         <fileSet>
             <includes>
-                <include>runtimes/**</include>
-            </includes>
-            <excludes>
-                <exclude>runtimes/**/bin/*</exclude>
-            </excludes>
-        </fileSet>
-
-        <fileSet>
-            <includes>
-                <include>runtimes/**/bin/*</include>
-            </includes>
-            <fileMode>0755</fileMode>
-        </fileSet>
-
-        <fileSet>
-            <includes>
                 <include>conf/**</include>
             </includes>
         </fileSet>
