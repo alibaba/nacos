@@ -274,7 +274,7 @@ public interface SkillMaintainerService {
      * @return skill name
      * @throws NacosException if fail to upload skill
      */
-    @Since("3.2.3")
+    @Since("3.3.0")
     default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
         String targetVersion, String commitMsg, String uploadAction)
         throws NacosException {
@@ -288,7 +288,7 @@ public interface SkillMaintainerService {
      * @return list of precheck results in the same order as input
      * @throws NacosException if precheck failed unexpectedly
      */
-    @Since("3.2.3")
+    @Since("3.3.0")
     default java.util.List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
         java.util.List<SkillUploadPrecheckRequest> requests) throws NacosException {
         return java.util.Collections.emptyList();
