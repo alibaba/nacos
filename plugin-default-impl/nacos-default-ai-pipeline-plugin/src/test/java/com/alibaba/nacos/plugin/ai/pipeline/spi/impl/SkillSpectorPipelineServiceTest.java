@@ -46,28 +46,28 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void pipelineMetadataTest() {
         SkillSpectorPipelineService service = createStubService(StubScanMode.PASS_LOW_RISK,
-                SkillSpectorScanOptions.none());
+            SkillSpectorScanOptions.none());
         
         assertEquals("skill-spector", service.pipelineId());
         assertEquals(90, service.getPreferOrder());
         assertTrue(Arrays.asList(service.pipelineResourceTypes())
-                .contains(PublishPipelineResourceType.SKILL));
+            .contains(PublishPipelineResourceType.SKILL));
         assertTrue(Arrays.asList(service.pipelineResourceTypes())
-                .contains(PublishPipelineResourceType.AGENTSPEC));
+            .contains(PublishPipelineResourceType.AGENTSPEC));
         assertTrue(Arrays.asList(service.pipelineResourceTypes())
-                .contains(PublishPipelineResourceType.PROMPT));
+            .contains(PublishPipelineResourceType.PROMPT));
     }
     
     @Test
     void buildScanCommandStaticOnlyTest() {
         SkillSpectorPipelineService service = new SkillSpectorPipelineService("skillspector",
-                SkillSpectorScanOptions.none());
+            SkillSpectorScanOptions.none());
         
         List<String> command = service.buildScanCommand(Path.of("/tmp/skill"),
-                Path.of("/tmp/report.json"));
+            Path.of("/tmp/report.json"));
         
         assertEquals(List.of("skillspector", "scan", "/tmp/skill", "--format", "json",
-                "--output", "/tmp/report.json", "--no-llm"), command);
+            "--output", "/tmp/report.json", "--no-llm"), command);
     }
     
     @Test
@@ -75,10 +75,10 @@ class SkillSpectorPipelineServiceTest {
         Properties properties = new Properties();
         properties.setProperty(SkillSpectorScanOptions.PROP_USE_LLM, "true");
         SkillSpectorPipelineService service = new SkillSpectorPipelineService("skillspector",
-                SkillSpectorScanOptions.fromProperties(properties));
+            SkillSpectorScanOptions.fromProperties(properties));
         
         List<String> command = service.buildScanCommand(Path.of("/tmp/skill"),
-                Path.of("/tmp/report.json"));
+            Path.of("/tmp/report.json"));
         
         assertFalse(command.contains("--no-llm"));
     }
@@ -86,7 +86,7 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executePassesWhenRiskScoreWithinDefaultThresholdTest() {
         PublishPipelineResult result = createStubService(StubScanMode.PASS_LOW_RISK,
-                SkillSpectorScanOptions.none()).execute(createSkillContext("low-risk"));
+            SkillSpectorScanOptions.none()).execute(createSkillContext("low-risk"));
         
         assertNotNull(result);
         assertTrue(result.isPassed(), result.getMessage());
@@ -101,7 +101,7 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executeRejectsWhenRiskScoreExceedsDefaultThresholdTest() {
         PublishPipelineResult result = createStubService(StubScanMode.REJECT_HIGH_RISK,
-                SkillSpectorScanOptions.none()).execute(createSkillContext("high-risk"));
+            SkillSpectorScanOptions.none()).execute(createSkillContext("high-risk"));
         
         assertNotNull(result);
         assertFalse(result.isPassed(), result.getMessage());
@@ -116,7 +116,7 @@ class SkillSpectorPipelineServiceTest {
         Properties properties = new Properties();
         properties.setProperty(SkillSpectorScanOptions.PROP_MAX_FINDINGS_KEBAB, "2");
         PublishPipelineResult result = createStubService(StubScanMode.REJECT_MANY_FINDINGS,
-                SkillSpectorScanOptions.fromProperties(properties)).execute(createSkillContext("many"));
+            SkillSpectorScanOptions.fromProperties(properties)).execute(createSkillContext("many"));
         
         assertNotNull(result);
         assertFalse(result.isPassed(), result.getMessage());
@@ -131,7 +131,8 @@ class SkillSpectorPipelineServiceTest {
         Properties properties = new Properties();
         properties.setProperty(SkillSpectorScanOptions.PROP_RISK_SCORE_THRESHOLD_KEBAB, "80");
         PublishPipelineResult result = createStubService(StubScanMode.REJECT_HIGH_RISK,
-                SkillSpectorScanOptions.fromProperties(properties)).execute(createSkillContext("high-risk"));
+            SkillSpectorScanOptions.fromProperties(properties))
+            .execute(createSkillContext("high-risk"));
         
         assertNotNull(result);
         assertTrue(result.isPassed(), result.getMessage());
@@ -141,7 +142,7 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executeRejectsOnCliErrorTest() {
         PublishPipelineResult result = createStubService(StubScanMode.CLI_ERROR,
-                SkillSpectorScanOptions.none()).execute(createSkillContext("cli-error"));
+            SkillSpectorScanOptions.none()).execute(createSkillContext("cli-error"));
         
         assertNotNull(result);
         assertFalse(result.isPassed());
@@ -151,7 +152,7 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executeRejectsWithOutputWhenCliExitOneWithoutReportTest() {
         PublishPipelineResult result = createStubService(StubScanMode.CLI_EXIT_ONE_WITHOUT_REPORT,
-                SkillSpectorScanOptions.none()).execute(createSkillContext("missing-report"));
+            SkillSpectorScanOptions.none()).execute(createSkillContext("missing-report"));
         
         assertNotNull(result);
         assertFalse(result.isPassed());
@@ -162,7 +163,7 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executeAgentSpecGeneratesSkillMdTest() {
         PublishPipelineResult result = createStubService(StubScanMode.PASS_AGENTSPEC,
-                SkillSpectorScanOptions.none()).execute(createAgentSpecContext("agent"));
+            SkillSpectorScanOptions.none()).execute(createAgentSpecContext("agent"));
         
         assertNotNull(result);
         assertTrue(result.isPassed(), result.getMessage());
@@ -171,7 +172,7 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executePromptGeneratesSkillMdTest() {
         PublishPipelineResult result = createStubService(StubScanMode.PASS_PROMPT,
-                SkillSpectorScanOptions.none()).execute(createPromptContext("prompt"));
+            SkillSpectorScanOptions.none()).execute(createPromptContext("prompt"));
         
         assertNotNull(result);
         assertTrue(result.isPassed(), result.getMessage());
@@ -187,8 +188,8 @@ class SkillSpectorPipelineServiceTest {
         SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
         
         PublishPipelineResult result =
-                createStubService(StubScanMode.VERIFY_LLM_ENV, options)
-                        .execute(createSkillContext("llm"));
+            createStubService(StubScanMode.VERIFY_LLM_ENV, options)
+                .execute(createSkillContext("llm"));
         
         assertNotNull(result);
         assertTrue(result.isPassed(), result.getMessage());
@@ -197,26 +198,26 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executeSkipsUnsafeAndBlankFilePathsTest() {
         SkillPipelineContext context = createSkillContext("path-boundary", Arrays.asList(
-                new ResourceFileContent(null, "ignored"),
-                new ResourceFileContent("", "ignored"),
-                new ResourceFileContent("../evil.txt", "ignored"),
-                new ResourceFileContent("valid.txt", null)));
+            new ResourceFileContent(null, "ignored"),
+            new ResourceFileContent("", "ignored"),
+            new ResourceFileContent("../evil.txt", "ignored"),
+            new ResourceFileContent("valid.txt", null)));
         
         PublishPipelineResult result = createStubService(StubScanMode.PASS_SKIPPED_FILES,
-                SkillSpectorScanOptions.none()).execute(context);
+            SkillSpectorScanOptions.none()).execute(context);
         
         assertNotNull(result);
         assertTrue(result.isPassed(), result.getMessage());
     }
     
     private SkillSpectorPipelineService createStubService(StubScanMode mode,
-            SkillSpectorScanOptions options) {
+        SkillSpectorScanOptions options) {
         return new StubSkillSpectorPipelineService(mode, options);
     }
     
     private SkillPipelineContext createSkillContext(String name) {
         return createSkillContext(name, List.of(new ResourceFileContent("SKILL.md",
-                "---\nname: " + name + "\n---\n\nhello")));
+            "---\nname: " + name + "\n---\n\nhello")));
     }
     
     private SkillPipelineContext createSkillContext(String name, List<ResourceFileContent> files) {
@@ -235,8 +236,8 @@ class SkillSpectorPipelineServiceTest {
         context.setNamespaceId("public");
         context.setVersion("v1");
         context.setFiles(List.of(
-                new ResourceFileContent("manifest.json", "{\"name\":\"" + name + "\"}"),
-                new ResourceFileContent("config/SOUL.md", "helpful assistant")));
+            new ResourceFileContent("manifest.json", "{\"name\":\"" + name + "\"}"),
+            new ResourceFileContent("config/SOUL.md", "helpful assistant")));
         return context;
     }
     
@@ -247,7 +248,7 @@ class SkillSpectorPipelineServiceTest {
         context.setNamespaceId("public");
         context.setVersion("v1");
         context.setFiles(List.of(new ResourceFileContent("prompt-main.json",
-                "{\"template\":\"helpful assistant\"}")));
+            "{\"template\":\"helpful assistant\"}")));
         return context;
     }
     
@@ -268,7 +269,7 @@ class SkillSpectorPipelineServiceTest {
         private final StubScanMode mode;
         
         private StubSkillSpectorPipelineService(StubScanMode mode,
-                SkillSpectorScanOptions options) {
+            SkillSpectorScanOptions options) {
             super("stub-skillspector", options);
             this.mode = mode;
         }
@@ -276,14 +277,14 @@ class SkillSpectorPipelineServiceTest {
         @Override
         List<String> buildScanCommand(Path tempDir, Path reportPath) {
             return Arrays.asList(currentJavaBinary(), "-cp",
-                    System.getProperty("java.class.path"),
-                    FakeSkillSpectorCli.class.getName(), mode.name(),
-                    tempDir.toAbsolutePath().toString(), reportPath.toAbsolutePath().toString());
+                System.getProperty("java.class.path"),
+                FakeSkillSpectorCli.class.getName(), mode.name(),
+                tempDir.toAbsolutePath().toString(), reportPath.toAbsolutePath().toString());
         }
         
         private static String currentJavaBinary() {
             String executable = System.getProperty("os.name", "").toLowerCase().contains("win")
-                    ? "java.exe" : "java";
+                ? "java.exe" : "java";
             return Path.of(System.getProperty("java.home"), "bin", executable).toString();
         }
     }
@@ -315,13 +316,13 @@ class SkillSpectorPipelineServiceTest {
                     return;
                 case PASS_AGENTSPEC:
                     requireContains(root.resolve("SKILL.md"),
-                            "Generated from AgentSpec pipeline context");
+                        "Generated from AgentSpec pipeline context");
                     requireContains(root.resolve("SKILL.md"), "File: config/SOUL.md");
                     writeReport(reportPath, 10, "LOW", "SAFE", 0);
                     return;
                 case PASS_PROMPT:
                     requireContains(root.resolve("SKILL.md"),
-                            "Generated from Prompt pipeline context");
+                        "Generated from Prompt pipeline context");
                     requireContains(root.resolve("SKILL.md"), "File: prompt-main.json");
                     writeReport(reportPath, 10, "LOW", "SAFE", 0);
                     return;
@@ -346,26 +347,26 @@ class SkillSpectorPipelineServiceTest {
         }
         
         private static void writeReport(Path reportPath, int score, String severity,
-                String recommendation, int issueCount) throws Exception {
+            String recommendation, int issueCount) throws Exception {
             StringBuilder issues = new StringBuilder("[");
             for (int i = 0; i < issueCount; i++) {
                 if (i > 0) {
                     issues.append(",");
                 }
                 issues.append("{\"id\":\"R").append(i)
-                        .append("\",\"category\":\"prompt-injection\"")
-                        .append(",\"severity\":\"HIGH\"")
-                        .append(",\"location\":{\"file\":\"SKILL.md\"")
-                        .append(",\"start_line\":3,\"end_line\":4}")
-                        .append(",\"explanation\":\"explanation R").append(i).append("\"")
-                        .append(",\"remediation\":\"fix R").append(i).append("\"")
-                        .append(",\"code_snippet\":\"snippet R").append(i).append("\"}");
+                    .append("\",\"category\":\"prompt-injection\"")
+                    .append(",\"severity\":\"HIGH\"")
+                    .append(",\"location\":{\"file\":\"SKILL.md\"")
+                    .append(",\"start_line\":3,\"end_line\":4}")
+                    .append(",\"explanation\":\"explanation R").append(i).append("\"")
+                    .append(",\"remediation\":\"fix R").append(i).append("\"")
+                    .append(",\"code_snippet\":\"snippet R").append(i).append("\"}");
             }
             issues.append("]");
             String report = "{\"risk_assessment\":{\"score\":" + score
-                    + ",\"severity\":\"" + severity
-                    + "\",\"recommendation\":\"" + recommendation
-                    + "\"},\"issues\":" + issues + "}";
+                + ",\"severity\":\"" + severity
+                + "\",\"recommendation\":\"" + recommendation
+                + "\"},\"issues\":" + issues + "}";
             Files.writeString(reportPath, report, StandardCharsets.UTF_8);
         }
         
@@ -373,7 +374,7 @@ class SkillSpectorPipelineServiceTest {
             String content = Files.readString(path, StandardCharsets.UTF_8);
             if (!content.contains(expected)) {
                 throw new IllegalStateException(
-                        "Expected '" + expected + "' in " + path + ", actual=" + content);
+                    "Expected '" + expected + "' in " + path + ", actual=" + content);
             }
         }
         
@@ -381,7 +382,7 @@ class SkillSpectorPipelineServiceTest {
             String content = Files.readString(path, StandardCharsets.UTF_8);
             if (!content.isEmpty()) {
                 throw new IllegalStateException(
-                        "Expected empty content in " + path + ", actual=" + content);
+                    "Expected empty content in " + path + ", actual=" + content);
             }
         }
         
@@ -395,7 +396,7 @@ class SkillSpectorPipelineServiceTest {
             String actual = System.getenv(key);
             if (!expected.equals(actual)) {
                 throw new IllegalStateException(
-                        "Expected env " + key + "=" + expected + ", actual=" + actual);
+                    "Expected env " + key + "=" + expected + ", actual=" + actual);
             }
         }
     }

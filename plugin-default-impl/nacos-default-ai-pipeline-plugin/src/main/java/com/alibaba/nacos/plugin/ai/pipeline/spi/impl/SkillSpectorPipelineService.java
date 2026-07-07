@@ -47,6 +47,8 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     
     static final String PIPELINE_ID = "skill-spector";
     
+    static final String DEFAULT_SKILL_SPECTOR_CMD = "skill-spector";
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillSpectorPipelineService.class);
     
     private static final String CHECKPOINT_AVAILABILITY = "SkillSpector runtime 安装状态";
@@ -60,8 +62,9 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     private static final int MAX_FIELD_LENGTH = 240;
     
     static final String INSTALLATION_HINT =
-            "SkillSpector runtime 未安装。请先通过 nacos-setup skill-spector install 安装，"
-                    + "并配置 nacos.plugin.ai-pipeline.skill-spector.command。";
+        "SkillSpector runtime 未安装。请先通过 nacos-setup skill-spector install 安装，"
+            + "默认路径为 ~/ai-infra/ai-pipeline/bin/skill-spector；"
+            + "如需自定义路径，请配置 nacos.plugin.ai-pipeline.skill-spector.command。";
     
     private final String scannerCommand;
     
@@ -81,20 +84,20 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     public PublishPipelineResult execute(PublishPipelineContext context) {
         if (scannerCommand == null || scannerCommand.isBlank()) {
             return PublishPipelineResult.reject(INSTALLATION_HINT,
-                    PublishPipelineMessageType.MARKDOWN,
-                    List.of(new Checkpoint(CHECKPOINT_AVAILABILITY, false)));
+                PublishPipelineMessageType.MARKDOWN,
+                List.of(new Checkpoint(CHECKPOINT_AVAILABILITY, false)));
         }
         if (!(context instanceof ResourceFilesPipelineContext)) {
             return PublishPipelineResult.pass("资源不包含可扫描文件，跳过 SkillSpector 扫描",
-                    PublishPipelineMessageType.MARKDOWN,
-                    List.of(new Checkpoint(CHECKPOINT_APPLICABILITY, true)));
+                PublishPipelineMessageType.MARKDOWN,
+                List.of(new Checkpoint(CHECKPOINT_APPLICABILITY, true)));
         }
         ResourceFilesPipelineContext resourceContext = (ResourceFilesPipelineContext) context;
         List<ResourceFileContent> files = resourceContext.getFiles();
         if (files == null || files.isEmpty()) {
             return PublishPipelineResult.pass("资源无文件内容，跳过扫描",
-                    PublishPipelineMessageType.MARKDOWN,
-                    List.of(new Checkpoint(CHECKPOINT_APPLICABILITY, true)));
+                PublishPipelineMessageType.MARKDOWN,
+                List.of(new Checkpoint(CHECKPOINT_APPLICABILITY, true)));
         }
         
         Path tempDir = null;
@@ -108,32 +111,32 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             int exitCode = waitForProcess(process);
             if (exitCode != 0 && exitCode != 1) {
                 return rejectRuntimeFailure("SkillSpector 扫描失败，exitCode=" + exitCode
-                        + "\n输出:\n" + scanOutput);
+                    + "\n输出:\n" + scanOutput);
             }
             if (!Files.isRegularFile(reportPath)) {
                 return rejectRuntimeFailure("SkillSpector 未生成扫描报告，exitCode=" + exitCode
-                        + "\n输出:\n" + scanOutput);
+                    + "\n输出:\n" + scanOutput);
             }
             
             SkillSpectorScanReport report = parseReport(reportPath);
             if (report.getRiskScore() > scanOptions.getRiskScoreThreshold()) {
                 LOGGER.warn("[SkillSpectorPipeline] {} {} risk_score={} 超过阈值 {}",
-                        context.getResourceType(), resourceContext.getResourceName(),
-                        report.getRiskScore(), scanOptions.getRiskScoreThreshold());
+                    context.getResourceType(), resourceContext.getResourceName(),
+                    report.getRiskScore(), scanOptions.getRiskScoreThreshold());
                 return PublishPipelineResult.reject(buildRejectMessage(report),
-                        PublishPipelineMessageType.MARKDOWN,
-                        List.of(new Checkpoint(CHECKPOINT_RISK_SCORE, false)));
+                    PublishPipelineMessageType.MARKDOWN,
+                    List.of(new Checkpoint(CHECKPOINT_RISK_SCORE, false)));
             }
             return PublishPipelineResult.pass(buildPassMessage(report),
-                    PublishPipelineMessageType.MARKDOWN,
-                    List.of(new Checkpoint(CHECKPOINT_RISK_SCORE, true)));
+                PublishPipelineMessageType.MARKDOWN,
+                List.of(new Checkpoint(CHECKPOINT_RISK_SCORE, true)));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOGGER.error("[SkillSpectorPipeline] 扫描被中断", e);
             return rejectRuntimeFailure("SkillSpector 扫描被中断: " + e.getMessage());
         } catch (IOException | IllegalArgumentException e) {
             LOGGER.warn("[SkillSpectorPipeline] 执行 SkillSpector runtime 失败, runtime={}: {}",
-                    scannerCommand, e.getMessage());
+                scannerCommand, e.getMessage());
             return rejectRuntimeFailure("执行 SkillSpector runtime 失败: " + e.getMessage());
         } finally {
             if (tempDir != null) {
@@ -176,7 +179,7 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     private String readOutput(Process process) throws IOException {
         StringBuilder output = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 output.append(line).append("\n");
@@ -187,25 +190,25 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     
     private PublishPipelineResult rejectRuntimeFailure(String message) {
         return PublishPipelineResult.reject(message, PublishPipelineMessageType.MARKDOWN,
-                List.of(new Checkpoint(CHECKPOINT_RUNTIME, false)));
+            List.of(new Checkpoint(CHECKPOINT_RUNTIME, false)));
     }
     
     private String buildPassMessage(SkillSpectorScanReport report) {
         return "SkillSpector 扫描通过，risk_score=" + report.getRiskScore()
-                + "，阈值=" + scanOptions.getRiskScoreThreshold()
-                + "，风险等级=" + report.getRiskSeverity()
-                + "，问题数=" + report.getIssueCount()
-                + buildFindingsMessage(report);
+            + "，阈值=" + scanOptions.getRiskScoreThreshold()
+            + "，风险等级=" + report.getRiskSeverity()
+            + "，问题数=" + report.getIssueCount()
+            + buildFindingsMessage(report);
     }
     
     private String buildRejectMessage(SkillSpectorScanReport report) {
         return "SkillSpector 检测到安全风险，发布被拒绝。\n\n"
-                + "- risk_score: " + report.getRiskScore() + "\n"
-                + "- threshold: " + scanOptions.getRiskScoreThreshold() + "\n"
-                + "- severity: " + report.getRiskSeverity() + "\n"
-                + "- recommendation: " + report.getRiskRecommendation() + "\n"
-                + "- issues: " + report.getIssueCount()
-                + buildFindingsMessage(report);
+            + "- risk_score: " + report.getRiskScore() + "\n"
+            + "- threshold: " + scanOptions.getRiskScoreThreshold() + "\n"
+            + "- severity: " + report.getRiskSeverity() + "\n"
+            + "- recommendation: " + report.getRiskRecommendation() + "\n"
+            + "- issues: " + report.getIssueCount()
+            + buildFindingsMessage(report);
     }
     
     private String buildFindingsMessage(SkillSpectorScanReport report) {
@@ -215,7 +218,7 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
         List<SkillSpectorScanReport.Finding> findings = report.getFindings();
         if (findings.isEmpty()) {
             return "\n\n## 扫描结果\n\nSkillSpector 返回了 " + report.getIssueCount()
-                    + " 个问题，但报告中没有包含可展示的明细。";
+                + " 个问题，但报告中没有包含可展示的明细。";
         }
         StringBuilder builder = new StringBuilder("\n\n## 扫描结果\n\n");
         int limit = Math.min(findings.size(), scanOptions.getMaxFindings());
@@ -224,18 +227,18 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
         }
         if (findings.size() > limit) {
             builder.append("\n仅展示前 ").append(limit).append(" 条，共 ")
-                    .append(findings.size()).append(" 条问题。");
+                .append(findings.size()).append(" 条问题。");
         }
         return builder.toString();
     }
     
     private void appendFinding(StringBuilder builder, int index,
-            SkillSpectorScanReport.Finding finding) {
+        SkillSpectorScanReport.Finding finding) {
         builder.append(index).append(". **")
-                .append(defaultText(finding.getSeverity(), "UNKNOWN"))
-                .append(" / ")
-                .append(defaultText(finding.getId(), "UNKNOWN"))
-                .append("**");
+            .append(defaultText(finding.getSeverity(), "UNKNOWN"))
+            .append(" / ")
+            .append(defaultText(finding.getId(), "UNKNOWN"))
+            .append("**");
         if (isNotBlank(finding.getCategory())) {
             builder.append(" - ").append(compact(finding.getCategory()));
         }
@@ -252,7 +255,7 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     private void appendFindingField(StringBuilder builder, String name, String value) {
         if (isNotBlank(value)) {
             builder.append("   - ").append(name).append(": ")
-                    .append(compact(value)).append("\n");
+                .append(compact(value)).append("\n");
         }
     }
     
@@ -265,7 +268,7 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
         }
         if (finding.getEndLine() > 0 && finding.getEndLine() != finding.getStartLine()) {
             return finding.getFile() + ":" + finding.getStartLine() + "-"
-                    + finding.getEndLine();
+                + finding.getEndLine();
         }
         return finding.getFile() + ":" + finding.getStartLine();
     }
@@ -287,7 +290,7 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     }
     
     private void writeResourceFiles(Path baseDir, List<ResourceFileContent> files)
-            throws IOException {
+        throws IOException {
         for (ResourceFileContent file : files) {
             String filePath = file.getFilePath();
             if (filePath == null || filePath.isEmpty()) {
@@ -305,21 +308,21 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     }
     
     private List<ResourceFileContent> normalizeFilesForScanner(PublishPipelineContext context,
-            List<ResourceFileContent> files) {
+        List<ResourceFileContent> files) {
         if (containsSkillMarkdown(files)) {
             return files;
         }
         if (context.getResourceType() == PublishPipelineResourceType.AGENTSPEC) {
             List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
             result.add(new ResourceFileContent("SKILL.md",
-                    buildWrappedSkillMarkdown("AgentSpec", context, files)));
+                buildWrappedSkillMarkdown("AgentSpec", context, files)));
             result.addAll(files);
             return result;
         }
         if (context.getResourceType() == PublishPipelineResourceType.PROMPT) {
             List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
             result.add(new ResourceFileContent("SKILL.md",
-                    buildWrappedSkillMarkdown("Prompt", context, files)));
+                buildWrappedSkillMarkdown("Prompt", context, files)));
             result.addAll(files);
             return result;
         }
@@ -336,12 +339,12 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     }
     
     private String buildWrappedSkillMarkdown(String type, PublishPipelineContext context,
-            List<ResourceFileContent> files) {
+        List<ResourceFileContent> files) {
         StringBuilder builder = new StringBuilder();
         builder.append("# ").append(type).append(" ").append(context.getResourceName())
-                .append("\n\n");
+            .append("\n\n");
         builder.append("Generated from ").append(type)
-                .append(" pipeline context for SkillSpector compatibility.\n");
+            .append(" pipeline context for SkillSpector compatibility.\n");
         for (ResourceFileContent file : files) {
             if (file == null || file.getFilePath() == null) {
                 continue;

@@ -55,7 +55,7 @@ class SkillSpectorScanOptionsTest {
         properties.setProperty(SkillSpectorScanOptions.PROP_MODEL, "gpt-test");
         properties.setProperty(SkillSpectorScanOptions.PROP_API_KEY_KEBAB, "configured-key");
         properties.setProperty(SkillSpectorScanOptions.PROP_BASE_URL_KEBAB,
-                "https://example.com/v1");
+            "https://example.com/v1");
         
         SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
         
