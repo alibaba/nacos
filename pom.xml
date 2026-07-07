@@ -349,6 +349,7 @@
                         <exclude>derby.log</exclude>
                         <exclude>logs/*</exclude>
                         <exclude>src/main/resources/static/**</exclude>
+                        <exclude>**/target/**</exclude>
                         <exclude>**/istio/model/**</exclude>
                         <exclude>**/consistency/entity/**</exclude>
                         <exclude>**/*.txt</exclude>
