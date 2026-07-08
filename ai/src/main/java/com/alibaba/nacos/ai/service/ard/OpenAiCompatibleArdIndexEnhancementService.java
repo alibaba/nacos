@@ -55,11 +55,11 @@ public class OpenAiCompatibleArdIndexEnhancementService implements ArdIndexEnhan
     
     static final String KEY_TIMEOUT_MS = "nacos.ai.ard.index.enhancement.timeout-ms";
     
-    static final String KEY_MAX_ITEMS = "nacos.ai.ard.index.enhancement.max-search-phrases";
+    static final String KEY_MAX_ITEMS = "nacos.ai.ard.index.enhancement.max-items-per-field";
     
     private static final int DEFAULT_TIMEOUT_MS = 10000;
     
-    private static final int DEFAULT_MAX_ITEMS = 16;
+    private static final int DEFAULT_MAX_ITEMS = 10;
     
     private static final int MAX_PROMPT_CHUNKS = 20;
     
@@ -209,8 +209,10 @@ public class OpenAiCompatibleArdIndexEnhancementService implements ArdIndexEnhan
         List<ArdIndexEnhancementChunk> chunks = new ArrayList<>();
         addValue(chunks, ArdIndexConstants.CHUNK_TYPE_AI_SUMMARY, parsed.get("summary"),
             metadata);
-        addValue(chunks, ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE,
-            parsed.get("searchPhrases"), metadata);
+        addValue(chunks, ArdIndexConstants.CHUNK_TYPE_SEARCH_INTENT,
+            parsed.get("searchIntents"), metadata);
+        addValue(chunks, ArdIndexConstants.CHUNK_TYPE_SEARCH_TERM,
+            parsed.get("searchTerms"), metadata);
         return chunks;
     }
     

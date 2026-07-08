@@ -32,12 +32,12 @@ import java.util.Map;
  * @author nacos
  */
 public class AiVectorPluginProvider implements PluginProvider<AiResourceVectorIndex> {
-
+    
     @Override
     public PluginType getPluginType() {
         return PluginType.AI_VECTOR;
     }
-
+    
     @Override
     public Map<String, AiResourceVectorIndex> getAllPlugins() {
         if (ApplicationUtils.getApplicationContext() == null) {

@@ -41,34 +41,34 @@ import java.util.Map;
  */
 @Service
 public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBean {
-
+    
     public static final String KEY_VECTOR_PROVIDER = "nacos.ai.ard.vector.provider";
-
+    
     public static final String DEFAULT_VECTOR_PROVIDER = "postgresql";
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(ArdVectorIndexRouter.class);
-
+    
     private final Map<String, AiResourceVectorIndexBuilder> builders;
-
+    
     private final String providerOverride;
-
+    
     private volatile AiResourceVectorIndex delegate;
-
+    
     public ArdVectorIndexRouter() {
         this(NacosServiceLoader.load(AiResourceVectorIndexBuilder.class), null);
     }
-
+    
     ArdVectorIndexRouter(Collection<AiResourceVectorIndexBuilder> builders,
         String providerOverride) {
         this.builders = Collections.unmodifiableMap(loadBuilders(builders));
         this.providerOverride = providerOverride;
     }
-
+    
     @Override
     public boolean available() {
         return delegate().available();
     }
-
+    
     @Override
     public void replaceResourceVersion(String namespaceId, String resourceType,
         String resourceName, String resourceVersion,
@@ -76,30 +76,30 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
         delegate().replaceResourceVersion(namespaceId, resourceType, resourceName,
             resourceVersion, documents);
     }
-
+    
     @Override
     public void addDocuments(Collection<AiResourceVectorDocument> documents) {
         delegate().addDocuments(documents);
     }
-
+    
     @Override
     public void deleteByResource(String namespaceId, String resourceType, String resourceName) {
         delegate().deleteByResource(namespaceId, resourceType, resourceName);
     }
-
+    
     @Override
     public void deleteByResourceVersion(String namespaceId, String resourceType,
         String resourceName, String resourceVersion) {
         delegate().deleteByResourceVersion(namespaceId, resourceType, resourceName,
             resourceVersion);
     }
-
+    
     @Override
     public List<AiResourceVectorHit> search(String namespaceId, String embeddingModel,
         double[] queryVector, List<String> resourceTypes, int limit) {
         return delegate().search(namespaceId, embeddingModel, queryVector, resourceTypes, limit);
     }
-
+    
     @Override
     public void destroy() throws Exception {
         AiResourceVectorIndex selected = delegate;
@@ -107,7 +107,7 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
             selected.close();
         }
     }
-
+    
     AiResourceVectorIndex delegate() {
         AiResourceVectorIndex selected = delegate;
         if (selected != null) {
@@ -120,7 +120,7 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
             return delegate;
         }
     }
-
+    
     /**
      * Return the configured vector index plugin for plugin manager listing.
      *
@@ -133,7 +133,7 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
         }
         return Collections.singletonMap(provider, delegate());
     }
-
+    
     private AiResourceVectorIndex buildDelegate() {
         String provider = resolveProvider();
         AiResourceVectorIndexBuilder builder = builders.get(provider);
@@ -151,7 +151,7 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
         LOGGER.info("Using ARD vector index provider: {}", provider);
         return index;
     }
-
+    
     private String resolveProvider() {
         if (StringUtils.isNotBlank(providerOverride)) {
             return providerOverride;
@@ -166,7 +166,7 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
             return DEFAULT_VECTOR_PROVIDER;
         }
     }
-
+    
     private Map<String, AiResourceVectorIndexBuilder> loadBuilders(
         Collection<AiResourceVectorIndexBuilder> builders) {
         Map<String, AiResourceVectorIndexBuilder> result = new LinkedHashMap<>();
@@ -175,46 +175,48 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
         }
         for (AiResourceVectorIndexBuilder builder : builders) {
             if (builder == null || StringUtils.isBlank(builder.type())) {
-                throw new IllegalStateException("ARD vector index provider type must not be empty.");
+                throw new IllegalStateException(
+                    "ARD vector index provider type must not be empty.");
             }
             String type = builder.type().trim();
             if (result.containsKey(type)) {
-                throw new IllegalStateException("Duplicate ARD vector index provider type: " + type);
+                throw new IllegalStateException(
+                    "Duplicate ARD vector index provider type: " + type);
             }
             result.put(type, builder);
         }
         return result;
     }
-
+    
     private static class NoopAiResourceVectorIndex implements AiResourceVectorIndex {
-
+        
         private static final NoopAiResourceVectorIndex INSTANCE = new NoopAiResourceVectorIndex();
-
+        
         @Override
         public boolean available() {
             return false;
         }
-
+        
         @Override
         public void replaceResourceVersion(String namespaceId, String resourceType,
             String resourceName, String resourceVersion,
             Collection<AiResourceVectorDocument> documents) {
         }
-
+        
         @Override
         public void addDocuments(Collection<AiResourceVectorDocument> documents) {
         }
-
+        
         @Override
         public void deleteByResource(String namespaceId, String resourceType,
             String resourceName) {
         }
-
+        
         @Override
         public void deleteByResourceVersion(String namespaceId, String resourceType,
             String resourceName, String resourceVersion) {
         }
-
+        
         @Override
         public List<AiResourceVectorHit> search(String namespaceId, String embeddingModel,
             double[] queryVector, List<String> resourceTypes, int limit) {

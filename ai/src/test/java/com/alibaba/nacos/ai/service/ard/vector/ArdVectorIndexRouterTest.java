@@ -37,110 +37,111 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author nacos
  */
 class ArdVectorIndexRouterTest {
-
+    
     @Test
     void shouldUseConfiguredProvider() {
         FakeVectorIndex index = new FakeVectorIndex(true);
         ArdVectorIndexRouter router = new ArdVectorIndexRouter(
             List.of(new FakeVectorIndexBuilder("custom", index)), "custom");
-
+        
         assertTrue(router.available());
         assertSame(index, router.delegate());
     }
-
+    
     @Test
     void shouldFallbackToNoopWhenProviderMissing() {
         ArdVectorIndexRouter router = new ArdVectorIndexRouter(Collections.emptyList(), "missing");
-
+        
         assertFalse(router.available());
         assertTrue(router.search("public", "model", new double[] {1.0D}, List.of("skill"), 10)
             .isEmpty());
     }
-
+    
     @Test
     void shouldRejectDuplicateProviderType() {
         FakeVectorIndex index = new FakeVectorIndex(true);
-
+        
         assertThrows(IllegalStateException.class, () -> new ArdVectorIndexRouter(
             List.of(new FakeVectorIndexBuilder("custom", index),
-                new FakeVectorIndexBuilder("custom", index)), "custom"));
+                new FakeVectorIndexBuilder("custom", index)),
+            "custom"));
     }
-
+    
     @Test
     void shouldCloseSelectedProviderOnDestroy() throws Exception {
         FakeVectorIndex index = new FakeVectorIndex(true);
         ArdVectorIndexRouter router = new ArdVectorIndexRouter(
             List.of(new FakeVectorIndexBuilder("custom", index)), "custom");
-
+        
         router.available();
         router.destroy();
-
+        
         assertTrue(index.closed);
     }
-
+    
     private static class FakeVectorIndexBuilder implements AiResourceVectorIndexBuilder {
-
+        
         private final String type;
-
+        
         private final AiResourceVectorIndex index;
-
+        
         private FakeVectorIndexBuilder(String type, AiResourceVectorIndex index) {
             this.type = type;
             this.index = index;
         }
-
+        
         @Override
         public String type() {
             return type;
         }
-
+        
         @Override
         public AiResourceVectorIndex build() {
             return index;
         }
     }
-
+    
     private static class FakeVectorIndex implements AiResourceVectorIndex {
-
+        
         private final boolean available;
-
+        
         private boolean closed;
-
+        
         private FakeVectorIndex(boolean available) {
             this.available = available;
         }
-
+        
         @Override
         public boolean available() {
             return available;
         }
-
+        
         @Override
         public void replaceResourceVersion(String namespaceId, String resourceType,
             String resourceName, String resourceVersion,
             Collection<AiResourceVectorDocument> documents) {
         }
-
+        
         @Override
         public void addDocuments(Collection<AiResourceVectorDocument> documents) {
         }
-
+        
         @Override
         public void deleteByResource(String namespaceId, String resourceType,
             String resourceName) {
         }
-
+        
         @Override
         public void deleteByResourceVersion(String namespaceId, String resourceType,
             String resourceName, String resourceVersion) {
         }
-
+        
         @Override
         public List<AiResourceVectorHit> search(String namespaceId, String embeddingModel,
             double[] queryVector, List<String> resourceTypes, int limit) {
             return Collections.emptyList();
         }
-
+        
         @Override
         public void close() {
             closed = true;

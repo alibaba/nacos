@@ -67,16 +67,18 @@ class ArdChunkBuilderTest {
     void buildEnhancementChunksShouldIncludeAiGeneratedSearchText() {
         ArdEntry entry = entry();
         List<ArdIndexEnhancementChunk> enhancements =
-            List.of(new ArdIndexEnhancementChunk(ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE,
+            List.of(new ArdIndexEnhancementChunk(ArdIndexConstants.CHUNK_TYPE_SEARCH_TERM,
                 "支付对账 payment reconciliation", "{\"source\":\"llm\"}"),
-                new ArdIndexEnhancementChunk(ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE,
+                new ArdIndexEnhancementChunk(ArdIndexConstants.CHUNK_TYPE_SEARCH_INTENT,
                     "find a skill for payment reconciliation", "{\"source\":\"llm\"}"));
         
         List<ArdChunk> chunks = new ArdChunkBuilder().buildEnhancementChunks(entry,
             enhancements);
         
         assertTrue(chunks.stream().anyMatch(
-            chunk -> ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE.equals(chunk.getChunkType())));
+            chunk -> ArdIndexConstants.CHUNK_TYPE_SEARCH_INTENT.equals(chunk.getChunkType())));
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_SEARCH_TERM.equals(chunk.getChunkType())));
         assertTrue(chunks.stream().anyMatch(
             chunk -> chunk.getChunkText().contains("find a skill for payment reconciliation")));
         assertTrue(chunks.stream().allMatch(chunk -> chunk.getChunkHash() != null));

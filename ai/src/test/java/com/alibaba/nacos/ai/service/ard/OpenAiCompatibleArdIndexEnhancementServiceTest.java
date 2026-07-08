@@ -43,13 +43,20 @@ class OpenAiCompatibleArdIndexEnhancementServiceTest {
         assertTrue(prompt.contains("must not infer"));
         assertTrue(prompt.contains("unsupported capabilities"));
         assertTrue(prompt.contains("humans or agents"));
-        assertTrue(prompt.contains("Search simulation"));
-        assertTrue(prompt.contains("searchPhrases"));
+        assertTrue(prompt.contains("Retrieval design"));
+        assertTrue(prompt.contains("user jobs"));
+        assertTrue(prompt.contains("searchIntents"));
+        assertTrue(prompt.contains("searchTerms"));
+        assertTrue(prompt.contains("Bilingual coverage"));
+        assertTrue(prompt.contains("Do not require one-to-one translations"));
         assertTrue(prompt.contains("Avoid awkward literal translations"));
         assertTrue(prompt.contains("native-speaker"));
         assertTrue(prompt.contains("search-box check"));
-        assertTrue(prompt.contains("\"searchPhrases\""));
+        assertTrue(prompt.contains("\"searchIntents\""));
+        assertTrue(prompt.contains("\"searchTerms\""));
+        assertFalse(prompt.contains("\"searchPhrases\""));
         assertFalse(prompt.contains("\"bilingualAliases\""));
+        assertFalse(prompt.contains("\"capabilitySynonyms\""));
         assertFalse(prompt.contains("\"exampleQueries\""));
         assertTrue(prompt.contains("Return strict JSON only"));
     }
@@ -60,8 +67,9 @@ class OpenAiCompatibleArdIndexEnhancementServiceTest {
             new OpenAiCompatibleArdIndexEnhancementService();
         String content = "```json\n"
             + "{\"summary\":\"支付对账能力\","
-            + "\"searchPhrases\":[\"支付对账\",\"payment reconciliation\","
-            + "\"find a payment reconcile skill\"]}"
+            + "\"searchIntents\":[\"查找支付对账工具\","
+            + "\"find a payment reconcile skill\"],"
+            + "\"searchTerms\":[\"支付对账\",\"payment reconciliation\"]}"
             + "\n```";
         
         List<ArdIndexEnhancementChunk> chunks =
@@ -70,7 +78,9 @@ class OpenAiCompatibleArdIndexEnhancementServiceTest {
         assertTrue(chunks.stream().anyMatch(
             chunk -> ArdIndexConstants.CHUNK_TYPE_AI_SUMMARY.equals(chunk.getChunkType())));
         assertTrue(chunks.stream().anyMatch(
-            chunk -> ArdIndexConstants.CHUNK_TYPE_SEARCH_PHRASE.equals(chunk.getChunkType())));
+            chunk -> ArdIndexConstants.CHUNK_TYPE_SEARCH_INTENT.equals(chunk.getChunkType())));
+        assertTrue(chunks.stream().anyMatch(
+            chunk -> ArdIndexConstants.CHUNK_TYPE_SEARCH_TERM.equals(chunk.getChunkType())));
     }
     
     @Test

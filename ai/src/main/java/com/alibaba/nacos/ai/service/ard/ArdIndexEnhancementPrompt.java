@@ -35,26 +35,31 @@ final class ArdIndexEnhancementPrompt {
             capabilities between Chinese and English for retrieval, but must not infer unsupported
             capabilities. If evidence is weak, keep the item generic or omit it.
             
-            Search simulation:
-            - Imagine 12 to 16 different searchers trying to find this resource. They may include a
-            developer who knows an exact model or API name, a user who describes the task casually, a
-            Chinese user typing short keywords, an English user typing a how-to query, and an agent
-            selecting a tool for a workflow.
-            - List what each searcher would type. Mix formal names, colloquial nouns, short keywords,
-            input/output asset words, task-intent phrases, how-to queries, workflow phrases, and
-            alternative-tool searches when supported by the source.
-            - Support both Chinese and English recall. If the source is English, generate natural
-            Chinese search phrases for supported capabilities. If the source is Chinese, generate
-            natural English search phrases for supported capabilities.
-            - Preserve original product, API, framework, model, protocol, competitor, and file-format
-            names when they appear in the source and are likely search terms.
+            Retrieval design:
+            - First identify the user jobs supported by the source: what the user wants to accomplish,
+            what input they have, what output they need, and which workflow or scenario they are in.
+            - Then simulate how users or agents would search when they need this resource but may not
+            know its formal name. Include exact-name searches only when those names are likely useful.
+            - Do not output the analysis steps. Return only the JSON fields in the schema.
             
             Field rules:
             - summary: one compact bilingual summary of what the resource actually does. Mention the
             main task, supported inputs, outputs, and target use case when present.
-            - searchPhrases: a flat list of search terms, phrases, and short queries. Do not classify
-            them as aliases, synonyms, or examples. Maximize lexical coverage while keeping each item
-            directly grounded in source-supported capabilities.
+            - searchIntents: natural search phrases for supported user jobs. Include task-intent,
+            input-to-output, scenario, workflow, and how-to phrases that users or agents would type.
+            - searchTerms: standalone high-value search terms. Include exact source names, product,
+            API, framework, model, protocol, competitor, file-format names, colloquial terms, domain
+            nouns, and input/output asset words when they are useful and source-supported.
+            
+            Bilingual coverage:
+            - summary must describe the resource in both Chinese and English.
+            - searchIntents must include natural Chinese and English ways users or agents would search
+            for the supported jobs. Do not require one-to-one translations; cover the same major user
+            jobs in both languages when enough evidence exists.
+            - searchTerms must include source-language exact names and natural counterpart search terms
+            in the other language when useful for retrieval.
+            - Do not let one language consume all items. If the source is mostly English, add Chinese
+            recall phrases; if the source is mostly Chinese, add English recall phrases.
             
             Phrase selection:
             - Prefer phrases grounded in explicit source evidence.
@@ -74,7 +79,7 @@ final class ArdIndexEnhancementPrompt {
             in the source content or source metadata.
             
             Ranking and size:
-            - Return 12 to 16 searchPhrases when enough evidence exists.
+            - Return 6 to 10 searchIntents and 6 to 10 searchTerms when enough evidence exists.
             - Put the most likely and highest-recall search phrases first.
             - Keep every item standalone, concise, and deduplicated.
             - Prefer user and agent search language over internal implementation terms.
@@ -86,7 +91,8 @@ final class ArdIndexEnhancementPrompt {
             Schema:
             {
               "summary": "string",
-              "searchPhrases": ["string"]
+              "searchIntents": ["string"],
+              "searchTerms": ["string"]
             }
             """;
     

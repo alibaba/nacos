@@ -66,7 +66,9 @@ final class ArdIndexConstants {
     
     static final String CHUNK_TYPE_AI_SUMMARY = "ai_summary";
     
-    static final String CHUNK_TYPE_SEARCH_PHRASE = "search_phrase";
+    static final String CHUNK_TYPE_SEARCH_INTENT = "search_intent";
+    
+    static final String CHUNK_TYPE_SEARCH_TERM = "search_term";
     
     private ArdIndexConstants() {
     }
