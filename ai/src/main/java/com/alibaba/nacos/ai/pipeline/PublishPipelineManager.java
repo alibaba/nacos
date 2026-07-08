@@ -145,7 +145,7 @@ public class PublishPipelineManager {
         }
         return Arrays.asList(types).contains(resourceType);
     }
-
+    
     private int getEffectiveOrder(PublishPipelineService service,
         Map<String, PipelineNodeConfig> nodeConfigMap) {
         PipelineNodeConfig nodeConfig = nodeConfigMap.get(service.pipelineId());

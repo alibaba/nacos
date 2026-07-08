@@ -206,7 +206,7 @@ class PublishPipelineManagerTest {
             }
         }
     }
-
+    
     @Test
     void configuredNodeOrderShouldOverrideServicePreferOrder() {
         PublishPipelineManager manager = new PublishPipelineManager();
@@ -215,19 +215,19 @@ class PublishPipelineManagerTest {
             PublishPipelineResourceType.values())));
         builders.add(createServiceBuilder(new ServiceDescriptor("first-by-config", 20,
             PublishPipelineResourceType.values())));
-
+        
         PipelineConfig config = new PipelineConfig();
         config.setEnabled(true);
         config.setNodes(new ArrayList<>());
         manager.initWithBuilders(builders, config);
-
+        
         List<PipelineNodeConfig> nodes = new ArrayList<>();
         nodes.add(createNode("first-by-default", 30));
         nodes.add(createNode("first-by-config", 5));
-
+        
         List<PublishPipelineService> result =
             manager.getPipelineServices(PublishPipelineResourceType.SKILL, nodes);
-
+        
         assertEquals(2, result.size());
         assertEquals("first-by-config", result.get(0).pipelineId());
         assertEquals("first-by-default", result.get(1).pipelineId());
@@ -272,7 +272,7 @@ class PublishPipelineManagerTest {
             }
         };
     }
-
+    
     private PipelineNodeConfig createNode(String pipelineId, Integer order) {
         PipelineNodeConfig nodeConfig = new PipelineNodeConfig();
         nodeConfig.setPipelineId(pipelineId);
