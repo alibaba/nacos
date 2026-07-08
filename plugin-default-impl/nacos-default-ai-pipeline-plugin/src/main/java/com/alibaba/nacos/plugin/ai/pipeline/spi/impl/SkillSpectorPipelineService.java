@@ -109,6 +109,7 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             Process process = startProcess(buildScanCommand(tempDir, reportPath));
             String scanOutput = readOutput(process);
             int exitCode = waitForProcess(process);
+            logScanOutput(context, resourceContext, exitCode, scanOutput);
             if (exitCode != 0 && exitCode != 1) {
                 return rejectRuntimeFailure("SkillSpector 扫描失败，exitCode=" + exitCode
                     + "\n输出:\n" + scanOutput);
@@ -186,6 +187,22 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             }
         }
         return output.toString();
+    }
+    
+    private void logScanOutput(PublishPipelineContext context,
+        ResourceFilesPipelineContext resourceContext, int exitCode, String scanOutput) {
+        if (!isNotBlank(scanOutput)) {
+            return;
+        }
+        if (exitCode == 0) {
+            LOGGER.info("[SkillSpectorPipeline] SkillSpector runtime 输出, resourceType={}, "
+                + "resourceName={}, exitCode={}:\n{}", context.getResourceType(),
+                resourceContext.getResourceName(), exitCode, scanOutput);
+            return;
+        }
+        LOGGER.warn("[SkillSpectorPipeline] SkillSpector runtime 输出, resourceType={}, "
+            + "resourceName={}, exitCode={}:\n{}", context.getResourceType(),
+            resourceContext.getResourceName(), exitCode, scanOutput);
     }
     
     private PublishPipelineResult rejectRuntimeFailure(String message) {
