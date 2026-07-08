@@ -212,7 +212,7 @@ public class ConsoleSkillController {
      * @return list of precheck results in the same order as input
      * @throws NacosException if precheck failed unexpectedly
      */
-    @Since("3.2.3")
+    @Since("3.3.0")
     @PostMapping(value = "/upload/batch/precheck")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
