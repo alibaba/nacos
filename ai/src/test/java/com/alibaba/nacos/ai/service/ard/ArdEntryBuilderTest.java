@@ -22,7 +22,10 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -40,9 +43,12 @@ class ArdEntryBuilderTest {
         ArdEntry entry = builder.fromAiResource(resource(Constants.Skills.RESOURCE_TYPE_SKILL,
             "avatar skill"), version("1.0.0"));
         
-        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"
-            + "&resourceName=avatar+skill&version=1.0.0", entry.getUrl());
+        assertEquals("/v3/client/ai/skills?namespaceId=public&name=avatar+skill&version=1.0.0",
+            entry.getUrl());
+        assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE, entry.getType());
         assertEquals("urn:air:nacos:public:skill:avatar skill", entry.getIdentifier());
+        Map<?, ?> metadata = JacksonUtils.toObj(entry.getMetadata(), Map.class);
+        assertEquals("SKILL.md", metadata.get("entrypoint"));
     }
     
     @Test

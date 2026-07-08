@@ -109,7 +109,7 @@ class ArdIndexBuildServiceImplTest {
         verify(repository).replaceEntry(entryCaptor.capture(), chunksCaptor.capture());
         ArdEntry entry = entryCaptor.getValue();
         assertEquals("urn:air:nacos:public:skill:api-helper", entry.getIdentifier());
-        assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL, entry.getType());
+        assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE, entry.getType());
         assertFalse(chunksCaptor.getValue().isEmpty());
         ArgumentCaptor<Collection<AiResourceVectorDocument>> vectorCaptor =
             ArgumentCaptor.forClass(Collection.class);

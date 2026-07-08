@@ -75,11 +75,11 @@ class ArdSearchControllerTest {
     void agentsShouldReturnArdListResponse() throws NacosException {
         ArdSearchController controller = controller();
         ArdListResponse response = new ArdListResponse();
-        when(ardSearchService.list("public", "type=application/ai-skill+md", "name ASC", 10,
+        when(ardSearchService.list("public", "type=application/zip", "name ASC", 10,
             null)).thenReturn(response);
         
-        assertSame(response, controller.agents("public", "type=application/ai-skill+md",
-            "name ASC", 10, null));
+        assertSame(response, controller.agents("public", "type=application/zip", "name ASC", 10,
+            null));
     }
     
     @Test

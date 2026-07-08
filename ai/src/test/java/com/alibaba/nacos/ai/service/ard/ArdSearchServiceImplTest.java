@@ -45,6 +45,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -95,11 +98,19 @@ class ArdSearchServiceImplTest {
         System.clearProperty(RANKING_ENABLED_KEY);
         System.clearProperty(CATALOG_BASE_URL_KEY);
         System.clearProperty(ArdIndexConstants.KEY_CATALOG_HOST_IDENTIFIER);
+        RequestContextHolder.resetRequestAttributes();
     }
     
     @Test
     void searchShouldReturnPersistedLatestSkillEntry() throws Exception {
         ArdSearchServiceImpl service = service();
+        MockHttpServletRequest servletRequest =
+            new MockHttpServletRequest("POST", "/nacos/v3/ai/ard/search");
+        servletRequest.setScheme("http");
+        servletRequest.setServerName("localhost");
+        servletRequest.setServerPort(8850);
+        servletRequest.setContextPath("/nacos");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
             .thenReturn(List.of(hit(100L, 1.0D)));
@@ -110,17 +121,19 @@ class ArdSearchServiceImplTest {
             Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0")).thenReturn(onlineVersion("1.0.0"));
         
         ArdSearchResponse response = service.search(request("api",
-            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL))));
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE))));
         
         assertEquals(1, response.getResults().size());
         ArdSearchResult result = response.getResults().get(0);
         assertEquals("api-helper", result.getDisplayName());
-        assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL, result.getType());
-        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"
-            + "&resourceName=api-helper&version=1.0.0", result.getUrl());
+        assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE, result.getType());
+        assertEquals("http://localhost:8850/nacos/v3/client/ai/skills"
+            + "?namespaceId=public&name=api-helper&version=1.0.0",
+            result.getUrl());
         assertEquals("urn:air:nacos:public:skill:api-helper", result.getIdentifier());
         assertEquals(ArdIndexConstants.SOURCE_NACOS_LOCAL, result.getSource());
         assertEquals("skill", result.getMetadata().get("resourceType"));
+        assertEquals("SKILL.md", result.getMetadata().get("entrypoint"));
         assertEquals("skill", result.getTrustManifest().get("resourceType"));
         assertEquals(100.0D, result.getScore(), 0.001D);
         assertTrue(response.getReferrals().isEmpty());
@@ -171,7 +184,7 @@ class ArdSearchServiceImplTest {
             eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
         
         ArdSearchResponse response = service.search(request("avatar",
-            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL))));
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE))));
         
         assertEquals(2, response.getResults().size());
         assertEquals("avatar-tool", response.getResults().get(0).getDisplayName());
@@ -191,7 +204,7 @@ class ArdSearchServiceImplTest {
             Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0")).thenReturn(onlineVersion("1.0.0"));
         
         ArdSearchResponse response = service.search(request("api",
-            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL))));
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE))));
         
         assertEquals(1, response.getResults().size());
         assertEquals(100.0D, response.getResults().get(0).getScore(), 0.001D);
@@ -257,7 +270,7 @@ class ArdSearchServiceImplTest {
             eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
         
         ArdSearchRequest firstRequest = request("api",
-            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL)));
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE)));
         firstRequest.setPageSize(2);
         ArdSearchResponse firstPage = service.search(firstRequest);
         
@@ -267,7 +280,7 @@ class ArdSearchServiceImplTest {
         assertNotNull(firstPage.getPageToken());
         
         ArdSearchRequest secondRequest = request("api",
-            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL)));
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE)));
         secondRequest.setPageSize(2);
         secondRequest.setPageToken(firstPage.getPageToken());
         ArdSearchResponse secondPage = service.search(secondRequest);
@@ -281,7 +294,7 @@ class ArdSearchServiceImplTest {
     void searchShouldRejectInvalidPageToken() {
         ArdSearchServiceImpl service = service();
         ArdSearchRequest request = request("api",
-            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL)));
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE)));
         request.setPageToken("broken-token");
         
         assertThrows(NacosException.class, () -> service.search(request));
@@ -298,7 +311,7 @@ class ArdSearchServiceImplTest {
             .thenReturn(meta("1.0.1"));
         
         ArdSearchResponse response = service.search(request("api",
-            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL))));
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE))));
         
         assertTrue(response.getResults().isEmpty());
     }
@@ -307,7 +320,7 @@ class ArdSearchServiceImplTest {
     void searchShouldRejectUnsupportedFederation() {
         ArdSearchServiceImpl service = service();
         ArdSearchRequest request = request("api",
-            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL)));
+            Map.of("type", (Object) List.of(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE)));
         request.setFederation("referrals");
         
         assertThrows(NacosException.class, () -> service.search(request));
@@ -345,7 +358,7 @@ class ArdSearchServiceImplTest {
             eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
         
         ArdExploreResponse response = service.explore(exploreRequest("public",
-            Map.of("type", (Object) ArdIndexConstants.MEDIA_TYPE_SKILL),
+            Map.of("type", (Object) ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE),
             List.of(facet("tags", 10, 1))));
         
         assertEquals(1, response.getFacets().size());
@@ -367,7 +380,7 @@ class ArdSearchServiceImplTest {
             eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
         
         ArdListResponse response = service.list("public",
-            "type=application/ai-skill+md;displayName=api", "displayName ASC", 1, null);
+            "type=application/zip;displayName=api", "displayName ASC", 1, null);
         
         assertEquals(1, response.getResults().size());
         assertEquals("api-one", response.getResults().get(0).getDisplayName());
@@ -414,8 +427,8 @@ class ArdSearchServiceImplTest {
             catalog.getEntries().get(0).getUrl());
         assertEquals("urn:air:nacos.example.com:public:skill:api-helper",
             catalog.getEntries().get(1).getIdentifier());
-        assertEquals("https://nacos.example.com/nacos/v3/ai/ard/artifacts"
-            + "?namespaceId=public&resourceType=skill&resourceName=api-helper&version=1.0.0",
+        assertEquals("https://nacos.example.com/nacos/v3/client/ai/skills"
+            + "?namespaceId=public&name=api-helper&version=1.0.0",
             catalog.getEntries().get(1).getUrl());
     }
     
@@ -523,17 +536,17 @@ class ArdSearchServiceImplTest {
         entry.setResourceVersion("1.0.0");
         entry.setIdentifier("urn:air:nacos:public:skill:" + resourceName);
         entry.setDisplayName(resourceName);
-        entry.setType(ArdIndexConstants.MEDIA_TYPE_SKILL);
-        entry.setUrl("/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"
-            + "&resourceName=" + resourceName + "&version=1.0.0");
+        entry.setType(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE);
+        entry.setUrl("/v3/client/ai/skills?namespaceId=public&name=" + resourceName
+            + "&version=1.0.0");
         entry.setDescription("Generate API parameter tables");
         entry.setTags(JacksonUtils.toJson(List.of("documentation", "api")));
         entry.setCapabilities(JacksonUtils.toJson(List.of("skill", "documentation")));
         entry.setRepresentativeQueries(JacksonUtils.toJson(List.of("api helper")));
         entry.setMetadata(JacksonUtils.toJson(Map.of("namespaceId", "public",
             "resourceType", "skill", "resourceName", resourceName, "resourceVersion", "1.0.0",
-            "inputTypes", List.of("json"), "outputTypes", List.of("markdown"),
-            "riskLevel", "low")));
+            "entrypoint", "SKILL.md", "inputTypes", List.of("json"), "outputTypes",
+            List.of("markdown"), "riskLevel", "low")));
         entry.setTrustManifest(JacksonUtils.toJson(Map.of("source",
             ArdIndexConstants.SOURCE_NACOS_LOCAL, "resourceType", "skill", "federation",
             ArdSearchServiceImpl.FEDERATION_NONE)));
