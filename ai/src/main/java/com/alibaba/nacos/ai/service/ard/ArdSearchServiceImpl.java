@@ -49,7 +49,12 @@ import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorHit;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
@@ -972,14 +977,32 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     }
     
     private String withBaseUrl(String url) {
+        if (StringUtils.isBlank(url) || url.startsWith("http://") || url.startsWith("https://")) {
+            return url;
+        }
         String baseUrl = property(KEY_CATALOG_BASE_URL, "");
-        if (StringUtils.isBlank(baseUrl) || StringUtils.isBlank(url)
-            || url.startsWith("http://") || url.startsWith("https://")) {
+        if (StringUtils.isBlank(baseUrl)) {
+            baseUrl = currentRequestBaseUrl();
+        }
+        if (StringUtils.isBlank(baseUrl)) {
             return url;
         }
         String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1)
             : baseUrl;
         return url.startsWith("/") ? base + url : base + "/" + url;
+    }
+    
+    private String currentRequestBaseUrl() {
+        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+        if (!(attributes instanceof ServletRequestAttributes)) {
+            return "";
+        }
+        HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
+        return ServletUriComponentsBuilder.fromRequestUri(request)
+            .replacePath(request.getContextPath())
+            .replaceQuery(null)
+            .build()
+            .toUriString();
     }
     
     private String buildIdentifier(ArdEntry entry) {
@@ -1286,7 +1309,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private enum ResourceKind {
         
-        SKILL(Constants.Skills.RESOURCE_TYPE_SKILL, ArdIndexConstants.MEDIA_TYPE_SKILL),
+        SKILL(Constants.Skills.RESOURCE_TYPE_SKILL, ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE),
         
         PROMPT(NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT,
             ArdIndexConstants.MEDIA_TYPE_PROMPT),

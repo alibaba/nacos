@@ -69,13 +69,16 @@ public class ArdEntryBuilder {
         String mediaType = mediaType(meta.getType());
         Map<String, Object> metadata = baseMetadata(meta.getNamespaceId(), meta.getType(),
             meta.getName(), version.getVersion(), AiResourceManager.resolveScope(meta));
+        if (RESOURCE_TYPE_SKILL.equals(meta.getType())) {
+            metadata.put("entrypoint", "SKILL.md");
+        }
         Map<String, Object> ext = parseMap(meta.getExt());
         metadata.putAll(extractMetadata(ext));
         List<String> tags = parseStringList(meta.getBizTags());
         List<String> capabilities = capabilities(meta.getType(), tags, ext);
         ArdEntry entry = baseEntry(meta.getNamespaceId(), meta.getType(), meta.getName(),
             version.getVersion(), meta.getName(), mediaType);
-        entry.setUrl(buildArtifactUrl(meta.getNamespaceId(), meta.getType(), meta.getName(),
+        entry.setUrl(buildAiResourceUrl(meta.getNamespaceId(), meta.getType(), meta.getName(),
             version.getVersion()));
         entry.setDescription(firstNotBlank(version.getDesc(), meta.getDesc()));
         entry.setTags(JacksonUtils.toJson(tags));
@@ -243,7 +246,7 @@ public class ArdEntryBuilder {
     
     private String mediaType(String resourceType) {
         if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
-            return ArdIndexConstants.MEDIA_TYPE_SKILL;
+            return ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE;
         }
         if (RESOURCE_TYPE_PROMPT.equals(resourceType)) {
             return ArdIndexConstants.MEDIA_TYPE_PROMPT;
@@ -359,13 +362,21 @@ public class ArdEntryBuilder {
     
     private String buildArtifactUrl(String namespaceId, String resourceType, String resourceName,
         String version) {
-        if (!RESOURCE_TYPE_SKILL.equals(resourceType)
-            && !RESOURCE_TYPE_PROMPT.equals(resourceType)) {
+        if (!RESOURCE_TYPE_PROMPT.equals(resourceType)) {
             throw new IllegalArgumentException("Unsupported ARD resource type: " + resourceType);
         }
         return Constants.ARD_CLIENT_PATH + "/artifacts?namespaceId=" + encode(namespaceId)
             + "&resourceType=" + encode(resourceType) + "&resourceName=" + encode(resourceName)
             + "&version=" + encode(version);
+    }
+    
+    private String buildAiResourceUrl(String namespaceId, String resourceType, String resourceName,
+        String version) {
+        if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
+            return Constants.Skills.CLIENT_PATH + "?namespaceId=" + encode(namespaceId)
+                + "&name=" + encode(resourceName) + "&version=" + encode(version);
+        }
+        return buildArtifactUrl(namespaceId, resourceType, resourceName, version);
     }
     
     private String buildMcpArtifactUrl(String namespaceId, String resourceName, String version,

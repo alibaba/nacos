@@ -40,6 +40,8 @@ final class ArdIndexConstants {
     
     static final String MEDIA_TYPE_SKILL = "application/ai-skill+md";
     
+    static final String MEDIA_TYPE_SKILL_PACKAGE = "application/zip";
+    
     static final String MEDIA_TYPE_PROMPT = "application/vnd.nacos.ai-prompt+json";
     
     static final String MEDIA_TYPE_MCP = "application/mcp-server-card+json";
