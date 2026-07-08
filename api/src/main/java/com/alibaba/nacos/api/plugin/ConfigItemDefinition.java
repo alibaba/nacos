@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.plugin;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -63,6 +64,21 @@ public class ConfigItemDefinition implements Serializable {
      * Enum values (when type is ENUM).
      */
     private List<String> enumValues;
+    
+    /**
+     * Historical static configuration keys for compatibility.
+     */
+    private List<String> aliases = new ArrayList<>();
+    
+    /**
+     * Whether this item contains sensitive data.
+     */
+    private boolean sensitive;
+    
+    /**
+     * Configuration item effect mode.
+     */
+    private ConfigItemEffectMode effectMode = ConfigItemEffectMode.RESTART;
     
     public ConfigItemDefinition() {
     }
@@ -129,6 +145,30 @@ public class ConfigItemDefinition implements Serializable {
         this.enumValues = enumValues;
     }
     
+    public List<String> getAliases() {
+        return aliases;
+    }
+    
+    public void setAliases(List<String> aliases) {
+        this.aliases = aliases;
+    }
+    
+    public boolean isSensitive() {
+        return sensitive;
+    }
+    
+    public void setSensitive(boolean sensitive) {
+        this.sensitive = sensitive;
+    }
+    
+    public ConfigItemEffectMode getEffectMode() {
+        return effectMode;
+    }
+    
+    public void setEffectMode(ConfigItemEffectMode effectMode) {
+        this.effectMode = effectMode;
+    }
+    
     /**
      * Builder for ConfigItemDefinition.
      */
@@ -157,6 +197,21 @@ public class ConfigItemDefinition implements Serializable {
         
         public Builder enumValues(List<String> enumValues) {
             definition.setEnumValues(enumValues);
+            return this;
+        }
+        
+        public Builder aliases(List<String> aliases) {
+            definition.setAliases(aliases);
+            return this;
+        }
+        
+        public Builder sensitive(boolean sensitive) {
+            definition.setSensitive(sensitive);
+            return this;
+        }
+        
+        public Builder effectMode(ConfigItemEffectMode effectMode) {
+            definition.setEffectMode(effectMode);
             return this;
         }
         

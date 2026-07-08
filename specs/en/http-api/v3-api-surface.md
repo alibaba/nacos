@@ -134,6 +134,9 @@ Implemented behavior to document more explicitly:
   configured encryption handler applies.
 - AI Prompt contains deprecated compatibility endpoints and newer lifecycle
   endpoints in the same controller.
+- Plugin detail returns the current effective plugin config in its existing
+  `config` field and may add value metadata such as source and overridden state
+  without changing existing fields.
 
 ## 6. Console API Implemented Behavior
 

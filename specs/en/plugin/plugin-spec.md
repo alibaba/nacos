@@ -159,6 +159,66 @@ config application behavior. Cluster-wide status or config changes must be
 synchronized through the plugin state operation path unless the request is
 explicitly local only.
 
+### Configuration Definition
+
+Plugin config items are described by `ConfigItemDefinition`. The `key` field is
+the canonical item key inside the plugin implementation and does not include the
+`nacos.plugin.{pluginType}.{pluginName}.` prefix. Static configuration should
+prefer this normalized full key:
+
+```text
+nacos.plugin.{pluginType}.{pluginName}.{itemKey}
+```
+
+Config definitions may declare the following metadata:
+
+| Field | Meaning |
+|-------|---------|
+| `aliases` | Historical static config keys for compatibility and migration hints. |
+| `sensitive` | Whether the value is sensitive. Query APIs must mask it before returning. |
+| `effectMode` | Effect mode. `RUNTIME` can take effect at runtime, and `RESTART` requires restart. |
+
+`aliases` are only used when reading compatible static configuration. They must
+not be written into runtime persistence files or local-only memory maps.
+
+### Config Sources And Value Metadata
+
+Effective plugin config values are computed by a unified resolution flow. Source
+priority is:
+
+```text
+LOCAL_ONLY > RUNTIME_PERSISTED > STATIC > DEFAULT
+```
+
+| Source | Meaning |
+|--------|---------|
+| `DEFAULT` | Value from `ConfigItemDefinition.defaultValue`. |
+| `STATIC` | Value from static configuration, such as `application.properties`, environment variables, JVM parameters, or Spring parameters. |
+| `RUNTIME_PERSISTED` | Cluster-wide runtime override. It may currently be persisted as the final content in `plugin-configs.json`. |
+| `LOCAL_ONLY` | Current-node override for diagnosis or emergency handling, not synchronized to the cluster. |
+
+Plugin detail responses may add `PluginConfigValueMeta` to describe the current
+source and overridden state of each config item. `overridden` ignores `DEFAULT`
+and should be `true` only when the same key has multiple non-default sources.
+
+Runtime persisted config and local-only config store only values by
+`pluginId + itemKey`. They do not store normalized full keys, alias keys,
+source, or version information.
+
+### Config Update Compatibility
+
+Plugin detail APIs must remain additively compatible: existing `config` and
+`configDefinitions` fields remain available. `config` may represent the current
+effective config, and the added `configValueMetas` field carries source and
+overridden metadata.
+
+`PUT /v3/admin/core/plugin/config` and the matching Console API keep the current
+full override map update semantics. `localOnly=true` updates only the current
+node local-only override; otherwise the request updates the cluster-wide runtime
+persisted override. Key normalization and `effectMode` checks are server-side
+logic and are not exposed as new API parameters. Fields marked
+`effectMode=RESTART` must not be applied immediately by runtime updates.
+
 ## Admin API
 
 The core plugin admin API is:
@@ -166,7 +226,7 @@ The core plugin admin API is:
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `/v3/admin/core/plugin/list` | List loaded plugins, optionally filtered by type. |
-| `GET` | `/v3/admin/core/plugin/detail` | Read one plugin detail. |
+| `GET` | `/v3/admin/core/plugin/detail` | Read one plugin detail with effective config and optional value metadata. |
 | `PUT` | `/v3/admin/core/plugin/status` | Enable or disable a plugin. |
 | `PUT` | `/v3/admin/core/plugin/config` | Update plugin configuration. |
 
