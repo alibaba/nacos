@@ -42,7 +42,7 @@ class SkillSpectorScanOptionsTest {
         assertEquals(20, options.getMaxFindings());
         Map<String, String> env = new HashMap<>();
         options.applyLlmEnvironment(env);
-        assertTrue(env.isEmpty());
+        assertEquals("WARNING", env.get("SKILLSPECTOR_LOG_LEVEL"));
     }
     
     @Test
@@ -56,6 +56,7 @@ class SkillSpectorScanOptionsTest {
         properties.setProperty(SkillSpectorScanOptions.PROP_API_KEY_KEBAB, "configured-key");
         properties.setProperty(SkillSpectorScanOptions.PROP_BASE_URL_KEBAB,
             "https://example.com/v1");
+        properties.setProperty(SkillSpectorScanOptions.PROP_LOG_LEVEL_KEBAB, "DEBUG");
         
         SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
         
@@ -66,8 +67,23 @@ class SkillSpectorScanOptionsTest {
         options.applyLlmEnvironment(env);
         assertEquals("openai", env.get("SKILLSPECTOR_PROVIDER"));
         assertEquals("gpt-test", env.get("SKILLSPECTOR_MODEL"));
+        assertEquals("DEBUG", env.get("SKILLSPECTOR_LOG_LEVEL"));
         assertEquals("configured-key", env.get("OPENAI_API_KEY"));
         assertEquals("https://example.com/v1", env.get("OPENAI_BASE_URL"));
+    }
+    
+    @Test
+    void environmentLogLevelHasPriorityTest() {
+        Properties properties = new Properties();
+        properties.setProperty(SkillSpectorScanOptions.PROP_LOG_LEVEL_KEBAB, "DEBUG");
+        
+        SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
+        Map<String, String> env = new HashMap<>();
+        env.put("SKILLSPECTOR_LOG_LEVEL", "WARNING");
+        
+        options.applyLlmEnvironment(env);
+        
+        assertEquals("WARNING", env.get("SKILLSPECTOR_LOG_LEVEL"));
     }
     
     @Test

@@ -45,6 +45,10 @@ final class SkillSpectorScanOptions {
     
     static final String PROP_BASE_URL_KEBAB = "base-url";
     
+    static final String PROP_LOG_LEVEL = "logLevel";
+    
+    static final String PROP_LOG_LEVEL_KEBAB = "log-level";
+    
     static final String PROP_RISK_SCORE_THRESHOLD = "riskScoreThreshold";
     
     static final String PROP_RISK_SCORE_THRESHOLD_KEBAB = "risk-score-threshold";
@@ -59,9 +63,13 @@ final class SkillSpectorScanOptions {
     
     static final int MAX_FINDINGS_LIMIT = 100;
     
+    private static final String DEFAULT_LOG_LEVEL = "WARNING";
+    
     private static final String ENV_SKILLSPECTOR_PROVIDER = "SKILLSPECTOR_PROVIDER";
     
     private static final String ENV_SKILLSPECTOR_MODEL = "SKILLSPECTOR_MODEL";
+    
+    private static final String ENV_SKILLSPECTOR_LOG_LEVEL = "SKILLSPECTOR_LOG_LEVEL";
     
     private static final String ENV_SKILLSPECTOR_API_KEY = "SKILLSPECTOR_API_KEY";
     
@@ -83,23 +91,26 @@ final class SkillSpectorScanOptions {
     
     private final String baseUrl;
     
+    private final String logLevel;
+    
     private final int riskScoreThreshold;
     
     private final int maxFindings;
     
     private SkillSpectorScanOptions(boolean useLlm, String provider, String model, String apiKey,
-        String baseUrl, int riskScoreThreshold, int maxFindings) {
+        String baseUrl, String logLevel, int riskScoreThreshold, int maxFindings) {
         this.useLlm = useLlm;
         this.provider = provider;
         this.model = model;
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
+        this.logLevel = logLevel;
         this.riskScoreThreshold = riskScoreThreshold;
         this.maxFindings = maxFindings;
     }
     
     static SkillSpectorScanOptions none() {
-        return new SkillSpectorScanOptions(false, null, null, null, null,
+        return new SkillSpectorScanOptions(false, null, null, null, null, DEFAULT_LOG_LEVEL,
             DEFAULT_RISK_SCORE_THRESHOLD, DEFAULT_MAX_FINDINGS);
     }
     
@@ -119,6 +130,7 @@ final class SkillSpectorScanOptions {
             trimToNull(properties.getProperty(PROP_MODEL)),
             readProperty(properties, PROP_API_KEY, PROP_API_KEY_KEBAB, null),
             readProperty(properties, PROP_BASE_URL, PROP_BASE_URL_KEBAB, null),
+            readProperty(properties, PROP_LOG_LEVEL, PROP_LOG_LEVEL_KEBAB, DEFAULT_LOG_LEVEL),
             threshold, maxFindings);
     }
     
@@ -183,6 +195,7 @@ final class SkillSpectorScanOptions {
     }
     
     void applyLlmEnvironment(Map<String, String> env) {
+        putIfConfigured(env, ENV_SKILLSPECTOR_LOG_LEVEL, logLevel);
         if (!useLlm) {
             return;
         }
