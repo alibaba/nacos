@@ -18,11 +18,11 @@ package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.service.ard.ArdSearchService;
 import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.auth.annotation.Secured;
-import org.junit.jupiter.api.AfterEach;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -31,9 +31,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 /**
@@ -47,46 +46,23 @@ class ArdWellKnownControllerTest {
     @Mock
     private ArdSearchService ardSearchService;
     
-    @AfterEach
-    void tearDown() {
-        System.clearProperty(ArdWellKnownController.KEY_WELL_KNOWN_ENABLED);
-        System.clearProperty(ArdWellKnownController.KEY_WELL_KNOWN_NAMESPACE_ID);
-    }
-    
     @Test
-    void catalogShouldReturnPublicCatalogWhenEnabled() throws NacosException {
-        System.setProperty(ArdWellKnownController.KEY_WELL_KNOWN_ENABLED, "true");
+    void catalogShouldReturnHostCatalog() throws NacosException {
         ArdCatalog catalog = new ArdCatalog();
-        when(ardSearchService.catalog(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID))
-            .thenReturn(catalog);
+        when(ardSearchService.hostCatalog()).thenReturn(catalog);
         
         assertSame(catalog, controller().catalog());
     }
     
     @Test
-    void catalogShouldUseConfiguredNamespaceWhenEnabled() throws NacosException {
-        System.setProperty(ArdWellKnownController.KEY_WELL_KNOWN_ENABLED, "true");
-        System.setProperty(ArdWellKnownController.KEY_WELL_KNOWN_NAMESPACE_ID, "tenant-a");
-        ArdCatalog catalog = new ArdCatalog();
-        when(ardSearchService.catalog("tenant-a")).thenReturn(catalog);
-        
-        assertSame(catalog, controller().catalog());
-    }
-    
-    @Test
-    void catalogShouldReturnNotFoundWhenDisabled() {
-        NacosApiException exception = assertThrows(NacosApiException.class,
-            () -> controller().catalog());
-        
-        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
-        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode(), exception.getDetailErrCode());
-    }
-    
-    @Test
-    void catalogShouldBeAnonymousDiscoveryEndpoint() throws NoSuchMethodException {
+    void catalogShouldUseAiReadAuthentication() throws NoSuchMethodException {
         Method method = ArdWellKnownController.class.getMethod("catalog");
+        Secured secured = method.getAnnotation(Secured.class);
         
-        assertFalse(method.isAnnotationPresent(Secured.class));
+        assertNotNull(secured);
+        assertEquals(ActionTypes.READ, secured.action());
+        assertEquals(SignType.AI, secured.signType());
+        assertEquals(ApiType.OPEN_API, secured.apiType());
     }
     
     private ArdWellKnownController controller() {

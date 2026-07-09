@@ -216,6 +216,15 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     }
     
     @Override
+    public ArdCatalog hostCatalog() {
+        ArdCatalog catalog = new ArdCatalog();
+        catalog.setSpecVersion(SPEC_VERSION);
+        catalog.setHost(hostInfo());
+        catalog.setEntries(Collections.singletonList(registryEntry()));
+        return catalog;
+    }
+    
+    @Override
     public ArdCatalog catalog(String namespaceId) throws NacosException {
         String resolvedNamespace = normalizeNamespaceId(namespaceId);
         ArdCatalog catalog = new ArdCatalog();

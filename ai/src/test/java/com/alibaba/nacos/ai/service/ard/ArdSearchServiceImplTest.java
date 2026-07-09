@@ -64,6 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -406,6 +407,22 @@ class ArdSearchServiceImplTest {
         assertEquals("urn:air:nacos:registry:nacos",
             catalog.getEntries().get(0).getIdentifier());
         assertEquals("api-helper", catalog.getEntries().get(1).getDisplayName());
+    }
+    
+    @Test
+    void hostCatalogShouldExposeOnlyRegistryEntry() {
+        ArdSearchServiceImpl service = service();
+        
+        ArdCatalog catalog = service.hostCatalog();
+        
+        assertEquals("1.0", catalog.getSpecVersion());
+        assertEquals("Nacos AI Registry", catalog.getHost().getDisplayName());
+        assertEquals(1, catalog.getEntries().size());
+        assertEquals("urn:air:nacos:registry:nacos",
+            catalog.getEntries().get(0).getIdentifier());
+        assertEquals("application/ai-registry+json", catalog.getEntries().get(0).getType());
+        assertEquals("/v3/ai/ard", catalog.getEntries().get(0).getUrl());
+        verifyNoInteractions(repository, resourceManager, mcpServerOperationService);
     }
     
     @Test

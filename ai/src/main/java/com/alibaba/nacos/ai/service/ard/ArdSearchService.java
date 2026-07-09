@@ -64,6 +64,13 @@ public interface ArdSearchService {
         String pageToken) throws NacosException;
     
     /**
+     * Build host-level ARD catalog manifest for standard well-known discovery.
+     *
+     * @return host-level ARD catalog manifest
+     */
+    ArdCatalog hostCatalog();
+    
+    /**
      * Build local ARD catalog manifest.
      *
      * @param namespaceId namespace id
