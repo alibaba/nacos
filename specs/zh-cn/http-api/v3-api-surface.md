@@ -127,6 +127,8 @@ Admin API 兼容开关。
 - Config 查询在返回 Admin API 详情前会解密加密内容。
 - Config 发布在未提供 encrypted data key 且适用加密处理器时会加密内容。
 - AI Prompt 在同一个 Controller 中同时包含已废弃兼容端点和新的生命周期端点。
+- Plugin detail 在已有 `config` 字段中返回当前 effective plugin config，并可以
+  追加来源、overridden 等值元数据，不改变已有字段。
 
 ## 6. Console API 已实现行为
 

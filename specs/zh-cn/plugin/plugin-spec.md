@@ -140,6 +140,59 @@ Nacos 插件包含两个相关的 SPI 层次：
 实现 `PluginConfigSpec` 的插件应暴露配置定义、当前配置和配置应用行为。除非请求明确
 声明为仅本机生效，否则集群级状态或配置变更必须通过插件状态操作链路进行同步。
 
+### 配置定义
+
+插件配置项由 `ConfigItemDefinition` 描述。`key` 表示插件实现内部的 canonical item
+key，不携带 `nacos.plugin.{pluginType}.{pluginName}.` 前缀。静态配置推荐使用以下
+normalized full key：
+
+```text
+nacos.plugin.{pluginType}.{pluginName}.{itemKey}
+```
+
+配置定义可以声明以下元数据：
+
+| 字段 | 含义 |
+|------|------|
+| `aliases` | 历史静态配置 key，用于兼容读取和迁移提示。 |
+| `sensitive` | 是否为敏感值。查询 API 返回前必须脱敏。 |
+| `effectMode` | 生效模式，`RUNTIME` 表示可运行时生效，`RESTART` 表示需要重启。 |
+
+`aliases` 只用于静态配置兼容读取，不应写入运行时持久化文件或 local-only 内存表。
+
+### 配置来源与值元数据
+
+插件配置的 effective value 由统一解析流程计算。配置来源优先级为：
+
+```text
+LOCAL_ONLY > RUNTIME_PERSISTED > STATIC > DEFAULT
+```
+
+| 来源 | 含义 |
+|------|------|
+| `DEFAULT` | 来自 `ConfigItemDefinition.defaultValue`。 |
+| `STATIC` | 来自 `application.properties`、环境变量、JVM 参数或 Spring 参数等静态配置。 |
+| `RUNTIME_PERSISTED` | 来自集群级运行时 override，当前可由 `plugin-configs.json` 记录终态内容。 |
+| `LOCAL_ONLY` | 当前节点的本机 override，只用于诊断或应急处理，不同步到集群。 |
+
+插件详情返回模型可以追加 `PluginConfigValueMeta`，用于描述每个配置项的当前值来源和
+是否存在多来源覆盖。`overridden` 忽略 `DEFAULT`，只有同一 key 同时存在多个非默认
+来源时才应为 `true`。
+
+运行时持久化配置和 local-only 配置只保存 `pluginId + itemKey` 对应的值，不保存
+normalized full key、alias key、source 或版本信息。
+
+### 配置更新兼容性
+
+插件详情 API 应保持 additive 兼容：已有 `config` 和 `configDefinitions` 字段继续
+保留，其中 `config` 可以表示当前 effective config，新增的 `configValueMetas` 表示
+source 和 overridden 等元信息。
+
+`PUT /v3/admin/core/plugin/config` 和对应 Console API 保持现有完整 override map
+更新语义。`localOnly=true` 表示只更新当前节点 local-only override；否则更新集群级
+runtime persisted override。key 归一化和 `effectMode` 校验由服务端内部完成，不作为
+新的 API 参数暴露。`effectMode=RESTART` 的字段不应通过运行时更新立即生效。
+
 ## 管理 API
 
 核心插件管理 API 如下：
@@ -147,7 +200,7 @@ Nacos 插件包含两个相关的 SPI 层次：
 | 方法 | 路径 | 目的 |
 |------|------|------|
 | `GET` | `/v3/admin/core/plugin/list` | 查询已加载插件，可按类型过滤。 |
-| `GET` | `/v3/admin/core/plugin/detail` | 查询单个插件详情。 |
+| `GET` | `/v3/admin/core/plugin/detail` | 查询单个插件详情，返回 effective config 和可选值元数据。 |
 | `PUT` | `/v3/admin/core/plugin/status` | 启用或禁用插件。 |
 | `PUT` | `/v3/admin/core/plugin/config` | 更新插件配置。 |
 
