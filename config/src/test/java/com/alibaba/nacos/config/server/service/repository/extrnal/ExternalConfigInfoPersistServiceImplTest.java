@@ -46,8 +46,10 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -336,6 +338,79 @@ class ExternalConfigInfoPersistServiceImplTest {
             assertEquals("mock fail", e.getMessage());
         }
         
+    }
+    
+    @Test
+    void testInsertOrUpdateUpdatesWhenDuplicateKeyException() {
+        ConfigOperateResult result = insertOrUpdateAfterInsertException(
+            new DuplicateKeyException("duplicate key"));
+        
+        assertTrue(result.isSuccess());
+        assertEquals(100L, result.getId());
+        verifyConfigInfoUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateUpdatesWhenWrappedDuplicateKeyException() {
+        ConfigOperateResult result = insertOrUpdateAfterInsertException(
+            new DataIntegrityViolationException("wrapped", new DuplicateKeyException("duplicate")));
+        
+        assertTrue(result.isSuccess());
+        assertEquals(100L, result.getId());
+        verifyConfigInfoUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateRethrowsWrappedUniqueSqlException() {
+        SQLException duplicateKeyException =
+            new SQLException("duplicate key value violates unique constraint", "23505");
+        BadSqlGrammarException exception =
+            new BadSqlGrammarException("insert", "sql", duplicateKeyException);
+        BadSqlGrammarException thrown = assertThrows(BadSqlGrammarException.class,
+            () -> insertOrUpdateAfterInsertException(exception));
+        
+        assertEquals(exception, thrown);
+        verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateRethrowsPlainDataIntegrityViolationException() {
+        DataIntegrityViolationException exception =
+            new DataIntegrityViolationException("unique constraint violated");
+        DataIntegrityViolationException thrown = assertThrows(DataIntegrityViolationException.class,
+            () -> insertOrUpdateAfterInsertException(exception));
+        
+        assertEquals(exception, thrown);
+        verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateCasReturnsFalseWhenDuplicateKeyException() {
+        ConfigOperateResult result = insertOrUpdateCasAfterInsertException(
+            new DuplicateKeyException("duplicate key"));
+        
+        assertFalse(result.isSuccess());
+        verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateCasReturnsFalseWhenWrappedDuplicateKeyException() {
+        ConfigOperateResult result = insertOrUpdateCasAfterInsertException(
+            new DataIntegrityViolationException("wrapped", new DuplicateKeyException("duplicate")));
+        
+        assertFalse(result.isSuccess());
+        verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateCasRethrowsPlainDataIntegrityViolationException() {
+        DataIntegrityViolationException exception =
+            new DataIntegrityViolationException("unique constraint violated");
+        DataIntegrityViolationException thrown = assertThrows(DataIntegrityViolationException.class,
+            () -> insertOrUpdateCasAfterInsertException(exception));
+        
+        assertEquals(exception, thrown);
+        verifyConfigInfoNotUpdated();
     }
     
     @Test
@@ -944,6 +1019,64 @@ class ExternalConfigInfoPersistServiceImplTest {
         
         assertNotNull(result);
         assertFalse(result.isSuccess());
+    }
+    
+    private ConfigOperateResult insertOrUpdateAfterInsertException(RuntimeException exception) {
+        ConfigInfo configInfo = mockInsertConfigException(exception);
+        mockFallbackUpdateConfigInfo();
+        return externalConfigInfoPersistService.insertOrUpdate("srcIp", "srcUser", configInfo,
+            new HashMap<>());
+    }
+    
+    private ConfigOperateResult insertOrUpdateCasAfterInsertException(RuntimeException exception) {
+        ConfigInfo configInfo = mockInsertConfigException(exception);
+        return externalConfigInfoPersistService.insertOrUpdateCas("srcIp", "srcUser", configInfo,
+            new HashMap<>());
+    }
+    
+    private ConfigInfo mockInsertConfigException(RuntimeException exception) {
+        String dataId = "dataId";
+        String group = "group";
+        String tenant = "tenant";
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, null, "content");
+        configInfo.setEncryptedDataKey("encryptedKey");
+        ConfigInfoStateWrapper updatedState = new ConfigInfoStateWrapper();
+        updatedState.setId(100L);
+        updatedState.setLastModified(123L);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(null, updatedState);
+        
+        GeneratedKeyHolder generatedKeyHolder = TestCaseUtils.createGeneratedKeyHolder(99L);
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder)
+            .thenReturn(generatedKeyHolder);
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class),
+            eq(generatedKeyHolder))).thenThrow(exception);
+        return configInfo;
+    }
+    
+    private void mockFallbackUpdateConfigInfo() {
+        String dataId = "dataId";
+        String group = "group";
+        String tenant = "tenant";
+        ConfigAllInfo oldConfig = new ConfigAllInfo();
+        oldConfig.setId(100L);
+        oldConfig.setDataId(dataId);
+        oldConfig.setGroup(group);
+        oldConfig.setTenant(tenant);
+        oldConfig.setAppName("oldApp");
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(oldConfig);
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any())).thenReturn(1);
+    }
+    
+    private void verifyConfigInfoUpdated() {
+        Mockito.verify(jdbcTemplate, times(1)).update(anyString(), Mockito.<Object[]>any());
+    }
+    
+    private void verifyConfigInfoNotUpdated() {
+        Mockito.verify(jdbcTemplate, times(0)).update(anyString(), Mockito.<Object[]>any());
     }
     
     private ConfigAllInfo createMockConfigAllInfo(long mockId) {
