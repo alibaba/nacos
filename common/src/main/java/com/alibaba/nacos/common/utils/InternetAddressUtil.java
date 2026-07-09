@@ -70,10 +70,19 @@ public class InternetAddressUtil {
      * @return java.lang.String
      */
     public static String localHostIp() {
-        if (PREFER_IPV6_ADDRESSES) {
+        if (isPreferIpv6Addresses()) {
             return LOCAL_HOST_IP_V6;
         }
         return LOCAL_HOST_IP_V4;
+    }
+    
+    /**
+     * Whether IPv6 address is preferred.
+     *
+     * @return true if IPv6 address is preferred
+     */
+    public static boolean isPreferIpv6Addresses() {
+        return PREFER_IPV6_ADDRESSES;
     }
     
     /**

@@ -17,7 +17,7 @@ concurrency:
 jobs:
   integration-test:
     name: OpenAPI, Java SDK and Maintainer SDK Integration Test
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-java]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
