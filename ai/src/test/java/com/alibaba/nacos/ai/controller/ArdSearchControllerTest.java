@@ -110,6 +110,11 @@ class ArdSearchControllerTest {
         assertEquals("/v3/ai/ard", Constants.ARD_CLIENT_PATH);
     }
     
+    @Test
+    void ardWellKnownPathShouldUseStandardEndpoint() {
+        assertEquals("/.well-known", Constants.ARD_WELL_KNOWN_PATH);
+    }
+    
     private ArdSearchController controller() {
         return new ArdSearchController(ardSearchService, ardArtifactService);
     }
