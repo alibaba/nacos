@@ -18,10 +18,13 @@ package com.alibaba.nacos.console.handler.impl.remote.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.api.plugin.ConfigItemType;
 import com.alibaba.nacos.console.handler.core.PluginHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
+import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
+import com.alibaba.nacos.core.plugin.model.vo.PluginConfigValueMeta;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
 import org.springframework.stereotype.Service;
@@ -61,6 +64,8 @@ public class PluginRemoteHandler implements PluginHandler {
     
     private static final String FIELD_CONFIG_DEFINITIONS = "configDefinitions";
     
+    private static final String FIELD_CONFIG_VALUE_METAS = "configValueMetas";
+    
     private static final String FIELD_KEY = "key";
     
     private static final String FIELD_NAME = "name";
@@ -74,6 +79,16 @@ public class PluginRemoteHandler implements PluginHandler {
     private static final String FIELD_TYPE = "type";
     
     private static final String FIELD_ENUM_VALUES = "enumValues";
+    
+    private static final String FIELD_ALIASES = "aliases";
+    
+    private static final String FIELD_SENSITIVE = "sensitive";
+    
+    private static final String FIELD_EFFECT_MODE = "effectMode";
+    
+    private static final String FIELD_SOURCE = "source";
+    
+    private static final String FIELD_OVERRIDDEN = "overridden";
     
     private final NacosMaintainerClientHolder clientHolder;
     
@@ -157,6 +172,11 @@ public class PluginRemoteHandler implements PluginHandler {
                 (List<Map<String, Object>>) raw.get(FIELD_CONFIG_DEFINITIONS);
             vo.setConfigDefinitions(convertToConfigItemDefinitions(rawDefinitions));
         }
+        if (raw.get(FIELD_CONFIG_VALUE_METAS) != null) {
+            List<Map<String, Object>> rawValueMetas =
+                (List<Map<String, Object>>) raw.get(FIELD_CONFIG_VALUE_METAS);
+            vo.setConfigValueMetas(convertToPluginConfigValueMetas(rawValueMetas));
+        }
         return vo;
     }
     
@@ -182,7 +202,39 @@ public class PluginRemoteHandler implements PluginHandler {
             if (raw.get(FIELD_ENUM_VALUES) != null) {
                 definition.setEnumValues((List<String>) raw.get(FIELD_ENUM_VALUES));
             }
+            if (raw.get(FIELD_ALIASES) != null) {
+                definition.setAliases((List<String>) raw.get(FIELD_ALIASES));
+            }
+            definition.setSensitive(Boolean.TRUE.equals(raw.get(FIELD_SENSITIVE)));
+            if (raw.get(FIELD_EFFECT_MODE) != null) {
+                String effectModeStr = raw.get(FIELD_EFFECT_MODE).toString();
+                try {
+                    definition.setEffectMode(ConfigItemEffectMode.valueOf(effectModeStr));
+                } catch (IllegalArgumentException e) {
+                    definition.setEffectMode(ConfigItemEffectMode.RESTART);
+                }
+            }
             result.add(definition);
+        }
+        return result;
+    }
+    
+    private List<PluginConfigValueMeta> convertToPluginConfigValueMetas(
+        List<Map<String, Object>> rawList) {
+        List<PluginConfigValueMeta> result = new ArrayList<>(rawList.size());
+        for (Map<String, Object> raw : rawList) {
+            PluginConfigValueMeta meta = new PluginConfigValueMeta();
+            meta.setKey((String) raw.get(FIELD_KEY));
+            meta.setOverridden(Boolean.TRUE.equals(raw.get(FIELD_OVERRIDDEN)));
+            if (raw.get(FIELD_SOURCE) != null) {
+                String sourceStr = raw.get(FIELD_SOURCE).toString();
+                try {
+                    meta.setSource(PluginConfigSourceType.valueOf(sourceStr));
+                } catch (IllegalArgumentException e) {
+                    meta.setSource(PluginConfigSourceType.DEFAULT);
+                }
+            }
+            result.add(meta);
         }
         return result;
     }

@@ -27,6 +27,8 @@ import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
+import com.alibaba.nacos.core.plugin.config.PluginConfigResolver;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.alibaba.nacos.core.plugin.sync.PluginStateApplier;
@@ -41,6 +43,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -98,14 +101,22 @@ public class PluginManager
     private final Map<String, Boolean> pluginStates = new ConcurrentHashMap<>();
     
     /**
-     * Plugin configurations: pluginId -> config.
+     * Runtime persisted plugin configurations: pluginId -> config.
      */
     private final Map<String, Map<String, String>> pluginConfigs = new ConcurrentHashMap<>();
+    
+    /**
+     * Local-only plugin configurations: pluginId -> config.
+     */
+    private final Map<String, Map<String, String>> localOnlyPluginConfigs =
+        new ConcurrentHashMap<>();
     
     /**
      * Plugin instances: pluginId -> instance.
      */
     private final Map<String, Object> pluginInstances = new ConcurrentHashMap<>();
+    
+    private final PluginConfigResolver pluginConfigResolver = new PluginConfigResolver();
     
     private final PluginStatePersistenceService persistence;
     
@@ -235,20 +246,22 @@ public class PluginManager
                 "Plugin does not support configuration: " + pluginId);
         }
         
-        // Validate config
-        validateConfig(info, config);
+        Map<String, String> normalizedConfig = normalizeConfig(info, config);
+        
+        // Validate effective config.
+        validateConfig(info, resolveEffectiveConfig(info, normalizedConfig, localOnly).getConfig());
         
         // LocalOnly mode: only update local memory, skip cluster sync
         if (localOnly) {
             LOGGER.warn(
                 "[PluginManager] LocalOnly mode: applying config change to this node only, pluginId={}",
                 pluginId);
-            applyConfigChange(pluginId, config);
+            applyLocalConfigChange(pluginId, normalizedConfig);
             return;
         }
         
         // Synchronize to cluster
-        synchronizer.syncConfigChange(pluginId, config);
+        synchronizer.syncConfigChange(pluginId, normalizedConfig);
         
         LOGGER.info("[PluginManager] Plugin {} config updated", pluginId);
     }
@@ -270,6 +283,17 @@ public class PluginManager
      */
     public Optional<PluginInfo> getPlugin(String pluginId) {
         return Optional.ofNullable(pluginRegistry.get(pluginId));
+    }
+    
+    /**
+     * Resolve plugin effective config for detail output.
+     *
+     * @param pluginInfo plugin info
+     * @return plugin config resolution with masked sensitive values
+     */
+    public PluginConfigResolution resolvePluginConfig(PluginInfo pluginInfo) {
+        return pluginConfigResolver.resolve(pluginInfo, pluginConfigs.get(pluginInfo.getPluginId()),
+            localOnlyPluginConfigs.get(pluginInfo.getPluginId()), true);
     }
     
     /**
@@ -361,9 +385,7 @@ public class PluginManager
         Map<String, Map<String, String>> configs = persistence.loadAllConfigs();
         configs.forEach((pluginId, config) -> {
             if (pluginRegistry.containsKey(pluginId)) {
-                pluginConfigs.put(pluginId, config);
-                pluginRegistry.get(pluginId).setConfig(config);
-                applyConfigToPlugin(pluginId, config);
+                applyConfigChange(pluginId, config);
             }
         });
     }
@@ -459,12 +481,48 @@ public class PluginManager
      */
     @Override
     public void applyConfigChange(String pluginId, Map<String, String> config) {
-        pluginConfigs.put(pluginId, new HashMap<>(config));
         PluginInfo info = pluginRegistry.get(pluginId);
-        if (info != null) {
-            info.setConfig(config);
+        Map<String, String> normalizedConfig = normalizeConfig(info, config);
+        pluginConfigs.put(pluginId, normalizedConfig);
+        applyEffectiveConfig(pluginId);
+    }
+    
+    private void applyLocalConfigChange(String pluginId, Map<String, String> config) {
+        PluginInfo info = pluginRegistry.get(pluginId);
+        Map<String, String> normalizedConfig = normalizeConfig(info, config);
+        localOnlyPluginConfigs.put(pluginId, normalizedConfig);
+        applyEffectiveConfig(pluginId);
+    }
+    
+    private Map<String, String> normalizeConfig(PluginInfo info, Map<String, String> config) {
+        Map<String, String> configToNormalize = config == null ? Collections.emptyMap() : config;
+        if (info == null) {
+            return new HashMap<>(configToNormalize);
         }
-        applyConfigToPlugin(pluginId, config);
+        return new HashMap<>(pluginConfigResolver.normalizeConfig(info, configToNormalize));
+    }
+    
+    private PluginConfigResolution resolveEffectiveConfig(PluginInfo info,
+        Map<String, String> updatingConfig, boolean localOnly) {
+        String pluginId = info.getPluginId();
+        Map<String, String> runtimeConfig =
+            localOnly ? pluginConfigs.get(pluginId) : updatingConfig;
+        Map<String, String> localConfig =
+            localOnly ? updatingConfig : localOnlyPluginConfigs.get(pluginId);
+        return pluginConfigResolver.resolve(info, runtimeConfig, localConfig, false);
+    }
+    
+    private void applyEffectiveConfig(String pluginId) {
+        PluginInfo info = pluginRegistry.get(pluginId);
+        Map<String, String> effectiveConfig;
+        if (info != null) {
+            effectiveConfig = pluginConfigResolver.resolve(info, pluginConfigs.get(pluginId),
+                localOnlyPluginConfigs.get(pluginId), false).getConfig();
+            info.setConfig(effectiveConfig);
+        } else {
+            effectiveConfig = pluginConfigs.get(pluginId);
+        }
+        applyConfigToPlugin(pluginId, effectiveConfig);
     }
     
     /**
