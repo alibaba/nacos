@@ -21,16 +21,15 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginConfigValueMeta;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.core.env.ConfigurableEnvironment;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.ArrayList;
 
 /**
  * Resolver for plugin effective configuration.
@@ -40,6 +39,22 @@ import java.util.ArrayList;
 public class PluginConfigResolver {
     
     private final PluginConfigKeyResolver keyResolver = new PluginConfigKeyResolver();
+    
+    private final LocalOnlyPluginConfigSourceResolver localOnlySourceResolver =
+        new LocalOnlyPluginConfigSourceResolver();
+    
+    private final RuntimePersistedPluginConfigSourceResolver runtimePersistedSourceResolver =
+        new RuntimePersistedPluginConfigSourceResolver();
+    
+    private final StaticPluginConfigSourceResolver staticSourceResolver =
+        new StaticPluginConfigSourceResolver();
+    
+    private final DefaultPluginConfigSourceResolver defaultSourceResolver =
+        new DefaultPluginConfigSourceResolver();
+    
+    private final List<PluginConfigSourceResolver> sourceResolvers = Arrays.asList(
+        localOnlySourceResolver, runtimePersistedSourceResolver, staticSourceResolver,
+        defaultSourceResolver);
     
     /**
      * Normalize config keys with plugin config definitions.
@@ -53,38 +68,78 @@ public class PluginConfigResolver {
     }
     
     /**
-     * Resolve effective plugin config.
+     * Update runtime persisted config for one plugin.
+     *
+     * @param pluginId plugin id
+     * @param config normalized config
+     */
+    public void updateRuntimeConfig(String pluginId, Map<String, String> config) {
+        runtimePersistedSourceResolver.updateConfig(pluginId, config);
+    }
+    
+    /**
+     * Update local-only config for one plugin.
+     *
+     * @param pluginId plugin id
+     * @param config normalized config
+     */
+    public void updateLocalOnlyConfig(String pluginId, Map<String, String> config) {
+        localOnlySourceResolver.updateConfig(pluginId, config);
+    }
+    
+    /**
+     * Resolve effective plugin config from source resolvers.
      *
      * @param pluginInfo plugin info
-     * @param runtimeConfig runtime persisted config
-     * @param localOnlyConfig local-only config
      * @param maskSensitive whether sensitive values should be masked
      * @return resolution
      */
-    public PluginConfigResolution resolve(PluginInfo pluginInfo,
-        Map<String, String> runtimeConfig, Map<String, String> localOnlyConfig,
+    public PluginConfigResolution resolve(PluginInfo pluginInfo, boolean maskSensitive) {
+        return resolveInternal(pluginInfo, null, null, maskSensitive);
+    }
+    
+    /**
+     * Resolve effective plugin config with a pending source update.
+     *
+     * @param pluginInfo plugin info
+     * @param updatingSource source type to update
+     * @param updatingConfig config to preview
+     * @param maskSensitive whether sensitive values should be masked
+     * @return resolution
+     */
+    public PluginConfigResolution resolveWithUpdate(PluginInfo pluginInfo,
+        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig,
+        boolean maskSensitive) {
+        Map<String, String> normalizedConfig = normalizeConfig(pluginInfo, updatingConfig);
+        return resolveInternal(pluginInfo, updatingSource, normalizedConfig, maskSensitive);
+    }
+    
+    private PluginConfigResolution resolveInternal(PluginInfo pluginInfo,
+        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig,
         boolean maskSensitive) {
         List<ConfigItemDefinition> definitions = pluginInfo.getConfigDefinitions();
         if (definitions == null || definitions.isEmpty()) {
-            return resolveWithoutDefinitions(pluginInfo, runtimeConfig, localOnlyConfig);
+            return resolveWithoutDefinitions(pluginInfo, updatingSource, updatingConfig);
         }
-        Map<String, String> normalizedRuntime = normalizeConfig(pluginInfo, runtimeConfig);
-        Map<String, String> normalizedLocalOnly = normalizeConfig(pluginInfo, localOnlyConfig);
         Map<String, String> config = new LinkedHashMap<>();
         List<PluginConfigValueMeta> metas = new ArrayList<>(definitions.size());
         for (ConfigItemDefinition definition : definitions) {
             if (StringUtils.isBlank(definition.getKey())) {
                 continue;
             }
-            resolveItem(pluginInfo, definition, normalizedRuntime, normalizedLocalOnly,
-                maskSensitive, config, metas);
+            resolveItem(pluginInfo, definition, updatingSource, updatingConfig, maskSensitive,
+                config, metas);
         }
         return new PluginConfigResolution(config, metas);
     }
     
     private PluginConfigResolution resolveWithoutDefinitions(PluginInfo pluginInfo,
-        Map<String, String> runtimeConfig, Map<String, String> localOnlyConfig) {
+        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig) {
         Map<String, String> config = new LinkedHashMap<>();
+        Map<String, String> runtimeConfig = getSourceConfig(runtimePersistedSourceResolver,
+            pluginInfo.getPluginId(), updatingSource, updatingConfig);
+        Map<String, String> localOnlyConfig = getSourceConfig(localOnlySourceResolver,
+            pluginInfo.getPluginId(), updatingSource, updatingConfig);
         if (runtimeConfig == null && localOnlyConfig == null && pluginInfo.getConfig() != null) {
             config.putAll(pluginInfo.getConfig());
         }
@@ -97,19 +152,23 @@ public class PluginConfigResolver {
         return new PluginConfigResolution(config, Collections.emptyList());
     }
     
+    private Map<String, String> getSourceConfig(
+        AbstractMapPluginConfigSourceResolver sourceResolver,
+        String pluginId, PluginConfigSourceType updatingSource,
+        Map<String, String> updatingConfig) {
+        if (sourceResolver.getSourceType() == updatingSource) {
+            return updatingConfig;
+        }
+        return sourceResolver.getConfig(pluginId);
+    }
+    
     private void resolveItem(PluginInfo pluginInfo, ConfigItemDefinition definition,
-        Map<String, String> runtimeConfig, Map<String, String> localOnlyConfig,
-        boolean maskSensitive, Map<String, String> config,
-        List<PluginConfigValueMeta> metas) {
+        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig,
+        boolean maskSensitive, Map<String, String> config, List<PluginConfigValueMeta> metas) {
         PluginConfigKeyCandidate candidate = keyResolver.resolve(pluginInfo, definition);
-        ValueWithSource staticValue = getStaticValue(candidate);
-        ValueWithSource runtimeValue = getMapValue(runtimeConfig, definition.getKey(),
-            PluginConfigSourceType.RUNTIME_PERSISTED);
-        ValueWithSource localOnlyValue = getMapValue(localOnlyConfig, definition.getKey(),
-            PluginConfigSourceType.LOCAL_ONLY);
-        ValueWithSource defaultValue = getDefaultValue(definition);
-        ValueWithSource effectiveValue =
-            firstPresent(localOnlyValue, runtimeValue, staticValue, defaultValue);
+        List<PluginConfigSourceValue> sourceValues = resolveSourceValues(pluginInfo, definition,
+            candidate, updatingSource, updatingConfig);
+        PluginConfigSourceValue effectiveValue = firstPresent(sourceValues);
         if (effectiveValue.getValue() != null) {
             String value = effectiveValue.getValue();
             if (maskSensitive) {
@@ -118,65 +177,38 @@ public class PluginConfigResolver {
             config.put(definition.getKey(), value);
         }
         metas.add(buildValueMeta(definition.getKey(), effectiveValue.getSource(),
-            countOverrideSources(staticValue, runtimeValue, localOnlyValue) > 1));
+            countOverrideSources(sourceValues) > 1));
     }
     
-    private ValueWithSource getStaticValue(PluginConfigKeyCandidate candidate) {
-        ConfigurableEnvironment environment = EnvUtil.getEnvironment();
-        if (environment == null) {
-            return ValueWithSource.absent(PluginConfigSourceType.STATIC);
-        }
-        ValueWithSource standardValue =
-            getEnvironmentValue(environment, candidate.getStandardKey());
-        if (standardValue.isPresent()) {
-            return standardValue;
-        }
-        for (String aliasKey : candidate.getAliasKeys()) {
-            ValueWithSource aliasValue = getEnvironmentValue(environment, aliasKey);
-            if (aliasValue.isPresent()) {
-                return aliasValue;
+    private List<PluginConfigSourceValue> resolveSourceValues(PluginInfo pluginInfo,
+        ConfigItemDefinition definition, PluginConfigKeyCandidate candidate,
+        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig) {
+        List<PluginConfigSourceValue> result = new ArrayList<>(sourceResolvers.size());
+        for (PluginConfigSourceResolver sourceResolver : sourceResolvers) {
+            if (sourceResolver.getSourceType() == updatingSource
+                && sourceResolver instanceof AbstractMapPluginConfigSourceResolver) {
+                result.add(((AbstractMapPluginConfigSourceResolver) sourceResolver)
+                    .resolveFromConfig(updatingConfig, definition));
+                continue;
             }
+            result.add(sourceResolver.resolve(pluginInfo, definition, candidate));
         }
-        return ValueWithSource.absent(PluginConfigSourceType.STATIC);
+        return result;
     }
     
-    private ValueWithSource getEnvironmentValue(ConfigurableEnvironment environment, String key) {
-        if (environment.containsProperty(key)) {
-            return ValueWithSource.present(environment.getProperty(key),
-                PluginConfigSourceType.STATIC);
-        }
-        return ValueWithSource.absent(PluginConfigSourceType.STATIC);
-    }
-    
-    private ValueWithSource getMapValue(Map<String, String> config, String key,
-        PluginConfigSourceType source) {
-        if (config != null && config.containsKey(key) && config.get(key) != null) {
-            return ValueWithSource.present(config.get(key), source);
-        }
-        return ValueWithSource.absent(source);
-    }
-    
-    private ValueWithSource getDefaultValue(ConfigItemDefinition definition) {
-        if (definition.getDefaultValue() != null) {
-            return ValueWithSource.present(definition.getDefaultValue(),
-                PluginConfigSourceType.DEFAULT);
-        }
-        return ValueWithSource.absent(PluginConfigSourceType.DEFAULT);
-    }
-    
-    private ValueWithSource firstPresent(ValueWithSource... values) {
-        for (ValueWithSource value : values) {
+    private PluginConfigSourceValue firstPresent(List<PluginConfigSourceValue> values) {
+        for (PluginConfigSourceValue value : values) {
             if (value.isPresent()) {
                 return value;
             }
         }
-        return ValueWithSource.absent(PluginConfigSourceType.DEFAULT);
+        return PluginConfigSourceValue.absent(PluginConfigSourceType.DEFAULT);
     }
     
-    private int countOverrideSources(ValueWithSource... values) {
+    private int countOverrideSources(List<PluginConfigSourceValue> values) {
         Set<PluginConfigSourceType> sources = new LinkedHashSet<>();
-        for (ValueWithSource value : values) {
-            if (value.isPresent()) {
+        for (PluginConfigSourceValue value : values) {
+            if (value.isPresent() && PluginConfigSourceType.DEFAULT != value.getSource()) {
                 sources.add(value.getSource());
             }
         }
@@ -190,40 +222,5 @@ public class PluginConfigResolver {
         meta.setSource(source);
         meta.setOverridden(overridden);
         return meta;
-    }
-    
-    private static class ValueWithSource {
-        
-        private final String value;
-        
-        private final PluginConfigSourceType source;
-        
-        private final boolean present;
-        
-        private ValueWithSource(String value, PluginConfigSourceType source, boolean present) {
-            this.value = value;
-            this.source = source;
-            this.present = present;
-        }
-        
-        static ValueWithSource present(String value, PluginConfigSourceType source) {
-            return new ValueWithSource(value, source, true);
-        }
-        
-        static ValueWithSource absent(PluginConfigSourceType source) {
-            return new ValueWithSource(null, source, false);
-        }
-        
-        String getValue() {
-            return value;
-        }
-        
-        PluginConfigSourceType getSource() {
-            return source;
-        }
-        
-        boolean isPresent() {
-            return present;
-        }
     }
 }

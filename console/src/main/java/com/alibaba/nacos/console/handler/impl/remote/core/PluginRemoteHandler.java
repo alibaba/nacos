@@ -17,21 +17,23 @@
 package com.alibaba.nacos.console.handler.impl.remote.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.api.plugin.ConfigItemType;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.console.handler.core.PluginHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
-import com.alibaba.nacos.core.plugin.model.vo.PluginConfigValueMeta;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Remote implementation of PluginHandler that handles plugin-related operations via HTTP.
@@ -42,53 +44,15 @@ import java.util.Map;
 @EnabledRemoteHandler
 public class PluginRemoteHandler implements PluginHandler {
     
-    private static final String FIELD_PLUGIN_ID = "pluginId";
-    
-    private static final String FIELD_PLUGIN_TYPE = "pluginType";
-    
-    private static final String FIELD_PLUGIN_NAME = "pluginName";
-    
-    private static final String FIELD_ENABLED = "enabled";
-    
-    private static final String FIELD_CRITICAL = "critical";
-    
-    private static final String FIELD_CONFIGURABLE = "configurable";
-    
-    private static final String FIELD_EXCLUSIVE = "exclusive";
-    
-    private static final String FIELD_TOTAL_NODE_COUNT = "totalNodeCount";
-    
-    private static final String FIELD_AVAILABLE_NODE_COUNT = "availableNodeCount";
-    
-    private static final String FIELD_CONFIG = "config";
-    
     private static final String FIELD_CONFIG_DEFINITIONS = "configDefinitions";
     
     private static final String FIELD_CONFIG_VALUE_METAS = "configValueMetas";
     
-    private static final String FIELD_KEY = "key";
-    
-    private static final String FIELD_NAME = "name";
-    
-    private static final String FIELD_DESCRIPTION = "description";
-    
-    private static final String FIELD_DEFAULT_VALUE = "defaultValue";
-    
-    private static final String FIELD_REQUIRED = "required";
-    
     private static final String FIELD_TYPE = "type";
-    
-    private static final String FIELD_ENUM_VALUES = "enumValues";
-    
-    private static final String FIELD_ALIASES = "aliases";
-    
-    private static final String FIELD_SENSITIVE = "sensitive";
     
     private static final String FIELD_EFFECT_MODE = "effectMode";
     
     private static final String FIELD_SOURCE = "source";
-    
-    private static final String FIELD_OVERRIDDEN = "overridden";
     
     private final NacosMaintainerClientHolder clientHolder;
     
@@ -100,11 +64,11 @@ public class PluginRemoteHandler implements PluginHandler {
     public List<PluginInfoVO> listPlugins(String pluginType) throws NacosException {
         List<Map<String, Object>> rawList =
             clientHolder.getNamingMaintainerService().listPlugins(pluginType);
-        List<PluginInfoVO> result = new ArrayList<>(rawList.size());
-        for (Map<String, Object> raw : rawList) {
-            result.add(convertToPluginInfoVO(raw));
+        if (rawList == null) {
+            return Collections.emptyList();
         }
-        return result;
+        return rawList.stream().map(raw -> convertToVO(raw, PluginInfoVO.class))
+            .collect(Collectors.toList());
     }
     
     @Override
@@ -112,7 +76,7 @@ public class PluginRemoteHandler implements PluginHandler {
         throws NacosException {
         Map<String, Object> raw =
             clientHolder.getNamingMaintainerService().getPluginDetail(pluginType, pluginName);
-        return convertToPluginDetailVO(raw);
+        return convertToVO(raw, PluginDetailVO.class);
     }
     
     @Override
@@ -137,105 +101,70 @@ public class PluginRemoteHandler implements PluginHandler {
             pluginName);
     }
     
-    private PluginInfoVO convertToPluginInfoVO(Map<String, Object> raw) {
-        PluginInfoVO vo = new PluginInfoVO();
-        vo.setPluginId((String) raw.get(FIELD_PLUGIN_ID));
-        vo.setPluginType((String) raw.get(FIELD_PLUGIN_TYPE));
-        vo.setPluginName((String) raw.get(FIELD_PLUGIN_NAME));
-        vo.setEnabled(Boolean.TRUE.equals(raw.get(FIELD_ENABLED)));
-        vo.setCritical(Boolean.TRUE.equals(raw.get(FIELD_CRITICAL)));
-        vo.setConfigurable(Boolean.TRUE.equals(raw.get(FIELD_CONFIGURABLE)));
-        vo.setExclusive(Boolean.TRUE.equals(raw.get(FIELD_EXCLUSIVE)));
-        if (raw.get(FIELD_TOTAL_NODE_COUNT) != null) {
-            vo.setTotalNodeCount(((Number) raw.get(FIELD_TOTAL_NODE_COUNT)).intValue());
-        }
-        if (raw.get(FIELD_AVAILABLE_NODE_COUNT) != null) {
-            vo.setAvailableNodeCount(((Number) raw.get(FIELD_AVAILABLE_NODE_COUNT)).intValue());
-        }
-        return vo;
+    private <T> T convertToVO(Map<String, Object> raw, Class<T> type) {
+        return JsonUtils.toObj(JsonUtils.toJson(sanitizeEnumFields(raw)), type);
     }
     
     @SuppressWarnings("unchecked")
-    private PluginDetailVO convertToPluginDetailVO(Map<String, Object> raw) {
-        PluginDetailVO vo = new PluginDetailVO();
-        vo.setPluginId((String) raw.get(FIELD_PLUGIN_ID));
-        vo.setPluginType((String) raw.get(FIELD_PLUGIN_TYPE));
-        vo.setPluginName((String) raw.get(FIELD_PLUGIN_NAME));
-        vo.setEnabled(Boolean.TRUE.equals(raw.get(FIELD_ENABLED)));
-        vo.setCritical(Boolean.TRUE.equals(raw.get(FIELD_CRITICAL)));
-        vo.setConfigurable(Boolean.TRUE.equals(raw.get(FIELD_CONFIGURABLE)));
-        if (raw.get(FIELD_CONFIG) != null) {
-            vo.setConfig((Map<String, String>) raw.get(FIELD_CONFIG));
-        }
-        if (raw.get(FIELD_CONFIG_DEFINITIONS) != null) {
-            List<Map<String, Object>> rawDefinitions =
-                (List<Map<String, Object>>) raw.get(FIELD_CONFIG_DEFINITIONS);
-            vo.setConfigDefinitions(convertToConfigItemDefinitions(rawDefinitions));
-        }
-        if (raw.get(FIELD_CONFIG_VALUE_METAS) != null) {
-            List<Map<String, Object>> rawValueMetas =
-                (List<Map<String, Object>>) raw.get(FIELD_CONFIG_VALUE_METAS);
-            vo.setConfigValueMetas(convertToPluginConfigValueMetas(rawValueMetas));
-        }
-        return vo;
+    private Map<String, Object> sanitizeEnumFields(Map<String, Object> raw) {
+        Map<String, Object> result = new LinkedHashMap<>(raw);
+        sanitizeConfigDefinitions(result);
+        sanitizeConfigValueMetas(result);
+        return result;
     }
     
     @SuppressWarnings("unchecked")
-    private List<ConfigItemDefinition> convertToConfigItemDefinitions(
-        List<Map<String, Object>> rawList) {
-        List<ConfigItemDefinition> result = new ArrayList<>(rawList.size());
-        for (Map<String, Object> raw : rawList) {
-            ConfigItemDefinition definition = new ConfigItemDefinition();
-            definition.setKey((String) raw.get(FIELD_KEY));
-            definition.setName((String) raw.get(FIELD_NAME));
-            definition.setDescription((String) raw.get(FIELD_DESCRIPTION));
-            definition.setDefaultValue((String) raw.get(FIELD_DEFAULT_VALUE));
-            definition.setRequired(Boolean.TRUE.equals(raw.get(FIELD_REQUIRED)));
-            if (raw.get(FIELD_TYPE) != null) {
-                String typeStr = raw.get(FIELD_TYPE).toString();
-                try {
-                    definition.setType(ConfigItemType.valueOf(typeStr));
-                } catch (IllegalArgumentException e) {
-                    definition.setType(ConfigItemType.STRING);
-                }
-            }
-            if (raw.get(FIELD_ENUM_VALUES) != null) {
-                definition.setEnumValues((List<String>) raw.get(FIELD_ENUM_VALUES));
-            }
-            if (raw.get(FIELD_ALIASES) != null) {
-                definition.setAliases((List<String>) raw.get(FIELD_ALIASES));
-            }
-            definition.setSensitive(Boolean.TRUE.equals(raw.get(FIELD_SENSITIVE)));
-            if (raw.get(FIELD_EFFECT_MODE) != null) {
-                String effectModeStr = raw.get(FIELD_EFFECT_MODE).toString();
-                try {
-                    definition.setEffectMode(ConfigItemEffectMode.valueOf(effectModeStr));
-                } catch (IllegalArgumentException e) {
-                    definition.setEffectMode(ConfigItemEffectMode.RESTART);
-                }
-            }
-            result.add(definition);
+    private void sanitizeConfigDefinitions(Map<String, Object> raw) {
+        Object definitions = raw.get(FIELD_CONFIG_DEFINITIONS);
+        if (!(definitions instanceof List)) {
+            return;
         }
-        return result;
+        List<Object> sanitizedDefinitions = new ArrayList<>(((List<?>) definitions).size());
+        for (Object each : (List<?>) definitions) {
+            if (each instanceof Map) {
+                Map<String, Object> definition = new LinkedHashMap<>((Map<String, Object>) each);
+                sanitizeEnum(definition, FIELD_TYPE, ConfigItemType.class,
+                    ConfigItemType.STRING.name());
+                sanitizeEnum(definition, FIELD_EFFECT_MODE, ConfigItemEffectMode.class,
+                    ConfigItemEffectMode.RESTART.name());
+                sanitizedDefinitions.add(definition);
+            } else {
+                sanitizedDefinitions.add(each);
+            }
+        }
+        raw.put(FIELD_CONFIG_DEFINITIONS, sanitizedDefinitions);
     }
     
-    private List<PluginConfigValueMeta> convertToPluginConfigValueMetas(
-        List<Map<String, Object>> rawList) {
-        List<PluginConfigValueMeta> result = new ArrayList<>(rawList.size());
-        for (Map<String, Object> raw : rawList) {
-            PluginConfigValueMeta meta = new PluginConfigValueMeta();
-            meta.setKey((String) raw.get(FIELD_KEY));
-            meta.setOverridden(Boolean.TRUE.equals(raw.get(FIELD_OVERRIDDEN)));
-            if (raw.get(FIELD_SOURCE) != null) {
-                String sourceStr = raw.get(FIELD_SOURCE).toString();
-                try {
-                    meta.setSource(PluginConfigSourceType.valueOf(sourceStr));
-                } catch (IllegalArgumentException e) {
-                    meta.setSource(PluginConfigSourceType.DEFAULT);
-                }
-            }
-            result.add(meta);
+    @SuppressWarnings("unchecked")
+    private void sanitizeConfigValueMetas(Map<String, Object> raw) {
+        Object valueMetas = raw.get(FIELD_CONFIG_VALUE_METAS);
+        if (!(valueMetas instanceof List)) {
+            return;
         }
-        return result;
+        List<Object> sanitizedValueMetas = new ArrayList<>(((List<?>) valueMetas).size());
+        for (Object each : (List<?>) valueMetas) {
+            if (each instanceof Map) {
+                Map<String, Object> valueMeta = new LinkedHashMap<>((Map<String, Object>) each);
+                sanitizeEnum(valueMeta, FIELD_SOURCE, PluginConfigSourceType.class,
+                    PluginConfigSourceType.DEFAULT.name());
+                sanitizedValueMetas.add(valueMeta);
+            } else {
+                sanitizedValueMetas.add(each);
+            }
+        }
+        raw.put(FIELD_CONFIG_VALUE_METAS, sanitizedValueMetas);
+    }
+    
+    private <T extends Enum<T>> void sanitizeEnum(Map<String, Object> raw, String field,
+        Class<T> enumType, String defaultValue) {
+        Object value = raw.get(field);
+        if (value == null) {
+            return;
+        }
+        try {
+            Enum.valueOf(enumType, value.toString());
+        } catch (IllegalArgumentException e) {
+            raw.put(field, defaultValue);
+        }
     }
 }

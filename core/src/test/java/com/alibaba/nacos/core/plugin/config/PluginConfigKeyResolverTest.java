@@ -61,9 +61,44 @@ class PluginConfigKeyResolverTest {
         
         Map<String, String> result = resolver.normalizeConfig(pluginInfo, input);
         
-        assertEquals("3000", result.get("timeout"));
+        assertEquals("1000", result.get("timeout"));
         assertEquals("value", result.get("unknown"));
         assertEquals(2, result.size());
+    }
+    
+    @Test
+    void testNormalizeConfigWithItemKeyFirst() {
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("timeout");
+        definition.setAliases(Arrays.asList("nacos.legacy.timeout", "oldTimeout"));
+        PluginInfo pluginInfo = createPluginInfo();
+        pluginInfo.setConfigDefinitions(Arrays.asList(definition));
+        
+        Map<String, String> input = new LinkedHashMap<>();
+        input.put("nacos.plugin.trace.demo.timeout", "1000");
+        input.put("timeout", "900");
+        
+        Map<String, String> result = resolver.normalizeConfig(pluginInfo, input);
+        
+        assertEquals("900", result.get("timeout"));
+        assertEquals(1, result.size());
+    }
+    
+    @Test
+    void testNormalizeConfigWithRawAliasKey() {
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("timeout");
+        definition.setAliases(Arrays.asList("oldTimeout"));
+        PluginInfo pluginInfo = createPluginInfo();
+        pluginInfo.setConfigDefinitions(Arrays.asList(definition));
+        
+        Map<String, String> input = new LinkedHashMap<>();
+        input.put("oldTimeout", "3000");
+        
+        Map<String, String> result = resolver.normalizeConfig(pluginInfo, input);
+        
+        assertEquals("3000", result.get("timeout"));
+        assertEquals(1, result.size());
     }
     
     private PluginInfo createPluginInfo() {

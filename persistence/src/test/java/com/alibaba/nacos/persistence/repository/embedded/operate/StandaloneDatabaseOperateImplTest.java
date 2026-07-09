@@ -17,12 +17,13 @@
 package com.alibaba.nacos.persistence.repository.embedded.operate;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.persistence.DerbyTestUtils;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.exception.NJdbcException;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,13 +33,14 @@ import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,64 +80,26 @@ class StandaloneDatabaseOperateImplTest {
     @Mock
     private TransactionTemplate transactionTemplate;
     
-    @BeforeAll
-    static void beforeAll() {
-        MockEnvironment environment = new MockEnvironment();
-        environment.setProperty("nacos.persistence.sql.derby.limit.enabled", "false");
-        EnvUtil.setEnvironment(environment);
-    }
+    @TempDir
+    private Path tempDir;
     
     @BeforeEach
     void setUp() {
+        DatasourceConfiguration.setEmbeddedStorage(true);
+        DatasourceConfiguration.setUseExternalDb(false);
+        DerbyTestUtils.resetDynamicDataSource();
+        EnvUtil.setNacosHomePath(tempDir.toString());
+        EnvUtil.setEnvironment(DerbyTestUtils.createDerbyTestEnvironment());
         operate = new StandaloneDatabaseOperateImpl();
         operate.init();
         ReflectionTestUtils.setField(operate, "jdbcTemplate", jdbcTemplate);
         ReflectionTestUtils.setField(operate, "transactionTemplate", transactionTemplate);
     }
     
-    @AfterAll
-    static void afterAll() {
-        // Shutdown Derby to release locks
-        try {
-            java.sql.DriverManager.getConnection("jdbc:derby:;shutdown=true");
-        } catch (Exception e) {
-            // Ignore shutdown exception as Derby always throws an exception on successful shutdown
-        }
-        
-        // Wait for Derby to fully shutdown and release locks
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        
-        // Clean up derby data directory to ensure fresh start
-        try {
-            String derbyPath = System.getProperty("user.dir") + "/data/derby-data";
-            java.io.File derbyDir = new java.io.File(derbyPath);
-            if (derbyDir.exists()) {
-                deleteDirectory(derbyDir);
-            }
-        } catch (Exception e) {
-            // Ignore cleanup exceptions
-        }
-        
-        EnvUtil.setEnvironment(null);
+    @AfterEach
+    void tearDown() {
+        DerbyTestUtils.resetDerbyState(tempDir);
         EmbeddedStorageContextHolder.cleanAllContext();
-    }
-    
-    private static void deleteDirectory(java.io.File directory) throws Exception {
-        if (directory.exists()) {
-            java.nio.file.Files.walk(directory.toPath())
-                .sorted((a, b) -> b.compareTo(a))
-                .forEach(path -> {
-                    try {
-                        java.nio.file.Files.delete(path);
-                    } catch (Exception e) {
-                        // Ignore
-                    }
-                });
-        }
     }
     
     @Test

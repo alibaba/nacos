@@ -21,9 +21,11 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Resolver for plugin configuration keys.
@@ -70,8 +72,63 @@ public class PluginConfigKeyResolver {
         }
         Map<String, String> keyMapping = buildKeyMapping(pluginInfo);
         Map<String, String> result = new LinkedHashMap<>(config.size());
-        config.forEach((key, value) -> result.put(keyMapping.getOrDefault(key, key), value));
+        Set<String> resolvedItemKeys = new HashSet<>();
+        for (ConfigItemDefinition definition : pluginInfo.getConfigDefinitions()) {
+            if (StringUtils.isBlank(definition.getKey())) {
+                continue;
+            }
+            PluginConfigKeyCandidate candidate = resolve(pluginInfo, definition);
+            if (putCandidateConfig(pluginInfo, definition, config, result, candidate)) {
+                resolvedItemKeys.add(candidate.getItemKey());
+            }
+        }
+        config.forEach((key, value) -> {
+            String itemKey = keyMapping.get(key);
+            if (itemKey == null) {
+                result.put(key, value);
+            } else if (!resolvedItemKeys.contains(itemKey)) {
+                result.put(itemKey, value);
+            }
+        });
         return result;
+    }
+    
+    private boolean putCandidateConfig(PluginInfo pluginInfo, ConfigItemDefinition definition,
+        Map<String, String> config, Map<String, String> result,
+        PluginConfigKeyCandidate candidate) {
+        if (putIfPresent(config, result, candidate.getItemKey(), candidate.getItemKey())) {
+            return true;
+        }
+        if (putIfPresent(config, result, candidate.getStandardKey(), candidate.getItemKey())) {
+            return true;
+        }
+        return putAliasConfig(pluginInfo, definition, config, result, candidate.getItemKey());
+    }
+    
+    private boolean putAliasConfig(PluginInfo pluginInfo, ConfigItemDefinition definition,
+        Map<String, String> config, Map<String, String> result, String itemKey) {
+        if (definition.getAliases() == null) {
+            return false;
+        }
+        for (String alias : definition.getAliases()) {
+            if (StringUtils.isBlank(alias)) {
+                continue;
+            }
+            if (putIfPresent(config, result, alias, itemKey)
+                || putIfPresent(config, result, toReadableKey(pluginInfo, alias), itemKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean putIfPresent(Map<String, String> config, Map<String, String> result,
+        String inputKey, String itemKey) {
+        if (config.containsKey(inputKey)) {
+            result.put(itemKey, config.get(inputKey));
+            return true;
+        }
+        return false;
     }
     
     private Map<String, String> buildKeyMapping(PluginInfo pluginInfo) {

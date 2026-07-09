@@ -29,6 +29,7 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolver;
+import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.alibaba.nacos.core.plugin.sync.PluginStateApplier;
@@ -99,17 +100,6 @@ public class PluginManager
      * Plugin states: pluginId -> enabled.
      */
     private final Map<String, Boolean> pluginStates = new ConcurrentHashMap<>();
-    
-    /**
-     * Runtime persisted plugin configurations: pluginId -> config.
-     */
-    private final Map<String, Map<String, String>> pluginConfigs = new ConcurrentHashMap<>();
-    
-    /**
-     * Local-only plugin configurations: pluginId -> config.
-     */
-    private final Map<String, Map<String, String>> localOnlyPluginConfigs =
-        new ConcurrentHashMap<>();
     
     /**
      * Plugin instances: pluginId -> instance.
@@ -292,8 +282,7 @@ public class PluginManager
      * @return plugin config resolution with masked sensitive values
      */
     public PluginConfigResolution resolvePluginConfig(PluginInfo pluginInfo) {
-        return pluginConfigResolver.resolve(pluginInfo, pluginConfigs.get(pluginInfo.getPluginId()),
-            localOnlyPluginConfigs.get(pluginInfo.getPluginId()), true);
+        return pluginConfigResolver.resolve(pluginInfo, true);
     }
     
     /**
@@ -483,14 +472,14 @@ public class PluginManager
     public void applyConfigChange(String pluginId, Map<String, String> config) {
         PluginInfo info = pluginRegistry.get(pluginId);
         Map<String, String> normalizedConfig = normalizeConfig(info, config);
-        pluginConfigs.put(pluginId, normalizedConfig);
+        pluginConfigResolver.updateRuntimeConfig(pluginId, normalizedConfig);
         applyEffectiveConfig(pluginId);
     }
     
     private void applyLocalConfigChange(String pluginId, Map<String, String> config) {
         PluginInfo info = pluginRegistry.get(pluginId);
         Map<String, String> normalizedConfig = normalizeConfig(info, config);
-        localOnlyPluginConfigs.put(pluginId, normalizedConfig);
+        pluginConfigResolver.updateLocalOnlyConfig(pluginId, normalizedConfig);
         applyEffectiveConfig(pluginId);
     }
     
@@ -504,23 +493,19 @@ public class PluginManager
     
     private PluginConfigResolution resolveEffectiveConfig(PluginInfo info,
         Map<String, String> updatingConfig, boolean localOnly) {
-        String pluginId = info.getPluginId();
-        Map<String, String> runtimeConfig =
-            localOnly ? pluginConfigs.get(pluginId) : updatingConfig;
-        Map<String, String> localConfig =
-            localOnly ? updatingConfig : localOnlyPluginConfigs.get(pluginId);
-        return pluginConfigResolver.resolve(info, runtimeConfig, localConfig, false);
+        PluginConfigSourceType updatingSource = localOnly ? PluginConfigSourceType.LOCAL_ONLY
+            : PluginConfigSourceType.RUNTIME_PERSISTED;
+        return pluginConfigResolver.resolveWithUpdate(info, updatingSource, updatingConfig, false);
     }
     
     private void applyEffectiveConfig(String pluginId) {
         PluginInfo info = pluginRegistry.get(pluginId);
         Map<String, String> effectiveConfig;
         if (info != null) {
-            effectiveConfig = pluginConfigResolver.resolve(info, pluginConfigs.get(pluginId),
-                localOnlyPluginConfigs.get(pluginId), false).getConfig();
+            effectiveConfig = pluginConfigResolver.resolve(info, false).getConfig();
             info.setConfig(effectiveConfig);
         } else {
-            effectiveConfig = pluginConfigs.get(pluginId);
+            effectiveConfig = Collections.emptyMap();
         }
         applyConfigToPlugin(pluginId, effectiveConfig);
     }

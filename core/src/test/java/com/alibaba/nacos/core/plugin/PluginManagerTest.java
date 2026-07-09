@@ -441,7 +441,7 @@ class PluginManagerTest {
         PluginConfigResolution resolution = manager.resolvePluginConfig(pluginInfo);
         
         assertEquals("local-secret", plugin.getCurrentConfig().get("secret"));
-        assertEquals("******", resolution.getConfig().get("secret"));
+        assertEquals("lo******et", resolution.getConfig().get("secret"));
         assertEquals(PluginConfigSourceType.LOCAL_ONLY,
             resolution.getValueMetas().get(0).getSource());
         assertTrue(resolution.getValueMetas().get(0).isOverridden());

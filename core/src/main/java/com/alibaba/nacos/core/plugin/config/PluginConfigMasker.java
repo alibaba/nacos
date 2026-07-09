@@ -28,6 +28,14 @@ public final class PluginConfigMasker {
     
     private static final String MASKED_VALUE = "******";
     
+    private static final int TINY_VALUE_MAX_LENGTH = 2;
+    
+    private static final int SHORT_VALUE_MAX_LENGTH = 8;
+    
+    private static final int SHORT_VALUE_RETAIN_LENGTH = 1;
+    
+    private static final int LONG_VALUE_RETAIN_LENGTH = 2;
+    
     private PluginConfigMasker() {
     }
     
@@ -40,8 +48,21 @@ public final class PluginConfigMasker {
      */
     public static String mask(ConfigItemDefinition definition, String value) {
         if (definition.isSensitive() && StringUtils.isNotEmpty(value)) {
-            return MASKED_VALUE;
+            return maskValue(value);
         }
         return value;
+    }
+    
+    private static String maskValue(String value) {
+        int length = value.length();
+        if (length <= TINY_VALUE_MAX_LENGTH) {
+            return MASKED_VALUE;
+        }
+        if (length <= SHORT_VALUE_MAX_LENGTH) {
+            return value.substring(0, SHORT_VALUE_RETAIN_LENGTH) + MASKED_VALUE
+                + value.substring(length - SHORT_VALUE_RETAIN_LENGTH);
+        }
+        return value.substring(0, LONG_VALUE_RETAIN_LENGTH) + MASKED_VALUE
+            + value.substring(length - LONG_VALUE_RETAIN_LENGTH);
     }
 }

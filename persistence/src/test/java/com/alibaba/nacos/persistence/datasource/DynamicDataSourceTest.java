@@ -16,17 +16,20 @@
 
 package com.alibaba.nacos.persistence.datasource;
 
+import com.alibaba.nacos.persistence.DerbyTestUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,58 +46,22 @@ class DynamicDataSourceTest {
     @Mock
     private ExternalDataSourceServiceImpl basicDataSourceService;
     
+    @TempDir
+    private Path tempDir;
+    
     @BeforeEach
     void setUp() {
-        EnvUtil.setEnvironment(new MockEnvironment());
+        DerbyTestUtils.resetDynamicDataSource();
+        EnvUtil.setNacosHomePath(tempDir.toString());
+        EnvUtil.setEnvironment(DerbyTestUtils.createDerbyTestEnvironment());
+        DatasourceConfiguration.setEmbeddedStorage(true);
+        DatasourceConfiguration.setUseExternalDb(false);
         dataSource = DynamicDataSource.getInstance();
     }
     
     @AfterEach
     void tearDown() {
-        DatasourceConfiguration.setEmbeddedStorage(true);
-        DatasourceConfiguration.setUseExternalDb(false);
-        ReflectionTestUtils.setField(dataSource, "localDataSourceService", null);
-        ReflectionTestUtils.setField(dataSource, "basicDataSourceService", null);
-        // Shutdown Derby to release locks
-        try {
-            java.sql.DriverManager.getConnection("jdbc:derby:;shutdown=true");
-        } catch (Exception e) {
-            // Ignore shutdown exception as Derby always throws an exception on successful shutdown
-        }
-        
-        // Wait for Derby to fully shutdown and release locks
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        
-        // Clean up derby data directory to ensure fresh start for next test
-        try {
-            String derbyPath = System.getProperty("user.dir") + "/data/derby-data";
-            java.io.File derbyDir = new java.io.File(derbyPath);
-            if (derbyDir.exists()) {
-                deleteDirectory(derbyDir);
-            }
-        } catch (Exception e) {
-            // Ignore cleanup exceptions
-        }
-        
-        EnvUtil.setEnvironment(null);
-    }
-    
-    private void deleteDirectory(java.io.File directory) throws Exception {
-        if (directory.exists()) {
-            java.nio.file.Files.walk(directory.toPath())
-                .sorted((a, b) -> b.compareTo(a))
-                .forEach(path -> {
-                    try {
-                        java.nio.file.Files.delete(path);
-                    } catch (Exception e) {
-                        // Ignore
-                    }
-                });
-        }
+        DerbyTestUtils.resetDerbyState(tempDir);
     }
     
     @Test

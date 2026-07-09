@@ -60,7 +60,7 @@ class PluginConfigResolverTest {
     void testResolveDefaultValue() {
         PluginInfo pluginInfo = createPluginInfo(createDefinition("timeout", "1000", false));
         
-        PluginConfigResolution resolution = resolver.resolve(pluginInfo, null, null, false);
+        PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
         
         assertEquals("1000", resolution.getConfig().get("timeout"));
         assertMeta(resolution.getValueMetas().get(0), "timeout", PluginConfigSourceType.DEFAULT,
@@ -74,9 +74,9 @@ class PluginConfigResolverTest {
         environment.setProperty("nacos.legacy.token", "static-token");
         PluginInfo pluginInfo = createPluginInfo(definition);
         
-        PluginConfigResolution resolution = resolver.resolve(pluginInfo, null, null, true);
+        PluginConfigResolution resolution = resolver.resolve(pluginInfo, true);
         
-        assertEquals("******", resolution.getConfig().get("token"));
+        assertEquals("st******en", resolution.getConfig().get("token"));
         assertMeta(resolution.getValueMetas().get(0), "token", PluginConfigSourceType.STATIC,
             false);
     }
@@ -90,9 +90,32 @@ class PluginConfigResolverTest {
         runtimeConfig.put("timeout", "3000");
         Map<String, String> localOnlyConfig = new HashMap<>();
         localOnlyConfig.put("timeout", "4000");
+        resolver.updateRuntimeConfig(pluginInfo.getPluginId(), runtimeConfig);
+        resolver.updateLocalOnlyConfig(pluginInfo.getPluginId(), localOnlyConfig);
         
-        PluginConfigResolution resolution =
-            resolver.resolve(pluginInfo, runtimeConfig, localOnlyConfig, false);
+        PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
+        
+        assertEquals("4000", resolution.getConfig().get("timeout"));
+        assertMeta(resolution.getValueMetas().get(0), "timeout",
+            PluginConfigSourceType.LOCAL_ONLY, true);
+    }
+    
+    @Test
+    void testResolveNormalizesMapBasedSourceKeysBeforeChain() {
+        ConfigItemDefinition definition = createDefinition("timeout", "1000", false);
+        definition.setAliases(Collections.singletonList("oldTimeout"));
+        environment.setProperty("nacos.plugin.trace.demo.timeout", "2000");
+        PluginInfo pluginInfo = createPluginInfo(definition);
+        Map<String, String> runtimeConfig = new HashMap<>();
+        runtimeConfig.put("nacos.plugin.trace.demo.timeout", "3000");
+        Map<String, String> localOnlyConfig = new HashMap<>();
+        localOnlyConfig.put("oldTimeout", "4000");
+        resolver.updateRuntimeConfig(pluginInfo.getPluginId(),
+            resolver.normalizeConfig(pluginInfo, runtimeConfig));
+        resolver.updateLocalOnlyConfig(pluginInfo.getPluginId(),
+            resolver.normalizeConfig(pluginInfo, localOnlyConfig));
+        
+        PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
         
         assertEquals("4000", resolution.getConfig().get("timeout"));
         assertMeta(resolution.getValueMetas().get(0), "timeout",

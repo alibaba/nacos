@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.adminapi.ai;
 
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -142,6 +143,27 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected void deleteMcpServerQuietly(String mcpName, String mcpId) throws Exception {
         deleteQuietly(ADMIN_MCP_PATH, mcpIdentityQuery(mcpName, mcpId, null));
+    }
+
+    protected void assertMcpServerAbsentEventually(String path, String mcpId) throws Exception {
+        HttpResponse lastResponse = null;
+        for (int i = 0; i < 20; i++) {
+            lastResponse = getRaw(path, mcpIdentityQuery(null, mcpId, null));
+            if (404 == lastResponse.code() && isMcpNotFoundResponse(lastResponse)) {
+                return;
+            }
+            Thread.sleep(250L);
+        }
+        assertEquals(404, lastResponse.code(), lastResponse.body());
+        assertTrue(isMcpNotFoundResponse(lastResponse), lastResponse.body());
+    }
+
+    private boolean isMcpNotFoundResponse(HttpResponse response) {
+        JsonNode root = JacksonUtils.toObj(response.body());
+        int errorCode = root.get("code").asInt();
+        boolean mcpNotFound = ErrorCode.MCP_SERVER_NOT_FOUND.getCode() == errorCode
+                || ErrorCode.MCP_SEVER_VERSION_NOT_FOUND.getCode() == errorCode;
+        return mcpNotFound && root.get("data").asText().contains("not found");
     }
 
     protected void assertMcpDetail(JsonNode data, String mcpName, String version, String description,
