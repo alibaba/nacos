@@ -37,7 +37,8 @@ Skill 是可复用的 AI Agent 能力包，包含：
 - description、bizTags、owner、scope、labels、version 和 download count 等元数据。
 
 Skill upload 接收 ZIP 包。Batch upload 是 best effort，必须报告每个 Skill 的成功和
-失败。
+失败。当上传已有 Skill 因调用方缺少写权限而失败时，失败信息必须在可获取时包含当前
+owner。
 
 ## 3. Agent Skills 标准兼容
 

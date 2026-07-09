@@ -39,7 +39,9 @@ A Skill is a packaged AI Agent capability. It contains:
   and download count.
 
 Skill upload accepts ZIP archives. Batch upload is best effort and must report
-per-skill success and failure.
+per-skill success and failure. When upload fails because the caller lacks write
+permission on an existing Skill, the failure information must include the
+current owner when available.
 
 ## 3. Agent Skills Standard Compatibility
 
