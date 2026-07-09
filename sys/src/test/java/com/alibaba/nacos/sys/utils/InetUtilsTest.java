@@ -28,7 +28,6 @@ import org.mockito.Mockito;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -349,16 +348,14 @@ class InetUtilsTest {
     
     @Test
     void testRefreshIpWithIpv6Bracketed() throws Exception {
-        boolean original = setPreferIpv6(true);
         System.setProperty(NACOS_SERVER_IP, "240e:3a1:8170:6c00:8c80:9aff:fe33:5d2c");
-        try {
+        try (MockedStatic<InternetAddressUtil> mocked = mockPreferIpv6()) {
             invokeRefreshIp();
             String selfIp = InetUtils.getSelfIP();
             assertNotNull(selfIp);
             assertTrue(selfIp.startsWith(InternetAddressUtil.IPV6_START_MARK));
             assertTrue(selfIp.endsWith(InternetAddressUtil.IPV6_END_MARK));
         } finally {
-            setPreferIpv6(original);
             System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
             invokeRefreshIp();
         }
@@ -366,16 +363,14 @@ class InetUtilsTest {
     
     @Test
     void testRefreshIpWithIpv6PercentScopeStripped() throws Exception {
-        boolean original = setPreferIpv6(true);
         System.setProperty(NACOS_SERVER_IP, "fe80::1%en0");
-        try {
+        try (MockedStatic<InternetAddressUtil> mocked = mockPreferIpv6()) {
             invokeRefreshIp();
             String selfIp = InetUtils.getSelfIP();
             assertNotNull(selfIp);
             assertFalse(selfIp.contains(InternetAddressUtil.PERCENT_SIGN_IN_IPV6));
             assertTrue(selfIp.endsWith(InternetAddressUtil.IPV6_END_MARK));
         } finally {
-            setPreferIpv6(original);
             System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
             invokeRefreshIp();
         }
@@ -413,8 +408,7 @@ class InetUtilsTest {
     
     @Test
     void testFindFirstNonLoopbackAddressReturnsIpv6WhenPreferred() throws Exception {
-        boolean original = setPreferIpv6(true);
-        try {
+        try (MockedStatic<InternetAddressUtil> mocked = mockPreferIpv6()) {
             Inet6Address inet6 = mock(Inet6Address.class);
             when(inet6.isLoopbackAddress()).thenReturn(false);
             when(inet6.getHostAddress()).thenReturn("fe80::1");
@@ -433,23 +427,13 @@ class InetUtilsTest {
                 InetAddress result = InetUtils.findFirstNonLoopbackAddress();
                 assertEquals(inet6, result);
             }
-        } finally {
-            setPreferIpv6(original);
         }
     }
     
-    private static boolean setPreferIpv6(boolean value) throws Exception {
-        Field theUnsafeField = Class.forName("sun.misc.Unsafe").getDeclaredField("theUnsafe");
-        theUnsafeField.setAccessible(true);
-        Object unsafe = theUnsafeField.get(null);
-        Class<?> unsafeClass = unsafe.getClass();
-        Field field = InternetAddressUtil.class.getDeclaredField("PREFER_IPV6_ADDRESSES");
-        Object base = unsafeClass.getMethod("staticFieldBase", Field.class).invoke(unsafe, field);
-        long offset =
-            (long) unsafeClass.getMethod("staticFieldOffset", Field.class).invoke(unsafe, field);
-        boolean original = field.getBoolean(null);
-        unsafeClass.getMethod("putBoolean", Object.class, long.class, boolean.class)
-            .invoke(unsafe, base, offset, value);
-        return original;
+    private static MockedStatic<InternetAddressUtil> mockPreferIpv6() {
+        MockedStatic<InternetAddressUtil> mocked =
+            Mockito.mockStatic(InternetAddressUtil.class, Mockito.CALLS_REAL_METHODS);
+        mocked.when(InternetAddressUtil::isPreferIpv6Addresses).thenReturn(true);
+        return mocked;
     }
 }
