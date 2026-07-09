@@ -20,16 +20,39 @@ import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
+import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link NacosConfigAiResourceStorage} static helper methods and key parsing.
@@ -40,6 +63,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 3.2.0
  */
 class NacosConfigAiResourceStorageTest {
+    
+    private ConfigQueryChainService configQueryChainService;
+    
+    private ConfigOperationService configOperationService;
+    
+    private SyncEffectService syncEffectService;
+    
+    private NacosConfigAiResourceStorage storage;
+    
+    @BeforeEach
+    void setUp() {
+        configQueryChainService = mock(ConfigQueryChainService.class);
+        configOperationService = mock(ConfigOperationService.class);
+        syncEffectService = mock(SyncEffectService.class);
+        storage = new NacosConfigAiResourceStorage(configQueryChainService, configOperationService,
+            syncEffectService);
+    }
     
     // ---- Legacy 4-part Skill key format (backward compatibility) ----
     
@@ -324,5 +364,130 @@ class NacosConfigAiResourceStorageTest {
                 }
             }
         }
+    }
+    
+    @Test
+    void testTypeReturnsNacosConfig() {
+        assertEquals(NacosConfigAiResourceStorage.TYPE, storage.type());
+    }
+    
+    @Test
+    void testSavePublishesConfigAndWaitsForSync() throws Exception {
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "ns1",
+            NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "myPrompt", "1.0.0",
+            "content.yaml");
+        
+        storage.save(key, "hello".getBytes(StandardCharsets.UTF_8));
+        
+        ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configOperationService).publishConfig(formCaptor.capture(),
+            any(ConfigRequestInfo.class), isNull());
+        ConfigForm form = formCaptor.getValue();
+        assertEquals(NacosAiConfigKeyCodec.encodeSegment("content.yaml"), form.getDataId());
+        assertEquals(PromptUtils.buildPromptVersionGroup("myPrompt", "1.0.0"), form.getGroup());
+        assertEquals("ns1", form.getNamespaceId());
+        assertEquals("hello", form.getContent());
+        assertEquals(ConfigType.YAML.getType(), form.getType());
+        verify(syncEffectService).toSync(same(form), anyLong());
+    }
+    
+    @Test
+    void testSaveRetriesWhenConfigAlreadyExists() throws Exception {
+        doThrow(new ConfigAlreadyExistsException("exists")).doReturn(true)
+            .when(configOperationService)
+            .publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), isNull());
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "ns1",
+            NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL, "mySkill", "v1", "skill.json");
+        
+        storage.save(key, null);
+        
+        ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configOperationService, times(2)).publishConfig(formCaptor.capture(),
+            any(ConfigRequestInfo.class), isNull());
+        assertEquals("", formCaptor.getValue().getContent());
+        assertEquals(ConfigType.JSON.getType(), formCaptor.getValue().getType());
+    }
+    
+    @Test
+    void testSaveGuessesConfigTypeFromDataId() throws Exception {
+        NacosConfigAiResourceStorage storageWithoutSync =
+            new NacosConfigAiResourceStorage(configQueryChainService, configOperationService, null);
+        List<String> dataIds = Arrays.asList("content.json", "content.yml", "content.xml",
+            "content.properties", "content.txt");
+        List<String> expectedTypes = Arrays.asList(ConfigType.JSON.getType(),
+            ConfigType.YAML.getType(), ConfigType.XML.getType(), ConfigType.PROPERTIES.getType(),
+            ConfigType.TEXT.getType());
+        
+        for (String dataId : dataIds) {
+            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                NacosConfigAiResourceStorage.TYPE, "ns1",
+                NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "myPrompt", "1.0.0", dataId);
+            storageWithoutSync.save(key, "x".getBytes(StandardCharsets.UTF_8));
+        }
+        
+        ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configOperationService, times(dataIds.size())).publishConfig(formCaptor.capture(),
+            any(ConfigRequestInfo.class), isNull());
+        for (int i = 0; i < expectedTypes.size(); i++) {
+            assertEquals(expectedTypes.get(i), formCaptor.getAllValues().get(i).getType());
+        }
+    }
+    
+    @Test
+    void testGetReturnsContent() throws Exception {
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        response.setContent("hello");
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "ns1",
+            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, "worker", "v1",
+            "manifest.json");
+        
+        byte[] actual = storage.get(key);
+        
+        assertArrayEquals("hello".getBytes(StandardCharsets.UTF_8), actual);
+        ArgumentCaptor<ConfigQueryChainRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(configQueryChainService).handle(requestCaptor.capture());
+        assertEquals(NacosAiConfigKeyCodec.encodeSegment("manifest.json"),
+            requestCaptor.getValue().getDataId());
+        assertEquals(AgentSpecUtils.buildAgentSpecVersionGroup("worker", "v1"),
+            requestCaptor.getValue().getGroup());
+        assertEquals("ns1", requestCaptor.getValue().getTenant());
+    }
+    
+    @Test
+    void testGetReturnsNullWhenConfigNotFoundOrContentNull() throws Exception {
+        ConfigQueryChainResponse notFound = new ConfigQueryChainResponse();
+        notFound.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
+        ConfigQueryChainResponse noContent = new ConfigQueryChainResponse();
+        noContent.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(notFound, noContent);
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "ns1",
+            NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL, "mySkill", "v1", "skill.json");
+        
+        assertNull(storage.get(key));
+        assertNull(storage.get(key));
+    }
+    
+    @Test
+    void testDeleteRemovesConfigWithoutHistory() throws Exception {
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "ns1",
+            NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "myPrompt", "1.0.0",
+            "content.json");
+        
+        storage.delete(key);
+        
+        verify(configOperationService).deleteConfig(
+            NacosAiConfigKeyCodec.encodeSegment("content.json"),
+            PromptUtils.buildPromptVersionGroup("myPrompt", "1.0.0"), "ns1", null, null, "nacos",
+            null);
     }
 }
