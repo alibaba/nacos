@@ -44,10 +44,20 @@ public class CopilotProperties {
     private String apiKey;
     
     /**
+     * LLM provider name.
+     */
+    private String provider = "DashScope";
+
+    /**
      * Model name.
      */
     private String model = "qwen-turbo";
-    
+
+    /**
+     * OpenAI-compatible base URL.
+     */
+    private String baseUrl;
+
     /**
      * AgentScope Studio URL.
      */
@@ -93,6 +103,24 @@ public class CopilotProperties {
     }
     
     /**
+     * Get provider name.
+     *
+     * @return provider name
+     */
+    public String getProvider() {
+        return provider;
+    }
+
+    /**
+     * Set provider name.
+     *
+     * @param provider provider name
+     */
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    /**
      * Get model name.
      *
      * @return model name
@@ -110,6 +138,24 @@ public class CopilotProperties {
         this.model = model;
     }
     
+    /**
+     * Get OpenAI-compatible base URL.
+     *
+     * @return base URL
+     */
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    /**
+     * Set OpenAI-compatible base URL.
+     *
+     * @param baseUrl base URL
+     */
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
     /**
      * Get Studio URL.
      *

@@ -59,7 +59,9 @@ class CopilotConfig extends React.Component {
       // Set form values - only apiKey, model, studioUrl and studioProject
       this.field.setValues({
         apiKey: config.apiKey || '',
+        provider: config.provider || 'DashScope',
         model: config.model || 'qwen-turbo',
+        baseUrl: config.baseUrl || '',
         studioUrl,
         studioProject: config.studioProject || 'NacosCopilot',
       });
@@ -85,7 +87,9 @@ class CopilotConfig extends React.Component {
       // Only send apiKey, model, studioUrl and studioProject
       const config = {
         apiKey: values.apiKey || '',
+        provider: values.provider || 'DashScope',
         model: values.model || 'qwen-turbo',
+        baseUrl: values.baseUrl || '',
         studioUrl,
         studioProject: values.studioProject || 'NacosCopilot',
       };
@@ -118,21 +122,22 @@ class CopilotConfig extends React.Component {
     const { locale = {} } = this.props;
     const { init } = this.field;
 
-    // 千问系列常见文本模型列表
-    const qwenModels = [
-      { value: 'qwen-turbo', label: 'qwen-turbo (快速版)' },
-      { value: 'qwen-plus', label: 'qwen-plus (增强版)' },
-      { value: 'qwen-max', label: 'qwen-max (最强版)' },
-      { value: 'qwen-7b-chat', label: 'qwen-7b-chat' },
-      { value: 'qwen-14b-chat', label: 'qwen-14b-chat' },
-      { value: 'qwen-72b-chat', label: 'qwen-72b-chat' },
-      { value: 'qwen3-turbo', label: 'qwen3-turbo (千问3快速版)' },
-      { value: 'qwen3-plus', label: 'qwen3-plus (千问3增强版)' },
-      { value: 'qwen3-max', label: 'qwen3-max (千问3最强版)' },
-      { value: 'qwen3-7b-instruct', label: 'qwen3-7b-instruct' },
-      { value: 'qwen3-14b-instruct', label: 'qwen3-14b-instruct' },
-      { value: 'qwen3-32b-instruct', label: 'qwen3-32b-instruct' },
-      { value: 'qwen3-72b-instruct', label: 'qwen3-72b-instruct' },
+    // Copilot LLM model list
+    const copilotModels = [
+      { value: 'qwen-turbo', label: 'qwen-turbo (DashScope 快速版)' },
+      { value: 'qwen-plus', label: 'qwen-plus (DashScope 增强版)' },
+      { value: 'qwen-max', label: 'qwen-max (DashScope 最强版)' },
+      { value: 'qwen-7b-chat', label: 'qwen-7b-chat (DashScope)' },
+      { value: 'qwen-14b-chat', label: 'qwen-14b-chat (DashScope)' },
+      { value: 'qwen-72b-chat', label: 'qwen-72b-chat (DashScope)' },
+      { value: 'qwen3-turbo', label: 'qwen3-turbo (DashScope 千问3快速版)' },
+      { value: 'qwen3-plus', label: 'qwen3-plus (DashScope 千问3增强版)' },
+      { value: 'qwen3-max', label: 'qwen3-max (DashScope 千问3最强版)' },
+      { value: 'qwen3-7b-instruct', label: 'qwen3-7b-instruct (DashScope)' },
+      { value: 'qwen3-14b-instruct', label: 'qwen3-14b-instruct (DashScope)' },
+      { value: 'qwen3-32b-instruct', label: 'qwen3-32b-instruct (DashScope)' },
+      { value: 'qwen3-72b-instruct', label: 'qwen3-72b-instruct (DashScope)' },
+      { value: 'MiniMax-M3', label: 'MiniMax-M3 (MiniMax)' },
     ];
 
     return (
@@ -172,14 +177,37 @@ class CopilotConfig extends React.Component {
           />
         </FormItem>
 
+        <FormItem label="Provider">
+          <Select
+            {...init('provider', {
+              initValue: 'DashScope',
+            })}
+            dataSource={[
+              { value: 'DashScope', label: 'DashScope' },
+              { value: 'MiniMax', label: 'MiniMax' },
+            ]}
+            placeholder="请选择 Provider"
+            style={{ width: '100%' }}
+          />
+        </FormItem>
+
         <FormItem label={locale.copilotLlmModelName || 'Model'}>
           <Select
             {...init('model', {
               initValue: 'qwen-turbo',
             })}
-            dataSource={qwenModels}
+            dataSource={copilotModels}
             placeholder={locale.copilotLlmModelNamePlaceholder || '请选择模型'}
             style={{ width: '100%' }}
+          />
+        </FormItem>
+
+        <FormItem label="Base URL">
+          <Input
+            {...init('baseUrl', {
+              initValue: '',
+            })}
+            placeholder="https://api.minimax.io/v1"
           />
         </FormItem>
 

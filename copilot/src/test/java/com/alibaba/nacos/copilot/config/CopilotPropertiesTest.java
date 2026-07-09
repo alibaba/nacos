@@ -37,6 +37,7 @@ class CopilotPropertiesTest {
         // Then
         assertTrue(properties.isEnabled());
         assertEquals("public", properties.getDefaultNamespace());
+        assertEquals("DashScope", properties.getProvider());
         assertEquals("qwen-turbo", properties.getModel());
         assertEquals("NacosCopilot", properties.getStudioProject());
     }
@@ -84,6 +85,18 @@ class CopilotPropertiesTest {
     }
     
     @Test
+    void testProvider() {
+        // Given
+        CopilotProperties properties = new CopilotProperties();
+
+        // When
+        properties.setProvider("MiniMax");
+
+        // Then
+        assertEquals("MiniMax", properties.getProvider());
+    }
+
+    @Test
     void testModel() {
         // Given
         CopilotProperties properties = new CopilotProperties();
@@ -95,6 +108,18 @@ class CopilotPropertiesTest {
         assertEquals("gpt-4", properties.getModel());
     }
     
+    @Test
+    void testBaseUrl() {
+        // Given
+        CopilotProperties properties = new CopilotProperties();
+
+        // When
+        properties.setBaseUrl("https://api.minimax.io/v1");
+
+        // Then
+        assertEquals("https://api.minimax.io/v1", properties.getBaseUrl());
+    }
+
     @Test
     void testStudioUrl() {
         // Given

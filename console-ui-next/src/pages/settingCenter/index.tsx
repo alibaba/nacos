@@ -20,23 +20,26 @@ import {
 
 interface CopilotConfig {
   apiKey: string;
+  provider: string;
   model: string;
+  baseUrl: string;
 }
 
-const QWEN_MODELS = [
-  { value: 'qwen-turbo', label: 'qwen-turbo', desc: 'Fast' },
-  { value: 'qwen-plus', label: 'qwen-plus', desc: 'Enhanced' },
-  { value: 'qwen-max', label: 'qwen-max', desc: 'Strongest' },
-  { value: 'qwen-7b-chat', label: 'qwen-7b-chat', desc: '7B' },
-  { value: 'qwen-14b-chat', label: 'qwen-14b-chat', desc: '14B' },
-  { value: 'qwen-72b-chat', label: 'qwen-72b-chat', desc: '72B' },
-  { value: 'qwen3-turbo', label: 'qwen3-turbo', desc: 'Qwen3 Fast' },
-  { value: 'qwen3-plus', label: 'qwen3-plus', desc: 'Qwen3 Enhanced' },
-  { value: 'qwen3-max', label: 'qwen3-max', desc: 'Qwen3 Strongest' },
-  { value: 'qwen3-7b-instruct', label: 'qwen3-7b-instruct', desc: '7B' },
-  { value: 'qwen3-14b-instruct', label: 'qwen3-14b-instruct', desc: '14B' },
-  { value: 'qwen3-32b-instruct', label: 'qwen3-32b-instruct', desc: '32B' },
-  { value: 'qwen3-72b-instruct', label: 'qwen3-72b-instruct', desc: '72B' },
+const COPILOT_MODELS = [
+  { value: 'qwen-turbo', label: 'qwen-turbo', desc: 'DashScope Fast' },
+  { value: 'qwen-plus', label: 'qwen-plus', desc: 'DashScope Enhanced' },
+  { value: 'qwen-max', label: 'qwen-max', desc: 'DashScope Strongest' },
+  { value: 'qwen-7b-chat', label: 'qwen-7b-chat', desc: 'DashScope 7B' },
+  { value: 'qwen-14b-chat', label: 'qwen-14b-chat', desc: 'DashScope 14B' },
+  { value: 'qwen-72b-chat', label: 'qwen-72b-chat', desc: 'DashScope 72B' },
+  { value: 'qwen3-turbo', label: 'qwen3-turbo', desc: 'DashScope Qwen3 Fast' },
+  { value: 'qwen3-plus', label: 'qwen3-plus', desc: 'DashScope Qwen3 Enhanced' },
+  { value: 'qwen3-max', label: 'qwen3-max', desc: 'DashScope Qwen3 Strongest' },
+  { value: 'qwen3-7b-instruct', label: 'qwen3-7b-instruct', desc: 'DashScope 7B' },
+  { value: 'qwen3-14b-instruct', label: 'qwen3-14b-instruct', desc: 'DashScope 14B' },
+  { value: 'qwen3-32b-instruct', label: 'qwen3-32b-instruct', desc: 'DashScope 32B' },
+  { value: 'qwen3-72b-instruct', label: 'qwen3-72b-instruct', desc: 'DashScope 72B' },
+  { value: 'MiniMax-M3', label: 'MiniMax-M3', desc: 'MiniMax' },
 ];
 
 export default function SettingCenterPage() {
@@ -56,7 +59,9 @@ export default function SettingCenterPage() {
   const [showApiKey, setShowApiKey] = useState(false);
 
   const [apiKey, setApiKey] = useState('');
+  const [provider, setProvider] = useState('DashScope');
   const [model, setModel] = useState('qwen-turbo');
+  const [baseUrl, setBaseUrl] = useState('');
 
   const loadConfig = useCallback(async () => {
     setLoading(true);
@@ -65,7 +70,9 @@ export default function SettingCenterPage() {
       const body = response as unknown as { data: CopilotConfig };
       const config = body.data || ({} as CopilotConfig);
       setApiKey(config.apiKey || '');
+      setProvider(config.provider || 'DashScope');
       setModel(config.model || 'qwen-turbo');
+      setBaseUrl(config.baseUrl || '');
     } catch {
       // Error handled by interceptor
     } finally {
@@ -84,7 +91,9 @@ export default function SettingCenterPage() {
     try {
       const config: CopilotConfig = {
         apiKey: apiKey.trim(),
+        provider: provider || 'DashScope',
         model: model || 'qwen-turbo',
+        baseUrl: baseUrl.trim(),
       };
 
       await client.post('v3/console/copilot/config', JSON.stringify(config), {
@@ -155,6 +164,20 @@ export default function SettingCenterPage() {
                   <p className="text-xs text-muted-foreground">{t('settings.apiKeyHint')}</p>
                 </div>
 
+                {/* Provider */}
+                <div className="space-y-2.5">
+                  <Label>Provider</Label>
+                  <Select value={provider} onValueChange={setProvider}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DashScope">DashScope</SelectItem>
+                      <SelectItem value="MiniMax">MiniMax</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Model */}
                 <div className="space-y-2.5">
                   <Label>{t('settings.model')}</Label>
@@ -163,7 +186,7 @@ export default function SettingCenterPage() {
                       <SelectValue placeholder={t('settings.modelPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {QWEN_MODELS.map((m) => (
+                      {COPILOT_MODELS.map((m) => (
                         <SelectItem key={m.value} value={m.value}>
                           <span>{m.label}</span>
                           <span className="ml-2 text-muted-foreground text-xs">({m.desc})</span>
@@ -171,6 +194,16 @@ export default function SettingCenterPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Base URL */}
+                <div className="space-y-2.5">
+                  <Label>Base URL</Label>
+                  <Input
+                    placeholder="https://api.minimax.io/v1"
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                  />
                 </div>
               </div>
             )}

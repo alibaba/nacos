@@ -19,6 +19,8 @@ package com.alibaba.nacos.copilot.config;
 import com.alibaba.nacos.common.utils.StringUtils;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.model.DashScopeChatModel;
+import io.agentscope.core.model.Model;
+import io.agentscope.core.model.OpenAIChatModel;
 import io.agentscope.core.studio.StudioManager;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -147,13 +149,8 @@ public class CopilotAgentManager {
         }
         
         // Create model
-        DashScopeChatModel model = DashScopeChatModel.builder()
-            .apiKey(apiKey)
-            .modelName(config.getModel())
-            .stream(true)
-            .enableThinking(true)
-            .build();
-        
+        Model model = createModel(config, apiKey);
+
         // Create agent
         ReActAgent.Builder agentBuilder = ReActAgent.builder()
             .name("CopilotAgent")
@@ -201,6 +198,31 @@ public class CopilotAgentManager {
         return defaultProperties;
     }
     
+    /**
+     * Create AgentScope model with current configuration.
+     *
+     * @param config CopilotProperties
+     * @param apiKey API key
+     * @return AgentScope model
+     */
+    private Model createModel(CopilotProperties config, String apiKey) {
+        if (StringUtils.equalsIgnoreCase("MiniMax", config.getProvider())) {
+            return OpenAIChatModel.builder()
+                .apiKey(apiKey)
+                .baseUrl(StringUtils.isBlank(config.getBaseUrl())
+                    ? "https://api.minimax.io/v1" : config.getBaseUrl())
+                .modelName(config.getModel())
+                .stream(true)
+                .build();
+        }
+        return DashScopeChatModel.builder()
+            .apiKey(apiKey)
+            .modelName(config.getModel())
+            .stream(true)
+            .enableThinking(true)
+            .build();
+    }
+
     /**
      * Get API key from environment variable or config.
      *
