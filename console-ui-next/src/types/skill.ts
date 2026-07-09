@@ -111,6 +111,7 @@ export interface SkillUploadPrecheckResult {
   namespaceId: string;
   skillName: string;
   description?: string;
+  owner?: string | null;
   parsedVersion: string;
   resolvedVersion: string;
   versionSource: string;

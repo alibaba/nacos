@@ -214,7 +214,9 @@ export function UploadSkillDialog({
       const targetVersion = getResultTargetVersion(result);
 
       if (result.status === 'FORBIDDEN' || !result.writable) {
-        messages.push(t('skill.precheckNoPermission'));
+        messages.push(t('skill.precheckNoPermission', {
+          owner: result.owner || '-',
+        }));
         return messages;
       }
 
@@ -290,6 +292,11 @@ export function UploadSkillDialog({
       }
       if (item.result) {
         const targetVersion = getResultTargetVersion(item.result);
+        if (item.result.status === 'FORBIDDEN' || !item.result.writable) {
+          return t('skill.batchItemNoPermissionWithOwner', {
+            owner: item.result.owner || '-',
+          });
+        }
         if (isUploadedVersionConverted(item.result, targetVersion)) {
           const normalizedVersion = normalizeShortSemverVersion(item.result.parsedVersion);
           if (item.result.versionExists && normalizedVersion && normalizedVersion !== targetVersion) {
@@ -617,6 +624,12 @@ export function UploadSkillDialog({
               <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
                 <span className="text-muted-foreground">{t('skill.skillName')}</span>
                 <span className="font-medium break-all">{precheck.skillName}</span>
+                {precheck.owner && (
+                  <>
+                    <span className="text-muted-foreground">{t('skill.owner')}</span>
+                    <span className="break-all">{precheck.owner}</span>
+                  </>
+                )}
                 <span className="text-muted-foreground">
                   {t(precheckVersionConverted ? 'skill.uploadedVersion' : 'skill.parsedVersion')}
                 </span>
