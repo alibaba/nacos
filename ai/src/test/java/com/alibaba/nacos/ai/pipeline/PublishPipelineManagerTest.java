@@ -33,6 +33,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -206,6 +207,32 @@ class PublishPipelineManagerTest {
         }
     }
     
+    @Test
+    void configuredNodeOrderShouldOverrideServicePreferOrder() {
+        PublishPipelineManager manager = new PublishPipelineManager();
+        List<PublishPipelineServiceBuilder> builders = new ArrayList<>();
+        builders.add(createServiceBuilder(new ServiceDescriptor("first-by-default", 10,
+            PublishPipelineResourceType.values())));
+        builders.add(createServiceBuilder(new ServiceDescriptor("first-by-config", 20,
+            PublishPipelineResourceType.values())));
+        
+        PipelineConfig config = new PipelineConfig();
+        config.setEnabled(true);
+        config.setNodes(new ArrayList<>());
+        manager.initWithBuilders(builders, config);
+        
+        List<PipelineNodeConfig> nodes = new ArrayList<>();
+        nodes.add(createNode("first-by-default", 30));
+        nodes.add(createNode("first-by-config", 5));
+        
+        List<PublishPipelineService> result =
+            manager.getPipelineServices(PublishPipelineResourceType.SKILL, nodes);
+        
+        assertEquals(2, result.size());
+        assertEquals("first-by-config", result.get(0).pipelineId());
+        assertEquals("first-by-default", result.get(1).pipelineId());
+    }
+    
     private PublishPipelineServiceBuilder createMockBuilder(BuilderDescriptor desc) {
         return new PublishPipelineServiceBuilder() {
             
@@ -244,6 +271,14 @@ class PublishPipelineManagerTest {
                 };
             }
         };
+    }
+    
+    private PipelineNodeConfig createNode(String pipelineId, Integer order) {
+        PipelineNodeConfig nodeConfig = new PipelineNodeConfig();
+        nodeConfig.setPipelineId(pipelineId);
+        nodeConfig.setProperties(new Properties());
+        nodeConfig.setOrder(order);
+        return nodeConfig;
     }
     
     static class BuilderDescriptor {
