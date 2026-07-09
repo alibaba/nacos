@@ -35,17 +35,21 @@ interface BatchPrecheckState {
 
 interface BatchUploadResultData {
   succeeded?: string[];
-  failed?: { name: string; reason: string }[];
+  failed?: { name: string; reason: string; owner?: string }[];
+}
+
+function isPrecheckBlocked(result: SkillUploadPrecheckResult): boolean {
+  return result.status === 'FORBIDDEN'
+    || result.status === 'CONFLICT'
+    || !result.writable
+    || result.actions.length === 0;
 }
 
 function isBatchItemBlocked(item: BatchPrecheckItem): boolean {
   if (item.kind !== 'SKILL') {
     return false;
   }
-  return !item.result
-    || item.result.status === 'FORBIDDEN'
-    || item.result.status === 'CONFLICT'
-    || item.result.actions.length === 0;
+  return !item.result || isPrecheckBlocked(item.result);
 }
 
 function getBatchItemName(item: BatchPrecheckItem): string {
@@ -416,8 +420,8 @@ export function UploadSkillDialog({
         const result = mergeLocalParsedVersion(resultList[0] ?? null, validEntries[0]?.request);
         setBatchPrecheck(null);
         setPrecheck(result);
-        if (!result || result.actions.length === 0) {
-          setError((result?.errors ?? []).join('; ') || t('skill.uploadPrecheckBlocked'));
+        if (!result) {
+          setError(t('skill.uploadPrecheckBlocked'));
         }
       } catch (err: unknown) {
         if (requestId !== precheckRequestRef.current) {
@@ -516,8 +520,7 @@ export function UploadSkillDialog({
       if (!currentPrecheck) {
         return;
       }
-      if (currentPrecheck.actions.length === 0) {
-        setError(currentPrecheck.errors.join('; ') || t('skill.uploadPrecheckBlocked'));
+      if (isPrecheckBlocked(currentPrecheck)) {
         return;
       }
       await runUpload(currentPrecheck);
@@ -568,15 +571,13 @@ export function UploadSkillDialog({
     : precheck?.draftExists
       ? t('skill.confirmForceOverwriteUpload')
       : t('skill.confirmUpload');
-  const precheckMessageClass = precheck?.status === 'CONFLICT'
-    || precheck?.status === 'FORBIDDEN'
-    || precheck?.actions.length === 0
+  const precheckMessageClass = precheck && isPrecheckBlocked(precheck)
     ? 'text-destructive'
     : 'text-muted-foreground';
   const canSubmit = !!file && !loading && !error
     && (
       !!batchPrecheck
-      || (!!precheck && precheck.actions.length > 0)
+      || (!!precheck && !isPrecheckBlocked(precheck))
     );
 
   return (

@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
@@ -681,6 +682,63 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
+    void testUploadSkillFromZipReturnsOwnerWhenForbidden() throws IOException, NacosException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
+        when(visibilityService.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
+            anyString(), any())).thenReturn(ValidationResult.deny("denied"));
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> uploadSkill(namespaceId, zipBytes));
+        
+        assertEquals(NacosException.NO_RIGHT, exception.getErrCode());
+        assertTrue(exception.getErrMsg().contains("No permission to modify skill: test-skill"));
+        assertTrue(exception.getErrMsg().contains("Current owner: ownerUser"));
+        verify(storage, never()).save(any(StorageKey.class), any(byte[].class));
+    }
+    
+    @Test
+    void testBatchUploadSkillFromZipReturnsOwnerWhenForbidden() throws IOException,
+        NacosException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createBatchZipBytes("test-skill", "3.0.6");
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
+        when(visibilityService.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
+            anyString(), any())).thenReturn(ValidationResult.deny("denied"));
+        
+        BatchUploadResult result =
+            skillOperationService.batchUploadSkillsFromZip(namespaceId, zipBytes, false);
+        
+        assertTrue(result.getSucceeded().isEmpty());
+        assertEquals(1, result.getFailed().size());
+        BatchUploadResult.FailedItem failed = result.getFailed().get(0);
+        assertEquals("test-skill", failed.getName());
+        assertEquals("ownerUser", failed.getOwner());
+        assertTrue(failed.getReason().contains("No permission to modify skill: test-skill"));
+        assertTrue(failed.getReason().contains("Current owner: ownerUser"));
+        verify(storage, never()).save(any(StorageKey.class), any(byte[].class));
+    }
+    
+    @Test
     void testPrecheckUploadSkillReturnsValidForExistingSkillWithoutWorkingVersion()
         throws NacosException {
         String namespaceId = "test-namespace";
@@ -1054,6 +1112,23 @@ class SkillOperationServiceImplTest {
                 zos.write(metaJson.getBytes());
                 zos.closeEntry();
             }
+        }
+        return baos.toByteArray();
+    }
+    
+    private byte[] createBatchZipBytes(String skillName, String version) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry(skillName + "/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                + "name: " + skillName + "\n"
+                + "description: Test skill description\n"
+                + (version == null ? "" : "version: " + version + "\n")
+                + "---\n\n"
+                + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
         }
         return baos.toByteArray();
     }

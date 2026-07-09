@@ -59,6 +59,10 @@ public class BatchUploadResult {
         this.failed.add(new FailedItem(skillName, reason));
     }
     
+    public void addFailed(String skillName, String reason, String owner) {
+        this.failed.add(new FailedItem(skillName, reason, owner));
+    }
+    
     /**
      * Represents a skill that failed during batch upload.
      */
@@ -68,12 +72,20 @@ public class BatchUploadResult {
         
         private String reason;
         
+        private String owner;
+        
         public FailedItem() {
         }
         
         public FailedItem(String name, String reason) {
             this.name = name;
             this.reason = reason;
+        }
+        
+        public FailedItem(String name, String reason, String owner) {
+            this.name = name;
+            this.reason = reason;
+            this.owner = owner;
         }
         
         public String getName() {
@@ -90,6 +102,14 @@ public class BatchUploadResult {
         
         public void setReason(String reason) {
             this.reason = reason;
+        }
+        
+        public String getOwner() {
+            return owner;
+        }
+        
+        public void setOwner(String owner) {
+            this.owner = owner;
         }
     }
 }

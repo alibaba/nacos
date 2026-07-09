@@ -320,7 +320,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 result.addSucceeded(skillName);
             } catch (Exception e) {
                 LOGGER.warn("Batch upload failed for skill [{}]: {}", skillName, e.getMessage());
-                result.addFailed(skillName != null ? skillName : "unknown", e.getMessage());
+                result.addFailed(skillName != null ? skillName : "unknown",
+                    resolveUploadErrorMessage(e),
+                    resolveUploadFailureOwner(namespaceId, skillName, e));
             }
         }
         return result;
@@ -337,7 +339,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         if (meta != null) {
-            VisibilityHelper.checkWritableResource(meta);
+            checkUploadWritableResource(meta);
         }
         String targetVersion = resolveUploadTargetVersion(namespaceId, name, meta, uploadVersion);
         if (StringUtils.isBlank(uploadAction)) {
@@ -360,6 +362,52 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         throw new NacosApiException(NacosException.INVALID_PARAM,
             ErrorCode.PARAMETER_VALIDATE_ERROR, "Unsupported uploadAction: " + uploadAction);
+    }
+    
+    private void checkUploadWritableResource(AiResource meta) throws NacosException {
+        try {
+            VisibilityHelper.checkWritableResource(meta);
+        } catch (NacosException e) {
+            if (e.getErrCode() != NacosException.NO_RIGHT) {
+                throw e;
+            }
+            throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
+                buildOwnerAwareUploadErrorMessage(meta, e));
+        }
+    }
+    
+    private String resolveUploadFailureOwner(String namespaceId, String skillName, Exception e) {
+        if (!isNoRightException(e) || StringUtils.isBlank(skillName)) {
+            return null;
+        }
+        AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        return meta == null ? null : meta.getOwner();
+    }
+    
+    private String resolveUploadErrorMessage(Exception e) {
+        if (e instanceof NacosException) {
+            String errMsg = ((NacosException) e).getErrMsg();
+            if (StringUtils.isNotBlank(errMsg)) {
+                return errMsg;
+            }
+        }
+        return e.getMessage();
+    }
+    
+    private boolean isNoRightException(Exception e) {
+        return e instanceof NacosException
+            && ((NacosException) e).getErrCode() == NacosException.NO_RIGHT;
+    }
+    
+    private String buildOwnerAwareUploadErrorMessage(AiResource meta, NacosException e) {
+        String message = e.getErrMsg();
+        if (StringUtils.isBlank(message)) {
+            message = e.getMessage();
+        }
+        if (StringUtils.isBlank(meta.getOwner())) {
+            return message;
+        }
+        return message + ". Current owner: " + meta.getOwner();
     }
     
     /**
