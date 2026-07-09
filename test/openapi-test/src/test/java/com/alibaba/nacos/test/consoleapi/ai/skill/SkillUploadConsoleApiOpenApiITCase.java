@@ -76,6 +76,7 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 .get("data").get(0);
         assertEquals("WARNING", precheck.get("status").asText(), precheck.toString());
         assertEquals(skillName, precheck.get("skillName").asText(), precheck.toString());
+        assertTrue(precheck.has("owner"), precheck.toString());
         assertEquals("duplicate guide", precheck.get("description").asText(), precheck.toString());
         assertEquals("1.0.0", precheck.get("parsedVersion").asText(), precheck.toString());
         assertEquals("1.0.0", precheck.get("resolvedVersion").asText(), precheck.toString());

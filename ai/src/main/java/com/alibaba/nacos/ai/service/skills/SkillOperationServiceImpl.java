@@ -232,6 +232,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         
         result.setExists(true);
+        result.setOwner(meta.getOwner());
         try {
             VisibilityHelper.checkWritableResource(meta);
             result.setWritable(true);
@@ -283,9 +284,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return result;
         }
         
-        result.setStatus(SkillUploadPrecheckResult.STATUS_WARNING);
-        result.addConflictType(SkillUploadPrecheckResult.CONFLICT_EXISTING_SKILL);
-        result.addWarning("Skill already exists: " + name);
+        result.setStatus(versionExists ? SkillUploadPrecheckResult.STATUS_WARNING
+            : SkillUploadPrecheckResult.STATUS_VALID);
         result.addAction(SkillUploadPrecheckResult.ACTION_CREATE_DRAFT, targetVersion,
             "Create a new draft for the existing skill");
         return result;

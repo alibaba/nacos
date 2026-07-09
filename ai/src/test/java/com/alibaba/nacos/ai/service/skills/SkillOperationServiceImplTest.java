@@ -77,6 +77,7 @@ import java.util.zip.ZipOutputStream;
 import org.springframework.core.env.StandardEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -643,6 +644,123 @@ class SkillOperationServiceImplTest {
         assertEquals("VALID", result.getStatus());
         assertTrue(result.getWarnings().get(0).contains("Invalid version"));
         assertEquals("0.0.1", result.getActions().get(0).getResultVersion());
+    }
+    
+    @Test
+    void testPrecheckUploadSkillReturnsOwnerWhenForbidden() throws NacosException {
+        String namespaceId = "test-namespace";
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(namespaceId);
+        request.setSkillName("test-skill");
+        request.setDescription("Test skill description");
+        request.setParsedVersion("1.0.0");
+        request.setVersionSource("SKILL.md frontmatter");
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
+        when(visibilityService.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
+            anyString(), any())).thenReturn(ValidationResult.deny("denied"));
+        
+        List<SkillUploadPrecheckResult> results =
+            skillOperationService.batchPrecheckUploadSkill(List.of(request));
+        
+        assertEquals(1, results.size());
+        SkillUploadPrecheckResult result = results.get(0);
+        assertEquals("FORBIDDEN", result.getStatus());
+        assertFalse(result.isWritable());
+        assertEquals("ownerUser", result.getOwner());
+        assertTrue(result.getConflictTypes()
+            .contains(SkillUploadPrecheckResult.CONFLICT_NO_PERMISSION));
+    }
+    
+    @Test
+    void testPrecheckUploadSkillReturnsValidForExistingSkillWithoutWorkingVersion()
+        throws NacosException {
+        String namespaceId = "test-namespace";
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(namespaceId);
+        request.setSkillName("test-skill");
+        request.setDescription("Test skill description");
+        request.setParsedVersion("0.0.5");
+        request.setVersionSource("SKILL.md frontmatter");
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setOwner("ownerUser");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"0.0.4\"},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion onlineVersion =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        onlineVersion.setVersion("0.0.4");
+        versions.setPageItems(List.of(onlineVersion));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(),
+            isNull(), anyInt(), anyInt())).thenReturn(versions);
+        
+        List<SkillUploadPrecheckResult> results =
+            skillOperationService.batchPrecheckUploadSkill(List.of(request));
+        
+        SkillUploadPrecheckResult result = results.get(0);
+        assertEquals("VALID", result.getStatus());
+        assertTrue(result.isExists());
+        assertTrue(result.isWritable());
+        assertFalse(result.isVersionExists());
+        assertTrue(result.getConflictTypes().isEmpty());
+        assertEquals("0.0.5", result.getResolvedVersion());
+        assertEquals(SkillUploadPrecheckResult.ACTION_CREATE_DRAFT,
+            result.getActions().get(0).getType());
+        assertEquals("0.0.5", result.getActions().get(0).getResultVersion());
+    }
+    
+    @Test
+    void testPrecheckUploadSkillReturnsWarningWhenExistingVersionIsUploaded()
+        throws NacosException {
+        String namespaceId = "test-namespace";
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(namespaceId);
+        request.setSkillName("test-skill");
+        request.setDescription("Test skill description");
+        request.setParsedVersion("0.0.4");
+        request.setVersionSource("SKILL.md frontmatter");
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setOwner("ownerUser");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"0.0.4\"},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion onlineVersion =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        onlineVersion.setVersion("0.0.4");
+        versions.setPageItems(List.of(onlineVersion));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(),
+            isNull(), anyInt(), anyInt())).thenReturn(versions);
+        
+        List<SkillUploadPrecheckResult> results =
+            skillOperationService.batchPrecheckUploadSkill(List.of(request));
+        
+        SkillUploadPrecheckResult result = results.get(0);
+        assertEquals("WARNING", result.getStatus());
+        assertTrue(result.isVersionExists());
+        assertTrue(result.getConflictTypes()
+            .contains(SkillUploadPrecheckResult.CONFLICT_VERSION_EXISTS));
+        assertFalse(result.getConflictTypes()
+            .contains(SkillUploadPrecheckResult.CONFLICT_EXISTING_SKILL));
+        assertEquals("0.0.5", result.getResolvedVersion());
+        assertEquals(SkillUploadPrecheckResult.ACTION_CREATE_DRAFT,
+            result.getActions().get(0).getType());
+        assertEquals("0.0.5", result.getActions().get(0).getResultVersion());
     }
     
     @Test
