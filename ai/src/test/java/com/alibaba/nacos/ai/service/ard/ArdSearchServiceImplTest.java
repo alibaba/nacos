@@ -435,20 +435,6 @@ class ArdSearchServiceImplTest {
             catalog.getEntries().get(1).getUrl());
     }
     
-    @Test
-    void catalogShouldNotDuplicateConfiguredContextPath() throws Exception {
-        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com/nacos");
-        EnvUtil.setContextPath("/nacos");
-        ArdSearchServiceImpl service = service();
-        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"), 100))
-            .thenReturn(List.of());
-        
-        ArdCatalog catalog = service.catalog("public");
-        
-        assertEquals("https://nacos.example.com/nacos/v3/ai/ard",
-            catalog.getEntries().get(0).getUrl());
-    }
-    
     private ArdSearchServiceImpl service() {
         return new ArdSearchServiceImpl(resourceManager, mcpServerOperationService, repository,
             embeddingService, vectorIndex);

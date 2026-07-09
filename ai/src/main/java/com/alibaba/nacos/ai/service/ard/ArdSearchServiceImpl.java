@@ -1000,10 +1000,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1)
             : baseUrl;
         String contextPath = EnvUtil.getContextPath();
-        if (StringUtils.isBlank(contextPath) || base.endsWith(contextPath)) {
-            return base;
-        }
-        return base + contextPath;
+        return StringUtils.isBlank(contextPath) ? base : base + contextPath;
     }
     
     private String currentRequestBaseUrl() {
