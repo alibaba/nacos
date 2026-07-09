@@ -980,7 +980,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         if (StringUtils.isBlank(url) || url.startsWith("http://") || url.startsWith("https://")) {
             return url;
         }
-        String baseUrl = property(KEY_CATALOG_BASE_URL, "");
+        String baseUrl = configuredBaseUrl();
         if (StringUtils.isBlank(baseUrl)) {
             baseUrl = currentRequestBaseUrl();
         }
@@ -990,6 +990,20 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1)
             : baseUrl;
         return url.startsWith("/") ? base + url : base + "/" + url;
+    }
+    
+    private String configuredBaseUrl() {
+        String baseUrl = property(KEY_CATALOG_BASE_URL, "");
+        if (StringUtils.isBlank(baseUrl)) {
+            return "";
+        }
+        String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1)
+            : baseUrl;
+        String contextPath = EnvUtil.getContextPath();
+        if (StringUtils.isBlank(contextPath) || base.endsWith(contextPath)) {
+            return base;
+        }
+        return base + contextPath;
     }
     
     private String currentRequestBaseUrl() {

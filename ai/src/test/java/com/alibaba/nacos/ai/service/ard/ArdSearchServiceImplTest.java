@@ -40,6 +40,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorHit;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -98,6 +99,7 @@ class ArdSearchServiceImplTest {
         System.clearProperty(RANKING_ENABLED_KEY);
         System.clearProperty(CATALOG_BASE_URL_KEY);
         System.clearProperty(ArdIndexConstants.KEY_CATALOG_HOST_IDENTIFIER);
+        EnvUtil.setContextPath(null);
         RequestContextHolder.resetRequestAttributes();
     }
     
@@ -408,8 +410,9 @@ class ArdSearchServiceImplTest {
     
     @Test
     void catalogShouldUseConfiguredBaseUrlAndHostIdentifier() throws Exception {
-        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com/nacos");
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com");
         System.setProperty(ArdIndexConstants.KEY_CATALOG_HOST_IDENTIFIER, "nacos.example.com");
+        EnvUtil.setContextPath("/nacos");
         ArdSearchServiceImpl service = service();
         when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"), 100))
             .thenReturn(List.of(entry()));
@@ -430,6 +433,20 @@ class ArdSearchServiceImplTest {
         assertEquals("https://nacos.example.com/nacos/v3/client/ai/skills"
             + "?namespaceId=public&name=api-helper&version=1.0.0",
             catalog.getEntries().get(1).getUrl());
+    }
+    
+    @Test
+    void catalogShouldNotDuplicateConfiguredContextPath() throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com/nacos");
+        EnvUtil.setContextPath("/nacos");
+        ArdSearchServiceImpl service = service();
+        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"), 100))
+            .thenReturn(List.of());
+        
+        ArdCatalog catalog = service.catalog("public");
+        
+        assertEquals("https://nacos.example.com/nacos/v3/ai/ard",
+            catalog.getEntries().get(0).getUrl());
     }
     
     private ArdSearchServiceImpl service() {
