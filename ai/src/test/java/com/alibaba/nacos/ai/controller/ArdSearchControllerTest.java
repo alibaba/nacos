@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.ai.model.ard.ArdListResponse;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
 import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.springframework.http.ResponseEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.when;
 
@@ -58,7 +60,8 @@ class ArdSearchControllerTest {
         ArdSearchResponse response = new ArdSearchResponse();
         when(ardSearchService.search(request)).thenReturn(response);
         
-        assertSame(response, controller.search(request));
+        assertSame(response, controller.search("tenant-a", request));
+        assertEquals("tenant-a", request.getNamespaceId());
     }
     
     @Test
@@ -68,7 +71,26 @@ class ArdSearchControllerTest {
         ArdExploreResponse response = new ArdExploreResponse();
         when(ardSearchService.explore(request)).thenReturn(response);
         
-        assertSame(response, controller.explore(request));
+        assertSame(response, controller.explore("tenant-a", request));
+        assertEquals("tenant-a", request.getNamespaceId());
+    }
+    
+    @Test
+    void searchShouldRejectBodyOnlyCustomNamespace() {
+        ArdSearchController controller = controller();
+        ArdSearchRequest request = new ArdSearchRequest();
+        request.setNamespaceId("tenant-a");
+        
+        assertThrows(NacosApiException.class, () -> controller.search(null, request));
+    }
+    
+    @Test
+    void exploreShouldRejectNamespaceMismatch() {
+        ArdSearchController controller = controller();
+        ArdExploreRequest request = new ArdExploreRequest();
+        request.setNamespaceId("tenant-a");
+        
+        assertThrows(NacosApiException.class, () -> controller.explore("tenant-b", request));
     }
     
     @Test

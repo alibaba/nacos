@@ -28,6 +28,7 @@ import java.util.Properties;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_AGENT;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_AGENT_SPEC;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_ARD;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_MCP;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_PROMPT;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_SKILL;
@@ -48,6 +49,8 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
     public static final String PROMPT_PATH = "/ai/prompt";
     
     public static final String AGENT_SPEC_PATH = "/ai/agentSpec";
+    
+    public static final String ARD_PATH = "/ai/ard";
     
     private static final String AGENT_CARD_PARAM = "agentCard";
     
@@ -78,6 +81,8 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
             return getPromptName(request);
         } else if (url.contains(AGENT_SPEC_PATH)) {
             return getAgentSpecName(request);
+        } else if (url.contains(ARD_PATH)) {
+            return getArdResourceName(request);
         }
         return StringUtils.EMPTY;
     }
@@ -119,6 +124,11 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
         return StringUtils.isBlank(agentSpecName) ? StringUtils.EMPTY : agentSpecName;
     }
     
+    private String getArdResourceName(HttpServletRequest request) {
+        String resourceName = request.getParameter("resourceName");
+        return StringUtils.isBlank(resourceName) ? StringUtils.EMPTY : resourceName;
+    }
+    
     @Override
     protected Properties getProperties(HttpServletRequest request) {
         Properties properties = new Properties();
@@ -133,6 +143,8 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
             properties.setProperty(AI_TYPE, AI_TYPE_PROMPT);
         } else if (url.contains(AGENT_SPEC_PATH)) {
             properties.setProperty(AI_TYPE, AI_TYPE_AGENT_SPEC);
+        } else if (url.contains(ARD_PATH)) {
+            properties.setProperty(AI_TYPE, AI_TYPE_ARD);
         }
         return properties;
     }

@@ -30,7 +30,10 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -70,8 +73,10 @@ public class ArdSearchController {
     @Since("3.3.0")
     @PostMapping("/search")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public ArdSearchResponse search(@RequestBody ArdSearchRequest request)
+    public ArdSearchResponse search(@RequestParam(required = false) String namespaceId,
+        @RequestBody ArdSearchRequest request)
         throws NacosException {
+        bindNamespaceId(namespaceId, request);
         return ardSearchService.search(request);
     }
     
@@ -81,8 +86,10 @@ public class ArdSearchController {
     @Since("3.3.0")
     @PostMapping("/explore")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public ArdExploreResponse explore(@RequestBody ArdExploreRequest request)
+    public ArdExploreResponse explore(@RequestParam(required = false) String namespaceId,
+        @RequestBody ArdExploreRequest request)
         throws NacosException {
+        bindNamespaceId(namespaceId, request);
         return ardSearchService.explore(request);
     }
     
@@ -98,7 +105,7 @@ public class ArdSearchController {
     }
     
     /**
-     * List local A2A agents from the local Nacos registry.
+     * List local ARD resources from the local Nacos registry.
      */
     @Since("3.3.0")
     @GetMapping("/agents")
@@ -110,6 +117,40 @@ public class ArdSearchController {
         @RequestParam(required = false) Integer pageSize,
         @RequestParam(required = false) String pageToken) throws NacosException {
         return ardSearchService.list(namespaceId, filter, orderBy, pageSize, pageToken);
+    }
+    
+    private void bindNamespaceId(String queryNamespaceId, ArdSearchRequest request)
+        throws NacosApiException {
+        if (request != null) {
+            request.setNamespaceId(resolveNamespaceId(queryNamespaceId, request.getNamespaceId()));
+        }
+    }
+    
+    private void bindNamespaceId(String queryNamespaceId, ArdExploreRequest request)
+        throws NacosApiException {
+        if (request != null) {
+            request.setNamespaceId(resolveNamespaceId(queryNamespaceId, request.getNamespaceId()));
+        }
+    }
+    
+    private String resolveNamespaceId(String queryNamespaceId, String bodyNamespaceId)
+        throws NacosApiException {
+        if (StringUtils.isBlank(queryNamespaceId)) {
+            if (StringUtils.isNotBlank(bodyNamespaceId)
+                && !com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID
+                    .equals(bodyNamespaceId)) {
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "ARD namespaceId should be passed as query parameter");
+            }
+            return bodyNamespaceId;
+        }
+        if (StringUtils.isNotBlank(bodyNamespaceId) && !queryNamespaceId.equals(bodyNamespaceId)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "ARD query namespaceId should match request body namespaceId");
+        }
+        return queryNamespaceId;
     }
     
     /**
