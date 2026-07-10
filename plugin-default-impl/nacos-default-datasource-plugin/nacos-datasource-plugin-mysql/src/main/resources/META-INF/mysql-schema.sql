@@ -260,7 +260,6 @@ CREATE TABLE `ai_resource_ard_entry` (
     `display_name` varchar(256) NOT NULL COMMENT '展示名称',
     `entry_type` varchar(128) NOT NULL COMMENT '条目类型',
     `entry_url` varchar(1024) DEFAULT NULL COMMENT '条目URL',
-    `entry_data` longtext DEFAULT NULL COMMENT '条目数据(JSON)',
     `c_desc` varchar(2048) DEFAULT NULL COMMENT '描述',
     `tags` longtext DEFAULT NULL COMMENT '标签(JSON)',
     `capabilities` longtext DEFAULT NULL COMMENT '能力(JSON)',

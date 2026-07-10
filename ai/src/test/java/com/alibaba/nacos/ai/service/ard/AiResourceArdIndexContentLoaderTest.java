@@ -40,11 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for {@link SkillArdIndexContentLoader}.
+ * Tests for {@link AiResourceArdIndexContentLoader}.
  *
  * @author nacos
  */
-class SkillArdIndexContentLoaderTest {
+class AiResourceArdIndexContentLoaderTest {
     
     @AfterEach
     void tearDown() {
@@ -59,7 +59,7 @@ class SkillArdIndexContentLoaderTest {
         save(storage, "templates/prompt.md", "Avatar video prompt template.");
         save(storage, "assets/logo.png", "binary");
         
-        SkillArdIndexContentLoader loader = new SkillArdIndexContentLoader(
+        AiResourceArdIndexContentLoader loader = new AiResourceArdIndexContentLoader(
             AiResourceStorageRouter.getInstance());
         List<ArdIndexEnhancementContent> contents = loader.load(entry(), version());
         
@@ -78,7 +78,7 @@ class SkillArdIndexContentLoaderTest {
         prompt.setVariables(List.of(new PromptVariable("avatar", null, "头像图片 URL")));
         savePrompt(storage, JacksonUtils.toJson(prompt));
         
-        SkillArdIndexContentLoader loader = new SkillArdIndexContentLoader(
+        AiResourceArdIndexContentLoader loader = new AiResourceArdIndexContentLoader(
             AiResourceStorageRouter.getInstance());
         List<ArdIndexEnhancementContent> contents = loader.load(promptEntry(), promptVersion());
         

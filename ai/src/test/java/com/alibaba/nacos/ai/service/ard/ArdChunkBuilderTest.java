@@ -85,7 +85,7 @@ class ArdChunkBuilderTest {
     }
     
     @Test
-    void buildSkillContentChunksShouldIncludeExtractedSkillMarkdownText() {
+    void buildSourceContentChunksShouldIncludeExtractedSkillMarkdownText() {
         ArdEntry entry = entry();
         String markdown = "---\n"
             + "description: Create AI avatar and talking head videos.\n"
@@ -94,7 +94,7 @@ class ArdChunkBuilderTest {
             + "- ai avatar\n"
             + "- talking head\n";
         
-        List<ArdChunk> chunks = new ArdChunkBuilder().buildSkillContentChunks(entry,
+        List<ArdChunk> chunks = new ArdChunkBuilder().buildSourceContentChunks(entry,
             List.of(new ArdIndexEnhancementContent("SKILL.md", markdown)));
         
         assertTrue(chunks.stream().anyMatch(

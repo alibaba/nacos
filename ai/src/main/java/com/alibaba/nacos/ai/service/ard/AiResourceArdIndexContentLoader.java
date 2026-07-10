@@ -44,7 +44,7 @@ import java.util.Map;
  * @author nacos
  */
 @Service
-public class SkillArdIndexContentLoader implements ArdIndexContentLoader {
+public class AiResourceArdIndexContentLoader implements ArdIndexContentLoader {
     
     private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
     
@@ -59,11 +59,11 @@ public class SkillArdIndexContentLoader implements ArdIndexContentLoader {
     
     private final AiResourceStorageRouter storageRouter;
     
-    public SkillArdIndexContentLoader() {
+    public AiResourceArdIndexContentLoader() {
         this(AiResourceStorageRouter.getInstance());
     }
     
-    SkillArdIndexContentLoader(AiResourceStorageRouter storageRouter) {
+    AiResourceArdIndexContentLoader(AiResourceStorageRouter storageRouter) {
         this.storageRouter = storageRouter;
     }
     

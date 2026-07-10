@@ -80,14 +80,6 @@ public class ArdChunkBuilder {
     }
     
     /**
-     * Build deterministic search chunks from Skill markdown content.
-     */
-    public List<ArdChunk> buildSkillContentChunks(ArdEntry entry,
-        List<ArdIndexEnhancementContent> contents) {
-        return buildSourceContentChunks(entry, contents);
-    }
-    
-    /**
      * Build deterministic search chunks from stored or supplied resource content.
      */
     public List<ArdChunk> buildSourceContentChunks(ArdEntry entry,

@@ -47,8 +47,6 @@ public class ArdEntry {
     
     private String url;
     
-    private String data;
-    
     private String description;
     
     private String tags;
@@ -155,14 +153,6 @@ public class ArdEntry {
     
     public void setUrl(String url) {
         this.url = url;
-    }
-    
-    public String getData() {
-        return data;
-    }
-    
-    public void setData(String data) {
-        this.data = data;
     }
     
     public String getDescription() {

@@ -275,7 +275,6 @@ CREATE TABLE ai_resource_ard_entry (
     display_name varchar(256) NOT NULL,
     entry_type varchar(128) NOT NULL,
     entry_url varchar(1024) DEFAULT NULL,
-    entry_data CLOB DEFAULT NULL,
     c_desc varchar(2048) DEFAULT NULL,
     tags CLOB DEFAULT NULL,
     capabilities CLOB DEFAULT NULL,

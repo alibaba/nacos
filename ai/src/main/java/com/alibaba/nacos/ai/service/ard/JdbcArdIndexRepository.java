@@ -46,9 +46,9 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
     
     private static final String SQL_INSERT_ENTRY = "INSERT INTO ai_resource_ard_entry "
         + "(namespace_id, resource_type, resource_name, resource_version, identifier, display_name, "
-        + "entry_type, entry_url, entry_data, c_desc, tags, capabilities, representative_queries, "
+        + "entry_type, entry_url, c_desc, tags, capabilities, representative_queries, "
         + "metadata, trust_manifest, source_digest, status, generate_mode, source, gmt_create, gmt_modified) "
-        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
     
     private static final String SQL_INSERT_CHUNK = "INSERT INTO ai_resource_ard_chunk "
         + "(entry_id, namespace_id, identifier, resource_type, resource_name, resource_version, "
@@ -189,17 +189,16 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
             ps.setString(6, entry.getDisplayName());
             ps.setString(7, entry.getType());
             ps.setString(8, entry.getUrl());
-            ps.setString(9, entry.getData());
-            ps.setString(10, entry.getDescription());
-            ps.setString(11, entry.getTags());
-            ps.setString(12, entry.getCapabilities());
-            ps.setString(13, entry.getRepresentativeQueries());
-            ps.setString(14, entry.getMetadata());
-            ps.setString(15, entry.getTrustManifest());
-            ps.setString(16, entry.getSourceDigest());
-            ps.setString(17, entry.getStatus());
-            ps.setString(18, entry.getGenerateMode());
-            ps.setString(19, entry.getSource());
+            ps.setString(9, entry.getDescription());
+            ps.setString(10, entry.getTags());
+            ps.setString(11, entry.getCapabilities());
+            ps.setString(12, entry.getRepresentativeQueries());
+            ps.setString(13, entry.getMetadata());
+            ps.setString(14, entry.getTrustManifest());
+            ps.setString(15, entry.getSourceDigest());
+            ps.setString(16, entry.getStatus());
+            ps.setString(17, entry.getGenerateMode());
+            ps.setString(18, entry.getSource());
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
@@ -306,7 +305,6 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
             entry.setDisplayName(rs.getString("display_name"));
             entry.setType(rs.getString("entry_type"));
             entry.setUrl(rs.getString("entry_url"));
-            entry.setData(rs.getString("entry_data"));
             entry.setDescription(rs.getString("c_desc"));
             entry.setTags(rs.getString("tags"));
             entry.setCapabilities(rs.getString("capabilities"));

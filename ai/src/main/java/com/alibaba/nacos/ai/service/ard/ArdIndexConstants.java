@@ -25,8 +25,6 @@ final class ArdIndexConstants {
     
     static final String STATUS_ENABLED = "enabled";
     
-    static final String STATUS_DISABLED = "disabled";
-    
     static final String GENERATE_MODE_AUTO = "auto";
     
     static final String SOURCE_NACOS_LOCAL = "nacos-local";

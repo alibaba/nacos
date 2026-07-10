@@ -578,7 +578,6 @@ CREATE TABLE "ai_resource_ard_entry" (
   "display_name" varchar(256) NOT NULL,
   "entry_type" varchar(128) NOT NULL,
   "entry_url" varchar(1024),
-  "entry_data" text,
   "c_desc" varchar(2048),
   "tags" text,
   "capabilities" text,
