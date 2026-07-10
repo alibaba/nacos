@@ -44,7 +44,7 @@ public class PluginDetailVO {
     
     private List<ConfigItemDefinition> configDefinitions;
     
-    private List<PluginConfigValueMeta> configValueMetas;
+    private Map<String, PluginConfigValueMeta> configValueMetas;
     
     public String getPluginId() {
         return pluginId;
@@ -110,11 +110,11 @@ public class PluginDetailVO {
         this.configDefinitions = configDefinitions;
     }
     
-    public List<PluginConfigValueMeta> getConfigValueMetas() {
+    public Map<String, PluginConfigValueMeta> getConfigValueMetas() {
         return configValueMetas;
     }
     
-    public void setConfigValueMetas(List<PluginConfigValueMeta> configValueMetas) {
+    public void setConfigValueMetas(Map<String, PluginConfigValueMeta> configValueMetas) {
         this.configValueMetas = configValueMetas;
     }
     

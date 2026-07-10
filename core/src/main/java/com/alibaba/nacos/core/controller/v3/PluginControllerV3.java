@@ -27,6 +27,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.PluginManager;
+import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
@@ -207,7 +208,13 @@ public class PluginControllerV3 {
         vo.setEnabled(pluginInfo.isEnabled());
         vo.setCritical(pluginInfo.isCritical());
         vo.setConfigurable(pluginInfo.isConfigurable());
-        vo.setConfig(pluginInfo.getConfig());
+        PluginConfigResolution resolution = unifiedPluginManager.resolvePluginConfig(pluginInfo);
+        if (resolution == null) {
+            vo.setConfig(pluginInfo.getConfig());
+        } else {
+            vo.setConfig(resolution.getConfig());
+            vo.setConfigValueMetas(resolution.getValueMetas());
+        }
         vo.setConfigDefinitions(pluginInfo.getConfigDefinitions());
         return vo;
     }

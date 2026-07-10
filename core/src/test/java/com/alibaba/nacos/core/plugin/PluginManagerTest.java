@@ -22,18 +22,25 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
+import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.alibaba.nacos.core.plugin.sync.PluginStateSynchronizer;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,14 +79,27 @@ class PluginManagerTest {
     
     private PluginManager manager;
     
+    private ConfigurableEnvironment cachedEnvironment;
+    
+    private MockEnvironment environment;
+    
     @BeforeEach
     void setUp() {
+        cachedEnvironment = EnvUtil.getEnvironment();
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
+        
         lenient().when(persistence.loadAllStates()).thenReturn(new HashMap<>());
         lenient().when(persistence.loadAllConfigs()).thenReturn(new HashMap<>());
         lenient().doNothing().when(persistence).saveState(any(), anyBoolean());
         lenient().doNothing().when(persistence).saveConfig(any(), anyMap());
         
         manager = new PluginManager(persistence, synchronizer);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(cachedEnvironment);
     }
     
     @Test
@@ -169,28 +189,37 @@ class PluginManagerTest {
     }
     
     @Test
-    void updatePluginConfigMissingRequiredConfigTest() {
+    void updatePluginConfigUnknownKeyTest() {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
-        ConfigItemDefinition requiredDef = new ConfigItemDefinition();
-        requiredDef.setKey("requiredKey");
-        requiredDef.setRequired(true);
-        
-        List<ConfigItemDefinition> definitions = new ArrayList<>();
-        definitions.add(requiredDef);
-        plugin.setConfigDefinitions(definitions);
-        
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("knownKey");
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
         registerConfigurablePlugin("trace", "test", plugin);
         
         Map<String, String> config = new HashMap<>();
-        config.put("otherKey", "value");
+        config.put("unknownKey", "value");
         
-        NacosApiException exception = assertThrows(NacosApiException.class, () -> {
-            manager.updatePluginConfig("trace:test", config);
-        });
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig("trace:test", config));
         
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
-        assertEquals(ErrorCode.PARAMETER_MISSING.getCode(), exception.getDetailErrCode());
-        assertTrue(exception.getErrMsg().contains("Required config missing"));
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
+        assertTrue(exception.getErrMsg().contains("Unknown plugin config key: unknownKey"));
+    }
+    
+    @Test
+    void updateLocalPluginConfigMissingRequiredEffectiveValueTest() {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("requiredKey");
+        definition.setRequired(true);
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
+        registerConfigurablePlugin("trace", "test", plugin);
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> manager.updatePluginConfig("trace:test", new HashMap<>(), true));
+        
+        assertTrue(exception.getMessage().contains("Required config missing: requiredKey"));
     }
     
     @Test
@@ -310,29 +339,6 @@ class PluginManagerTest {
     }
     
     @Test
-    void validateConfigEmptyValueTest() {
-        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
-        ConfigItemDefinition requiredDef = new ConfigItemDefinition();
-        requiredDef.setKey("requiredKey");
-        requiredDef.setRequired(true);
-        
-        List<ConfigItemDefinition> definitions = new ArrayList<>();
-        definitions.add(requiredDef);
-        plugin.setConfigDefinitions(definitions);
-        
-        registerConfigurablePlugin("trace", "test", plugin);
-        
-        Map<String, String> config = new HashMap<>();
-        config.put("requiredKey", "");
-        
-        NacosApiException exception = assertThrows(NacosApiException.class, () -> {
-            manager.updatePluginConfig("trace:test", config);
-        });
-        
-        assertEquals(ErrorCode.PARAMETER_MISSING.getCode(), exception.getDetailErrCode());
-    }
-    
-    @Test
     void applyConfigToNonConfigurablePluginTest() throws NacosApiException {
         Object plainPlugin = new Object();
         registerPluginInstance("trace", "test", plainPlugin, false, false);
@@ -370,6 +376,62 @@ class PluginManagerTest {
         
         assertEquals("value", plugin.getCurrentConfig().get("key"));
         verify(synchronizer, times(0)).syncConfigChange(any(), anyMap());
+    }
+    
+    @Test
+    void updatePluginConfigNormalizesStandardKeyTest() throws NacosApiException {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition requiredDef = new ConfigItemDefinition();
+        requiredDef.setKey("requiredKey");
+        requiredDef.setRequired(true);
+        
+        List<ConfigItemDefinition> definitions = new ArrayList<>();
+        definitions.add(requiredDef);
+        plugin.setConfigDefinitions(definitions);
+        
+        registerConfigurablePlugin("trace", "test", plugin);
+        
+        Map<String, String> config = new HashMap<>();
+        config.put("nacos.plugin.trace.test.requiredKey", "value");
+        Map<String, String> expectedConfig = new HashMap<>();
+        expectedConfig.put("requiredKey", "value");
+        
+        manager.updatePluginConfig("trace:test", config);
+        
+        verify(synchronizer, times(1)).syncConfigChange(eq("trace:test"), eq(expectedConfig));
+    }
+    
+    @Test
+    void resolvePluginConfigWithLayeredSourcesTest() throws NacosApiException {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("secret");
+        definition.setDefaultValue("default-secret");
+        definition.setSensitive(true);
+        
+        List<ConfigItemDefinition> definitions = new ArrayList<>();
+        definitions.add(definition);
+        plugin.setConfigDefinitions(definitions);
+        environment.setProperty("nacos.plugin.trace.test.secret", "static-secret");
+        
+        registerConfigurablePlugin("trace", "test", plugin);
+        
+        Map<String, String> runtimeConfig = new HashMap<>();
+        runtimeConfig.put("secret", "runtime-secret");
+        manager.applyConfigChange("trace:test", runtimeConfig);
+        
+        Map<String, String> localOnlyConfig = new HashMap<>();
+        localOnlyConfig.put("secret", "local-secret");
+        manager.updatePluginConfig("trace:test", localOnlyConfig, true);
+        
+        PluginInfo pluginInfo = manager.getPlugin("trace:test").get();
+        PluginConfigResolution resolution = manager.resolvePluginConfig(pluginInfo);
+        
+        assertEquals("local-secret", plugin.getCurrentConfig().get("secret"));
+        assertEquals("lo******et", resolution.getConfig().get("secret"));
+        assertEquals(PluginConfigSourceType.LOCAL_ONLY,
+            resolution.getValueMetas().get("secret").getSource());
+        assertTrue(resolution.getValueMetas().get("secret").isOverridden());
     }
     
     @Test

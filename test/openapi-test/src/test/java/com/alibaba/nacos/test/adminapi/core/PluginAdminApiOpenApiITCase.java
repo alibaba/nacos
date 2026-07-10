@@ -67,6 +67,7 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         assertEquals(plugin.get("pluginName").asText(), detail.get("pluginName").asText(), detail.toString());
         assertTrue(detail.has("enabled"), detail.toString());
         assertTrue(detail.has("configurable"), detail.toString());
+        assertTrue(detail.get("configValueMetas").isObject(), detail.toString());
 
         JsonNode unknownType = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/list",
                 Query.newInstance().addParam("pluginType", "not-a-plugin-type")).get("data");

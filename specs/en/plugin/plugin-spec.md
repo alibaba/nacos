@@ -178,8 +178,11 @@ Config definitions may declare the following metadata:
 | `sensitive` | Whether the value is sensitive. Query APIs must mask it before returning. |
 | `effectMode` | Effect mode. `RUNTIME` can take effect at runtime, and `RESTART` requires restart. |
 
-`aliases` are only used when reading compatible static configuration. They must
-not be written into runtime persistence files or local-only memory maps.
+`aliases` are used when reading compatible static configuration and may also be
+accepted as migration-compatible API input. After normalization, aliases must
+not be written into runtime persistence files or local-only memory maps. If an
+input contains multiple aliases for the same item, the first alias declared in
+the definition takes effect and the server logs the ignored aliases.
 
 ### Config Sources And Value Metadata
 
@@ -197,9 +200,10 @@ LOCAL_ONLY > RUNTIME_PERSISTED > STATIC > DEFAULT
 | `RUNTIME_PERSISTED` | Cluster-wide runtime override. It may currently be persisted as the final content in `plugin-configs.json`. |
 | `LOCAL_ONLY` | Current-node override for diagnosis or emergency handling, not synchronized to the cluster. |
 
-Plugin detail responses may add `PluginConfigValueMeta` to describe the current
-source and overridden state of each config item. `overridden` ignores `DEFAULT`
-and should be `true` only when the same key has multiple non-default sources.
+Plugin detail responses may add a `configValueMetas` map keyed by canonical item
+key. Each `PluginConfigValueMeta` describes the current source and overridden
+state of one config item. `overridden` ignores `DEFAULT` and should be `true`
+only when the same key has multiple non-default sources.
 
 Runtime persisted config and local-only config store only values by
 `pluginId + itemKey`. They do not store normalized full keys, alias keys,
@@ -209,8 +213,8 @@ source, or version information.
 
 Plugin detail APIs must remain additively compatible: existing `config` and
 `configDefinitions` fields remain available. `config` may represent the current
-effective config, and the added `configValueMetas` field carries source and
-overridden metadata.
+effective config, and the added `configValueMetas` map carries source and
+overridden metadata by canonical item key.
 
 `PUT /v3/admin/core/plugin/config` and the matching Console API keep the current
 full override map update semantics. `localOnly=true` updates only the current
@@ -218,6 +222,10 @@ node local-only override; otherwise the request updates the cluster-wide runtime
 persisted override. Key normalization and `effectMode` checks are server-side
 logic and are not exposed as new API parameters. Fields marked
 `effectMode=RESTART` must not be applied immediately by runtime updates.
+Canonical item keys, normalized full keys, and compatible alias keys are
+normalized to item keys before validation and storage. An undefined key or an
+alias that ambiguously matches multiple config items must produce a parameter
+validation error.
 
 ## Admin API
 

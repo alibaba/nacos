@@ -30,6 +30,7 @@ import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.cluster.remote.request.PluginAvailabilityRequest;
 import com.alibaba.nacos.core.cluster.remote.response.PluginAvailabilityResponse;
 import com.alibaba.nacos.core.plugin.PluginManager;
+import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
@@ -263,7 +264,13 @@ public class PluginInnerHandler implements PluginHandler {
         vo.setEnabled(pluginInfo.isEnabled());
         vo.setCritical(pluginInfo.isCritical());
         vo.setConfigurable(pluginInfo.isConfigurable());
-        vo.setConfig(pluginInfo.getConfig());
+        PluginConfigResolution resolution = pluginManager.resolvePluginConfig(pluginInfo);
+        if (resolution == null) {
+            vo.setConfig(pluginInfo.getConfig());
+        } else {
+            vo.setConfig(resolution.getConfig());
+            vo.setConfigValueMetas(resolution.getValueMetas());
+        }
         vo.setConfigDefinitions(pluginInfo.getConfigDefinitions());
         return vo;
     }

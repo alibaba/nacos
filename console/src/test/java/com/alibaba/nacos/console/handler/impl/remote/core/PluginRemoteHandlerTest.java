@@ -17,14 +17,17 @@
 package com.alibaba.nacos.console.handler.impl.remote.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.api.plugin.ConfigItemType;
 import com.alibaba.nacos.console.handler.impl.remote.AbstractRemoteHandlerTest;
+import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -168,8 +171,18 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configDef.put("defaultValue", "5000");
         configDef.put("type", "NUMBER");
         configDef.put("required", true);
+        configDef.put("aliases", Collections.singletonList("nacos.legacy.timeout"));
+        configDef.put("sensitive", true);
+        configDef.put("effectMode", "RUNTIME");
         configDefinitions.add(configDef);
         mockDetail.put("configDefinitions", configDefinitions);
+        Map<String, Object> valueMetas = new HashMap<>();
+        Map<String, Object> valueMeta = new HashMap<>();
+        valueMeta.put("key", "timeout");
+        valueMeta.put("source", "LOCAL_ONLY");
+        valueMeta.put("overridden", true);
+        valueMetas.put("timeout", valueMeta);
+        mockDetail.put("configValueMetas", valueMetas);
         
         when(namingMaintainerService.getPluginDetail("auth", "test")).thenReturn(mockDetail);
         
@@ -180,6 +193,14 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertEquals(1, result.getConfigDefinitions().size());
         assertEquals("timeout", result.getConfigDefinitions().get(0).getKey());
         assertEquals(ConfigItemType.NUMBER, result.getConfigDefinitions().get(0).getType());
+        assertEquals("nacos.legacy.timeout",
+            result.getConfigDefinitions().get(0).getAliases().get(0));
+        assertTrue(result.getConfigDefinitions().get(0).isSensitive());
+        assertEquals(ConfigItemEffectMode.RUNTIME,
+            result.getConfigDefinitions().get(0).getEffectMode());
+        assertEquals(PluginConfigSourceType.LOCAL_ONLY,
+            result.getConfigValueMetas().get("timeout").getSource());
+        assertTrue(result.getConfigValueMetas().get("timeout").isOverridden());
     }
     
     @Test
@@ -193,6 +214,10 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configDef.put("type", "UNKNOWN_TYPE");
         configDefinitions.add(configDef);
         mockDetail.put("configDefinitions", configDefinitions);
+        Map<String, Object> valueMeta = new HashMap<>();
+        valueMeta.put("key", "unknown");
+        valueMeta.put("source", "UNKNOWN_SOURCE");
+        mockDetail.put("configValueMetas", Collections.singletonMap("unknown", valueMeta));
         
         when(namingMaintainerService.getPluginDetail("auth", "test")).thenReturn(mockDetail);
         
@@ -202,6 +227,8 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertNotNull(result.getConfigDefinitions());
         assertEquals(1, result.getConfigDefinitions().size());
         assertEquals(ConfigItemType.STRING, result.getConfigDefinitions().get(0).getType());
+        assertEquals(PluginConfigSourceType.DEFAULT,
+            result.getConfigValueMetas().get("unknown").getSource());
     }
     
     private Map<String, Object> createMockPluginData() {

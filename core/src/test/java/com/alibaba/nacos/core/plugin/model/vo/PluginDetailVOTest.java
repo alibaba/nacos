@@ -48,7 +48,7 @@ class PluginDetailVOTest {
         meta.setKey("endpoint");
         meta.setSource(PluginConfigSourceType.STATIC);
         meta.setOverridden(true);
-        vo.setConfigValueMetas(Collections.singletonList(meta));
+        vo.setConfigValueMetas(Collections.singletonMap("endpoint", meta));
         
         assertEquals("trace:otel", vo.getPluginId());
         assertEquals("trace", vo.getPluginType());
@@ -61,9 +61,10 @@ class PluginDetailVOTest {
         assertEquals(1, vo.getConfigDefinitions().size());
         assertNotNull(vo.getConfigValueMetas());
         assertEquals(1, vo.getConfigValueMetas().size());
-        assertEquals("endpoint", vo.getConfigValueMetas().get(0).getKey());
-        assertEquals(PluginConfigSourceType.STATIC, vo.getConfigValueMetas().get(0).getSource());
-        assertTrue(vo.getConfigValueMetas().get(0).isOverridden());
+        assertEquals("endpoint", vo.getConfigValueMetas().get("endpoint").getKey());
+        assertEquals(PluginConfigSourceType.STATIC,
+            vo.getConfigValueMetas().get("endpoint").getSource());
+        assertTrue(vo.getConfigValueMetas().get("endpoint").isOverridden());
         
         String s = vo.toString();
         assertNotNull(s);

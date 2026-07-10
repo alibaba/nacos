@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.adminapi.ai;
 
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -48,6 +49,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected static final String DEFAULT_NAMESPACE = "public";
+
+    private static final int MCP_DELETE_MAX_RETRIES = 60;
+
+    private static final long MCP_DELETE_RETRY_INTERVAL_MILLIS = 250L;
 
     protected static final String ADMIN_A2A_PATH = nacosPath(Constants.A2A.ADMIN_PATH);
 
@@ -142,6 +147,34 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected void deleteMcpServerQuietly(String mcpName, String mcpId) throws Exception {
         deleteQuietly(ADMIN_MCP_PATH, mcpIdentityQuery(mcpName, mcpId, null));
+    }
+
+    protected void assertMcpServerAbsentEventually(String path, String mcpId) throws Exception {
+        HttpResponse lastResponse = null;
+        for (int retry = 0; retry <= MCP_DELETE_MAX_RETRIES; retry++) {
+            lastResponse = getRaw(path, mcpIdentityQuery(null, mcpId, null));
+            if (isMcpErrorResponse(lastResponse, ErrorCode.MCP_SERVER_NOT_FOUND)) {
+                return;
+            }
+            if (200 != lastResponse.code()
+                    && !isMcpErrorResponse(lastResponse,
+                ErrorCode.MCP_SEVER_VERSION_NOT_FOUND)) {
+                assertError(lastResponse, 404, ErrorCode.MCP_SERVER_NOT_FOUND, "not found");
+            }
+            if (retry < MCP_DELETE_MAX_RETRIES) {
+                Thread.sleep(MCP_DELETE_RETRY_INTERVAL_MILLIS);
+            }
+        }
+        assertError(lastResponse, 404, ErrorCode.MCP_SERVER_NOT_FOUND, "not found");
+    }
+
+    private boolean isMcpErrorResponse(HttpResponse response, ErrorCode expectedError) {
+        if (404 != response.code()) {
+            return false;
+        }
+        JsonNode root = JacksonUtils.toObj(response.body());
+        return expectedError.getCode() == root.path("code").asInt()
+                && root.path("data").asText().contains("not found");
     }
 
     protected void assertMcpDetail(JsonNode data, String mcpName, String version, String description,
