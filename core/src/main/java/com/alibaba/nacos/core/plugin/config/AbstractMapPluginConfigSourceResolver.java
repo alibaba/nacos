@@ -40,7 +40,8 @@ abstract class AbstractMapPluginConfigSourceResolver implements PluginConfigSour
      * @param pluginId plugin id
      * @param config normalized config
      */
-    void updateConfig(String pluginId, Map<String, String> config) {
+    @Override
+    public void updateConfig(String pluginId, Map<String, String> config) {
         Map<String, String> configToStore =
             config == null ? Collections.emptyMap() : new HashMap<>(config);
         configs.put(pluginId, configToStore);
@@ -61,6 +62,11 @@ abstract class AbstractMapPluginConfigSourceResolver implements PluginConfigSour
     public PluginConfigSourceValue resolve(PluginInfo pluginInfo, ConfigItemDefinition definition,
         PluginConfigKeyCandidate candidate) {
         return resolveFromConfig(configs.get(pluginInfo.getPluginId()), definition);
+    }
+    
+    @Override
+    public boolean isUpdatable() {
+        return true;
     }
     
     PluginConfigSourceValue resolveFromConfig(Map<String, String> config,

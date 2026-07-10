@@ -176,12 +176,12 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configDef.put("effectMode", "RUNTIME");
         configDefinitions.add(configDef);
         mockDetail.put("configDefinitions", configDefinitions);
-        List<Map<String, Object>> valueMetas = new ArrayList<>();
+        Map<String, Object> valueMetas = new HashMap<>();
         Map<String, Object> valueMeta = new HashMap<>();
         valueMeta.put("key", "timeout");
         valueMeta.put("source", "LOCAL_ONLY");
         valueMeta.put("overridden", true);
-        valueMetas.add(valueMeta);
+        valueMetas.put("timeout", valueMeta);
         mockDetail.put("configValueMetas", valueMetas);
         
         when(namingMaintainerService.getPluginDetail("auth", "test")).thenReturn(mockDetail);
@@ -199,8 +199,8 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertEquals(ConfigItemEffectMode.RUNTIME,
             result.getConfigDefinitions().get(0).getEffectMode());
         assertEquals(PluginConfigSourceType.LOCAL_ONLY,
-            result.getConfigValueMetas().get(0).getSource());
-        assertTrue(result.getConfigValueMetas().get(0).isOverridden());
+            result.getConfigValueMetas().get("timeout").getSource());
+        assertTrue(result.getConfigValueMetas().get("timeout").isOverridden());
     }
     
     @Test
@@ -214,6 +214,10 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configDef.put("type", "UNKNOWN_TYPE");
         configDefinitions.add(configDef);
         mockDetail.put("configDefinitions", configDefinitions);
+        Map<String, Object> valueMeta = new HashMap<>();
+        valueMeta.put("key", "unknown");
+        valueMeta.put("source", "UNKNOWN_SOURCE");
+        mockDetail.put("configValueMetas", Collections.singletonMap("unknown", valueMeta));
         
         when(namingMaintainerService.getPluginDetail("auth", "test")).thenReturn(mockDetail);
         
@@ -223,6 +227,8 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertNotNull(result.getConfigDefinitions());
         assertEquals(1, result.getConfigDefinitions().size());
         assertEquals(ConfigItemType.STRING, result.getConfigDefinitions().get(0).getType());
+        assertEquals(PluginConfigSourceType.DEFAULT,
+            result.getConfigValueMetas().get("unknown").getSource());
     }
     
     private Map<String, Object> createMockPluginData() {

@@ -147,7 +147,8 @@ class PluginInnerHandlerTest {
         
         when(pluginManager.getPlugin("auth:test")).thenReturn(Optional.of(pluginInfo));
         when(pluginManager.resolvePluginConfig(pluginInfo))
-            .thenReturn(new PluginConfigResolution(config, Collections.singletonList(meta)));
+            .thenReturn(new PluginConfigResolution(config,
+                Collections.singletonMap("key1", meta)));
         
         PluginDetailVO result = pluginInnerHandler.getPluginDetail("auth", "test");
         
@@ -159,7 +160,7 @@ class PluginInnerHandlerTest {
         assertNotNull(result.getConfig());
         assertEquals("value1", result.getConfig().get("key1"));
         assertEquals(PluginConfigSourceType.RUNTIME_PERSISTED,
-            result.getConfigValueMetas().get(0).getSource());
+            result.getConfigValueMetas().get("key1").getSource());
     }
     
     @Test

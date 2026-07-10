@@ -26,6 +26,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginConfigKeyResolverTest {
     
@@ -99,6 +102,48 @@ class PluginConfigKeyResolverTest {
         
         assertEquals("3000", result.get("timeout"));
         assertEquals(1, result.size());
+    }
+    
+    @Test
+    void testNormalizeConfigCanonicalKeyWinsAliasCollision() {
+        ConfigItemDefinition timeoutDefinition = new ConfigItemDefinition();
+        timeoutDefinition.setKey("timeout");
+        timeoutDefinition.setAliases(Arrays.asList("retry"));
+        ConfigItemDefinition retryDefinition = new ConfigItemDefinition();
+        retryDefinition.setKey("retry");
+        PluginInfo pluginInfo = createPluginInfo();
+        pluginInfo.setConfigDefinitions(Arrays.asList(timeoutDefinition, retryDefinition));
+        
+        Map<String, String> input = new LinkedHashMap<>();
+        input.put("retry", "3");
+        
+        Map<String, String> result = resolver.normalizeConfig(pluginInfo, input);
+        
+        assertFalse(result.containsKey("timeout"));
+        assertEquals("3", result.get("retry"));
+        assertEquals(1, result.size());
+    }
+    
+    @Test
+    void testNormalizeConfigRejectsAmbiguousAlias() {
+        ConfigItemDefinition timeoutDefinition = new ConfigItemDefinition();
+        timeoutDefinition.setKey("timeout");
+        timeoutDefinition.setAliases(Arrays.asList("legacyValue"));
+        ConfigItemDefinition retryDefinition = new ConfigItemDefinition();
+        retryDefinition.setKey("retry");
+        retryDefinition.setAliases(Arrays.asList("legacyValue"));
+        PluginInfo pluginInfo = createPluginInfo();
+        pluginInfo.setConfigDefinitions(Arrays.asList(timeoutDefinition, retryDefinition));
+        
+        Map<String, String> input = new LinkedHashMap<>();
+        input.put("legacyValue", "3");
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> resolver.normalizeConfig(pluginInfo, input));
+        
+        assertTrue(exception.getMessage().contains("Ambiguous plugin config key"));
+        assertTrue(exception.getMessage().contains("timeout"));
+        assertTrue(exception.getMessage().contains("retry"));
     }
     
     private PluginInfo createPluginInfo() {

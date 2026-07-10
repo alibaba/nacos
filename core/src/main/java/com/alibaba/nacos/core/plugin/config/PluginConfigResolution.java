@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.plugin.config;
 import com.alibaba.nacos.core.plugin.model.vo.PluginConfigValueMeta;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,19 +30,19 @@ public class PluginConfigResolution {
     
     private final Map<String, String> config;
     
-    private final List<PluginConfigValueMeta> valueMetas;
+    private final Map<String, PluginConfigValueMeta> valueMetas;
     
     public PluginConfigResolution(Map<String, String> config,
-        List<PluginConfigValueMeta> valueMetas) {
+        Map<String, PluginConfigValueMeta> valueMetas) {
         this.config = config == null ? Collections.emptyMap() : config;
-        this.valueMetas = valueMetas == null ? Collections.emptyList() : valueMetas;
+        this.valueMetas = valueMetas == null ? Collections.emptyMap() : valueMetas;
     }
     
     public Map<String, String> getConfig() {
         return config;
     }
     
-    public List<PluginConfigValueMeta> getValueMetas() {
+    public Map<String, PluginConfigValueMeta> getValueMetas() {
         return valueMetas;
     }
 }

@@ -21,8 +21,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,90 +67,86 @@ public class PluginConfigKeyResolver {
      * @return normalized config
      */
     public Map<String, String> normalizeConfig(PluginInfo pluginInfo, Map<String, String> config) {
-        if (config == null || config.isEmpty() || pluginInfo.getConfigDefinitions() == null) {
+        if (config == null || config.isEmpty() || pluginInfo.getConfigDefinitions() == null
+            || pluginInfo.getConfigDefinitions().isEmpty()) {
             return config;
         }
-        Map<String, String> keyMapping = buildKeyMapping(pluginInfo);
+        Map<String, ConfigKeyMapping> keyMappings = buildKeyMappings(pluginInfo);
+        Map<String, ResolvedConfigValue> resolvedValues = new LinkedHashMap<>();
+        Map<String, String> unknownValues = new LinkedHashMap<>();
+        config.forEach((key, value) -> resolveInputValue(key, value, keyMappings, resolvedValues,
+            unknownValues));
         Map<String, String> result = new LinkedHashMap<>(config.size());
-        Set<String> resolvedItemKeys = new HashSet<>();
+        for (ConfigItemDefinition definition : pluginInfo.getConfigDefinitions()) {
+            if (StringUtils.isBlank(definition.getKey())) {
+                continue;
+            }
+            ResolvedConfigValue resolvedValue = resolvedValues.get(definition.getKey());
+            if (resolvedValue != null) {
+                result.put(definition.getKey(), resolvedValue.getValue());
+            }
+        }
+        result.putAll(unknownValues);
+        return result;
+    }
+    
+    private void resolveInputValue(String key, String value,
+        Map<String, ConfigKeyMapping> keyMappings,
+        Map<String, ResolvedConfigValue> resolvedValues, Map<String, String> unknownValues) {
+        ConfigKeyMapping keyMapping = keyMappings.get(key);
+        if (keyMapping == null) {
+            unknownValues.put(key, value);
+            return;
+        }
+        String itemKey = keyMapping.getItemKey(key);
+        ResolvedConfigValue resolvedValue = new ResolvedConfigValue(value,
+            keyMapping.getPriority(), keyMapping.getOrder());
+        ResolvedConfigValue currentValue = resolvedValues.get(itemKey);
+        if (currentValue == null || resolvedValue.hasHigherPriorityThan(currentValue)) {
+            resolvedValues.put(itemKey, resolvedValue);
+        }
+    }
+    
+    private Map<String, ConfigKeyMapping> buildKeyMappings(PluginInfo pluginInfo) {
+        Map<String, ConfigKeyMapping> result = new LinkedHashMap<>();
         for (ConfigItemDefinition definition : pluginInfo.getConfigDefinitions()) {
             if (StringUtils.isBlank(definition.getKey())) {
                 continue;
             }
             PluginConfigKeyCandidate candidate = resolve(pluginInfo, definition);
-            if (putCandidateConfig(pluginInfo, definition, config, result, candidate)) {
-                resolvedItemKeys.add(candidate.getItemKey());
-            }
+            registerKeyMapping(result, candidate.getItemKey(), candidate.getItemKey(),
+                ConfigKeyPriority.ITEM, 0);
+            registerKeyMapping(result, candidate.getStandardKey(), candidate.getItemKey(),
+                ConfigKeyPriority.STANDARD, 0);
+            registerAliasKeyMappings(result, pluginInfo, definition, candidate.getItemKey());
         }
-        config.forEach((key, value) -> {
-            String itemKey = keyMapping.get(key);
-            if (itemKey == null) {
-                result.put(key, value);
-            } else if (!resolvedItemKeys.contains(itemKey)) {
-                result.put(itemKey, value);
-            }
-        });
         return result;
     }
     
-    private boolean putCandidateConfig(PluginInfo pluginInfo, ConfigItemDefinition definition,
-        Map<String, String> config, Map<String, String> result,
-        PluginConfigKeyCandidate candidate) {
-        if (putIfPresent(config, result, candidate.getItemKey(), candidate.getItemKey())) {
-            return true;
-        }
-        if (putIfPresent(config, result, candidate.getStandardKey(), candidate.getItemKey())) {
-            return true;
-        }
-        return putAliasConfig(pluginInfo, definition, config, result, candidate.getItemKey());
-    }
-    
-    private boolean putAliasConfig(PluginInfo pluginInfo, ConfigItemDefinition definition,
-        Map<String, String> config, Map<String, String> result, String itemKey) {
+    private void registerAliasKeyMappings(Map<String, ConfigKeyMapping> mappings,
+        PluginInfo pluginInfo, ConfigItemDefinition definition, String itemKey) {
         if (definition.getAliases() == null) {
-            return false;
+            return;
         }
+        int order = 0;
         for (String alias : definition.getAliases()) {
             if (StringUtils.isBlank(alias)) {
                 continue;
             }
-            if (putIfPresent(config, result, alias, itemKey)
-                || putIfPresent(config, result, toReadableKey(pluginInfo, alias), itemKey)) {
-                return true;
-            }
+            registerKeyMapping(mappings, alias, itemKey, ConfigKeyPriority.ALIAS, order++);
+            registerKeyMapping(mappings, toReadableKey(pluginInfo, alias), itemKey,
+                ConfigKeyPriority.ALIAS, order++);
         }
-        return false;
     }
     
-    private boolean putIfPresent(Map<String, String> config, Map<String, String> result,
-        String inputKey, String itemKey) {
-        if (config.containsKey(inputKey)) {
-            result.put(itemKey, config.get(inputKey));
-            return true;
+    private void registerKeyMapping(Map<String, ConfigKeyMapping> mappings, String inputKey,
+        String itemKey, ConfigKeyPriority priority, int order) {
+        ConfigKeyMapping mapping = mappings.get(inputKey);
+        if (mapping == null) {
+            mappings.put(inputKey, new ConfigKeyMapping(itemKey, priority, order));
+        } else {
+            mapping.merge(itemKey, priority, order);
         }
-        return false;
-    }
-    
-    private Map<String, String> buildKeyMapping(PluginInfo pluginInfo) {
-        Map<String, String> result = new LinkedHashMap<>();
-        for (ConfigItemDefinition definition : pluginInfo.getConfigDefinitions()) {
-            if (StringUtils.isBlank(definition.getKey())) {
-                continue;
-            }
-            PluginConfigKeyCandidate candidate = resolve(pluginInfo, definition);
-            result.put(candidate.getItemKey(), candidate.getItemKey());
-            result.put(candidate.getStandardKey(), candidate.getItemKey());
-            if (definition.getAliases() != null) {
-                for (String alias : definition.getAliases()) {
-                    if (StringUtils.isBlank(alias)) {
-                        continue;
-                    }
-                    result.put(alias, candidate.getItemKey());
-                    result.put(toReadableKey(pluginInfo, alias), candidate.getItemKey());
-                }
-            }
-        }
-        return result;
     }
     
     private String toReadableKey(PluginInfo pluginInfo, String key) {
@@ -163,5 +159,91 @@ public class PluginConfigKeyResolver {
     private String buildStandardKey(PluginInfo pluginInfo, String itemKey) {
         return STANDARD_KEY_PREFIX + pluginInfo.getPluginType().getType() + "."
             + pluginInfo.getPluginName() + "." + itemKey;
+    }
+    
+    private enum ConfigKeyPriority {
+        
+        ALIAS(1),
+        
+        STANDARD(2),
+        
+        ITEM(3);
+        
+        private final int value;
+        
+        ConfigKeyPriority(int value) {
+            this.value = value;
+        }
+        
+        boolean isHigherThan(ConfigKeyPriority other) {
+            return value > other.value;
+        }
+    }
+    
+    private static class ConfigKeyMapping {
+        
+        private final Set<String> itemKeys = new LinkedHashSet<>();
+        
+        private ConfigKeyPriority priority;
+        
+        private int order;
+        
+        ConfigKeyMapping(String itemKey, ConfigKeyPriority priority, int order) {
+            itemKeys.add(itemKey);
+            this.priority = priority;
+            this.order = order;
+        }
+        
+        void merge(String itemKey, ConfigKeyPriority newPriority, int newOrder) {
+            if (newPriority.isHigherThan(priority)) {
+                itemKeys.clear();
+                itemKeys.add(itemKey);
+                priority = newPriority;
+                order = newOrder;
+            } else if (newPriority == priority) {
+                itemKeys.add(itemKey);
+                order = Math.min(order, newOrder);
+            }
+        }
+        
+        String getItemKey(String inputKey) {
+            if (itemKeys.size() > 1) {
+                throw new IllegalArgumentException("Ambiguous plugin config key '" + inputKey
+                    + "' matches multiple items: " + itemKeys);
+            }
+            return itemKeys.iterator().next();
+        }
+        
+        ConfigKeyPriority getPriority() {
+            return priority;
+        }
+        
+        int getOrder() {
+            return order;
+        }
+    }
+    
+    private static class ResolvedConfigValue {
+        
+        private final String value;
+        
+        private final ConfigKeyPriority priority;
+        
+        private final int order;
+        
+        ResolvedConfigValue(String value, ConfigKeyPriority priority, int order) {
+            this.value = value;
+            this.priority = priority;
+            this.order = order;
+        }
+        
+        boolean hasHigherPriorityThan(ResolvedConfigValue other) {
+            return priority.isHigherThan(other.priority)
+                || priority == other.priority && order < other.order;
+        }
+        
+        String getValue() {
+            return value;
+        }
     }
 }

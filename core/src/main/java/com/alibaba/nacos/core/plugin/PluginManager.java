@@ -236,10 +236,14 @@ public class PluginManager
                 "Plugin does not support configuration: " + pluginId);
         }
         
-        Map<String, String> normalizedConfig = normalizeConfig(info, config);
-        
-        // Validate effective config.
-        validateConfig(info, resolveEffectiveConfig(info, normalizedConfig, localOnly).getConfig());
+        Map<String, String> normalizedConfig;
+        try {
+            normalizedConfig = normalizeConfig(info, config);
+        } catch (IllegalArgumentException e) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
+        }
+        validateConfigKeys(info, normalizedConfig);
         
         // LocalOnly mode: only update local memory, skip cluster sync
         if (localOnly) {
@@ -379,20 +383,23 @@ public class PluginManager
         });
     }
     
-    private void validateConfig(PluginInfo info, Map<String, String> config)
+    private void validateConfigKeys(PluginInfo info, Map<String, String> config)
         throws NacosApiException {
         List<ConfigItemDefinition> definitions = info.getConfigDefinitions();
-        if (definitions == null) {
+        if (definitions == null || definitions.isEmpty()) {
             return;
         }
-        
-        for (ConfigItemDefinition def : definitions) {
-            String value = config.get(def.getKey());
-            boolean valueIsEmpty = value == null || value.isEmpty();
-            if (def.isRequired() && valueIsEmpty) {
+        Set<String> definedKeys = new HashSet<>();
+        for (ConfigItemDefinition definition : definitions) {
+            if (StringUtils.isNotBlank(definition.getKey())) {
+                definedKeys.add(definition.getKey());
+            }
+        }
+        for (String key : config.keySet()) {
+            if (!definedKeys.contains(key)) {
                 throw new NacosApiException(NacosException.INVALID_PARAM,
-                    ErrorCode.PARAMETER_MISSING,
-                    "Required config missing: " + def.getKey());
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Unknown plugin config key: " + key);
             }
         }
     }
@@ -472,14 +479,16 @@ public class PluginManager
     public void applyConfigChange(String pluginId, Map<String, String> config) {
         PluginInfo info = pluginRegistry.get(pluginId);
         Map<String, String> normalizedConfig = normalizeConfig(info, config);
-        pluginConfigResolver.updateRuntimeConfig(pluginId, normalizedConfig);
+        pluginConfigResolver.updateConfig(PluginConfigSourceType.RUNTIME_PERSISTED, pluginId,
+            normalizedConfig);
         applyEffectiveConfig(pluginId);
     }
     
     private void applyLocalConfigChange(String pluginId, Map<String, String> config) {
         PluginInfo info = pluginRegistry.get(pluginId);
         Map<String, String> normalizedConfig = normalizeConfig(info, config);
-        pluginConfigResolver.updateLocalOnlyConfig(pluginId, normalizedConfig);
+        pluginConfigResolver.updateConfig(PluginConfigSourceType.LOCAL_ONLY, pluginId,
+            normalizedConfig);
         applyEffectiveConfig(pluginId);
     }
     
@@ -491,23 +500,31 @@ public class PluginManager
         return new HashMap<>(pluginConfigResolver.normalizeConfig(info, configToNormalize));
     }
     
-    private PluginConfigResolution resolveEffectiveConfig(PluginInfo info,
-        Map<String, String> updatingConfig, boolean localOnly) {
-        PluginConfigSourceType updatingSource = localOnly ? PluginConfigSourceType.LOCAL_ONLY
-            : PluginConfigSourceType.RUNTIME_PERSISTED;
-        return pluginConfigResolver.resolveWithUpdate(info, updatingSource, updatingConfig, false);
-    }
-    
     private void applyEffectiveConfig(String pluginId) {
         PluginInfo info = pluginRegistry.get(pluginId);
         Map<String, String> effectiveConfig;
         if (info != null) {
             effectiveConfig = pluginConfigResolver.resolve(info, false).getConfig();
+            validateEffectiveConfig(info, effectiveConfig);
             info.setConfig(effectiveConfig);
         } else {
             effectiveConfig = Collections.emptyMap();
         }
         applyConfigToPlugin(pluginId, effectiveConfig);
+    }
+    
+    private void validateEffectiveConfig(PluginInfo info, Map<String, String> config) {
+        List<ConfigItemDefinition> definitions = info.getConfigDefinitions();
+        if (definitions == null) {
+            return;
+        }
+        for (ConfigItemDefinition definition : definitions) {
+            String value = config.get(definition.getKey());
+            if (definition.isRequired() && StringUtils.isEmpty(value)) {
+                throw new IllegalArgumentException(
+                    "Required config missing: " + definition.getKey());
+            }
+        }
     }
     
     /**

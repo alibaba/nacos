@@ -40,6 +40,7 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -188,28 +189,37 @@ class PluginManagerTest {
     }
     
     @Test
-    void updatePluginConfigMissingRequiredConfigTest() {
+    void updatePluginConfigUnknownKeyTest() {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
-        ConfigItemDefinition requiredDef = new ConfigItemDefinition();
-        requiredDef.setKey("requiredKey");
-        requiredDef.setRequired(true);
-        
-        List<ConfigItemDefinition> definitions = new ArrayList<>();
-        definitions.add(requiredDef);
-        plugin.setConfigDefinitions(definitions);
-        
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("knownKey");
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
         registerConfigurablePlugin("trace", "test", plugin);
         
         Map<String, String> config = new HashMap<>();
-        config.put("otherKey", "value");
+        config.put("unknownKey", "value");
         
-        NacosApiException exception = assertThrows(NacosApiException.class, () -> {
-            manager.updatePluginConfig("trace:test", config);
-        });
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig("trace:test", config));
         
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
-        assertEquals(ErrorCode.PARAMETER_MISSING.getCode(), exception.getDetailErrCode());
-        assertTrue(exception.getErrMsg().contains("Required config missing"));
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
+        assertTrue(exception.getErrMsg().contains("Unknown plugin config key: unknownKey"));
+    }
+    
+    @Test
+    void updateLocalPluginConfigMissingRequiredEffectiveValueTest() {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("requiredKey");
+        definition.setRequired(true);
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
+        registerConfigurablePlugin("trace", "test", plugin);
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> manager.updatePluginConfig("trace:test", new HashMap<>(), true));
+        
+        assertTrue(exception.getMessage().contains("Required config missing: requiredKey"));
     }
     
     @Test
@@ -329,29 +339,6 @@ class PluginManagerTest {
     }
     
     @Test
-    void validateConfigEmptyValueTest() {
-        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
-        ConfigItemDefinition requiredDef = new ConfigItemDefinition();
-        requiredDef.setKey("requiredKey");
-        requiredDef.setRequired(true);
-        
-        List<ConfigItemDefinition> definitions = new ArrayList<>();
-        definitions.add(requiredDef);
-        plugin.setConfigDefinitions(definitions);
-        
-        registerConfigurablePlugin("trace", "test", plugin);
-        
-        Map<String, String> config = new HashMap<>();
-        config.put("requiredKey", "");
-        
-        NacosApiException exception = assertThrows(NacosApiException.class, () -> {
-            manager.updatePluginConfig("trace:test", config);
-        });
-        
-        assertEquals(ErrorCode.PARAMETER_MISSING.getCode(), exception.getDetailErrCode());
-    }
-    
-    @Test
     void applyConfigToNonConfigurablePluginTest() throws NacosApiException {
         Object plainPlugin = new Object();
         registerPluginInstance("trace", "test", plainPlugin, false, false);
@@ -443,8 +430,8 @@ class PluginManagerTest {
         assertEquals("local-secret", plugin.getCurrentConfig().get("secret"));
         assertEquals("lo******et", resolution.getConfig().get("secret"));
         assertEquals(PluginConfigSourceType.LOCAL_ONLY,
-            resolution.getValueMetas().get(0).getSource());
-        assertTrue(resolution.getValueMetas().get(0).isOverridden());
+            resolution.getValueMetas().get("secret").getSource());
+        assertTrue(resolution.getValueMetas().get("secret").isOverridden());
     }
     
     @Test

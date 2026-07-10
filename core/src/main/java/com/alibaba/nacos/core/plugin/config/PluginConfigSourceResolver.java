@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 
+import java.util.Map;
+
 /**
  * Resolver for one plugin configuration source.
  *
@@ -37,6 +39,26 @@ interface PluginConfigSourceResolver {
      */
     PluginConfigSourceValue resolve(PluginInfo pluginInfo, ConfigItemDefinition definition,
         PluginConfigKeyCandidate candidate);
+    
+    /**
+     * Whether this source supports runtime updates.
+     *
+     * @return true if the source is updatable
+     */
+    default boolean isUpdatable() {
+        return false;
+    }
+    
+    /**
+     * Replace source config for one plugin.
+     *
+     * @param pluginId plugin id
+     * @param config normalized full source config
+     */
+    default void updateConfig(String pluginId, Map<String, String> config) {
+        throw new UnsupportedOperationException("Plugin config source is not updatable: "
+            + getSourceType());
+    }
     
     /**
      * Get source type.

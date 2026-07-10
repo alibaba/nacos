@@ -68,23 +68,20 @@ public class PluginConfigResolver {
     }
     
     /**
-     * Update runtime persisted config for one plugin.
+     * Replace config in an updatable source.
      *
+     * @param sourceType source type
      * @param pluginId plugin id
-     * @param config normalized config
+     * @param config normalized full source config
      */
-    public void updateRuntimeConfig(String pluginId, Map<String, String> config) {
-        runtimePersistedSourceResolver.updateConfig(pluginId, config);
-    }
-    
-    /**
-     * Update local-only config for one plugin.
-     *
-     * @param pluginId plugin id
-     * @param config normalized config
-     */
-    public void updateLocalOnlyConfig(String pluginId, Map<String, String> config) {
-        localOnlySourceResolver.updateConfig(pluginId, config);
+    public void updateConfig(PluginConfigSourceType sourceType, String pluginId,
+        Map<String, String> config) {
+        PluginConfigSourceResolver sourceResolver = getSourceResolver(sourceType);
+        if (!sourceResolver.isUpdatable()) {
+            throw new IllegalArgumentException("Plugin config source is not updatable: "
+                + sourceType);
+        }
+        sourceResolver.updateConfig(pluginId, config);
     }
     
     /**
@@ -95,51 +92,31 @@ public class PluginConfigResolver {
      * @return resolution
      */
     public PluginConfigResolution resolve(PluginInfo pluginInfo, boolean maskSensitive) {
-        return resolveInternal(pluginInfo, null, null, maskSensitive);
+        return resolveInternal(pluginInfo, maskSensitive);
     }
     
-    /**
-     * Resolve effective plugin config with a pending source update.
-     *
-     * @param pluginInfo plugin info
-     * @param updatingSource source type to update
-     * @param updatingConfig config to preview
-     * @param maskSensitive whether sensitive values should be masked
-     * @return resolution
-     */
-    public PluginConfigResolution resolveWithUpdate(PluginInfo pluginInfo,
-        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig,
-        boolean maskSensitive) {
-        Map<String, String> normalizedConfig = normalizeConfig(pluginInfo, updatingConfig);
-        return resolveInternal(pluginInfo, updatingSource, normalizedConfig, maskSensitive);
-    }
-    
-    private PluginConfigResolution resolveInternal(PluginInfo pluginInfo,
-        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig,
-        boolean maskSensitive) {
+    private PluginConfigResolution resolveInternal(PluginInfo pluginInfo, boolean maskSensitive) {
         List<ConfigItemDefinition> definitions = pluginInfo.getConfigDefinitions();
         if (definitions == null || definitions.isEmpty()) {
-            return resolveWithoutDefinitions(pluginInfo, updatingSource, updatingConfig);
+            return resolveWithoutDefinitions(pluginInfo);
         }
         Map<String, String> config = new LinkedHashMap<>();
-        List<PluginConfigValueMeta> metas = new ArrayList<>(definitions.size());
+        Map<String, PluginConfigValueMeta> metas = new LinkedHashMap<>(definitions.size());
         for (ConfigItemDefinition definition : definitions) {
             if (StringUtils.isBlank(definition.getKey())) {
                 continue;
             }
-            resolveItem(pluginInfo, definition, updatingSource, updatingConfig, maskSensitive,
-                config, metas);
+            resolveItem(pluginInfo, definition, maskSensitive, config, metas);
         }
         return new PluginConfigResolution(config, metas);
     }
     
-    private PluginConfigResolution resolveWithoutDefinitions(PluginInfo pluginInfo,
-        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig) {
+    private PluginConfigResolution resolveWithoutDefinitions(PluginInfo pluginInfo) {
         Map<String, String> config = new LinkedHashMap<>();
-        Map<String, String> runtimeConfig = getSourceConfig(runtimePersistedSourceResolver,
-            pluginInfo.getPluginId(), updatingSource, updatingConfig);
-        Map<String, String> localOnlyConfig = getSourceConfig(localOnlySourceResolver,
-            pluginInfo.getPluginId(), updatingSource, updatingConfig);
+        Map<String, String> runtimeConfig =
+            runtimePersistedSourceResolver.getConfig(pluginInfo.getPluginId());
+        Map<String, String> localOnlyConfig =
+            localOnlySourceResolver.getConfig(pluginInfo.getPluginId());
         if (runtimeConfig == null && localOnlyConfig == null && pluginInfo.getConfig() != null) {
             config.putAll(pluginInfo.getConfig());
         }
@@ -149,25 +126,15 @@ public class PluginConfigResolver {
         if (localOnlyConfig != null) {
             config.putAll(localOnlyConfig);
         }
-        return new PluginConfigResolution(config, Collections.emptyList());
-    }
-    
-    private Map<String, String> getSourceConfig(
-        AbstractMapPluginConfigSourceResolver sourceResolver,
-        String pluginId, PluginConfigSourceType updatingSource,
-        Map<String, String> updatingConfig) {
-        if (sourceResolver.getSourceType() == updatingSource) {
-            return updatingConfig;
-        }
-        return sourceResolver.getConfig(pluginId);
+        return new PluginConfigResolution(config, Collections.emptyMap());
     }
     
     private void resolveItem(PluginInfo pluginInfo, ConfigItemDefinition definition,
-        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig,
-        boolean maskSensitive, Map<String, String> config, List<PluginConfigValueMeta> metas) {
+        boolean maskSensitive, Map<String, String> config,
+        Map<String, PluginConfigValueMeta> metas) {
         PluginConfigKeyCandidate candidate = keyResolver.resolve(pluginInfo, definition);
-        List<PluginConfigSourceValue> sourceValues = resolveSourceValues(pluginInfo, definition,
-            candidate, updatingSource, updatingConfig);
+        List<PluginConfigSourceValue> sourceValues =
+            resolveSourceValues(pluginInfo, definition, candidate);
         PluginConfigSourceValue effectiveValue = firstPresent(sourceValues);
         if (effectiveValue.getValue() != null) {
             String value = effectiveValue.getValue();
@@ -176,24 +143,26 @@ public class PluginConfigResolver {
             }
             config.put(definition.getKey(), value);
         }
-        metas.add(buildValueMeta(definition.getKey(), effectiveValue.getSource(),
-            countOverrideSources(sourceValues) > 1));
+        metas.put(definition.getKey(), buildValueMeta(definition.getKey(),
+            effectiveValue.getSource(), countOverrideSources(sourceValues) > 1));
     }
     
     private List<PluginConfigSourceValue> resolveSourceValues(PluginInfo pluginInfo,
-        ConfigItemDefinition definition, PluginConfigKeyCandidate candidate,
-        PluginConfigSourceType updatingSource, Map<String, String> updatingConfig) {
+        ConfigItemDefinition definition, PluginConfigKeyCandidate candidate) {
         List<PluginConfigSourceValue> result = new ArrayList<>(sourceResolvers.size());
         for (PluginConfigSourceResolver sourceResolver : sourceResolvers) {
-            if (sourceResolver.getSourceType() == updatingSource
-                && sourceResolver instanceof AbstractMapPluginConfigSourceResolver) {
-                result.add(((AbstractMapPluginConfigSourceResolver) sourceResolver)
-                    .resolveFromConfig(updatingConfig, definition));
-                continue;
-            }
             result.add(sourceResolver.resolve(pluginInfo, definition, candidate));
         }
         return result;
+    }
+    
+    private PluginConfigSourceResolver getSourceResolver(PluginConfigSourceType sourceType) {
+        for (PluginConfigSourceResolver sourceResolver : sourceResolvers) {
+            if (sourceResolver.getSourceType() == sourceType) {
+                return sourceResolver;
+            }
+        }
+        throw new IllegalArgumentException("Plugin config source not found: " + sourceType);
     }
     
     private PluginConfigSourceValue firstPresent(List<PluginConfigSourceValue> values) {

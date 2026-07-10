@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * Resolver for static plugin configuration source.
@@ -32,17 +31,15 @@ class StaticPluginConfigSourceResolver implements PluginConfigSourceResolver {
     @Override
     public PluginConfigSourceValue resolve(PluginInfo pluginInfo, ConfigItemDefinition definition,
         PluginConfigKeyCandidate candidate) {
-        ConfigurableEnvironment environment = EnvUtil.getEnvironment();
-        if (environment == null) {
+        if (EnvUtil.getEnvironment() == null) {
             return PluginConfigSourceValue.absent(PluginConfigSourceType.STATIC);
         }
-        PluginConfigSourceValue standardValue =
-            getEnvironmentValue(environment, candidate.getStandardKey());
+        PluginConfigSourceValue standardValue = getEnvironmentValue(candidate.getStandardKey());
         if (standardValue.isPresent()) {
             return standardValue;
         }
         for (String aliasKey : candidate.getAliasKeys()) {
-            PluginConfigSourceValue aliasValue = getEnvironmentValue(environment, aliasKey);
+            PluginConfigSourceValue aliasValue = getEnvironmentValue(aliasKey);
             if (aliasValue.isPresent()) {
                 return aliasValue;
             }
@@ -55,10 +52,9 @@ class StaticPluginConfigSourceResolver implements PluginConfigSourceResolver {
         return PluginConfigSourceType.STATIC;
     }
     
-    private PluginConfigSourceValue getEnvironmentValue(ConfigurableEnvironment environment,
-        String key) {
-        if (environment.containsProperty(key)) {
-            return PluginConfigSourceValue.present(environment.getProperty(key),
+    private PluginConfigSourceValue getEnvironmentValue(String key) {
+        if (EnvUtil.containsProperty(key)) {
+            return PluginConfigSourceValue.present(EnvUtil.getProperty(key),
                 PluginConfigSourceType.STATIC);
         }
         return PluginConfigSourceValue.absent(PluginConfigSourceType.STATIC);

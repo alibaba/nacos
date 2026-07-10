@@ -69,6 +69,7 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
         assertEquals(pluginName, detail.get("pluginName").asText(), detail.toString());
         assertTrue(detail.has("enabled"), detail.toString());
         assertTrue(detail.has("configurable"), detail.toString());
+        assertTrue(detail.get("configValueMetas").isObject(), detail.toString());
 
         JsonNode availability = getJsonOk(CONSOLE_PLUGIN_AVAILABILITY_PATH,
                 Query.newInstance().addParam("pluginType", pluginType).addParam("pluginName", pluginName))

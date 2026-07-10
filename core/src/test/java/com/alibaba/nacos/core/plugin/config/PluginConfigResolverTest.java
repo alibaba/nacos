@@ -34,6 +34,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginConfigResolverTest {
@@ -63,8 +64,8 @@ class PluginConfigResolverTest {
         PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
         
         assertEquals("1000", resolution.getConfig().get("timeout"));
-        assertMeta(resolution.getValueMetas().get(0), "timeout", PluginConfigSourceType.DEFAULT,
-            false);
+        assertMeta(resolution.getValueMetas().get("timeout"), "timeout",
+            PluginConfigSourceType.DEFAULT, false);
     }
     
     @Test
@@ -77,8 +78,8 @@ class PluginConfigResolverTest {
         PluginConfigResolution resolution = resolver.resolve(pluginInfo, true);
         
         assertEquals("st******en", resolution.getConfig().get("token"));
-        assertMeta(resolution.getValueMetas().get(0), "token", PluginConfigSourceType.STATIC,
-            false);
+        assertMeta(resolution.getValueMetas().get("token"), "token",
+            PluginConfigSourceType.STATIC, false);
     }
     
     @Test
@@ -90,13 +91,15 @@ class PluginConfigResolverTest {
         runtimeConfig.put("timeout", "3000");
         Map<String, String> localOnlyConfig = new HashMap<>();
         localOnlyConfig.put("timeout", "4000");
-        resolver.updateRuntimeConfig(pluginInfo.getPluginId(), runtimeConfig);
-        resolver.updateLocalOnlyConfig(pluginInfo.getPluginId(), localOnlyConfig);
+        resolver.updateConfig(PluginConfigSourceType.RUNTIME_PERSISTED, pluginInfo.getPluginId(),
+            runtimeConfig);
+        resolver.updateConfig(PluginConfigSourceType.LOCAL_ONLY, pluginInfo.getPluginId(),
+            localOnlyConfig);
         
         PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
         
         assertEquals("4000", resolution.getConfig().get("timeout"));
-        assertMeta(resolution.getValueMetas().get(0), "timeout",
+        assertMeta(resolution.getValueMetas().get("timeout"), "timeout",
             PluginConfigSourceType.LOCAL_ONLY, true);
     }
     
@@ -110,16 +113,43 @@ class PluginConfigResolverTest {
         runtimeConfig.put("nacos.plugin.trace.demo.timeout", "3000");
         Map<String, String> localOnlyConfig = new HashMap<>();
         localOnlyConfig.put("oldTimeout", "4000");
-        resolver.updateRuntimeConfig(pluginInfo.getPluginId(),
+        resolver.updateConfig(PluginConfigSourceType.RUNTIME_PERSISTED, pluginInfo.getPluginId(),
             resolver.normalizeConfig(pluginInfo, runtimeConfig));
-        resolver.updateLocalOnlyConfig(pluginInfo.getPluginId(),
+        resolver.updateConfig(PluginConfigSourceType.LOCAL_ONLY, pluginInfo.getPluginId(),
             resolver.normalizeConfig(pluginInfo, localOnlyConfig));
         
         PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
         
         assertEquals("4000", resolution.getConfig().get("timeout"));
-        assertMeta(resolution.getValueMetas().get(0), "timeout",
+        assertMeta(resolution.getValueMetas().get("timeout"), "timeout",
             PluginConfigSourceType.LOCAL_ONLY, true);
+    }
+    
+    @Test
+    void testUpdateConfigReplacesSourceSnapshot() {
+        ConfigItemDefinition definition = createDefinition("timeout", "1000", false);
+        PluginInfo pluginInfo = createPluginInfo(definition);
+        Map<String, String> runtimeConfig = new HashMap<>();
+        runtimeConfig.put("timeout", "3000");
+        resolver.updateConfig(PluginConfigSourceType.RUNTIME_PERSISTED, pluginInfo.getPluginId(),
+            runtimeConfig);
+        PluginConfigResolution updated = resolver.resolve(pluginInfo, false);
+        
+        resolver.updateConfig(PluginConfigSourceType.RUNTIME_PERSISTED, pluginInfo.getPluginId(),
+            Collections.emptyMap());
+        PluginConfigResolution removed = resolver.resolve(pluginInfo, false);
+        
+        assertEquals("3000", updated.getConfig().get("timeout"));
+        assertEquals("1000", removed.getConfig().get("timeout"));
+    }
+    
+    @Test
+    void testUpdateConfigRejectsReadOnlySource() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> resolver.updateConfig(PluginConfigSourceType.STATIC, "trace:demo",
+                Collections.emptyMap()));
+        
+        assertTrue(exception.getMessage().contains("not updatable"));
     }
     
     private void assertMeta(PluginConfigValueMeta meta, String key,

@@ -138,18 +138,20 @@ public class PluginRemoteHandler implements PluginHandler {
     @SuppressWarnings("unchecked")
     private void sanitizeConfigValueMetas(Map<String, Object> raw) {
         Object valueMetas = raw.get(FIELD_CONFIG_VALUE_METAS);
-        if (!(valueMetas instanceof List)) {
+        if (!(valueMetas instanceof Map)) {
             return;
         }
-        List<Object> sanitizedValueMetas = new ArrayList<>(((List<?>) valueMetas).size());
-        for (Object each : (List<?>) valueMetas) {
+        Map<String, Object> sanitizedValueMetas =
+            new LinkedHashMap<>(((Map<?, ?>) valueMetas).size());
+        for (Map.Entry<String, Object> entry : ((Map<String, Object>) valueMetas).entrySet()) {
+            Object each = entry.getValue();
             if (each instanceof Map) {
                 Map<String, Object> valueMeta = new LinkedHashMap<>((Map<String, Object>) each);
                 sanitizeEnum(valueMeta, FIELD_SOURCE, PluginConfigSourceType.class,
                     PluginConfigSourceType.DEFAULT.name());
-                sanitizedValueMetas.add(valueMeta);
+                sanitizedValueMetas.put(entry.getKey(), valueMeta);
             } else {
-                sanitizedValueMetas.add(each);
+                sanitizedValueMetas.put(entry.getKey(), each);
             }
         }
         raw.put(FIELD_CONFIG_VALUE_METAS, sanitizedValueMetas);

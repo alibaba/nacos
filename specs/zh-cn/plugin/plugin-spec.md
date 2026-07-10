@@ -158,7 +158,8 @@ nacos.plugin.{pluginType}.{pluginName}.{itemKey}
 | `sensitive` | 是否为敏感值。查询 API 返回前必须脱敏。 |
 | `effectMode` | 生效模式，`RUNTIME` 表示可运行时生效，`RESTART` 表示需要重启。 |
 
-`aliases` 只用于静态配置兼容读取，不应写入运行时持久化文件或 local-only 内存表。
+`aliases` 用于静态配置兼容读取，也可以作为迁移兼容的 API 输入。完成归一化后，alias
+不应写入运行时持久化文件或 local-only 内存表。
 
 ### 配置来源与值元数据
 
@@ -175,9 +176,9 @@ LOCAL_ONLY > RUNTIME_PERSISTED > STATIC > DEFAULT
 | `RUNTIME_PERSISTED` | 来自集群级运行时 override，当前可由 `plugin-configs.json` 记录终态内容。 |
 | `LOCAL_ONLY` | 当前节点的本机 override，只用于诊断或应急处理，不同步到集群。 |
 
-插件详情返回模型可以追加 `PluginConfigValueMeta`，用于描述每个配置项的当前值来源和
-是否存在多来源覆盖。`overridden` 忽略 `DEFAULT`，只有同一 key 同时存在多个非默认
-来源时才应为 `true`。
+插件详情返回模型可以追加以 canonical item key 为索引的 `configValueMetas` map。每个
+`PluginConfigValueMeta` 用于描述对应配置项的当前值来源和是否存在多来源覆盖。
+`overridden` 忽略 `DEFAULT`，只有同一 key 同时存在多个非默认来源时才应为 `true`。
 
 运行时持久化配置和 local-only 配置只保存 `pluginId + itemKey` 对应的值，不保存
 normalized full key、alias key、source 或版本信息。
@@ -185,13 +186,15 @@ normalized full key、alias key、source 或版本信息。
 ### 配置更新兼容性
 
 插件详情 API 应保持 additive 兼容：已有 `config` 和 `configDefinitions` 字段继续
-保留，其中 `config` 可以表示当前 effective config，新增的 `configValueMetas` 表示
-source 和 overridden 等元信息。
+保留，其中 `config` 可以表示当前 effective config，新增的 `configValueMetas` map 按
+canonical item key 提供 source 和 overridden 等元信息。
 
 `PUT /v3/admin/core/plugin/config` 和对应 Console API 保持现有完整 override map
 更新语义。`localOnly=true` 表示只更新当前节点 local-only override；否则更新集群级
 runtime persisted override。key 归一化和 `effectMode` 校验由服务端内部完成，不作为
 新的 API 参数暴露。`effectMode=RESTART` 的字段不应通过运行时更新立即生效。
+canonical item key、normalized full key 和兼容 alias key 应在校验及存储前统一归一化为
+item key。请求包含未定义 key，或者 alias 歧义命中多个配置项时，应返回参数校验错误。
 
 ## 管理 API
 

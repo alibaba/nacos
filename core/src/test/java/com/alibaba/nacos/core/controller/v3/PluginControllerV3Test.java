@@ -123,7 +123,7 @@ class PluginControllerV3Test {
         info.setConfig(config);
         when(unifiedPluginManager.getPlugin("auth:nacos")).thenReturn(Optional.of(info));
         when(unifiedPluginManager.resolvePluginConfig(info))
-            .thenReturn(new PluginConfigResolution(config, Collections.singletonList(meta)));
+            .thenReturn(new PluginConfigResolution(config, Collections.singletonMap("key", meta)));
         
         Result<PluginDetailVO> result = pluginControllerV3.getPluginDetail("auth", "nacos");
         
@@ -134,7 +134,7 @@ class PluginControllerV3Test {
         assertEquals("nacos", result.getData().getPluginName());
         assertNotNull(result.getData().getConfig());
         assertEquals(PluginConfigSourceType.RUNTIME_PERSISTED,
-            result.getData().getConfigValueMetas().get(0).getSource());
+            result.getData().getConfigValueMetas().get("key").getSource());
     }
     
     @Test
